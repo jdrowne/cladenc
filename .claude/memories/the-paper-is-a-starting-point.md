@@ -1,0 +1,17 @@
+---
+name: the-paper-is-a-starting-point
+description: "The HGM paper is where cladenc starts, not a standard it is held to — keep its ideas, name things plainly, and let cladenc leave the paper where a change improves it"
+metadata:
+  node_type: memory
+  type: feedback
+  originSessionId: 3c2b70de-42b2-4496-8bfc-c8f6aecc6bad
+  modified: 2026-11-14T23:26:10.475Z
+---
+
+# The paper is a starting point
+
+`cladenc` takes its ideas from the HGM paper (arXiv:2510.21614) and is not bound to the paper's vocabulary, notation or details. Where a plainer, more natural name exists than the paper's, use it: in option names, journal keys, code identifiers, the issue plan and the README. `cladenc` may also depart from the paper's method wherever a change makes it better.
+
+**Why:** On 2026-11-14 the user asked why the plan in issue #1 named the agent a run starts from as the paper does, when `progenitor` was available. My reason was fidelity to the paper. The user held that the paper's terms are not needed where a more natural one exists, and that the paper is to be followed in its ideas, not to the letter. They added that `cladenc` is to be intellectual property owned by Jose Drowne (`LICENSE.txt` reserves all rights), so it is free to move away from the paper as it improves.
+
+**How to apply:** Name things for what they are; `progenitor`, and `genealogy` for what the paper calls the tree, are the user's own examples. What the paper calls an agent is a `harness` here: the user thinks of `cladenc` as improving harnesses and found the paper's word unclear. Mention the paper's name for an idea once, where the plan or the README maps ideas to the paper, so a reader can still find it there. Do not write point-by-point reconciliations with the paper's text, and do not reject an improvement because the paper does it differently. The clean-room rule is separate and unchanged: the paper is the only source, and the authors' code is never read. My own reading, not something the user said: the rule covers the paper's Greek-letter symbols too, which is why the plan says `--genealogy-growth` and `--confidence`. Recorded under [[never-quote-the-user-verbatim]].
