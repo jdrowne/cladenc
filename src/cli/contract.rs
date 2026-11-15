@@ -39,7 +39,7 @@ A harness is started in a container of the image of the search, as
 where <COMMAND> is the value of --harness-run-command. In the container,
 
   /harness             holds the source code of the harness, a copy made
-                       for this job
+                       for this container
   /work                is the directory the harness works in, and the
                        working directory
   CLADENC_HARNESS      /harness
@@ -76,7 +76,7 @@ How the harness ends decides what is recorded:
 
   exit status 0     the procreation created a harness
   exit status 125   Docker did not start the container: the search stops, and
-                    `cladenc resume` runs the job again
+                    `cladenc resume` carries out the procreation again
   any other status  the procreation failed
   the time limit    the container is removed, and the procreation is recorded
                     as timed out
@@ -94,11 +94,12 @@ with /harness as the working directory, which holds the source code of the
 harness and is what CLADENC_HARNESS names. A build calls no model, and is
 given none of the three variables of the model. What the build makes stays
 there, and is part of every copy made of the harness. The progenitor is
-built before the first job, within the time limit of one procreation. A
-child is built as the last step of its procreation, within what is left of
-the time limit of that procreation. builds in the run directory keeps the
-standard output and standard error of every build, in a directory named
-after the harness.
+built before any procreation or evaluation, within the time limit of one
+procreation. A child is built as the last step of its procreation, within
+what is left of the time limit of that procreation.
+
+builds in the run directory keeps the standard output and standard error
+of every build, in a directory named after the harness.
 
 How a build ends decides what is recorded:
 
@@ -168,8 +169,8 @@ How an evaluation ends decides what is recorded:
   the check exits with status 0    the evaluation succeeded
   the check exits with another     the evaluation failed
   exit status 125 of either step   Docker did not start the container: the
-                                   search stops, and `cladenc resume` runs
-                                   the job again
+                                   search stops, and `cladenc resume` carries
+                                   out the evaluation again
   the time limit                   the container is removed, and the
                                    evaluation is recorded as timed out
 

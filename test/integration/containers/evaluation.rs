@@ -2,8 +2,8 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::EvaluationOutcome;
-use cladenc::job::{self, JobError, Launch};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -14,7 +14,7 @@ const FINISHED: &str = "grep -q done work.txt";
 struct Evaluated {
     _directory: TempDir,
     workspace: Workspace,
-    result: Result<EvaluationOutcome, JobError>,
+    result: Result<EvaluationOutcome, ContainerError>,
 }
 
 struct Evaluation<'a> {
@@ -46,7 +46,7 @@ fn evaluated_as(evaluation: &Evaluation<'_>) -> Evaluated {
         },
     };
     let stop = AtomicBool::new(false);
-    let result = job::run_evaluation(
+    let result = containers::run_evaluation(
         &workspace,
         &launch,
         evaluation.harness,
@@ -357,7 +357,7 @@ fn a_check_that_runs_past_what_is_left_of_the_time_limit_times_out() {
 fn a_harness_whose_container_docker_did_not_start_is_an_error() {
     assert!(matches!(
         evaluated("exit 125", FINISHED).result,
-        Err(JobError::Docker(_))
+        Err(ContainerError::Docker(_))
     ));
 }
 
@@ -365,7 +365,7 @@ fn a_harness_whose_container_docker_did_not_start_is_an_error() {
 fn a_check_whose_container_docker_did_not_start_is_an_error() {
     assert!(matches!(
         evaluated(FINISH, "exit 125").result,
-        Err(JobError::Docker(_))
+        Err(ContainerError::Docker(_))
     ));
 }
 
@@ -376,7 +376,7 @@ fn what_docker_said_of_a_check_it_did_not_start_is_kept_with_the_check() {
         .workspace
         .running_evaluation(0, "benchmark/t1")
         .join("check/stderr");
-    assert!(matches!(evaluated.result, Err(JobError::Docker(said)) if said == kept));
+    assert!(matches!(evaluated.result, Err(ContainerError::Docker(said)) if said == kept));
 }
 
 #[test]
@@ -400,5 +400,5 @@ fn an_evaluation_of_a_harness_that_is_not_there_is_an_error() {
         harness: 9,
         time_limit: 30,
     });
-    assert!(matches!(evaluated.result, Err(JobError::Io(_))));
+    assert!(matches!(evaluated.result, Err(ContainerError::Io(_))));
 }

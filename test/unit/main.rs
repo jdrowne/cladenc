@@ -20,6 +20,10 @@ mod cli {
     mod version;
 }
 
+mod containers {
+    mod worded;
+}
+
 mod genealogy {
     mod build;
     mod clade;
@@ -30,10 +34,6 @@ mod genealogy {
     mod refused_evaluation;
     mod refused_procreation;
     mod tasks;
-    mod worded;
-}
-
-mod job {
     mod worded;
 }
 
@@ -59,7 +59,7 @@ mod policy {
     mod focus;
     mod growth;
     mod lower_bound;
-    mod no_job;
+    mod no_action;
     mod procreation;
     mod repeatable;
 }

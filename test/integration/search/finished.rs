@@ -70,9 +70,9 @@ fn journal_of(directory: &TempDir) -> String {
     fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
 }
 
-fn started(journal: &str, job: &str) -> usize {
+fn started(journal: &str, action: &str) -> usize {
     journal
-        .matches(&format!("\"record\":\"{job}_started\""))
+        .matches(&format!("\"record\":\"{action}_started\""))
         .count()
 }
 
@@ -220,7 +220,7 @@ fn a_search_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 }
 
 #[test]
-fn a_search_says_each_job_as_it_starts() {
+fn a_search_says_each_action_as_it_starts() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
         said[2],
@@ -294,7 +294,7 @@ fn a_search_cannot_start_in_a_run_directory_that_exists() {
 }
 
 #[test]
-fn a_search_whose_run_record_cannot_be_written_stops_before_any_job() {
+fn a_search_whose_run_record_cannot_be_written_stops_before_any_action() {
     let (_directory, found) = searched(|settings| {
         let unwritable = OsStr::from_bytes(&[b'p', 0xff]);
         settings.progenitor =

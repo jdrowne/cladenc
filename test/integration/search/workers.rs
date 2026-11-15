@@ -64,7 +64,7 @@ fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
 }
 
 #[test]
-fn with_three_workers_the_journal_holds_three_jobs_started_and_not_finished_at_most() {
+fn with_three_workers_the_journal_holds_three_actions_started_and_not_finished_at_most() {
     assert_eq!(most_running_at_once(&records(|_| {})), 3);
 }
 

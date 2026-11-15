@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::job::JobError;
+use cladenc::containers::ContainerError;
 use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -66,8 +66,8 @@ fn a_container_that_ends_with_status_125_at_an_evaluation_stops_the_search() {
     let (_directory, found) = stopped_at_its_first_evaluation();
     assert!(matches!(
         found,
-        Err(SearchError::Job {
-            error: JobError::Docker(_),
+        Err(SearchError::Action {
+            error: ContainerError::Docker(_),
             ..
         })
     ));
@@ -85,8 +85,8 @@ fn after_one_procreation_by(run_command: &str) -> Result<Found, SearchError> {
 fn a_container_that_ends_with_status_125_stops_the_search() {
     assert!(matches!(
         after_one_procreation_by("exit 125"),
-        Err(SearchError::Job {
-            error: JobError::Docker(_),
+        Err(SearchError::Action {
+            error: ContainerError::Docker(_),
             ..
         })
     ));
@@ -102,8 +102,8 @@ fn a_search_an_evaluation_stopped_names_the_harness_and_the_task_of_that_evaluat
     let (_directory, found) = stopped_at_its_first_evaluation();
     assert!(matches!(
         found,
-        Err(SearchError::Job {
-            job: Started::Evaluation { harness: 0, task },
+        Err(SearchError::Action {
+            action: Started::Evaluation { harness: 0, task },
             ..
         }) if task == "benchmark/t1"
     ));
@@ -113,8 +113,8 @@ fn a_search_an_evaluation_stopped_names_the_harness_and_the_task_of_that_evaluat
 fn a_search_a_container_stopped_names_the_parent_and_the_child_of_that_procreation() {
     assert!(matches!(
         after_one_procreation_by("exit 125"),
-        Err(SearchError::Job {
-            job: Started::Procreation {
+        Err(SearchError::Action {
+            action: Started::Procreation {
                 child: 1,
                 parent: 0
             },
@@ -124,7 +124,7 @@ fn a_search_a_container_stopped_names_the_parent_and_the_child_of_that_procreati
 }
 
 #[test]
-fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_job_that_ran() {
+fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_action_that_ran() {
     let (directory, _found) = stopped_at_its_first_evaluation();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
@@ -155,7 +155,7 @@ fn a_search_stopped_by_its_flag_leaves_no_container_behind() {
 }
 
 #[test]
-fn a_search_stopped_by_its_flag_writes_no_record_for_the_job_that_was_running() {
+fn a_search_stopped_by_its_flag_writes_no_record_for_the_action_that_was_running() {
     let (directory, _found, _said) = stopped_by_its_flag();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
@@ -166,7 +166,7 @@ fn a_search_stopped_by_its_flag_writes_no_record_for_the_job_that_was_running() 
 #[test]
 fn a_search_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_what_was_running() {
     let (_directory, _found, said) = stopped_by_its_flag();
-    assert!(said.ends_with("cladenc: asked to stop, with 1 job running\n"));
+    assert!(said.ends_with("cladenc: asked to stop, with 1 container running\n"));
 }
 
 #[test]

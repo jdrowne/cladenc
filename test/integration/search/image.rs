@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::job::JobError;
+use cladenc::containers::ContainerError;
 use cladenc::journal::{self, Settings};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -115,7 +115,7 @@ fn a_search_says_that_it_builds_its_image_and_that_the_image_is_built() {
 }
 
 #[test]
-fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_job() {
+fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
     let searched = searched(SOLVES_T1);
     let places = [
         "cladenc: copying the 1 task ",
@@ -144,10 +144,10 @@ fn the_run_record_names_the_image_that_was_built_its_dockerfile_and_the_time_lim
 }
 
 #[test]
-fn a_dockerfile_that_is_not_built_stops_the_search_before_its_first_job() {
+fn a_dockerfile_that_is_not_built_stops_the_search_before_its_first_action() {
     assert!(matches!(
         searched("RUN exit 3\n").found,
-        Err(SearchError::Image(JobError::Exit(_)))
+        Err(SearchError::Image(ContainerError::Exit(_)))
     ));
 }
 

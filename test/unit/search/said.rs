@@ -1,7 +1,7 @@
 use std::path::Path;
 
+use cladenc::containers::ContainerError;
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
-use cladenc::job::JobError;
 use cladenc::journal::Started;
 use cladenc::search::Said;
 use cladenc::workspace::Workspace;
@@ -24,9 +24,9 @@ fn evaluation() -> Started {
     }
 }
 
-fn started(job: &Started, again: bool) -> String {
+fn started(action: &Started, again: bool) -> String {
     Said::Started {
-        job,
+        action,
         again,
         evaluations: 5,
         budget: 800,
@@ -160,7 +160,7 @@ fn an_image_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
 fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::ImageNotBuilt {
-            error: &JobError::Exit(1),
+            error: &ContainerError::Exit(1),
             workspace: &workspace(),
         }
         .to_string(),
@@ -182,7 +182,7 @@ fn the_progenitor_is_said_to_be_built() {
 fn a_build_of_the_progenitor_that_failed_is_said_with_where_what_it_printed_is_kept() {
     assert_eq!(
         Said::BuildFailed {
-            error: &JobError::Exit(2),
+            error: &ContainerError::Exit(2),
             workspace: &workspace(),
         }
         .to_string(),
@@ -286,11 +286,11 @@ fn an_evaluation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn a_job_that_stops_the_search_is_said_with_what_became_of_it() {
+fn an_action_that_stops_the_search_is_said_with_what_became_of_it() {
     assert_eq!(
         Said::Failed {
-            job: &evaluation(),
-            error: &JobError::Exit(2),
+            action: &evaluation(),
+            error: &ContainerError::Exit(2),
         }
         .to_string(),
         "the evaluation of harness 3 on task fix-the-parser exited with status 2"
@@ -298,14 +298,14 @@ fn a_job_that_stops_the_search_is_said_with_what_became_of_it() {
 }
 
 #[test]
-fn a_search_asked_to_stop_is_said_with_the_number_of_jobs_running() {
+fn a_search_asked_to_stop_is_said_with_the_number_of_containers_running() {
     assert_eq!(
         Said::Stopping {
             asked: true,
             running: 2,
         }
         .to_string(),
-        "asked to stop, with 2 jobs running"
+        "asked to stop, with 2 containers running"
     );
 }
 
@@ -317,7 +317,7 @@ fn a_search_that_stops_over_a_failure_is_said_to_be_stopping() {
             running: 1,
         }
         .to_string(),
-        "stopping the search, with 1 job running"
+        "stopping the search, with 1 container running"
     );
 }
 

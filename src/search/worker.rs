@@ -1,32 +1,32 @@
 use super::Shared;
+use crate::containers::{self, ContainerError};
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
-use crate::job::{self, JobError};
 use crate::journal::Started;
 
 pub(super) enum Ended {
     Procreation {
         child: HarnessId,
         parent: HarnessId,
-        result: Result<ProcreationOutcome, JobError>,
+        result: Result<ProcreationOutcome, ContainerError>,
     },
     Evaluation {
         harness: HarnessId,
         task: String,
-        result: Result<EvaluationOutcome, JobError>,
+        result: Result<EvaluationOutcome, ContainerError>,
     },
 }
 
-pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended {
+pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> Ended {
     let settings = shared.settings;
-    match job {
+    match action {
         Started::Procreation { child, parent } => {
             let cleared = if again {
                 shared.workspace.discard_procreation(child)
             } else {
                 Ok(())
             };
-            let result = cleared.map_err(JobError::Io).and_then(|()| {
-                job::run_procreation(
+            let result = cleared.map_err(ContainerError::Io).and_then(|()| {
+                containers::run_procreation(
                     &shared.workspace,
                     &shared.launch,
                     child,
@@ -47,8 +47,8 @@ pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended
             } else {
                 Ok(())
             };
-            let result = cleared.map_err(JobError::Io).and_then(|()| {
-                job::run_evaluation(
+            let result = cleared.map_err(ContainerError::Io).and_then(|()| {
+                containers::run_evaluation(
                     &shared.workspace,
                     &shared.launch,
                     harness,

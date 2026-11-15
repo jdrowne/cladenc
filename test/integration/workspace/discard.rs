@@ -132,7 +132,7 @@ fn a_discarded_evaluation_can_be_started_again() {
 }
 
 #[test]
-fn discarding_a_job_that_left_nothing_is_not_an_error() {
+fn discarding_a_procreation_that_left_nothing_is_not_an_error() {
     let (_directory, workspace) = made();
     assert!(workspace.discard_procreation(1).is_ok());
 }

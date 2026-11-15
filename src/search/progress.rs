@@ -7,10 +7,10 @@ use std::thread::Scope;
 use super::said::say;
 use super::worker::{self, Ended};
 use super::{Found, Said, SearchError, Shared};
+use crate::containers::ContainerError;
 use crate::genealogy::Genealogy;
-use crate::job::JobError;
 use crate::journal::{Journal, Record, Settings, Started};
-use crate::policy::{Job, Policy};
+use crate::policy::{Action, Policy};
 use crate::workspace::Workspace;
 
 pub(super) struct Progress<'a> {
@@ -19,7 +19,7 @@ pub(super) struct Progress<'a> {
     writer: Option<&'a mut dyn Write>,
     genealogy: Genealogy,
     again: VecDeque<Started>,
-    next_job: u64,
+    next_action: u64,
     initial_left: u64,
     initial_ended: bool,
     running: u64,
@@ -39,7 +39,7 @@ impl<'a> Progress<'a> {
             writer,
             genealogy: settings.genealogy(),
             again: VecDeque::new(),
-            next_job: 0,
+            next_action: 0,
             initial_left: settings.initial_procreations,
             initial_ended: false,
             running: 0,
@@ -66,15 +66,15 @@ impl<'a> Progress<'a> {
         mut self,
         genealogy: Genealogy,
         unfinished: Vec<(u64, Started)>,
-        next_job: u64,
+        next_action: u64,
     ) -> Self {
         let initial = self.initial_left;
-        self.initial_left = initial.saturating_sub(next_job);
+        self.initial_left = initial.saturating_sub(next_action);
         self.initial_ended =
-            self.initial_left == 0 && unfinished.iter().all(|(job, _)| *job >= initial);
+            self.initial_left == 0 && unfinished.iter().all(|(action, _)| *action >= initial);
         self.genealogy = genealogy;
-        self.again = unfinished.into_iter().map(|(_, job)| job).collect();
-        self.next_job = next_job;
+        self.again = unfinished.into_iter().map(|(_, action)| action).collect();
+        self.next_action = next_action;
         self
     }
 
@@ -107,13 +107,13 @@ impl<'a> Progress<'a> {
     pub(super) fn take(&mut self) -> Option<(Started, bool)> {
         self.again
             .pop_front()
-            .map(|job| (job, true))
-            .or_else(|| self.next().map(|job| (self.start(job), false)))
+            .map(|action| (action, true))
+            .or_else(|| self.next().map(|action| (self.start(action), false)))
     }
 
     pub(super) fn hand_over<'scope>(
         &mut self,
-        job: Started,
+        action: Started,
         again: bool,
         shared: &'scope Shared<'_>,
         scope: &'scope Scope<'scope, '_>,
@@ -125,14 +125,14 @@ impl<'a> Progress<'a> {
             say(
                 &mut self.writer,
                 &Said::Started {
-                    job: &job,
+                    action: &action,
                     again,
                     evaluations: self.genealogy.started(),
                     budget: self.policy.budget,
                 },
             );
             scope.spawn(move || {
-                let _ = sender.send(worker::carry_out(shared, job, again));
+                let _ = sender.send(worker::carry_out(shared, action, again));
             })
         });
         self.running += u64::from(recorded);
@@ -178,11 +178,11 @@ impl<'a> Progress<'a> {
                 });
             }
             Ended::Procreation {
-                result: Err(JobError::Stopped),
+                result: Err(ContainerError::Stopped),
                 ..
             }
             | Ended::Evaluation {
-                result: Err(JobError::Stopped),
+                result: Err(ContainerError::Stopped),
                 ..
             } => {}
             Ended::Procreation {
@@ -198,12 +198,12 @@ impl<'a> Progress<'a> {
         }
     }
 
-    fn failed(&mut self, job: Started, error: JobError) {
+    fn failed(&mut self, action: Started, error: ContainerError) {
         self.say(&Said::Failed {
-            job: &job,
+            action: &action,
             error: &error,
         });
-        self.fail(SearchError::Job { job, error });
+        self.fail(SearchError::Action { action, error });
     }
 
     pub(super) fn finish(
@@ -234,20 +234,20 @@ impl<'a> Progress<'a> {
         self.failure.map_or(Ok(found), Err)
     }
 
-    fn next(&mut self) -> Option<Job> {
+    fn next(&mut self) -> Option<Action> {
         if self.initial_left > 0 {
             self.initial_left -= 1;
-            return Some(Job::Procreation { parent: 0 });
+            return Some(Action::Procreation { parent: 0 });
         }
         self.initial_ended = self.initial_ended || self.running == 0;
         self.initial_ended
-            .then(|| self.policy.next_job(&self.genealogy, self.next_job))
+            .then(|| self.policy.next_action(&self.genealogy, self.next_action))
             .flatten()
     }
 
-    fn start(&mut self, job: Job) -> Started {
-        let started = match job {
-            Job::Procreation { parent } => {
+    fn start(&mut self, action: Action) -> Started {
+        let started = match action {
+            Action::Procreation { parent } => {
                 let child = self
                     .genealogy
                     .start_procreation(parent)
@@ -255,7 +255,7 @@ impl<'a> Progress<'a> {
                 self.record(&Record::ProcreationStarted { child, parent });
                 Started::Procreation { child, parent }
             }
-            Job::Evaluation { harness, task } => {
+            Action::Evaluation { harness, task } => {
                 self.genealogy
                     .start_evaluation(harness, &task)
                     .expect("an evaluated harness is created and has not been given the task");
@@ -266,7 +266,7 @@ impl<'a> Progress<'a> {
                 Started::Evaluation { harness, task }
             }
         };
-        self.next_job += 1;
+        self.next_action += 1;
         started
     }
 

@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use nix::unistd::{Gid, Uid};
 
-use super::JobError;
+use super::ContainerError;
 use super::program::{self, Ending};
 
 const NOT_STARTED: i32 = 125;
@@ -29,10 +29,10 @@ pub(super) struct Container<'a> {
 impl Container<'_> {
     pub(super) fn run(
         &self,
-        job: &Path,
+        running: &Path,
         deadline: Instant,
         stop: &AtomicBool,
-    ) -> Result<Ending, JobError> {
+    ) -> Result<Ending, ContainerError> {
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
         let mut docker = Command::new("docker");
         docker
@@ -47,12 +47,12 @@ impl Container<'_> {
             docker.args(["--env", variable]).env(variable, value);
         }
         docker.args([self.image, "sh", "-c", self.command]);
-        let ended = program::run(docker, job, deadline, stop);
-        if matches!(ended, Ok(Ending::TimedOut) | Err(JobError::Stopped)) {
+        let ended = program::run(docker, running, deadline, stop);
+        if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
             remove(&name);
         }
         ended.and_then(|ending| match ending {
-            Ending::Exited(NOT_STARTED) => Err(JobError::Docker(job.join("stderr"))),
+            Ending::Exited(NOT_STARTED) => Err(ContainerError::Docker(running.join("stderr"))),
             started => Ok(started),
         })
     }

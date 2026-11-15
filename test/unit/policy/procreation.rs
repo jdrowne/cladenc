@@ -1,5 +1,5 @@
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use cladenc::policy::{Job, Policy};
+use cladenc::policy::{Action, Policy};
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -47,17 +47,19 @@ fn two_lines() -> Genealogy {
 
 fn times_parent(genealogy: &Genealogy, parent: HarnessId) -> usize {
     (0..200)
-        .filter(|seed| policy(*seed).next_job(genealogy, 0) == Some(Job::Procreation { parent }))
+        .filter(|seed| {
+            policy(*seed).next_action(genealogy, 0) == Some(Action::Procreation { parent })
+        })
         .count()
 }
 
 #[test]
-fn a_procreation_is_the_next_job_when_the_harness_count_is_within_started_to_the_growth() {
+fn a_procreation_is_the_next_action_when_the_harness_count_is_within_started_to_the_growth() {
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 1, EvaluationOutcome::Success);
     assert_eq!(
-        policy(0).next_job(&genealogy, 0),
-        Some(Job::Procreation { parent: 0 })
+        policy(0).next_action(&genealogy, 0),
+        Some(Action::Procreation { parent: 0 })
     );
 }
 
@@ -93,11 +95,11 @@ fn a_failed_harness_is_never_the_parent() {
 }
 
 #[test]
-fn a_procreation_is_the_next_job_even_when_no_task_is_left_to_give() {
+fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 20, EvaluationOutcome::Success);
     assert_eq!(
-        policy(0).next_job(&genealogy, 0),
-        Some(Job::Procreation { parent: 0 })
+        policy(0).next_action(&genealogy, 0),
+        Some(Action::Procreation { parent: 0 })
     );
 }

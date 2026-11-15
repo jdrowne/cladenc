@@ -20,7 +20,7 @@ fn harnesses_at_the_end(growth: f64, budget: u64, harnesses: u64) -> u64 {
 }
 
 #[test]
-fn the_first_job_is_an_evaluation() {
+fn the_first_action_is_an_evaluation() {
     assert!(!procreation_is_due(1, 0, 0.6));
 }
 

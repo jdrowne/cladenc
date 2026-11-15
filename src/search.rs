@@ -10,8 +10,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
+use crate::containers::{self, ContainerError, Launch};
 use crate::genealogy::HarnessId;
-use crate::job::{self, JobError, Launch};
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::workspace::Workspace;
 
@@ -94,7 +94,7 @@ fn build_image(
     };
     let image = &settings.docker_image;
     say(writer, &Said::BuildingImage { image, dockerfile });
-    match job::build_image(workspace, dockerfile, image, time_limit, stop) {
+    match containers::build_image(workspace, dockerfile, image, time_limit, stop) {
         Ok(()) => {
             say(writer, &Said::ImageBuilt { image, workspace });
             Ok(())
@@ -124,7 +124,7 @@ pub fn resume(
         settings,
         genealogy,
         unfinished,
-        next_job,
+        next_action,
         best_harness,
     } = state;
     let workspace = Workspace::at(run_directory);
@@ -150,8 +150,11 @@ pub fn resume(
                 harnesses: genealogy.harness_count(),
             };
             say(&mut writer, &continuing);
-            let progress =
-                Progress::new(&settings, journal, writer).resumed(genealogy, unfinished, next_job);
+            let progress = Progress::new(&settings, journal, writer).resumed(
+                genealogy,
+                unfinished,
+                next_action,
+            );
             carry_on(&settings, key.as_deref(), workspace, progress, stop)
         }
     }
@@ -168,9 +171,9 @@ fn carry_on(
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
         progress.say(&Said::Building);
-        job::build_progenitor(&workspace, &launch, time_limit, stop).map_err(
-            |error| match error {
-                JobError::Stopped => SearchError::Asked,
+        containers::build_progenitor(&workspace, &launch, time_limit, stop).map_err(|error| {
+            match error {
+                ContainerError::Stopped => SearchError::Asked,
                 error => {
                     progress.say(&Said::BuildFailed {
                         error: &error,
@@ -178,8 +181,8 @@ fn carry_on(
                     });
                     SearchError::Build(error)
                 }
-            },
-        )?;
+            }
+        })?;
         progress.built();
     }
     let shared = Shared {
@@ -192,10 +195,10 @@ fn carry_on(
         let (sender, receiver) = mpsc::channel();
         loop {
             while !progress.halted(stop) && progress.running() < settings.workers {
-                let Some((job, again)) = progress.take() else {
+                let Some((action, again)) = progress.take() else {
                     break;
                 };
-                progress.hand_over(job, again, &shared, scope, &sender);
+                progress.hand_over(action, again, &shared, scope, &sender);
             }
             if progress.running() == 0 {
                 break;

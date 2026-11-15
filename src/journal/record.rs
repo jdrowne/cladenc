@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use super::JournalError;
 use crate::benchmark::Benchmark;
+use crate::containers::Launch;
 use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use crate::job::Launch;
 use crate::model::{self, Model};
 use crate::policy::Policy;
 

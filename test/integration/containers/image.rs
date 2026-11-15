@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::job::{self, JobError};
+use cladenc::containers::{self, ContainerError};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -12,7 +12,7 @@ struct Built {
     _directory: TempDir,
     workspace: Workspace,
     image: Image,
-    result: Result<(), JobError>,
+    result: Result<(), ContainerError>,
 }
 
 fn made() -> (TempDir, Workspace) {
@@ -27,7 +27,7 @@ fn built_within(steps: &str, time_limit: u64, stop: bool) -> Built {
     let dockerfile = test_inputs::dockerfile(directory.path(), steps);
     let image = test_inputs::image();
     let stop = AtomicBool::new(stop);
-    let result = job::build_image(&workspace, &dockerfile, &image.name, time_limit, &stop);
+    let result = containers::build_image(&workspace, &dockerfile, &image.name, time_limit, &stop);
     Built {
         _directory: directory,
         workspace,
@@ -79,7 +79,7 @@ fn what_docker_printed_while_it_built_is_kept_in_the_run_directory() {
 fn a_dockerfile_with_a_step_that_fails_is_not_built() {
     assert!(matches!(
         built("RUN exit 3\n").result,
-        Err(JobError::Exit(_))
+        Err(ContainerError::Exit(_))
     ));
 }
 
@@ -87,7 +87,7 @@ fn a_dockerfile_with_a_step_that_fails_is_not_built() {
 fn a_dockerfile_that_copies_a_file_is_not_built_since_it_is_given_no_file_to_copy() {
     assert!(matches!(
         built("COPY harness.sh /harness.sh\n").result,
-        Err(JobError::Exit(_))
+        Err(ContainerError::Exit(_))
     ));
 }
 
@@ -95,7 +95,7 @@ fn a_dockerfile_that_copies_a_file_is_not_built_since_it_is_given_no_file_to_cop
 fn a_build_that_runs_past_its_time_limit_is_ended() {
     assert!(matches!(
         built_within("RUN sleep 30\n", 1, false).result,
-        Err(JobError::TimeLimit)
+        Err(ContainerError::TimeLimit)
     ));
 }
 
@@ -103,7 +103,7 @@ fn a_build_that_runs_past_its_time_limit_is_ended() {
 fn a_build_is_ended_when_the_search_is_asked_to_stop() {
     assert!(matches!(
         built_within(MADE, 60, true).result,
-        Err(JobError::Stopped)
+        Err(ContainerError::Stopped)
     ));
 }
 
@@ -111,12 +111,12 @@ fn a_build_is_ended_when_the_search_is_asked_to_stop() {
 fn a_dockerfile_that_is_gone_is_not_built() {
     let (directory, workspace) = made();
     let image = test_inputs::image();
-    let result = job::build_image(
+    let result = containers::build_image(
         &workspace,
         &directory.path().join("missing"),
         &image.name,
         60,
         &AtomicBool::new(false),
     );
-    assert!(matches!(result, Err(JobError::Io(_))));
+    assert!(matches!(result, Err(ContainerError::Io(_))));
 }

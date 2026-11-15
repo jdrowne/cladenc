@@ -2,8 +2,8 @@ use std::fmt::{self, Display, Formatter};
 use std::io::Write;
 use std::path::Path;
 
+use crate::containers::ContainerError;
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
-use crate::job::JobError;
 use crate::journal::Started;
 use crate::workspace::Workspace;
 
@@ -25,7 +25,7 @@ pub enum Said<'a> {
         workspace: &'a Workspace,
     },
     ImageNotBuilt {
-        error: &'a JobError,
+        error: &'a ContainerError,
         workspace: &'a Workspace,
     },
     Continuing {
@@ -41,11 +41,11 @@ pub enum Said<'a> {
     Building,
     Built,
     BuildFailed {
-        error: &'a JobError,
+        error: &'a ContainerError,
         workspace: &'a Workspace,
     },
     Started {
-        job: &'a Started,
+        action: &'a Started,
         again: bool,
         evaluations: u64,
         budget: u64,
@@ -63,8 +63,8 @@ pub enum Said<'a> {
         workspace: &'a Workspace,
     },
     Failed {
-        job: &'a Started,
-        error: &'a JobError,
+        action: &'a Started,
+        error: &'a ContainerError,
     },
     Stopping {
         asked: bool,
@@ -139,17 +139,17 @@ impl Display for Said<'_> {
                 workspace.build(0).display()
             ),
             Self::Started {
-                job,
+                action,
                 again,
                 evaluations,
                 budget,
-            } => match (job, again) {
+            } => match (action, again) {
                 (Started::Evaluation { .. }, false) => write!(
                     formatter,
-                    "started {job}, evaluation {evaluations} of {budget}"
+                    "started {action}, evaluation {evaluations} of {budget}"
                 ),
-                (_, false) => write!(formatter, "started {job}"),
-                (_, true) => write!(formatter, "started again {job}"),
+                (_, false) => write!(formatter, "started {action}"),
+                (_, true) => write!(formatter, "started again {action}"),
             },
             Self::Procreated {
                 child,
@@ -200,7 +200,7 @@ impl Display for Said<'_> {
                     workspace.evaluation(*harness, task).display()
                 )
             }
-            Self::Failed { job, error } => write!(formatter, "{job} {error}"),
+            Self::Failed { action, error } => write!(formatter, "{action} {error}"),
             Self::Stopping { asked, running } => {
                 let why = if *asked {
                     "asked to stop"
@@ -210,7 +210,7 @@ impl Display for Said<'_> {
                 write!(
                     formatter,
                     "{why}, with {} running",
-                    counted(*running, "job", "jobs")
+                    counted(*running, "container", "containers")
                 )
             }
             Self::Finished {

@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::job::JobError;
+use cladenc::containers::ContainerError;
 use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -83,9 +83,9 @@ fn journal_of(searches: &Searches, search: &str) -> String {
 fn a_container_that_ends_with_status_125_at_an_evaluation_stops_the_search_before_its_end() {
     assert!(matches!(
         stopped_at(99, Some("t3"), 0).stopped,
-        Err(SearchError::Job {
-            job: Started::Evaluation { .. },
-            error: JobError::Docker(_),
+        Err(SearchError::Action {
+            action: Started::Evaluation { .. },
+            error: ContainerError::Docker(_),
         })
     ));
 }
@@ -103,8 +103,8 @@ fn a_search_an_evaluation_stopped_continues_to_the_journal_an_unbroken_search_wr
 fn a_container_that_ends_with_status_125_at_an_initial_procreation_stops_the_search() {
     assert!(matches!(
         stopped_at(0, None, 0).stopped,
-        Err(SearchError::Job {
-            error: JobError::Docker(_),
+        Err(SearchError::Action {
+            error: ContainerError::Docker(_),
             ..
         })
     ));
@@ -123,9 +123,9 @@ fn a_search_stopped_during_its_initial_procreations_continues_to_the_same_journa
 fn a_search_resumed_while_docker_still_does_not_start_the_container_stops_again() {
     assert!(matches!(
         stopped_at(99, Some("t3"), 1).stopped,
-        Err(SearchError::Job {
-            job: Started::Evaluation { .. },
-            error: JobError::Docker(_),
+        Err(SearchError::Action {
+            action: Started::Evaluation { .. },
+            error: ContainerError::Docker(_),
         })
     ));
 }
@@ -182,7 +182,7 @@ fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<Stri
 }
 
 #[test]
-fn a_search_that_a_job_stops_says_what_became_of_the_job() {
+fn a_search_that_an_action_stops_says_what_became_of_the_action() {
     let (_directory, stopped, _resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(stopped.iter().any(|line| {
         line.starts_with("cladenc: the evaluation of harness ")
@@ -193,11 +193,11 @@ fn a_search_that_a_job_stops_says_what_became_of_the_job() {
 }
 
 #[test]
-fn a_search_that_a_job_stops_says_last_that_it_is_stopping() {
+fn a_search_that_an_action_stops_says_last_that_it_is_stopping() {
     let (_directory, stopped, _resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert_eq!(
         stopped.last().unwrap(),
-        "cladenc: stopping the search, with 0 jobs running"
+        "cladenc: stopping the search, with 0 containers running"
     );
 }
 
@@ -211,7 +211,7 @@ fn a_resumed_search_says_first_how_far_the_search_had_got() {
 }
 
 #[test]
-fn a_resumed_search_says_that_it_starts_again_the_job_that_was_running() {
+fn a_resumed_search_says_that_it_starts_again_the_action_that_was_running() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(resumed[1..2].iter().any(|line| {
         line.starts_with("cladenc: started again the evaluation of harness ")
@@ -231,7 +231,7 @@ fn a_resumed_search_says_last_that_it_finished() {
 }
 
 #[test]
-fn a_journal_cut_before_the_finished_record_of_a_job_in_place_continues_to_the_same_journal() {
+fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_the_same_journal() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);

@@ -64,7 +64,7 @@ fn a_new_run_directory_holds_no_benchmark() {
 }
 
 #[test]
-fn a_new_run_directory_holds_no_running_job() {
+fn a_new_run_directory_holds_nothing_running() {
     let (_directory, run_directory) = made();
     assert_eq!(entries(run_directory.join("running")), 0);
 }

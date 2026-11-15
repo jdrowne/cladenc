@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use super::container::{Container, Mount};
 use super::program::Ending;
-use super::{JobError, WORK};
+use super::{ContainerError, WORK};
 use crate::genealogy::EvaluationOutcome;
 
 const TASK: &str = "/task";
@@ -13,11 +13,11 @@ const CHECK: &str = "/task/check";
 pub(super) fn run(
     image: &str,
     task: &Path,
-    job: &Path,
+    running: &Path,
     deadline: Instant,
     stop: &AtomicBool,
-) -> Result<EvaluationOutcome, JobError> {
-    let work = job.join("work");
+) -> Result<EvaluationOutcome, ContainerError> {
+    let work = running.join("work");
     let container = Container {
         image,
         command: CHECK,
@@ -36,9 +36,11 @@ pub(super) fn run(
         working_directory: WORK,
         environment: &[("CLADENC_TASK", TASK)],
     };
-    Ok(match container.run(&job.join("check"), deadline, stop)? {
-        Ending::Exited(0) => EvaluationOutcome::Success,
-        Ending::Exited(_) => EvaluationOutcome::Failure,
-        Ending::TimedOut => EvaluationOutcome::TimedOut,
-    })
+    Ok(
+        match container.run(&running.join("check"), deadline, stop)? {
+            Ending::Exited(0) => EvaluationOutcome::Success,
+            Ending::Exited(_) => EvaluationOutcome::Failure,
+            Ending::TimedOut => EvaluationOutcome::TimedOut,
+        },
+    )
 }

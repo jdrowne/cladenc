@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 
-use cladenc::job::JobError;
+use cladenc::containers::ContainerError;
 use cladenc::journal::{JournalError, Started};
 use cladenc::search::SearchError;
 
@@ -57,7 +57,7 @@ fn a_search_that_was_asked_to_stop_is_worded() {
 #[test]
 fn an_image_that_was_not_built_is_worded_with_how_its_build_ended() {
     assert_eq!(
-        worded(SearchError::Image(JobError::Exit(1))),
+        worded(SearchError::Image(ContainerError::Exit(1))),
         "the image of the search was not built: its build exited with status 1"
     );
 }
@@ -65,7 +65,7 @@ fn an_image_that_was_not_built_is_worded_with_how_its_build_ended() {
 #[test]
 fn an_image_whose_build_took_too_long_is_worded_with_its_time_limit() {
     assert_eq!(
-        worded(SearchError::Image(JobError::TimeLimit)),
+        worded(SearchError::Image(ContainerError::TimeLimit)),
         "the image of the search was not built: its build ran past its time limit"
     );
 }
@@ -73,7 +73,7 @@ fn an_image_whose_build_took_too_long_is_worded_with_its_time_limit() {
 #[test]
 fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
-        worded(SearchError::Image(JobError::Stopped)),
+        worded(SearchError::Image(ContainerError::Stopped)),
         "the image of the search was not built: its build was stopped"
     );
 }
@@ -81,7 +81,7 @@ fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
 #[test]
 fn a_search_the_build_of_its_progenitor_stopped_says_how_the_build_ended() {
     assert_eq!(
-        worded(SearchError::Build(JobError::Exit(2))),
+        worded(SearchError::Build(ContainerError::Exit(2))),
         "the search stopped before its end: the build of the progenitor exited with status 2"
     );
 }
@@ -89,7 +89,7 @@ fn a_search_the_build_of_its_progenitor_stopped_says_how_the_build_ended() {
 #[test]
 fn a_search_whose_progenitor_took_too_long_to_build_says_so() {
     assert_eq!(
-        worded(SearchError::Build(JobError::TimeLimit)),
+        worded(SearchError::Build(ContainerError::TimeLimit)),
         "the search stopped before its end: \
          the build of the progenitor ran past its time limit"
     );
@@ -98,12 +98,12 @@ fn a_search_whose_progenitor_took_too_long_to_build_says_so() {
 #[test]
 fn a_search_an_evaluation_stopped_names_the_harness_and_the_task() {
     assert_eq!(
-        worded(SearchError::Job {
-            job: Started::Evaluation {
+        worded(SearchError::Action {
+            action: Started::Evaluation {
                 harness: 0,
                 task: "t1".to_owned()
             },
-            error: JobError::Exit(2)
+            error: ContainerError::Exit(2)
         }),
         "the search stopped before its end: \
          the evaluation of harness 0 on task t1 exited with status 2"
@@ -113,12 +113,12 @@ fn a_search_an_evaluation_stopped_names_the_harness_and_the_task() {
 #[test]
 fn a_search_a_procreation_stopped_names_the_parent_and_the_child() {
     assert_eq!(
-        worded(SearchError::Job {
-            job: Started::Procreation {
+        worded(SearchError::Action {
+            action: Started::Procreation {
                 child: 3,
                 parent: 0
             },
-            error: JobError::Signal(9)
+            error: ContainerError::Signal(9)
         }),
         "the search stopped before its end: \
          the procreation of harness 3 by harness 0 was ended by signal 9"

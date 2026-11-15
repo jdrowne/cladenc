@@ -6,8 +6,8 @@ use std::sync::atomic::AtomicBool;
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
-use cladenc::job::{self, JobError, Launch};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
@@ -19,7 +19,11 @@ const MODEL: Model<'static> = Model {
     key: None,
 };
 
-type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
+type Procreated = (
+    TempDir,
+    Workspace,
+    Result<ProcreationOutcome, ContainerError>,
+);
 
 fn made_at(run_directory: &str) -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
@@ -34,14 +38,14 @@ fn started_from(
     workspace: &Workspace,
     parent: u64,
     time_limit: u64,
-) -> Result<ProcreationOutcome, JobError> {
+) -> Result<ProcreationOutcome, ContainerError> {
     let launch = Launch {
         image,
         run_command,
         build_command: None,
         model: MODEL,
     };
-    job::run_procreation(
+    containers::run_procreation(
         workspace,
         &launch,
         1,
@@ -94,7 +98,7 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
             ..MODEL
         },
     };
-    let _ = job::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
+    let _ = containers::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
     fs::read_to_string(workspace.harness(1).join(file)).unwrap()
 }
 
@@ -142,7 +146,7 @@ fn the_source_code_a_harness_is_told_of_is_that_of_its_parent() {
 fn a_harness_is_given_the_instruction_to_improve_its_source_code() {
     assert_eq!(
         left_in_the_child("printf %s \"$CLADENC_INSTRUCTION\" > given", "given"),
-        job::INSTRUCTION
+        containers::INSTRUCTION
     );
 }
 
@@ -288,13 +292,13 @@ fn the_time_limit_removes_the_container_of_a_harness() {
 #[test]
 fn a_container_that_docker_does_not_start_is_an_error() {
     let (_directory, _workspace, result) = not_started_by_docker();
-    assert!(matches!(result, Err(JobError::Docker(_))));
+    assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
 fn a_container_that_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
     let (_directory, _workspace, result) = procreated("exit 125");
-    assert!(matches!(result, Err(JobError::Docker(_))));
+    assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
@@ -302,7 +306,7 @@ fn the_error_names_the_file_that_holds_what_docker_said() {
     let (_directory, workspace, result) = not_started_by_docker();
     assert!(matches!(
         result,
-        Err(JobError::Docker(said)) if said == workspace.running_procreation(1).join("stderr")
+        Err(ContainerError::Docker(said)) if said == workspace.running_procreation(1).join("stderr")
     ));
 }
 
@@ -316,7 +320,7 @@ fn what_docker_said_is_kept_under_running() {
 #[test]
 fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
     let (_directory, _workspace, result) = procreated_by("exit 0", 9, 30);
-    assert!(matches!(result, Err(JobError::Io(_))));
+    assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]
@@ -340,7 +344,7 @@ fn a_procreation_whose_directory_cannot_be_put_in_place_is_an_error() {
     let (_directory, workspace) = made_at("run");
     fs::create_dir_all(workspace.procreation(1).join("in the way")).unwrap();
     let result = started_from(test_inputs::IMAGE, "exit 0", &workspace, 0, 30);
-    assert!(matches!(result, Err(JobError::Io(_))));
+    assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]

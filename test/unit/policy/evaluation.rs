@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use cladenc::policy::{Job, Policy};
+use cladenc::policy::{Action, Policy};
 
 fn tasks(count: usize) -> Vec<String> {
     (0..count).map(|number| format!("task-{number}")).collect()
@@ -49,10 +49,10 @@ fn two_lines() -> Genealogy {
 
 fn evaluation(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<(HarnessId, String)> {
     policy(seed, task_count)
-        .next_job(genealogy, 0)
-        .and_then(|job| match job {
-            Job::Evaluation { harness, task } => Some((harness, task)),
-            Job::Procreation { .. } => None,
+        .next_action(genealogy, 0)
+        .and_then(|action| match action {
+            Action::Evaluation { harness, task } => Some((harness, task)),
+            Action::Procreation { .. } => None,
         })
 }
 
@@ -74,7 +74,7 @@ fn tasks_drawn(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String> {
 }
 
 #[test]
-fn an_evaluation_is_the_next_job_when_no_procreation_is_due() {
+fn an_evaluation_is_the_next_action_when_no_procreation_is_due() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
     assert_eq!(evaluated(&genealogy, 0, 20), Some(0));
@@ -158,12 +158,12 @@ fn every_harness_is_given_every_task_exactly_once() {
     let mut genealogy = Genealogy::new();
     let mut given = Vec::new();
     let mut number = 0;
-    while let Some(job) = policy.next_job(&genealogy, number) {
-        match job {
-            Job::Procreation { parent } => {
+    while let Some(action) = policy.next_action(&genealogy, number) {
+        match action {
+            Action::Procreation { parent } => {
                 child_of(&mut genealogy, parent, ProcreationOutcome::Created)
             }
-            Job::Evaluation { harness, task } => {
+            Action::Evaluation { harness, task } => {
                 genealogy.start_evaluation(harness, &task).unwrap();
                 given.push((harness, task));
             }

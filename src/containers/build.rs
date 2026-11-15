@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use super::container::{Container, Mount};
 use super::program::{Ending, deadline};
-use super::{HARNESS, JobError, Launch};
+use super::{ContainerError, HARNESS, Launch};
 use crate::genealogy::{HarnessId, ProcreationOutcome};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
@@ -20,7 +20,7 @@ pub fn build_progenitor(
     launch: &Launch<'_>,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<(), JobError> {
+) -> Result<(), ContainerError> {
     let Some(command) = launch.build_command else {
         return Ok(());
     };
@@ -33,9 +33,9 @@ pub fn build_progenitor(
     };
     match build.run(workspace, deadline(time_limit), stop)? {
         Ending::Exited(0) if holds_only_harness_files(&source).unwrap_or(false) => Ok(()),
-        Ending::Exited(0) => Err(JobError::OtherFiles),
-        Ending::Exited(status) => Err(JobError::Exit(status)),
-        Ending::TimedOut => Err(JobError::TimeLimit),
+        Ending::Exited(0) => Err(ContainerError::OtherFiles),
+        Ending::Exited(status) => Err(ContainerError::Exit(status)),
+        Ending::TimedOut => Err(ContainerError::TimeLimit),
     }
 }
 
@@ -46,7 +46,7 @@ pub(super) fn build_child(
     source: &Path,
     deadline: Instant,
     stop: &AtomicBool,
-) -> Result<ProcreationOutcome, JobError> {
+) -> Result<ProcreationOutcome, ContainerError> {
     let Some(command) = launch.build_command else {
         return Ok(ProcreationOutcome::Created);
     };
@@ -71,8 +71,10 @@ impl Build<'_> {
         workspace: &Workspace,
         deadline: Instant,
         stop: &AtomicBool,
-    ) -> Result<Ending, JobError> {
-        let kept = workspace.start_build(self.harness).map_err(JobError::Io)?;
+    ) -> Result<Ending, ContainerError> {
+        let kept = workspace
+            .start_build(self.harness)
+            .map_err(ContainerError::Io)?;
         let container = Container {
             image: self.image,
             command: self.command,

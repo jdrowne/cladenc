@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::job::JobError;
+use cladenc::containers::ContainerError;
 use cladenc::journal::{self, Settings};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -154,7 +154,10 @@ fn a_search_goes_on_to_its_end_past_a_child_that_did_not_build() {
 #[test]
 fn a_progenitor_that_does_not_build_stops_the_search_with_the_status_of_its_build() {
     let (_directory, found) = searched("exit 3");
-    assert!(matches!(found, Err(SearchError::Build(JobError::Exit(3)))));
+    assert!(matches!(
+        found,
+        Err(SearchError::Build(ContainerError::Exit(3)))
+    ));
 }
 
 #[test]

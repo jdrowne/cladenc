@@ -43,7 +43,7 @@ pub struct Launch<'a> {
 }
 
 #[derive(Debug)]
-pub enum JobError {
+pub enum ContainerError {
     Stopped,
     Io(io::Error),
     Docker(PathBuf),
@@ -53,7 +53,7 @@ pub enum JobError {
     OtherFiles,
 }
 
-impl Display for JobError {
+impl Display for ContainerError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Stopped => write!(formatter, "was stopped"),
@@ -75,7 +75,7 @@ impl Display for JobError {
     }
 }
 
-impl Error for JobError {}
+impl Error for ContainerError {}
 
 pub fn run_procreation(
     workspace: &Workspace,
@@ -84,13 +84,13 @@ pub fn run_procreation(
     parent: HarnessId,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<ProcreationOutcome, JobError> {
+) -> Result<ProcreationOutcome, ContainerError> {
     workspace
         .start_procreation(child, parent)
-        .map_err(JobError::Io)?;
-    let job = workspace.running_procreation(child);
-    let source = job.join("parent");
-    let made = job.join("child");
+        .map_err(ContainerError::Io)?;
+    let running = workspace.running_procreation(child);
+    let source = running.join("parent");
+    let made = running.join("child");
     let evaluations = workspace.evaluations(parent);
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
@@ -123,7 +123,7 @@ pub fn run_procreation(
         working_directory: WORK,
         environment: &environment,
     };
-    let outcome = match container.run(&job, deadline, stop)? {
+    let outcome = match container.run(&running, deadline, stop)? {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
             build::build_child(workspace, launch, child, &made, deadline, stop)?
         }
@@ -133,7 +133,7 @@ pub fn run_procreation(
     workspace
         .end_procreation(child, outcome)
         .map(|()| outcome)
-        .map_err(JobError::Io)
+        .map_err(ContainerError::Io)
 }
 
 pub fn run_evaluation(
@@ -143,14 +143,14 @@ pub fn run_evaluation(
     task: &str,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<EvaluationOutcome, JobError> {
-    let job = workspace.running_evaluation(harness, task);
+) -> Result<EvaluationOutcome, ContainerError> {
+    let running = workspace.running_evaluation(harness, task);
     let statement = workspace
         .start_evaluation(harness, task)
-        .and_then(|()| fs::read_to_string(job.join("statement")))
-        .map_err(JobError::Io)?;
-    let source = job.join("harness");
-    let work = job.join("work");
+        .and_then(|()| fs::read_to_string(running.join("statement")))
+        .map_err(ContainerError::Io)?;
+    let source = running.join("harness");
+    let work = running.join("work");
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
@@ -177,12 +177,18 @@ pub fn run_evaluation(
         working_directory: WORK,
         environment: &environment,
     };
-    let outcome = match container.run(&job, deadline, stop)? {
-        Ending::Exited(_) => check::run(launch.image, &workspace.task(task), &job, deadline, stop)?,
+    let outcome = match container.run(&running, deadline, stop)? {
+        Ending::Exited(_) => check::run(
+            launch.image,
+            &workspace.task(task),
+            &running,
+            deadline,
+            stop,
+        )?,
         Ending::TimedOut => EvaluationOutcome::TimedOut,
     };
     workspace
         .end_evaluation(harness, task, outcome)
         .map(|()| outcome)
-        .map_err(JobError::Io)
+        .map_err(ContainerError::Io)
 }

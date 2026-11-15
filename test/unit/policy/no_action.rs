@@ -31,11 +31,17 @@ fn with_every_task_given() -> Genealogy {
 }
 
 #[test]
-fn there_is_no_next_job_when_no_procreation_is_due_and_every_task_has_been_given() {
-    assert_eq!(policy(100, 0.0).next_job(&with_every_task_given(), 0), None);
+fn there_is_no_next_action_when_no_procreation_is_due_and_every_task_has_been_given() {
+    assert_eq!(
+        policy(100, 0.0).next_action(&with_every_task_given(), 0),
+        None
+    );
 }
 
 #[test]
-fn there_is_no_next_job_once_the_budget_is_spent() {
-    assert_eq!(policy(2, 1.0).next_job(&with_every_task_given(), 0), None);
+fn there_is_no_next_action_once_the_budget_is_spent() {
+    assert_eq!(
+        policy(2, 1.0).next_action(&with_every_task_given(), 0),
+        None
+    );
 }

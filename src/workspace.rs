@@ -98,24 +98,24 @@ impl Workspace {
     }
 
     pub fn start_procreation(&self, child: HarnessId, parent: HarnessId) -> io::Result<()> {
-        let job = self.running_procreation(child);
+        let running = self.running_procreation(child);
         let harness = self.harness(parent);
-        fs::create_dir(&job)
-            .and_then(|()| copy_tree(&harness, &job.join("parent")))
-            .and_then(|()| copy_tree(&harness, &job.join("child")))
+        fs::create_dir(&running)
+            .and_then(|()| copy_tree(&harness, &running.join("parent")))
+            .and_then(|()| copy_tree(&harness, &running.join("child")))
     }
 
     pub fn end_procreation(&self, child: HarnessId, outcome: ProcreationOutcome) -> io::Result<()> {
-        let job = self.running_procreation(child);
-        fs::rename(job.join("child"), self.harness(child))
+        let running = self.running_procreation(child);
+        fs::rename(running.join("child"), self.harness(child))
             .and_then(|()| match outcome {
                 ProcreationOutcome::Created => fs::create_dir(self.evaluations(child)),
                 ProcreationOutcome::Failed
                 | ProcreationOutcome::BuildFailed
                 | ProcreationOutcome::TimedOut => Ok(()),
             })
-            .and_then(|()| fs::remove_dir_all(job.join("parent")))
-            .and_then(|()| fs::rename(&job, self.procreation(child)))
+            .and_then(|()| fs::remove_dir_all(running.join("parent")))
+            .and_then(|()| fs::rename(&running, self.procreation(child)))
     }
 
     pub fn start_build(&self, harness: HarnessId) -> io::Result<PathBuf> {
@@ -126,14 +126,14 @@ impl Workspace {
     }
 
     pub fn start_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
-        let job = self.running_evaluation(harness, task);
+        let running = self.running_evaluation(harness, task);
         let given = self.task(task);
         let kept = self.evaluation(harness, task);
-        fs::create_dir(&job)
-            .and_then(|()| fs::create_dir(job.join("check")))
-            .and_then(|()| copy_tree(&self.harness(harness), &job.join("harness")))
-            .and_then(|()| copy_tree(&given.join("files"), &job.join("work")))
-            .and_then(|()| fs::copy(given.join("statement"), job.join("statement")))
+        fs::create_dir(&running)
+            .and_then(|()| fs::create_dir(running.join("check")))
+            .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
+            .and_then(|()| copy_tree(&given.join("files"), &running.join("work")))
+            .and_then(|()| fs::copy(given.join("statement"), running.join("statement")))
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
@@ -143,15 +143,15 @@ impl Workspace {
         task: &str,
         outcome: EvaluationOutcome,
     ) -> io::Result<()> {
-        let job = self.running_evaluation(harness, task);
+        let running = self.running_evaluation(harness, task);
         let word = match outcome {
             EvaluationOutcome::Success => "success\n",
             EvaluationOutcome::Failure => "failure\n",
             EvaluationOutcome::TimedOut => "timed_out\n",
         };
-        fs::remove_dir_all(job.join("harness"))
-            .and_then(|()| fs::write(job.join("outcome"), word))
-            .and_then(|()| fs::rename(&job, self.evaluation(harness, task)))
+        fs::remove_dir_all(running.join("harness"))
+            .and_then(|()| fs::write(running.join("outcome"), word))
+            .and_then(|()| fs::rename(&running, self.evaluation(harness, task)))
     }
 
     pub fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {

@@ -56,9 +56,9 @@ cladenc resume \
 | `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
-`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how far the search had got and each job it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
 
-The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then ends the jobs it has running and exits with status 1, and a search that stopped again can be continued again.
+The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a search that stopped again can be continued again.
 
 ### `cladenc start`
 
@@ -107,7 +107,7 @@ cladenc start \
 | `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 | `--seed <INTEGER>` | Required | The seed of every random draw. |
-| `--workers <COUNT>` | Required | The most jobs running at once. |
+| `--workers <COUNT>` | Required | The most containers running at once. |
 
 A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
 
@@ -147,6 +147,6 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 `cladenc` names the image `cladenc-` and sixteen random hexadecimal digits, and says the name. `image` in the run directory keeps a copy of the Dockerfile and what Docker printed. An image that is not built stops `cladenc start` with exit status 2. The image stays on the machine when the search ends, and `cladenc resume` starts its containers from it and builds nothing.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A job that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A procreation or an evaluation that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.

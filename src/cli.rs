@@ -167,7 +167,7 @@ pub struct StartOptions {
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The most jobs running at once"
+        help = "The most containers running at once"
     )]
     pub workers: u64,
 }
@@ -291,7 +291,7 @@ fn stopped(error: SearchError) -> (u8, String) {
         SearchError::Journal(_)
         | SearchError::Asked
         | SearchError::Build(_)
-        | SearchError::Job { .. } => 1,
+        | SearchError::Action { .. } => 1,
     };
     (status, error.to_string())
 }

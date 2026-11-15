@@ -135,7 +135,7 @@ fn an_evaluation_that_runs_again_ends_with_its_directory_in_place() {
 }
 
 #[test]
-fn a_job_that_runs_again_writes_no_second_started_record() {
+fn an_action_that_runs_again_writes_no_second_started_record() {
     let directory = resumed_after_an_evaluation_stopped();
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert_eq!(
@@ -147,7 +147,7 @@ fn a_job_that_runs_again_writes_no_second_started_record() {
 }
 
 #[test]
-fn a_new_job_starts_while_a_job_that_runs_again_is_still_running() {
+fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let directory = test_inputs::temporary_directory();
     let run_directory = with_one_evaluation_left_running(directory.path());
     let stop = AtomicBool::new(false);

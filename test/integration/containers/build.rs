@@ -2,8 +2,8 @@ use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
+use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::ProcreationOutcome;
-use cladenc::job::{self, JobError, Launch};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
@@ -15,7 +15,11 @@ const MODEL: Model<'static> = Model {
     key: None,
 };
 
-type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
+type Procreated = (
+    TempDir,
+    Workspace,
+    Result<ProcreationOutcome, ContainerError>,
+);
 
 fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
@@ -33,7 +37,7 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
         model: MODEL,
     };
     let stop = AtomicBool::new(false);
-    let result = job::run_procreation(&workspace, &launch, 1, 0, time_limit, &stop);
+    let result = containers::run_procreation(&workspace, &launch, 1, 0, time_limit, &stop);
     (directory, workspace, result)
 }
 
@@ -56,7 +60,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        job::run_procreation(&workspace, &launch, 1, 0, 60, &stop)
+        containers::run_procreation(&workspace, &launch, 1, 0, 60, &stop)
     });
     (directory, workspace, result)
 }
@@ -72,7 +76,7 @@ fn left_by_a_build_of_a_search_with_a_key(build_command: &str, file: &str) -> St
             ..MODEL
         },
     };
-    let _ = job::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
+    let _ = containers::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
     fs::read_to_string(workspace.harness(1).join(file)).unwrap()
 }
 
@@ -214,7 +218,7 @@ fn the_time_limit_removes_the_container_of_a_build() {
 #[test]
 fn a_build_whose_container_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
     let (_directory, _workspace, result) = procreated("exit 0", "exit 125");
-    assert!(matches!(result, Err(JobError::Docker(_))));
+    assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
@@ -222,7 +226,7 @@ fn the_error_of_a_build_names_the_file_under_builds_that_holds_what_docker_said(
     let (_directory, workspace, result) = procreated("exit 0", "exit 125");
     assert!(matches!(
         result,
-        Err(JobError::Docker(said)) if said == workspace.build(1).join("stderr")
+        Err(ContainerError::Docker(said)) if said == workspace.build(1).join("stderr")
     ));
 }
 
@@ -238,15 +242,15 @@ fn a_build_whose_output_cannot_be_kept_is_an_error() {
     };
     let stop = AtomicBool::new(false);
     assert!(matches!(
-        job::run_procreation(&workspace, &launch, 1, 0, 30, &stop),
-        Err(JobError::Io(_))
+        containers::run_procreation(&workspace, &launch, 1, 0, 30, &stop),
+        Err(ContainerError::Io(_))
     ));
 }
 
 #[test]
 fn a_procreation_stopped_while_its_child_is_built_reports_that_it_was_stopped() {
     let (_directory, _workspace, result) = stopped_while_its_child_is_built();
-    assert!(matches!(result, Err(JobError::Stopped)));
+    assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]

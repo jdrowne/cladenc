@@ -98,7 +98,7 @@ fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
     journal::read(run_directory.path()).unwrap()
 }
 
-fn four_jobs_of_which_two_finished() -> [Record; 6] {
+fn four_actions_of_which_two_finished() -> [Record; 6] {
     [
         procreation_started(1, 0),
         evaluation_started(0, "t1"),
@@ -115,7 +115,7 @@ fn the_settings_of_the_run_record_come_back() {
 }
 
 #[test]
-fn a_journal_that_holds_no_job_gives_a_genealogy_of_the_progenitor_alone() {
+fn a_journal_that_holds_no_action_gives_a_genealogy_of_the_progenitor_alone() {
     assert_eq!(rebuilt(&[]).genealogy, Genealogy::new());
 }
 
@@ -136,9 +136,9 @@ fn a_journal_that_holds_the_build_of_its_progenitor_gives_a_created_progenitor()
 }
 
 #[test]
-fn the_build_of_the_progenitor_is_not_counted_as_a_job() {
+fn the_build_of_the_progenitor_is_not_counted_as_an_action() {
     assert_eq!(
-        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).next_job,
+        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).next_action,
         0
     );
 }
@@ -176,9 +176,9 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
 }
 
 #[test]
-fn the_jobs_that_did_not_finish_come_back_in_the_order_they_started_with_their_numbers() {
+fn the_actions_that_did_not_finish_come_back_in_the_order_they_started_with_their_numbers() {
     assert_eq!(
-        rebuilt(&four_jobs_of_which_two_finished()).unfinished,
+        rebuilt(&four_actions_of_which_two_finished()).unfinished,
         [
             (
                 2,
@@ -199,7 +199,7 @@ fn the_jobs_that_did_not_finish_come_back_in_the_order_they_started_with_their_n
 }
 
 #[test]
-fn a_journal_whose_jobs_all_finished_holds_no_unfinished_job() {
+fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
@@ -210,13 +210,16 @@ fn a_journal_whose_jobs_all_finished_holds_no_unfinished_job() {
 }
 
 #[test]
-fn the_number_of_the_next_job_is_the_count_of_started_records() {
-    assert_eq!(rebuilt(&four_jobs_of_which_two_finished()).next_job, 4);
+fn the_number_of_the_next_action_is_the_count_of_started_records() {
+    assert_eq!(
+        rebuilt(&four_actions_of_which_two_finished()).next_action,
+        4
+    );
 }
 
 #[test]
-fn the_first_job_of_a_journal_that_holds_no_job_takes_number_0() {
-    assert_eq!(rebuilt(&[]).next_job, 0);
+fn the_first_action_of_a_journal_that_holds_no_action_takes_number_0() {
+    assert_eq!(rebuilt(&[]).next_action, 0);
 }
 
 #[test]

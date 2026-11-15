@@ -69,7 +69,8 @@ fn a_run_stopped_by_a_docker_that_a_signal_ended_says_which_evaluation_and_which
 }
 
 #[test]
-fn a_run_on_a_machine_where_docker_is_not_found_says_that_its_job_could_not_be_carried_out() {
+fn a_run_on_a_machine_where_docker_is_not_found_says_that_its_evaluation_could_not_be_carried_out()
+{
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), "exit 0");
     start.env("PATH", directory.path());

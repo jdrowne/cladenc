@@ -3,7 +3,7 @@ use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::path::PathBuf;
 
-use crate::job::JobError;
+use crate::containers::ContainerError;
 use crate::journal::{JournalError, Started};
 
 #[derive(Debug)]
@@ -11,11 +11,14 @@ pub enum SearchError {
     Io(io::Error),
     Unusable(JournalError),
     Key(PathBuf),
-    Image(JobError),
+    Image(ContainerError),
     Journal(JournalError),
     Asked,
-    Build(JobError),
-    Job { job: Started, error: JobError },
+    Build(ContainerError),
+    Action {
+        action: Started,
+        error: ContainerError,
+    },
 }
 
 impl Display for SearchError {
@@ -47,10 +50,10 @@ impl Display for SearchError {
                 formatter,
                 "the search stopped before its end: the build of the progenitor {error}"
             ),
-            Self::Job { job, error } => {
+            Self::Action { action, error } => {
                 write!(
                     formatter,
-                    "the search stopped before its end: {job} {error}"
+                    "the search stopped before its end: {action} {error}"
                 )
             }
         }

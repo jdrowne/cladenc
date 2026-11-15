@@ -4,8 +4,8 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Launch;
 use cladenc::genealogy::Genealogy;
-use cladenc::job::Launch;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::model::Model;
 use cladenc::policy::Policy;

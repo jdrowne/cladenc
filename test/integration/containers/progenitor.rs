@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::job::{self, JobError, Launch};
+use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -12,7 +12,7 @@ const MODEL: Model<'static> = Model {
     key: None,
 };
 
-type Built = (TempDir, Workspace, Result<(), JobError>);
+type Built = (TempDir, Workspace, Result<(), ContainerError>);
 
 fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
@@ -30,7 +30,7 @@ fn built_from(image: &str, build_command: Option<&str>, time_limit: u64, stop: b
         model: MODEL,
     };
     let stop = AtomicBool::new(stop);
-    let result = job::build_progenitor(&workspace, &launch, time_limit, &stop);
+    let result = containers::build_progenitor(&workspace, &launch, time_limit, &stop);
     (directory, workspace, result)
 }
 
@@ -91,20 +91,20 @@ fn a_progenitor_whose_build_exits_with_0_is_built() {
 #[test]
 fn a_progenitor_whose_build_exits_with_another_status_is_an_error_that_holds_the_status() {
     let (_directory, _workspace, result) = built("exit 3");
-    assert!(matches!(result, Err(JobError::Exit(3))));
+    assert!(matches!(result, Err(ContainerError::Exit(3))));
 }
 
 #[test]
 fn a_progenitor_whose_build_runs_past_the_time_limit_is_an_error() {
     let (_directory, _workspace, result) =
         built_from(test_inputs::IMAGE, Some("sleep 300"), 1, false);
-    assert!(matches!(result, Err(JobError::TimeLimit)));
+    assert!(matches!(result, Err(ContainerError::TimeLimit)));
 }
 
 #[test]
 fn a_progenitor_whose_build_leaves_a_named_pipe_is_an_error() {
     let (_directory, _workspace, result) = built("mkfifo pipe");
-    assert!(matches!(result, Err(JobError::OtherFiles)));
+    assert!(matches!(result, Err(ContainerError::OtherFiles)));
 }
 
 #[test]
@@ -112,7 +112,7 @@ fn a_build_of_the_progenitor_that_docker_does_not_start_is_an_error() {
     let (_directory, workspace, result) = built_from("Not An Image", Some("exit 0"), 30, false);
     assert!(matches!(
         result,
-        Err(JobError::Docker(said)) if said == workspace.build(0).join("stderr")
+        Err(ContainerError::Docker(said)) if said == workspace.build(0).join("stderr")
     ));
 }
 
@@ -120,7 +120,7 @@ fn a_build_of_the_progenitor_that_docker_does_not_start_is_an_error() {
 fn a_build_of_the_progenitor_whose_stop_flag_is_set_reports_that_it_was_stopped() {
     let (_directory, _workspace, result) =
         built_from(test_inputs::IMAGE, Some("sleep 300"), 60, true);
-    assert!(matches!(result, Err(JobError::Stopped)));
+    assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]

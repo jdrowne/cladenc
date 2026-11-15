@@ -111,7 +111,7 @@ fn a_search_whose_file_of_the_key_is_gone_is_not_resumed() {
 }
 
 #[test]
-fn a_search_that_is_not_resumed_for_its_key_starts_no_job() {
+fn a_search_that_is_not_resumed_for_its_key_starts_no_action() {
     let (keyed, _stopped) = searched_with(Some("a-made-up-key\n"), true);
     let journal = fs::read(journal::path(&keyed.run_directory)).unwrap();
     fs::remove_file(&keyed.key_file).unwrap();
