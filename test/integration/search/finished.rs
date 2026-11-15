@@ -13,6 +13,7 @@ fn settings(directory: &Path) -> Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
+        harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 6,

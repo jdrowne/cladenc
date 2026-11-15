@@ -24,7 +24,11 @@ fn started_from(
     parent: u64,
     time_limit: u64,
 ) -> Result<ProcreationOutcome, JobError> {
-    let launch = Launch { image, run_command };
+    let launch = Launch {
+        image,
+        run_command,
+        build_command: None,
+    };
     job::run_procreation(
         workspace,
         &launch,
@@ -154,6 +158,12 @@ fn the_standard_error_of_a_harness_is_kept_with_its_procreation() {
 fn a_harness_that_exits_with_0_creates_its_child() {
     let (_directory, _workspace, result) = procreated("exit 0");
     assert!(matches!(result, Ok(ProcreationOutcome::Created)));
+}
+
+#[test]
+fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
+    let (_directory, workspace, _result) = procreated("exit 0");
+    assert!(!workspace.build(1).exists());
 }
 
 #[test]

@@ -45,6 +45,23 @@ fn a_search_that_was_asked_to_stop_is_worded() {
 }
 
 #[test]
+fn a_search_the_build_of_its_progenitor_stopped_says_how_the_build_ended() {
+    assert_eq!(
+        worded(SearchError::Build(JobError::Exit(2))),
+        "the search stopped before its end: the build of the progenitor exited with status 2"
+    );
+}
+
+#[test]
+fn a_search_whose_progenitor_took_too_long_to_build_says_so() {
+    assert_eq!(
+        worded(SearchError::Build(JobError::TimeLimit)),
+        "the search stopped before its end: \
+         the build of the progenitor ran past its time limit"
+    );
+}
+
+#[test]
 fn a_search_an_evaluation_stopped_names_the_harness_and_the_task() {
     assert_eq!(
         worded(SearchError::Job {

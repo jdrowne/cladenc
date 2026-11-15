@@ -5,6 +5,7 @@ use super::HarnessId;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GenealogyError {
+    ProgenitorNotAwaitingBuild,
     ParentNotCreated { parent: HarnessId },
     ChildNotBeingCreated { child: HarnessId },
     HarnessNotCreated { harness: HarnessId },
@@ -15,6 +16,9 @@ pub enum GenealogyError {
 impl Display for GenealogyError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ProgenitorNotAwaitingBuild => {
+                write!(formatter, "the progenitor is not waiting to be built")
+            }
             Self::ParentNotCreated { parent } => write!(
                 formatter,
                 "harness {parent} cannot procreate because it is not a created harness"

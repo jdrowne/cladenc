@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use super::JournalError;
-use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use crate::job::Launch;
 use crate::policy::Policy;
 
@@ -11,6 +11,7 @@ use crate::policy::Policy;
 pub struct Settings {
     pub progenitor: PathBuf,
     pub docker_image: String,
+    pub harness_build_command: Option<String>,
     pub harness_run_command: String,
     pub tasks: Vec<String>,
     pub evaluator: PathBuf,
@@ -29,6 +30,14 @@ impl Settings {
         Launch {
             image: &self.docker_image,
             run_command: &self.harness_run_command,
+            build_command: self.harness_build_command.as_deref(),
+        }
+    }
+
+    pub fn genealogy(&self) -> Genealogy {
+        match self.harness_build_command {
+            Some(_) => Genealogy::unbuilt(),
+            None => Genealogy::new(),
         }
     }
 
@@ -51,6 +60,7 @@ pub enum Record {
         #[serde(flatten)]
         settings: Settings,
     },
+    ProgenitorBuilt,
     ProcreationStarted {
         child: HarnessId,
         parent: HarnessId,

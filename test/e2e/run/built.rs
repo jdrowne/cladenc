@@ -1,0 +1,79 @@
+use std::fs;
+use std::process::{Command, Output};
+
+use tempfile::TempDir;
+
+fn ran(build_command: &str) -> (TempDir, Output) {
+    let directory = test_inputs::temporary_directory();
+    let options = [
+        ("--progenitor", test_inputs::progenitor(directory.path())),
+        ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-build-command", build_command.into()),
+        ("--harness-run-command", "exit 0".into()),
+        ("--evaluator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--run-dir", directory.path().join("run")),
+        ("--budget", "1".into()),
+        ("--genealogy-growth", "0".into()),
+        ("--confidence", "99".into()),
+        ("--initial-procreations", "1".into()),
+        ("--workers", "1".into()),
+        ("--procreation-timeout", "30".into()),
+        ("--evaluation-timeout", "30".into()),
+        ("--seed", "7".into()),
+    ]
+    .map(|(option, value)| format!("{option}={}", value.display()));
+    let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("run")
+        .args(options)
+        .output()
+        .unwrap();
+    (directory, output)
+}
+
+fn left_in_the_run(build_command: &str, file: &str) -> String {
+    let (directory, _output) = ran(build_command);
+    fs::read_to_string(directory.path().join("run").join(file)).unwrap()
+}
+
+#[test]
+fn a_run_given_a_build_command_builds_the_progenitor() {
+    assert_eq!(
+        left_in_the_run("echo built >> built", "harnesses/0/built"),
+        "built\n"
+    );
+}
+
+#[test]
+fn a_run_given_a_build_command_builds_a_child_after_its_parent() {
+    assert_eq!(
+        left_in_the_run("echo built >> built", "harnesses/1/built"),
+        "built\nbuilt\n"
+    );
+}
+
+#[test]
+fn a_run_keeps_what_the_build_of_a_harness_wrote_under_builds() {
+    assert_eq!(
+        left_in_the_run("echo making", "builds/1/stdout"),
+        "making\n"
+    );
+}
+
+#[test]
+fn a_run_whose_progenitor_does_not_build_exits_with_1() {
+    let (_directory, output) = ran("exit 3");
+    assert_eq!(output.status.code(), Some(1));
+}
+
+#[test]
+fn a_run_whose_progenitor_does_not_build_says_how_the_build_ended() {
+    let (_directory, output) = ran("exit 3");
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap().lines().last(),
+        Some(
+            "cladenc: the search stopped before its end: \
+             the build of the progenitor exited with status 3"
+        )
+    );
+}

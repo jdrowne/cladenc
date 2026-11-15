@@ -19,6 +19,7 @@ fn options(directory: &Path) -> RunOptions {
         progenitor: test_inputs::progenitor(directory),
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
         docker_image: "image".to_owned(),
+        harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory, "evaluate", 0o755),
         run_dir: directory.join("run"),
@@ -62,6 +63,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             progenitor: root.join("progenitor"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
             docker_image: "image".to_owned(),
+            harness_build_command: None,
             harness_run_command: "run a harness".to_owned(),
             evaluator: root.join("evaluate"),
             budget: 800,
@@ -173,6 +175,18 @@ fn the_image_and_the_run_command_are_settings_as_they_were_given() {
             "registry.example/harness:1".to_owned(),
             "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned()
         )
+    );
+}
+
+#[test]
+fn the_build_command_is_a_setting_as_it_was_given() {
+    let settings = checked(|_, options| {
+        options.harness_build_command = Some("make harness".to_owned());
+    })
+    .unwrap();
+    assert_eq!(
+        settings.harness_build_command,
+        Some("make harness".to_owned())
     );
 }
 

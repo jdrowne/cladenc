@@ -1,4 +1,4 @@
-use cladenc::cli::{Cli, Command, RunOptions};
+use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
@@ -32,6 +32,18 @@ fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
     )
 }
 
+fn built_by(command: Option<&str>) -> Result<Cli, clap::Error> {
+    let options = OPTIONS
+        .iter()
+        .map(|(option, value)| format!("{option}={value}"));
+    Cli::try_parse_from(
+        ["cladenc".to_owned(), "run".to_owned()]
+            .into_iter()
+            .chain(options)
+            .chain(command.map(|command| format!("--harness-build-command={command}"))),
+    )
+}
+
 fn refusal(changed: &str, given: &str) -> ErrorKind {
     with(changed, given).unwrap_err().kind()
 }
@@ -50,9 +62,31 @@ fn an_empty_harness_run_command_is_an_error() {
 fn a_harness_run_command_is_taken_as_it_is_written() {
     assert!(matches!(
         with("--harness-run-command", "sh \"$CLADENC_HARNESS/harness.sh\" --flag").unwrap().command,
-        Command::Run(RunOptions { harness_run_command, .. })
-            if harness_run_command == "sh \"$CLADENC_HARNESS/harness.sh\" --flag"
+        Command::Run(options)
+            if options.harness_run_command == "sh \"$CLADENC_HARNESS/harness.sh\" --flag"
     ));
+}
+
+#[test]
+fn a_command_line_with_no_harness_build_command_builds_nothing() {
+    assert!(matches!(
+        built_by(None).unwrap().command,
+        Command::Run(options) if options.harness_build_command.is_none()
+    ));
+}
+
+#[test]
+fn a_harness_build_command_is_taken_as_it_is_written() {
+    assert!(matches!(
+        built_by(Some("cargo build --release && cp target/release/harness .")).unwrap().command,
+        Command::Run(options) if options.harness_build_command.as_deref()
+            == Some("cargo build --release && cp target/release/harness .")
+    ));
+}
+
+#[test]
+fn an_empty_harness_build_command_is_an_error() {
+    assert!(built_by(Some("")).is_err());
 }
 
 #[test]
@@ -185,7 +219,7 @@ fn quiet_takes_no_value() {
 fn writing_quiet_turns_it_on() {
     assert!(matches!(
         with("--quiet", "--quiet").unwrap().command,
-        Command::Run(RunOptions { quiet: true, .. })
+        Command::Run(options) if options.quiet
     ));
 }
 
@@ -193,6 +227,6 @@ fn writing_quiet_turns_it_on() {
 fn leaving_quiet_out_leaves_it_off() {
     assert!(matches!(
         with("", "").unwrap().command,
-        Command::Run(RunOptions { quiet: false, .. })
+        Command::Run(options) if !options.quiet
     ));
 }

@@ -48,6 +48,19 @@ fn a_program_that_exited_with_another_status_is_worded() {
 }
 
 #[test]
+fn a_program_that_ran_past_its_time_limit_is_worded() {
+    assert_eq!(worded(JobError::TimeLimit), "ran past its time limit");
+}
+
+#[test]
+fn a_build_that_left_what_a_harness_cannot_hold_is_worded() {
+    assert_eq!(
+        worded(JobError::OtherFiles),
+        "left something that is not a regular file, a directory or a symbolic link"
+    );
+}
+
+#[test]
 fn a_program_ended_by_a_signal_is_worded() {
     assert_eq!(worded(JobError::Signal(9)), "was ended by signal 9");
 }

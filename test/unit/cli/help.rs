@@ -42,6 +42,34 @@ fn the_long_help_of_run_says_what_each_way_a_harness_ends_means() {
 }
 
 #[test]
+fn the_long_help_of_run_says_where_a_harness_is_built() {
+    let help = help_of_run(true);
+    let said = [
+        "Where --harness-build-command is given, a harness is built before it is\n",
+        "with /harness as the working directory",
+        "builds in the run directory",
+    ];
+    assert!(said.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_run_says_what_each_way_a_build_ends_means() {
+    let help = help_of_run(true);
+    let endings = [
+        "  exit status 0     the harness is built\n",
+        "  exit status 125   Docker did not start the container: the search stops",
+        "  any other status  a child is recorded as build_failed",
+        "  the time limit    the container is removed",
+    ];
+    assert!(endings.iter().all(|ending| help.contains(ending)));
+}
+
+#[test]
+fn the_short_help_of_run_names_the_option_that_builds_a_harness() {
+    assert!(help_of_run(false).contains("--harness-build-command <COMMAND>"));
+}
+
+#[test]
 fn the_long_help_of_run_shows_how_the_evaluator_is_called() {
     assert!(help_of_run(true).contains("    EVALUATOR <harness> <task> <output>\n"));
 }

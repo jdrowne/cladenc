@@ -10,6 +10,7 @@ fn settings() -> Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
+        harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
@@ -159,6 +160,19 @@ fn the_progenitor_has_no_parent() {
 fn the_parent_of_a_child_is_the_harness_that_procreated_it() {
     let report = report(&a_child_that_succeeds_where_its_parent_fails());
     assert_eq!(report.harnesses[1].parent, Some(0));
+}
+
+#[test]
+fn a_progenitor_that_awaits_its_build_is_reported_as_being_created() {
+    assert_eq!(
+        report(&Genealogy::unbuilt()).harnesses[0].state,
+        HarnessState::BeingCreated
+    );
+}
+
+#[test]
+fn a_search_whose_progenitor_awaits_its_build_reports_harness_0_as_its_best() {
+    assert_eq!(report(&Genealogy::unbuilt()).best_harness, 0);
 }
 
 #[test]

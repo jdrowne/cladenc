@@ -29,7 +29,7 @@ pub enum Command {
         about = "Start a new search and print the directory of its best harness",
         after_long_help = contract::CONTRACT
     )]
-    Run(RunOptions),
+    Run(Box<RunOptions>),
     #[command(about = "Continue a search that stopped before its end")]
     Resume(ResumeOptions),
     #[command(about = "Print the state of a search without changing it")]
@@ -51,6 +51,13 @@ pub struct RunOptions {
         help = "The Docker image every container is started from"
     )]
     pub docker_image: String,
+    #[arg(
+        long,
+        value_name = "COMMAND",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The shell command that builds a harness in a container, where one has to be built"
+    )]
+    pub harness_build_command: Option<String>,
     #[arg(
         long,
         value_name = "COMMAND",
@@ -239,7 +246,10 @@ fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
 fn stopped(error: SearchError) -> (u8, String) {
     let status = match error {
         SearchError::Io(_) | SearchError::Unusable(_) => 2,
-        SearchError::Journal(_) | SearchError::Asked | SearchError::Job { .. } => 1,
+        SearchError::Journal(_)
+        | SearchError::Asked
+        | SearchError::Build(_)
+        | SearchError::Job { .. } => 1,
     };
     (status, error.to_string())
 }

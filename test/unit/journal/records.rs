@@ -57,6 +57,27 @@ fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
 }
 
 #[test]
+fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed() {
+    assert_eq!(
+        line(&procreation_finished(ProcreationOutcome::BuildFailed)),
+        r#"{"record":"procreation_finished","child":1,"outcome":"build_failed"}"#
+    );
+}
+
+#[test]
+fn the_build_of_the_progenitor_is_written_with_its_name_alone() {
+    assert_eq!(
+        line(&Record::ProgenitorBuilt),
+        r#"{"record":"progenitor_built"}"#
+    );
+}
+
+#[test]
+fn the_build_of_the_progenitor_survives_being_written_and_read_back() {
+    assert_eq!(read_back(&Record::ProgenitorBuilt), Record::ProgenitorBuilt);
+}
+
+#[test]
 fn the_start_of_an_evaluation_is_written_with_its_harness_and_task() {
     assert_eq!(
         line(&Record::EvaluationStarted {

@@ -10,6 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::genealogy::HarnessId;
+use crate::job::{self, JobError};
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::workspace::Workspace;
 
@@ -86,6 +87,16 @@ fn carry_on(
     mut progress: Progress<'_>,
     stop: &AtomicBool,
 ) -> Result<Found, SearchError> {
+    if progress.awaits_build(stop) {
+        let time_limit = settings.procreation_timeout;
+        job::build_progenitor(&workspace, &settings.launch(), time_limit, stop).map_err(
+            |error| match error {
+                JobError::Stopped => SearchError::Asked,
+                error => SearchError::Build(error),
+            },
+        )?;
+        progress.built();
+    }
     let shared = Shared {
         settings,
         workspace,

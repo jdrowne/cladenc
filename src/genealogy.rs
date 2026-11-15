@@ -13,6 +13,7 @@ pub type HarnessId = u64;
 pub enum ProcreationOutcome {
     Created,
     Failed,
+    BuildFailed,
     TimedOut,
 }
 
@@ -38,10 +39,29 @@ impl Default for Genealogy {
 
 impl Genealogy {
     pub fn new() -> Self {
+        Self::of_a_progenitor(HarnessState::Created)
+    }
+
+    pub fn unbuilt() -> Self {
+        Self::of_a_progenitor(HarnessState::BeingCreated)
+    }
+
+    fn of_a_progenitor(state: HarnessState) -> Self {
         Self {
-            harnesses: vec![Harness::new(0, None, HarnessState::Created)],
+            harnesses: vec![Harness::new(0, None, state)],
             started: 0,
         }
+    }
+
+    pub fn awaits_build(&self) -> bool {
+        self.harnesses[0].state() == HarnessState::BeingCreated
+    }
+
+    pub fn build_progenitor(&mut self) -> Result<(), GenealogyError> {
+        self.harness_in_state(0, HarnessState::BeingCreated)
+            .ok_or(GenealogyError::ProgenitorNotAwaitingBuild)?
+            .set_state(HarnessState::Created);
+        Ok(())
     }
 
     pub fn harnesses(&self) -> &[Harness] {
@@ -89,7 +109,9 @@ impl Genealogy {
             .ok_or(GenealogyError::ChildNotBeingCreated { child })?;
         created.set_state(match outcome {
             ProcreationOutcome::Created => HarnessState::Created,
-            ProcreationOutcome::Failed | ProcreationOutcome::TimedOut => HarnessState::Failed,
+            ProcreationOutcome::Failed
+            | ProcreationOutcome::BuildFailed
+            | ProcreationOutcome::TimedOut => HarnessState::Failed,
         });
         Ok(())
     }

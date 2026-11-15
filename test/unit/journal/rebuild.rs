@@ -11,6 +11,7 @@ fn settings() -> Settings {
         progenitor: PathBuf::from("/abs/harness"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
+        harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: PathBuf::from("/abs/evaluate"),
         budget: 800,
@@ -48,12 +49,16 @@ fn evaluation_finished(harness: u64, task: &str, outcome: EvaluationOutcome) -> 
 }
 
 fn journal_of(records: &[Record]) -> TempDir {
+    journal_with(settings(), records)
+}
+
+fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
     let run_directory = tempfile::tempdir().unwrap();
     let mut journal = Journal::open(run_directory.path()).unwrap();
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
-            settings: settings(),
+            settings,
         })
         .unwrap();
     for record in records {
@@ -64,6 +69,14 @@ fn journal_of(records: &[Record]) -> TempDir {
 
 fn rebuilt(records: &[Record]) -> State {
     journal::read(journal_of(records).path()).unwrap()
+}
+
+fn rebuilt_of_a_search_that_builds(records: &[Record]) -> State {
+    let settings = Settings {
+        harness_build_command: Some("make harness".to_owned()),
+        ..settings()
+    };
+    journal::read(journal_with(settings, records).path()).unwrap()
 }
 
 fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
@@ -96,6 +109,30 @@ fn the_settings_of_the_run_record_come_back() {
 #[test]
 fn a_journal_that_holds_no_job_gives_a_genealogy_of_the_progenitor_alone() {
     assert_eq!(rebuilt(&[]).genealogy, Genealogy::new());
+}
+
+#[test]
+fn a_journal_of_a_search_that_builds_and_holds_no_build_gives_a_progenitor_awaiting_its_build() {
+    assert_eq!(
+        rebuilt_of_a_search_that_builds(&[]).genealogy,
+        Genealogy::unbuilt()
+    );
+}
+
+#[test]
+fn a_journal_that_holds_the_build_of_its_progenitor_gives_a_created_progenitor() {
+    assert_eq!(
+        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).genealogy,
+        Genealogy::new()
+    );
+}
+
+#[test]
+fn the_build_of_the_progenitor_is_not_counted_as_a_job() {
+    assert_eq!(
+        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).next_job,
+        0
+    );
 }
 
 #[test]

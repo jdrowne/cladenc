@@ -66,6 +66,12 @@ fn a_procreation_that_failed_leaves_a_failed_harness() {
 }
 
 #[test]
+fn a_procreation_whose_child_did_not_build_leaves_a_failed_harness() {
+    let genealogy = procreated(ProcreationOutcome::BuildFailed);
+    assert_eq!(genealogy.harnesses()[1].state(), HarnessState::Failed);
+}
+
+#[test]
 fn a_procreation_that_timed_out_leaves_a_failed_harness() {
     let genealogy = procreated(ProcreationOutcome::TimedOut);
     assert_eq!(genealogy.harnesses()[1].state(), HarnessState::Failed);

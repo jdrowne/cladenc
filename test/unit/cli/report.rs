@@ -41,6 +41,7 @@ fn reported(json: bool) -> (Ran, String) {
                 progenitor: PathBuf::from("/progenitor"),
                 tasks: vec!["t1".to_owned()],
                 docker_image: "image".to_owned(),
+                harness_build_command: None,
                 harness_run_command: "run a harness".to_owned(),
                 evaluator: PathBuf::from("/evaluator"),
                 budget: 800,

@@ -44,6 +44,7 @@ fn procreation_stopped_while_running() -> Procreated {
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command: "hostname > id; sleep 300",
+        build_command: None,
     };
     let id_file = workspace.running_procreation(1).join("child/id");
     let stop = AtomicBool::new(false);
@@ -107,6 +108,7 @@ fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command: "sleep 300",
+        build_command: None,
     };
     let stop = AtomicBool::new(true);
     assert!(matches!(

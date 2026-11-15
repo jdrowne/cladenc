@@ -150,6 +150,18 @@ fn a_procreation_that_timed_out_leaves_no_directory_for_the_evaluations_of_its_c
 }
 
 #[test]
+fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_the_harnesses() {
+    let (_directory, workspace) = ended(ProcreationOutcome::BuildFailed);
+    assert!(workspace.harness(1).join("harness.sh").is_file());
+}
+
+#[test]
+fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_evaluations() {
+    let (_directory, workspace) = ended(ProcreationOutcome::BuildFailed);
+    assert!(!workspace.evaluations(1).exists());
+}
+
+#[test]
 fn a_procreation_that_failed_leaves_nothing_running() {
     let (_directory, workspace) = ended(ProcreationOutcome::Failed);
     assert!(!workspace.running_procreation(1).exists());

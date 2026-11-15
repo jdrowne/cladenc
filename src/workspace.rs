@@ -53,6 +53,10 @@ impl Workspace {
         self.evaluations(harness).join(task)
     }
 
+    pub fn build(&self, harness: HarnessId) -> PathBuf {
+        self.run_directory.join("builds").join(harness.to_string())
+    }
+
     pub fn running_procreation(&self, child: HarnessId) -> PathBuf {
         self.run_directory
             .join("running")
@@ -78,10 +82,19 @@ impl Workspace {
         fs::rename(job.join("child"), self.harness(child))
             .and_then(|()| match outcome {
                 ProcreationOutcome::Created => fs::create_dir(self.evaluations(child)),
-                ProcreationOutcome::Failed | ProcreationOutcome::TimedOut => Ok(()),
+                ProcreationOutcome::Failed
+                | ProcreationOutcome::BuildFailed
+                | ProcreationOutcome::TimedOut => Ok(()),
             })
             .and_then(|()| fs::remove_dir_all(job.join("parent")))
             .and_then(|()| fs::rename(&job, self.procreation(child)))
+    }
+
+    pub fn start_build(&self, harness: HarnessId) -> io::Result<PathBuf> {
+        let build = self.build(harness);
+        remove_if_there(&build)
+            .and_then(|()| fs::create_dir_all(&build))
+            .map(|()| build)
     }
 
     pub fn start_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
@@ -114,6 +127,7 @@ impl Workspace {
             self.harness(child),
             self.procreation(child),
             self.evaluations(child),
+            self.build(child),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))

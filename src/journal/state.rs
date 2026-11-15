@@ -64,8 +64,8 @@ pub fn read(run_directory: &Path) -> Result<State, JournalError> {
         _ => return Err(JournalError::FirstRecordNotRun),
     };
     let mut state = State {
+        genealogy: settings.genealogy(),
         settings,
-        genealogy: Genealogy::new(),
         unfinished: Vec::new(),
         next_job: 0,
         best_harness: None,
@@ -85,6 +85,7 @@ impl State {
         let refused = |error| JournalError::Refused { line, error };
         match record {
             Record::Run { .. } => return Err(JournalError::RunRecordRepeated { line }),
+            Record::ProgenitorBuilt => self.genealogy.build_progenitor().map_err(refused)?,
             Record::ProcreationStarted { child, parent } => {
                 if child != self.genealogy.harness_count() {
                     return Err(JournalError::WrongChild { line, child });

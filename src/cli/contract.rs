@@ -35,6 +35,35 @@ A child that holds anything but regular files, directories and symbolic
 links is a failed procreation. The source code of every child is kept under
 harnesses in the run directory, created or not.
 
+Where --harness-build-command is given, a harness is built before it is
+run for the first time, in a container of the same image, as
+
+    sh -c <COMMAND>
+
+with /harness as the working directory, which holds the source code of the
+harness and is what CLADENC_HARNESS names. What the build makes stays there,
+and is part of every copy made of the harness. The progenitor is built
+before the first job, within the time limit of one procreation. A child is
+built as the last step of its procreation, within what is left of the time
+limit of that procreation. builds in the run directory keeps the standard
+output and standard error of every build, in a directory named after the
+harness.
+
+How a build ends decides what is recorded:
+
+  exit status 0     the harness is built
+  exit status 125   Docker did not start the container: the search stops, and
+                    `cladenc resume` builds again
+  any other status  a child is recorded as build_failed, and is not created;
+                    for the progenitor the search stops, and `cladenc resume`
+                    builds it again
+  the time limit    the container is removed, and the procreation of a child
+                    is recorded as timed out; for the progenitor the search
+                    stops
+
+A build that leaves anything but regular files, directories and symbolic
+links has failed.
+
 The evaluator is run once for each evaluation, as
 
     EVALUATOR <harness> <task> <output>

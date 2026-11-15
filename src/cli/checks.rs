@@ -25,6 +25,7 @@ impl RunOptions {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
             docker_image: self.docker_image.clone(),
+            harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             tasks: tasks(&self.tasks)?,
             evaluator: program(&self.evaluator, "--evaluator")?,

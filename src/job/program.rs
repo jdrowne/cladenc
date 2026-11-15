@@ -18,10 +18,14 @@ pub(super) enum Ending {
     TimedOut,
 }
 
+pub(super) fn deadline(time_limit: u64) -> Instant {
+    Instant::now() + Duration::from_secs(time_limit)
+}
+
 pub(super) fn run(
     mut command: Command,
     job: &Path,
-    time_limit: u64,
+    deadline: Instant,
     stop: &AtomicBool,
 ) -> Result<Ending, JobError> {
     let mut program = File::create(job.join("stdout"))
@@ -35,7 +39,6 @@ pub(super) fn run(
                 .spawn()
         })
         .map_err(JobError::Io)?;
-    let deadline = Instant::now() + Duration::from_secs(time_limit);
     loop {
         if let Some(status) = program.try_wait().ok().flatten() {
             return status

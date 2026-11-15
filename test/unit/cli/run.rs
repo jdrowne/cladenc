@@ -24,6 +24,7 @@ fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: test_inputs::task_file(directory.path(), &["t1"]),
         docker_image: "image".to_owned(),
+        harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory.path(), "evaluate"),
         run_dir: directory.path().join("run"),
@@ -41,7 +42,7 @@ fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
     let mut output = Vec::new();
     let mut errors = Vec::new();
     let cli = Cli {
-        command: Command::Run(options),
+        command: Command::Run(Box::new(options)),
     };
     let status = cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut errors);
     Ran {

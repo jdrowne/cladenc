@@ -1,3 +1,4 @@
+mod build;
 mod container;
 mod program;
 
@@ -11,8 +12,9 @@ use std::sync::atomic::AtomicBool;
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
+pub use build::build_progenitor;
 use container::{Container, Mount};
-use program::{Ending, run};
+use program::{Ending, deadline, run};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes solves \
@@ -30,6 +32,7 @@ const EVALUATIONS: &str = "/evaluations";
 pub struct Launch<'a> {
     pub image: &'a str,
     pub run_command: &'a str,
+    pub build_command: Option<&'a str>,
 }
 
 #[derive(Debug)]
@@ -39,6 +42,8 @@ pub enum JobError {
     Docker(PathBuf),
     Exit(i32),
     Signal(i32),
+    TimeLimit,
+    OtherFiles,
 }
 
 impl Display for JobError {
@@ -54,6 +59,11 @@ impl Display for JobError {
             ),
             Self::Exit(status) => write!(formatter, "exited with status {status}"),
             Self::Signal(signal) => write!(formatter, "was ended by signal {signal}"),
+            Self::TimeLimit => write!(formatter, "ran past its time limit"),
+            Self::OtherFiles => write!(
+                formatter,
+                "left something that is not a regular file, a directory or a symbolic link"
+            ),
         }
     }
 }
@@ -75,6 +85,7 @@ pub fn run_procreation(
     let source = job.join("parent");
     let made = job.join("child");
     let evaluations = workspace.evaluations(parent);
+    let deadline = deadline(time_limit);
     let container = Container {
         image: launch.image,
         command: launch.run_command,
@@ -101,9 +112,9 @@ pub fn run_procreation(
             ("CLADENC_INSTRUCTION", INSTRUCTION),
         ],
     };
-    let outcome = match container.run(&job, time_limit, stop)? {
+    let outcome = match container.run(&job, deadline, stop)? {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
-            ProcreationOutcome::Created
+            build::build_child(workspace, launch, child, &made, deadline, stop)?
         }
         Ending::Exited(_) => ProcreationOutcome::Failed,
         Ending::TimedOut => ProcreationOutcome::TimedOut,
@@ -132,7 +143,7 @@ pub fn run_evaluation(
         .arg(task)
         .arg(job.join("output"))
         .current_dir(job.join("output"));
-    let outcome = match run(command, &job, time_limit, stop)? {
+    let outcome = match run(command, &job, deadline(time_limit), stop)? {
         Ending::Exited(0) => EvaluationOutcome::Success,
         Ending::Exited(1) => EvaluationOutcome::Failure,
         Ending::Exited(status) => return Err(JobError::Exit(status)),

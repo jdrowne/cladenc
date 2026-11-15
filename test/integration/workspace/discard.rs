@@ -71,6 +71,24 @@ fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_evaluations_o
 }
 
 #[test]
+fn discarding_a_procreation_leaves_no_build_of_its_child() {
+    let (_directory, workspace) = made();
+    workspace.start_procreation(1, 0).unwrap();
+    workspace.start_build(1).unwrap();
+    workspace.discard_procreation(1).unwrap();
+    assert!(!workspace.build(1).exists());
+}
+
+#[test]
+fn discarding_a_procreation_leaves_the_build_of_another_harness_as_it_was() {
+    let (_directory, workspace) = made();
+    workspace.start_build(0).unwrap();
+    workspace.start_procreation(1, 0).unwrap();
+    workspace.discard_procreation(1).unwrap();
+    assert!(workspace.build(0).is_dir());
+}
+
+#[test]
 fn discarding_a_procreation_leaves_the_parent_as_it_was() {
     let (_directory, workspace) = with_a_procreation_discarded_after_it_ended();
     assert!(workspace.harness(0).join("harness.sh").is_file());

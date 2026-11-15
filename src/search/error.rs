@@ -11,6 +11,7 @@ pub enum SearchError {
     Unusable(JournalError),
     Journal(JournalError),
     Asked,
+    Build(JobError),
     Job { job: Started, error: JobError },
 }
 
@@ -28,6 +29,10 @@ impl Display for SearchError {
             Self::Asked => write!(
                 formatter,
                 "the search stopped before its end: it was asked to stop"
+            ),
+            Self::Build(error) => write!(
+                formatter,
+                "the search stopped before its end: the build of the progenitor {error}"
             ),
             Self::Job { job, error } => {
                 write!(

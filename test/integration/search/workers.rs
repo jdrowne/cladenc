@@ -10,6 +10,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
+        harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 12,
@@ -41,7 +42,7 @@ fn most_running_at_once(records: &[Record]) -> usize {
                 most = most.max(running);
             }
             Record::ProcreationFinished { .. } | Record::EvaluationFinished { .. } => running -= 1,
-            Record::Run { .. } | Record::SearchFinished { .. } => {}
+            Record::Run { .. } | Record::ProgenitorBuilt | Record::SearchFinished { .. } => {}
         }
     }
     most

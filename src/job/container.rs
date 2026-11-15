@@ -2,6 +2,7 @@ use std::ffi::OsString;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::atomic::AtomicBool;
+use std::time::Instant;
 
 use nix::unistd::{Gid, Uid};
 
@@ -28,7 +29,7 @@ impl Container<'_> {
     pub(super) fn run(
         &self,
         job: &Path,
-        time_limit: u64,
+        deadline: Instant,
         stop: &AtomicBool,
     ) -> Result<Ending, JobError> {
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
@@ -44,7 +45,7 @@ impl Container<'_> {
             docker.arg("--env").arg(format!("{variable}={value}"));
         }
         docker.args([self.image, "sh", "-c", self.command]);
-        let ended = program::run(docker, job, time_limit, stop);
+        let ended = program::run(docker, job, deadline, stop);
         if matches!(ended, Ok(Ending::TimedOut) | Err(JobError::Stopped)) {
             remove(&name);
         }

@@ -35,7 +35,7 @@ impl<'a> Progress<'a> {
             policy: settings.policy(),
             journal,
             writer,
-            genealogy: Genealogy::new(),
+            genealogy: settings.genealogy(),
             again: VecDeque::new(),
             next_job: 0,
             initial_left: settings.initial_procreations,
@@ -67,6 +67,17 @@ impl<'a> Progress<'a> {
 
     pub(super) fn halted(&self, stop: &AtomicBool) -> bool {
         self.failure.is_some() || stop.load(Ordering::SeqCst)
+    }
+
+    pub(super) fn awaits_build(&self, stop: &AtomicBool) -> bool {
+        self.genealogy.awaits_build() && !self.halted(stop)
+    }
+
+    pub(super) fn built(&mut self) {
+        self.genealogy
+            .build_progenitor()
+            .expect("a progenitor that was built was waiting to be");
+        self.record(&Record::ProgenitorBuilt);
     }
 
     pub(super) fn record(&mut self, record: &Record) {

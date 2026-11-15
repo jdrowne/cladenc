@@ -10,6 +10,7 @@ mod cli {
 }
 
 mod genealogy {
+    mod build;
     mod clade;
     mod created;
     mod evaluation;
