@@ -35,7 +35,7 @@ fn run_directory(last_line: &str) -> TempDir {
     let records = [
         Record::Run {
             format: journal::FORMAT,
-            settings: settings(),
+            settings: Box::new(settings()),
         },
         Record::EvaluationStarted {
             harness: 0,

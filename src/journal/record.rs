@@ -78,7 +78,7 @@ pub enum Record {
     Run {
         format: u32,
         #[serde(flatten)]
-        settings: Settings,
+        settings: Box<Settings>,
     },
     ProgenitorBuilt,
     ProcreationStarted {

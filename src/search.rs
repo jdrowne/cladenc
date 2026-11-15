@@ -49,7 +49,7 @@ pub fn search(
     let mut progress = Progress::new(settings, journal, writer);
     progress.record(&Record::Run {
         format: journal::FORMAT,
-        settings: settings.clone(),
+        settings: Box::new(settings.clone()),
     });
     carry_on(settings, key.as_deref(), workspace, progress, stop)
 }

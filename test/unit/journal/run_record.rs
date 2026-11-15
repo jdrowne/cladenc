@@ -48,7 +48,7 @@ fn keyed() -> Settings {
 fn run(settings: Settings) -> Record {
     Record::Run {
         format: journal::FORMAT,
-        settings,
+        settings: Box::new(settings),
     }
 }
 

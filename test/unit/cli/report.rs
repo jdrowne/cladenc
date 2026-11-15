@@ -37,7 +37,7 @@ fn reported(json: bool) -> (Ran, String) {
     let records = [
         Record::Run {
             format: journal::FORMAT,
-            settings: Settings {
+            settings: Box::new(Settings {
                 progenitor: PathBuf::from("/progenitor"),
                 model: "a-model".to_owned(),
                 model_url: "http://models.example/v1".to_owned(),
@@ -55,7 +55,7 @@ fn reported(json: bool) -> (Ran, String) {
                 procreation_timeout: 60,
                 evaluation_timeout: 60,
                 seed: 7,
-            },
+            }),
         },
         Record::ProcreationStarted {
             child: 1,

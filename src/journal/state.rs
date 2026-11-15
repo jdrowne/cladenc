@@ -59,7 +59,7 @@ pub fn read(run_directory: &Path) -> Result<State, JournalError> {
             .map_err(|_| JournalError::NotARecord { line })
     });
     let settings = match records.next() {
-        Some(Ok((_, Record::Run { settings, .. }))) => settings,
+        Some(Ok((_, Record::Run { settings, .. }))) => *settings,
         Some(Err(error)) => return Err(error),
         _ => return Err(JournalError::FirstRecordNotRun),
     };

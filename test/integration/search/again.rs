@@ -70,7 +70,7 @@ fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
-            settings,
+            settings: Box::new(settings),
         })
         .unwrap();
     journal

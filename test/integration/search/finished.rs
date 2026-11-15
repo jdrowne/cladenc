@@ -82,7 +82,7 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
         first,
         Record::Run {
             format: journal::FORMAT,
-            settings
+            settings: Box::new(settings),
         }
     );
 }

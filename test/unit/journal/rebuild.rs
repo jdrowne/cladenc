@@ -61,7 +61,7 @@ fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
-            settings,
+            settings: Box::new(settings),
         })
         .unwrap();
     for record in records {
