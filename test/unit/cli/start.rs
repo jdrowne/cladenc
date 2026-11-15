@@ -127,11 +127,22 @@ fn a_run_directory_at_which_something_exists_gives_exit_status_2() {
 }
 
 #[test]
-fn a_run_directory_at_which_something_exists_is_reported_on_standard_error() {
+fn a_run_directory_at_which_something_exists_is_reported_last_on_standard_error() {
     assert!(
         ran(in_a_run_directory_that_exists)
             .errors
-            .starts_with("cladenc: the run directory cannot be made: ")
+            .lines()
+            .last()
+            .is_some_and(|line| line.starts_with("cladenc: the run directory cannot be made: "))
+    );
+}
+
+#[test]
+fn a_run_directory_that_is_being_made_is_said_first_on_standard_error() {
+    assert!(
+        ran(in_a_run_directory_that_exists)
+            .errors
+            .starts_with("cladenc: making the run directory ")
     );
 }
 

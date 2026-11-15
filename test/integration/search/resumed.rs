@@ -201,10 +201,10 @@ fn a_resumed_search_says_first_how_far_the_search_had_got() {
 #[test]
 fn a_resumed_search_says_that_it_starts_again_the_job_that_was_running() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
-    assert!(
-        resumed[1].starts_with("cladenc: started again the evaluation of harness ")
-            && resumed[1].ends_with(" on task t3")
-    );
+    assert!(resumed[1..2].iter().any(|line| {
+        line.starts_with("cladenc: started again the evaluation of harness ")
+            && line.ends_with(" on task t3")
+    }));
 }
 
 #[test]
