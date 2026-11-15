@@ -5,14 +5,14 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 3c2b70de-42b2-4496-8bfc-c8f6aecc6bad
-  modified: 2026-11-15T04:30:56.115Z
+  modified: 2026-11-15T15:40:19.165Z
 ---
 
 # Long-running commands in the background
 
 Run every command that can take more than about a minute as a background `Bash` call (`run_in_background: true`) or under `Monitor`, then end the turn and let its notification resume the work. In this repository that covers a `cargo` build or test run that compiles the dependencies, a sweep of `gh` calls over many issues or runs, and a long `grep` or `find` over another of the user's repositories, as well as the watch of each workflow run, per [[every-run-is-watched]].
 
-**Why:** On 2026-11-14 the user pointed at the memories their other repositories hold on background shells and monitors, and this is the one of them that was missing here. The reason those repositories record: a foreground command holds the turn for as long as it runs, so every scheduled reminder due in that time waits behind it and the user cannot type. A background command frees the turn as soon as it starts.
+**Why:** The user's other repositories hold the same rule, and the user wants it here. A foreground command holds the turn for as long as it runs, so every scheduled reminder due in that time waits behind it and the user cannot type. A background command frees the turn as soon as it starts.
 
 **How to apply:**
 
@@ -23,4 +23,4 @@ Run every command that can take more than about a minute as a background `Bash` 
 - Other work that does not depend on the result goes on meanwhile. Once only the result is left to wait for, end the turn.
 - A turn made of many short foreground calls also holds the reminders back until it ends. Split long work at its natural boundaries, such as after a batch of edits.
 
-On the fifth point, the user's other repositories that have an autopilot allow other work except during a CI run. This repository held the same, by my own choice, until 2026-11-14, when the user dropped the exception, per [[the-work-does-not-wait-for-ci]]. A `cargo` build or test reads the working tree until it ends, so an edit to the code it is building depends on its result and waits for it.
+On the fifth point, other work goes on during a CI run as well, per [[the-work-does-not-wait-for-ci]]. A `cargo` build or test reads the working tree until it ends, so an edit to the code it is building depends on its result and waits for it.

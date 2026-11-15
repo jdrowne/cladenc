@@ -2,10 +2,11 @@
 
 - [Push to main](push-to-main.md) — commit/push directly to main, no feature branches or PRs; starting the autopilot counts as the ask, and so does asking for a change
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
-- [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
+- [A memory says what holds now](a-memory-says-what-holds-now.md) — a memory states the rule, its reason and how to apply it, and tells nothing of how the rule came about or what was done when
+- [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; no rule limits the work to only what was asked
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words, and let cladenc leave the paper where a change improves it
-- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: two inputs, and cladenc does the self-improvement itself; the model may be remote or self-hosted; the code of 2026-11-14 asks for a procreator and an evaluator program instead
+- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: a person brings the progenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Every build is for Linux arm64](every-build-is-for-linux-arm64.md) — what CI compiles, tests, packages and releases is for Linux arm64 and no other platform
 - [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora
@@ -29,7 +30,7 @@
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and progenitor for the one a search starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
-- [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — the sub-command was `cladenc run` until 2026-11-15; older issues and memories that say so mean `start`
+- [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — older issues call the sub-command `cladenc run` and mean `start`
 - [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows `cladenc` and each sub-command as a command block, then a table of its flags in alphabetical order, with text about a sub-command under it
 - [No flag has a default](no-flag-has-a-default.md) — every flag that takes a value is required and nothing about a search is assumed; a default is never proposed, and the count of required flags is not a problem
 - [A key is given in a file](a-key-is-given-in-a-file.md) — a secret such as a model's key reaches cladenc in a file that a flag names, never as a flag's value or in an environment variable
