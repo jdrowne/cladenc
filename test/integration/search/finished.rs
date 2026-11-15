@@ -47,6 +47,18 @@ fn searched(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, Searc
     (directory, found)
 }
 
+fn said_over_one_task() -> (TempDir, Vec<String>) {
+    let directory = test_inputs::temporary_directory();
+    let mut settings = settings(directory.path());
+    over_one_task(&mut settings);
+    let run_directory = directory.path().join("run");
+    let mut written = Vec::new();
+    let stop = AtomicBool::new(false);
+    search::search(&settings, &run_directory, &stop, Some(&mut written)).unwrap();
+    let said = String::from_utf8(written).unwrap();
+    (directory, said.lines().map(str::to_owned).collect())
+}
+
 fn journal_of(directory: &TempDir) -> String {
     fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
 }
@@ -165,14 +177,94 @@ fn the_directory_returned_is_that_of_the_best_harness_in_the_run_directory() {
 }
 
 #[test]
-fn the_writer_receives_each_record_as_the_line_the_journal_holds() {
-    let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path());
-    let run_directory = directory.path().join("run");
-    let mut written = Vec::new();
-    let stop = AtomicBool::new(false);
-    search::search(&settings, &run_directory, &stop, Some(&mut written)).unwrap();
-    assert_eq!(written, fs::read(journal::path(&run_directory)).unwrap());
+fn a_search_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_progenitor() {
+    let (directory, said) = said_over_one_task();
+    assert_eq!(
+        said[0],
+        format!(
+            "cladenc: making the run directory {} with a copy of the progenitor {}",
+            directory.path().join("run").display(),
+            directory.path().join("progenitor").display()
+        )
+    );
+}
+
+#[test]
+fn a_search_says_next_that_it_copies_the_tasks_of_its_benchmark() {
+    let (directory, said) = said_over_one_task();
+    assert_eq!(
+        said[1],
+        format!(
+            "cladenc: copying the 1 task of the benchmark {} into the run directory",
+            directory.path().join("benchmark").display()
+        )
+    );
+}
+
+#[test]
+fn a_search_says_each_job_as_it_starts() {
+    let (_directory, said) = said_over_one_task();
+    assert_eq!(
+        said[2],
+        "cladenc: started the procreation of harness 1 by harness 0"
+    );
+}
+
+#[test]
+fn a_search_says_as_many_starts_as_its_journal_records() {
+    let (directory, said) = said_over_one_task();
+    assert_eq!(
+        said.iter()
+            .filter(|line| line.starts_with("cladenc: started the "))
+            .count(),
+        journal_of(&directory).matches("_started\"").count()
+    );
+}
+
+#[test]
+fn a_search_says_the_number_of_each_evaluation_it_starts_and_its_budget() {
+    let (_directory, said) = said_over_one_task();
+    assert!(said.iter().any(|line| {
+        line.starts_with("cladenc: started the evaluation of harness ")
+            && line.ends_with(" on task t1, evaluation 2 of 10")
+    }));
+}
+
+#[test]
+fn a_search_says_how_a_procreation_ended_and_where_its_child_is_kept() {
+    let (directory, said) = said_over_one_task();
+    assert!(said.contains(&format!(
+        "cladenc: the procreation of harness 1 by harness 0 created harness 1, kept in {}",
+        directory.path().join("run/harnesses/1").display()
+    )));
+}
+
+#[test]
+fn a_search_says_how_an_evaluation_ended_and_where_what_it_left_is_kept() {
+    let (directory, said) = said_over_one_task();
+    assert!(said.contains(&format!(
+        "cladenc: the evaluation of harness 1 on task t1 succeeded: what it left is kept in {}",
+        directory.path().join("run/evaluations/1/t1").display()
+    )));
+}
+
+#[test]
+fn a_search_says_last_that_it_finished_and_which_harness_is_its_best() {
+    let (directory, said) = said_over_one_task();
+    assert_eq!(
+        said.last().unwrap(),
+        &format!(
+            "cladenc: the search finished with 2 evaluations started and 2 harnesses: its best \
+             harness is harness 1, kept in {}",
+            directory.path().join("run/harnesses/1").display()
+        )
+    );
+}
+
+#[test]
+fn a_search_copies_no_record_of_its_journal_to_its_writer() {
+    let (_directory, said) = said_over_one_task();
+    assert!(!said.iter().any(|line| line.contains("\"record\"")));
 }
 
 #[test]

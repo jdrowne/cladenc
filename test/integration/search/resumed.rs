@@ -152,19 +152,70 @@ fn a_resumed_search_returns_the_directory_of_the_best_harness_in_its_run_directo
     );
 }
 
-#[test]
-fn a_resumed_search_copies_only_the_records_it_writes_to_its_writer() {
+fn lines_of(written: Vec<u8>) -> Vec<String> {
+    let said = String::from_utf8(written).unwrap();
+    said.lines().map(str::to_owned).collect()
+}
+
+fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<String>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
-    let journal = journal::path(&run_directory);
+    let mut stopped = Vec::new();
+    let mut resumed = Vec::new();
     fs::write(directory.path().join("exit-2-at"), "t3\n").unwrap();
-    let _stopped = search::search(&settings, &run_directory, &stop, None);
+    let _stopped = search::search(&settings, &run_directory, &stop, Some(&mut stopped));
     fs::remove_file(directory.path().join("exit-2-at")).unwrap();
-    let mut written = fs::read(&journal).unwrap();
-    search::resume(&run_directory, &stop, Some(&mut written)).unwrap();
-    assert_eq!(written, fs::read(&journal).unwrap());
+    search::resume(&run_directory, &stop, Some(&mut resumed)).unwrap();
+    (directory, lines_of(stopped), lines_of(resumed))
+}
+
+#[test]
+fn a_search_that_a_job_stops_says_what_became_of_the_job() {
+    let (_directory, stopped, _resumed) = said_when_stopped_at_t3_and_when_resumed();
+    assert!(stopped.iter().any(|line| {
+        line.starts_with("cladenc: the evaluation of harness ")
+            && line.ends_with(" on task t3 exited with status 2")
+    }));
+}
+
+#[test]
+fn a_search_that_a_job_stops_says_last_that_it_is_stopping() {
+    let (_directory, stopped, _resumed) = said_when_stopped_at_t3_and_when_resumed();
+    assert_eq!(
+        stopped.last().unwrap(),
+        "cladenc: stopping the search, with 0 jobs running"
+    );
+}
+
+#[test]
+fn a_resumed_search_says_first_how_far_the_search_had_got() {
+    let (directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
+    assert!(resumed[0].starts_with(&format!(
+        "cladenc: continuing the search in {}, which has started ",
+        directory.path().join("run").display()
+    )));
+}
+
+#[test]
+fn a_resumed_search_says_that_it_starts_again_the_job_that_was_running() {
+    let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
+    assert!(
+        resumed[1].starts_with("cladenc: started again the evaluation of harness ")
+            && resumed[1].ends_with(" on task t3")
+    );
+}
+
+#[test]
+fn a_resumed_search_says_last_that_it_finished() {
+    let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
+    assert!(
+        resumed
+            .last()
+            .unwrap()
+            .starts_with("cladenc: the search finished with 12 evaluations started and ")
+    );
 }
 
 #[test]

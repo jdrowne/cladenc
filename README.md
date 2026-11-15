@@ -56,6 +56,8 @@ cladenc resume \
 | `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how far the search had got and each job it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
+
 The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then ends the jobs it has running and exits with status 1, and a search that stopped again can be continued again.
 
 ### `cladenc start`
@@ -126,5 +128,7 @@ parsing/
 The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `statement` is a file of text that says what is to be done, `files` is a directory of the files the work starts from, and `check` is an executable file: the program that says by its exit status whether the work passes. The directory of a task may hold more, such as tests that the check runs.
 
 `cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which task. It copies the tasks into `benchmark` in the run directory, so a search keeps the tasks it started with, and `cladenc resume` does not read the directory that `--benchmark` named.
+
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A job that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.

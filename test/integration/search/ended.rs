@@ -55,11 +55,18 @@ fn resuming_a_search_that_ended_leaves_its_journal_unchanged() {
 }
 
 #[test]
-fn resuming_a_search_that_ended_copies_no_record_to_its_writer() {
-    let (_directory, run_directory, _found) = ended();
+fn resuming_a_search_that_ended_says_that_it_had_finished_and_nothing_else() {
+    let (_directory, run_directory, found) = ended();
     let mut written = Vec::new();
     search::resume(&run_directory, &AtomicBool::new(false), Some(&mut written)).unwrap();
-    assert!(written.is_empty());
+    assert_eq!(
+        String::from_utf8(written).unwrap(),
+        format!(
+            "cladenc: the search had finished: its best harness is harness {}, kept in {}\n",
+            found.best_harness,
+            found.directory.display()
+        )
+    );
 }
 
 #[test]

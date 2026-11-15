@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -70,10 +69,38 @@ fn quiet_leaves_standard_error_empty() {
 }
 
 #[test]
-fn without_quiet_standard_error_holds_the_records_of_the_journal() {
+fn without_quiet_every_line_of_standard_error_is_a_sentence_of_cladenc() {
+    let (_directory, output) = ran(None);
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .lines()
+            .all(|line| line.starts_with("cladenc: ") && !line.contains("\"record\""))
+    );
+}
+
+#[test]
+fn without_quiet_standard_error_starts_with_the_run_directory_being_made() {
     let (directory, output) = ran(None);
-    assert_eq!(
-        String::from_utf8(output.stderr).unwrap(),
-        fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap()
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .starts_with(&format!(
+                "cladenc: making the run directory {} with a copy of the progenitor ",
+                directory.path().join("run").display()
+            ))
+    );
+}
+
+#[test]
+fn without_quiet_standard_error_ends_with_the_best_harness_and_where_it_is_kept() {
+    let (directory, output) = ran(None);
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .ends_with(&format!(
+                "its best harness is harness 1, kept in {}\n",
+                directory.path().join("run/harnesses/1").display()
+            ))
     );
 }

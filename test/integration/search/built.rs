@@ -90,6 +90,16 @@ fn stopped_while_its_progenitor_is_built() -> Searched {
     (directory, found)
 }
 
+fn said_by_a_search_built_with(build_command: &str) -> (TempDir, String) {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path(), build_command);
+    let run_directory = directory.path().join("run");
+    let mut written = Vec::new();
+    let stop = AtomicBool::new(false);
+    let _found = search::search(&settings, &run_directory, &stop, Some(&mut written));
+    (directory, String::from_utf8(written).unwrap())
+}
+
 fn journal_of(directory: &TempDir) -> String {
     fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
 }
@@ -204,4 +214,30 @@ fn a_search_asked_to_stop_before_it_starts_stops() {
 fn a_search_asked_to_stop_before_it_starts_does_not_build_its_progenitor() {
     let (directory, _found) = searched_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
     assert!(!directory.path().join("run/builds").exists());
+}
+
+#[test]
+fn a_search_says_that_it_builds_its_progenitor_and_then_that_it_is_built() {
+    let (_directory, said) = said_by_a_search_built_with(COUNT_THE_BUILDS);
+    assert!(said.contains("cladenc: building the progenitor\ncladenc: the progenitor is built\n"));
+}
+
+#[test]
+fn a_search_whose_progenitor_does_not_build_says_where_what_the_build_printed_is_kept() {
+    let (directory, said) = said_by_a_search_built_with("exit 3");
+    assert!(said.ends_with(&format!(
+        "cladenc: the build of the progenitor exited with status 3: what it printed is kept in \
+         {}\n",
+        directory.path().join("run/builds/0").display()
+    )));
+}
+
+#[test]
+fn a_search_says_of_a_child_that_did_not_build_where_what_its_build_printed_is_kept() {
+    let (directory, said) = said_by_a_search_built_with(BUILD_ONLY_WHAT_SOLVES_NOTHING);
+    assert!(said.contains(&format!(
+        "cladenc: the procreation of harness 1 by harness 0 made a harness that did not build: \
+         what its build printed is kept in {}\n",
+        directory.path().join("run/builds/1").display()
+    )));
 }

@@ -39,20 +39,21 @@ fn stopped_by_an_evaluator_that_exits_with_2() -> (TempDir, Result<Found, Search
     (directory, found)
 }
 
-fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>) {
+fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 0", "spawn.sh");
     let run_directory = directory.path().join("run");
     let pid_file = run_directory.join("running/evaluation-0-t1/output/pid");
     let stop = AtomicBool::new(false);
+    let mut written = Vec::new();
     let found = thread::scope(|scope| {
         scope.spawn(|| {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
             stop.store(true, Ordering::SeqCst);
         });
-        search::search(&settings, &run_directory, &stop, None)
+        search::search(&settings, &run_directory, &stop, Some(&mut written))
     });
-    (directory, found)
+    (directory, found, String::from_utf8(written).unwrap())
 }
 
 fn journal_of(directory: &TempDir) -> String {
@@ -138,13 +139,13 @@ fn a_stopped_search_leaves_no_search_finished_record() {
 
 #[test]
 fn setting_the_stop_flag_stops_the_search() {
-    let (_directory, found) = stopped_by_its_flag();
+    let (_directory, found, _said) = stopped_by_its_flag();
     assert!(matches!(found, Err(SearchError::Asked)));
 }
 
 #[test]
 fn a_search_stopped_by_its_flag_leaves_no_sample_program_running() {
-    let (directory, _found) = stopped_by_its_flag();
+    let (directory, _found, _said) = stopped_by_its_flag();
     assert!(test_inputs::process_is_gone(
         &directory
             .path()
@@ -154,9 +155,30 @@ fn a_search_stopped_by_its_flag_leaves_no_sample_program_running() {
 
 #[test]
 fn a_search_stopped_by_its_flag_writes_no_record_for_the_job_that_was_running() {
-    let (directory, _found) = stopped_by_its_flag();
+    let (directory, _found, _said) = stopped_by_its_flag();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
         r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
     );
+}
+
+#[test]
+fn a_search_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_what_was_running() {
+    let (_directory, _found, said) = stopped_by_its_flag();
+    assert!(said.ends_with("cladenc: asked to stop, with 1 job running\n"));
+}
+
+#[test]
+fn a_search_a_container_stopped_says_what_docker_did_when_it_happens() {
+    let directory = test_inputs::temporary_directory();
+    let mut settings = settings(directory.path(), "exit 125", "exit-0.sh");
+    settings.initial_procreations = 1;
+    let run_directory = directory.path().join("run");
+    let mut written = Vec::new();
+    let stop = AtomicBool::new(false);
+    let _stopped = search::search(&settings, &run_directory, &stop, Some(&mut written));
+    assert!(String::from_utf8(written).unwrap().contains(
+        "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker \
+         did not start its container"
+    ));
 }

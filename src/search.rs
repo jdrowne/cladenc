@@ -1,5 +1,6 @@
 mod error;
 mod progress;
+mod said;
 mod worker;
 
 use std::io::Write;
@@ -16,6 +17,8 @@ use crate::workspace::Workspace;
 
 pub use error::SearchError;
 use progress::Progress;
+pub use said::Said;
+use said::say;
 
 const WAIT: Duration = Duration::from_millis(100);
 
@@ -36,11 +39,21 @@ pub fn search(
     settings: &Settings,
     run_directory: &Path,
     stop: &AtomicBool,
-    writer: Option<&mut dyn Write>,
+    mut writer: Option<&mut dyn Write>,
 ) -> Result<Found, SearchError> {
     let key = settings.model_key().map_err(SearchError::Key)?;
+    let making = Said::Making {
+        run_directory,
+        progenitor: &settings.progenitor,
+    };
+    let copying = Said::CopyingTasks {
+        benchmark: &settings.benchmark,
+        tasks: settings.tasks.len() as u64,
+    };
+    say(&mut writer, &making);
     let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
         .and_then(|workspace| {
+            say(&mut writer, &copying);
             workspace
                 .copy_benchmark(&settings.benchmark, &settings.tasks)
                 .map(|()| workspace)
@@ -62,7 +75,7 @@ pub fn search(
 pub fn resume(
     run_directory: &Path,
     stop: &AtomicBool,
-    writer: Option<&mut dyn Write>,
+    mut writer: Option<&mut dyn Write>,
 ) -> Result<Found, SearchError> {
     let (journal, state) = Journal::open_existing(run_directory)
         .and_then(|journal| journal::read(run_directory).map(|state| (journal, state)))
@@ -76,12 +89,27 @@ pub fn resume(
     } = state;
     let workspace = Workspace::at(run_directory);
     match best_harness {
-        Some(best_harness) => Ok(Found {
-            best_harness,
-            directory: workspace.harness(best_harness),
-        }),
+        Some(best_harness) => {
+            let directory = workspace.harness(best_harness);
+            let finished = Said::HadFinished {
+                best_harness,
+                directory: &directory,
+            };
+            say(&mut writer, &finished);
+            Ok(Found {
+                best_harness,
+                directory,
+            })
+        }
         None => {
             let key = settings.model_key().map_err(SearchError::Key)?;
+            let continuing = Said::Continuing {
+                run_directory,
+                started: genealogy.started(),
+                budget: settings.budget,
+                harnesses: genealogy.harness_count(),
+            };
+            say(&mut writer, &continuing);
             let progress =
                 Progress::new(&settings, journal, writer).resumed(genealogy, unfinished, next_job);
             carry_on(&settings, key.as_deref(), workspace, progress, stop)
@@ -99,10 +127,17 @@ fn carry_on(
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
+        progress.say(&Said::Building);
         job::build_progenitor(&workspace, &launch, time_limit, stop).map_err(
             |error| match error {
                 JobError::Stopped => SearchError::Asked,
-                error => SearchError::Build(error),
+                error => {
+                    progress.say(&Said::BuildFailed {
+                        error: &error,
+                        workspace: &workspace,
+                    });
+                    SearchError::Build(error)
+                }
             },
         )?;
         progress.built();
@@ -126,9 +161,10 @@ fn carry_on(
                 break;
             }
             if let Ok(ended) = receiver.recv_timeout(WAIT) {
-                progress.end(ended);
+                progress.end(ended, &shared.workspace);
             }
             if progress.halted(stop) {
+                progress.stopping();
                 shared.halt.store(true, Ordering::SeqCst);
             }
         }

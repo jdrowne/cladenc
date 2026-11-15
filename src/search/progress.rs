@@ -4,8 +4,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread::Scope;
 
+use super::said::say;
 use super::worker::{self, Ended};
-use super::{Found, SearchError, Shared};
+use super::{Found, Said, SearchError, Shared};
 use crate::genealogy::Genealogy;
 use crate::job::JobError;
 use crate::journal::{Journal, Record, Settings, Started};
@@ -23,6 +24,7 @@ pub(super) struct Progress<'a> {
     initial_ended: bool,
     running: u64,
     failure: Option<SearchError>,
+    stopping: bool,
 }
 
 impl<'a> Progress<'a> {
@@ -42,6 +44,21 @@ impl<'a> Progress<'a> {
             initial_ended: false,
             running: 0,
             failure: None,
+            stopping: false,
+        }
+    }
+
+    pub(super) fn say(&mut self, said: &Said<'_>) {
+        say(&mut self.writer, said);
+    }
+
+    pub(super) fn stopping(&mut self) {
+        if !self.stopping {
+            self.stopping = true;
+            self.say(&Said::Stopping {
+                asked: self.failure.is_none(),
+                running: self.running,
+            });
         }
     }
 
@@ -78,19 +95,12 @@ impl<'a> Progress<'a> {
             .build_progenitor()
             .expect("a progenitor that was built was waiting to be");
         self.record(&Record::ProgenitorBuilt);
+        self.say(&Said::Built);
     }
 
     pub(super) fn record(&mut self, record: &Record) {
-        let written = record
-            .line()
-            .and_then(|line| self.journal.append(record).map(|()| line));
-        match written {
-            Ok(line) => {
-                if let Some(writer) = self.writer.as_mut() {
-                    let _ = writeln!(writer, "{line}");
-                }
-            }
-            Err(error) => self.fail(SearchError::Journal(error)),
+        if let Err(error) = self.journal.append(record) {
+            self.fail(SearchError::Journal(error));
         }
     }
 
@@ -112,6 +122,15 @@ impl<'a> Progress<'a> {
         let recorded = self.failure.is_none();
         let sender = sender.clone();
         let _ = recorded.then(|| {
+            say(
+                &mut self.writer,
+                &Said::Started {
+                    job: &job,
+                    again,
+                    evaluations: self.genealogy.started(),
+                    budget: self.policy.budget,
+                },
+            );
             scope.spawn(move || {
                 let _ = sender.send(worker::carry_out(shared, job, again));
             })
@@ -119,18 +138,24 @@ impl<'a> Progress<'a> {
         self.running += u64::from(recorded);
     }
 
-    pub(super) fn end(&mut self, ended: Ended) {
+    pub(super) fn end(&mut self, ended: Ended, workspace: &Workspace) {
         self.running -= 1;
         match ended {
             Ended::Procreation {
                 child,
+                parent,
                 result: Ok(outcome),
-                ..
             } => {
                 self.genealogy
                     .end_procreation(child, outcome)
                     .expect("a procreation that ended was started");
                 self.record(&Record::ProcreationFinished { child, outcome });
+                self.say(&Said::Procreated {
+                    child,
+                    parent,
+                    outcome,
+                    workspace,
+                });
             }
             Ended::Evaluation {
                 harness,
@@ -140,6 +165,12 @@ impl<'a> Progress<'a> {
                 self.genealogy
                     .end_evaluation(harness, &task, outcome)
                     .expect("an evaluation that ended was started");
+                self.say(&Said::Evaluated {
+                    harness,
+                    task: &task,
+                    outcome,
+                    workspace,
+                });
                 self.record(&Record::EvaluationFinished {
                     harness,
                     task,
@@ -158,19 +189,21 @@ impl<'a> Progress<'a> {
                 child,
                 parent,
                 result: Err(error),
-            } => self.fail(SearchError::Job {
-                job: Started::Procreation { child, parent },
-                error,
-            }),
+            } => self.failed(Started::Procreation { child, parent }, error),
             Ended::Evaluation {
                 harness,
                 task,
                 result: Err(error),
-            } => self.fail(SearchError::Job {
-                job: Started::Evaluation { harness, task },
-                error,
-            }),
+            } => self.failed(Started::Evaluation { harness, task }, error),
         }
+    }
+
+    fn failed(&mut self, job: Started, error: JobError) {
+        self.say(&Said::Failed {
+            job: &job,
+            error: &error,
+        });
+        self.fail(SearchError::Job { job, error });
     }
 
     pub(super) fn finish(
@@ -187,6 +220,17 @@ impl<'a> Progress<'a> {
             best_harness,
             directory: workspace.harness(best_harness),
         };
+        let _ = self.failure.is_none().then(|| {
+            say(
+                &mut self.writer,
+                &Said::Finished {
+                    evaluations: self.genealogy.started(),
+                    harnesses: self.genealogy.harness_count(),
+                    best_harness,
+                    directory: &found.directory,
+                },
+            );
+        });
         self.failure.map_or(Ok(found), Err)
     }
 

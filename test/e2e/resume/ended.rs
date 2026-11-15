@@ -70,7 +70,11 @@ fn resume_on_a_run_that_ended_leaves_the_journal_unchanged() {
 }
 
 #[test]
-fn resume_on_a_run_that_ended_prints_nothing_on_standard_error() {
+fn resume_on_a_run_that_ended_says_on_standard_error_that_the_search_had_finished() {
     let (directory, _run) = ended();
-    assert!(resume(directory.path()).stderr.is_empty());
+    assert!(
+        String::from_utf8(resume(directory.path()).stderr)
+            .unwrap()
+            .starts_with("cladenc: the search had finished: its best harness is harness ")
+    );
 }
