@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
 
 fn evaluated(outcome: EvaluationOutcome) -> Genealogy {
     let mut genealogy = Genealogy::new();
@@ -22,9 +22,9 @@ fn started_keeps_counting_an_evaluation_that_has_ended() {
 #[test]
 fn started_counts_the_evaluations_of_every_harness() {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_mutation(0).unwrap();
+    let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_mutation(child, MutationOutcome::Created)
+        .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
     genealogy.start_evaluation(0, "a").unwrap();
     genealogy.start_evaluation(0, "b").unwrap();

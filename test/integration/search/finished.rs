@@ -12,14 +12,14 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        mutator: test_inputs::sample("integration", "mutate-solve-one-more.sh"),
+        procreator: test_inputs::sample("integration", "procreate-solve-one-more.sh"),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 2,
+        initial_procreations: 2,
         workers: 1,
-        mutation_timeout: 30,
+        procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
     }
@@ -28,7 +28,7 @@ fn settings(directory: &Path) -> Settings {
 fn over_one_task(settings: &mut Settings) {
     settings.tasks = vec!["t1".to_owned()];
     settings.genealogy_growth = 0.0;
-    settings.initial_mutations = 0;
+    settings.initial_procreations = 0;
     settings.budget = 10;
 }
 
@@ -83,9 +83,9 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
 }
 
 #[test]
-fn the_initial_mutations_all_end_before_the_first_evaluation_starts() {
+fn the_initial_procreations_all_end_before_the_first_evaluation_starts() {
     let (directory, _found) = searched(|settings| {
-        settings.initial_mutations = 3;
+        settings.initial_procreations = 3;
         settings.workers = 2;
     });
     let journal = journal_of(&directory);
@@ -95,7 +95,7 @@ fn the_initial_mutations_all_end_before_the_first_evaluation_starts() {
         .unwrap();
     assert_eq!(
         before_the_first_evaluation
-            .matches("\"record\":\"mutation_finished\"")
+            .matches("\"record\":\"procreation_finished\"")
             .count(),
         3
     );
@@ -159,7 +159,7 @@ fn a_search_cannot_start_in_a_run_directory_that_exists() {
 #[test]
 fn a_search_whose_run_record_cannot_be_written_stops_before_any_job() {
     let (_directory, found) = searched(|settings| {
-        settings.mutator = PathBuf::from(OsStr::from_bytes(&[b'/', 0xff]));
+        settings.procreator = PathBuf::from(OsStr::from_bytes(&[b'/', 0xff]));
     });
     assert!(matches!(found, Err(SearchError::Journal(_))));
 }

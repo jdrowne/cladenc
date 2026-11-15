@@ -5,9 +5,9 @@ use cladenc::journal::{self, JournalError};
 
 const RUN: &str = concat!(
     r#"{"record":"run","format":1,"progenitor":"/abs/harness","tasks":["t1","t2"],"#,
-    r#""mutator":"/abs/mutate","evaluator":"/abs/evaluate","budget":800,"#,
-    r#""genealogy_growth":0.6,"confidence":99.0,"initial_mutations":5,"workers":8,"#,
-    r#""mutation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
+    r#""procreator":"/abs/procreate","evaluator":"/abs/evaluate","budget":800,"#,
+    r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
+    r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
 );
 
 fn error_of_text(text: &str) -> JournalError {
@@ -90,7 +90,7 @@ fn a_journal_with_a_record_of_an_unknown_name_cannot_be_read() {
 #[test]
 fn a_journal_with_a_record_that_lacks_a_key_cannot_be_read() {
     assert!(matches!(
-        error_of(&[RUN, r#"{"record":"mutation_started","child":1}"#]),
+        error_of(&[RUN, r#"{"record":"procreation_started","child":1}"#]),
         JournalError::NotARecord { line: 2 }
     ));
 }
@@ -100,8 +100,8 @@ fn a_journal_with_an_unknown_outcome_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"mutation_started","child":1,"parent":0}"#,
-            r#"{"record":"mutation_finished","child":1,"outcome":"lost"}"#
+            r#"{"record":"procreation_started","child":1,"parent":0}"#,
+            r#"{"record":"procreation_finished","child":1,"outcome":"lost"}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -124,9 +124,12 @@ fn a_journal_with_a_second_run_record_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_with_a_mutation_of_a_harness_that_was_not_created_cannot_be_read() {
+fn a_journal_with_a_procreation_of_a_harness_that_was_not_created_cannot_be_read() {
     assert!(matches!(
-        error_of(&[RUN, r#"{"record":"mutation_started","child":1,"parent":5}"#]),
+        error_of(&[
+            RUN,
+            r#"{"record":"procreation_started","child":1,"parent":5}"#
+        ]),
         JournalError::Refused {
             line: 2,
             error: GenealogyError::ParentNotCreated { parent: 5 }
@@ -135,11 +138,11 @@ fn a_journal_with_a_mutation_of_a_harness_that_was_not_created_cannot_be_read() 
 }
 
 #[test]
-fn a_journal_with_the_end_of_a_mutation_that_never_started_cannot_be_read() {
+fn a_journal_with_the_end_of_a_procreation_that_never_started_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"mutation_finished","child":1,"outcome":"created"}"#
+            r#"{"record":"procreation_finished","child":1,"outcome":"created"}"#
         ]),
         JournalError::Refused {
             line: 2,
@@ -178,9 +181,12 @@ fn a_journal_with_the_end_of_an_evaluation_that_never_started_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_mutation_names_a_child_other_than_the_next_id_cannot_be_read() {
+fn a_journal_whose_procreation_names_a_child_other_than_the_next_id_cannot_be_read() {
     assert!(matches!(
-        error_of(&[RUN, r#"{"record":"mutation_started","child":7,"parent":0}"#]),
+        error_of(&[
+            RUN,
+            r#"{"record":"procreation_started","child":7,"parent":0}"#
+        ]),
         JournalError::WrongChild { line: 2, child: 7 }
     ));
 }
@@ -191,7 +197,7 @@ fn a_journal_with_a_record_after_the_end_of_its_search_cannot_be_read() {
         error_of(&[
             RUN,
             r#"{"record":"search_finished","best_harness":0}"#,
-            r#"{"record":"mutation_started","child":1,"parent":0}"#
+            r#"{"record":"procreation_started","child":1,"parent":0}"#
         ]),
         JournalError::AfterSearchFinished { line: 3 }
     ));

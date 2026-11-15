@@ -18,15 +18,15 @@ fn options(directory: &Path) -> RunOptions {
     RunOptions {
         progenitor: test_inputs::progenitor(directory),
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
-        mutator: program(directory, "mutate", 0o755),
+        procreator: program(directory, "procreate", 0o755),
         evaluator: program(directory, "evaluate", 0o755),
         run_dir: directory.join("run"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 5,
+        initial_procreations: 5,
         workers: 8,
-        mutation_timeout: 3600,
+        procreation_timeout: 3600,
         evaluation_timeout: 1800,
         seed: 7,
         quiet: false,
@@ -60,14 +60,14 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
         Ok(Settings {
             progenitor: root.join("progenitor"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
-            mutator: root.join("mutate"),
+            procreator: root.join("procreate"),
             evaluator: root.join("evaluate"),
             budget: 800,
             genealogy_growth: 0.6,
             confidence: 99.0,
-            initial_mutations: 5,
+            initial_procreations: 5,
             workers: 8,
-            mutation_timeout: 3600,
+            procreation_timeout: 3600,
             evaluation_timeout: 1800,
             seed: 7,
         })
@@ -91,7 +91,7 @@ fn a_progenitor_that_does_not_exist_is_refused() {
 #[test]
 fn a_progenitor_that_is_a_file_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.progenitor = options.mutator.clone()),
+        option_refused(|_, options| options.progenitor = options.procreator.clone()),
         "--progenitor"
     );
 }
@@ -159,28 +159,28 @@ fn task_ids_of_letters_digits_dots_underscores_and_hyphens_are_accepted() {
 }
 
 #[test]
-fn a_mutator_that_does_not_exist_is_refused() {
+fn a_procreator_that_does_not_exist_is_refused() {
     assert_eq!(
-        option_refused(|directory, options| options.mutator = directory.path().join("missing")),
-        "--mutator"
+        option_refused(|directory, options| options.procreator = directory.path().join("missing")),
+        "--procreator"
     );
 }
 
 #[test]
-fn a_mutator_that_is_not_executable_is_refused() {
+fn a_procreator_that_is_not_executable_is_refused() {
     assert_eq!(
         option_refused(|directory, options| {
-            options.mutator = program(directory.path(), "plain", 0o644);
+            options.procreator = program(directory.path(), "plain", 0o644);
         }),
-        "--mutator"
+        "--procreator"
     );
 }
 
 #[test]
-fn a_mutator_that_is_a_directory_is_refused() {
+fn a_procreator_that_is_a_directory_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.mutator = options.progenitor.clone()),
-        "--mutator"
+        option_refused(|_, options| options.procreator = options.progenitor.clone()),
+        "--procreator"
     );
 }
 
@@ -205,8 +205,8 @@ fn an_evaluator_that_is_not_executable_is_refused() {
 #[test]
 fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
     let refused = Refused {
-        option: "--mutator",
+        option: "--procreator",
         accepted: "an executable file",
     };
-    assert_eq!(refused.to_string(), "--mutator takes an executable file");
+    assert_eq!(refused.to_string(), "--procreator takes an executable file");
 }

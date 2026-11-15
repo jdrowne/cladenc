@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use cladenc::policy::{Job, Policy};
 
 fn tasks() -> Vec<String> {
@@ -15,9 +15,9 @@ fn policy(seed: u64) -> Policy {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: MutationOutcome) {
-    let child = genealogy.start_mutation(parent).unwrap();
-    genealogy.end_mutation(child, outcome).unwrap();
+fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(parent).unwrap();
+    genealogy.end_procreation(child, outcome).unwrap();
 }
 
 fn evaluate(
@@ -34,10 +34,10 @@ fn evaluate(
 
 fn two_lines() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, MutationOutcome::Created);
-    child_of(&mut genealogy, 0, MutationOutcome::Created);
-    child_of(&mut genealogy, 1, MutationOutcome::Created);
-    child_of(&mut genealogy, 2, MutationOutcome::Created);
+    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 1, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 2, ProcreationOutcome::Created);
     evaluate(&mut genealogy, 1, 4, EvaluationOutcome::Failure);
     evaluate(&mut genealogy, 3, 8, EvaluationOutcome::Success);
     evaluate(&mut genealogy, 2, 4, EvaluationOutcome::Success);
@@ -47,17 +47,17 @@ fn two_lines() -> Genealogy {
 
 fn times_parent(genealogy: &Genealogy, parent: HarnessId) -> usize {
     (0..200)
-        .filter(|seed| policy(*seed).next_job(genealogy, 0) == Some(Job::Mutation { parent }))
+        .filter(|seed| policy(*seed).next_job(genealogy, 0) == Some(Job::Procreation { parent }))
         .count()
 }
 
 #[test]
-fn a_mutation_is_the_next_job_when_the_harness_count_is_within_started_to_the_growth() {
+fn a_procreation_is_the_next_job_when_the_harness_count_is_within_started_to_the_growth() {
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 1, EvaluationOutcome::Success);
     assert_eq!(
         policy(0).next_job(&genealogy, 0),
-        Some(Job::Mutation { parent: 0 })
+        Some(Job::Procreation { parent: 0 })
     );
 }
 
@@ -70,7 +70,7 @@ fn a_harness_with_the_better_clade_is_the_parent_more_often_than_one_with_better
 #[test]
 fn a_created_child_can_be_the_parent() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, MutationOutcome::Created);
+    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
     genealogy.start_evaluation(0, "task-0").unwrap();
     genealogy.start_evaluation(0, "task-1").unwrap();
     assert!(times_parent(&genealogy, 1) > 0);
@@ -79,7 +79,7 @@ fn a_created_child_can_be_the_parent() {
 #[test]
 fn a_harness_that_is_being_created_is_never_the_parent() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_mutation(0).unwrap();
+    genealogy.start_procreation(0).unwrap();
     evaluate(&mut genealogy, 0, 2, EvaluationOutcome::Failure);
     assert_eq!(times_parent(&genealogy, 0), 200);
 }
@@ -87,17 +87,17 @@ fn a_harness_that_is_being_created_is_never_the_parent() {
 #[test]
 fn a_failed_harness_is_never_the_parent() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, MutationOutcome::Failed);
+    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
     evaluate(&mut genealogy, 0, 2, EvaluationOutcome::Failure);
     assert_eq!(times_parent(&genealogy, 0), 200);
 }
 
 #[test]
-fn a_mutation_is_the_next_job_even_when_no_task_is_left_to_give() {
+fn a_procreation_is_the_next_job_even_when_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 20, EvaluationOutcome::Success);
     assert_eq!(
         policy(0).next_job(&genealogy, 0),
-        Some(Job::Mutation { parent: 0 })
+        Some(Job::Procreation { parent: 0 })
     );
 }

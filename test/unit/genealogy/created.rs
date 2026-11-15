@@ -1,4 +1,4 @@
-use cladenc::genealogy::{Genealogy, HarnessId, MutationOutcome};
+use cladenc::genealogy::{Genealogy, HarnessId, ProcreationOutcome};
 
 fn created_ids(genealogy: &Genealogy) -> Vec<HarnessId> {
     genealogy
@@ -8,9 +8,9 @@ fn created_ids(genealogy: &Genealogy) -> Vec<HarnessId> {
         .collect()
 }
 
-fn mutate(genealogy: &mut Genealogy, parent: HarnessId, outcome: MutationOutcome) {
-    let child = genealogy.start_mutation(parent).unwrap();
-    genealogy.end_mutation(child, outcome).unwrap();
+fn procreate(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(parent).unwrap();
+    genealogy.end_procreation(child, outcome).unwrap();
 }
 
 #[test]
@@ -21,36 +21,36 @@ fn the_progenitor_is_the_one_created_harness_of_a_new_genealogy() {
 #[test]
 fn a_created_child_is_among_the_created_harnesses() {
     let mut genealogy = Genealogy::new();
-    mutate(&mut genealogy, 0, MutationOutcome::Created);
+    procreate(&mut genealogy, 0, ProcreationOutcome::Created);
     assert_eq!(created_ids(&genealogy), [0, 1]);
 }
 
 #[test]
 fn a_child_being_created_is_not_among_the_created_harnesses() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_mutation(0).unwrap();
+    genealogy.start_procreation(0).unwrap();
     assert_eq!(created_ids(&genealogy), [0]);
 }
 
 #[test]
 fn a_failed_harness_is_not_among_the_created_harnesses() {
     let mut genealogy = Genealogy::new();
-    mutate(&mut genealogy, 0, MutationOutcome::Failed);
+    procreate(&mut genealogy, 0, ProcreationOutcome::Failed);
     assert_eq!(created_ids(&genealogy), [0]);
 }
 
 #[test]
-fn a_harness_whose_mutation_timed_out_is_not_among_the_created_harnesses() {
+fn a_harness_whose_procreation_timed_out_is_not_among_the_created_harnesses() {
     let mut genealogy = Genealogy::new();
-    mutate(&mut genealogy, 0, MutationOutcome::TimedOut);
+    procreate(&mut genealogy, 0, ProcreationOutcome::TimedOut);
     assert_eq!(created_ids(&genealogy), [0]);
 }
 
 #[test]
 fn the_created_harnesses_come_in_ascending_id_order() {
     let mut genealogy = Genealogy::new();
-    mutate(&mut genealogy, 0, MutationOutcome::Failed);
-    mutate(&mut genealogy, 0, MutationOutcome::Created);
-    mutate(&mut genealogy, 2, MutationOutcome::Created);
+    procreate(&mut genealogy, 0, ProcreationOutcome::Failed);
+    procreate(&mut genealogy, 0, ProcreationOutcome::Created);
+    procreate(&mut genealogy, 2, ProcreationOutcome::Created);
     assert_eq!(created_ids(&genealogy), [0, 2, 3]);
 }

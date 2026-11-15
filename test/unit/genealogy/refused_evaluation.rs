@@ -1,14 +1,16 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, GenealogyError, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, GenealogyError, ProcreationOutcome};
 
 fn with_a_child_being_created() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    genealogy.start_mutation(0).unwrap();
+    genealogy.start_procreation(0).unwrap();
     genealogy
 }
 
 fn with_a_failed_child() -> Genealogy {
     let mut genealogy = with_a_child_being_created();
-    genealogy.end_mutation(1, MutationOutcome::Failed).unwrap();
+    genealogy
+        .end_procreation(1, ProcreationOutcome::Failed)
+        .unwrap();
     genealogy
 }
 

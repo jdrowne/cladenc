@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
 
 fn tasks(ids: &[&str]) -> Vec<String> {
     ids.iter().map(|id| (*id).to_owned()).collect()
@@ -56,9 +56,9 @@ fn a_harness_given_every_task_of_the_list_has_none_left() {
 fn a_task_given_to_one_harness_is_not_given_to_another() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_mutation(0).unwrap();
+    let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_mutation(child, MutationOutcome::Created)
+        .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
     genealogy.start_evaluation(0, "a").unwrap();
     assert_eq!(genealogy.harnesses()[1].tasks_not_given(&list), ["a", "b"]);

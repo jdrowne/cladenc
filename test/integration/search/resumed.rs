@@ -18,14 +18,14 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        mutator: test_inputs::sample("integration", "mutate-solve-one-more-or-exit-2.sh"),
+        procreator: test_inputs::sample("integration", "procreate-solve-one-more-or-exit-2.sh"),
         evaluator: test_inputs::sample("integration", "evaluate-listed-or-exit-2.sh"),
         budget: 12,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 3,
+        initial_procreations: 3,
         workers: 1,
-        mutation_timeout: 30,
+        procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
     }
@@ -82,9 +82,9 @@ fn a_search_an_evaluator_stopped_continues_to_the_journal_an_unbroken_search_wri
 }
 
 #[test]
-fn a_mutator_that_exits_with_2_at_an_initial_mutation_stops_the_search_before_its_end() {
+fn a_procreator_that_exits_with_2_at_an_initial_procreation_stops_the_search_before_its_end() {
     assert!(matches!(
-        stopped_at("mutation-2", 0).stopped,
+        stopped_at("procreation-2", 0).stopped,
         Err(SearchError::Job {
             error: JobError::Exit(2),
             ..
@@ -93,8 +93,8 @@ fn a_mutator_that_exits_with_2_at_an_initial_mutation_stops_the_search_before_it
 }
 
 #[test]
-fn a_search_stopped_during_its_initial_mutations_continues_to_the_same_journal_too() {
-    let searches = stopped_at("mutation-2", 0);
+fn a_search_stopped_during_its_initial_procreations_continues_to_the_same_journal_too() {
+    let searches = stopped_at("procreation-2", 0);
     assert_eq!(
         journal_of(&searches, "stopped"),
         journal_of(&searches, "unbroken")

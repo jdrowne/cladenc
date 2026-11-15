@@ -83,12 +83,12 @@ fn a_job_whose_stop_flag_was_set_before_it_started_is_stopped() {
 }
 
 #[test]
-fn a_stopped_mutation_reports_that_it_was_stopped() {
+fn a_stopped_procreation_reports_that_it_was_stopped() {
     let (_directory, workspace) = made();
-    let mutator = test_inputs::sample("integration", "sleep.sh");
+    let procreator = test_inputs::sample("integration", "sleep.sh");
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        job::run_mutation(&workspace, &mutator, 1, 0, 60, &stop),
+        job::run_procreation(&workspace, &procreator, 1, 0, 60, &stop),
         Err(JobError::Stopped)
     ));
 }

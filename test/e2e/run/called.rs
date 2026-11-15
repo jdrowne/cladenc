@@ -9,7 +9,7 @@ fn ran() -> TempDir {
         ("--progenitor", test_inputs::progenitor(directory.path())),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
         (
-            "--mutator",
+            "--procreator",
             test_inputs::sample("e2e", "record-arguments.sh"),
         ),
         (
@@ -20,9 +20,9 @@ fn ran() -> TempDir {
         ("--budget", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
-        ("--initial-mutations", "1".into()),
+        ("--initial-procreations", "1".into()),
         ("--workers", "1".into()),
-        ("--mutation-timeout", "30".into()),
+        ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
         ("--seed", "7".into()),
     ]
@@ -37,16 +37,16 @@ fn ran() -> TempDir {
 }
 
 #[test]
-fn the_mutator_is_given_the_parent_the_child_the_evaluations_and_the_output() {
+fn the_procreator_is_given_the_parent_the_child_the_evaluations_and_the_output() {
     let directory = ran();
     let run = directory.path().join("run");
     assert_eq!(
-        fs::read_to_string(run.join("mutations/1/output/arguments")).unwrap(),
+        fs::read_to_string(run.join("procreations/1/output/arguments")).unwrap(),
         format!(
-            "{0}/running/mutation-1/parent\n\
-             {0}/running/mutation-1/child\n\
+            "{0}/running/procreation-1/parent\n\
+             {0}/running/procreation-1/child\n\
              {0}/evaluations/0\n\
-             {0}/running/mutation-1/output\n",
+             {0}/running/procreation-1/output\n",
             run.display()
         )
     );

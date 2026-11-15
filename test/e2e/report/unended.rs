@@ -9,15 +9,15 @@ fn run(directory: &Path, evaluator: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        ("--mutator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--procreator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--evaluator", test_inputs::sample("e2e", evaluator)),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-mutations", "0".into()),
+        ("--initial-procreations", "0".into()),
         ("--workers", "1".into()),
-        ("--mutation-timeout", "60".into()),
+        ("--procreation-timeout", "60".into()),
         ("--evaluation-timeout", "60".into()),
         ("--seed", "7".into()),
     ]

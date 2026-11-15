@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
 use cladenc::policy::Policy;
 
 fn tasks() -> Vec<String> {
@@ -17,9 +17,9 @@ fn policy(budget: u64, growth: f64) -> Policy {
 
 fn with_every_task_given() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_mutation(0).unwrap();
+    let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_mutation(child, MutationOutcome::Failed)
+        .end_procreation(child, ProcreationOutcome::Failed)
         .unwrap();
     for task in tasks() {
         genealogy.start_evaluation(0, &task).unwrap();
@@ -31,7 +31,7 @@ fn with_every_task_given() -> Genealogy {
 }
 
 #[test]
-fn there_is_no_next_job_when_no_mutation_is_due_and_every_task_has_been_given() {
+fn there_is_no_next_job_when_no_procreation_is_due_and_every_task_has_been_given() {
     assert_eq!(policy(100, 0.0).next_job(&with_every_task_given(), 0), None);
 }
 

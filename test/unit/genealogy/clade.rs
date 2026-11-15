@@ -1,11 +1,11 @@
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 
 fn family() -> Genealogy {
     let mut genealogy = Genealogy::new();
     for parent in [0, 1, 0] {
-        let child = genealogy.start_mutation(parent).unwrap();
+        let child = genealogy.start_procreation(parent).unwrap();
         genealogy
-            .end_mutation(child, MutationOutcome::Created)
+            .end_procreation(child, ProcreationOutcome::Created)
             .unwrap();
     }
     genealogy

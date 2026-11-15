@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
 use cladenc::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -9,8 +9,8 @@ fn read_back(record: &Record) -> Record {
     serde_json::from_str(&line(record)).unwrap()
 }
 
-fn mutation_finished(outcome: MutationOutcome) -> Record {
-    Record::MutationFinished { child: 1, outcome }
+fn procreation_finished(outcome: ProcreationOutcome) -> Record {
+    Record::ProcreationFinished { child: 1, outcome }
 }
 
 fn evaluation_finished(outcome: EvaluationOutcome) -> Record {
@@ -22,37 +22,37 @@ fn evaluation_finished(outcome: EvaluationOutcome) -> Record {
 }
 
 #[test]
-fn the_start_of_a_mutation_is_written_with_its_child_and_parent() {
+fn the_start_of_a_procreation_is_written_with_its_child_and_parent() {
     assert_eq!(
-        line(&Record::MutationStarted {
+        line(&Record::ProcreationStarted {
             child: 1,
             parent: 0
         }),
-        r#"{"record":"mutation_started","child":1,"parent":0}"#
+        r#"{"record":"procreation_started","child":1,"parent":0}"#
     );
 }
 
 #[test]
-fn the_end_of_a_mutation_that_created_its_child_is_written_as_created() {
+fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
     assert_eq!(
-        line(&mutation_finished(MutationOutcome::Created)),
-        r#"{"record":"mutation_finished","child":1,"outcome":"created"}"#
+        line(&procreation_finished(ProcreationOutcome::Created)),
+        r#"{"record":"procreation_finished","child":1,"outcome":"created"}"#
     );
 }
 
 #[test]
-fn the_end_of_a_mutation_that_failed_is_written_as_failed() {
+fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
     assert_eq!(
-        line(&mutation_finished(MutationOutcome::Failed)),
-        r#"{"record":"mutation_finished","child":1,"outcome":"failed"}"#
+        line(&procreation_finished(ProcreationOutcome::Failed)),
+        r#"{"record":"procreation_finished","child":1,"outcome":"failed"}"#
     );
 }
 
 #[test]
-fn the_end_of_a_mutation_that_timed_out_is_written_as_timed_out() {
+fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
     assert_eq!(
-        line(&mutation_finished(MutationOutcome::TimedOut)),
-        r#"{"record":"mutation_finished","child":1,"outcome":"timed_out"}"#
+        line(&procreation_finished(ProcreationOutcome::TimedOut)),
+        r#"{"record":"procreation_finished","child":1,"outcome":"timed_out"}"#
     );
 }
 
@@ -100,8 +100,8 @@ fn the_end_of_a_search_is_written_with_its_best_harness() {
 }
 
 #[test]
-fn the_start_of_a_mutation_survives_being_written_and_read_back() {
-    let record = Record::MutationStarted {
+fn the_start_of_a_procreation_survives_being_written_and_read_back() {
+    let record = Record::ProcreationStarted {
         child: 1,
         parent: 0,
     };
@@ -109,8 +109,8 @@ fn the_start_of_a_mutation_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_a_mutation_survives_being_written_and_read_back() {
-    let record = mutation_finished(MutationOutcome::TimedOut);
+fn the_end_of_a_procreation_survives_being_written_and_read_back() {
+    let record = procreation_finished(ProcreationOutcome::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 

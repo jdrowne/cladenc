@@ -48,9 +48,9 @@ pub struct RunOptions {
     #[arg(
         long,
         value_name = "FILE",
-        help = "The program that carries out a mutation"
+        help = "The program that carries out a procreation"
     )]
-    pub mutator: PathBuf,
+    pub procreator: PathBuf,
     #[arg(
         long,
         value_name = "FILE",
@@ -87,9 +87,9 @@ pub struct RunOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "Mutations of the progenitor made before the first evaluation"
+        help = "Procreations of the progenitor made before the first evaluation"
     )]
-    pub initial_mutations: u64,
+    pub initial_procreations: u64,
     #[arg(
         long,
         value_name = "COUNT",
@@ -101,9 +101,9 @@ pub struct RunOptions {
         long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one mutation"
+        help = "The time limit of one procreation"
     )]
-    pub mutation_timeout: u64,
+    pub procreation_timeout: u64,
     #[arg(
         long,
         value_name = "SECONDS",

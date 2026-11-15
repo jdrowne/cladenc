@@ -25,14 +25,14 @@ impl RunOptions {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
             tasks: tasks(&self.tasks)?,
-            mutator: program(&self.mutator, "--mutator")?,
+            procreator: program(&self.procreator, "--procreator")?,
             evaluator: program(&self.evaluator, "--evaluator")?,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
-            initial_mutations: self.initial_mutations,
+            initial_procreations: self.initial_procreations,
             workers: self.workers,
-            mutation_timeout: self.mutation_timeout,
+            procreation_timeout: self.procreation_timeout,
             evaluation_timeout: self.evaluation_timeout,
             seed: self.seed,
         })

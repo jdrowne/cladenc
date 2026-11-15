@@ -2,7 +2,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
 
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
 use cladenc::journal::{self, Journal, Record, Settings, Started, State};
 use tempfile::TempDir;
 
@@ -10,25 +10,25 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/abs/harness"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
-        mutator: PathBuf::from("/abs/mutate"),
+        procreator: PathBuf::from("/abs/procreate"),
         evaluator: PathBuf::from("/abs/evaluate"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 5,
+        initial_procreations: 5,
         workers: 8,
-        mutation_timeout: 3600,
+        procreation_timeout: 3600,
         evaluation_timeout: 3600,
         seed: 7,
     }
 }
 
-fn mutation_started(child: u64, parent: u64) -> Record {
-    Record::MutationStarted { child, parent }
+fn procreation_started(child: u64, parent: u64) -> Record {
+    Record::ProcreationStarted { child, parent }
 }
 
-fn mutation_finished(child: u64, outcome: MutationOutcome) -> Record {
-    Record::MutationFinished { child, outcome }
+fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
+    Record::ProcreationFinished { child, outcome }
 }
 
 fn evaluation_started(harness: u64, task: &str) -> Record {
@@ -78,11 +78,11 @@ fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
 
 fn four_jobs_of_which_two_finished() -> [Record; 6] {
     [
-        mutation_started(1, 0),
+        procreation_started(1, 0),
         evaluation_started(0, "t1"),
-        mutation_started(2, 0),
+        procreation_started(2, 0),
         evaluation_started(0, "t2"),
-        mutation_finished(1, MutationOutcome::Created),
+        procreation_finished(1, ProcreationOutcome::Created),
         evaluation_finished(0, "t1", EvaluationOutcome::Success),
     ]
 }
@@ -100,27 +100,31 @@ fn a_journal_that_holds_no_job_gives_a_genealogy_of_the_progenitor_alone() {
 #[test]
 fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_mutation(0).unwrap();
-    genealogy.end_mutation(1, MutationOutcome::Created).unwrap();
+    genealogy.start_procreation(0).unwrap();
+    genealogy
+        .end_procreation(1, ProcreationOutcome::Created)
+        .unwrap();
     genealogy.start_evaluation(1, "t2").unwrap();
     genealogy
         .end_evaluation(1, "t2", EvaluationOutcome::Success)
         .unwrap();
-    genealogy.start_mutation(1).unwrap();
+    genealogy.start_procreation(1).unwrap();
     genealogy.start_evaluation(0, "t1").unwrap();
     genealogy
         .end_evaluation(0, "t1", EvaluationOutcome::TimedOut)
         .unwrap();
-    genealogy.end_mutation(2, MutationOutcome::Failed).unwrap();
+    genealogy
+        .end_procreation(2, ProcreationOutcome::Failed)
+        .unwrap();
     let state = rebuilt(&[
-        mutation_started(1, 0),
-        mutation_finished(1, MutationOutcome::Created),
+        procreation_started(1, 0),
+        procreation_finished(1, ProcreationOutcome::Created),
         evaluation_started(1, "t2"),
         evaluation_finished(1, "t2", EvaluationOutcome::Success),
-        mutation_started(2, 1),
+        procreation_started(2, 1),
         evaluation_started(0, "t1"),
         evaluation_finished(0, "t1", EvaluationOutcome::TimedOut),
-        mutation_finished(2, MutationOutcome::Failed),
+        procreation_finished(2, ProcreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
 }
@@ -132,7 +136,7 @@ fn the_jobs_that_did_not_finish_come_back_in_the_order_they_started_with_their_n
         [
             (
                 2,
-                Started::Mutation {
+                Started::Procreation {
                     child: 2,
                     parent: 0
                 }
@@ -151,8 +155,8 @@ fn the_jobs_that_did_not_finish_come_back_in_the_order_they_started_with_their_n
 #[test]
 fn a_journal_whose_jobs_all_finished_holds_no_unfinished_job() {
     let state = rebuilt(&[
-        mutation_started(1, 0),
-        mutation_finished(1, MutationOutcome::Created),
+        procreation_started(1, 0),
+        procreation_finished(1, ProcreationOutcome::Created),
         evaluation_started(1, "t1"),
         evaluation_finished(1, "t1", EvaluationOutcome::Failure),
     ]);
@@ -172,8 +176,8 @@ fn the_first_job_of_a_journal_that_holds_no_job_takes_number_0() {
 #[test]
 fn a_journal_that_holds_the_end_of_its_search_names_the_best_harness() {
     let state = rebuilt(&[
-        mutation_started(1, 0),
-        mutation_finished(1, MutationOutcome::Created),
+        procreation_started(1, 0),
+        procreation_finished(1, ProcreationOutcome::Created),
         Record::SearchFinished { best_harness: 1 },
     ]);
     assert_eq!(state.best_harness, Some(1));
@@ -181,16 +185,16 @@ fn a_journal_that_holds_the_end_of_its_search_names_the_best_harness() {
 
 #[test]
 fn a_journal_that_does_not_hold_the_end_of_its_search_names_no_best_harness() {
-    assert_eq!(rebuilt(&[mutation_started(1, 0)]).best_harness, None);
+    assert_eq!(rebuilt(&[procreation_started(1, 0)]).best_harness, None);
 }
 
 #[test]
 fn a_cut_short_last_line_is_ignored_when_the_journal_is_read() {
     let state = rebuilt_with_a_last_line_of(
-        &[mutation_started(1, 0)],
-        "{\"record\":\"mutation_finished\",\"chi",
+        &[procreation_started(1, 0)],
+        "{\"record\":\"procreation_finished\",\"chi",
     );
-    assert_eq!(state, rebuilt(&[mutation_started(1, 0)]));
+    assert_eq!(state, rebuilt(&[procreation_started(1, 0)]));
 }
 
 #[test]

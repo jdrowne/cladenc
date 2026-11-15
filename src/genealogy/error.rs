@@ -17,7 +17,7 @@ impl Display for GenealogyError {
         match self {
             Self::ParentNotCreated { parent } => write!(
                 formatter,
-                "harness {parent} cannot be mutated because it is not a created harness"
+                "harness {parent} cannot procreate because it is not a created harness"
             ),
             Self::ChildNotBeingCreated { child } => {
                 write!(formatter, "harness {child} is not being created")

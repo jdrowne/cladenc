@@ -3,21 +3,21 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use super::JournalError;
-use crate::genealogy::{EvaluationOutcome, HarnessId, MutationOutcome};
+use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
 use crate::policy::Policy;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
     pub progenitor: PathBuf,
     pub tasks: Vec<String>,
-    pub mutator: PathBuf,
+    pub procreator: PathBuf,
     pub evaluator: PathBuf,
     pub budget: u64,
     pub genealogy_growth: f64,
     pub confidence: f64,
-    pub initial_mutations: u64,
+    pub initial_procreations: u64,
     pub workers: u64,
-    pub mutation_timeout: u64,
+    pub procreation_timeout: u64,
     pub evaluation_timeout: u64,
     pub seed: u64,
 }
@@ -42,13 +42,13 @@ pub enum Record {
         #[serde(flatten)]
         settings: Settings,
     },
-    MutationStarted {
+    ProcreationStarted {
         child: HarnessId,
         parent: HarnessId,
     },
-    MutationFinished {
+    ProcreationFinished {
         child: HarnessId,
-        outcome: MutationOutcome,
+        outcome: ProcreationOutcome,
     },
     EvaluationStarted {
         harness: HarnessId,

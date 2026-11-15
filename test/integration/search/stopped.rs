@@ -8,18 +8,18 @@ use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
-fn settings(directory: &Path, mutator: &str, evaluator: &str) -> Settings {
+fn settings(directory: &Path, procreator: &str, evaluator: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        mutator: test_inputs::sample("integration", mutator),
+        procreator: test_inputs::sample("integration", procreator),
         evaluator: test_inputs::sample("integration", evaluator),
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 0,
+        initial_procreations: 0,
         workers: 1,
-        mutation_timeout: 60,
+        procreation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
@@ -66,10 +66,10 @@ fn a_program_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
 }
 
 #[test]
-fn a_mutator_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
+fn a_procreator_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), "exit-2.sh", "exit-0.sh");
-    settings.initial_mutations = 1;
+    settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
     let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
     assert!(matches!(
@@ -94,16 +94,16 @@ fn a_search_an_evaluator_stopped_names_the_harness_and_the_task_of_that_evaluati
 }
 
 #[test]
-fn a_search_a_mutator_stopped_names_the_parent_and_the_child_of_that_mutation() {
+fn a_search_a_procreator_stopped_names_the_parent_and_the_child_of_that_procreation() {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), "exit-2.sh", "exit-0.sh");
-    settings.initial_mutations = 1;
+    settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
     let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
     assert!(matches!(
         found,
         Err(SearchError::Job {
-            job: Started::Mutation {
+            job: Started::Procreation {
                 child: 1,
                 parent: 0
             },

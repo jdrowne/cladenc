@@ -5,15 +5,15 @@ use clap::error::ErrorKind;
 const OPTIONS: [(&str, &str); 13] = [
     ("--progenitor", "/progenitor"),
     ("--tasks", "/tasks"),
-    ("--mutator", "/mutator"),
+    ("--procreator", "/procreator"),
     ("--evaluator", "/evaluator"),
     ("--run-dir", "/run"),
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
-    ("--initial-mutations", "5"),
+    ("--initial-procreations", "5"),
     ("--workers", "8"),
-    ("--mutation-timeout", "3600"),
+    ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
     ("--seed", "7"),
 ];
@@ -105,16 +105,16 @@ fn a_confidence_between_0_and_100_is_accepted() {
 }
 
 #[test]
-fn initial_mutations_below_0_are_an_error() {
+fn initial_procreations_below_0_are_an_error() {
     assert_eq!(
-        refusal("--initial-mutations", "-1"),
+        refusal("--initial-procreations", "-1"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn no_initial_mutations_are_accepted() {
-    assert!(with("--initial-mutations", "0").is_ok());
+fn no_initial_procreations_are_accepted() {
+    assert!(with("--initial-procreations", "0").is_ok());
 }
 
 #[test]
@@ -123,9 +123,9 @@ fn no_workers_are_an_error() {
 }
 
 #[test]
-fn a_mutation_timeout_of_0_is_an_error() {
+fn a_procreation_timeout_of_0_is_an_error() {
     assert_eq!(
-        refusal("--mutation-timeout", "0"),
+        refusal("--procreation-timeout", "0"),
         ErrorKind::ValueValidation
     );
 }

@@ -38,7 +38,7 @@ impl<'a> Progress<'a> {
             genealogy: Genealogy::new(),
             again: VecDeque::new(),
             next_job: 0,
-            initial_left: settings.initial_mutations,
+            initial_left: settings.initial_procreations,
             initial_ended: false,
             running: 0,
             failure: None,
@@ -111,15 +111,15 @@ impl<'a> Progress<'a> {
     pub(super) fn end(&mut self, ended: Ended) {
         self.running -= 1;
         match ended {
-            Ended::Mutation {
+            Ended::Procreation {
                 child,
                 result: Ok(outcome),
                 ..
             } => {
                 self.genealogy
-                    .end_mutation(child, outcome)
-                    .expect("a mutation that ended was started");
-                self.record(&Record::MutationFinished { child, outcome });
+                    .end_procreation(child, outcome)
+                    .expect("a procreation that ended was started");
+                self.record(&Record::ProcreationFinished { child, outcome });
             }
             Ended::Evaluation {
                 harness,
@@ -135,7 +135,7 @@ impl<'a> Progress<'a> {
                     outcome,
                 });
             }
-            Ended::Mutation {
+            Ended::Procreation {
                 result: Err(JobError::Stopped),
                 ..
             }
@@ -143,12 +143,12 @@ impl<'a> Progress<'a> {
                 result: Err(JobError::Stopped),
                 ..
             } => {}
-            Ended::Mutation {
+            Ended::Procreation {
                 child,
                 parent,
                 result: Err(error),
             } => self.fail(SearchError::Job {
-                job: Started::Mutation { child, parent },
+                job: Started::Procreation { child, parent },
                 error,
             }),
             Ended::Evaluation {
@@ -182,7 +182,7 @@ impl<'a> Progress<'a> {
     fn next(&mut self) -> Option<Job> {
         if self.initial_left > 0 {
             self.initial_left -= 1;
-            return Some(Job::Mutation { parent: 0 });
+            return Some(Job::Procreation { parent: 0 });
         }
         self.initial_ended = self.initial_ended || self.running == 0;
         self.initial_ended
@@ -192,13 +192,13 @@ impl<'a> Progress<'a> {
 
     fn start(&mut self, job: Job) -> Started {
         let started = match job {
-            Job::Mutation { parent } => {
+            Job::Procreation { parent } => {
                 let child = self
                     .genealogy
-                    .start_mutation(parent)
-                    .expect("the parent of a mutation is a created harness");
-                self.record(&Record::MutationStarted { child, parent });
-                Started::Mutation { child, parent }
+                    .start_procreation(parent)
+                    .expect("the parent of a procreation is a created harness");
+                self.record(&Record::ProcreationStarted { child, parent });
+                Started::Procreation { child, parent }
             }
             Job::Evaluation { harness, task } => {
                 self.genealogy

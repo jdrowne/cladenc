@@ -13,10 +13,10 @@ mod genealogy {
     mod clade;
     mod created;
     mod evaluation;
-    mod mutation;
+    mod procreation;
     mod progenitor;
     mod refused_evaluation;
-    mod refused_mutation;
+    mod refused_procreation;
     mod tasks;
     mod worded;
 }
@@ -42,8 +42,8 @@ mod policy {
     mod focus;
     mod growth;
     mod lower_bound;
-    mod mutation;
     mod no_job;
+    mod procreation;
     mod repeatable;
 }
 

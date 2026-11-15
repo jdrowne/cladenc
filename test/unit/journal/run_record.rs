@@ -10,14 +10,14 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/abs/harness"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
-        mutator: PathBuf::from("/abs/mutate"),
+        procreator: PathBuf::from("/abs/procreate"),
         evaluator: PathBuf::from("/abs/evaluate"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_mutations: 5,
+        initial_procreations: 5,
         workers: 8,
-        mutation_timeout: 3600,
+        procreation_timeout: 3600,
         evaluation_timeout: 3600,
         seed: 7,
     }
@@ -52,9 +52,9 @@ fn the_run_record_is_written_key_for_key() {
         run(settings()).line().unwrap(),
         concat!(
             r#"{"record":"run","format":1,"progenitor":"/abs/harness","tasks":["t1","t2"],"#,
-            r#""mutator":"/abs/mutate","evaluator":"/abs/evaluate","budget":800,"#,
-            r#""genealogy_growth":0.6,"confidence":99.0,"initial_mutations":5,"workers":8,"#,
-            r#""mutation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
+            r#""procreator":"/abs/procreate","evaluator":"/abs/evaluate","budget":800,"#,
+            r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
+            r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
         )
     );
 }

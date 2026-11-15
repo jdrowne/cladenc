@@ -7,16 +7,16 @@ use crate::genealogy::{Genealogy, HarnessId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Started {
-    Mutation { child: HarnessId, parent: HarnessId },
+    Procreation { child: HarnessId, parent: HarnessId },
     Evaluation { harness: HarnessId, task: String },
 }
 
 impl Display for Started {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Mutation { child, parent } => write!(
+            Self::Procreation { child, parent } => write!(
                 formatter,
-                "the mutation of harness {parent} into harness {child}"
+                "the procreation of harness {child} by harness {parent}"
             ),
             Self::Evaluation { harness, task } => write!(
                 formatter,
@@ -75,19 +75,19 @@ impl State {
         let refused = |error| JournalError::Refused { line, error };
         match record {
             Record::Run { .. } => return Err(JournalError::RunRecordRepeated { line }),
-            Record::MutationStarted { child, parent } => {
+            Record::ProcreationStarted { child, parent } => {
                 if child != self.genealogy.harness_count() {
                     return Err(JournalError::WrongChild { line, child });
                 }
-                self.genealogy.start_mutation(parent).map_err(refused)?;
-                self.start(Started::Mutation { child, parent });
+                self.genealogy.start_procreation(parent).map_err(refused)?;
+                self.start(Started::Procreation { child, parent });
             }
-            Record::MutationFinished { child, outcome } => {
+            Record::ProcreationFinished { child, outcome } => {
                 self.genealogy
-                    .end_mutation(child, outcome)
+                    .end_procreation(child, outcome)
                     .map_err(refused)?;
                 self.unfinished
-                    .retain(|(_, job)| !matches!(job, Started::Mutation { child: running, .. } if *running == child));
+                    .retain(|(_, job)| !matches!(job, Started::Procreation { child: running, .. } if *running == child));
             }
             Record::EvaluationStarted { harness, task } => {
                 self.genealogy

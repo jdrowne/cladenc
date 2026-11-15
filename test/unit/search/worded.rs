@@ -60,16 +60,16 @@ fn a_search_an_evaluation_stopped_names_the_harness_and_the_task() {
 }
 
 #[test]
-fn a_search_a_mutation_stopped_names_the_parent_and_the_child() {
+fn a_search_a_procreation_stopped_names_the_parent_and_the_child() {
     assert_eq!(
         worded(SearchError::Job {
-            job: Started::Mutation {
+            job: Started::Procreation {
                 child: 3,
                 parent: 0
             },
             error: JobError::Signal(9)
         }),
         "the search stopped before its end: \
-         the mutation of harness 0 into harness 3 was ended by signal 9"
+         the procreation of harness 3 by harness 0 was ended by signal 9"
     );
 }

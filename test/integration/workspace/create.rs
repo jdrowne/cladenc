@@ -52,9 +52,9 @@ fn a_new_run_directory_holds_an_empty_directory_for_the_evaluations_of_harness_0
 }
 
 #[test]
-fn a_new_run_directory_holds_no_mutation() {
+fn a_new_run_directory_holds_no_procreation() {
     let (_directory, run_directory) = made();
-    assert_eq!(entries(run_directory.join("mutations")), 0);
+    assert_eq!(entries(run_directory.join("procreations")), 0);
 }
 
 #[test]

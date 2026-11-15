@@ -4,11 +4,11 @@ use std::path::Path;
 use cladenc::journal::{self, Journal, JournalError, Record};
 use tempfile::TempDir;
 
-const FIRST: &str = r#"{"record":"mutation_started","child":1,"parent":0}"#;
-const SECOND: &str = r#"{"record":"mutation_started","child":2,"parent":0}"#;
+const FIRST: &str = r#"{"record":"procreation_started","child":1,"parent":0}"#;
+const SECOND: &str = r#"{"record":"procreation_started","child":2,"parent":0}"#;
 
 fn started(child: u64) -> Record {
-    Record::MutationStarted { child, parent: 0 }
+    Record::ProcreationStarted { child, parent: 0 }
 }
 
 fn holding(text: &str) -> TempDir {
@@ -79,7 +79,7 @@ fn two_records_appended_to_one_journal_are_kept_in_their_order() {
 
 #[test]
 fn a_cut_short_last_line_is_gone_after_the_next_record_is_appended() {
-    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"mutation_fin"));
+    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"procreation_fin"));
     assert_eq!(
         after_appending(&cut_short, &started(2)),
         format!("{FIRST}\n{SECOND}\n")

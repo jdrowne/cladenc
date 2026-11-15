@@ -9,8 +9,8 @@ fn options(directory: &Path) -> Vec<String> {
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
         (
-            "--mutator",
-            test_inputs::sample("e2e", "mutate-solve-one-more.sh"),
+            "--procreator",
+            test_inputs::sample("e2e", "procreate-solve-one-more.sh"),
         ),
         (
             "--evaluator",
@@ -20,9 +20,9 @@ fn options(directory: &Path) -> Vec<String> {
         ("--budget", "10".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
-        ("--initial-mutations", "0".into()),
+        ("--initial-procreations", "0".into()),
         ("--workers", "1".into()),
-        ("--mutation-timeout", "30".into()),
+        ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
         ("--seed", "7".into()),
     ]

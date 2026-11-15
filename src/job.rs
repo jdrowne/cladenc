@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
-use crate::genealogy::{EvaluationOutcome, HarnessId, MutationOutcome};
+use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
 use program::{Ending, run};
@@ -33,20 +33,20 @@ impl Display for JobError {
 
 impl Error for JobError {}
 
-pub fn run_mutation(
+pub fn run_procreation(
     workspace: &Workspace,
-    mutator: &Path,
+    procreator: &Path,
     child: HarnessId,
     parent: HarnessId,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<MutationOutcome, JobError> {
+) -> Result<ProcreationOutcome, JobError> {
     workspace
-        .start_mutation(child, parent)
+        .start_procreation(child, parent)
         .map_err(JobError::Io)?;
-    let job = workspace.running_mutation(child);
+    let job = workspace.running_procreation(child);
     let made = job.join("child");
-    let mut command = Command::new(mutator);
+    let mut command = Command::new(procreator);
     command
         .arg(job.join("parent"))
         .arg(&made)
@@ -54,13 +54,13 @@ pub fn run_mutation(
         .arg(job.join("output"));
     let outcome = match run(command, &job, time_limit, stop)? {
         Ending::Passed if holds_only_harness_files(&made).unwrap_or(false) => {
-            MutationOutcome::Created
+            ProcreationOutcome::Created
         }
-        Ending::Passed | Ending::Failed => MutationOutcome::Failed,
-        Ending::TimedOut => MutationOutcome::TimedOut,
+        Ending::Passed | Ending::Failed => ProcreationOutcome::Failed,
+        Ending::TimedOut => ProcreationOutcome::TimedOut,
     };
     workspace
-        .end_mutation(child, outcome)
+        .end_procreation(child, outcome)
         .map(|()| outcome)
         .map_err(JobError::Io)
 }

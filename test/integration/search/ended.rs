@@ -10,14 +10,14 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        mutator: test_inputs::sample("integration", "mutate-solve-one-more.sh"),
+        procreator: test_inputs::sample("integration", "procreate-solve-one-more.sh"),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 10,
         genealogy_growth: 0.0,
         confidence: 99.0,
-        initial_mutations: 0,
+        initial_procreations: 0,
         workers: 1,
-        mutation_timeout: 30,
+        procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
     }

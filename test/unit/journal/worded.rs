@@ -81,14 +81,14 @@ fn a_record_after_the_search_finished_is_worded() {
 }
 
 #[test]
-fn a_mutation_is_named_by_its_parent_and_its_child() {
+fn a_procreation_is_named_by_its_parent_and_its_child() {
     assert_eq!(
-        Started::Mutation {
+        Started::Procreation {
             child: 3,
             parent: 0
         }
         .to_string(),
-        "the mutation of harness 0 into harness 3"
+        "the procreation of harness 3 by harness 0"
     );
 }
 

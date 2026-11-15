@@ -10,7 +10,7 @@ fn worded(error: impl Error) -> String {
 fn a_parent_that_is_not_created_is_worded() {
     assert_eq!(
         worded(GenealogyError::ParentNotCreated { parent: 3 }),
-        "harness 3 cannot be mutated because it is not a created harness"
+        "harness 3 cannot procreate because it is not a created harness"
     );
 }
 
