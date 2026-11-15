@@ -398,11 +398,15 @@ jobs:
         with:
           name: package
           path: package
-      - name: Install the package on a clean system and run cladenc
+      - name: Install the package and Docker on a clean system and run both
         run: >-
-          docker run --rm --volume "$PWD/package:/package:ro" ubuntu:latest
-          sh -ec "dpkg --install /package/cladenc-linux-arm64.deb
-          && cladenc --version"
+          docker run --rm --env DEBIAN_FRONTEND=noninteractive
+          --volume "$PWD/package:/package:ro" ubuntu:latest
+          sh -ec "apt-get update
+          && apt-get install --yes --no-install-recommends
+          /package/cladenc-linux-arm64.deb
+          && cladenc --version
+          && docker --version"
   unit-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-24.04-arm
