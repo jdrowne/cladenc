@@ -13,6 +13,7 @@ pub use checks::Refused;
 #[derive(Clone, Debug, Parser)]
 #[command(
     name = "cladenc",
+    version,
     about = "Searches for a better agentic coding harness by letting harnesses modify themselves"
 )]
 pub struct Cli {

@@ -17,3 +17,5 @@ mod run {
     mod signals;
     mod stopped;
 }
+
+mod version;

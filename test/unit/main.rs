@@ -5,6 +5,7 @@ mod cli {
     mod resume;
     mod run;
     mod values;
+    mod version;
 }
 
 mod genealogy {
