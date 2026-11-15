@@ -1,10 +1,13 @@
 mod benchmark {
+    mod named;
     mod refused;
+    mod several;
     mod tasks;
     mod worded;
 }
 
 mod cli {
+    mod benchmarks;
     mod checks;
     mod help;
     mod image;

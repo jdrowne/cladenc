@@ -1,6 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::EvaluationOutcome;
 use cladenc::job::{self, JobError, Launch};
 use cladenc::model::Model;
@@ -31,9 +32,9 @@ fn evaluated_as(evaluation: &Evaluation<'_>) -> Evaluated {
     let workspace = Workspace::create(&run_directory, &progenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     workspace
-        .copy_benchmark(&benchmark, &["t1".to_owned()])
+        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    test_inputs::check(&run_directory, "t1", evaluation.check);
+    test_inputs::kept_check(&run_directory, "t1", evaluation.check);
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command: evaluation.run_command,
@@ -49,7 +50,7 @@ fn evaluated_as(evaluation: &Evaluation<'_>) -> Evaluated {
         &workspace,
         &launch,
         evaluation.harness,
-        "t1",
+        "benchmark/t1",
         evaluation.time_limit,
         &stop,
     );
@@ -81,7 +82,7 @@ fn within(time_limit: u64, run_command: &str, check: &str) -> Evaluated {
 }
 
 fn kept(evaluated: &Evaluated, file: &str) -> String {
-    fs::read_to_string(evaluated.workspace.evaluation(0, "t1").join(file)).unwrap()
+    fs::read_to_string(evaluated.workspace.evaluation(0, "benchmark/t1").join(file)).unwrap()
 }
 
 fn left_by_the_harness(run_command: &str, file: &str) -> String {
@@ -207,7 +208,13 @@ fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
 fn a_harness_that_changes_the_files_leaves_the_task_unchanged() {
     let evaluated = evaluated(FINISH, FINISHED);
     assert_eq!(
-        fs::read_to_string(evaluated.workspace.task("t1").join("files/work.txt")).unwrap(),
+        fs::read_to_string(
+            evaluated
+                .workspace
+                .task("benchmark/t1")
+                .join("files/work.txt")
+        )
+        .unwrap(),
         "to do\n"
     );
 }
@@ -272,7 +279,7 @@ fn the_check_is_given_the_files_the_work_started_from() {
 fn the_check_cannot_change_its_task() {
     let evaluated = evaluated(FINISH, "echo changed > /task/statement");
     assert_eq!(
-        fs::read_to_string(evaluated.workspace.task("t1").join("statement")).unwrap(),
+        fs::read_to_string(evaluated.workspace.task("benchmark/t1").join("statement")).unwrap(),
         "Finish the work of t1.\n"
     );
 }
@@ -312,7 +319,7 @@ fn an_evaluation_that_ended_keeps_no_copy_of_the_harness() {
     assert!(
         !evaluated
             .workspace
-            .evaluation(0, "t1")
+            .evaluation(0, "benchmark/t1")
             .join("harness")
             .exists()
     );
@@ -332,7 +339,7 @@ fn a_harness_that_timed_out_is_not_checked() {
     assert!(
         !evaluated
             .workspace
-            .evaluation(0, "t1")
+            .evaluation(0, "benchmark/t1")
             .join("work/checked")
             .exists()
     );
@@ -367,7 +374,7 @@ fn what_docker_said_of_a_check_it_did_not_start_is_kept_with_the_check() {
     let evaluated = evaluated(FINISH, "exit 125");
     let kept = evaluated
         .workspace
-        .running_evaluation(0, "t1")
+        .running_evaluation(0, "benchmark/t1")
         .join("check/stderr");
     assert!(matches!(evaluated.result, Err(JobError::Docker(said)) if said == kept));
 }
@@ -378,7 +385,7 @@ fn after_an_error_the_directory_of_an_evaluation_is_still_under_running() {
     assert!(
         evaluated
             .workspace
-            .running_evaluation(0, "t1")
+            .running_evaluation(0, "benchmark/t1")
             .join("stdout")
             .is_file()
     );

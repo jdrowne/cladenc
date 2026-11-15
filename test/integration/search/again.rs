@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::journal::{self, Journal, Record, Settings};
 use cladenc::search;
 use cladenc::workspace::Workspace;
@@ -14,8 +15,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t1"]),
-        tasks: vec!["t1".to_owned()],
+        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -65,7 +65,7 @@ fn resumed_after_a_procreation_stopped() -> TempDir {
 }
 
 fn resumed_after_an_evaluation_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, Some("t1"), "evaluation-0-t1/work/leftover", 0)
+    resumed_after_a_stop_at(99, Some("t1"), "evaluation-0-benchmark+t1/work/leftover", 0)
 }
 
 fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
@@ -75,7 +75,7 @@ fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.progenitor)
         .unwrap()
-        .copy_benchmark(&settings.benchmark, &settings.tasks)
+        .copy_benchmark(&settings.benchmarks[0])
         .unwrap();
     let mut journal = Journal::open(&run_directory).unwrap();
     journal
@@ -87,7 +87,7 @@ fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
     journal
         .append(&Record::EvaluationStarted {
             harness: 0,
-            task: "t1".to_owned(),
+            task: "benchmark/t1".to_owned(),
         })
         .unwrap();
     run_directory
@@ -118,7 +118,7 @@ fn what_an_evaluation_left_under_running_is_gone_before_it_runs_again() {
     assert!(
         !directory
             .path()
-            .join("run/evaluations/0/t1/work/leftover")
+            .join("run/evaluations/0/benchmark/t1/work/leftover")
             .exists()
     );
 }
@@ -129,7 +129,7 @@ fn an_evaluation_that_runs_again_ends_with_its_directory_in_place() {
     assert!(
         directory
             .path()
-            .join("run/evaluations/0/t1/outcome")
+            .join("run/evaluations/0/benchmark/t1/outcome")
             .is_file()
     );
 }
@@ -140,7 +140,7 @@ fn a_job_that_runs_again_writes_no_second_started_record() {
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert_eq!(
         journal
-            .matches(r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#)
+            .matches(r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#)
             .count(),
         1
     );

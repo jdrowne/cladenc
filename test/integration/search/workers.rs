@@ -1,6 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::journal::{self, Record, Settings};
 use cladenc::search;
 
@@ -11,8 +12,13 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4", "t5"]),
-        tasks: (1..=5).map(|number| format!("t{number}")).collect(),
+        benchmarks: vec![
+            Benchmark::read(&test_inputs::benchmark(
+                directory.path(),
+                &["t1", "t2", "t3", "t4", "t5"],
+            ))
+            .unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,

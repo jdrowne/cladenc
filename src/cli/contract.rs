@@ -57,7 +57,8 @@ A procreation is carried out by the harness that procreates. /work holds a
 second copy of its source code, and the instruction asks the harness to
 improve that copy: what the harness leaves in /work is its child.
 /evaluations holds the finished evaluations of the harness, to read: one
-directory for each task, holding what the evaluation of that task kept.
+directory for each benchmark, and in it one for each task, holding what the
+evaluation of that task kept.
 
 How the harness ends decides what is recorded:
 
@@ -114,10 +115,24 @@ underscores and hyphens, and the directory holds
 
 and may hold more, such as tests that the check runs. A file that is in the
 benchmark and in no task is left alone. A benchmark that holds no task is
-refused, and so is one with a task that lacks one of the three. The tasks
-are copied into benchmark in the run directory when a search is started, so
-the search keeps the tasks it started with, and `cladenc resume` does not
-read the directory that --benchmark named.
+refused, and so is one with a task that lacks one of the three.
+
+--benchmark is given once for each benchmark of the search. A search that
+is given several tries its harnesses on the tasks of all of them, and looks
+for the one harness that passes the largest share of those tasks. Every
+task counts the same, so a benchmark with more tasks weighs more. The name
+of a benchmark is the name of its directory, made of the characters the id
+of a task is made of, and a task of a search is known by the two together,
+as
+
+    <BENCHMARK>/<TASK>
+
+so two benchmarks may each hold a task of the same id. Two benchmarks whose
+directories have the same name are refused. The tasks are copied into
+benchmarks in the run directory when a search is started, each into a
+directory named after its benchmark, so the search keeps the tasks it
+started with, and `cladenc resume` does not read the directories that
+--benchmark named.
 
 An evaluation is one harness tried on one task, and cladenc carries it out
 in two steps. First the harness is started, as it is for a procreation.
@@ -147,7 +162,8 @@ How an evaluation ends decides what is recorded:
                                    evaluation is recorded as timed out
 
 evaluations in the run directory keeps every evaluation, in a directory
-named after the harness and in it one named after the task, which holds
+named after the harness, in it one named after the benchmark, and in that
+one named after the task, which holds
 
   outcome    one word: success, failure or timed_out
   statement  the statement of the task

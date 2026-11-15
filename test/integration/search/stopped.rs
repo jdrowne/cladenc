@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::job::JobError;
 use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
@@ -14,8 +15,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t1"]),
-        tasks: vec!["t1".to_owned()],
+        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -44,7 +44,7 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
     let run_directory = directory.path().join("run");
-    let id_file = run_directory.join("running/evaluation-0-t1/work/id");
+    let id_file = run_directory.join("running/evaluation-0-benchmark+t1/work/id");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
@@ -105,7 +105,7 @@ fn a_search_an_evaluation_stopped_names_the_harness_and_the_task_of_that_evaluat
         Err(SearchError::Job {
             job: Started::Evaluation { harness: 0, task },
             ..
-        }) if task == "t1"
+        }) if task == "benchmark/t1"
     ));
 }
 
@@ -128,7 +128,7 @@ fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_job_t
     let (directory, _found) = stopped_at_its_first_evaluation();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
+        r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 
@@ -148,7 +148,9 @@ fn setting_the_stop_flag_stops_the_search() {
 fn a_search_stopped_by_its_flag_leaves_no_container_behind() {
     let (directory, _found, _said) = stopped_by_its_flag();
     assert!(test_inputs::container_is_gone(
-        &directory.path().join("run/running/evaluation-0-t1/work/id")
+        &directory
+            .path()
+            .join("run/running/evaluation-0-benchmark+t1/work/id")
     ));
 }
 
@@ -157,7 +159,7 @@ fn a_search_stopped_by_its_flag_writes_no_record_for_the_job_that_was_running() 
     let (directory, _found, _said) = stopped_by_its_flag();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
+        r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 

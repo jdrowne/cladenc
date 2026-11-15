@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
 use cladenc::job::{self, JobError, Launch};
 use cladenc::model::Model;
@@ -179,23 +180,23 @@ fn a_harness_can_read_the_ended_evaluations_of_its_parent_and_none_still_running
     let (directory, workspace) = made_at("run");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     workspace
-        .copy_benchmark(&benchmark, &["t1".to_owned(), "t2".to_owned()])
+        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    workspace.start_evaluation(0, "t1").unwrap();
+    workspace.start_evaluation(0, "benchmark/t1").unwrap();
     workspace
-        .end_evaluation(0, "t1", EvaluationOutcome::Failure)
+        .end_evaluation(0, "benchmark/t1", EvaluationOutcome::Failure)
         .unwrap();
-    workspace.start_evaluation(0, "t2").unwrap();
+    workspace.start_evaluation(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /evaluations > evidence",
+        "ls /evaluations /evaluations/benchmark > evidence",
         &workspace,
         0,
         30,
     );
     assert_eq!(
         fs::read_to_string(workspace.harness(1).join("evidence")).unwrap(),
-        "t1\n"
+        "/evaluations:\nbenchmark\n\n/evaluations/benchmark:\nt1\n"
     );
 }
 

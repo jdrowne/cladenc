@@ -13,6 +13,7 @@ mod resume {
 }
 
 mod start {
+    mod benchmarks;
     mod built;
     mod called;
     mod finished;

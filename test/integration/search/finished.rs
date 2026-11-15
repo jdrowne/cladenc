@@ -4,6 +4,7 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::journal::{self, Record, Settings};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -14,8 +15,13 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
-        tasks: (1..=5).map(|number| format!("t{number}")).collect(),
+        benchmarks: vec![
+            Benchmark::read(&test_inputs::benchmark(
+                directory,
+                &["t1", "t2", "t3", "t4", "t5"],
+            ))
+            .unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -33,7 +39,7 @@ fn settings(directory: &Path) -> Settings {
 }
 
 fn over_one_task(settings: &mut Settings) {
-    settings.tasks = vec!["t1".to_owned()];
+    settings.benchmarks[0].tasks = vec!["t1".to_owned()];
     settings.genealogy_growth = 0.0;
     settings.initial_procreations = 0;
     settings.budget = 10;
@@ -105,7 +111,12 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
 fn a_search_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
     let (directory, _found) = searched(over_one_task);
     assert_eq!(
-        fs::read_to_string(directory.path().join("run/benchmark/t1/statement")).unwrap(),
+        fs::read_to_string(
+            directory
+                .path()
+                .join("run/benchmarks/benchmark/t1/statement")
+        )
+        .unwrap(),
         "Finish the work of t1.\n"
     );
 }
@@ -113,12 +124,18 @@ fn a_search_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
 #[test]
 fn a_search_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
     let (directory, _found) = searched(over_one_task);
-    assert!(!directory.path().join("run/benchmark/t2").exists());
+    assert!(
+        !directory
+            .path()
+            .join("run/benchmarks/benchmark/t2")
+            .exists()
+    );
 }
 
 #[test]
 fn a_search_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory() {
-    let (_directory, found) = searched(|settings| settings.tasks.push("missing".to_owned()));
+    let (_directory, found) =
+        searched(|settings| settings.benchmarks[0].tasks.push("missing".to_owned()));
     assert!(matches!(found, Err(SearchError::Io(_))));
 }
 
@@ -227,7 +244,7 @@ fn a_search_says_the_number_of_each_evaluation_it_starts_and_its_budget() {
     let (_directory, said) = said_over_one_task();
     assert!(said.iter().any(|line| {
         line.starts_with("cladenc: started the evaluation of harness ")
-            && line.ends_with(" on task t1, evaluation 2 of 10")
+            && line.ends_with(" on task benchmark/t1, evaluation 2 of 10")
     }));
 }
 
@@ -244,8 +261,8 @@ fn a_search_says_how_a_procreation_ended_and_where_its_child_is_kept() {
 fn a_search_says_how_an_evaluation_ended_and_where_what_it_left_is_kept() {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
-        "cladenc: the evaluation of harness 1 on task t1 succeeded: what it left is kept in {}",
-        directory.path().join("run/evaluations/1/t1").display()
+        "cladenc: the evaluation of harness 1 on task benchmark/t1 succeeded: what it left is kept in {}",
+        directory.path().join("run/evaluations/1/benchmark/t1").display()
     )));
 }
 

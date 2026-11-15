@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use super::JournalError;
+use crate::benchmark::Benchmark;
 use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use crate::job::Launch;
 use crate::model::{self, Model};
@@ -19,8 +20,7 @@ pub struct Settings {
     pub docker_build_timeout: Option<u64>,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
-    pub benchmark: PathBuf,
-    pub tasks: Vec<String>,
+    pub benchmarks: Vec<Benchmark>,
     pub budget: u64,
     pub genealogy_growth: f64,
     pub confidence: f64,
@@ -63,12 +63,19 @@ impl Settings {
         }
     }
 
+    pub fn tasks(&self) -> Vec<String> {
+        self.benchmarks
+            .iter()
+            .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
+            .collect()
+    }
+
     pub fn policy(&self) -> Policy {
         Policy {
             budget: self.budget,
             growth: self.genealogy_growth,
             confidence: self.confidence,
-            tasks: self.tasks.clone(),
+            tasks: self.tasks(),
             seed: self.seed,
         }
     }

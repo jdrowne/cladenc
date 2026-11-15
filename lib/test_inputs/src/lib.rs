@@ -101,7 +101,11 @@ pub fn progenitor(directory: &Path) -> PathBuf {
 }
 
 pub fn benchmark(directory: &Path, tasks: &[&str]) -> PathBuf {
-    let benchmark = directory.join("benchmark");
+    benchmark_named(directory, "benchmark", tasks)
+}
+
+pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf {
+    let benchmark = directory.join(name);
     fs::create_dir_all(&benchmark).expect("the benchmark can be made");
     for id in tasks {
         task(&benchmark, id);
@@ -181,9 +185,9 @@ pub fn end_with_125_on(directory: &Path, task: &str) {
     fs::write(marker, "").expect("the marker can be written");
 }
 
-pub fn end_with_125_on_no_more(directory: &Path, task: &str) {
-    let marker = directory
-        .join("benchmark")
+pub fn end_with_125_on_no_more(run_directory: &Path, task: &str) {
+    let marker = run_directory
+        .join("benchmarks/benchmark")
         .join(task)
         .join("files/end-with-125");
     fs::remove_file(marker).expect("the marker can be removed");
@@ -192,6 +196,10 @@ pub fn end_with_125_on_no_more(directory: &Path, task: &str) {
 pub fn check(directory: &Path, task: &str, command: &str) {
     let check = directory.join("benchmark").join(task).join("check");
     fs::write(check, format!("#!/bin/sh\n{command}\n")).expect("the check can be written");
+}
+
+pub fn kept_check(run_directory: &Path, task: &str, command: &str) {
+    check(&run_directory.join("benchmarks"), task, command);
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

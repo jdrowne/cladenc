@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::job::JobError;
 use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
@@ -20,8 +21,13 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
-        tasks: (1..=5).map(|number| format!("t{number}")).collect(),
+        benchmarks: vec![
+            Benchmark::read(&test_inputs::benchmark(
+                directory,
+                &["t1", "t2", "t3", "t4", "t5"],
+            ))
+            .unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -181,7 +187,7 @@ fn a_search_that_a_job_stops_says_what_became_of_the_job() {
     assert!(stopped.iter().any(|line| {
         line.starts_with("cladenc: the evaluation of harness ")
             && line.contains(
-                " on task t3 could not be carried out: Docker did not start its container, and ",
+                " on task benchmark/t3 could not be carried out: Docker did not start its container, and ",
             )
     }));
 }
@@ -209,7 +215,7 @@ fn a_resumed_search_says_that_it_starts_again_the_job_that_was_running() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(resumed[1..2].iter().any(|line| {
         line.starts_with("cladenc: started again the evaluation of harness ")
-            && line.ends_with(" on task t3")
+            && line.ends_with(" on task benchmark/t3")
     }));
 }
 
@@ -249,6 +255,6 @@ fn a_search_is_resumed_without_the_directory_its_benchmark_was_given_in() {
     test_inputs::end_with_125_at(&settings.progenitor, 0);
     let _ = search::search(&settings, &run_directory, &stop, None);
     test_inputs::end_with_125_no_more(&run_directory);
-    fs::remove_dir_all(&settings.benchmark).unwrap();
+    fs::remove_dir_all(&settings.benchmarks[0].directory).unwrap();
     assert!(search::resume(&run_directory, &stop, None).is_ok());
 }

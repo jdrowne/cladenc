@@ -39,7 +39,10 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 
 #[test]
 fn the_instruction_says_where_the_evaluations_are() {
-    assert!(job::INSTRUCTION.contains("/evaluations holds one directory for each task"));
+    assert!(job::INSTRUCTION.contains(
+        "/evaluations holds one directory for each benchmark, and in it one directory for each \
+         task you have been tried on. In the directory of a task, "
+    ));
 }
 
 #[test]

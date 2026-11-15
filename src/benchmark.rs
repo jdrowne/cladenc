@@ -5,17 +5,76 @@ use std::io;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
+
 use crate::workspace::holds_only_harness_files;
 
 pub const STATEMENT: &str = "statement";
 pub const FILES: &str = "files";
 pub const CHECK: &str = "check";
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct Benchmark {
+    pub directory: PathBuf,
+    pub tasks: Vec<String>,
+}
+
+impl Benchmark {
+    pub fn read(directory: &Path) -> Result<Self, BenchmarkError> {
+        let benchmark = Self {
+            directory: directory.to_owned(),
+            tasks: tasks(directory)?,
+        };
+        if is_name(&benchmark.name()) {
+            Ok(benchmark)
+        } else {
+            Err(BenchmarkError::NotNamed {
+                directory: benchmark.name(),
+            })
+        }
+    }
+
+    pub fn name(&self) -> String {
+        name_of(&self.directory)
+    }
+
+    pub fn task(&self, id: &str) -> String {
+        format!("{}/{id}", self.name())
+    }
+}
+
+pub fn told_apart(benchmarks: &[Benchmark]) -> Result<(), BenchmarkError> {
+    benchmarks
+        .iter()
+        .enumerate()
+        .try_for_each(|(place, benchmark)| {
+            benchmarks[..place]
+                .iter()
+                .find(|earlier| earlier.name() == benchmark.name())
+                .map_or(Ok(()), |earlier| Err(not_told_apart(earlier, benchmark)))
+        })
+}
+
+fn not_told_apart(earlier: &Benchmark, benchmark: &Benchmark) -> BenchmarkError {
+    if earlier.directory == benchmark.directory {
+        BenchmarkError::GivenTwice {
+            directory: benchmark.directory.clone(),
+        }
+    } else {
+        BenchmarkError::SameName {
+            name: benchmark.name(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BenchmarkError {
     NotADirectory,
     OneTask,
     NoTask,
+    NotNamed { directory: String },
+    GivenTwice { directory: PathBuf },
+    SameName { name: String },
     NotAnId { directory: String },
     NoStatement { task: String },
     NoFiles { task: String },
@@ -38,6 +97,21 @@ impl Display for BenchmarkError {
             Self::NoTask => write!(
                 formatter,
                 "the directory given holds no directory, and so no task"
+            ),
+            Self::NotNamed { directory } => write!(
+                formatter,
+                "its directory is named `{directory}`, and the name of a benchmark is made of \
+                 letters, digits, dots, underscores and hyphens alone"
+            ),
+            Self::GivenTwice { directory } => write!(
+                formatter,
+                "the benchmark {} is given twice",
+                directory.display()
+            ),
+            Self::SameName { name } => write!(
+                formatter,
+                "two of the benchmarks given are in directories named `{name}`, and a task is \
+                 known by the name of its benchmark and its id together"
             ),
             Self::NotAnId { directory } => write!(
                 formatter,
@@ -91,12 +165,16 @@ pub fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
         .collect()
 }
 
-fn task(directory: &Path) -> Result<String, BenchmarkError> {
-    let task = directory
+fn name_of(directory: &Path) -> String {
+    directory
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    if !is_task_id(&task) {
+        .unwrap_or_default()
+}
+
+fn task(directory: &Path) -> Result<String, BenchmarkError> {
+    let task = name_of(directory);
+    if !is_name(&task) {
         return Err(BenchmarkError::NotAnId { directory: task });
     }
     if !is_statement(&directory.join(STATEMENT)) {
@@ -114,9 +192,11 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     Ok(task)
 }
 
-fn is_task_id(name: &str) -> bool {
-    name.chars()
-        .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
+fn is_name(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
 }
 
 fn is_statement(file: &Path) -> bool {

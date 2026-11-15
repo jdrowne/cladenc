@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -11,7 +12,7 @@ fn made() -> (TempDir, Workspace) {
     let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     workspace
-        .copy_benchmark(&benchmark, &["t1".to_owned()])
+        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
     (directory, workspace)
 }
@@ -28,11 +29,11 @@ fn with_a_procreation_discarded_after_it_ended() -> (TempDir, Workspace) {
 
 fn with_an_evaluation_discarded_after_it_ended() -> (TempDir, Workspace) {
     let (directory, workspace) = made();
-    workspace.start_evaluation(0, "t1").unwrap();
+    workspace.start_evaluation(0, "benchmark/t1").unwrap();
     workspace
-        .end_evaluation(0, "t1", EvaluationOutcome::Success)
+        .end_evaluation(0, "benchmark/t1", EvaluationOutcome::Success)
         .unwrap();
-    workspace.discard_evaluation(0, "t1").unwrap();
+    workspace.discard_evaluation(0, "benchmark/t1").unwrap();
     (directory, workspace)
 }
 
@@ -101,15 +102,15 @@ fn discarding_a_procreation_leaves_the_parent_as_it_was() {
 #[test]
 fn discarding_an_evaluation_that_is_running_leaves_nothing_running() {
     let (_directory, workspace) = made();
-    workspace.start_evaluation(0, "t1").unwrap();
-    workspace.discard_evaluation(0, "t1").unwrap();
-    assert!(!workspace.running_evaluation(0, "t1").exists());
+    workspace.start_evaluation(0, "benchmark/t1").unwrap();
+    workspace.discard_evaluation(0, "benchmark/t1").unwrap();
+    assert!(!workspace.running_evaluation(0, "benchmark/t1").exists());
 }
 
 #[test]
 fn discarding_an_evaluation_that_ended_leaves_no_directory_of_the_evaluation() {
     let (_directory, workspace) = with_an_evaluation_discarded_after_it_ended();
-    assert!(!workspace.evaluation(0, "t1").exists());
+    assert!(!workspace.evaluation(0, "benchmark/t1").exists());
 }
 
 #[test]

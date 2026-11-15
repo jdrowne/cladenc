@@ -51,7 +51,9 @@ fn report_exits_with_0_on_a_run_that_is_still_going() {
     let mut going = start(directory.path(), "hostname > id; sleep 300")
         .spawn()
         .unwrap();
-    let id_file = directory.path().join("run/running/evaluation-0-t1/work/id");
+    let id_file = directory
+        .path()
+        .join("run/running/evaluation-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let status = report(directory.path());
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();

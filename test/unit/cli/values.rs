@@ -144,8 +144,32 @@ fn an_empty_model_key_file_is_an_error() {
 fn a_benchmark_is_the_path_that_is_written() {
     assert!(matches!(
         with("--benchmark", "benchmarks/parsing").unwrap().command,
-        Command::Start(options) if options.benchmark == Path::new("benchmarks/parsing")
+        Command::Start(options) if options.benchmark == [Path::new("benchmarks/parsing")]
     ));
+}
+
+#[test]
+fn a_benchmark_given_a_second_time_is_a_second_benchmark() {
+    assert!(matches!(
+        and(Some("--benchmark=benchmarks/refactoring".to_owned())).unwrap().command,
+        Command::Start(options)
+            if options.benchmark == [Path::new("/benchmark"), Path::new("benchmarks/refactoring")]
+    ));
+}
+
+#[test]
+fn a_second_path_after_one_benchmark_flag_is_an_error() {
+    let given = [
+        "cladenc",
+        "start",
+        "--benchmark",
+        "/benchmark",
+        "/refactoring",
+    ];
+    assert_eq!(
+        Cli::try_parse_from(given).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }
 
 #[test]

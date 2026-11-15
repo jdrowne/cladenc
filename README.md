@@ -88,7 +88,7 @@ cladenc start \
 
 | Flag | Required | Description |
 | --- | --- | --- |
-| `--benchmark <DIR>` | Required | The directory of the benchmark, which holds a directory for each task. `cladenc` fetches no benchmark: the tasks are read from this directory and copied into the run directory. |
+| `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the search. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the run directory. |
 | `--budget <COUNT>` | Required | The number of evaluations to start. |
 | `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
@@ -109,7 +109,7 @@ cladenc start \
 | `--seed <INTEGER>` | Required | The seed of every random draw. |
 | `--workers <COUNT>` | Required | The most jobs running at once. |
 
-A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names the whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
+A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
 
 ```text
 parsing/
@@ -129,9 +129,15 @@ parsing/
 
 The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `statement` is a file of text that says what is to be done, `files` is a directory of the files the work starts from, and `check` is an executable file: the program that says by its exit status whether the work passes. The directory of a task may hold more, such as tests that the check runs.
 
-`cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which task. It copies the tasks into `benchmark` in the run directory, so a search keeps the tasks it started with, and `cladenc resume` does not read the directory that `--benchmark` named.
+`cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which benchmark and which task.
 
-An evaluation is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/work`, the working directory, holds what the harness left, and `/task` holds the directory of the task, to read. A check that exits with status 0 is a success, and one that exits with any other status is a failure. `evaluations` in the run directory keeps what each evaluation left.
+`--benchmark` is given once for each benchmark of the search. A search that is given `--benchmark parsing` and `--benchmark refactoring` tries its harnesses on the tasks of both, and returns one harness: the one it believes passes the largest share of all those tasks. Every task counts the same, so a benchmark with more tasks weighs more.
+
+The name of a benchmark is the name of its directory, made of letters, digits, dots, underscores and hyphens. A task of a search is known by the name of its benchmark and its id together, as `parsing/fix-the-parser`, so two benchmarks may each hold a task of the same id. `cladenc start` refuses a benchmark that is given twice, and two benchmarks whose directories have the same name.
+
+`cladenc start` copies the tasks into `benchmarks` in the run directory, each into a directory named after its benchmark, so a search keeps the tasks it started with, and `cladenc resume` does not read the directories that `--benchmark` named.
+
+An evaluation is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/work`, the working directory, holds what the harness left, and `/task` holds the directory of the task, to read. A check that exits with status 0 is a success, and one that exits with any other status is a failure. `evaluations` in the run directory keeps what each evaluation left, in a directory named after the harness, the benchmark and the task, as `evaluations/3/parsing/fix-the-parser`.
 
 Every container of a search is started from one image. `--docker-image` names an image that Docker already holds. `--dockerfile` names a Dockerfile, the text file Docker builds an image from, and `cladenc` builds the image itself, once, when the search is started, within the time limit that `--docker-build-timeout` gives.
 

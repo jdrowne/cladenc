@@ -16,7 +16,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory.path(), &["t1"]),
+        benchmark: vec![test_inputs::benchmark(directory.path(), &["t1"])],
         docker_image: Some("image".to_owned()),
         dockerfile: None,
         docker_build_timeout: None,
@@ -48,7 +48,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
 }
 
 fn with_a_missing_benchmark(directory: &Path, options: &mut StartOptions) {
-    options.benchmark = directory.join("missing");
+    options.benchmark = vec![directory.join("missing")];
 }
 
 fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) {

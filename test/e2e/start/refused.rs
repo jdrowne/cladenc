@@ -70,10 +70,11 @@ fn a_benchmark_with_a_task_that_lacks_its_check_exits_with_2() {
 }
 
 #[test]
-fn a_benchmark_with_a_task_that_lacks_its_check_is_refused_by_the_id_of_the_task() {
+fn a_benchmark_with_a_task_that_lacks_its_check_is_refused_by_its_directory_and_the_id_of_the_task()
+{
     let directory = test_inputs::temporary_directory();
     let options = with_a_task_that_lacks_its_check(directory.path());
-    assert!(said(&options).ends_with(": task t1 holds no executable file named check\n"));
+    assert!(said(&options).ends_with("/benchmark: task t1 holds no executable file named check\n"));
 }
 
 #[test]
@@ -82,6 +83,30 @@ fn a_benchmark_that_is_refused_leaves_no_run_directory() {
     let options = with_a_task_that_lacks_its_check(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
+}
+
+fn with_its_benchmark_given_twice(directory: &Path) -> Vec<String> {
+    let options = options(directory, &directory.join("run"));
+    let again = options
+        .iter()
+        .filter(|option| option.starts_with("--benchmark="))
+        .cloned()
+        .collect::<Vec<_>>();
+    options.into_iter().chain(again).collect()
+}
+
+#[test]
+fn a_benchmark_given_twice_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_its_benchmark_given_twice(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_benchmark_given_twice_is_said_to_be_given_twice() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_its_benchmark_given_twice(directory.path());
+    assert!(said(&options).ends_with("/benchmark is given twice\n"));
 }
 
 #[test]

@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::cli::{self, Cli, Command, ReportOptions};
 use cladenc::journal::{self, Record, Settings};
 use cladenc::report;
@@ -42,8 +43,10 @@ fn reported(json: bool) -> (Ran, String) {
                 model: "a-model".to_owned(),
                 model_url: "http://models.example/v1".to_owned(),
                 model_key_file: None,
-                benchmark: PathBuf::from("/abs/benchmark"),
-                tasks: vec!["t1".to_owned()],
+                benchmarks: vec![Benchmark {
+                    directory: PathBuf::from("/abs/benchmark"),
+                    tasks: vec!["t1".to_owned()],
+                }],
                 docker_image: "image".to_owned(),
                 dockerfile: None,
                 docker_build_timeout: None,

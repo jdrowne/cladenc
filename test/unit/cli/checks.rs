@@ -3,6 +3,7 @@ use std::os::unix::fs::symlink;
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 
+use cladenc::benchmark::Benchmark;
 use cladenc::cli::{Refused, StartOptions};
 use cladenc::journal::Settings;
 use tempfile::TempDir;
@@ -13,7 +14,7 @@ fn options(directory: &Path) -> StartOptions {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t2", "t1"]),
+        benchmark: vec![test_inputs::benchmark(directory, &["t2", "t1"])],
         docker_image: Some("image".to_owned()),
         dockerfile: None,
         docker_build_timeout: None,
@@ -62,7 +63,8 @@ fn option_refused(change: impl FnOnce(&TempDir, &mut StartOptions)) -> &'static 
 }
 
 fn with_no_check_in_a_task() -> Refused {
-    checked(|_, options| fs::remove_file(options.benchmark.join("t2/check")).unwrap()).unwrap_err()
+    checked(|_, options| fs::remove_file(options.benchmark[0].join("t2/check")).unwrap())
+        .unwrap_err()
 }
 
 #[test]
@@ -77,8 +79,10 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             model: "a-model".to_owned(),
             model_url: "http://models.example/v1".to_owned(),
             model_key_file: None,
-            benchmark: root.join("benchmark"),
-            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            benchmarks: vec![Benchmark {
+                directory: root.join("benchmark"),
+                tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            }],
             docker_image: "image".to_owned(),
             dockerfile: None,
             docker_build_timeout: None,
@@ -126,88 +130,6 @@ fn a_progenitor_that_holds_a_socket_is_refused() {
     let options = options(directory.path());
     let _socket = UnixListener::bind(options.progenitor.join("socket")).unwrap();
     assert_eq!(options.settings().unwrap_err().option, "--progenitor");
-}
-
-#[test]
-fn a_benchmark_that_does_not_exist_is_refused() {
-    assert_eq!(
-        option_refused(|directory, options| options.benchmark = directory.path().join("missing")),
-        "--benchmark"
-    );
-}
-
-#[test]
-fn a_benchmark_that_does_not_exist_is_said_not_to_be_a_directory() {
-    let refused = checked(|directory, options| {
-        options.benchmark = directory.path().join("missing");
-    })
-    .unwrap_err();
-    assert_eq!(
-        refused.reason.as_deref(),
-        Some("what was given is not a directory that can be read")
-    );
-}
-
-#[test]
-fn a_benchmark_that_is_one_task_and_not_a_directory_of_tasks_is_refused() {
-    assert_eq!(
-        option_refused(|_, options| options.benchmark = options.benchmark.join("t1")),
-        "--benchmark"
-    );
-}
-
-#[test]
-fn a_benchmark_that_is_one_task_is_said_to_be_one_task() {
-    let refused = checked(|_, options| options.benchmark = options.benchmark.join("t1"));
-    assert_eq!(
-        refused.unwrap_err().reason.as_deref(),
-        Some(
-            "what was given is the directory of one task, and a benchmark is the directory that \
-             holds the tasks"
-        )
-    );
-}
-
-#[test]
-fn a_benchmark_with_a_task_that_cannot_be_used_is_refused() {
-    assert_eq!(with_no_check_in_a_task().option, "--benchmark");
-}
-
-#[test]
-fn a_benchmark_that_is_refused_for_a_task_names_the_task_and_what_it_lacks() {
-    assert_eq!(
-        with_no_check_in_a_task().reason.as_deref(),
-        Some("task t2 holds no executable file named check")
-    );
-}
-
-#[test]
-fn a_benchmark_given_from_the_working_directory_is_made_absolute() {
-    let settings = checked(|_, options| {
-        options.benchmark = PathBuf::from("test/unit/samples/benchmark");
-    })
-    .unwrap();
-    assert!(settings.benchmark.is_absolute());
-}
-
-#[test]
-fn the_tasks_of_a_search_are_the_tasks_its_benchmark_holds() {
-    let settings = checked(|_, options| {
-        options.benchmark = PathBuf::from("test/unit/samples/benchmark");
-    })
-    .unwrap();
-    assert_eq!(settings.tasks, ["add-a-flag", "fix-the-parser"]);
-}
-
-#[test]
-fn a_benchmark_given_through_a_symbolic_link_is_the_directory_it_leads_to() {
-    let settings = checked(|directory, options| {
-        let link = directory.path().join("link");
-        symlink(&options.benchmark, &link).unwrap();
-        options.benchmark = link;
-    })
-    .unwrap();
-    assert!(settings.benchmark.ends_with("benchmark"));
 }
 
 #[test]
@@ -359,12 +281,11 @@ fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
 
 #[test]
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
-    assert_eq!(
-        with_no_check_in_a_task().to_string(),
+    assert!(with_no_check_in_a_task().to_string().starts_with(
         "--benchmark takes the directory of a benchmark, in which every directory is a task that \
          holds a file of text named statement, a directory named files and an executable file \
-         named check: task t2 holds no executable file named check"
-    );
+         named check: /"
+    ));
 }
 
 #[test]

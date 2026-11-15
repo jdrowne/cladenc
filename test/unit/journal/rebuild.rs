@@ -2,6 +2,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
 use cladenc::journal::{self, Journal, Record, Settings, Started, State};
 use tempfile::TempDir;
@@ -12,8 +13,10 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: PathBuf::from("/abs/benchmark"),
-        tasks: vec!["t1".to_owned(), "t2".to_owned()],
+        benchmarks: vec![Benchmark {
+            directory: PathBuf::from("/abs/benchmark"),
+            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+        }],
         docker_image: "image".to_owned(),
         dockerfile: None,
         docker_build_timeout: None,

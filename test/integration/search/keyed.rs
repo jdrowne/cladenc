@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::journal::{self, Settings};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
@@ -18,8 +19,7 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: Some(key_file.to_owned()),
-        benchmark: test_inputs::benchmark(directory, &["t1"]),
-        tasks: vec!["t1".to_owned()],
+        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,

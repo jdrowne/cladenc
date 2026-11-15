@@ -32,7 +32,9 @@ fn start(directory: &Path, run_command: &str) -> Command {
 }
 
 fn id_file(directory: &TempDir) -> PathBuf {
-    directory.path().join("run/running/evaluation-0-t1/work/id")
+    directory
+        .path()
+        .join("run/running/evaluation-0-benchmark+t1/work/id")
 }
 
 fn signalled(signal: Signal) -> (TempDir, ExitStatus) {

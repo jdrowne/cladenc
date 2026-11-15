@@ -82,7 +82,7 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
 fn left_by_the_evaluation(directory: &TempDir, file: &str) -> String {
     let work = fs::read_dir(directory.path().join("run/evaluations"))
         .unwrap()
-        .map(|harness| harness.unwrap().path().join("t1/work"))
+        .map(|harness| harness.unwrap().path().join("benchmark/t1/work"))
         .find(|work| work.is_dir())
         .unwrap();
     fs::read_to_string(work.join(file)).unwrap()

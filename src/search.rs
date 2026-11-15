@@ -46,16 +46,20 @@ pub fn search(
         run_directory,
         progenitor: &settings.progenitor,
     };
-    let copying = Said::CopyingTasks {
-        benchmark: &settings.benchmark,
-        tasks: settings.tasks.len() as u64,
-    };
     say(&mut writer, &making);
     let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
         .and_then(|workspace| {
-            say(&mut writer, &copying);
-            workspace
-                .copy_benchmark(&settings.benchmark, &settings.tasks)
+            settings
+                .benchmarks
+                .iter()
+                .try_for_each(|benchmark| {
+                    let copying = Said::CopyingTasks {
+                        benchmark: &benchmark.directory,
+                        tasks: benchmark.tasks.len() as u64,
+                    };
+                    say(&mut writer, &copying);
+                    workspace.copy_benchmark(benchmark)
+                })
                 .map(|()| workspace)
         })
         .map_err(SearchError::Io)

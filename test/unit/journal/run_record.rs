@@ -3,6 +3,7 @@ use std::fs;
 use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::Genealogy;
 use cladenc::job::Launch;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
@@ -15,8 +16,10 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: PathBuf::from("/abs/benchmark"),
-        tasks: vec!["t1".to_owned(), "t2".to_owned()],
+        benchmarks: vec![Benchmark {
+            directory: PathBuf::from("/abs/benchmark"),
+            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+        }],
         docker_image: "image".to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -75,8 +78,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_7() {
-    assert_eq!(journal::FORMAT, 7);
+fn the_format_of_the_journal_is_8() {
+    assert_eq!(journal::FORMAT, 8);
 }
 
 #[test]
@@ -84,11 +87,11 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":7,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":8,"progenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
-            r#""benchmark":"/abs/benchmark","tasks":["t1","t2"],"#,
+            r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
             r#""budget":800,"#,
             r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
             r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#

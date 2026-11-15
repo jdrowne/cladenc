@@ -22,12 +22,12 @@ use program::{Ending, deadline};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes solves \
-    more coding tasks than you do. /evaluations holds one directory for each task you have been \
-    tried on. In it, the file named statement says what you were asked to do, the file named \
-    outcome reads success, failure or timed_out, the directory named work holds the files of the \
-    task as you left them, the files named stdout and stderr hold what you printed, and the \
-    directory named check holds what the check of the task printed. Use them to find what to \
-    improve. Change files in the current directory only: what it holds when you end becomes a new \
+    more coding tasks than you do. /evaluations holds one directory for each benchmark, and in it \
+    one directory for each task you have been tried on. In the directory of a task, the file \
+    named statement says what you were asked to do, the file named outcome reads success, failure \
+    or timed_out, the directory named work holds the files of the task as you left them, the \
+    files named stdout and stderr hold what you printed, and the directory named check holds what \
+    the check of the task printed. Use them to find what to improve. Change files in the current directory only: what it holds when you end becomes a new \
     harness, which is tried on tasks in its turn.";
 
 const HARNESS: &str = "/harness";

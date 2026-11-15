@@ -58,6 +58,12 @@ fn a_new_run_directory_holds_no_procreation() {
 }
 
 #[test]
+fn a_new_run_directory_holds_no_benchmark() {
+    let (_directory, run_directory) = made();
+    assert_eq!(entries(run_directory.join("benchmarks")), 0);
+}
+
+#[test]
 fn a_new_run_directory_holds_no_running_job() {
     let (_directory, run_directory) = made();
     assert_eq!(entries(run_directory.join("running")), 0);

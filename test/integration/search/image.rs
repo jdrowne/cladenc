@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+use cladenc::benchmark::Benchmark;
 use cladenc::job::JobError;
 use cladenc::journal::{self, Settings};
 use cladenc::search::{self, Found, SearchError};
@@ -23,8 +24,7 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmark: test_inputs::benchmark(directory, &["t1"]),
-        tasks: vec!["t1".to_owned()],
+        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
         docker_image: image.name.clone(),
         dockerfile: Some(test_inputs::dockerfile(directory, steps)),
         docker_build_timeout: Some(60),

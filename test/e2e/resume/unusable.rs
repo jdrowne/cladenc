@@ -39,7 +39,9 @@ fn resume(directory: &Path) -> Output {
 fn resumed_while_in_use() -> Output {
     let directory = test_inputs::temporary_directory();
     let mut first = start(directory.path()).spawn().unwrap();
-    let id_file = directory.path().join("run/running/evaluation-0-t1/work/id");
+    let id_file = directory
+        .path()
+        .join("run/running/evaluation-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let second = resume(directory.path());
     kill(Pid::from_raw(first.id().cast_signed()), Signal::SIGINT).unwrap();

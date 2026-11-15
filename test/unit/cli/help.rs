@@ -224,7 +224,10 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
 
 #[test]
 fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_run_directory() {
-    assert!(help_of_start(true).contains("are copied into benchmark in the run directory when a"));
+    assert!(help_of_start(true).contains(
+        "The tasks are copied into\nbenchmarks in the run directory when a search is started, each \
+         into a\ndirectory named after its benchmark"
+    ));
 }
 
 #[test]
@@ -232,6 +235,59 @@ fn the_long_help_of_start_says_that_the_id_of_a_task_is_the_name_of_its_director
     assert!(help_of_start(true).contains(
         "The name\nof a task's directory is the id of the task, made of letters, digits, dots,\n\
          underscores and hyphens"
+    ));
+}
+
+#[test]
+fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_benchmark() {
+    assert!(help_of_start(false).contains("given once for each benchmark"));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_search_given_several_benchmarks_looks_for() {
+    assert!(help_of_start(true).contains(
+        "A search that\nis given several tries its harnesses on the tasks of all of them, and \
+         looks\nfor the one harness that passes the largest share of those tasks."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_every_task_counts_the_same() {
+    assert!(
+        help_of_start(true)
+            .contains("Every\ntask counts the same, so a benchmark with more tasks weighs more.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_how_a_task_of_a_search_is_known() {
+    assert!(help_of_start(true).contains(
+        "a task of a search is known by the two together,\nas\n\n    <BENCHMARK>/<TASK>\n\nso \
+         two benchmarks may each hold a task of the same id."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_two_benchmarks_of_the_same_name_are_refused() {
+    assert!(
+        help_of_start(true)
+            .contains("Two benchmarks whose\ndirectories have the same name are refused.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_directory_of_an_evaluation_is() {
+    assert!(help_of_start(true).contains(
+        "in a directory\nnamed after the harness, in it one named after the benchmark, and in \
+         that\none named after the task, which holds"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_procreation_finds_its_evaluations_by_benchmark() {
+    assert!(help_of_start(true).contains(
+        "one\ndirectory for each benchmark, and in it one for each task, holding what \
+         the\nevaluation of that task kept."
     ));
 }
 

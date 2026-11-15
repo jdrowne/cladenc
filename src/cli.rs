@@ -43,9 +43,11 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The directory of the benchmark, which holds a directory for each task"
+        required = true,
+        help = "The directory of a benchmark, which holds a directory for each task, given once \
+                for each benchmark"
     )]
-    pub benchmark: PathBuf,
+    pub benchmark: Vec<PathBuf>,
     #[arg(
         long,
         value_name = "COUNT",

@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
-use crate::benchmark::{self, BenchmarkError};
+use crate::benchmark::{self, Benchmark, BenchmarkError};
 use crate::journal::Settings;
 use crate::model;
 use crate::workspace::holds_only_harness_files;
@@ -30,7 +30,7 @@ impl Display for Refused {
 
 impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
-        let (benchmark, tasks) = benchmark(&self.benchmark)?;
+        let benchmarks = benchmarks(&self.benchmark)?;
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
             model: self.model.clone(),
@@ -45,8 +45,7 @@ impl StartOptions {
             docker_build_timeout: self.docker_build_timeout,
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
-            benchmark,
-            tasks,
+            benchmarks,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
@@ -117,17 +116,32 @@ fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
         })
 }
 
-fn benchmark(given: &Path) -> Result<(PathBuf, Vec<String>), Refused> {
+fn benchmarks(given: &[PathBuf]) -> Result<Vec<Benchmark>, Refused> {
+    let mut benchmarks = given
+        .iter()
+        .map(|given| benchmark(given))
+        .collect::<Result<Vec<Benchmark>, Refused>>()?;
+    benchmarks.sort_by_key(Benchmark::name);
+    benchmark::told_apart(&benchmarks)
+        .map(|()| benchmarks)
+        .map_err(|error| refused_benchmark(error.to_string()))
+}
+
+fn benchmark(given: &Path) -> Result<Benchmark, Refused> {
     fs::canonicalize(given)
         .ok()
         .filter(|directory| directory.to_str().is_some())
         .ok_or(BenchmarkError::NotADirectory)
-        .and_then(|directory| benchmark::tasks(&directory).map(|tasks| (directory, tasks)))
-        .map_err(|error| Refused {
-            option: "--benchmark",
-            accepted: "the directory of a benchmark, in which every directory is a task that \
-                       holds a file of text named statement, a directory named files and an \
-                       executable file named check",
-            reason: Some(error.to_string()),
-        })
+        .and_then(|directory| Benchmark::read(&directory))
+        .map_err(|error| refused_benchmark(format!("{}: {error}", given.display())))
+}
+
+fn refused_benchmark(reason: String) -> Refused {
+    Refused {
+        option: "--benchmark",
+        accepted: "the directory of a benchmark, in which every directory is a task that holds \
+                   a file of text named statement, a directory named files and an executable \
+                   file named check",
+        reason: Some(reason),
+    }
 }

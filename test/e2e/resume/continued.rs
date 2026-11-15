@@ -51,11 +51,11 @@ fn stopped_by(signal: Signal) -> TempDir {
     fs::write(directory.path().join("benchmark/t1/files/hold"), "").unwrap();
     let mut cladenc = start.spawn().unwrap();
     let run = directory.path().join("run");
-    let id_file = run.join("running/evaluation-0-t1/work/id");
+    let id_file = run.join("running/evaluation-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
-    fs::remove_file(run.join("benchmark/t1/files/hold")).unwrap();
+    fs::remove_file(run.join("benchmarks/benchmark/t1/files/hold")).unwrap();
     directory
 }
 
