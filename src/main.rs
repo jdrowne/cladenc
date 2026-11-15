@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::cli::{self, Cli, Command};
 use clap::Parser;
-use signal_hook::consts::{SIGHUP, SIGINT, SIGTERM};
+use signal_hook::consts::{SIGHUP, SIGINT, SIGQUIT, SIGTERM};
 use signal_hook::flag;
 
 fn main() -> ExitCode {
@@ -13,7 +13,7 @@ fn main() -> ExitCode {
     let stop = Arc::new(AtomicBool::new(false));
     if matches!(cli.command, Command::Run(_) | Command::Resume(_)) {
         let hangup = (!a_hangup_is_ignored()).then_some(SIGHUP);
-        for signal in [SIGINT, SIGTERM].into_iter().chain(hangup) {
+        for signal in [SIGINT, SIGQUIT, SIGTERM].into_iter().chain(hangup) {
             flag::register(signal, Arc::clone(&stop)).expect("a signal can be listened for");
         }
     }

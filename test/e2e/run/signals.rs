@@ -53,13 +53,23 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
     assert_eq!(cladenc.wait().unwrap().code(), Some(0));
 }
 
-#[test]
-fn a_program_that_sends_itself_a_hangup_is_ended_by_it() {
+fn status_of_a_run_evaluated_by(evaluator: &str) -> Option<i32> {
     let directory = test_inputs::temporary_directory();
-    let arguments = run(directory.path(), "hang-up-self.sh");
-    let ended = Command::new(&arguments[0])
+    let arguments = run(directory.path(), evaluator);
+    Command::new(&arguments[0])
         .args(&arguments[1..])
         .output()
-        .unwrap();
-    assert_eq!(ended.status.code(), Some(1));
+        .unwrap()
+        .status
+        .code()
+}
+
+#[test]
+fn a_program_that_sends_itself_a_hangup_is_ended_by_it() {
+    assert_eq!(status_of_a_run_evaluated_by("hang-up-self.sh"), Some(1));
+}
+
+#[test]
+fn a_program_that_sends_itself_a_quit_is_ended_by_it() {
+    assert_eq!(status_of_a_run_evaluated_by("quit-self.sh"), Some(1));
 }

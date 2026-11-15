@@ -92,6 +92,12 @@ fn after_a_hangup_stops_a_run_resume_finishes_it_and_exits_with_0() {
 }
 
 #[test]
+fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
+    let directory = stopped_by(Signal::SIGQUIT);
+    assert_eq!(resume(directory.path()).status.code(), Some(0));
+}
+
+#[test]
 fn a_search_that_stops_again_under_resume_exits_with_1() {
     let directory = test_inputs::temporary_directory();
     run(directory.path(), "exit-2.sh").status().unwrap();
