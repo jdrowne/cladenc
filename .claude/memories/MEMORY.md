@@ -19,7 +19,7 @@
 - [The work in hand can be several issues](the-work-in-hand-can-be-several-issues.md) — the autopilot takes the lowest unblocked issue, alone or with others it chooses; a blocked issue joins only with all its open blockers
 - [Issues are sized to one context](issues-are-sized-to-one-context.md) — split a plan too large for one context into stand-alone issues, re-using the original, ordered by blocked_by edges
 - [One indivisible problem per issue](one-indivisible-problem-per-issue.md) — an issue documenting more than one problem is split, re-using the issue as one of the splits
-- [An issue is brought up to date before work](an-issue-is-brought-up-to-date-before-work.md) — correct its title and body against the code as it stands before working on it
+- [An issue is brought up to date before work](an-issue-is-brought-up-to-date-before-work.md) — correct its title and body against the code as it stands before working on it, without adding work it does not ask for
 - [A blocked_by edge states a real block](a-blocked-by-edge-states-a-real-block.md) — only where the waiting issue cannot be finished until the other closes; written with gh api and -F issue_id
 - [Before an issue is labelled needs decision](before-an-issue-is-labelled-needs-decision.md) — check the memories and the code first, then write into its body what a person has to decide
 - [Tests are written before code](tests-are-written-before-code.md) — the tests of a change come first and land in the same commit as its code

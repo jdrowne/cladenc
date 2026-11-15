@@ -2,6 +2,7 @@ mod cli {
     mod checks;
     mod help;
     mod missing;
+    mod readme;
     mod report;
     mod resume;
     mod run;
