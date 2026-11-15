@@ -6,7 +6,7 @@
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly, and let cladenc leave the paper where a change improves it
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
-- [A wait runs in the background](a-wait-runs-in-the-background.md) — wait for CI with run_in_background or Monitor, never in the foreground, so the autopilot reminders can fire
+- [The work does not wait for CI](the-work-does-not-wait-for-ci.md) — after a push go straight on, commits and pushes included; the organization's free-tier runners are shared, so a run can stay queued for hours
 - [Long-running commands in the background](long-running-commands-in-the-background.md) — a command that can take more than about a minute is a background Bash call or a Monitor, with a time limit, never followed by a foreground wait
 - [cargo is not on the shell's PATH](cargo-is-not-on-the-shell-path.md) — Rust is installed in ~/.cargo/bin; put it on PATH before calling cargo, and do not install it again
 - [Reminders drive the loop](reminders-drive-the-loop.md) — an autopilot reminder only for a rule that says what to do next when it fires, one rule and one action each; every other rule is a memory
@@ -19,6 +19,5 @@
 - [Before an issue is labelled needs decision](before-an-issue-is-labelled-needs-decision.md) — check the memories and the code first, then write into its body what a person has to decide
 - [Tests are written before code](tests-are-written-before-code.md) — the tests of a change come first and land in the same commit as its code
 - [A commit closes at least one issue](a-commit-closes-at-least-one-issue.md) — one or more, a Closes #N line each; only a failed run's fix and a change the user asks for directly close none
-- [A push carries one commit](a-push-carries-one-commit.md) — one commit per push, its runs read before the next; a second push cancels the first run
-- [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — the session whose push started the run fixes it in a push of its own
-- [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — once the runs are clean, read back each issue the commit closes and close by hand any still open
+- [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — when a run of the session's own push is found to have failed, the fix is the next commit pushed
+- [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open

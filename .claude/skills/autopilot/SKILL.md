@@ -17,30 +17,29 @@ Fetch `CronCreate`, `CronList` and `CronDelete` with `ToolSearch` first.
 
 ## Reminders
 
-A rule is a reminder only when it tells the session what to do next at the moment it fires: which work to take, to keep going, how to hand an issue over instead of stopping, and to hold still while a run is in progress. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories".
+A rule is a reminder only when it tells the session what to do next at the moment it fires: which work to take, to keep going, and how to hand an issue over instead of stopping. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories".
 
 Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders.
 
-Each reminder has its own minute of a twenty-minute cycle, four minutes from the next, and none falls on the hour or the half hour. A reminder fires only while the session is idle, which is why every wait runs in the background, per `.claude/memories/a-wait-runs-in-the-background.md`.
+Each reminder has its own minute of a twenty-minute cycle, four minutes from the next, and none falls on the hour or the half hour. A reminder fires only while the session is idle, which is why every command that can run long goes in the background, per `.claude/memories/long-running-commands-in-the-background.md`.
 
-There are five. The first, on `1,21,41 * * * *`, is the listing:
+There are four. The first, on `1,21,41 * * * *`, is the listing:
 
 ```text
 REMINDER: When no work is in hand, run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(all(.labels[]; .name != "needs decision"))) | sort_by(.number) | map({number, title, labels: [.labels[].name]})' to list the open issues no label holds back, lowest number first.
 ```
 
-The other four:
+The other three:
 
 | Cron | Prompt |
 | --- | --- |
 | `5,25,45 * * * *` | `REMINDER: Take as the work in hand the lowest-numbered issue of the listing for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other issues of the listing that you choose to solve with it.` |
 | `9,29,49 * * * *` | `REMINDER: Continue autonomously: while an open issue can be taken, do not stop to ask or to report.` |
 | `13,33,53 * * * *` | `REMINDER: When an issue in hand cannot go on without a person's answer, hand it to a person by labelling it 'needs decision'.` |
-| `17,37,57 * * * *` | `REMINDER: While any CI run for a commit pushed to this repository is in progress, only wait, in the background: no diagnosis, edits or commits.` |
 
 In a prompt, `<number>` stands for the issue being checked, and `gh api` fills in `{owner}` and `{repo}` from the repository the session runs in.
 
-The last reminder repeats a rule that is also a memory. It stays a reminder because the others fire during a wait, and it is what tells the session to answer them by waiting on.
+No reminder tells the session to wait for a run: after a push the work goes straight on, per `.claude/memories/the-work-does-not-wait-for-ci.md`.
 
 ## Rules that are memories
 
@@ -58,9 +57,9 @@ Each file is under `.claude/memories/`.
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
-| A push carries exactly one commit. | `a-push-carries-one-commit.md` |
-| A failed run is fixed in a push of its own before other work. | `a-failed-run-is-fixed-before-other-work.md` |
-| Once a push's runs are clean, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
+| After a push the work goes straight on, and no run is waited for. | `the-work-does-not-wait-for-ci.md` |
+| A run found to have failed is fixed in the next commit pushed, ahead of other work. | `a-failed-run-is-fixed-before-other-work.md` |
+| After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
 
 ## Start
 
@@ -71,7 +70,7 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 1. Say which model this session runs on, as its system prompt names it. The issues that build `cladenc` ask, under "Working rules", for the latest Fable model at Extra High effort, and only the user can set either. When the model is another, say so and stop here.
 2. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
 3. Run the listing's command once, its `--skip-label` filters in place. When it names no issue, say so and stop: there is nothing to schedule reminders for.
-4. Call `CronList`, and `CronDelete` each job on one of the five crons whose prompt differs from that cron's reminder.
+4. Call `CronList`, and `CronDelete` each job on one of the four crons whose prompt differs from that cron's reminder.
 5. `CronCreate` with `recurring: true` each reminder that is not already scheduled.
 6. Tell the user how many reminders are running, and the two limits that come with them: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after seven days.
 7. Read in full each memory that "Rules that are memories" names.
@@ -79,7 +78,7 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 
 ## Restart
 
-Run "Stop", then "Start" with the `--skip-label` flags that `restart` was given. That leaves exactly the five reminders, each with seven fresh days, and it is how a changed set of `--skip-label` flags takes effect.
+Run "Stop", then "Start" with the `--skip-label` flags that `restart` was given. That leaves exactly the four reminders, each with seven fresh days, and it is how a changed set of `--skip-label` flags takes effect.
 
 ## Stop
 
