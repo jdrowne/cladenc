@@ -3,7 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
-use cladenc::cli::{self, Cli, Command, RunOptions};
+use cladenc::cli::{self, Cli, Command, StartOptions};
 
 struct Ran {
     status: u8,
@@ -18,9 +18,9 @@ fn program(directory: &Path, name: &str) -> PathBuf {
     program
 }
 
-fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
+fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     let directory = test_inputs::temporary_directory();
-    let mut options = RunOptions {
+    let mut options = StartOptions {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: test_inputs::task_file(directory.path(), &["t1"]),
         docker_image: "image".to_owned(),
@@ -42,7 +42,7 @@ fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
     let mut output = Vec::new();
     let mut errors = Vec::new();
     let cli = Cli {
-        command: Command::Run(Box::new(options)),
+        command: Command::Start(Box::new(options)),
     };
     let status = cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut errors);
     Ran {
@@ -52,15 +52,15 @@ fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
     }
 }
 
-fn with_a_missing_task_file(directory: &Path, options: &mut RunOptions) {
+fn with_a_missing_task_file(directory: &Path, options: &mut StartOptions) {
     options.tasks = directory.join("missing");
 }
 
-fn in_a_run_directory_that_exists(directory: &Path, options: &mut RunOptions) {
+fn in_a_run_directory_that_exists(directory: &Path, options: &mut StartOptions) {
     options.run_dir = directory.to_owned();
 }
 
-fn in_a_run_directory_with_a_colon_in_its_path(directory: &Path, options: &mut RunOptions) {
+fn in_a_run_directory_with_a_colon_in_its_path(directory: &Path, options: &mut StartOptions) {
     options.run_dir = directory.join("first:second");
 }
 

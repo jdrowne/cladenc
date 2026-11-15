@@ -1,6 +1,6 @@
 # Memory Index
 
-- [Push to main](push-to-main.md) — commit/push directly to main, no feature branches or PRs; starting the autopilot counts as the ask
+- [Push to main](push-to-main.md) — commit/push directly to main, no feature branches or PRs; starting the autopilot counts as the ask, and so does asking for a change
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
@@ -28,3 +28,5 @@
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and progenitor for the one a search starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
+- [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — the sub-command was `cladenc run` until 2026-11-15; older issues and memories that say so mean `start`
+- [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows each sub-command as a command block, then a table of its flags in alphabetical order

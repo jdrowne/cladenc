@@ -4,45 +4,79 @@ CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation o
 
 ## Sub-commands
 
-| Sub-command | What it does |
+| Sub-command | Description |
 | --- | --- |
-| `cladenc run` | Starts a new search and prints the directory of its best harness. |
+| `cladenc start` | Starts a new search and prints the directory of its best harness. |
 | `cladenc resume` | Continues a search that stopped before its end. |
 | `cladenc report` | Prints the state of a search without changing it. |
 
-`cladenc --help` lists the sub-commands, and `cladenc --version` prints the version. `--help` after a sub-command prints its options.
+`cladenc --help` lists the sub-commands, and `cladenc --version` prints the version. `--help` after a sub-command prints its flags.
 
-### `cladenc run`
+A search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then ends the jobs it has running and exits with status 1, and `cladenc resume` carries the search on from where it stopped.
 
-| Option | Required | What it is |
+### `cladenc start`
+
+```text
+cladenc start \
+  --budget <COUNT> \
+  --confidence <PERCENT> \
+  --docker-image <IMAGE> \
+  --evaluation-timeout <SECONDS> \
+  --evaluator <FILE> \
+  --genealogy-growth <NUMBER> \
+  --harness-build-command <COMMAND> \
+  --harness-run-command <COMMAND> \
+  --initial-procreations <COUNT> \
+  --procreation-timeout <SECONDS> \
+  --progenitor <DIR> \
+  --quiet \
+  --run-dir <DIR> \
+  --seed <INTEGER> \
+  --tasks <FILE> \
+  --workers <COUNT>
+```
+
+| Flag | Required | Description |
 | --- | --- | --- |
-| `--progenitor <DIR>` | yes | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
-| `--docker-image <IMAGE>` | yes | The Docker image every container is started from. |
-| `--harness-build-command <COMMAND>` | no | The shell command that builds a harness in a container, where one has to be built. |
-| `--harness-run-command <COMMAND>` | yes | The shell command that runs a harness in a container. |
-| `--tasks <FILE>` | yes | A file of task ids, one on each line. |
-| `--evaluator <FILE>` | yes | The program that carries out an evaluation, which is one harness tried on one task. |
-| `--run-dir <DIR>` | yes | The run directory, which `run` creates. |
-| `--budget <COUNT>` | yes | The number of evaluations to start. |
-| `--genealogy-growth <NUMBER>` | yes | How fast the genealogy may grow, from 0 to 1. |
-| `--confidence <PERCENT>` | yes | The probability behind the lower bound that picks the best harness. |
-| `--initial-procreations <COUNT>` | yes | The number of procreations of the progenitor made before the first evaluation. A procreation is one harness making another. |
-| `--workers <COUNT>` | yes | The most jobs running at once. |
-| `--procreation-timeout <SECONDS>` | yes | The time limit of one procreation. |
-| `--evaluation-timeout <SECONDS>` | yes | The time limit of one evaluation. |
-| `--seed <INTEGER>` | yes | The seed of every random draw. |
-| `--quiet` | no | Print nothing on standard error. |
+| `--budget <COUNT>` | Required | The number of evaluations to start. |
+| `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
+| `--docker-image <IMAGE>` | Required | The Docker image every container is started from. |
+| `--evaluation-timeout <SECONDS>` | Required | The time limit of one evaluation. |
+| `--evaluator <FILE>` | Required | The program that carries out an evaluation, which is one harness tried on one task. |
+| `--genealogy-growth <NUMBER>` | Required | How fast the genealogy may grow, from 0 to 1. |
+| `--harness-build-command <COMMAND>` | Not Required | The shell command that builds a harness in a container, where one has to be built. |
+| `--harness-run-command <COMMAND>` | Required | The shell command that runs a harness in a container. |
+| `--initial-procreations <COUNT>` | Required | The number of procreations of the progenitor made before the first evaluation. A procreation is one harness making another. |
+| `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation. |
+| `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
+| `--quiet` | Not Required | Print nothing on standard error. |
+| `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
+| `--seed <INTEGER>` | Required | The seed of every random draw. |
+| `--tasks <FILE>` | Required | A file of task ids, one on each line. |
+| `--workers <COUNT>` | Required | The most jobs running at once. |
 
 ### `cladenc resume`
 
-| Option | Required | What it is |
+```text
+cladenc resume \
+  --quiet \
+  --run-dir <DIR>
+```
+
+| Flag | Required | Description |
 | --- | --- | --- |
-| `--run-dir <DIR>` | yes | The run directory of the search to continue. |
-| `--quiet` | no | Print nothing on standard error. |
+| `--quiet` | Not Required | Print nothing on standard error. |
+| `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
 ### `cladenc report`
 
-| Option | Required | What it is |
+```text
+cladenc report \
+  --json \
+  --run-dir <DIR>
+```
+
+| Flag | Required | Description |
 | --- | --- | --- |
-| `--run-dir <DIR>` | yes | The run directory of the search to report on. |
-| `--json` | no | Print one JSON object in place of the table. |
+| `--json` | Not Required | Print one JSON object in place of the table. |
+| `--run-dir <DIR>` | Required | The run directory of the search to report on. |

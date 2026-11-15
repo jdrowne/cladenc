@@ -5,7 +5,7 @@ use std::process::Command;
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 
-fn run(directory: &Path, evaluator: &str) -> Command {
+fn start(directory: &Path, evaluator: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
@@ -23,9 +23,9 @@ fn run(directory: &Path, evaluator: &str) -> Command {
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    let mut run = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    run.arg("run").args(options).arg("--quiet");
-    run
+    let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
+    start.arg("start").args(options).arg("--quiet");
+    start
 }
 
 fn report(directory: &Path) -> Option<i32> {
@@ -41,7 +41,7 @@ fn report(directory: &Path) -> Option<i32> {
 #[test]
 fn report_exits_with_0_on_a_run_that_stopped_before_its_end() {
     let directory = test_inputs::temporary_directory();
-    run(directory.path(), "exit-2.sh").status().unwrap();
+    start(directory.path(), "exit-2.sh").status().unwrap();
     assert_eq!(report(directory.path()), Some(0));
 }
 
@@ -49,7 +49,7 @@ fn report_exits_with_0_on_a_run_that_stopped_before_its_end() {
 fn report_exits_with_0_on_a_run_that_is_still_going() {
     let directory = test_inputs::temporary_directory();
     fs::write(directory.path().join("hold"), "").unwrap();
-    let mut going = run(directory.path(), "spawn-while-held.sh")
+    let mut going = start(directory.path(), "spawn-while-held.sh")
         .spawn()
         .unwrap();
     let pid_file = directory

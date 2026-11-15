@@ -24,7 +24,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("run")
+        .arg("start")
         .args(options)
         .output()
         .unwrap();

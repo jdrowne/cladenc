@@ -5,7 +5,7 @@ use std::process::{Command, Stdio};
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 
-fn run(directory: &Path, evaluator: &str) -> Vec<String> {
+fn start(directory: &Path, evaluator: &str) -> Vec<String> {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
@@ -25,7 +25,7 @@ fn run(directory: &Path, evaluator: &str) -> Vec<String> {
     .map(|(option, value)| format!("{option}={}", value.display()));
     [
         env!("CARGO_BIN_EXE_cladenc").to_owned(),
-        "run".to_owned(),
+        "start".to_owned(),
         "--quiet".to_owned(),
     ]
     .into_iter()
@@ -39,7 +39,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
     let hold = directory.path().join("hold");
     fs::write(&hold, "").unwrap();
     let mut cladenc = Command::new("nohup")
-        .args(run(directory.path(), "wait-while-held.sh"))
+        .args(start(directory.path(), "wait-while-held.sh"))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -56,7 +56,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
 
 fn status_of_a_run_evaluated_by(evaluator: &str) -> Option<i32> {
     let directory = test_inputs::temporary_directory();
-    let arguments = run(directory.path(), evaluator);
+    let arguments = start(directory.path(), evaluator);
     Command::new(&arguments[0])
         .args(&arguments[1..])
         .output()

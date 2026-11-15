@@ -11,7 +11,7 @@ use signal_hook::flag;
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let stop = Arc::new(AtomicBool::new(false));
-    if matches!(cli.command, Command::Run(_) | Command::Resume(_)) {
+    if matches!(cli.command, Command::Start(_) | Command::Resume(_)) {
         let hangup = (!a_hangup_is_ignored()).then_some(SIGHUP);
         for signal in [SIGINT, SIGQUIT, SIGTERM].into_iter().chain(hangup) {
             flag::register(signal, Arc::clone(&stop)).expect("a signal can be listened for");

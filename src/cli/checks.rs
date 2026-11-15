@@ -4,7 +4,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-use super::RunOptions;
+use super::StartOptions;
 use crate::journal::Settings;
 use crate::workspace::holds_only_harness_files;
 
@@ -20,7 +20,7 @@ impl Display for Refused {
     }
 }
 
-impl RunOptions {
+impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,

@@ -6,7 +6,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-fn run(directory: &Path, evaluator: &str) -> Command {
+fn start(directory: &Path, evaluator: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
@@ -24,9 +24,9 @@ fn run(directory: &Path, evaluator: &str) -> Command {
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    let mut run = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    run.arg("run").args(options).arg("--quiet");
-    run
+    let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
+    start.arg("start").args(options).arg("--quiet");
+    start
 }
 
 fn resume(directory: &Path) -> Output {
@@ -46,7 +46,7 @@ fn stopped_by(signal: Signal) -> TempDir {
     let directory = test_inputs::temporary_directory();
     let hold = directory.path().join("hold");
     fs::write(&hold, "").unwrap();
-    let mut cladenc = run(directory.path(), "spawn-while-held.sh")
+    let mut cladenc = start(directory.path(), "spawn-while-held.sh")
         .spawn()
         .unwrap();
     let pid_file = directory
@@ -101,6 +101,6 @@ fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
 #[test]
 fn a_search_that_stops_again_under_resume_exits_with_1() {
     let directory = test_inputs::temporary_directory();
-    run(directory.path(), "exit-2.sh").status().unwrap();
+    start(directory.path(), "exit-2.sh").status().unwrap();
     assert_eq!(resume(directory.path()).status.code(), Some(1));
 }

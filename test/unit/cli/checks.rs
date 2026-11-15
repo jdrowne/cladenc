@@ -3,7 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 
-use cladenc::cli::{Refused, RunOptions};
+use cladenc::cli::{Refused, StartOptions};
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
@@ -14,8 +14,8 @@ fn program(directory: &Path, name: &str, mode: u32) -> PathBuf {
     program
 }
 
-fn options(directory: &Path) -> RunOptions {
-    RunOptions {
+fn options(directory: &Path) -> StartOptions {
+    StartOptions {
         progenitor: test_inputs::progenitor(directory),
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
         docker_image: "image".to_owned(),
@@ -35,14 +35,14 @@ fn options(directory: &Path) -> RunOptions {
     }
 }
 
-fn checked(change: impl FnOnce(&TempDir, &mut RunOptions)) -> Result<Settings, Refused> {
+fn checked(change: impl FnOnce(&TempDir, &mut StartOptions)) -> Result<Settings, Refused> {
     let directory = test_inputs::temporary_directory();
     let mut options = options(directory.path());
     change(&directory, &mut options);
     options.settings()
 }
 
-fn option_refused(change: impl FnOnce(&TempDir, &mut RunOptions)) -> &'static str {
+fn option_refused(change: impl FnOnce(&TempDir, &mut StartOptions)) -> &'static str {
     checked(change).unwrap_err().option
 }
 

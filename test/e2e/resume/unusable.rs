@@ -5,7 +5,7 @@ use std::process::{Command, Output};
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 
-fn run(directory: &Path) -> Command {
+fn start(directory: &Path) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
@@ -26,9 +26,9 @@ fn run(directory: &Path) -> Command {
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    let mut run = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    run.arg("run").args(options).arg("--quiet");
-    run
+    let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
+    start.arg("start").args(options).arg("--quiet");
+    start
 }
 
 fn resume(directory: &Path) -> Output {
@@ -42,7 +42,7 @@ fn resume(directory: &Path) -> Output {
 fn resumed_while_in_use() -> Output {
     let directory = test_inputs::temporary_directory();
     fs::write(directory.path().join("hold"), "").unwrap();
-    let mut first = run(directory.path()).spawn().unwrap();
+    let mut first = start(directory.path()).spawn().unwrap();
     let pid_file = directory
         .path()
         .join("run/running/evaluation-0-t1/output/pid");

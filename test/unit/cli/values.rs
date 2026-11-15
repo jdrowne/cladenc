@@ -25,7 +25,7 @@ fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
         format!("{option}={value}")
     });
     Cli::try_parse_from(
-        ["cladenc".to_owned(), "run".to_owned()]
+        ["cladenc".to_owned(), "start".to_owned()]
             .into_iter()
             .chain(options)
             .chain((changed == "--quiet").then_some(given.to_owned())),
@@ -37,7 +37,7 @@ fn built_by(command: Option<&str>) -> Result<Cli, clap::Error> {
         .iter()
         .map(|(option, value)| format!("{option}={value}"));
     Cli::try_parse_from(
-        ["cladenc".to_owned(), "run".to_owned()]
+        ["cladenc".to_owned(), "start".to_owned()]
             .into_iter()
             .chain(options)
             .chain(command.map(|command| format!("--harness-build-command={command}"))),
@@ -62,7 +62,7 @@ fn an_empty_harness_run_command_is_an_error() {
 fn a_harness_run_command_is_taken_as_it_is_written() {
     assert!(matches!(
         with("--harness-run-command", "sh \"$CLADENC_HARNESS/harness.sh\" --flag").unwrap().command,
-        Command::Run(options)
+        Command::Start(options)
             if options.harness_run_command == "sh \"$CLADENC_HARNESS/harness.sh\" --flag"
     ));
 }
@@ -71,7 +71,7 @@ fn a_harness_run_command_is_taken_as_it_is_written() {
 fn a_command_line_with_no_harness_build_command_builds_nothing() {
     assert!(matches!(
         built_by(None).unwrap().command,
-        Command::Run(options) if options.harness_build_command.is_none()
+        Command::Start(options) if options.harness_build_command.is_none()
     ));
 }
 
@@ -79,7 +79,7 @@ fn a_command_line_with_no_harness_build_command_builds_nothing() {
 fn a_harness_build_command_is_taken_as_it_is_written() {
     assert!(matches!(
         built_by(Some("cargo build --release && cp target/release/harness .")).unwrap().command,
-        Command::Run(options) if options.harness_build_command.as_deref()
+        Command::Start(options) if options.harness_build_command.as_deref()
             == Some("cargo build --release && cp target/release/harness .")
     ));
 }
@@ -219,7 +219,7 @@ fn quiet_takes_no_value() {
 fn writing_quiet_turns_it_on() {
     assert!(matches!(
         with("--quiet", "--quiet").unwrap().command,
-        Command::Run(options) if options.quiet
+        Command::Start(options) if options.quiet
     ));
 }
 
@@ -227,6 +227,6 @@ fn writing_quiet_turns_it_on() {
 fn leaving_quiet_out_leaves_it_off() {
     assert!(matches!(
         with("", "").unwrap().command,
-        Command::Run(options) if !options.quiet
+        Command::Start(options) if !options.quiet
     ));
 }

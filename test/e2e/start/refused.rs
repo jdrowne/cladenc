@@ -25,7 +25,7 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
 
 fn status(options: &[String]) -> Option<i32> {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("run")
+        .arg("start")
         .args(options)
         .arg("--quiet")
         .output()

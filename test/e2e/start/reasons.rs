@@ -21,7 +21,7 @@ fn a_run_an_evaluator_stopped_says_which_evaluation_and_how_it_ended() {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let ended = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("run")
+        .arg("start")
         .args(options)
         .output()
         .unwrap();

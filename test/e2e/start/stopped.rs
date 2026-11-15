@@ -5,7 +5,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-fn run(directory: &Path, evaluator: &str) -> Command {
+fn start(directory: &Path, evaluator: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
@@ -23,14 +23,14 @@ fn run(directory: &Path, evaluator: &str) -> Command {
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    let mut run = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    run.arg("run").args(options).arg("--quiet");
-    run
+    let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
+    start.arg("start").args(options).arg("--quiet");
+    start
 }
 
 fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = run(directory.path(), "spawn.sh").spawn().unwrap();
+    let mut cladenc = start(directory.path(), "spawn.sh").spawn().unwrap();
     let pid_file = directory
         .path()
         .join("run/running/evaluation-0-t1/output/pid");
@@ -97,6 +97,6 @@ fn an_interrupt_during_a_run_leaves_no_sample_program_running() {
 #[test]
 fn an_evaluator_that_exits_with_a_status_other_than_0_or_1_gives_exit_status_1() {
     let directory = test_inputs::temporary_directory();
-    let status = run(directory.path(), "exit-2.sh").status().unwrap();
+    let status = start(directory.path(), "exit-2.sh").status().unwrap();
     assert_eq!(status.code(), Some(1));
 }

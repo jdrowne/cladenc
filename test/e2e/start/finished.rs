@@ -32,7 +32,7 @@ fn options(directory: &Path) -> Vec<String> {
 fn ran(quiet: Option<&str>) -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("run")
+        .arg("start")
         .args(options(directory.path()))
         .args(quiet)
         .output()

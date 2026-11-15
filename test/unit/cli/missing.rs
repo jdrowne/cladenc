@@ -25,7 +25,7 @@ fn without(left_out: &str) -> Result<Cli, clap::Error> {
         .filter(|(option, _)| *option != left_out)
         .map(|(option, value)| format!("{option}={value}"));
     Cli::try_parse_from(
-        ["cladenc".to_owned(), "run".to_owned()]
+        ["cladenc".to_owned(), "start".to_owned()]
             .into_iter()
             .chain(options),
     )

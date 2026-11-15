@@ -29,7 +29,7 @@ pub enum Command {
         about = "Start a new search and print the directory of its best harness",
         after_long_help = contract::CONTRACT
     )]
-    Run(Box<RunOptions>),
+    Start(Box<StartOptions>),
     #[command(about = "Continue a search that stopped before its end")]
     Resume(ResumeOptions),
     #[command(about = "Print the state of a search without changing it")]
@@ -37,13 +37,21 @@ pub enum Command {
 }
 
 #[derive(Clone, Debug, Args)]
-pub struct RunOptions {
+pub struct StartOptions {
     #[arg(
         long,
-        value_name = "DIR",
-        help = "The directory of source code copied to make the progenitor"
+        value_name = "COUNT",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The number of evaluations to start"
     )]
-    pub progenitor: PathBuf,
+    pub budget: u64,
+    #[arg(
+        long,
+        value_name = "PERCENT",
+        value_parser = checks::confidence,
+        help = "The probability behind the lower bound that picks the best harness"
+    )]
+    pub confidence: f64,
     #[arg(
         long,
         value_name = "IMAGE",
@@ -51,6 +59,26 @@ pub struct RunOptions {
         help = "The Docker image every container is started from"
     )]
     pub docker_image: String,
+    #[arg(
+        long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The time limit of one evaluation"
+    )]
+    pub evaluation_timeout: u64,
+    #[arg(
+        long,
+        value_name = "FILE",
+        help = "The program that carries out an evaluation"
+    )]
+    pub evaluator: PathBuf,
+    #[arg(
+        long,
+        value_name = "NUMBER",
+        value_parser = checks::genealogy_growth,
+        help = "How fast the genealogy may grow, from 0 to 1"
+    )]
+    pub genealogy_growth: f64,
     #[arg(
         long,
         value_name = "COMMAND",
@@ -65,54 +93,12 @@ pub struct RunOptions {
         help = "The shell command that runs a harness in a container"
     )]
     pub harness_run_command: String,
-    #[arg(long, value_name = "FILE", help = "The task ids, one per line")]
-    pub tasks: PathBuf,
-    #[arg(
-        long,
-        value_name = "FILE",
-        help = "The program that carries out an evaluation"
-    )]
-    pub evaluator: PathBuf,
-    #[arg(
-        long,
-        value_name = "DIR",
-        help = "The run directory, which run creates"
-    )]
-    pub run_dir: PathBuf,
-    #[arg(
-        long,
-        value_name = "COUNT",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The number of evaluations to start"
-    )]
-    pub budget: u64,
-    #[arg(
-        long,
-        value_name = "NUMBER",
-        value_parser = checks::genealogy_growth,
-        help = "How fast the genealogy may grow, from 0 to 1"
-    )]
-    pub genealogy_growth: f64,
-    #[arg(
-        long,
-        value_name = "PERCENT",
-        value_parser = checks::confidence,
-        help = "The probability behind the lower bound that picks the best harness"
-    )]
-    pub confidence: f64,
     #[arg(
         long,
         value_name = "COUNT",
         help = "Procreations of the progenitor made before the first evaluation"
     )]
     pub initial_procreations: u64,
-    #[arg(
-        long,
-        value_name = "COUNT",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The most jobs running at once"
-    )]
-    pub workers: u64,
     #[arg(
         long,
         value_name = "SECONDS",
@@ -122,44 +108,58 @@ pub struct RunOptions {
     pub procreation_timeout: u64,
     #[arg(
         long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one evaluation"
+        value_name = "DIR",
+        help = "The directory of source code copied to make the progenitor"
     )]
-    pub evaluation_timeout: u64,
-    #[arg(long, value_name = "INTEGER", help = "The seed of every random draw")]
-    pub seed: u64,
+    pub progenitor: PathBuf,
     #[arg(long, help = "Print nothing on standard error")]
     pub quiet: bool,
+    #[arg(
+        long,
+        value_name = "DIR",
+        help = "The run directory, which start creates"
+    )]
+    pub run_dir: PathBuf,
+    #[arg(long, value_name = "INTEGER", help = "The seed of every random draw")]
+    pub seed: u64,
+    #[arg(long, value_name = "FILE", help = "The task ids, one per line")]
+    pub tasks: PathBuf,
+    #[arg(
+        long,
+        value_name = "COUNT",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The most jobs running at once"
+    )]
+    pub workers: u64,
 }
 
 #[derive(Clone, Debug, Args)]
 pub struct ResumeOptions {
+    #[arg(long, help = "Print nothing on standard error")]
+    pub quiet: bool,
     #[arg(
         long,
         value_name = "DIR",
         help = "The run directory of the search to continue"
     )]
     pub run_dir: PathBuf,
-    #[arg(long, help = "Print nothing on standard error")]
-    pub quiet: bool,
 }
 
 #[derive(Clone, Debug, Args)]
 pub struct ReportOptions {
+    #[arg(long, help = "Print one JSON object in place of the table")]
+    pub json: bool,
     #[arg(
         long,
         value_name = "DIR",
         help = "The run directory of the search to report on"
     )]
     pub run_dir: PathBuf,
-    #[arg(long, help = "Print one JSON object in place of the table")]
-    pub json: bool,
 }
 
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
     let quiet = match &cli.command {
-        Command::Run(options) => options.quiet,
+        Command::Start(options) => options.quiet,
         Command::Resume(options) => options.quiet,
         Command::Report(_) => false,
     };
@@ -168,7 +168,7 @@ pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mu
         .as_mut()
         .map(|errors| &mut **errors as &mut dyn Write);
     let printed = match &cli.command {
-        Command::Run(options) => run(options, stop, writer).map(directory),
+        Command::Start(options) => start(options, stop, writer).map(directory),
         Command::Resume(options) => resume(options, stop, writer).map(directory),
         Command::Report(options) => report(options),
     };
@@ -186,8 +186,8 @@ pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mu
     }
 }
 
-fn run(
-    options: &RunOptions,
+fn start(
+    options: &StartOptions,
     stop: &AtomicBool,
     writer: Option<&mut dyn Write>,
 ) -> Result<Found, (u8, String)> {
