@@ -10,6 +10,7 @@ use super::JobError;
 use super::program::{self, Ending};
 
 const NOT_STARTED: i32 = 125;
+const MACHINE: &str = "host.docker.internal:host-gateway";
 
 pub(super) struct Mount<'a> {
     pub from: &'a Path,
@@ -37,12 +38,13 @@ impl Container<'_> {
         docker
             .args(["run", "--rm", "--name", &name, "--user"])
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
+            .args(["--add-host", MACHINE])
             .args(["--workdir", self.working_directory]);
         for mount in self.mounts {
             docker.arg("--volume").arg(mount.written());
         }
-        for (variable, value) in self.environment {
-            docker.arg("--env").arg(format!("{variable}={value}"));
+        for &(variable, value) in self.environment {
+            docker.args(["--env", variable]).env(variable, value);
         }
         docker.args([self.image, "sh", "-c", self.command]);
         let ended = program::run(docker, job, deadline, stop);

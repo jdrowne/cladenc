@@ -11,6 +11,12 @@ use tempfile::TempDir;
 
 pub const IMAGE: &str = "busybox:1.37.0";
 
+pub const MODEL: &str = "a-model";
+
+pub const MODEL_URL: &str = "http://models.example/v1";
+
+pub const MODEL_KEY: &str = "a-made-up-key";
+
 pub const SOLVE_ONE_MORE: &str = r#"touch solved
 echo "t$(($(wc -l < solved) + 1))" >> solved"#;
 
@@ -98,4 +104,10 @@ pub fn end_with_125_no_more(run_directory: &Path) {
             fs::remove_file(marker).expect("the marker can be removed");
         }
     }
+}
+
+pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {
+    let file = directory.join("model-key");
+    fs::write(&file, text).expect("the file of the key can be written");
+    file
 }

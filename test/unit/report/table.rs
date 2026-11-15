@@ -7,6 +7,9 @@ use cladenc::report::Report;
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -35,14 +38,15 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 }
 
 #[test]
-fn the_table_holds_a_line_for_the_run_a_header_and_a_row_for_each_harness() {
+fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table(|genealogy| {
         evaluated(genealogy, "t1", EvaluationOutcome::Success);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
         table,
-        "started 1 of 800, best harness 0\n\
+        "model a-model at http://models.example/v1\n\
+         started 1 of 800, best harness 0\n\
          \n\
          id  parent  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
          0   -       created        1          0         1                0               1.000               0.100\n\
@@ -60,7 +64,8 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
     });
     assert_eq!(
         table,
-        "started 0 of 800, best harness 0\n\
+        "model a-model at http://models.example/v1\n\
+         started 0 of 800, best harness 0\n\
          \n\
          id  parent  state    successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
          0   -       created  0          0         0                0               -                   0.010\n\
@@ -75,5 +80,5 @@ fn a_rate_is_printed_to_three_decimal_places() {
         evaluated(genealogy, "t2", EvaluationOutcome::Failure);
         evaluated(genealogy, "t3", EvaluationOutcome::Failure);
     });
-    assert!(table.lines().nth(3).unwrap().contains("  0.333  "));
+    assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
 }

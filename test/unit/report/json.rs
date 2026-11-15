@@ -7,6 +7,9 @@ use cladenc::report::Report;
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -34,7 +37,8 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     assert_eq!(
         Report::of(&settings(), &genealogy).json(),
         concat!(
-            r#"{"started":1,"budget":800,"best_harness":0,"harnesses":["#,
+            r#"{"model":"a-model","model_url":"http://models.example/v1","#,
+            r#""started":1,"budget":800,"best_harness":0,"harnesses":["#,
             r#"{"id":0,"parent":null,"state":"created","successes":1,"failures":0,"#,
             r#""clade_successes":1,"clade_failures":0,"clade_success_rate":1.0,"#,
             r#""lower_bound":0.09999999999999981},"#,

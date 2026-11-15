@@ -8,6 +8,8 @@ use nix::unistd::Pid;
 fn start(directory: &Path, evaluator: &str) -> Vec<String> {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
+        ("--model", test_inputs::MODEL.into()),
+        ("--model-url", test_inputs::MODEL_URL.into()),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),

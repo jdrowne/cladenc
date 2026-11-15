@@ -17,6 +17,9 @@ struct Searches {
 fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
+        model: test_inputs::MODEL.to_owned(),
+        model_url: test_inputs::MODEL_URL.to_owned(),
+        model_key_file: None,
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: None,

@@ -12,6 +12,7 @@ mod search {
     mod built;
     mod ended;
     mod finished;
+    mod keyed;
     mod resumed;
     mod stopped;
     mod unusable;

@@ -10,6 +10,7 @@ use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::model::{self, Model};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
 pub use build::build_progenitor;
@@ -33,6 +34,7 @@ pub struct Launch<'a> {
     pub image: &'a str,
     pub run_command: &'a str,
     pub build_command: Option<&'a str>,
+    pub model: Model<'a>,
 }
 
 #[derive(Debug)]
@@ -86,6 +88,13 @@ pub fn run_procreation(
     let made = job.join("child");
     let evaluations = workspace.evaluations(parent);
     let deadline = deadline(time_limit);
+    let environment: Vec<(&str, &str)> = [
+        ("CLADENC_HARNESS", HARNESS),
+        ("CLADENC_INSTRUCTION", INSTRUCTION),
+    ]
+    .into_iter()
+    .chain(launch.model.environment())
+    .collect();
     let container = Container {
         image: launch.image,
         command: launch.run_command,
@@ -107,10 +116,7 @@ pub fn run_procreation(
             },
         ],
         working_directory: WORK,
-        environment: &[
-            ("CLADENC_HARNESS", HARNESS),
-            ("CLADENC_INSTRUCTION", INSTRUCTION),
-        ],
+        environment: &environment,
     };
     let outcome = match container.run(&job, deadline, stop)? {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
@@ -128,6 +134,7 @@ pub fn run_procreation(
 pub fn run_evaluation(
     workspace: &Workspace,
     evaluator: &Path,
+    model: &Model<'_>,
     harness: HarnessId,
     task: &str,
     time_limit: u64,
@@ -142,7 +149,9 @@ pub fn run_evaluation(
         .arg(job.join("harness"))
         .arg(task)
         .arg(job.join("output"))
-        .current_dir(job.join("output"));
+        .current_dir(job.join("output"))
+        .env_remove(model::KEY)
+        .envs(model.environment());
     let outcome = match run(command, &job, deadline(time_limit), stop)? {
         Ending::Exited(0) => EvaluationOutcome::Success,
         Ending::Exited(1) => EvaluationOutcome::Failure,

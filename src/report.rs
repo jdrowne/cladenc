@@ -21,6 +21,8 @@ const HEADER: [&str; 9] = [
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Report {
+    pub model: String,
+    pub model_url: String,
     pub started: u64,
     pub budget: u64,
     pub best_harness: HarnessId,
@@ -47,6 +49,8 @@ pub fn read(run_directory: &Path) -> Result<Report, JournalError> {
 impl Report {
     pub fn of(settings: &Settings, genealogy: &Genealogy) -> Self {
         Self {
+            model: settings.model.clone(),
+            model_url: settings.model_url.clone(),
             started: genealogy.started(),
             budget: settings.budget,
             best_harness: settings.policy().best_harness(genealogy),
@@ -79,8 +83,8 @@ impl Report {
             })
             .collect();
         format!(
-            "started {} of {}, best harness {}\n\n{lines}",
-            self.started, self.budget, self.best_harness
+            "model {} at {}\nstarted {} of {}, best harness {}\n\n{lines}",
+            self.model, self.model_url, self.started, self.budget, self.best_harness
         )
     }
 }

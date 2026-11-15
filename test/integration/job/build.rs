@@ -4,9 +4,16 @@ use std::thread;
 
 use cladenc::genealogy::ProcreationOutcome;
 use cladenc::job::{self, JobError, Launch};
+use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
 use tempfile::TempDir;
+
+const MODEL: Model<'static> = Model {
+    name: test_inputs::MODEL,
+    url: test_inputs::MODEL_URL,
+    key: None,
+};
 
 type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
 
@@ -23,6 +30,7 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
         image: test_inputs::IMAGE,
         run_command,
         build_command: Some(build_command),
+        model: MODEL,
     };
     let stop = AtomicBool::new(false);
     let result = job::run_procreation(&workspace, &launch, 1, 0, time_limit, &stop);
@@ -39,6 +47,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
         image: test_inputs::IMAGE,
         run_command: "exit 0",
         build_command: Some("hostname > id; sleep 300"),
+        model: MODEL,
     };
     let id_file = workspace.running_procreation(1).join("child/id");
     let stop = AtomicBool::new(false);
@@ -50,6 +59,21 @@ fn stopped_while_its_child_is_built() -> Procreated {
         job::run_procreation(&workspace, &launch, 1, 0, 60, &stop)
     });
     (directory, workspace, result)
+}
+
+fn left_by_a_build_of_a_search_with_a_key(build_command: &str, file: &str) -> String {
+    let (_directory, workspace) = made();
+    let launch = Launch {
+        image: test_inputs::IMAGE,
+        run_command: "exit 0",
+        build_command: Some(build_command),
+        model: Model {
+            key: Some(test_inputs::MODEL_KEY),
+            ..MODEL
+        },
+    };
+    let _ = job::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
+    fs::read_to_string(workspace.harness(1).join(file)).unwrap()
 }
 
 fn left_in_the_child(build_command: &str, file: &str) -> String {
@@ -72,6 +96,18 @@ fn the_build_of_a_child_is_told_where_the_source_code_is() {
     assert_eq!(
         left_in_the_child("echo \"$CLADENC_HARNESS\" > told", "told"),
         "/harness\n"
+    );
+}
+
+#[test]
+fn a_build_is_told_nothing_of_the_model() {
+    assert_eq!(
+        left_by_a_build_of_a_search_with_a_key(
+            "echo \"${CLADENC_MODEL-none} ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
+             > told",
+            "told"
+        ),
+        "none none none\n"
     );
 }
 
@@ -198,6 +234,7 @@ fn a_build_whose_output_cannot_be_kept_is_an_error() {
         image: test_inputs::IMAGE,
         run_command: "exit 0",
         build_command: Some("exit 0"),
+        model: MODEL,
     };
     let stop = AtomicBool::new(false);
     assert!(matches!(

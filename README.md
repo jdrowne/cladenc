@@ -71,6 +71,9 @@ cladenc start \
   --harness-build-command <COMMAND> \
   --harness-run-command <COMMAND> \
   --initial-procreations <COUNT> \
+  --model <NAME> \
+  --model-key-file <FILE> \
+  --model-url <URL> \
   --procreation-timeout <SECONDS> \
   --progenitor <DIR> \
   --quiet \
@@ -91,6 +94,9 @@ cladenc start \
 | `--harness-build-command <COMMAND>` | Not Required | The shell command that builds a harness in a container, where one has to be built. |
 | `--harness-run-command <COMMAND>` | Required | The shell command that runs a harness in a container. |
 | `--initial-procreations <COUNT>` | Required | The number of procreations of the progenitor made before the first evaluation. A procreation is one harness making another. |
+| `--model <NAME>` | Required | The name of the model the harnesses call, as its server knows it. `cladenc` calls no model itself: it tells each harness the name, the address and the key. |
+| `--model-key-file <FILE>` | Not Required | The file that holds the key the model is called with, on one line, and nothing else. It is given where the server of the model asks for a key. `cladenc resume` reads the file again. |
+| `--model-url <URL>` | Required | The address the model is served at, by a provider or by a server of your own. In a container, `host.docker.internal` names the machine `cladenc` runs on. |
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation. |
 | `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
 | `--quiet` | Not Required | Print nothing on standard error. |

@@ -8,6 +8,9 @@ use cladenc::report::Report;
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -123,6 +126,15 @@ fn the_best_harness_reported_is_the_one_the_policy_chooses() {
 fn the_best_harness_reported_is_the_created_harness_with_the_largest_lower_bound() {
     let report = report(&a_child_that_succeeds_where_its_parent_fails());
     assert_eq!(report.best_harness, 1);
+}
+
+#[test]
+fn the_model_reported_is_the_one_the_search_was_started_with() {
+    let report = report(&Genealogy::new());
+    assert_eq!(
+        (report.model.as_str(), report.model_url.as_str()),
+        ("a-model", "http://models.example/v1")
+    );
 }
 
 #[test]

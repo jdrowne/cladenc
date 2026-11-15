@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::job;
+use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -12,7 +13,13 @@ fn recorded() -> (TempDir, PathBuf) {
     let progenitor = test_inputs::progenitor(directory.path());
     let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
     let evaluator = test_inputs::sample("integration", "record.sh");
-    let _ = job::run_evaluation(&workspace, &evaluator, 0, "t1", 30, &AtomicBool::new(false));
+    let model = Model {
+        name: test_inputs::MODEL,
+        url: test_inputs::MODEL_URL,
+        key: None,
+    };
+    let stop = AtomicBool::new(false);
+    let _ = job::run_evaluation(&workspace, &evaluator, &model, 0, "t1", 30, &stop);
     (directory, workspace.evaluation(0, "t1"))
 }
 

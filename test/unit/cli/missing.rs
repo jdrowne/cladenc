@@ -2,8 +2,10 @@ use cladenc::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 14] = [
+const OPTIONS: [(&str, &str); 16] = [
     ("--progenitor", "/progenitor"),
+    ("--model", "a-model"),
+    ("--model-url", "http://models.example/v1"),
     ("--tasks", "/tasks"),
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
@@ -44,6 +46,22 @@ fn a_command_line_with_every_option_is_accepted() {
 fn leaving_out_the_progenitor_is_an_error() {
     assert_eq!(
         refusal_without("--progenitor"),
+        ErrorKind::MissingRequiredArgument
+    );
+}
+
+#[test]
+fn leaving_out_the_model_is_an_error() {
+    assert_eq!(
+        refusal_without("--model"),
+        ErrorKind::MissingRequiredArgument
+    );
+}
+
+#[test]
+fn leaving_out_the_address_of_the_model_is_an_error() {
+    assert_eq!(
+        refusal_without("--model-url"),
         ErrorKind::MissingRequiredArgument
     );
 }

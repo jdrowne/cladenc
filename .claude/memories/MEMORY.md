@@ -5,7 +5,7 @@
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words, and let cladenc leave the paper where a change improves it
-- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: two inputs, and cladenc does the self-improvement itself; the code of 2026-11-14 asks for a procreator and an evaluator program instead
+- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: two inputs, and cladenc does the self-improvement itself; the model may be remote or self-hosted; the code of 2026-11-14 asks for a procreator and an evaluator program instead
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Every build is for Linux arm64](every-build-is-for-linux-arm64.md) — what CI compiles, tests, packages and releases is for Linux arm64 and no other platform
 - [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora
@@ -32,3 +32,4 @@
 - [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — the sub-command was `cladenc run` until 2026-11-15; older issues and memories that say so mean `start`
 - [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows `cladenc` and each sub-command as a command block, then a table of its flags in alphabetical order, with text about a sub-command under it
 - [No flag has a default](no-flag-has-a-default.md) — every flag that takes a value is required and nothing about a search is assumed; a default is never proposed, and the count of required flags is not a problem
+- [A key is given in a file](a-key-is-given-in-a-file.md) — a secret such as a model's key reaches cladenc in a file that a flag names, never as a flag's value or in an environment variable

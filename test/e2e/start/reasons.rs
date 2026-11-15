@@ -5,6 +5,8 @@ fn a_run_an_evaluator_stopped_says_which_evaluation_and_how_it_ended() {
     let directory = test_inputs::temporary_directory();
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
+        ("--model", test_inputs::MODEL.into()),
+        ("--model-url", test_inputs::MODEL_URL.into()),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),

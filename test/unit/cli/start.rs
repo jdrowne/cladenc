@@ -22,6 +22,9 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     let directory = test_inputs::temporary_directory();
     let mut options = StartOptions {
         progenitor: test_inputs::progenitor(directory.path()),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: test_inputs::task_file(directory.path(), &["t1"]),
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -54,6 +57,10 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
 
 fn with_a_missing_task_file(directory: &Path, options: &mut StartOptions) {
     options.tasks = directory.join("missing");
+}
+
+fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) {
+    options.model_key_file = Some(directory.join("missing"));
 }
 
 fn in_a_run_directory_that_exists(directory: &Path, options: &mut StartOptions) {
@@ -90,6 +97,19 @@ fn with_quiet_a_refused_value_prints_nothing_on_standard_error() {
         options.quiet = true;
     });
     assert_eq!(quiet.errors, "");
+}
+
+#[test]
+fn a_file_of_the_key_that_holds_no_key_gives_exit_status_2() {
+    assert_eq!(ran(with_a_missing_file_of_the_key).status, 2);
+}
+
+#[test]
+fn a_file_of_the_key_that_holds_no_key_is_refused_for_what_the_flag_takes() {
+    assert_eq!(
+        ran(with_a_missing_file_of_the_key).errors,
+        "cladenc: --model-key-file takes a file that holds a key on one line and nothing else\n"
+    );
 }
 
 #[test]

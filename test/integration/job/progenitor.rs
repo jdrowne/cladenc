@@ -2,8 +2,15 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::job::{self, JobError, Launch};
+use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
+
+const MODEL: Model<'static> = Model {
+    name: test_inputs::MODEL,
+    url: test_inputs::MODEL_URL,
+    key: None,
+};
 
 type Built = (TempDir, Workspace, Result<(), JobError>);
 
@@ -20,6 +27,7 @@ fn built_from(image: &str, build_command: Option<&str>, time_limit: u64, stop: b
         image,
         run_command: "exit 0",
         build_command,
+        model: MODEL,
     };
     let stop = AtomicBool::new(stop);
     let result = job::build_progenitor(&workspace, &launch, time_limit, &stop);

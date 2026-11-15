@@ -9,6 +9,9 @@ use tempfile::TempDir;
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/abs/harness"),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,

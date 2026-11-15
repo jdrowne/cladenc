@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io;
+use std::path::PathBuf;
 
 use cladenc::job::JobError;
 use cladenc::journal::{JournalError, Started};
@@ -22,6 +23,15 @@ fn a_run_directory_that_cannot_be_used_is_worded_with_the_journal_s_reason() {
     assert_eq!(
         worded(SearchError::Unusable(JournalError::Locked)),
         "the run directory cannot be used: another cladenc is using it"
+    );
+}
+
+#[test]
+fn a_key_that_cannot_be_read_is_worded_with_its_file_and_what_the_file_has_to_hold() {
+    assert_eq!(
+        worded(SearchError::Key(PathBuf::from("/keys/model"))),
+        "the key of the model cannot be read: /keys/model is not a file that holds a key on one \
+         line and nothing else"
     );
 }
 

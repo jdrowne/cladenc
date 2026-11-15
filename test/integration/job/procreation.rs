@@ -1,12 +1,22 @@
 use std::fs;
+use std::io::Read;
+use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
+use std::thread;
 
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
 use cladenc::job::{self, JobError, Launch};
+use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
 use tempfile::TempDir;
+
+const MODEL: Model<'static> = Model {
+    name: test_inputs::MODEL,
+    url: test_inputs::MODEL_URL,
+    key: None,
+};
 
 type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
 
@@ -28,6 +38,7 @@ fn started_from(
         image,
         run_command,
         build_command: None,
+        model: MODEL,
     };
     job::run_procreation(
         workspace,
@@ -71,6 +82,36 @@ fn kept_of_the_procreation(run_command: &str, file: &str) -> String {
     fs::read_to_string(workspace.procreation(1).join(file)).unwrap()
 }
 
+fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
+    let (_directory, workspace) = made_at("run");
+    let launch = Launch {
+        image: test_inputs::IMAGE,
+        run_command,
+        build_command: None,
+        model: Model {
+            key: Some(test_inputs::MODEL_KEY),
+            ..MODEL
+        },
+    };
+    let _ = job::run_procreation(&workspace, &launch, 1, 0, 30, &AtomicBool::new(false));
+    fs::read_to_string(workspace.harness(1).join(file)).unwrap()
+}
+
+fn heard_from_a_harness_that_says(said: &str) -> String {
+    let listener = TcpListener::bind("0.0.0.0:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let hearing = thread::spawn(move || {
+        let mut heard = String::new();
+        let _ = listener
+            .accept()
+            .and_then(|(mut harness, _)| harness.read_to_string(&mut heard));
+        heard
+    });
+    let _ = procreated(&format!("echo {said} | nc host.docker.internal {port}"));
+    drop(TcpStream::connect(("127.0.0.1", port)));
+    hearing.join().unwrap()
+}
+
 fn harness_script(harness: &Path) -> String {
     fs::read_to_string(harness.join("harness.sh")).unwrap()
 }
@@ -102,6 +143,35 @@ fn a_harness_is_given_the_instruction_to_improve_its_source_code() {
         left_in_the_child("printf %s \"$CLADENC_INSTRUCTION\" > given", "given"),
         job::INSTRUCTION
     );
+}
+
+#[test]
+fn a_harness_is_told_the_model_and_the_address_it_is_served_at() {
+    assert_eq!(
+        left_in_the_child("echo \"$CLADENC_MODEL $CLADENC_MODEL_URL\" > told", "told"),
+        format!("{} {}\n", test_inputs::MODEL, test_inputs::MODEL_URL)
+    );
+}
+
+#[test]
+fn a_harness_is_given_the_key_the_model_is_called_with() {
+    assert_eq!(
+        left_by_a_harness_given_a_key("printf %s \"$CLADENC_MODEL_KEY\" > given", "given"),
+        test_inputs::MODEL_KEY
+    );
+}
+
+#[test]
+fn a_harness_of_a_search_with_no_key_is_given_none() {
+    assert_eq!(
+        left_in_the_child("echo \"${CLADENC_MODEL_KEY-none}\" > given", "given"),
+        "none\n"
+    );
+}
+
+#[test]
+fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
+    assert_eq!(heard_from_a_harness_that_says("reached"), "reached\n");
 }
 
 #[test]

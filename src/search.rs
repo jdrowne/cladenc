@@ -10,7 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::genealogy::HarnessId;
-use crate::job::{self, JobError};
+use crate::job::{self, JobError, Launch};
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::workspace::Workspace;
 
@@ -27,6 +27,7 @@ pub struct Found {
 
 struct Shared<'a> {
     settings: &'a Settings,
+    launch: Launch<'a>,
     workspace: Workspace,
     halt: AtomicBool,
 }
@@ -37,6 +38,7 @@ pub fn search(
     stop: &AtomicBool,
     writer: Option<&mut dyn Write>,
 ) -> Result<Found, SearchError> {
+    let key = settings.model_key().map_err(SearchError::Key)?;
     let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
         .map_err(SearchError::Io)
         .and_then(|workspace| {
@@ -49,7 +51,7 @@ pub fn search(
         format: journal::FORMAT,
         settings: settings.clone(),
     });
-    carry_on(settings, workspace, progress, stop)
+    carry_on(settings, key.as_deref(), workspace, progress, stop)
 }
 
 pub fn resume(
@@ -74,22 +76,25 @@ pub fn resume(
             directory: workspace.harness(best_harness),
         }),
         None => {
+            let key = settings.model_key().map_err(SearchError::Key)?;
             let progress =
                 Progress::new(&settings, journal, writer).resumed(genealogy, unfinished, next_job);
-            carry_on(&settings, workspace, progress, stop)
+            carry_on(&settings, key.as_deref(), workspace, progress, stop)
         }
     }
 }
 
 fn carry_on(
     settings: &Settings,
+    key: Option<&str>,
     workspace: Workspace,
     mut progress: Progress<'_>,
     stop: &AtomicBool,
 ) -> Result<Found, SearchError> {
+    let launch = settings.launch(key);
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
-        job::build_progenitor(&workspace, &settings.launch(), time_limit, stop).map_err(
+        job::build_progenitor(&workspace, &launch, time_limit, stop).map_err(
             |error| match error {
                 JobError::Stopped => SearchError::Asked,
                 error => SearchError::Build(error),
@@ -99,6 +104,7 @@ fn carry_on(
     }
     let shared = Shared {
         settings,
+        launch,
         workspace,
         halt: AtomicBool::new(false),
     };

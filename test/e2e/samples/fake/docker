@@ -1,0 +1,2 @@
+#!/bin/sh
+printf '%s\n' "$@" >> "$CLADENC_TEST_ARGUMENTS_OF_DOCKER"

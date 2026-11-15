@@ -31,6 +31,43 @@ fn the_long_help_of_start_names_what_a_harness_is_told() {
 }
 
 #[test]
+fn the_long_help_of_start_names_the_variables_a_harness_is_told_the_model_in() {
+    let help = help_of_start(true);
+    let told = [
+        "  CLADENC_MODEL        the name of the model, the value of --model\n",
+        "  CLADENC_MODEL_URL    the address the model is served at",
+        "  CLADENC_MODEL_KEY    the key the model is called with",
+    ];
+    assert!(told.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_a_harness_reaches_the_machine_cladenc_runs_on() {
+    assert!(
+        help_of_start(true).contains("host.docker.internal names the machine cladenc\nruns on")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_build_is_not_told_the_model() {
+    assert!(help_of_start(true).contains(
+        "A build calls no model, and is\ngiven none of the three variables of the model."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_evaluator_is_told_the_model_too() {
+    assert!(help_of_start(true).contains(
+        "It is\ngiven CLADENC_MODEL, CLADENC_MODEL_URL and CLADENC_MODEL_KEY in its\nenvironment"
+    ));
+}
+
+#[test]
+fn the_short_help_of_start_names_the_flag_that_names_the_file_of_the_key() {
+    assert!(help_of_start(false).contains("--model-key-file <FILE>"));
+}
+
+#[test]
 fn the_long_help_of_start_says_what_each_way_a_harness_ends_means() {
     let help = help_of_start(true);
     let endings = [

@@ -102,6 +102,26 @@ pub struct StartOptions {
     pub initial_procreations: u64,
     #[arg(
         long,
+        value_name = "NAME",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The name of the model the harnesses call, as its server knows it"
+    )]
+    pub model: String,
+    #[arg(
+        long,
+        value_name = "FILE",
+        help = "The file that holds the key the model is called with, where its server asks for one"
+    )]
+    pub model_key_file: Option<PathBuf>,
+    #[arg(
+        long,
+        value_name = "URL",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The address the model is served at"
+    )]
+    pub model_url: String,
+    #[arg(
+        long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The time limit of one procreation"
@@ -246,7 +266,7 @@ fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
 
 fn stopped(error: SearchError) -> (u8, String) {
     let status = match error {
-        SearchError::Io(_) | SearchError::Unusable(_) => 2,
+        SearchError::Io(_) | SearchError::Unusable(_) | SearchError::Key(_) => 2,
         SearchError::Journal(_)
         | SearchError::Asked
         | SearchError::Build(_)

@@ -17,6 +17,9 @@ fn program(directory: &Path, name: &str, mode: u32) -> PathBuf {
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
         progenitor: test_inputs::progenitor(directory),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -61,6 +64,9 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
         options.settings(),
         Ok(Settings {
             progenitor: root.join("progenitor"),
+            model: "a-model".to_owned(),
+            model_url: "http://models.example/v1".to_owned(),
+            model_key_file: None,
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
             docker_image: "image".to_owned(),
             harness_build_command: None,
@@ -223,4 +229,66 @@ fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
         accepted: "an executable file",
     };
     assert_eq!(refused.to_string(), "--evaluator takes an executable file");
+}
+
+#[test]
+fn the_model_and_its_address_are_settings_as_they_were_given() {
+    let settings = checked(|_, options| {
+        options.model = "llama3.3:70b".to_owned();
+        options.model_url = "http://host.docker.internal:11434".to_owned();
+    })
+    .unwrap();
+    assert_eq!(
+        (settings.model, settings.model_url),
+        (
+            "llama3.3:70b".to_owned(),
+            "http://host.docker.internal:11434".to_owned()
+        )
+    );
+}
+
+#[test]
+fn the_file_of_the_key_is_a_setting_and_the_key_is_not() {
+    let directory = test_inputs::temporary_directory();
+    let mut options = options(directory.path());
+    let file = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
+    options.model_key_file = Some(file.clone());
+    assert_eq!(options.settings().unwrap().model_key_file, Some(file));
+}
+
+#[test]
+fn a_file_of_the_key_given_from_the_working_directory_is_made_absolute() {
+    let settings = checked(|_, options| {
+        options.model_key_file = Some(PathBuf::from("test/unit/samples/model-key"));
+    })
+    .unwrap();
+    assert!(settings.model_key_file.unwrap().is_absolute());
+}
+
+#[test]
+fn a_file_of_the_key_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.model_key_file = Some(directory.path().join("missing"));
+        }),
+        "--model-key-file"
+    );
+}
+
+#[test]
+fn a_file_of_the_key_that_holds_no_key_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.model_key_file = Some(test_inputs::model_key_file(directory.path(), "\n"));
+        }),
+        "--model-key-file"
+    );
+}
+
+#[test]
+fn a_file_of_the_key_with_no_path_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.model_key_file = Some(PathBuf::new())),
+        "--model-key-file"
+    );
 }

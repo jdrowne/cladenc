@@ -6,11 +6,15 @@ use std::path::PathBuf;
 use cladenc::genealogy::Genealogy;
 use cladenc::job::Launch;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
+use cladenc::model::Model;
 use cladenc::policy::Policy;
 
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/abs/harness"),
+        model: "a-model".to_owned(),
+        model_url: "http://models.example/v1".to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -34,6 +38,13 @@ fn built_with(command: &str) -> Settings {
     }
 }
 
+fn keyed() -> Settings {
+    Settings {
+        model_key_file: Some(PathBuf::from("/abs/keys/model")),
+        ..settings()
+    }
+}
+
 fn run(settings: Settings) -> Record {
     Record::Run {
         format: journal::FORMAT,
@@ -53,8 +64,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_3() {
-    assert_eq!(journal::FORMAT, 3);
+fn the_format_of_the_journal_is_4() {
+    assert_eq!(journal::FORMAT, 4);
 }
 
 #[test]
@@ -62,7 +73,9 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":3,"progenitor":"/abs/harness","docker_image":"image","#,
+            r#"{"record":"run","format":4,"progenitor":"/abs/harness","model":"a-model","#,
+            r#""model_url":"http://models.example/v1","model_key_file":null,"#,
+            r#""docker_image":"image","#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""tasks":["t1","t2"],"#,
             r#""evaluator":"/abs/evaluate","budget":800,"#,
@@ -83,6 +96,56 @@ fn the_run_record_of_a_search_that_builds_its_harnesses_holds_the_build_command(
 }
 
 #[test]
+fn the_run_record_of_a_search_with_a_key_holds_the_file_of_the_key() {
+    assert!(
+        run(keyed())
+            .line()
+            .unwrap()
+            .contains(r#""model_key_file":"/abs/keys/model","docker_image":"image","#)
+    );
+}
+
+#[test]
+fn the_file_of_a_key_survives_being_written_and_read_back() {
+    assert_eq!(read_back(&run(keyed())), run(keyed()));
+}
+
+#[test]
+fn the_settings_and_a_key_give_the_model_a_harness_is_told() {
+    assert_eq!(
+        settings().model(Some("a-made-up-key")),
+        Model {
+            name: "a-model",
+            url: "http://models.example/v1",
+            key: Some("a-made-up-key"),
+        }
+    );
+}
+
+#[test]
+fn settings_that_name_no_file_of_a_key_have_no_key() {
+    assert_eq!(settings().model_key(), Ok(None));
+}
+
+#[test]
+fn settings_that_name_a_file_of_a_key_have_the_key_the_file_holds() {
+    let directory = test_inputs::temporary_directory();
+    let settings = Settings {
+        model_key_file: Some(test_inputs::model_key_file(
+            directory.path(),
+            "a-made-up-key\n",
+        )),
+        ..settings()
+    };
+    assert_eq!(settings.model_key(), Ok(Some("a-made-up-key".to_owned())));
+}
+
+#[test]
+fn settings_whose_file_of_a_key_holds_no_key_give_the_file() {
+    assert_eq!(keyed().model_key(), Err(PathBuf::from("/abs/keys/model")));
+}
+
+#[test]
 fn a_build_command_survives_being_written_and_read_back() {
     assert_eq!(
         read_back(&run(built_with("make harness"))),
@@ -93,18 +156,23 @@ fn a_build_command_survives_being_written_and_read_back() {
 #[test]
 fn the_settings_give_how_a_harness_is_built_and_run() {
     assert_eq!(
-        built_with("make harness").launch(),
+        built_with("make harness").launch(None),
         Launch {
             image: "image",
             run_command: "run a harness",
             build_command: Some("make harness"),
+            model: Model {
+                name: "a-model",
+                url: "http://models.example/v1",
+                key: None,
+            },
         }
     );
 }
 
 #[test]
 fn settings_with_no_build_command_give_a_launch_that_builds_nothing() {
-    assert_eq!(settings().launch().build_command, None);
+    assert_eq!(settings().launch(None).build_command, None);
 }
 
 #[test]

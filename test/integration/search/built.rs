@@ -17,6 +17,9 @@ const BUILD_UNLESS_TOLD_NOT_TO: &str = "[ ! -e do-not-build ] && echo built >> b
 fn settings(directory: &Path, build_command: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
+        model: test_inputs::MODEL.to_owned(),
+        model_url: test_inputs::MODEL_URL.to_owned(),
+        model_key_file: None,
         tasks: vec!["t1".to_owned()],
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: Some(build_command.to_owned()),

@@ -8,6 +8,8 @@ fn ended() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
+        ("--model", test_inputs::MODEL.into()),
+        ("--model-url", test_inputs::MODEL_URL.into()),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),

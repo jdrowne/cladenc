@@ -5,11 +5,15 @@ use serde::{Deserialize, Serialize};
 use super::JournalError;
 use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use crate::job::Launch;
+use crate::model::{self, Model};
 use crate::policy::Policy;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
     pub progenitor: PathBuf,
+    pub model: String,
+    pub model_url: String,
+    pub model_key_file: Option<PathBuf>,
     pub docker_image: String,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
@@ -26,11 +30,27 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn launch(&self) -> Launch<'_> {
+    pub fn model_key(&self) -> Result<Option<String>, PathBuf> {
+        self.model_key_file
+            .as_ref()
+            .map(|file| model::read_key(file).ok_or_else(|| file.clone()))
+            .transpose()
+    }
+
+    pub fn model<'a>(&'a self, key: Option<&'a str>) -> Model<'a> {
+        Model {
+            name: &self.model,
+            url: &self.model_url,
+            key,
+        }
+    }
+
+    pub fn launch<'a>(&'a self, key: Option<&'a str>) -> Launch<'a> {
         Launch {
             image: &self.docker_image,
             run_command: &self.harness_run_command,
             build_command: self.harness_build_command.as_deref(),
+            model: self.model(key),
         }
     }
 

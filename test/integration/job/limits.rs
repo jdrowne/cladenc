@@ -3,8 +3,15 @@ use std::thread;
 
 use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
 use cladenc::job::{self, JobError, Launch};
+use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
+
+const MODEL: Model<'static> = Model {
+    name: test_inputs::MODEL,
+    url: test_inputs::MODEL_URL,
+    key: None,
+};
 
 type Evaluated = (TempDir, Workspace, Result<EvaluationOutcome, JobError>);
 type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
@@ -20,7 +27,7 @@ fn timed_out() -> Evaluated {
     let (directory, workspace) = made();
     let evaluator = test_inputs::sample("integration", "spawn.sh");
     let stop = AtomicBool::new(false);
-    let result = job::run_evaluation(&workspace, &evaluator, 0, "t1", 1, &stop);
+    let result = job::run_evaluation(&workspace, &evaluator, &MODEL, 0, "t1", 1, &stop);
     (directory, workspace, result)
 }
 
@@ -34,7 +41,7 @@ fn stopped_while_running() -> Evaluated {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
             stop.store(true, Ordering::SeqCst);
         });
-        job::run_evaluation(&workspace, &evaluator, 0, "t1", 60, &stop)
+        job::run_evaluation(&workspace, &evaluator, &MODEL, 0, "t1", 60, &stop)
     });
     (directory, workspace, result)
 }
@@ -45,6 +52,7 @@ fn procreation_stopped_while_running() -> Procreated {
         image: test_inputs::IMAGE,
         run_command: "hostname > id; sleep 300",
         build_command: None,
+        model: MODEL,
     };
     let id_file = workspace.running_procreation(1).join("child/id");
     let stop = AtomicBool::new(false);
@@ -97,7 +105,7 @@ fn a_job_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let evaluator = test_inputs::sample("integration", "sleep.sh");
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        job::run_evaluation(&workspace, &evaluator, 0, "t1", 60, &stop),
+        job::run_evaluation(&workspace, &evaluator, &MODEL, 0, "t1", 60, &stop),
         Err(JobError::Stopped)
     ));
 }
@@ -109,6 +117,7 @@ fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
         image: test_inputs::IMAGE,
         run_command: "sleep 300",
         build_command: None,
+        model: MODEL,
     };
     let stop = AtomicBool::new(true);
     assert!(matches!(

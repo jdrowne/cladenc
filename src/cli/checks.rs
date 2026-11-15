@@ -2,10 +2,11 @@ use std::collections::BTreeSet;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::{Path, PathBuf};
+use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
 use crate::journal::Settings;
+use crate::model;
 use crate::workspace::holds_only_harness_files;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -24,6 +25,13 @@ impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
+            model: self.model.clone(),
+            model_url: self.model_url.clone(),
+            model_key_file: self
+                .model_key_file
+                .as_deref()
+                .map(model_key_file)
+                .transpose()?,
             docker_image: self.docker_image.clone(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
@@ -69,6 +77,16 @@ fn progenitor(given: &Path) -> Result<PathBuf, Refused> {
             option: "--progenitor",
             accepted: "an existing directory that holds only regular files, directories and \
                        symbolic links",
+        })
+}
+
+fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
+    path::absolute(given)
+        .ok()
+        .filter(|file| file.to_str().is_some() && model::read_key(file).is_some())
+        .ok_or(Refused {
+            option: "--model-key-file",
+            accepted: "a file that holds a key on one line and nothing else",
         })
 }
 

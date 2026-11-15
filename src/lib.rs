@@ -2,6 +2,7 @@ pub mod cli;
 pub mod genealogy;
 pub mod job;
 pub mod journal;
+pub mod model;
 pub mod policy;
 pub mod report;
 pub mod search;

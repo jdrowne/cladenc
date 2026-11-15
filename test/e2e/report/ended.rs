@@ -9,6 +9,8 @@ fn ended() -> TempDir {
     let directory = test_inputs::temporary_directory();
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
+        ("--model", test_inputs::MODEL.into()),
+        ("--model-url", test_inputs::MODEL_URL.into()),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
@@ -54,7 +56,8 @@ fn report_prints_the_table() {
     let directory = ended();
     assert_eq!(
         String::from_utf8(report(directory.path(), None).stdout).unwrap(),
-        "started 2 of 10, best harness 1\n\
+        "model a-model at http://models.example/v1\n\
+         started 2 of 10, best harness 1\n\
          \n\
          id  parent  state    successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
          0   -       created  0          1         1                1               0.500               0.005\n\
@@ -69,7 +72,8 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         String::from_utf8(report(directory.path(), Some("--json")).stdout).unwrap(),
         format!(
             concat!(
-                r#"{{"started":2,"budget":10,"best_harness":1,"harnesses":["#,
+                r#"{{"model":"a-model","model_url":"http://models.example/v1","#,
+                r#""started":2,"budget":10,"best_harness":1,"harnesses":["#,
                 r#"{{"id":0,"parent":null,"state":"created","successes":0,"failures":1,"#,
                 r#""clade_successes":1,"clade_failures":1,"clade_success_rate":0.5,"#,
                 r#""lower_bound":{}}},"#,

@@ -39,6 +39,9 @@ fn reported(json: bool) -> (Ran, String) {
             format: journal::FORMAT,
             settings: Settings {
                 progenitor: PathBuf::from("/progenitor"),
+                model: "a-model".to_owned(),
+                model_url: "http://models.example/v1".to_owned(),
+                model_key_file: None,
                 tasks: vec!["t1".to_owned()],
                 docker_image: "image".to_owned(),
                 harness_build_command: None,
@@ -114,7 +117,8 @@ fn a_report_prints_the_table_on_standard_output() {
     let (ran, _object) = reported(false);
     assert_eq!(
         ran.output,
-        "started 0 of 800, best harness 0\n\
+        "model a-model at http://models.example/v1\n\
+         started 0 of 800, best harness 0\n\
          \n\
          id  parent  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
          0   -       created        0          0         0                0               -                   0.010\n\

@@ -38,6 +38,11 @@ mod journal {
     mod writing;
 }
 
+mod model {
+    mod environment;
+    mod key;
+}
+
 mod policy {
     mod best;
     mod evaluation;

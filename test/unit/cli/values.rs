@@ -1,9 +1,13 @@
+use std::path::Path;
+
 use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 14] = [
+const OPTIONS: [(&str, &str); 16] = [
     ("--progenitor", "/progenitor"),
+    ("--model", "a-model"),
+    ("--model-url", "http://models.example/v1"),
     ("--tasks", "/tasks"),
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
@@ -32,7 +36,7 @@ fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
     )
 }
 
-fn built_by(command: Option<&str>) -> Result<Cli, clap::Error> {
+fn and(another: Option<String>) -> Result<Cli, clap::Error> {
     let options = OPTIONS
         .iter()
         .map(|(option, value)| format!("{option}={value}"));
@@ -40,8 +44,16 @@ fn built_by(command: Option<&str>) -> Result<Cli, clap::Error> {
         ["cladenc".to_owned(), "start".to_owned()]
             .into_iter()
             .chain(options)
-            .chain(command.map(|command| format!("--harness-build-command={command}"))),
+            .chain(another),
     )
+}
+
+fn built_by(command: Option<&str>) -> Result<Cli, clap::Error> {
+    and(command.map(|command| format!("--harness-build-command={command}")))
+}
+
+fn with_the_key_in(file: Option<&str>) -> Result<Cli, clap::Error> {
+    and(file.map(|file| format!("--model-key-file={file}")))
 }
 
 fn refusal(changed: &str, given: &str) -> ErrorKind {
@@ -87,6 +99,46 @@ fn a_harness_build_command_is_taken_as_it_is_written() {
 #[test]
 fn an_empty_harness_build_command_is_an_error() {
     assert!(built_by(Some("")).is_err());
+}
+
+#[test]
+fn an_empty_model_is_an_error() {
+    assert!(with("--model", "").is_err());
+}
+
+#[test]
+fn an_empty_address_of_the_model_is_an_error() {
+    assert!(with("--model-url", "").is_err());
+}
+
+#[test]
+fn a_model_and_its_address_are_taken_as_they_are_written() {
+    assert!(matches!(
+        with("--model-url", "http://host.docker.internal:11434/v1").unwrap().command,
+        Command::Start(options) if options.model == "a-model"
+            && options.model_url == "http://host.docker.internal:11434/v1"
+    ));
+}
+
+#[test]
+fn a_command_line_with_no_model_key_file_names_no_file_of_a_key() {
+    assert!(matches!(
+        with_the_key_in(None).unwrap().command,
+        Command::Start(options) if options.model_key_file.is_none()
+    ));
+}
+
+#[test]
+fn a_model_key_file_is_the_path_that_is_written() {
+    assert!(matches!(
+        with_the_key_in(Some("keys/model")).unwrap().command,
+        Command::Start(options) if options.model_key_file.as_deref() == Some(Path::new("keys/model"))
+    ));
+}
+
+#[test]
+fn an_empty_model_key_file_is_an_error() {
+    assert!(with_the_key_in(Some("")).is_err());
 }
 
 #[test]

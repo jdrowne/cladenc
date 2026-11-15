@@ -12,9 +12,26 @@ where <COMMAND> is the value of --harness-run-command. In the container,
                        working directory
   CLADENC_HARNESS      /harness
   CLADENC_INSTRUCTION  what the harness is asked to do
+  CLADENC_MODEL        the name of the model, the value of --model
+  CLADENC_MODEL_URL    the address the model is served at, the value of
+                       --model-url
+  CLADENC_MODEL_KEY    the key the model is called with, read from the file
+                       that --model-key-file names, and not set where that
+                       flag is not given
 
 The command runs as the user cladenc runs as, with nothing on standard
 input, and its standard output and standard error are kept.
+
+cladenc calls no model. A harness calls the model itself, at the address it
+is told. In every container, host.docker.internal names the machine cladenc
+runs on, so a model served on that machine at port 11434 is named by
+
+    --model-url http://host.docker.internal:11434
+
+and is reached as long as its server listens on an address a container can
+reach. The key is read from its file when a search is started, and again
+each time the search is resumed. cladenc keeps the key off every command
+line, out of the journal and out of what it prints.
 
 A procreation is carried out by the harness that procreates. /work holds a
 second copy of its source code, and the instruction asks the harness to
@@ -41,13 +58,14 @@ run for the first time, in a container of the same image, as
     sh -c <COMMAND>
 
 with /harness as the working directory, which holds the source code of the
-harness and is what CLADENC_HARNESS names. What the build makes stays there,
-and is part of every copy made of the harness. The progenitor is built
-before the first job, within the time limit of one procreation. A child is
-built as the last step of its procreation, within what is left of the time
-limit of that procreation. builds in the run directory keeps the standard
-output and standard error of every build, in a directory named after the
-harness.
+harness and is what CLADENC_HARNESS names. A build calls no model, and is
+given none of the three variables of the model. What the build makes stays
+there, and is part of every copy made of the harness. The progenitor is
+built before the first job, within the time limit of one procreation. A
+child is built as the last step of its procreation, within what is left of
+the time limit of that procreation. builds in the run directory keeps the
+standard output and standard error of every build, in a directory named
+after the harness.
 
 How a build ends decides what is recorded:
 
@@ -74,7 +92,9 @@ The evaluator is run once for each evaluation, as
              also the working directory
 
 It runs in a process group of its own, with nothing on standard input, and
-its standard output and standard error are kept beside <output>.
+its standard output and standard error are kept beside <output>. It is
+given CLADENC_MODEL, CLADENC_MODEL_URL and CLADENC_MODEL_KEY in its
+environment, as a harness is.
 
 How the evaluator ends decides what is recorded:
 
