@@ -25,7 +25,7 @@ cladenc \
 | `cladenc resume` | Continues a search that stopped before its end. |
 | `cladenc report` | Prints the state of a search without changing it. |
 
-`--help` after a sub-command prints its flags, and so does `cladenc help` before it, as in `cladenc help start`.
+`--help` after a sub-command prints its flags.
 
 ### `cladenc start`
 

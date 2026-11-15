@@ -16,7 +16,8 @@ pub use checks::Refused;
 #[command(
     name = "cladenc",
     version,
-    about = "Searches for a better agentic coding harness by letting harnesses modify themselves"
+    about = "Searches for a better agentic coding harness by letting harnesses modify themselves",
+    disable_help_subcommand = true
 )]
 pub struct Cli {
     #[command(subcommand)]

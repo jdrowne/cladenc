@@ -1,5 +1,6 @@
 use cladenc::cli::Cli;
-use clap::CommandFactory;
+use clap::error::ErrorKind;
+use clap::{CommandFactory, Parser};
 
 fn help_of_start(long: bool) -> String {
     let mut cladenc = Cli::command();
@@ -114,5 +115,23 @@ fn the_help_of_cladenc_names_start_as_the_sub_command_that_starts_a_search() {
             .render_help()
             .to_string()
             .contains("  start   Start a new search")
+    );
+}
+
+#[test]
+fn the_help_of_cladenc_lists_no_sub_command_named_help() {
+    assert!(
+        !Cli::command()
+            .render_help()
+            .to_string()
+            .contains("\n  help ")
+    );
+}
+
+#[test]
+fn help_written_as_a_sub_command_is_refused() {
+    assert_eq!(
+        Cli::try_parse_from(["cladenc", "help"]).unwrap_err().kind(),
+        ErrorKind::InvalidSubcommand
     );
 }
