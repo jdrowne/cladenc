@@ -230,7 +230,8 @@ fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_run_directory(
 #[test]
 fn the_long_help_of_start_says_that_the_id_of_a_task_is_the_name_of_its_directory() {
     assert!(help_of_start(true).contains(
-        "  <task>     the id of the task, the name of its directory in the\n             benchmark\n"
+        "The name\nof a task's directory is the id of the task, made of letters, digits, dots,\n\
+         underscores and hyphens"
     ));
 }
 
