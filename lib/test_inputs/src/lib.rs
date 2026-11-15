@@ -6,8 +6,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 
-use nix::sys::signal::kill;
-use nix::unistd::Pid;
 use tempfile::TempDir;
 
 pub const IMAGE: &str = "busybox:1.37.0";
@@ -18,13 +16,34 @@ pub const MODEL_URL: &str = "http://models.example/v1";
 
 pub const MODEL_KEY: &str = "a-made-up-key";
 
-pub const SOLVE_ONE_MORE: &str = r#"touch solved
-echo "t$(($(wc -l < solved) + 1))" >> solved"#;
+pub const SOLVE_ONE_MORE: &str = r#"if [ -d /evaluations ]
+then
+  touch solved
+  echo "t$(($(wc -l < solved) + 1))" >> solved
+else
+  touch "$CLADENC_HARNESS/solved"
+  cp "$CLADENC_HARNESS/solved" solved
+fi"#;
 
-pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"touch solved
-solved=$(($(wc -l < solved)))
-[ -e end-with-125-at ] && [ "$solved" -eq "$(cat end-with-125-at)" ] && exit 125
-echo "t$((solved + 1))" >> solved"#;
+pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /evaluations ]
+then
+  touch solved
+  solved=$(($(wc -l < solved)))
+  [ -e end-with-125-at ] && [ "$solved" -eq "$(cat end-with-125-at)" ] && exit 125
+  echo "t$((solved + 1))" >> solved
+else
+  [ -e end-with-125 ] && exit 125
+  touch "$CLADENC_HARNESS/solved"
+  cp "$CLADENC_HARNESS/solved" solved
+fi"#;
+
+pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /evaluations ]
+then
+  cp /solved-by-the-image solved
+else
+  touch "$CLADENC_HARNESS/solved"
+  cp "$CLADENC_HARNESS/solved" solved
+fi"#;
 
 pub struct Image {
     pub name: String,
@@ -100,7 +119,8 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     )
     .expect("the statement can be written");
     fs::write(task.join("files/work.txt"), "to do\n").expect("the file can be written");
-    fs::write(&check, "#!/bin/sh\ngrep -q done work.txt\n").expect("the check can be written");
+    fs::write(&check, format!("#!/bin/sh\ngrep -q -x -e {id} solved\n"))
+        .expect("the check can be written");
     fs::set_permissions(&check, fs::Permissions::from_mode(0o750))
         .expect("the check can be given its permission bits");
     task
@@ -123,15 +143,6 @@ pub fn within_ten_seconds(mut holds: impl FnMut() -> bool) -> bool {
 
 pub fn line_is_written(file: &Path) -> bool {
     fs::read_to_string(file).is_ok_and(|line| line.ends_with('\n'))
-}
-
-pub fn process_is_gone(pid_file: &Path) -> bool {
-    let pid = fs::read_to_string(pid_file)
-        .expect("the file of the process id can be read")
-        .trim()
-        .parse()
-        .expect("the file holds a process id");
-    within_ten_seconds(|| kill(Pid::from_raw(pid), None).is_err())
 }
 
 pub fn container_is_gone(id_file: &Path) -> bool {
@@ -160,6 +171,27 @@ pub fn end_with_125_no_more(run_directory: &Path) {
             fs::remove_file(marker).expect("the marker can be removed");
         }
     }
+}
+
+pub fn end_with_125_on(directory: &Path, task: &str) {
+    let marker = directory
+        .join("benchmark")
+        .join(task)
+        .join("files/end-with-125");
+    fs::write(marker, "").expect("the marker can be written");
+}
+
+pub fn end_with_125_on_no_more(directory: &Path, task: &str) {
+    let marker = directory
+        .join("benchmark")
+        .join(task)
+        .join("files/end-with-125");
+    fs::remove_file(marker).expect("the marker can be removed");
+}
+
+pub fn check(directory: &Path, task: &str, command: &str) {
+    let check = directory.join("benchmark").join(task).join("check");
+    fs::write(check, format!("#!/bin/sh\n{command}\n")).expect("the check can be written");
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

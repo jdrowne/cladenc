@@ -16,7 +16,6 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
         ("--harness-run-command", "exit 0".into()),
-        ("--evaluator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--run-dir", directory.path().join("run")),
         ("--budget", "1".into()),
         ("--genealogy-growth", "0".into()),

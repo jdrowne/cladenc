@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -12,11 +11,7 @@ fn start(directory: &Path) -> Command {
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
-        ("--harness-run-command", "exit 0".into()),
-        (
-            "--evaluator",
-            test_inputs::sample("e2e", "spawn-while-held.sh"),
-        ),
+        ("--harness-run-command", "hostname > id; sleep 300".into()),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
@@ -43,12 +38,9 @@ fn resume(directory: &Path) -> Output {
 
 fn resumed_while_in_use() -> Output {
     let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("hold"), "").unwrap();
     let mut first = start(directory.path()).spawn().unwrap();
-    let pid_file = directory
-        .path()
-        .join("run/running/evaluation-0-t1/output/pid");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
+    let id_file = directory.path().join("run/running/evaluation-0-t1/work/id");
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let second = resume(directory.path());
     kill(Pid::from_raw(first.id().cast_signed()), Signal::SIGINT).unwrap();
     first.wait().unwrap();

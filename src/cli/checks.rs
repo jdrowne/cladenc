@@ -1,6 +1,5 @@
 use std::fmt::{self, Display, Formatter};
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
@@ -48,7 +47,6 @@ impl StartOptions {
             harness_run_command: self.harness_run_command.clone(),
             benchmark,
             tasks,
-            evaluator: program(&self.evaluator, "--evaluator")?,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
@@ -131,21 +129,5 @@ fn benchmark(given: &Path) -> Result<(PathBuf, Vec<String>), Refused> {
                        holds a file of text named statement, a directory named files and an \
                        executable file named check",
             reason: Some(error.to_string()),
-        })
-}
-
-fn program(given: &Path, option: &'static str) -> Result<PathBuf, Refused> {
-    fs::canonicalize(given)
-        .ok()
-        .filter(|file| {
-            file.to_str().is_some()
-                && fs::metadata(file).is_ok_and(|metadata| {
-                    metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
-                })
-        })
-        .ok_or(Refused {
-            option,
-            accepted: "an executable file",
-            reason: None,
         })
 }

@@ -1,19 +1,20 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-fn start(directory: &Path, evaluator: &str) -> Command {
+const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
+
+fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
-        ("--harness-run-command", "exit 0".into()),
-        ("--evaluator", test_inputs::sample("e2e", evaluator)),
+        ("--harness-run-command", run_command.into()),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
@@ -30,13 +31,17 @@ fn start(directory: &Path, evaluator: &str) -> Command {
     start
 }
 
+fn id_file(directory: &TempDir) -> PathBuf {
+    directory.path().join("run/running/evaluation-0-t1/work/id")
+}
+
 fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = start(directory.path(), "spawn.sh").spawn().unwrap();
-    let pid_file = directory
-        .path()
-        .join("run/running/evaluation-0-t1/output/pid");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
+    let mut cladenc = start(directory.path(), SAY_THE_CONTAINER_AND_STAY)
+        .spawn()
+        .unwrap();
+    let id_file = id_file(&directory);
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     let status = cladenc.wait().unwrap();
     (directory, status)
@@ -67,38 +72,26 @@ fn a_quit_during_a_run_gives_exit_status_1() {
 }
 
 #[test]
-fn a_quit_during_a_run_leaves_no_sample_program_running() {
+fn a_quit_during_a_run_leaves_no_container_behind() {
     let (directory, _status) = signalled(Signal::SIGQUIT);
-    assert!(test_inputs::process_is_gone(
-        &directory
-            .path()
-            .join("run/running/evaluation-0-t1/output/pid")
-    ));
+    assert!(test_inputs::container_is_gone(&id_file(&directory)));
 }
 
 #[test]
-fn a_hangup_during_a_run_leaves_no_sample_program_running() {
+fn a_hangup_during_a_run_leaves_no_container_behind() {
     let (directory, _status) = signalled(Signal::SIGHUP);
-    assert!(test_inputs::process_is_gone(
-        &directory
-            .path()
-            .join("run/running/evaluation-0-t1/output/pid")
-    ));
+    assert!(test_inputs::container_is_gone(&id_file(&directory)));
 }
 
 #[test]
-fn an_interrupt_during_a_run_leaves_no_sample_program_running() {
+fn an_interrupt_during_a_run_leaves_no_container_behind() {
     let (directory, _status) = signalled(Signal::SIGINT);
-    assert!(test_inputs::process_is_gone(
-        &directory
-            .path()
-            .join("run/running/evaluation-0-t1/output/pid")
-    ));
+    assert!(test_inputs::container_is_gone(&id_file(&directory)));
 }
 
 #[test]
-fn an_evaluator_that_exits_with_a_status_other_than_0_or_1_gives_exit_status_1() {
+fn a_container_that_docker_does_not_start_gives_exit_status_1() {
     let directory = test_inputs::temporary_directory();
-    let status = start(directory.path(), "exit-2.sh").status().unwrap();
+    let status = start(directory.path(), "exit 125").status().unwrap();
     assert_eq!(status.code(), Some(1));
 }

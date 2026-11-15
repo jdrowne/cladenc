@@ -176,7 +176,11 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 
 #[test]
 fn a_harness_can_read_the_ended_evaluations_of_its_parent_and_none_still_running() {
-    let (_directory, workspace) = made_at("run");
+    let (directory, workspace) = made_at("run");
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    workspace
+        .copy_benchmark(&benchmark, &["t1".to_owned(), "t2".to_owned()])
+        .unwrap();
     workspace.start_evaluation(0, "t1").unwrap();
     workspace
         .end_evaluation(0, "t1", EvaluationOutcome::Failure)

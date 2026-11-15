@@ -8,7 +8,7 @@ use cladenc::search;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
-fn settings(directory: &Path, evaluator: &str) -> Settings {
+fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         model: test_inputs::MODEL.to_owned(),
@@ -20,8 +20,7 @@ fn settings(directory: &Path, evaluator: &str) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
-        evaluator: test_inputs::sample("integration", evaluator),
+        harness_run_command: run_command.to_owned(),
         budget: 4,
         genealogy_growth: 0.6,
         confidence: 99.0,
@@ -35,40 +34,49 @@ fn settings(directory: &Path, evaluator: &str) -> Settings {
 
 fn resumed_after_a_stop_at(
     solved: u64,
-    task: &str,
+    task: Option<&str>,
     leftover: &str,
     initial_procreations: u64,
 ) -> TempDir {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), "evaluate-listed-or-exit-2.sh");
+    let mut settings = settings(
+        directory.path(),
+        test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125,
+    );
     settings.initial_procreations = initial_procreations;
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
-    let marker = directory.path().join("exit-2-at");
     test_inputs::end_with_125_at(&settings.progenitor, solved);
-    fs::write(&marker, format!("{task}\n")).unwrap();
+    if let Some(task) = task {
+        test_inputs::end_with_125_on(directory.path(), task);
+    }
     let _stopped = search::search(&settings, &run_directory, &stop, None);
     fs::write(run_directory.join("running").join(leftover), "left\n").unwrap();
     test_inputs::end_with_125_no_more(&run_directory);
-    fs::remove_file(&marker).unwrap();
+    if let Some(task) = task {
+        test_inputs::end_with_125_on_no_more(&run_directory, task);
+    }
     search::resume(&run_directory, &stop, None).unwrap();
     directory
 }
 
 fn resumed_after_a_procreation_stopped() -> TempDir {
-    resumed_after_a_stop_at(0, "none", "procreation-1/child/leftover", 1)
+    resumed_after_a_stop_at(0, None, "procreation-1/child/leftover", 1)
 }
 
 fn resumed_after_an_evaluation_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, "t1", "evaluation-0-t1/output/leftover", 0)
+    resumed_after_a_stop_at(99, Some("t1"), "evaluation-0-t1/work/leftover", 0)
 }
 
 fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
-    let mut settings = settings(directory, "spawn.sh");
+    let mut settings = settings(directory, "[ -d /evaluations ] || sleep 300");
     settings.initial_procreations = 0;
     settings.workers = 2;
     let run_directory = directory.join("run");
-    Workspace::create(&run_directory, &settings.progenitor).unwrap();
+    Workspace::create(&run_directory, &settings.progenitor)
+        .unwrap()
+        .copy_benchmark(&settings.benchmark, &settings.tasks)
+        .unwrap();
     let mut journal = Journal::open(&run_directory).unwrap();
     journal
         .append(&Record::Run {
@@ -110,7 +118,7 @@ fn what_an_evaluation_left_under_running_is_gone_before_it_runs_again() {
     assert!(
         !directory
             .path()
-            .join("run/evaluations/0/t1/output/leftover")
+            .join("run/evaluations/0/t1/work/leftover")
             .exists()
     );
 }

@@ -1,5 +1,3 @@
-use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -9,13 +7,6 @@ struct Ran {
     status: u8,
     output: String,
     errors: String,
-}
-
-fn program(directory: &Path, name: &str) -> PathBuf {
-    let program = directory.join(name);
-    fs::write(&program, "#!/bin/sh\n").unwrap();
-    fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
-    program
 }
 
 fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
@@ -31,7 +22,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        evaluator: program(directory.path(), "evaluate"),
         run_dir: directory.path().join("run"),
         budget: 2,
         genealogy_growth: 0.0,

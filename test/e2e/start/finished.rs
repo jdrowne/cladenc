@@ -11,10 +11,6 @@ fn options(directory: &Path) -> Vec<String> {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        (
-            "--evaluator",
-            test_inputs::sample("e2e", "evaluate-listed.sh"),
-        ),
         ("--run-dir", directory.join("run")),
         ("--budget", "10".into()),
         ("--genealogy-growth", "0".into()),

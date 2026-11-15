@@ -1,0 +1,2 @@
+#!/bin/sh
+kill -s "$CLADENC_TEST_SIGNAL_OF_DOCKER" $$

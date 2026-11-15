@@ -4,13 +4,12 @@ use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 15] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
     ("--harness-run-command", "run a harness"),
-    ("--evaluator", "/evaluator"),
     ("--run-dir", "/run"),
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),

@@ -50,8 +50,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended
             let result = cleared.map_err(JobError::Io).and_then(|()| {
                 job::run_evaluation(
                     &shared.workspace,
-                    &settings.evaluator,
-                    &shared.launch.model,
+                    &shared.launch,
                     harness,
                     &task,
                     settings.evaluation_timeout,

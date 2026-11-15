@@ -93,12 +93,6 @@ pub struct StartOptions {
     pub evaluation_timeout: u64,
     #[arg(
         long,
-        value_name = "FILE",
-        help = "The program that carries out an evaluation"
-    )]
-    pub evaluator: PathBuf,
-    #[arg(
-        long,
         value_name = "NUMBER",
         value_parser = checks::genealogy_growth,
         help = "How fast the genealogy may grow, from 0 to 1"

@@ -10,7 +10,6 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
-        ("--evaluator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--run-dir", run_directory.to_owned()),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),

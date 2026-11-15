@@ -71,7 +71,6 @@ cladenc start \
   --docker-image <IMAGE> \
   --dockerfile <FILE> \
   --evaluation-timeout <SECONDS> \
-  --evaluator <FILE> \
   --genealogy-growth <NUMBER> \
   --harness-build-command <COMMAND> \
   --harness-run-command <COMMAND> \
@@ -95,8 +94,7 @@ cladenc start \
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
 | `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
 | `--dockerfile <FILE>` | Not Required | The Dockerfile that `cladenc` builds the image of every container from, in place of `--docker-image`. |
-| `--evaluation-timeout <SECONDS>` | Required | The time limit of one evaluation. |
-| `--evaluator <FILE>` | Required | The program that carries out an evaluation, which is one harness tried on one task. |
+| `--evaluation-timeout <SECONDS>` | Required | The time limit of one evaluation, which is one harness tried on one task. |
 | `--genealogy-growth <NUMBER>` | Required | How fast the genealogy may grow, from 0 to 1. |
 | `--harness-build-command <COMMAND>` | Not Required | The shell command that builds a harness in a container, where one has to be built. |
 | `--harness-run-command <COMMAND>` | Required | The shell command that runs a harness in a container. |
@@ -132,6 +130,8 @@ parsing/
 The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `statement` is a file of text that says what is to be done, `files` is a directory of the files the work starts from, and `check` is an executable file: the program that says by its exit status whether the work passes. The directory of a task may hold more, such as tests that the check runs.
 
 `cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which task. It copies the tasks into `benchmark` in the run directory, so a search keeps the tasks it started with, and `cladenc resume` does not read the directory that `--benchmark` named.
+
+An evaluation is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/work`, the working directory, holds what the harness left, and `/task` holds the directory of the task, to read. A check that exits with status 0 is a success, and one that exits with any other status is a failure. `evaluations` in the run directory keeps what each evaluation left.
 
 Every container of a search is started from one image. `--docker-image` names an image that Docker already holds. `--dockerfile` names a Dockerfile, the text file Docker builds an image from, and `cladenc` builds the image itself, once, when the search is started, within the time limit that `--docker-build-timeout` gives.
 

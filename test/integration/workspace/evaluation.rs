@@ -5,10 +5,19 @@ use cladenc::genealogy::EvaluationOutcome;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
-fn started() -> (TempDir, Workspace) {
+fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
     let progenitor = test_inputs::progenitor(directory.path());
     let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    workspace
+        .copy_benchmark(&benchmark, &["t1".to_owned()])
+        .unwrap();
+    (directory, workspace)
+}
+
+fn started() -> (TempDir, Workspace) {
+    let (directory, workspace) = made();
     workspace.start_evaluation(0, "t1").unwrap();
     (directory, workspace)
 }
@@ -24,31 +33,57 @@ fn outcome_written(outcome: EvaluationOutcome) -> String {
     fs::read_to_string(workspace.evaluation(0, "t1").join("outcome")).unwrap()
 }
 
+fn held_while_running(file: &str) -> String {
+    let (_directory, workspace) = started();
+    fs::read_to_string(workspace.running_evaluation(0, "t1").join(file)).unwrap()
+}
+
 fn entries(directory: PathBuf) -> usize {
     fs::read_dir(directory).unwrap().count()
 }
 
 #[test]
 fn a_started_evaluation_holds_a_copy_of_its_harness() {
-    let (_directory, workspace) = started();
     assert_eq!(
-        fs::read_to_string(
-            workspace
-                .running_evaluation(0, "t1")
-                .join("harness/harness.sh")
-        )
-        .unwrap(),
+        held_while_running("harness/harness.sh"),
         "#!/bin/sh\necho harness\n"
     );
 }
 
 #[test]
-fn a_started_evaluation_holds_an_empty_output_directory() {
+fn a_started_evaluation_holds_a_copy_of_the_files_of_its_task_to_work_on() {
+    assert_eq!(held_while_running("work/work.txt"), "to do\n");
+}
+
+#[test]
+fn a_started_evaluation_holds_the_statement_of_its_task() {
+    assert_eq!(held_while_running("statement"), "Finish the work of t1.\n");
+}
+
+#[test]
+fn a_started_evaluation_holds_an_empty_directory_for_what_the_check_prints() {
     let (_directory, workspace) = started();
     assert_eq!(
-        entries(workspace.running_evaluation(0, "t1").join("output")),
+        entries(workspace.running_evaluation(0, "t1").join("check")),
         0
     );
+}
+
+#[test]
+fn a_started_evaluation_holds_no_copy_of_the_check() {
+    let (_directory, workspace) = started();
+    assert!(
+        !workspace
+            .running_evaluation(0, "t1")
+            .join("work/check")
+            .exists()
+    );
+}
+
+#[test]
+fn an_evaluation_on_a_task_the_run_directory_does_not_hold_cannot_be_started() {
+    let (_directory, workspace) = made();
+    assert!(workspace.start_evaluation(0, "t9").is_err());
 }
 
 #[test]
@@ -73,9 +108,20 @@ fn an_ended_evaluation_keeps_no_copy_of_its_harness() {
 }
 
 #[test]
-fn an_ended_evaluation_keeps_its_output() {
+fn an_ended_evaluation_keeps_the_work() {
     let (_directory, workspace) = ended(EvaluationOutcome::Success);
-    assert!(workspace.evaluation(0, "t1").join("output").is_dir());
+    assert!(
+        workspace
+            .evaluation(0, "t1")
+            .join("work/work.txt")
+            .is_file()
+    );
+}
+
+#[test]
+fn an_ended_evaluation_keeps_the_statement_of_its_task() {
+    let (_directory, workspace) = ended(EvaluationOutcome::Success);
+    assert!(workspace.evaluation(0, "t1").join("statement").is_file());
 }
 
 #[test]

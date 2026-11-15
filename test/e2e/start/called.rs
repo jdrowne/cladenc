@@ -6,6 +6,11 @@ use std::process::{Command, Output};
 use tempfile::TempDir;
 
 const TOLD: &str = "a-model http://models.example/v1";
+const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
+     echo \"$CLADENC_MODEL $CLADENC_MODEL_URL ${CLADENC_MODEL_KEY-none}\" > model";
+const SAY_WHAT_THE_CHECK_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> where-checked; \
+     echo \"${CLADENC_MODEL-none} ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" > \
+     model-of-the-check";
 
 fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     let options = [
@@ -16,11 +21,8 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
-            "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
-             echo \"$CLADENC_MODEL $CLADENC_MODEL_URL ${CLADENC_MODEL_KEY-none}\" > model"
-                .into(),
+            SAY_WHAT_THE_HARNESS_IS_GIVEN.into(),
         ),
-        ("--evaluator", test_inputs::sample("e2e", "record.sh")),
         ("--run-dir", directory.join("run")),
         ("--budget", "1".into()),
         ("--genealogy-growth", "0".into()),
@@ -34,6 +36,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))
     .map(|(option, value)| format!("{option}={}", value.display()));
+    test_inputs::check(directory, "t1", SAY_WHAT_THE_CHECK_IS_GIVEN);
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
     start.arg("start").args(options);
     start
@@ -76,12 +79,13 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("run/harnesses/1").join(file)).unwrap()
 }
 
-fn output_of_the_evaluation(directory: &TempDir) -> PathBuf {
-    fs::read_dir(directory.path().join("run/evaluations"))
+fn left_by_the_evaluation(directory: &TempDir, file: &str) -> String {
+    let work = fs::read_dir(directory.path().join("run/evaluations"))
         .unwrap()
-        .map(|harness| harness.unwrap().path().join("t1/output"))
-        .find(|output| output.is_dir())
-        .unwrap()
+        .map(|harness| harness.unwrap().path().join("t1/work"))
+        .find(|work| work.is_dir())
+        .unwrap();
+    fs::read_to_string(work.join(file)).unwrap()
 }
 
 #[test]
@@ -103,35 +107,38 @@ fn a_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_evaluator_is_given_the_harness_the_task_and_the_output() {
+fn the_harness_of_an_evaluation_is_started_on_the_files_of_the_task() {
     let (directory, _output) = ran();
-    let run = directory.path().join("run");
-    let evaluated = output_of_the_evaluation(&directory);
-    let harness = evaluated
-        .strip_prefix(run.join("evaluations"))
-        .unwrap()
-        .iter()
-        .next()
-        .unwrap()
-        .to_str()
-        .unwrap();
     assert_eq!(
-        fs::read_to_string(evaluated.join("arguments")).unwrap(),
-        format!(
-            "{0}/running/evaluation-{harness}-t1/harness\n\
-             t1\n\
-             {0}/running/evaluation-{harness}-t1/output\n",
-            run.display()
-        )
+        left_by_the_evaluation(&directory, "where"),
+        "/harness\n/work\n"
     );
 }
 
 #[test]
-fn the_evaluator_is_told_the_model_the_address_it_is_served_at_and_its_key() {
+fn the_harness_of_an_evaluation_is_told_the_model_the_address_it_is_served_at_and_its_key() {
     let (directory, _output) = ran();
     assert_eq!(
-        fs::read_to_string(output_of_the_evaluation(&directory).join("model")).unwrap(),
+        left_by_the_evaluation(&directory, "model"),
         format!("{TOLD} a-made-up-key\n")
+    );
+}
+
+#[test]
+fn the_check_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_is() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        left_by_the_evaluation(&directory, "where-checked"),
+        "/task\n/work\n"
+    );
+}
+
+#[test]
+fn the_check_of_a_task_is_told_nothing_of_the_model() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        left_by_the_evaluation(&directory, "model-of-the-check"),
+        "none none none\n"
     );
 }
 
@@ -164,10 +171,10 @@ fn a_harness_is_given_no_key_that_no_file_holds_though_the_environment_of_claden
 }
 
 #[test]
-fn the_evaluator_is_given_no_key_that_no_file_holds_though_the_environment_of_cladenc_holds_one() {
+fn the_harness_of_an_evaluation_is_given_no_key_that_no_file_holds_either() {
     let directory = ran_with_no_file_of_a_key_and_a_key_in_the_environment();
     assert_eq!(
-        fs::read_to_string(output_of_the_evaluation(&directory).join("model")).unwrap(),
+        left_by_the_evaluation(&directory, "model"),
         format!("{TOLD} none\n")
     );
 }

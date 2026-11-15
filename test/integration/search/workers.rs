@@ -18,7 +18,6 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
-        evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 12,
         genealogy_growth: 0.6,
         confidence: 99.0,

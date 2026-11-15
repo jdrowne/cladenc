@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::os::unix::ffi::OsStrExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::journal::{self, Record, Settings};
@@ -21,7 +21,6 @@ fn settings(directory: &Path) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
-        evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
@@ -280,7 +279,9 @@ fn a_search_cannot_start_in_a_run_directory_that_exists() {
 #[test]
 fn a_search_whose_run_record_cannot_be_written_stops_before_any_job() {
     let (_directory, found) = searched(|settings| {
-        settings.evaluator = PathBuf::from(OsStr::from_bytes(&[b'/', 0xff]));
+        let unwritable = OsStr::from_bytes(&[b'p', 0xff]);
+        settings.progenitor =
+            test_inputs::progenitor(&settings.progenitor.with_file_name(unwritable));
     });
     assert!(matches!(found, Err(SearchError::Journal(_))));
 }

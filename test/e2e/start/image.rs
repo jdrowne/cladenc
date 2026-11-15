@@ -27,11 +27,7 @@ fn start(directory: &Path, steps: &str) -> Command {
         ("--docker-build-timeout", "60".into()),
         (
             "--harness-run-command",
-            "cp /solved-by-the-image solved".into(),
-        ),
-        (
-            "--evaluator",
-            test_inputs::sample("e2e", "evaluate-listed.sh"),
+            test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.into(),
         ),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),

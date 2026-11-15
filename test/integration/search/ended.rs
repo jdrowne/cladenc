@@ -19,7 +19,6 @@ fn settings(directory: &Path) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
-        evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 10,
         genealogy_growth: 0.0,
         confidence: 99.0,

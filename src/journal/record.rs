@@ -21,7 +21,6 @@ pub struct Settings {
     pub harness_run_command: String,
     pub benchmark: PathBuf,
     pub tasks: Vec<String>,
-    pub evaluator: PathBuf,
     pub budget: u64,
     pub genealogy_growth: f64,
     pub confidence: f64,

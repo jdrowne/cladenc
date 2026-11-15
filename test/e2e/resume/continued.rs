@@ -6,15 +6,16 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-fn start(directory: &Path, evaluator: &str) -> Command {
+const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname > id; sleep 300";
+
+fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
-        ("--harness-run-command", "exit 0".into()),
-        ("--evaluator", test_inputs::sample("e2e", evaluator)),
+        ("--harness-run-command", run_command.into()),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
@@ -46,18 +47,15 @@ fn interrupted() -> TempDir {
 
 fn stopped_by(signal: Signal) -> TempDir {
     let directory = test_inputs::temporary_directory();
-    let hold = directory.path().join("hold");
-    fs::write(&hold, "").unwrap();
-    let mut cladenc = start(directory.path(), "spawn-while-held.sh")
-        .spawn()
-        .unwrap();
-    let pid_file = directory
-        .path()
-        .join("run/running/evaluation-0-t1/output/pid");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
+    let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
+    fs::write(directory.path().join("benchmark/t1/files/hold"), "").unwrap();
+    let mut cladenc = start.spawn().unwrap();
+    let run = directory.path().join("run");
+    let id_file = run.join("running/evaluation-0-t1/work/id");
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
-    fs::remove_file(hold).unwrap();
+    fs::remove_file(run.join("benchmark/t1/files/hold")).unwrap();
     directory
 }
 
@@ -103,6 +101,6 @@ fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
 #[test]
 fn a_search_that_stops_again_under_resume_exits_with_1() {
     let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit-2.sh").status().unwrap();
+    start(directory.path(), "exit 125").status().unwrap();
     assert_eq!(resume(directory.path()).status.code(), Some(1));
 }

@@ -124,9 +124,13 @@ impl Workspace {
 
     pub fn start_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         let job = self.running_evaluation(harness, task);
+        let given = self.task(task);
         fs::create_dir(&job)
-            .and_then(|()| fs::create_dir(job.join("output")))
+            .and_then(|()| fs::create_dir(job.join("check")))
             .and_then(|()| copy_tree(&self.harness(harness), &job.join("harness")))
+            .and_then(|()| copy_tree(&given.join("files"), &job.join("work")))
+            .and_then(|()| fs::copy(given.join("statement"), job.join("statement")))
+            .map(|_| ())
     }
 
     pub fn end_evaluation(

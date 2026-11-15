@@ -8,7 +8,7 @@ use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
-fn settings(directory: &Path, run_command: &str, evaluator: &str) -> Settings {
+fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         model: test_inputs::MODEL.to_owned(),
@@ -21,7 +21,6 @@ fn settings(directory: &Path, run_command: &str, evaluator: &str) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: run_command.to_owned(),
-        evaluator: test_inputs::sample("integration", evaluator),
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
@@ -33,9 +32,9 @@ fn settings(directory: &Path, run_command: &str, evaluator: &str) -> Settings {
     }
 }
 
-fn stopped_by_an_evaluator_that_exits_with_2() -> (TempDir, Result<Found, SearchError>) {
+fn stopped_at_its_first_evaluation() -> (TempDir, Result<Found, SearchError>) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path(), "exit 0", "exit-2.sh");
+    let settings = settings(directory.path(), "exit 125");
     let run_directory = directory.path().join("run");
     let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
     (directory, found)
@@ -43,14 +42,14 @@ fn stopped_by_an_evaluator_that_exits_with_2() -> (TempDir, Result<Found, Search
 
 fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>, String) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path(), "exit 0", "spawn.sh");
+    let settings = settings(directory.path(), "hostname > id; sleep 300");
     let run_directory = directory.path().join("run");
-    let pid_file = run_directory.join("running/evaluation-0-t1/output/pid");
+    let id_file = run_directory.join("running/evaluation-0-t1/work/id");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
+            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
         search::search(&settings, &run_directory, &stop, Some(&mut written))
@@ -63,12 +62,12 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn a_program_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
-    let (_directory, found) = stopped_by_an_evaluator_that_exits_with_2();
+fn a_container_that_ends_with_status_125_at_an_evaluation_stops_the_search() {
+    let (_directory, found) = stopped_at_its_first_evaluation();
     assert!(matches!(
         found,
         Err(SearchError::Job {
-            error: JobError::Exit(2),
+            error: JobError::Docker(_),
             ..
         })
     ));
@@ -76,7 +75,7 @@ fn a_program_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
 
 fn after_one_procreation_by(run_command: &str) -> Result<Found, SearchError> {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), run_command, "exit-0.sh");
+    let mut settings = settings(directory.path(), run_command);
     settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
     search::search(&settings, &run_directory, &AtomicBool::new(false), None)
@@ -99,8 +98,8 @@ fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_sear
 }
 
 #[test]
-fn a_search_an_evaluator_stopped_names_the_harness_and_the_task_of_that_evaluation() {
-    let (_directory, found) = stopped_by_an_evaluator_that_exits_with_2();
+fn a_search_an_evaluation_stopped_names_the_harness_and_the_task_of_that_evaluation() {
+    let (_directory, found) = stopped_at_its_first_evaluation();
     assert!(matches!(
         found,
         Err(SearchError::Job {
@@ -126,7 +125,7 @@ fn a_search_a_container_stopped_names_the_parent_and_the_child_of_that_procreati
 
 #[test]
 fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_job_that_ran() {
-    let (directory, _found) = stopped_by_an_evaluator_that_exits_with_2();
+    let (directory, _found) = stopped_at_its_first_evaluation();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
         r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
@@ -135,7 +134,7 @@ fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_job_t
 
 #[test]
 fn a_stopped_search_leaves_no_search_finished_record() {
-    let (directory, _found) = stopped_by_an_evaluator_that_exits_with_2();
+    let (directory, _found) = stopped_at_its_first_evaluation();
     assert!(!journal_of(&directory).contains("search_finished"));
 }
 
@@ -146,12 +145,10 @@ fn setting_the_stop_flag_stops_the_search() {
 }
 
 #[test]
-fn a_search_stopped_by_its_flag_leaves_no_sample_program_running() {
+fn a_search_stopped_by_its_flag_leaves_no_container_behind() {
     let (directory, _found, _said) = stopped_by_its_flag();
-    assert!(test_inputs::process_is_gone(
-        &directory
-            .path()
-            .join("run/running/evaluation-0-t1/output/pid")
+    assert!(test_inputs::container_is_gone(
+        &directory.path().join("run/running/evaluation-0-t1/work/id")
     ));
 }
 
@@ -173,7 +170,7 @@ fn a_search_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_what_was_runn
 #[test]
 fn a_search_a_container_stopped_says_what_docker_did_when_it_happens() {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), "exit 125", "exit-0.sh");
+    let mut settings = settings(directory.path(), "exit 125");
     settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();

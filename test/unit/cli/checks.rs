@@ -1,18 +1,11 @@
 use std::fs;
-use std::os::unix::fs::{PermissionsExt, symlink};
+use std::os::unix::fs::symlink;
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 
 use cladenc::cli::{Refused, StartOptions};
 use cladenc::journal::Settings;
 use tempfile::TempDir;
-
-fn program(directory: &Path, name: &str, mode: u32) -> PathBuf {
-    let program = directory.join(name);
-    fs::write(&program, "#!/bin/sh\n").unwrap();
-    fs::set_permissions(&program, fs::Permissions::from_mode(mode)).unwrap();
-    program
-}
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
@@ -26,7 +19,6 @@ fn options(directory: &Path) -> StartOptions {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        evaluator: program(directory, "evaluate", 0o755),
         run_dir: directory.join("run"),
         budget: 800,
         genealogy_growth: 0.6,
@@ -92,7 +84,6 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             docker_build_timeout: None,
             harness_build_command: None,
             harness_run_command: "run a harness".to_owned(),
-            evaluator: root.join("evaluate"),
             budget: 800,
             genealogy_growth: 0.6,
             confidence: 99.0,
@@ -122,7 +113,9 @@ fn a_progenitor_that_does_not_exist_is_refused() {
 #[test]
 fn a_progenitor_that_is_a_file_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.progenitor = options.evaluator.clone()),
+        option_refused(|directory, options| {
+            options.progenitor = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
+        }),
         "--progenitor"
     );
 }
@@ -355,39 +348,13 @@ fn the_build_command_is_a_setting_as_it_was_given() {
 }
 
 #[test]
-fn an_evaluator_that_does_not_exist_is_refused() {
-    assert_eq!(
-        option_refused(|directory, options| options.evaluator = directory.path().join("missing")),
-        "--evaluator"
-    );
-}
-
-#[test]
-fn an_evaluator_that_is_not_executable_is_refused() {
-    assert_eq!(
-        option_refused(|directory, options| {
-            options.evaluator = program(directory.path(), "plain", 0o644);
-        }),
-        "--evaluator"
-    );
-}
-
-#[test]
-fn an_evaluator_that_is_a_directory_is_refused() {
-    assert_eq!(
-        option_refused(|_, options| options.evaluator = options.progenitor.clone()),
-        "--evaluator"
-    );
-}
-
-#[test]
 fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
     let refused = Refused {
-        option: "--evaluator",
-        accepted: "an executable file",
+        option: "--dockerfile",
+        accepted: "an existing file",
         reason: None,
     };
-    assert_eq!(refused.to_string(), "--evaluator takes an executable file");
+    assert_eq!(refused.to_string(), "--dockerfile takes an existing file");
 }
 
 #[test]

@@ -57,7 +57,7 @@ A procreation is carried out by the harness that procreates. /work holds a
 second copy of its source code, and the instruction asks the harness to
 improve that copy: what the harness leaves in /work is its child.
 /evaluations holds the finished evaluations of the harness, to read: one
-directory for each task, holding the outcome and what the evaluator left.
+directory for each task, holding what the evaluation of that task kept.
 
 How the harness ends decides what is recorded:
 
@@ -119,25 +119,39 @@ are copied into benchmark in the run directory when a search is started, so
 the search keeps the tasks it started with, and `cladenc resume` does not
 read the directory that --benchmark named.
 
-The evaluator is run once for each evaluation, as
+An evaluation is one harness tried on one task, and cladenc carries it out
+in two steps. First the harness is started, as it is for a procreation.
+/work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds
+the statement of the task. The harness is given nothing else of the task,
+so it can neither read nor change the check. When the harness has ended,
+with whatever exit status, the check of the task is run in a second
+container of the same image, as
 
-    EVALUATOR <harness> <task> <output>
+    /task/check
 
-  <harness>  a copy of the harness to try
-  <task>     the id of the task, the name of its directory in the
-             benchmark
-  <output>   an empty directory for anything worth keeping, which is
-             also the working directory
+  /work         holds what the harness left, and is the working directory
+  /task         holds the directory of the task, to read and not to change
+  CLADENC_TASK  /task
 
-It runs in a process group of its own, with nothing on standard input, and
-its standard output and standard error are kept beside <output>. It is
-given CLADENC_MODEL, CLADENC_MODEL_URL and CLADENC_MODEL_KEY in its
-environment, as a harness is.
+A check calls no model, and is given none of the three variables of the
+model. The two steps share the time limit of one evaluation.
 
-How the evaluator ends decides what is recorded:
+How an evaluation ends decides what is recorded:
 
-  exit status 0   the evaluation succeeded
-  exit status 1   the evaluation failed
-  the time limit  the evaluator's process group is killed, and the evaluation
-                  is recorded as timed out
-  anything else   the search stops, and `cladenc resume` runs the job again";
+  the check exits with status 0    the evaluation succeeded
+  the check exits with another     the evaluation failed
+  exit status 125 of either step   Docker did not start the container: the
+                                   search stops, and `cladenc resume` runs
+                                   the job again
+  the time limit                   the container is removed, and the
+                                   evaluation is recorded as timed out
+
+evaluations in the run directory keeps every evaluation, in a directory
+named after the harness and in it one named after the task, which holds
+
+  outcome    one word: success, failure or timed_out
+  statement  the statement of the task
+  work       the files of the task as the harness left them
+  stdout     the standard output of the harness
+  stderr     the standard error of the harness
+  check      the standard output and the standard error of the check";

@@ -56,9 +56,9 @@ fn the_long_help_of_start_says_that_a_build_is_not_told_the_model() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_evaluator_is_told_the_model_too() {
+fn the_long_help_of_start_says_that_a_check_is_not_told_the_model() {
     assert!(help_of_start(true).contains(
-        "It is\ngiven CLADENC_MODEL, CLADENC_MODEL_URL and CLADENC_MODEL_KEY in its\nenvironment"
+        "A check calls no model, and is given none of the three variables of the\nmodel."
     ));
 }
 
@@ -144,20 +144,58 @@ fn the_short_help_of_start_names_the_option_that_builds_a_harness() {
 }
 
 #[test]
-fn the_long_help_of_start_shows_how_the_evaluator_is_called() {
-    assert!(help_of_start(true).contains("    EVALUATOR <harness> <task> <output>\n"));
+fn the_long_help_of_start_says_what_the_harness_of_an_evaluation_is_given_of_its_task() {
+    assert!(help_of_start(true).contains(
+        "/work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds\nthe \
+         statement of the task."
+    ));
 }
 
 #[test]
-fn the_long_help_of_start_says_what_each_way_the_evaluator_ends_means() {
+fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_check() {
+    assert!(help_of_start(true).contains("so it can neither read nor change the check."));
+}
+
+#[test]
+fn the_long_help_of_start_shows_how_the_check_of_a_task_is_called() {
+    assert!(help_of_start(true).contains("\n    /task/check\n"));
+}
+
+#[test]
+fn the_long_help_of_start_names_what_a_check_is_given() {
+    let help = help_of_start(true);
+    let given = [
+        "  /work         holds what the harness left, and is the working directory\n",
+        "  /task         holds the directory of the task, to read and not to change\n",
+        "  CLADENC_TASK  /task\n",
+    ];
+    assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_each_way_an_evaluation_ends_means() {
     let help = help_of_start(true);
     let endings = [
-        "  exit status 0   the evaluation succeeded\n",
-        "  exit status 1   the evaluation failed\n",
-        "  the time limit  the evaluator's process group is killed",
-        "  anything else   the search stops",
+        "  the check exits with status 0    the evaluation succeeded\n",
+        "  the check exits with another     the evaluation failed\n",
+        "  exit status 125 of either step   Docker did not start the container",
+        "  the time limit                   the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
+}
+
+#[test]
+fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_evaluation() {
+    let help = help_of_start(true);
+    let kept = [
+        "  outcome    one word: success, failure or timed_out\n",
+        "  statement  the statement of the task\n",
+        "  work       the files of the task as the harness left them\n",
+        "  stdout     the standard output of the harness\n",
+        "  stderr     the standard error of the harness\n",
+        "  check      the standard output and the standard error of the check",
+    ];
+    assert!(kept.iter().all(|line| help.contains(line)));
 }
 
 #[test]

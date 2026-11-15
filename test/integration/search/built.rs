@@ -26,8 +26,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: Some(build_command.to_owned()),
-        harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
-        evaluator: test_inputs::sample("integration", "evaluate-listed-or-exit-2.sh"),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         budget: 10,
         genealogy_growth: 0.0,
         confidence: 99.0,
@@ -63,15 +62,14 @@ fn resumed_after_its_progenitor_did_not_build() -> Searched {
     (directory, resumed)
 }
 
-fn resumed_after_an_evaluator_stopped_it() -> Searched {
+fn resumed_after_an_evaluation_stopped_it() -> Searched {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), COUNT_THE_BUILDS);
     let run_directory = directory.path().join("run");
-    let marker = directory.path().join("exit-2-at");
     let stop = AtomicBool::new(false);
-    fs::write(&marker, "t1\n").unwrap();
+    test_inputs::end_with_125_on(directory.path(), "t1");
     let _stopped = search::search(&settings, &run_directory, &stop, None);
-    fs::remove_file(&marker).unwrap();
+    test_inputs::end_with_125_on_no_more(&run_directory, "t1");
     let resumed = search::resume(&run_directory, &stop, None);
     (directory, resumed)
 }
@@ -182,13 +180,13 @@ fn a_search_whose_progenitor_was_built_on_resuming_goes_on_to_its_end() {
 
 #[test]
 fn a_resumed_search_whose_progenitor_was_built_does_not_build_it_again() {
-    let (directory, _resumed) = resumed_after_an_evaluator_stopped_it();
+    let (directory, _resumed) = resumed_after_an_evaluation_stopped_it();
     assert_eq!(builds_of(&directory, 0), "built\n");
 }
 
 #[test]
 fn a_resumed_search_whose_progenitor_was_built_goes_on_to_its_end() {
-    let (_directory, resumed) = resumed_after_an_evaluator_stopped_it();
+    let (_directory, resumed) = resumed_after_an_evaluation_stopped_it();
     assert_eq!(resumed.unwrap().best_harness, 1);
 }
 

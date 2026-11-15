@@ -5,7 +5,6 @@ mod job {
     mod limits;
     mod procreation;
     mod progenitor;
-    mod program;
 }
 
 mod search {

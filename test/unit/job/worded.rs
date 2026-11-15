@@ -43,6 +43,23 @@ fn the_instruction_says_where_the_evaluations_are() {
 }
 
 #[test]
+fn the_instruction_says_what_each_evaluation_keeps_of_the_task_and_of_the_harness() {
+    assert!(job::INSTRUCTION.contains(
+        "the file named statement says what you were asked to do, the file named outcome reads \
+         success, failure or timed_out, the directory named work holds the files of the task as \
+         you left them"
+    ));
+}
+
+#[test]
+fn the_instruction_says_where_what_the_check_printed_is() {
+    assert!(
+        job::INSTRUCTION
+            .contains("the directory named check holds what the check of the task printed")
+    );
+}
+
+#[test]
 fn a_program_that_exited_with_another_status_is_worded() {
     assert_eq!(worded(JobError::Exit(2)), "exited with status 2");
 }

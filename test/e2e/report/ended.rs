@@ -17,10 +17,6 @@ fn ended() -> TempDir {
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        (
-            "--evaluator",
-            test_inputs::sample("e2e", "evaluate-listed.sh"),
-        ),
         ("--run-dir", directory.path().join("run")),
         ("--budget", "10".into()),
         ("--genealogy-growth", "0".into()),

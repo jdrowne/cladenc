@@ -49,7 +49,6 @@ fn reported(json: bool) -> (Ran, String) {
                 docker_build_timeout: None,
                 harness_build_command: None,
                 harness_run_command: "run a harness".to_owned(),
-                evaluator: PathBuf::from("/evaluator"),
                 budget: 800,
                 genealogy_growth: 0.6,
                 confidence: 99.0,

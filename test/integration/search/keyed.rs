@@ -25,7 +25,6 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "printf %s \"$CLADENC_MODEL_KEY\" > key-given".to_owned(),
-        evaluator: test_inputs::sample("integration", "exit-0.sh"),
         budget: 1,
         genealogy_growth: 0.0,
         confidence: 99.0,

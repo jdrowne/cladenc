@@ -9,9 +9,6 @@ use tempfile::TempDir;
 use test_inputs::Image;
 
 const SOLVES_T1: &str = "RUN echo t1 > /solved-by-the-image\n";
-const COPY_WHAT_THE_IMAGE_SOLVES: &str = "cp /solved-by-the-image solved";
-const END_WITH_125_OR_COPY: &str = "[ -e end-with-125-at ] && exit 125
-cp /solved-by-the-image solved";
 
 struct Searched {
     directory: TempDir,
@@ -32,8 +29,7 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         dockerfile: Some(test_inputs::dockerfile(directory, steps)),
         docker_build_timeout: Some(60),
         harness_build_command: None,
-        harness_run_command: COPY_WHAT_THE_IMAGE_SOLVES.to_owned(),
-        evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
+        harness_run_command: test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.to_owned(),
         budget: 2,
         genealogy_growth: 0.0,
         confidence: 99.0,
@@ -65,7 +61,10 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Searched {
     let directory = test_inputs::temporary_directory();
     let image = test_inputs::image();
     let settings = Settings {
-        harness_run_command: END_WITH_125_OR_COPY.to_owned(),
+        harness_run_command: format!(
+            "[ -e end-with-125-at ] && exit 125\n{}",
+            test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES
+        ),
         ..settings(directory.path(), &image, SOLVES_T1)
     };
     let run_directory = directory.path().join("run");
