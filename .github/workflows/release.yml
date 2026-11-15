@@ -85,24 +85,9 @@ jobs:
       - name: assert-no-inline-directives
         run: >-
           assert-no-inline-directives
-          --tools markdownlint,yamllint
+          --tools clippy,coverage,markdownlint,rustc,rustdoc,rustfmt,yamllint
           --verbose
           ${{ github.workspace }}
-      - name: Assert that no attribute in a Rust file silences a tool
-        run: |
-          levels='allow|expect|warn|deny|forbid'
-          others='rustfmt::skip|coverage|cfg_attr'
-          attribute="#!?\[[[:space:]]*($levels|$others)[[:space:]]*[](]"
-          gate='cfg!?\((not\()?[[:space:]]*coverage'
-          found="$(git grep -nE "$attribute|$gate" -- '*.rs' || true)"
-          if [ -n "$found" ]; then
-            said='sets the level of a lint or switches a tool off'
-            echo "$found" | sed -E "s/^([^:]+):([0-9]+):.*/\1 \2/" |
-              while read -r file line; do
-                echo "::error file=$file,line=$line::$file:$line $said"
-              done
-            exit 1
-          fi
   assert-no-linter-config-files:
     runs-on: ubuntu-latest
     steps:
