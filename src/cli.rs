@@ -26,6 +26,8 @@ pub enum Command {
     Run(RunOptions),
     #[command(about = "Continue a search that stopped before its end")]
     Resume(ResumeOptions),
+    #[command(about = "Print the state of a search without changing it")]
+    Report(ReportOptions),
 }
 
 #[derive(Clone, Debug, Args)]
@@ -122,22 +124,36 @@ pub struct ResumeOptions {
     pub quiet: bool,
 }
 
+#[derive(Clone, Debug, Args)]
+pub struct ReportOptions {
+    #[arg(
+        long,
+        value_name = "DIR",
+        help = "The run directory of the search to report on"
+    )]
+    pub run_dir: PathBuf,
+    #[arg(long, help = "Print one JSON object in place of the table")]
+    pub json: bool,
+}
+
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
     let quiet = match &cli.command {
         Command::Run(options) => options.quiet,
         Command::Resume(options) => options.quiet,
+        Command::Report(_) => false,
     };
     let mut errors = (!quiet).then_some(errors);
     let writer = errors
         .as_mut()
         .map(|errors| &mut **errors as &mut dyn Write);
-    let found = match &cli.command {
-        Command::Run(options) => run(options, stop, writer),
-        Command::Resume(options) => resume(options, stop, writer),
+    let printed = match &cli.command {
+        Command::Run(options) => run(options, stop, writer).map(directory),
+        Command::Resume(options) => resume(options, stop, writer).map(directory),
+        Command::Report(options) => report(options),
     };
-    match found {
-        Ok(found) => {
-            let _ = writeln!(output, "{}", found.directory.display());
+    match printed {
+        Ok(text) => {
+            let _ = write!(output, "{text}");
             0
         }
         Err((status, reason)) => {
@@ -168,6 +184,23 @@ fn resume(
 ) -> Result<Found, (u8, String)> {
     let run_directory = absolute(&options.run_dir)?;
     search::resume(&run_directory, stop, writer).map_err(stopped)
+}
+
+fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
+    let run_directory = absolute(&options.run_dir)?;
+    crate::report::read(&run_directory)
+        .map(|report| {
+            if options.json {
+                report.json() + "\n"
+            } else {
+                report.table()
+            }
+        })
+        .map_err(|error| (2, format!("the run directory cannot be used: {error:?}")))
+}
+
+fn directory(found: Found) -> String {
+    format!("{}\n", found.directory.display())
 }
 
 fn absolute(run_dir: &Path) -> Result<PathBuf, (u8, String)> {

@@ -1,6 +1,7 @@
 mod cli {
     mod checks;
     mod missing;
+    mod report;
     mod resume;
     mod run;
     mod values;
@@ -36,4 +37,11 @@ mod policy {
     mod lower_bound;
     mod no_job;
     mod repeatable;
+}
+
+mod report {
+    mod json;
+    mod reading;
+    mod table;
+    mod values;
 }

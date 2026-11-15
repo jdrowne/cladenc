@@ -1,8 +1,11 @@
 use std::collections::BTreeSet;
 
+use serde::Serialize;
+
 use super::{EvaluationOutcome, HarnessId};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum HarnessState {
     BeingCreated,
     Created,

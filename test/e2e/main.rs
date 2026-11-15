@@ -1,3 +1,9 @@
+mod report {
+    mod ended;
+    mod unended;
+    mod unusable;
+}
+
 mod resume {
     mod continued;
     mod ended;
