@@ -18,7 +18,8 @@ fn options(directory: &Path) -> RunOptions {
     RunOptions {
         progenitor: test_inputs::progenitor(directory),
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
-        procreator: program(directory, "procreate", 0o755),
+        docker_image: "image".to_owned(),
+        harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory, "evaluate", 0o755),
         run_dir: directory.join("run"),
         budget: 800,
@@ -60,7 +61,8 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
         Ok(Settings {
             progenitor: root.join("progenitor"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
-            procreator: root.join("procreate"),
+            docker_image: "image".to_owned(),
+            harness_run_command: "run a harness".to_owned(),
             evaluator: root.join("evaluate"),
             budget: 800,
             genealogy_growth: 0.6,
@@ -91,7 +93,7 @@ fn a_progenitor_that_does_not_exist_is_refused() {
 #[test]
 fn a_progenitor_that_is_a_file_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.progenitor = options.procreator.clone()),
+        option_refused(|_, options| options.progenitor = options.evaluator.clone()),
         "--progenitor"
     );
 }
@@ -159,28 +161,18 @@ fn task_ids_of_letters_digits_dots_underscores_and_hyphens_are_accepted() {
 }
 
 #[test]
-fn a_procreator_that_does_not_exist_is_refused() {
+fn the_image_and_the_run_command_are_settings_as_they_were_given() {
+    let settings = checked(|_, options| {
+        options.docker_image = "registry.example/harness:1".to_owned();
+        options.harness_run_command = "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned();
+    })
+    .unwrap();
     assert_eq!(
-        option_refused(|directory, options| options.procreator = directory.path().join("missing")),
-        "--procreator"
-    );
-}
-
-#[test]
-fn a_procreator_that_is_not_executable_is_refused() {
-    assert_eq!(
-        option_refused(|directory, options| {
-            options.procreator = program(directory.path(), "plain", 0o644);
-        }),
-        "--procreator"
-    );
-}
-
-#[test]
-fn a_procreator_that_is_a_directory_is_refused() {
-    assert_eq!(
-        option_refused(|_, options| options.procreator = options.progenitor.clone()),
-        "--procreator"
+        (settings.docker_image, settings.harness_run_command),
+        (
+            "registry.example/harness:1".to_owned(),
+            "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned()
+        )
     );
 }
 
@@ -203,10 +195,18 @@ fn an_evaluator_that_is_not_executable_is_refused() {
 }
 
 #[test]
+fn an_evaluator_that_is_a_directory_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.evaluator = options.progenitor.clone()),
+        "--evaluator"
+    );
+}
+
+#[test]
 fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
     let refused = Refused {
-        option: "--procreator",
+        option: "--evaluator",
         accepted: "an executable file",
     };
-    assert_eq!(refused.to_string(), "--procreator takes an executable file");
+    assert_eq!(refused.to_string(), "--evaluator takes an executable file");
 }

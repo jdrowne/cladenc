@@ -6,7 +6,8 @@ fn a_run_an_evaluator_stopped_says_which_evaluation_and_how_it_ended() {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
-        ("--procreator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", "exit 0".into()),
         ("--evaluator", test_inputs::sample("e2e", "exit-2.sh")),
         ("--run-dir", directory.path().join("run")),
         ("--budget", "2".into()),

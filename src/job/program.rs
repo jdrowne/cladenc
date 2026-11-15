@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
-use std::process::{Child, Command, ExitStatus, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -14,8 +14,7 @@ use super::JobError;
 const LOOK: Duration = Duration::from_millis(20);
 
 pub(super) enum Ending {
-    Passed,
-    Failed,
+    Exited(i32),
     TimedOut,
 }
 
@@ -29,7 +28,6 @@ pub(super) fn run(
         .and_then(|stdout| File::create(job.join("stderr")).map(|stderr| (stdout, stderr)))
         .and_then(|(stdout, stderr)| {
             command
-                .current_dir(job.join("output"))
                 .stdin(Stdio::null())
                 .stdout(stdout)
                 .stderr(stderr)
@@ -40,7 +38,10 @@ pub(super) fn run(
     let deadline = Instant::now() + Duration::from_secs(time_limit);
     loop {
         if let Some(status) = program.try_wait().ok().flatten() {
-            return ending(status);
+            return status
+                .code()
+                .map(Ending::Exited)
+                .ok_or_else(|| JobError::Signal(status.signal().unwrap_or_default()));
         }
         if stop.load(Ordering::SeqCst) {
             kill(&mut program);
@@ -58,13 +59,4 @@ fn kill(program: &mut Child) {
     let group = Pid::from_raw(program.id().cast_signed());
     let _ = killpg(group, Signal::SIGKILL);
     let _ = program.wait();
-}
-
-fn ending(status: ExitStatus) -> Result<Ending, JobError> {
-    match status.code() {
-        Some(0) => Ok(Ending::Passed),
-        Some(1) => Ok(Ending::Failed),
-        Some(code) => Err(JobError::Exit(code)),
-        None => Err(JobError::Signal(status.signal().unwrap_or_default())),
-    }
 }

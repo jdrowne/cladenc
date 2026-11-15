@@ -12,7 +12,8 @@ fn settings(directory: &Path, evaluator: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        procreator: test_inputs::sample("integration", "procreate-solve-one-more-or-exit-2.sh"),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         evaluator: test_inputs::sample("integration", evaluator),
         budget: 4,
         genealogy_growth: 0.6,
@@ -25,27 +26,34 @@ fn settings(directory: &Path, evaluator: &str) -> Settings {
     }
 }
 
-fn resumed_after_a_stop_at(job: &str, leftover: &str, initial_procreations: u64) -> TempDir {
+fn resumed_after_a_stop_at(
+    solved: u64,
+    task: &str,
+    leftover: &str,
+    initial_procreations: u64,
+) -> TempDir {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), "evaluate-listed-or-exit-2.sh");
     settings.initial_procreations = initial_procreations;
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
     let marker = directory.path().join("exit-2-at");
-    fs::write(&marker, format!("{job}\n")).unwrap();
+    test_inputs::end_with_125_at(&settings.progenitor, solved);
+    fs::write(&marker, format!("{task}\n")).unwrap();
     let _stopped = search::search(&settings, &run_directory, &stop, None);
     fs::write(run_directory.join("running").join(leftover), "left\n").unwrap();
+    test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_file(&marker).unwrap();
     search::resume(&run_directory, &stop, None).unwrap();
     directory
 }
 
 fn resumed_after_a_procreation_stopped() -> TempDir {
-    resumed_after_a_stop_at("procreation-1", "procreation-1/child/leftover", 1)
+    resumed_after_a_stop_at(0, "none", "procreation-1/child/leftover", 1)
 }
 
 fn resumed_after_an_evaluation_stopped() -> TempDir {
-    resumed_after_a_stop_at("t1", "evaluation-0-t1/output/leftover", 0)
+    resumed_after_a_stop_at(99, "t1", "evaluation-0-t1/output/leftover", 0)
 }
 
 fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {

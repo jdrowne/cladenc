@@ -8,9 +8,10 @@ fn ran() -> TempDir {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
+        ("--docker-image", test_inputs::IMAGE.into()),
         (
-            "--procreator",
-            test_inputs::sample("e2e", "record-arguments.sh"),
+            "--harness-run-command",
+            "echo \"$CLADENC_HARNESS\" > where; pwd >> where".into(),
         ),
         (
             "--evaluator",
@@ -37,18 +38,11 @@ fn ran() -> TempDir {
 }
 
 #[test]
-fn the_procreator_is_given_the_parent_the_child_the_evaluations_and_the_output() {
+fn a_harness_is_started_in_a_container_that_holds_its_source_code_and_the_copy_to_improve() {
     let directory = ran();
-    let run = directory.path().join("run");
     assert_eq!(
-        fs::read_to_string(run.join("procreations/1/output/arguments")).unwrap(),
-        format!(
-            "{0}/running/procreation-1/parent\n\
-             {0}/running/procreation-1/child\n\
-             {0}/evaluations/0\n\
-             {0}/running/procreation-1/output\n",
-            run.display()
-        )
+        fs::read_to_string(directory.path().join("run/harnesses/1/where")).unwrap(),
+        "/harness\n/work\n"
     );
 }
 

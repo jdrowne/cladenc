@@ -5,7 +5,8 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
     [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        ("--procreator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", "exit 0".into()),
         ("--evaluator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--run-dir", run_directory.to_owned()),
         ("--budget", "2".into()),
@@ -37,7 +38,7 @@ fn status(options: &[String]) -> Option<i32> {
 fn a_missing_option_exits_with_2() {
     let directory = test_inputs::temporary_directory();
     let options = options(directory.path(), &directory.path().join("run"));
-    assert_eq!(status(&options[..12]), Some(2));
+    assert_eq!(status(&options[..13]), Some(2));
 }
 
 #[test]

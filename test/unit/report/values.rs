@@ -9,7 +9,8 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
-        procreator: PathBuf::from("/procreator"),
+        docker_image: "image".to_owned(),
+        harness_run_command: "run a harness".to_owned(),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
         genealogy_growth: 0.6,

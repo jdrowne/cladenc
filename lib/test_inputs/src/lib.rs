@@ -1,12 +1,23 @@
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
 use nix::sys::signal::kill;
 use nix::unistd::Pid;
 use tempfile::TempDir;
+
+pub const IMAGE: &str = "busybox:1.37.0";
+
+pub const SOLVE_ONE_MORE: &str = r#"touch solved
+echo "t$(($(wc -l < solved) + 1))" >> solved"#;
+
+pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"touch solved
+solved=$(($(wc -l < solved)))
+[ -e end-with-125-at ] && [ "$solved" -eq "$(cat end-with-125-at)" ] && exit 125
+echo "t$((solved + 1))" >> solved"#;
 
 pub fn temporary_directory() -> TempDir {
     tempfile::tempdir().expect("a temporary directory can be made")
@@ -48,8 +59,8 @@ pub fn within_ten_seconds(mut holds: impl FnMut() -> bool) -> bool {
     })
 }
 
-pub fn pid_is_written(pid_file: &Path) -> bool {
-    fs::read_to_string(pid_file).is_ok_and(|pid| pid.ends_with('\n'))
+pub fn line_is_written(file: &Path) -> bool {
+    fs::read_to_string(file).is_ok_and(|line| line.ends_with('\n'))
 }
 
 pub fn process_is_gone(pid_file: &Path) -> bool {
@@ -59,4 +70,32 @@ pub fn process_is_gone(pid_file: &Path) -> bool {
         .parse()
         .expect("the file holds a process id");
     within_ten_seconds(|| kill(Pid::from_raw(pid), None).is_err())
+}
+
+pub fn container_is_gone(id_file: &Path) -> bool {
+    let id = fs::read_to_string(id_file).expect("the file of the container id can be read");
+    let filter = format!("id={}", id.trim());
+    within_ten_seconds(|| {
+        Command::new("docker")
+            .args(["ps", "--all", "--quiet", "--filter", &filter])
+            .output()
+            .is_ok_and(|listed| listed.status.success() && listed.stdout.is_empty())
+    })
+}
+
+pub fn end_with_125_at(progenitor: &Path, solved: u64) {
+    fs::write(progenitor.join("end-with-125-at"), format!("{solved}\n"))
+        .expect("the marker can be written");
+}
+
+pub fn end_with_125_no_more(run_directory: &Path) {
+    for harness in fs::read_dir(run_directory.join("harnesses")).expect("the harnesses are there") {
+        let marker = harness
+            .expect("a harness can be listed")
+            .path()
+            .join("end-with-125-at");
+        if marker.exists() {
+            fs::remove_file(marker).expect("the marker can be removed");
+        }
+    }
 }

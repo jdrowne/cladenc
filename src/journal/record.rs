@@ -4,13 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use super::JournalError;
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::job::Launch;
 use crate::policy::Policy;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
     pub progenitor: PathBuf,
+    pub docker_image: String,
+    pub harness_run_command: String,
     pub tasks: Vec<String>,
-    pub procreator: PathBuf,
     pub evaluator: PathBuf,
     pub budget: u64,
     pub genealogy_growth: f64,
@@ -23,6 +25,13 @@ pub struct Settings {
 }
 
 impl Settings {
+    pub fn launch(&self) -> Launch<'_> {
+        Launch {
+            image: &self.docker_image,
+            run_command: &self.harness_run_command,
+        }
+    }
+
     pub fn policy(&self) -> Policy {
         Policy {
             budget: self.budget,

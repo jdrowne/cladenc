@@ -40,8 +40,8 @@ fn a_journal_that_does_not_start_with_a_run_record_is_worded() {
 #[test]
 fn a_format_that_is_not_read_is_worded() {
     assert_eq!(
-        worded(JournalError::UnknownFormat { format: 2 }),
-        "its journal has format 2, which this cladenc does not read"
+        worded(JournalError::UnknownFormat { format: 1 }),
+        "its journal has format 1, which this cladenc does not read"
     );
 }
 

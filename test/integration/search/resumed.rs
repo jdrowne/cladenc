@@ -18,7 +18,8 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        procreator: test_inputs::sample("integration", "procreate-solve-one-more-or-exit-2.sh"),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed-or-exit-2.sh"),
         budget: 12,
         genealogy_growth: 0.6,
@@ -31,7 +32,7 @@ fn settings(directory: &Path) -> Settings {
     }
 }
 
-fn stopped_at(job: &str, resumes_while_stopped: usize) -> Searches {
+fn stopped_at(solved: u64, task: &str, resumes_while_stopped: usize) -> Searches {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
@@ -41,11 +42,13 @@ fn stopped_at(job: &str, resumes_while_stopped: usize) -> Searches {
     fs::create_dir(directory.path().join("stopped")).unwrap();
     let unbroken = directory.path().join("unbroken/run");
     let unbroken = search::search(&settings, &unbroken, &stop, None).unwrap();
-    fs::write(&marker, format!("{job}\n")).unwrap();
+    test_inputs::end_with_125_at(&settings.progenitor, solved);
+    fs::write(&marker, format!("{task}\n")).unwrap();
     let mut stopped = search::search(&settings, &run_directory, &stop, None);
     for _ in 0..resumes_while_stopped {
         stopped = search::resume(&run_directory, &stop, None);
     }
+    test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_file(&marker).unwrap();
     let resumed = search::resume(&run_directory, &stop, None);
     Searches {
@@ -64,7 +67,7 @@ fn journal_of(searches: &Searches, search: &str) -> String {
 #[test]
 fn an_evaluator_that_exits_with_2_at_a_task_stops_the_search_before_its_end() {
     assert!(matches!(
-        stopped_at("t3", 0).stopped,
+        stopped_at(99, "t3", 0).stopped,
         Err(SearchError::Job {
             error: JobError::Exit(2),
             ..
@@ -74,7 +77,7 @@ fn an_evaluator_that_exits_with_2_at_a_task_stops_the_search_before_its_end() {
 
 #[test]
 fn a_search_an_evaluator_stopped_continues_to_the_journal_an_unbroken_search_writes() {
-    let searches = stopped_at("t3", 0);
+    let searches = stopped_at(99, "t3", 0);
     assert_eq!(
         journal_of(&searches, "stopped"),
         journal_of(&searches, "unbroken")
@@ -82,11 +85,11 @@ fn a_search_an_evaluator_stopped_continues_to_the_journal_an_unbroken_search_wri
 }
 
 #[test]
-fn a_procreator_that_exits_with_2_at_an_initial_procreation_stops_the_search_before_its_end() {
+fn a_container_that_ends_with_status_125_at_an_initial_procreation_stops_the_search() {
     assert!(matches!(
-        stopped_at("procreation-2", 0).stopped,
+        stopped_at(0, "none", 0).stopped,
         Err(SearchError::Job {
-            error: JobError::Exit(2),
+            error: JobError::Docker(_),
             ..
         })
     ));
@@ -94,7 +97,7 @@ fn a_procreator_that_exits_with_2_at_an_initial_procreation_stops_the_search_bef
 
 #[test]
 fn a_search_stopped_during_its_initial_procreations_continues_to_the_same_journal_too() {
-    let searches = stopped_at("procreation-2", 0);
+    let searches = stopped_at(0, "none", 0);
     assert_eq!(
         journal_of(&searches, "stopped"),
         journal_of(&searches, "unbroken")
@@ -104,7 +107,7 @@ fn a_search_stopped_during_its_initial_procreations_continues_to_the_same_journa
 #[test]
 fn a_search_resumed_while_its_program_still_fails_stops_again() {
     assert!(matches!(
-        stopped_at("t3", 1).stopped,
+        stopped_at(99, "t3", 1).stopped,
         Err(SearchError::Job {
             error: JobError::Exit(2),
             ..
@@ -114,7 +117,7 @@ fn a_search_resumed_while_its_program_still_fails_stops_again() {
 
 #[test]
 fn a_search_that_stopped_again_continues_to_the_same_journal_once_resumed_once_more() {
-    let searches = stopped_at("t3", 1);
+    let searches = stopped_at(99, "t3", 1);
     assert_eq!(
         journal_of(&searches, "stopped"),
         journal_of(&searches, "unbroken")
@@ -123,7 +126,7 @@ fn a_search_that_stopped_again_continues_to_the_same_journal_once_resumed_once_m
 
 #[test]
 fn a_resumed_search_returns_the_harness_an_unbroken_search_returns() {
-    let searches = stopped_at("t3", 0);
+    let searches = stopped_at(99, "t3", 0);
     assert_eq!(
         searches.resumed.unwrap().best_harness,
         searches.unbroken.best_harness
@@ -132,7 +135,7 @@ fn a_resumed_search_returns_the_harness_an_unbroken_search_returns() {
 
 #[test]
 fn a_resumed_search_returns_the_directory_of_the_best_harness_in_its_run_directory() {
-    let searches = stopped_at("t3", 0);
+    let searches = stopped_at(99, "t3", 0);
     let best_harness = searches.unbroken.best_harness.to_string();
     assert_eq!(
         searches.resumed.unwrap().directory,

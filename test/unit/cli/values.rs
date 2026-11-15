@@ -2,10 +2,11 @@ use cladenc::cli::{Cli, Command, RunOptions};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--progenitor", "/progenitor"),
     ("--tasks", "/tasks"),
-    ("--procreator", "/procreator"),
+    ("--docker-image", "image"),
+    ("--harness-run-command", "run a harness"),
     ("--evaluator", "/evaluator"),
     ("--run-dir", "/run"),
     ("--budget", "800"),
@@ -33,6 +34,25 @@ fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
 
 fn refusal(changed: &str, given: &str) -> ErrorKind {
     with(changed, given).unwrap_err().kind()
+}
+
+#[test]
+fn an_empty_docker_image_is_an_error() {
+    assert!(with("--docker-image", "").is_err());
+}
+
+#[test]
+fn an_empty_harness_run_command_is_an_error() {
+    assert!(with("--harness-run-command", "").is_err());
+}
+
+#[test]
+fn a_harness_run_command_is_taken_as_it_is_written() {
+    assert!(matches!(
+        with("--harness-run-command", "sh \"$CLADENC_HARNESS/harness.sh\" --flag").unwrap().command,
+        Command::Run(RunOptions { harness_run_command, .. })
+            if harness_run_command == "sh \"$CLADENC_HARNESS/harness.sh\" --flag"
+    ));
 }
 
 #[test]

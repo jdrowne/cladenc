@@ -28,7 +28,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended
             let result = cleared.map_err(JobError::Io).and_then(|()| {
                 job::run_procreation(
                     &shared.workspace,
-                    &settings.procreator,
+                    &settings.launch(),
                     child,
                     parent,
                     settings.procreation_timeout,

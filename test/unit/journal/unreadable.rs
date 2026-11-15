@@ -4,8 +4,9 @@ use cladenc::genealogy::GenealogyError;
 use cladenc::journal::{self, JournalError};
 
 const RUN: &str = concat!(
-    r#"{"record":"run","format":1,"progenitor":"/abs/harness","tasks":["t1","t2"],"#,
-    r#""procreator":"/abs/procreate","evaluator":"/abs/evaluate","budget":800,"#,
+    r#"{"record":"run","format":2,"progenitor":"/abs/harness","docker_image":"image","#,
+    r#""harness_run_command":"run a harness","tasks":["t1","t2"],"#,
+    r#""evaluator":"/abs/evaluate","budget":800,"#,
     r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
     r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
 );
@@ -56,10 +57,31 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_1_cannot_be_read() {
+fn a_journal_whose_format_is_not_2_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":1"#, r#""format":2"#)]),
-        JournalError::UnknownFormat { format: 2 }
+        error_of(&[&RUN.replace(r#""format":2"#, r#""format":3"#)]),
+        JournalError::UnknownFormat { format: 3 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_others() {
+    assert!(matches!(
+        error_of(&[concat!(
+            r#"{"record":"run","format":1,"progenitor":"/abs/harness","tasks":["t1","t2"],"#,
+            r#""procreator":"/abs/procreate","evaluator":"/abs/evaluate","budget":800,"#,
+            r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
+            r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
+        )]),
+        JournalError::UnknownFormat { format: 1 }
+    ));
+}
+
+#[test]
+fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[r#"{"record":"run","format":2,"progenitor":"/abs/harness"}"#]),
+        JournalError::NotARecord { line: 1 }
     ));
 }
 

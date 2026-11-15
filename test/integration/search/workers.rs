@@ -9,7 +9,8 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     let mut settings = Settings {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        procreator: test_inputs::sample("integration", "procreate-solve-one-more.sh"),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 12,
         genealogy_growth: 0.6,

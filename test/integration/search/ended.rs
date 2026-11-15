@@ -10,7 +10,8 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        procreator: test_inputs::sample("integration", "procreate-solve-one-more.sh"),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 10,
         genealogy_growth: 0.0,

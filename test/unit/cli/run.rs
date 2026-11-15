@@ -23,7 +23,8 @@ fn ran(change: impl FnOnce(&Path, &mut RunOptions)) -> Ran {
     let mut options = RunOptions {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: test_inputs::task_file(directory.path(), &["t1"]),
-        procreator: program(directory.path(), "procreate"),
+        docker_image: "image".to_owned(),
+        harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory.path(), "evaluate"),
         run_dir: directory.path().join("run"),
         budget: 2,
@@ -56,6 +57,10 @@ fn with_a_missing_task_file(directory: &Path, options: &mut RunOptions) {
 
 fn in_a_run_directory_that_exists(directory: &Path, options: &mut RunOptions) {
     options.run_dir = directory.to_owned();
+}
+
+fn in_a_run_directory_with_a_colon_in_its_path(directory: &Path, options: &mut RunOptions) {
+    options.run_dir = directory.join("first:second");
 }
 
 #[test]
@@ -97,6 +102,20 @@ fn a_run_directory_at_which_something_exists_is_reported_on_standard_error() {
         ran(in_a_run_directory_that_exists)
             .errors
             .starts_with("cladenc: the run directory cannot be made: ")
+    );
+}
+
+#[test]
+fn a_run_directory_with_a_colon_in_its_path_gives_exit_status_2() {
+    assert_eq!(ran(in_a_run_directory_with_a_colon_in_its_path).status, 2);
+}
+
+#[test]
+fn a_run_directory_with_a_colon_in_its_path_is_refused_for_what_docker_cannot_mount() {
+    assert_eq!(
+        ran(in_a_run_directory_with_a_colon_in_its_path).errors,
+        "cladenc: --run-dir takes a path that holds no colon, because Docker cannot mount a \
+         directory whose path holds one\n"
     );
 }
 

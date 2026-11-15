@@ -1,21 +1,42 @@
+mod container;
 mod program;
 
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
 use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
+use container::{Container, Mount};
 use program::{Ending, run};
+
+pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
+    copy of your own source code. Improve that source code, so that the harness it makes solves \
+    more coding tasks than you do. /evaluations holds one directory for each task you have been \
+    tried on: the file named outcome in it reads success, failure or timed_out, and the rest is \
+    what that attempt left. Use them to find what to improve. Change files in the current \
+    directory only: what it holds when you end becomes a new harness, which is tried on tasks in \
+    its turn.";
+
+const HARNESS: &str = "/harness";
+const WORK: &str = "/work";
+const EVALUATIONS: &str = "/evaluations";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Launch<'a> {
+    pub image: &'a str,
+    pub run_command: &'a str,
+}
 
 #[derive(Debug)]
 pub enum JobError {
     Stopped,
     Io(io::Error),
+    Docker(PathBuf),
     Exit(i32),
     Signal(i32),
 }
@@ -25,6 +46,12 @@ impl Display for JobError {
         match self {
             Self::Stopped => write!(formatter, "was stopped"),
             Self::Io(error) => write!(formatter, "could not be carried out: {error}"),
+            Self::Docker(said) => write!(
+                formatter,
+                "could not be carried out: Docker did not start its container, and {} holds \
+                 what Docker said",
+                said.display()
+            ),
             Self::Exit(status) => write!(formatter, "exited with status {status}"),
             Self::Signal(signal) => write!(formatter, "was ended by signal {signal}"),
         }
@@ -35,7 +62,7 @@ impl Error for JobError {}
 
 pub fn run_procreation(
     workspace: &Workspace,
-    procreator: &Path,
+    launch: &Launch<'_>,
     child: HarnessId,
     parent: HarnessId,
     time_limit: u64,
@@ -45,18 +72,40 @@ pub fn run_procreation(
         .start_procreation(child, parent)
         .map_err(JobError::Io)?;
     let job = workspace.running_procreation(child);
+    let source = job.join("parent");
     let made = job.join("child");
-    let mut command = Command::new(procreator);
-    command
-        .arg(job.join("parent"))
-        .arg(&made)
-        .arg(workspace.evaluations(parent))
-        .arg(job.join("output"));
-    let outcome = match run(command, &job, time_limit, stop)? {
-        Ending::Passed if holds_only_harness_files(&made).unwrap_or(false) => {
+    let evaluations = workspace.evaluations(parent);
+    let container = Container {
+        image: launch.image,
+        command: launch.run_command,
+        mounts: &[
+            Mount {
+                from: &source,
+                to: HARNESS,
+                read_only: false,
+            },
+            Mount {
+                from: &made,
+                to: WORK,
+                read_only: false,
+            },
+            Mount {
+                from: &evaluations,
+                to: EVALUATIONS,
+                read_only: true,
+            },
+        ],
+        working_directory: WORK,
+        environment: &[
+            ("CLADENC_HARNESS", HARNESS),
+            ("CLADENC_INSTRUCTION", INSTRUCTION),
+        ],
+    };
+    let outcome = match container.run(&job, time_limit, stop)? {
+        Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
             ProcreationOutcome::Created
         }
-        Ending::Passed | Ending::Failed => ProcreationOutcome::Failed,
+        Ending::Exited(_) => ProcreationOutcome::Failed,
         Ending::TimedOut => ProcreationOutcome::TimedOut,
     };
     workspace
@@ -81,10 +130,12 @@ pub fn run_evaluation(
     command
         .arg(job.join("harness"))
         .arg(task)
-        .arg(job.join("output"));
+        .arg(job.join("output"))
+        .current_dir(job.join("output"));
     let outcome = match run(command, &job, time_limit, stop)? {
-        Ending::Passed => EvaluationOutcome::Success,
-        Ending::Failed => EvaluationOutcome::Failure,
+        Ending::Exited(0) => EvaluationOutcome::Success,
+        Ending::Exited(1) => EvaluationOutcome::Failure,
+        Ending::Exited(status) => return Err(JobError::Exit(status)),
         Ending::TimedOut => EvaluationOutcome::TimedOut,
     };
     workspace

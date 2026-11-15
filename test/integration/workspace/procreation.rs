@@ -52,9 +52,9 @@ fn a_started_procreation_holds_a_copy_of_its_parent_to_modify() {
 }
 
 #[test]
-fn a_started_procreation_holds_an_empty_output_directory() {
+fn a_started_procreation_holds_its_two_copies_and_nothing_else() {
     let (_directory, workspace) = started();
-    assert_eq!(entries(workspace.running_procreation(1).join("output")), 0);
+    assert_eq!(entries(workspace.running_procreation(1)), 2);
 }
 
 #[test]
@@ -102,13 +102,9 @@ fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_evalua
 }
 
 #[test]
-fn a_procreation_that_created_its_child_keeps_only_its_output() {
+fn a_procreation_that_created_its_child_keeps_neither_copy_in_its_directory() {
     let (_directory, workspace) = ended(ProcreationOutcome::Created);
-    let kept: Vec<_> = fs::read_dir(workspace.procreation(1))
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name())
-        .collect();
-    assert_eq!(kept, ["output"]);
+    assert_eq!(entries(workspace.procreation(1)), 0);
 }
 
 #[test]
@@ -133,13 +129,9 @@ fn a_procreation_that_failed_leaves_no_directory_for_the_evaluations_of_its_chil
 }
 
 #[test]
-fn a_procreation_that_failed_keeps_only_its_output() {
+fn a_procreation_that_failed_keeps_neither_copy_in_its_directory() {
     let (_directory, workspace) = ended(ProcreationOutcome::Failed);
-    let kept: Vec<_> = fs::read_dir(workspace.procreation(1))
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name())
-        .collect();
-    assert_eq!(kept, ["output"]);
+    assert_eq!(entries(workspace.procreation(1)), 0);
 }
 
 #[test]

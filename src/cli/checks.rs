@@ -24,8 +24,9 @@ impl RunOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
+            docker_image: self.docker_image.clone(),
+            harness_run_command: self.harness_run_command.clone(),
             tasks: tasks(&self.tasks)?,
-            procreator: program(&self.procreator, "--procreator")?,
             evaluator: program(&self.evaluator, "--evaluator")?,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,

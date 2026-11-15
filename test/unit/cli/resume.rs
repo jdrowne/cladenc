@@ -34,6 +34,15 @@ fn missing() -> PathBuf {
 }
 
 #[test]
+fn a_run_directory_with_a_colon_in_its_path_is_refused_before_it_is_looked_at() {
+    assert!(
+        ran(PathBuf::from("/first:second"), false)
+            .errors
+            .starts_with("cladenc: --run-dir takes a path that holds no colon")
+    );
+}
+
+#[test]
 fn the_run_directory_is_the_one_given() {
     assert!(matches!(
         parsed(&["--run-dir=/run"]).unwrap().command,

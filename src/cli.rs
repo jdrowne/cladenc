@@ -5,6 +5,7 @@ use std::io::Write;
 use std::path::{self, Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use clap::builder::NonEmptyStringValueParser;
 use clap::{Args, Parser, Subcommand};
 
 use crate::search::{self, Found, SearchError};
@@ -40,17 +41,25 @@ pub struct RunOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The directory copied to make the progenitor"
+        help = "The directory of source code copied to make the progenitor"
     )]
     pub progenitor: PathBuf,
-    #[arg(long, value_name = "FILE", help = "The task ids, one per line")]
-    pub tasks: PathBuf,
     #[arg(
         long,
-        value_name = "FILE",
-        help = "The program that carries out a procreation"
+        value_name = "IMAGE",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The Docker image every container is started from"
     )]
-    pub procreator: PathBuf,
+    pub docker_image: String,
+    #[arg(
+        long,
+        value_name = "COMMAND",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The shell command that runs a harness in a container"
+    )]
+    pub harness_run_command: String,
+    #[arg(long, value_name = "FILE", help = "The task ids, one per line")]
+    pub tasks: PathBuf,
     #[arg(
         long,
         value_name = "FILE",
@@ -178,7 +187,7 @@ fn run(
     let settings = options
         .settings()
         .map_err(|refused| (2, refused.to_string()))?;
-    let run_directory = absolute(&options.run_dir)?;
+    let run_directory = mountable(&options.run_dir)?;
     search::search(&settings, &run_directory, stop, writer).map_err(stopped)
 }
 
@@ -187,7 +196,7 @@ fn resume(
     stop: &AtomicBool,
     writer: Option<&mut dyn Write>,
 ) -> Result<Found, (u8, String)> {
-    let run_directory = absolute(&options.run_dir)?;
+    let run_directory = mountable(&options.run_dir)?;
     search::resume(&run_directory, stop, writer).map_err(stopped)
 }
 
@@ -210,6 +219,21 @@ fn directory(found: Found) -> String {
 
 fn absolute(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
     path::absolute(run_dir).map_err(|error| (2, format!("--run-dir takes a path: {error}")))
+}
+
+fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
+    absolute(run_dir).and_then(|run_directory| {
+        if run_directory.to_string_lossy().contains(':') {
+            Err((
+                2,
+                "--run-dir takes a path that holds no colon, because Docker cannot mount a \
+                 directory whose path holds one"
+                    .to_owned(),
+            ))
+        } else {
+            Ok(run_directory)
+        }
+    })
 }
 
 fn stopped(error: SearchError) -> (u8, String) {

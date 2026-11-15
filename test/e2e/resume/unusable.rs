@@ -9,7 +9,8 @@ fn run(directory: &Path) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        ("--procreator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", "exit 0".into()),
         (
             "--evaluator",
             test_inputs::sample("e2e", "spawn-while-held.sh"),
@@ -45,7 +46,7 @@ fn resumed_while_in_use() -> Output {
     let pid_file = directory
         .path()
         .join("run/running/evaluation-0-t1/output/pid");
-    test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
     let second = resume(directory.path());
     kill(Pid::from_raw(first.id().cast_signed()), Signal::SIGINT).unwrap();
     first.wait().unwrap();

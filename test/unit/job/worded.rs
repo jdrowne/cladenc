@@ -1,7 +1,8 @@
 use std::error::Error;
 use std::io;
+use std::path::PathBuf;
 
-use cladenc::job::JobError;
+use cladenc::job::{self, JobError};
 
 fn worded(error: impl Error) -> String {
     error.to_string()
@@ -18,6 +19,27 @@ fn a_job_that_could_not_be_carried_out_is_worded_with_the_system_s_reason() {
         worded(JobError::Io(io::Error::from_raw_os_error(2))),
         "could not be carried out: No such file or directory (os error 2)"
     );
+}
+
+#[test]
+fn a_container_that_docker_did_not_start_is_worded_with_the_file_that_holds_what_docker_said() {
+    assert_eq!(
+        worded(JobError::Docker(PathBuf::from("/run/running/job/stderr"))),
+        "could not be carried out: Docker did not start its container, \
+         and /run/running/job/stderr holds what Docker said"
+    );
+}
+
+#[test]
+fn the_instruction_says_where_the_source_code_to_improve_is() {
+    assert!(
+        job::INSTRUCTION.contains("The current directory holds a copy of your own source code")
+    );
+}
+
+#[test]
+fn the_instruction_says_where_the_evaluations_are() {
+    assert!(job::INSTRUCTION.contains("/evaluations holds one directory for each task"));
 }
 
 #[test]

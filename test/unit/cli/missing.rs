@@ -2,10 +2,11 @@ use cladenc::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--progenitor", "/progenitor"),
     ("--tasks", "/tasks"),
-    ("--procreator", "/procreator"),
+    ("--docker-image", "image"),
+    ("--harness-run-command", "run a harness"),
     ("--evaluator", "/evaluator"),
     ("--run-dir", "/run"),
     ("--budget", "800"),
@@ -56,9 +57,17 @@ fn leaving_out_the_tasks_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_procreator_is_an_error() {
+fn leaving_out_the_docker_image_is_an_error() {
     assert_eq!(
-        refusal_without("--procreator"),
+        refusal_without("--docker-image"),
+        ErrorKind::MissingRequiredArgument
+    );
+}
+
+#[test]
+fn leaving_out_the_harness_run_command_is_an_error() {
+    assert_eq!(
+        refusal_without("--harness-run-command"),
         ErrorKind::MissingRequiredArgument
     );
 }

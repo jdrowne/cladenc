@@ -9,7 +9,8 @@ fn run(directory: &Path, evaluator: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        ("--procreator", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", "exit 0".into()),
         ("--evaluator", test_inputs::sample("e2e", evaluator)),
         ("--run-dir", directory.join("run")),
         ("--budget", "2".into()),
@@ -54,7 +55,7 @@ fn report_exits_with_0_on_a_run_that_is_still_going() {
     let pid_file = directory
         .path()
         .join("run/running/evaluation-0-t1/output/pid");
-    test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
     let status = report(directory.path());
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();
     going.wait().unwrap();

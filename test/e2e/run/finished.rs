@@ -8,10 +8,8 @@ fn options(directory: &Path) -> Vec<String> {
     [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        (
-            "--procreator",
-            test_inputs::sample("e2e", "procreate-solve-one-more.sh"),
-        ),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
         (
             "--evaluator",
             test_inputs::sample("e2e", "evaluate-listed.sh"),

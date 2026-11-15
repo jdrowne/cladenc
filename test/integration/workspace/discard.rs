@@ -45,6 +45,14 @@ fn discarding_a_procreation_that_is_running_leaves_nothing_running() {
 }
 
 #[test]
+fn a_discarded_procreation_can_be_started_again() {
+    let (_directory, workspace) = made();
+    workspace.start_procreation(1, 0).unwrap();
+    workspace.discard_procreation(1).unwrap();
+    assert!(workspace.start_procreation(1, 0).is_ok());
+}
+
+#[test]
 fn discarding_a_procreation_that_ended_leaves_no_harness() {
     let (_directory, workspace) = with_a_procreation_discarded_after_it_ended();
     assert!(!workspace.harness(1).exists());

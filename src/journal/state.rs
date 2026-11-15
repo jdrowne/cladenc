@@ -2,6 +2,8 @@ use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::path::Path;
 
+use serde::Deserialize;
+
 use super::{FORMAT, JournalError, Record, Settings, path, whole_lines};
 use crate::genealogy::{Genealogy, HarnessId};
 
@@ -26,6 +28,12 @@ impl Display for Started {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(tag = "record", rename_all = "snake_case")]
+enum First {
+    Run { format: u32 },
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct State {
     pub settings: Settings,
@@ -37,19 +45,21 @@ pub struct State {
 
 pub fn read(run_directory: &Path) -> Result<State, JournalError> {
     let contents = fs::read(path(run_directory)).map_err(JournalError::Io)?;
-    let mut records = whole_lines(&contents)
-        .split_inclusive(|byte| *byte == b'\n')
-        .zip(1..)
-        .map(|(text, line)| {
-            serde_json::from_slice::<Record>(text)
-                .map(|record| (line, record))
-                .map_err(|_| JournalError::NotARecord { line })
-        });
+    let lines = || whole_lines(&contents).split_inclusive(|byte| *byte == b'\n');
+    if let Some(First::Run { format }) = lines()
+        .next()
+        .and_then(|first| serde_json::from_slice(first).ok())
+        && format != FORMAT
+    {
+        return Err(JournalError::UnknownFormat { format });
+    }
+    let mut records = lines().zip(1..).map(|(text, line)| {
+        serde_json::from_slice::<Record>(text)
+            .map(|record| (line, record))
+            .map_err(|_| JournalError::NotARecord { line })
+    });
     let settings = match records.next() {
-        Some(Ok((_, Record::Run { format, settings }))) if format == FORMAT => settings,
-        Some(Ok((_, Record::Run { format, .. }))) => {
-            return Err(JournalError::UnknownFormat { format });
-        }
+        Some(Ok((_, Record::Run { settings, .. }))) => settings,
         Some(Err(error)) => return Err(error),
         _ => return Err(JournalError::FirstRecordNotRun),
     };

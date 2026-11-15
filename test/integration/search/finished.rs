@@ -12,7 +12,8 @@ fn settings(directory: &Path) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        procreator: test_inputs::sample("integration", "procreate-solve-one-more.sh"),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 6,
         genealogy_growth: 0.6,
@@ -159,7 +160,7 @@ fn a_search_cannot_start_in_a_run_directory_that_exists() {
 #[test]
 fn a_search_whose_run_record_cannot_be_written_stops_before_any_job() {
     let (_directory, found) = searched(|settings| {
-        settings.procreator = PathBuf::from(OsStr::from_bytes(&[b'/', 0xff]));
+        settings.evaluator = PathBuf::from(OsStr::from_bytes(&[b'/', 0xff]));
     });
     assert!(matches!(found, Err(SearchError::Journal(_))));
 }

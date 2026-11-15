@@ -69,7 +69,6 @@ impl Workspace {
         let job = self.running_procreation(child);
         let harness = self.harness(parent);
         fs::create_dir(&job)
-            .and_then(|()| fs::create_dir(job.join("output")))
             .and_then(|()| copy_tree(&harness, &job.join("parent")))
             .and_then(|()| copy_tree(&harness, &job.join("child")))
     }

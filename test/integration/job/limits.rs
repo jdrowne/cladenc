@@ -1,12 +1,13 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
-use cladenc::genealogy::EvaluationOutcome;
-use cladenc::job::{self, JobError};
+use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
+use cladenc::job::{self, JobError, Launch};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
 type Evaluated = (TempDir, Workspace, Result<EvaluationOutcome, JobError>);
+type Procreated = (TempDir, Workspace, Result<ProcreationOutcome, JobError>);
 
 fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
@@ -30,10 +31,28 @@ fn stopped_while_running() -> Evaluated {
     let stop = AtomicBool::new(false);
     let result = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
+            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
             stop.store(true, Ordering::SeqCst);
         });
         job::run_evaluation(&workspace, &evaluator, 0, "t1", 60, &stop)
+    });
+    (directory, workspace, result)
+}
+
+fn procreation_stopped_while_running() -> Procreated {
+    let (directory, workspace) = made();
+    let launch = Launch {
+        image: test_inputs::IMAGE,
+        run_command: "hostname > id; sleep 300",
+    };
+    let id_file = workspace.running_procreation(1).join("child/id");
+    let stop = AtomicBool::new(false);
+    let result = thread::scope(|scope| {
+        scope.spawn(|| {
+            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+            stop.store(true, Ordering::SeqCst);
+        });
+        job::run_procreation(&workspace, &launch, 1, 0, 60, &stop)
     });
     (directory, workspace, result)
 }
@@ -83,12 +102,29 @@ fn a_job_whose_stop_flag_was_set_before_it_started_is_stopped() {
 }
 
 #[test]
-fn a_stopped_procreation_reports_that_it_was_stopped() {
+fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let (_directory, workspace) = made();
-    let procreator = test_inputs::sample("integration", "sleep.sh");
+    let launch = Launch {
+        image: test_inputs::IMAGE,
+        run_command: "sleep 300",
+    };
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        job::run_procreation(&workspace, &procreator, 1, 0, 60, &stop),
+        job::run_procreation(&workspace, &launch, 1, 0, 60, &stop),
         Err(JobError::Stopped)
+    ));
+}
+
+#[test]
+fn a_procreation_whose_stop_flag_is_set_reports_that_it_was_stopped() {
+    let (_directory, _workspace, result) = procreation_stopped_while_running();
+    assert!(matches!(result, Err(JobError::Stopped)));
+}
+
+#[test]
+fn a_procreation_whose_stop_flag_is_set_leaves_no_container_behind() {
+    let (_directory, workspace, _result) = procreation_stopped_while_running();
+    assert!(test_inputs::container_is_gone(
+        &workspace.running_procreation(1).join("child/id")
     ));
 }

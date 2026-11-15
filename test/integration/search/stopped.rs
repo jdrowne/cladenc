@@ -8,11 +8,12 @@ use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
-fn settings(directory: &Path, procreator: &str, evaluator: &str) -> Settings {
+fn settings(directory: &Path, run_command: &str, evaluator: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        procreator: test_inputs::sample("integration", procreator),
+        docker_image: test_inputs::IMAGE.to_owned(),
+        harness_run_command: run_command.to_owned(),
         evaluator: test_inputs::sample("integration", evaluator),
         budget: 6,
         genealogy_growth: 0.6,
@@ -27,7 +28,7 @@ fn settings(directory: &Path, procreator: &str, evaluator: &str) -> Settings {
 
 fn stopped_by_an_evaluator_that_exits_with_2() -> (TempDir, Result<Found, SearchError>) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path(), "exit-0.sh", "exit-2.sh");
+    let settings = settings(directory.path(), "exit 0", "exit-2.sh");
     let run_directory = directory.path().join("run");
     let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
     (directory, found)
@@ -35,13 +36,13 @@ fn stopped_by_an_evaluator_that_exits_with_2() -> (TempDir, Result<Found, Search
 
 fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path(), "exit-0.sh", "spawn.sh");
+    let settings = settings(directory.path(), "exit 0", "spawn.sh");
     let run_directory = directory.path().join("run");
     let pid_file = run_directory.join("running/evaluation-0-t1/output/pid");
     let stop = AtomicBool::new(false);
     let found = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
+            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&pid_file));
             stop.store(true, Ordering::SeqCst);
         });
         search::search(&settings, &run_directory, &stop, None)
@@ -65,20 +66,28 @@ fn a_program_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
     ));
 }
 
-#[test]
-fn a_procreator_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
+fn after_one_procreation_by(run_command: &str) -> Result<Found, SearchError> {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), "exit-2.sh", "exit-0.sh");
+    let mut settings = settings(directory.path(), run_command, "exit-0.sh");
     settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
+    search::search(&settings, &run_directory, &AtomicBool::new(false), None)
+}
+
+#[test]
+fn a_container_that_ends_with_status_125_stops_the_search() {
     assert!(matches!(
-        found,
+        after_one_procreation_by("exit 125"),
         Err(SearchError::Job {
-            error: JobError::Exit(2),
+            error: JobError::Docker(_),
             ..
         })
     ));
+}
+
+#[test]
+fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_search() {
+    assert!(after_one_procreation_by("exit 2").is_ok());
 }
 
 #[test]
@@ -94,14 +103,9 @@ fn a_search_an_evaluator_stopped_names_the_harness_and_the_task_of_that_evaluati
 }
 
 #[test]
-fn a_search_a_procreator_stopped_names_the_parent_and_the_child_of_that_procreation() {
-    let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), "exit-2.sh", "exit-0.sh");
-    settings.initial_procreations = 1;
-    let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
+fn a_search_a_container_stopped_names_the_parent_and_the_child_of_that_procreation() {
     assert!(matches!(
-        found,
+        after_one_procreation_by("exit 125"),
         Err(SearchError::Job {
             job: Started::Procreation {
                 child: 1,
