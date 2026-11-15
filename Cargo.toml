@@ -13,7 +13,14 @@ statrs = { version = "0.19.1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
+test_inputs = { path = "lib/test_inputs" }
+
+[[test]]
+name = "integration"
+path = "test/integration/main.rs"
 
 [[test]]
 name = "unit"
 path = "test/unit/main.rs"
+
+[workspace]

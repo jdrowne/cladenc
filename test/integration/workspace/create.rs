@@ -1,0 +1,96 @@
+use std::fs;
+use std::io::ErrorKind;
+use std::os::unix::fs::symlink;
+use std::path::PathBuf;
+
+use cladenc::workspace::Workspace;
+use tempfile::TempDir;
+
+fn made() -> (TempDir, PathBuf) {
+    let directory = test_inputs::temporary_directory();
+    let progenitor = test_inputs::progenitor(directory.path());
+    let run_directory = directory.path().join("run");
+    Workspace::create(&run_directory, &progenitor).unwrap();
+    (directory, run_directory)
+}
+
+fn entries(directory: PathBuf) -> usize {
+    fs::read_dir(directory).unwrap().count()
+}
+
+#[test]
+fn making_a_run_directory_where_a_directory_exists_is_refused() {
+    let directory = test_inputs::temporary_directory();
+    let progenitor = test_inputs::progenitor(directory.path());
+    let refused = Workspace::create(directory.path(), &progenitor).unwrap_err();
+    assert_eq!(refused.kind(), ErrorKind::AlreadyExists);
+}
+
+#[test]
+fn making_a_run_directory_where_a_file_exists_is_refused() {
+    let directory = test_inputs::temporary_directory();
+    let progenitor = test_inputs::progenitor(directory.path());
+    let taken = directory.path().join("run");
+    fs::write(&taken, "").unwrap();
+    let refused = Workspace::create(&taken, &progenitor).unwrap_err();
+    assert_eq!(refused.kind(), ErrorKind::AlreadyExists);
+}
+
+#[test]
+fn a_new_run_directory_holds_a_copy_of_the_progenitor_as_harness_0() {
+    let (_directory, run_directory) = made();
+    assert_eq!(
+        fs::read_to_string(run_directory.join("harnesses/0/prompts/system.txt")).unwrap(),
+        "Solve the task.\n"
+    );
+}
+
+#[test]
+fn a_new_run_directory_holds_an_empty_directory_for_the_evaluations_of_harness_0() {
+    let (_directory, run_directory) = made();
+    assert_eq!(entries(run_directory.join("evaluations/0")), 0);
+}
+
+#[test]
+fn a_new_run_directory_holds_no_expansion() {
+    let (_directory, run_directory) = made();
+    assert_eq!(entries(run_directory.join("expansions")), 0);
+}
+
+#[test]
+fn a_new_run_directory_holds_no_running_job() {
+    let (_directory, run_directory) = made();
+    assert_eq!(entries(run_directory.join("running")), 0);
+}
+
+#[test]
+fn a_progenitor_given_through_a_symbolic_link_is_copied_as_the_directory_it_leads_to() {
+    let directory = test_inputs::temporary_directory();
+    let progenitor = test_inputs::progenitor(directory.path());
+    let link = directory.path().join("link");
+    symlink(&progenitor, &link).unwrap();
+    let run_directory = directory.path().join("run");
+    Workspace::create(&run_directory, &link).unwrap();
+    assert!(
+        fs::symlink_metadata(run_directory.join("harnesses/0"))
+            .unwrap()
+            .is_dir()
+    );
+}
+
+#[test]
+fn a_progenitor_that_does_not_exist_cannot_be_copied() {
+    let directory = test_inputs::temporary_directory();
+    let missing = directory.path().join("missing");
+    let refused = Workspace::create(&directory.path().join("run"), &missing).unwrap_err();
+    assert_eq!(refused.kind(), ErrorKind::NotFound);
+}
+
+#[test]
+fn the_workspace_of_a_run_directory_that_exists_gives_the_same_paths() {
+    let (_directory, run_directory) = made();
+    assert_eq!(
+        Workspace::at(&run_directory).harness(0),
+        run_directory.join("harnesses/0")
+    );
+}

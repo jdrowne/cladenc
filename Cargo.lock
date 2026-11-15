@@ -57,6 +57,7 @@ dependencies = [
  "serde_json",
  "statrs",
  "tempfile",
+ "test_inputs",
 ]
 
 [[package]]
@@ -433,6 +434,13 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys",
+]
+
+[[package]]
+name = "test_inputs"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
 ]
 
 [[package]]
