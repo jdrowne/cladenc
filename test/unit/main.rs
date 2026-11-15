@@ -1,5 +1,6 @@
 mod cli {
     mod checks;
+    mod help;
     mod missing;
     mod report;
     mod resume;

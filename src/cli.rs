@@ -1,4 +1,5 @@
 mod checks;
+mod contract;
 
 use std::io::Write;
 use std::path::{self, Path, PathBuf};
@@ -23,7 +24,10 @@ pub struct Cli {
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
-    #[command(about = "Start a new search and print the directory of its best harness")]
+    #[command(
+        about = "Start a new search and print the directory of its best harness",
+        after_long_help = contract::CONTRACT
+    )]
     Run(RunOptions),
     #[command(about = "Continue a search that stopped before its end")]
     Resume(ResumeOptions),
