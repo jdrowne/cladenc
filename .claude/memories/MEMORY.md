@@ -5,7 +5,10 @@
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words, and let cladenc leave the paper where a change improves it
+- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: two inputs, and cladenc does the self-improvement itself; the code of 2026-11-14 asks for a procreator and an evaluator program instead
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
+- [Every build is for Linux arm64](every-build-is-for-linux-arm64.md) — what CI compiles, tests, packages and releases is for Linux arm64 and no other platform
+- [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora
 - [Repositories outside jdrowne stay out of the record](repositories-outside-jdrowne-stay-out-of-the-record.md) — not mentioned in a memory, and nothing from one quoted in anything public
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
 - [The work does not wait for CI](the-work-does-not-wait-for-ci.md) — after a push go straight on, commits and pushes included; the organization's free-tier runners are shared, so a run can stay queued for hours

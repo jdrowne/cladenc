@@ -11,7 +11,7 @@ jobs:
       - e2e-test-coverage
       - integration-test-coverage
       - unit-test-coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -159,7 +159,7 @@ jobs:
       - name: assert-one-assert-per-test
         run: assert-one-assert-per-test --verbose src test lib
   build-coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -191,7 +191,6 @@ jobs:
           path: coverage.tar
           retention-days: 1
   build-debug:
-    name: build-debug-${{ matrix.platform }}
     needs:
       - assert-coverage
       - assert-no-comments
@@ -203,7 +202,7 @@ jobs:
       - clippy
       - rustfmt
       - yamllint
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -223,24 +222,15 @@ jobs:
       - name: Hand on what was built
         uses: actions/upload-artifact@v4
         with:
-          name: debug-${{ matrix.platform }}
+          name: debug
           path: debug.tar
           retention-days: 1
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86-64
-            runner: ubuntu-latest
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
   build-release:
-    name: build-release-${{ matrix.platform }}
     needs:
       - e2e-test-debug
       - integration-test-debug
       - unit-test-debug
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -249,23 +239,15 @@ jobs:
       - name: Build the program for release
         run: |
           cargo build --locked --release
-          cp target/release/cladenc "cladenc-${{ matrix.platform }}"
+          cp target/release/cladenc cladenc-linux-arm64
       - name: Hand on the program
         uses: actions/upload-artifact@v4
         with:
-          name: program-${{ matrix.platform }}
-          path: cladenc-${{ matrix.platform }}
+          name: program
+          path: cladenc-linux-arm64
           retention-days: 1
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86-64
-            runner: ubuntu-latest
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
   clippy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -277,7 +259,7 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
   e2e-test-coverage:
     needs: build-coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -299,31 +281,22 @@ jobs:
           path: profiles-e2e.tar
           retention-days: 1
   e2e-test-debug:
-    name: e2e-test-debug-${{ matrix.platform }}
     needs: build-debug
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug-${{ matrix.platform }}
+          name: debug
       - name: E2E tests
         run: |
           tar -xf debug.tar
           target/debug/test-e2e
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86-64
-            runner: ubuntu-latest
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
   integration-test-coverage:
     needs: build-coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -345,28 +318,19 @@ jobs:
           path: profiles-integration.tar
           retention-days: 1
   integration-test-debug:
-    name: integration-test-debug-${{ matrix.platform }}
     needs: build-debug
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug-${{ matrix.platform }}
+          name: debug
       - name: Integration tests
         run: |
           tar -xf debug.tar
           target/debug/test-integration
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86-64
-            runner: ubuntu-latest
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
   package:
     needs: build-release
     outputs:
@@ -375,38 +339,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Take the programs
+      - name: Take the program
         uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          name: program
           path: programs
-          pattern: program-*
       - id: version
         name: Number the release by the time
         run: echo "version=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
       - env:
           VERSION: ${{ steps.version.outputs.version }}
-        name: Make a .deb and an RPM for each platform
+        name: Make a .deb
         run: |
-          mkdir packages stage
-          for platform in linux-x86-64 linux-arm64; do
-            case "$platform" in
-              linux-x86-64) export ARCH=amd64 ;;
-              linux-arm64) export ARCH=arm64 ;;
-            esac
-            cp "programs/cladenc-$platform" stage/cladenc
-            for format in deb rpm; do
-              docker run --rm --volume "$PWD:/work" --workdir /work \
-                --env ARCH --env VERSION goreleaser/nfpm package \
-                --config etc/nfpm/nfpm.yaml --packager "$format" \
-                --target "packages/cladenc-$platform.$format"
-            done
-          done
-      - name: Hand on the packages
+          mkdir package stage
+          cp programs/cladenc-linux-arm64 stage/cladenc
+          docker run --rm --volume "$PWD:/work" --workdir /work \
+            --env VERSION goreleaser/nfpm package \
+            --config etc/nfpm/nfpm.yaml --packager deb \
+            --target package/cladenc-linux-arm64.deb
+      - name: Hand on the package
         uses: actions/upload-artifact@v4
         with:
-          name: packages
-          path: packages
+          name: package
+          path: package
           retention-days: 1
   release:
     if: github.ref_name == 'main'
@@ -419,16 +374,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Take the programs
+      - name: Take the program
         uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          name: program
           path: release
-          pattern: program-*
-      - name: Take the packages
+      - name: Take the package
         uses: actions/download-artifact@v4
         with:
-          name: packages
+          name: package
           path: release
       - env:
           GH_TOKEN: ${{ github.token }}
@@ -454,50 +408,22 @@ jobs:
       - name: rustfmt, on every Rust file, built or not
         run: rustfmt --check --edition 2024 $(git ls-files '*.rs')
   test-package:
-    name: test-package-${{ matrix.platform }}-${{ matrix.format }}
     needs: package
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
-      - name: Take the packages
+      - name: Take the package
         uses: actions/download-artifact@v4
         with:
-          name: packages
-          path: packages
-      - env:
-          IMAGE: ${{ matrix.image }}
-          INSTALL: ${{ matrix.install }}
-          PACKAGE: cladenc-${{ matrix.platform }}.${{ matrix.format }}
-        name: Install the package on a clean system and run cladenc
+          name: package
+          path: package
+      - name: Install the package on a clean system and run cladenc
         run: >-
-          docker run --rm --volume "$PWD/packages:/packages:ro" "$IMAGE"
-          sh -ec "$INSTALL /packages/$PACKAGE && cladenc --version"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - format: deb
-            image: ubuntu:latest
-            install: dpkg --install
-            platform: linux-x86-64
-            runner: ubuntu-latest
-          - format: rpm
-            image: fedora:latest
-            install: rpm --install --nosignature
-            platform: linux-x86-64
-            runner: ubuntu-latest
-          - format: deb
-            image: ubuntu:latest
-            install: dpkg --install
-            platform: linux-arm64
-            runner: ubuntu-24.04-arm
-          - format: rpm
-            image: fedora:latest
-            install: rpm --install --nosignature
-            platform: linux-arm64
-            runner: ubuntu-24.04-arm
+          docker run --rm --volume "$PWD/package:/package:ro" ubuntu:latest
+          sh -ec "dpkg --install /package/cladenc-linux-arm64.deb
+          && cladenc --version"
   unit-test-coverage:
     needs: build-coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -519,28 +445,19 @@ jobs:
           path: profiles-unit.tar
           retention-days: 1
   unit-test-debug:
-    name: unit-test-debug-${{ matrix.platform }}
     needs: build-debug
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug-${{ matrix.platform }}
+          name: debug
       - name: Unit tests
         run: |
           tar -xf debug.tar
           target/debug/test-unit
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86-64
-            runner: ubuntu-latest
-          - platform: linux-arm64
-            runner: ubuntu-24.04-arm
   yamllint:
     runs-on: ubuntu-latest
     steps:
