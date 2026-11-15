@@ -2,7 +2,7 @@
 
 - [Push to main](push-to-main.md) — commit/push directly to main, no feature branches or PRs; starting the autopilot counts as the ask
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
-- [Only what was asked](only-what-was-asked.md) — file only the work the user asked for and adopt a sibling's rule only when the user points at it; a README issue and the CI waits were taken back
+- [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the sibling repos; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly, and let cladenc leave the paper where a change improves it
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
