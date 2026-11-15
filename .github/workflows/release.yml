@@ -482,7 +482,7 @@ jobs:
             runner: ubuntu-latest
           - format: rpm
             image: fedora:latest
-            install: rpm --install
+            install: rpm --install --nosignature
             platform: linux-x86-64
             runner: ubuntu-latest
           - format: deb
@@ -492,7 +492,7 @@ jobs:
             runner: ubuntu-24.04-arm
           - format: rpm
             image: fedora:latest
-            install: rpm --install
+            install: rpm --install --nosignature
             platform: linux-arm64
             runner: ubuntu-24.04-arm
   unit-test-coverage:
