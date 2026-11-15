@@ -1,14 +1,9 @@
-use std::fs;
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
-use std::time::Duration;
 
 use cladenc::genealogy::EvaluationOutcome;
 use cladenc::job::{self, JobError};
 use cladenc::workspace::Workspace;
-use nix::sys::signal::kill;
-use nix::unistd::Pid;
 use tempfile::TempDir;
 
 type Evaluated = (TempDir, Workspace, Result<EvaluationOutcome, JobError>);
@@ -18,26 +13,6 @@ fn made() -> (TempDir, Workspace) {
     let progenitor = test_inputs::progenitor(directory.path());
     let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
     (directory, workspace)
-}
-
-fn written(pid_file: &Path) -> bool {
-    fs::read_to_string(pid_file).is_ok_and(|pid| pid.ends_with('\n'))
-}
-
-fn within_ten_seconds(mut holds: impl FnMut() -> bool) -> bool {
-    (0..1000).any(|_| {
-        thread::sleep(Duration::from_millis(10));
-        holds()
-    })
-}
-
-fn gone(pid_file: &Path) -> bool {
-    let pid = fs::read_to_string(pid_file)
-        .unwrap()
-        .trim()
-        .parse()
-        .unwrap();
-    within_ten_seconds(|| kill(Pid::from_raw(pid), None).is_err())
 }
 
 fn timed_out() -> Evaluated {
@@ -55,7 +30,7 @@ fn stopped_while_running() -> Evaluated {
     let stop = AtomicBool::new(false);
     let result = thread::scope(|scope| {
         scope.spawn(|| {
-            within_ten_seconds(|| written(&pid_file));
+            test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
             stop.store(true, Ordering::SeqCst);
         });
         job::run_evaluation(&workspace, &evaluator, 0, "t1", 60, &stop)
@@ -66,7 +41,9 @@ fn stopped_while_running() -> Evaluated {
 #[test]
 fn the_time_limit_kills_a_process_that_the_program_started() {
     let (_directory, workspace, _result) = timed_out();
-    assert!(gone(&workspace.evaluation(0, "t1").join("output/pid")));
+    assert!(test_inputs::process_is_gone(
+        &workspace.evaluation(0, "t1").join("output/pid")
+    ));
 }
 
 #[test]
@@ -78,7 +55,7 @@ fn a_job_whose_stop_flag_is_set_reports_that_it_was_stopped() {
 #[test]
 fn a_job_whose_stop_flag_is_set_leaves_no_program_running() {
     let (_directory, workspace, _result) = stopped_while_running();
-    assert!(gone(
+    assert!(test_inputs::process_is_gone(
         &workspace.running_evaluation(0, "t1").join("output/pid")
     ));
 }

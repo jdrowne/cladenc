@@ -1,7 +1,11 @@
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
 
+use nix::sys::signal::kill;
+use nix::unistd::Pid;
 use tempfile::TempDir;
 
 pub fn temporary_directory() -> TempDir {
@@ -28,4 +32,24 @@ pub fn sample(tier: &str, name: &str) -> PathBuf {
         .join(tier)
         .join("samples")
         .join(name)
+}
+
+pub fn within_ten_seconds(mut holds: impl FnMut() -> bool) -> bool {
+    (0..1000).any(|_| {
+        thread::sleep(Duration::from_millis(10));
+        holds()
+    })
+}
+
+pub fn pid_is_written(pid_file: &Path) -> bool {
+    fs::read_to_string(pid_file).is_ok_and(|pid| pid.ends_with('\n'))
+}
+
+pub fn process_is_gone(pid_file: &Path) -> bool {
+    let pid = fs::read_to_string(pid_file)
+        .expect("the file of the process id can be read")
+        .trim()
+        .parse()
+        .expect("the file holds a process id");
+    within_ten_seconds(|| kill(Pid::from_raw(pid), None).is_err())
 }

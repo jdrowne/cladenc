@@ -5,6 +5,12 @@ mod job {
     mod program;
 }
 
+mod search {
+    mod finished;
+    mod stopped;
+    mod workers;
+}
+
 mod workspace {
     mod copy;
     mod create;
