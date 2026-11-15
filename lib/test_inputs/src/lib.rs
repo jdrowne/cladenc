@@ -1,7 +1,8 @@
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{self, Command};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -24,6 +25,43 @@ pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"touch solved
 solved=$(($(wc -l < solved)))
 [ -e end-with-125-at ] && [ "$solved" -eq "$(cat end-with-125-at)" ] && exit 125
 echo "t$((solved + 1))" >> solved"#;
+
+pub struct Image {
+    pub name: String,
+}
+
+impl Drop for Image {
+    fn drop(&mut self) {
+        let _ = Command::new("docker")
+            .args(["rmi", "--force", &self.name])
+            .output();
+    }
+}
+
+pub fn image() -> Image {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    Image {
+        name: format!(
+            "cladenc-test-{}-{}",
+            process::id(),
+            NEXT.fetch_add(1, Ordering::SeqCst)
+        ),
+    }
+}
+
+pub fn dockerfile(directory: &Path, steps: &str) -> PathBuf {
+    let file = directory.join("Dockerfile");
+    fs::write(&file, format!("FROM {IMAGE}\n{steps}")).expect("the Dockerfile can be written");
+    file
+}
+
+pub fn printed_in_a_container_of(image: &str, command: &str) -> String {
+    let ran = Command::new("docker")
+        .args(["run", "--rm", image, "sh", "-c", command])
+        .output()
+        .expect("docker can be called");
+    String::from_utf8(ran.stdout).expect("what the container printed is text")
+}
 
 pub fn temporary_directory() -> TempDir {
     tempfile::tempdir().expect("a temporary directory can be made")

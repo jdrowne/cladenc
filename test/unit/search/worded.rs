@@ -55,6 +55,30 @@ fn a_search_that_was_asked_to_stop_is_worded() {
 }
 
 #[test]
+fn an_image_that_was_not_built_is_worded_with_how_its_build_ended() {
+    assert_eq!(
+        worded(SearchError::Image(JobError::Exit(1))),
+        "the image of the search was not built: its build exited with status 1"
+    );
+}
+
+#[test]
+fn an_image_whose_build_took_too_long_is_worded_with_its_time_limit() {
+    assert_eq!(
+        worded(SearchError::Image(JobError::TimeLimit)),
+        "the image of the search was not built: its build ran past its time limit"
+    );
+}
+
+#[test]
+fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
+    assert_eq!(
+        worded(SearchError::Image(JobError::Stopped)),
+        "the image of the search was not built: its build was stopped"
+    );
+}
+
+#[test]
 fn a_search_the_build_of_its_progenitor_stopped_says_how_the_build_ended() {
     assert_eq!(
         worded(SearchError::Build(JobError::Exit(2))),

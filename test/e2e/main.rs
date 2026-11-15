@@ -16,6 +16,7 @@ mod start {
     mod built;
     mod called;
     mod finished;
+    mod image;
     mod reasons;
     mod refused;
     mod signals;

@@ -54,6 +54,8 @@ fn evaluated(outcome: EvaluationOutcome) -> String {
     .to_string()
 }
 
+const IMAGE: &str = "cladenc-0123456789abcdef";
+
 fn copying(tasks: u64) -> String {
     Said::CopyingTasks {
         benchmark: Path::new("/parsing"),
@@ -127,6 +129,42 @@ fn a_search_that_had_finished_is_said_with_its_best_harness() {
         }
         .to_string(),
         "the search had finished: its best harness is harness 3, kept in /run/harnesses/3"
+    );
+}
+
+#[test]
+fn an_image_is_said_to_be_being_built_with_its_name_and_its_dockerfile() {
+    assert_eq!(
+        Said::BuildingImage {
+            image: IMAGE,
+            dockerfile: Path::new("/images/Dockerfile"),
+        }
+        .to_string(),
+        "building the image cladenc-0123456789abcdef from the Dockerfile /images/Dockerfile"
+    );
+}
+
+#[test]
+fn an_image_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
+    assert_eq!(
+        Said::ImageBuilt {
+            image: IMAGE,
+            workspace: &workspace(),
+        }
+        .to_string(),
+        "the image cladenc-0123456789abcdef is built: what Docker printed is kept in /run/image"
+    );
+}
+
+#[test]
+fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
+    assert_eq!(
+        Said::ImageNotBuilt {
+            error: &JobError::Exit(1),
+            workspace: &workspace(),
+        }
+        .to_string(),
+        "the build of the image exited with status 1: what Docker printed is kept in /run/image"
     );
 }
 

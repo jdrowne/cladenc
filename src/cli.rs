@@ -6,7 +6,7 @@ use std::path::{self, Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use clap::builder::NonEmptyStringValueParser;
-use clap::{Args, Parser, Subcommand};
+use clap::{ArgGroup, Args, Parser, Subcommand};
 
 use crate::search::{self, Found, SearchError};
 
@@ -38,6 +38,7 @@ pub enum Command {
 }
 
 #[derive(Clone, Debug, Args)]
+#[command(group(ArgGroup::new("image").required(true).args(["docker_image", "dockerfile"])))]
 pub struct StartOptions {
     #[arg(
         long,
@@ -61,11 +62,28 @@ pub struct StartOptions {
     pub confidence: f64,
     #[arg(
         long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        requires = "dockerfile",
+        conflicts_with = "docker_image",
+        help = "The time limit of the build of the image, given with --dockerfile"
+    )]
+    pub docker_build_timeout: Option<u64>,
+    #[arg(
+        long,
         value_name = "IMAGE",
         value_parser = NonEmptyStringValueParser::new(),
-        help = "The Docker image every container is started from"
+        help = "The Docker image every container is started from, where --dockerfile is not given"
     )]
-    pub docker_image: String,
+    pub docker_image: Option<String>,
+    #[arg(
+        long,
+        value_name = "FILE",
+        requires = "docker_build_timeout",
+        help = "The Dockerfile cladenc builds the image of every container from, in place of \
+                --docker-image"
+    )]
+    pub dockerfile: Option<PathBuf>,
     #[arg(
         long,
         value_name = "SECONDS",
@@ -270,7 +288,10 @@ fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
 
 fn stopped(error: SearchError) -> (u8, String) {
     let status = match error {
-        SearchError::Io(_) | SearchError::Unusable(_) | SearchError::Key(_) => 2,
+        SearchError::Io(_)
+        | SearchError::Unusable(_)
+        | SearchError::Key(_)
+        | SearchError::Image(_) => 2,
         SearchError::Journal(_)
         | SearchError::Asked
         | SearchError::Build(_)

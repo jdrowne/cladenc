@@ -26,7 +26,9 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
         benchmark: test_inputs::benchmark(directory.path(), &["t1"]),
-        docker_image: "image".to_owned(),
+        docker_image: Some("image".to_owned()),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory.path(), "evaluate"),
@@ -61,6 +63,12 @@ fn with_a_missing_benchmark(directory: &Path, options: &mut StartOptions) {
 
 fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) {
     options.model_key_file = Some(directory.join("missing"));
+}
+
+fn with_a_missing_dockerfile(directory: &Path, options: &mut StartOptions) {
+    options.docker_image = None;
+    options.dockerfile = Some(directory.join("missing"));
+    options.docker_build_timeout = Some(600);
 }
 
 fn in_a_run_directory_that_exists(directory: &Path, options: &mut StartOptions) {
@@ -118,6 +126,19 @@ fn a_file_of_the_key_that_holds_no_key_is_refused_for_what_the_flag_takes() {
     assert_eq!(
         ran(with_a_missing_file_of_the_key).errors,
         "cladenc: --model-key-file takes a file that holds a key on one line and nothing else\n"
+    );
+}
+
+#[test]
+fn a_dockerfile_that_does_not_exist_gives_exit_status_2() {
+    assert_eq!(ran(with_a_missing_dockerfile).status, 2);
+}
+
+#[test]
+fn a_dockerfile_that_does_not_exist_is_refused_for_what_the_flag_takes() {
+    assert_eq!(
+        ran(with_a_missing_dockerfile).errors,
+        "cladenc: --dockerfile takes an existing file\n"
     );
 }
 

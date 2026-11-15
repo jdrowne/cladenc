@@ -67,7 +67,9 @@ cladenc start \
   --benchmark <DIR> \
   --budget <COUNT> \
   --confidence <PERCENT> \
+  --docker-build-timeout <SECONDS> \
   --docker-image <IMAGE> \
+  --dockerfile <FILE> \
   --evaluation-timeout <SECONDS> \
   --evaluator <FILE> \
   --genealogy-growth <NUMBER> \
@@ -90,7 +92,9 @@ cladenc start \
 | `--benchmark <DIR>` | Required | The directory of the benchmark, which holds a directory for each task. `cladenc` fetches no benchmark: the tasks are read from this directory and copied into the run directory. |
 | `--budget <COUNT>` | Required | The number of evaluations to start. |
 | `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
-| `--docker-image <IMAGE>` | Required | The Docker image every container is started from. |
+| `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
+| `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
+| `--dockerfile <FILE>` | Not Required | The Dockerfile that `cladenc` builds the image of every container from, in place of `--docker-image`. |
 | `--evaluation-timeout <SECONDS>` | Required | The time limit of one evaluation. |
 | `--evaluator <FILE>` | Required | The program that carries out an evaluation, which is one harness tried on one task. |
 | `--genealogy-growth <NUMBER>` | Required | How fast the genealogy may grow, from 0 to 1. |
@@ -129,6 +133,12 @@ The name of a task's directory is the id of the task, and is made of letters, di
 
 `cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which task. It copies the tasks into `benchmark` in the run directory, so a search keeps the tasks it started with, and `cladenc resume` does not read the directory that `--benchmark` named.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A job that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
+Every container of a search is started from one image. `--docker-image` names an image that Docker already holds. `--dockerfile` names a Dockerfile, the text file Docker builds an image from, and `cladenc` builds the image itself, once, when the search is started, within the time limit that `--docker-build-timeout` gives.
+
+The Dockerfile is all that Docker is given. It can start from an image and run commands, and it has no file to copy into the image: a Dockerfile that copies files is built by hand, and its image is given with `--docker-image`. `cladenc` tells Docker to fetch nothing, so a Dockerfile whose base image is on the machine, and whose steps fetch nothing, is built with no connection to the internet.
+
+`cladenc` names the image `cladenc-` and sixteen random hexadecimal digits, and says the name. `image` in the run directory keeps a copy of the Dockerfile and what Docker printed. An image that is not built stops `cladenc start` with exit status 2. The image stays on the machine when the search ends, and `cladenc resume` starts its containers from it and builds nothing.
+
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A job that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.

@@ -21,7 +21,9 @@ fn options(directory: &Path) -> StartOptions {
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
         benchmark: test_inputs::benchmark(directory, &["t2", "t1"]),
-        docker_image: "image".to_owned(),
+        docker_image: Some("image".to_owned()),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: program(directory, "evaluate", 0o755),
@@ -36,6 +38,24 @@ fn options(directory: &Path) -> StartOptions {
         seed: 7,
         quiet: false,
     }
+}
+
+fn with_a_dockerfile(directory: &TempDir, options: &mut StartOptions) {
+    options.docker_image = None;
+    options.dockerfile = Some(test_inputs::dockerfile(
+        directory.path(),
+        "RUN touch /made-here\n",
+    ));
+    options.docker_build_timeout = Some(600);
+}
+
+fn is_named_by_cladenc(image: &str) -> bool {
+    image.strip_prefix("cladenc-").is_some_and(|digits| {
+        digits.len() == 16
+            && digits
+                .chars()
+                .all(|digit| matches!(digit, '0'..='9' | 'a'..='f'))
+    })
 }
 
 fn checked(change: impl FnOnce(&TempDir, &mut StartOptions)) -> Result<Settings, Refused> {
@@ -68,6 +88,8 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             benchmark: root.join("benchmark"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
             docker_image: "image".to_owned(),
+            dockerfile: None,
+            docker_build_timeout: None,
             harness_build_command: None,
             harness_run_command: "run a harness".to_owned(),
             evaluator: root.join("evaluate"),
@@ -198,7 +220,7 @@ fn a_benchmark_given_through_a_symbolic_link_is_the_directory_it_leads_to() {
 #[test]
 fn the_image_and_the_run_command_are_settings_as_they_were_given() {
     let settings = checked(|_, options| {
-        options.docker_image = "registry.example/harness:1".to_owned();
+        options.docker_image = Some("registry.example/harness:1".to_owned());
         options.harness_run_command = "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned();
     })
     .unwrap();
@@ -209,6 +231,115 @@ fn the_image_and_the_run_command_are_settings_as_they_were_given() {
             "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned()
         )
     );
+}
+
+#[test]
+fn a_search_given_an_image_has_no_dockerfile_and_no_time_limit_of_a_build() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert_eq!(
+        (settings.dockerfile, settings.docker_build_timeout),
+        (None, None)
+    );
+}
+
+#[test]
+fn a_dockerfile_is_a_setting_with_the_time_limit_of_its_build() {
+    let directory = test_inputs::temporary_directory();
+    let mut options = options(directory.path());
+    with_a_dockerfile(&directory, &mut options);
+    let settings = options.settings().unwrap();
+    assert_eq!(
+        (settings.dockerfile, settings.docker_build_timeout),
+        (
+            Some(
+                fs::canonicalize(directory.path())
+                    .unwrap()
+                    .join("Dockerfile")
+            ),
+            Some(600)
+        )
+    );
+}
+
+#[test]
+fn a_search_given_a_dockerfile_is_given_an_image_named_cladenc_and_sixteen_hexadecimal_digits() {
+    let settings = checked(with_a_dockerfile).unwrap();
+    assert!(is_named_by_cladenc(&settings.docker_image));
+}
+
+#[test]
+fn two_searches_given_a_dockerfile_are_given_images_of_different_names() {
+    assert_ne!(
+        checked(with_a_dockerfile).unwrap().docker_image,
+        checked(with_a_dockerfile).unwrap().docker_image
+    );
+}
+
+#[test]
+fn a_dockerfile_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            with_a_dockerfile(directory, options);
+            options.dockerfile = Some(directory.path().join("missing"));
+        }),
+        "--dockerfile"
+    );
+}
+
+#[test]
+fn a_dockerfile_that_is_a_directory_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            with_a_dockerfile(directory, options);
+            options.dockerfile = Some(options.progenitor.clone());
+        }),
+        "--dockerfile"
+    );
+}
+
+#[test]
+fn a_dockerfile_with_no_path_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            with_a_dockerfile(directory, options);
+            options.dockerfile = Some(PathBuf::new());
+        }),
+        "--dockerfile"
+    );
+}
+
+#[test]
+fn a_dockerfile_that_is_refused_is_said_with_what_the_flag_takes() {
+    let refused = checked(|directory, options| {
+        with_a_dockerfile(directory, options);
+        options.dockerfile = Some(directory.path().join("missing"));
+    });
+    assert_eq!(
+        refused.unwrap_err().to_string(),
+        "--dockerfile takes an existing file"
+    );
+}
+
+#[test]
+fn a_dockerfile_given_from_the_working_directory_is_made_absolute() {
+    let settings = checked(|directory, options| {
+        with_a_dockerfile(directory, options);
+        options.dockerfile = Some(PathBuf::from("test/unit/samples/Dockerfile"));
+    })
+    .unwrap();
+    assert!(settings.dockerfile.unwrap().is_absolute());
+}
+
+#[test]
+fn a_dockerfile_given_through_a_symbolic_link_is_the_file_it_leads_to() {
+    let settings = checked(|directory, options| {
+        with_a_dockerfile(directory, options);
+        let link = directory.path().join("link");
+        symlink(directory.path().join("Dockerfile"), &link).unwrap();
+        options.dockerfile = Some(link);
+    })
+    .unwrap();
+    assert!(settings.dockerfile.unwrap().ends_with("Dockerfile"));
 }
 
 #[test]

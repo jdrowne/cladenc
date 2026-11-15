@@ -16,6 +16,18 @@ pub enum Said<'a> {
         benchmark: &'a Path,
         tasks: u64,
     },
+    BuildingImage {
+        image: &'a str,
+        dockerfile: &'a Path,
+    },
+    ImageBuilt {
+        image: &'a str,
+        workspace: &'a Workspace,
+    },
+    ImageNotBuilt {
+        error: &'a JobError,
+        workspace: &'a Workspace,
+    },
     Continuing {
         run_directory: &'a Path,
         started: u64,
@@ -83,6 +95,21 @@ impl Display for Said<'_> {
                 "copying the {} of the benchmark {} into the run directory",
                 counted(*tasks, "task", "tasks"),
                 benchmark.display()
+            ),
+            Self::BuildingImage { image, dockerfile } => write!(
+                formatter,
+                "building the image {image} from the Dockerfile {}",
+                dockerfile.display()
+            ),
+            Self::ImageBuilt { image, workspace } => write!(
+                formatter,
+                "the image {image} is built: what Docker printed is kept in {}",
+                workspace.image().display()
+            ),
+            Self::ImageNotBuilt { error, workspace } => write!(
+                formatter,
+                "the build of the image {error}: what Docker printed is kept in {}",
+                workspace.image().display()
             ),
             Self::Continuing {
                 run_directory,

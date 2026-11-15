@@ -1,6 +1,26 @@
 pub(super) const CONTRACT: &str = "\
-A harness is started in a Docker container of the image that --docker-image
-names, as
+Every container of a search is started from one image, the image of the
+search. It is the image that --docker-image names, or the image that
+cladenc builds when the search is started, from the Dockerfile that
+--dockerfile names, as
+
+    docker build --tag <NAME> --file <FILE> <DIR>
+
+  <NAME>  the name cladenc gives the image: cladenc- and sixteen random
+          hexadecimal digits
+  <FILE>  a copy of the Dockerfile, kept in image in the run directory
+  <DIR>   an empty directory, so the Dockerfile has no file to copy into
+          the image
+
+The build has the time limit that --docker-build-timeout gives, and image
+in the run directory keeps what Docker printed. cladenc tells Docker to
+fetch nothing: a Dockerfile whose base image is on the machine, and whose
+steps fetch nothing, is built with no connection to the internet. An image
+that is not built stops `cladenc start` with exit status 2, before the
+search has a journal. The image stays on the machine when the search ends:
+`cladenc resume` starts its containers from it and builds nothing.
+
+A harness is started in a container of the image of the search, as
 
     sh -c <COMMAND>
 

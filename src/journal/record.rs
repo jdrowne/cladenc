@@ -15,6 +15,8 @@ pub struct Settings {
     pub model_url: String,
     pub model_key_file: Option<PathBuf>,
     pub docker_image: String,
+    pub dockerfile: Option<PathBuf>,
+    pub docker_build_timeout: Option<u64>,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
     pub benchmark: PathBuf,

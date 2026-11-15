@@ -60,6 +60,9 @@ pub fn search(
         })
         .map_err(SearchError::Io)
         .and_then(|workspace| {
+            build_image(settings, &workspace, stop, &mut writer).map(|()| workspace)
+        })
+        .and_then(|workspace| {
             Journal::open(run_directory)
                 .map(|journal| (workspace, journal))
                 .map_err(SearchError::Journal)
@@ -70,6 +73,39 @@ pub fn search(
         settings: Box::new(settings.clone()),
     });
     carry_on(settings, key.as_deref(), workspace, progress, stop)
+}
+
+fn build_image(
+    settings: &Settings,
+    workspace: &Workspace,
+    stop: &AtomicBool,
+    writer: &mut Option<&mut dyn Write>,
+) -> Result<(), SearchError> {
+    let given = settings
+        .dockerfile
+        .as_deref()
+        .zip(settings.docker_build_timeout);
+    let Some((dockerfile, time_limit)) = given else {
+        return Ok(());
+    };
+    let image = &settings.docker_image;
+    say(writer, &Said::BuildingImage { image, dockerfile });
+    match job::build_image(workspace, dockerfile, image, time_limit, stop) {
+        Ok(()) => {
+            say(writer, &Said::ImageBuilt { image, workspace });
+            Ok(())
+        }
+        Err(error) => {
+            say(
+                writer,
+                &Said::ImageNotBuilt {
+                    error: &error,
+                    workspace,
+                },
+            );
+            Err(SearchError::Image(error))
+        }
+    }
 }
 
 pub fn resume(

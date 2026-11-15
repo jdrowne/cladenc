@@ -15,6 +15,8 @@ fn settings(directory: &Path) -> Settings {
         benchmark: test_inputs::benchmark(directory, &["t1"]),
         tasks: vec!["t1".to_owned()],
         docker_image: test_inputs::IMAGE.to_owned(),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),

@@ -46,6 +46,18 @@ impl Workspace {
         self.run_directory.join("benchmark").join(task)
     }
 
+    pub fn image(&self) -> PathBuf {
+        self.run_directory.join("image")
+    }
+
+    pub fn start_image(&self, dockerfile: &Path) -> io::Result<PathBuf> {
+        let image = self.image();
+        fs::create_dir(&image)
+            .and_then(|()| fs::create_dir(image.join("context")))
+            .and_then(|()| fs::copy(dockerfile, image.join("Dockerfile")))
+            .map(|_| image)
+    }
+
     pub fn harness(&self, id: HarnessId) -> PathBuf {
         self.run_directory.join("harnesses").join(id.to_string())
     }

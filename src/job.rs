@@ -1,5 +1,6 @@
 mod build;
 mod container;
+mod image;
 mod program;
 
 use std::error::Error;
@@ -15,6 +16,7 @@ use crate::workspace::{Workspace, holds_only_harness_files};
 
 pub use build::build_progenitor;
 use container::{Container, Mount};
+pub use image::build_image;
 use program::{Ending, deadline, run};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \

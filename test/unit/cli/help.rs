@@ -68,6 +68,42 @@ fn the_short_help_of_start_names_the_flag_that_names_the_file_of_the_key() {
 }
 
 #[test]
+fn the_long_help_of_start_shows_how_an_image_is_built_from_a_dockerfile() {
+    assert!(help_of_start(true).contains("    docker build --tag <NAME> --file <FILE> <DIR>\n"));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_docker_is_given_to_build_an_image_from() {
+    let help = help_of_start(true);
+    let given = [
+        "  <NAME>  the name cladenc gives the image: ",
+        "  <FILE>  a copy of the Dockerfile, kept in image in the run directory\n",
+        "  <DIR>   an empty directory, so the Dockerfile has no file to copy into",
+    ];
+    assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_cladenc_tells_docker_to_fetch_nothing() {
+    assert!(help_of_start(true).contains("cladenc tells Docker to\nfetch nothing"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_resume_builds_no_image() {
+    assert!(
+        help_of_start(true)
+            .contains("`cladenc resume` starts its containers from it and builds nothing.\n")
+    );
+}
+
+#[test]
+fn the_short_help_of_start_names_the_two_flags_of_a_dockerfile() {
+    let help = help_of_start(false);
+    let flags = ["--dockerfile <FILE>", "--docker-build-timeout <SECONDS>"];
+    assert!(flags.iter().all(|flag| help.contains(flag)));
+}
+
+#[test]
 fn the_long_help_of_start_says_what_each_way_a_harness_ends_means() {
     let help = help_of_start(true);
     let endings = [

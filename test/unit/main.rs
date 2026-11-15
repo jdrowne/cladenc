@@ -7,6 +7,7 @@ mod benchmark {
 mod cli {
     mod checks;
     mod help;
+    mod image;
     mod missing;
     mod readme;
     mod report;

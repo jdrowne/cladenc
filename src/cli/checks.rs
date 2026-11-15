@@ -41,7 +41,9 @@ impl StartOptions {
                 .as_deref()
                 .map(model_key_file)
                 .transpose()?,
-            docker_image: self.docker_image.clone(),
+            docker_image: self.docker_image.clone().unwrap_or_else(image_name),
+            dockerfile: self.dockerfile.as_deref().map(dockerfile).transpose()?,
+            docker_build_timeout: self.docker_build_timeout,
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             benchmark,
@@ -98,6 +100,21 @@ fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
         .ok_or(Refused {
             option: "--model-key-file",
             accepted: "a file that holds a key on one line and nothing else",
+            reason: None,
+        })
+}
+
+fn image_name() -> String {
+    format!("cladenc-{:016x}", rand::random::<u64>())
+}
+
+fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
+    fs::canonicalize(given)
+        .ok()
+        .filter(|file| file.to_str().is_some() && file.is_file())
+        .ok_or(Refused {
+            option: "--dockerfile",
+            accepted: "an existing file",
             reason: None,
         })
 }

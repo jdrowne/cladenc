@@ -18,6 +18,8 @@ fn settings() -> Settings {
         benchmark: PathBuf::from("/abs/benchmark"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         evaluator: PathBuf::from("/abs/evaluate"),
@@ -35,6 +37,15 @@ fn settings() -> Settings {
 fn built_with(command: &str) -> Settings {
     Settings {
         harness_build_command: Some(command.to_owned()),
+        ..settings()
+    }
+}
+
+fn given_a_dockerfile() -> Settings {
+    Settings {
+        docker_image: "cladenc-0123456789abcdef".to_owned(),
+        dockerfile: Some(PathBuf::from("/abs/images/Dockerfile")),
+        docker_build_timeout: Some(600),
         ..settings()
     }
 }
@@ -65,8 +76,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_5() {
-    assert_eq!(journal::FORMAT, 5);
+fn the_format_of_the_journal_is_6() {
+    assert_eq!(journal::FORMAT, 6);
 }
 
 #[test]
@@ -74,9 +85,9 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":5,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":6,"progenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
-            r#""docker_image":"image","#,
+            r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmark":"/abs/benchmark","tasks":["t1","t2"],"#,
             r#""evaluator":"/abs/evaluate","budget":800,"#,
@@ -92,7 +103,31 @@ fn the_run_record_of_a_search_that_builds_its_harnesses_holds_the_build_command(
         run(built_with("make harness"))
             .line()
             .unwrap()
-            .contains(r#""docker_image":"image","harness_build_command":"make harness","#)
+            .contains(r#""docker_build_timeout":null,"harness_build_command":"make harness","#)
+    );
+}
+
+#[test]
+fn the_run_record_of_a_search_given_a_dockerfile_holds_it_with_its_image_and_its_time_limit() {
+    assert!(run(given_a_dockerfile()).line().unwrap().contains(concat!(
+        r#""docker_image":"cladenc-0123456789abcdef","#,
+        r#""dockerfile":"/abs/images/Dockerfile","docker_build_timeout":600,"#
+    )));
+}
+
+#[test]
+fn a_dockerfile_survives_being_written_and_read_back() {
+    assert_eq!(
+        read_back(&run(given_a_dockerfile())),
+        run(given_a_dockerfile())
+    );
+}
+
+#[test]
+fn the_image_a_harness_is_started_from_is_the_one_built_from_the_dockerfile() {
+    assert_eq!(
+        given_a_dockerfile().launch(None).image,
+        "cladenc-0123456789abcdef"
     );
 }
 

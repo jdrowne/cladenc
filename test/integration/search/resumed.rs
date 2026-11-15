@@ -23,6 +23,8 @@ fn settings(directory: &Path) -> Settings {
         benchmark: test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed-or-exit-2.sh"),

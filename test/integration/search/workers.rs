@@ -14,6 +14,8 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         benchmark: test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4", "t5"]),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
+        dockerfile: None,
+        docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
