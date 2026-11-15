@@ -68,6 +68,12 @@ fn a_procreator_that_exits_with_1_fails_its_child() {
 }
 
 #[test]
+fn a_procreation_that_failed_keeps_its_child_beside_the_harnesses() {
+    let (_directory, workspace, _result) = procreated("exit-1.sh");
+    assert!(workspace.harness(1).is_dir());
+}
+
+#[test]
 fn a_procreator_that_runs_past_the_time_limit_times_out() {
     let (_directory, _workspace, result) =
         procreated_by(test_inputs::sample("integration", "sleep.sh"), 0, 1);

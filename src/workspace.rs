@@ -76,13 +76,11 @@ impl Workspace {
 
     pub fn end_procreation(&self, child: HarnessId, outcome: ProcreationOutcome) -> io::Result<()> {
         let job = self.running_procreation(child);
-        let made = job.join("child");
-        let settled = match outcome {
-            ProcreationOutcome::Created => fs::rename(made, self.harness(child))
-                .and_then(|()| fs::create_dir(self.evaluations(child))),
-            ProcreationOutcome::Failed | ProcreationOutcome::TimedOut => fs::remove_dir_all(made),
-        };
-        settled
+        fs::rename(job.join("child"), self.harness(child))
+            .and_then(|()| match outcome {
+                ProcreationOutcome::Created => fs::create_dir(self.evaluations(child)),
+                ProcreationOutcome::Failed | ProcreationOutcome::TimedOut => Ok(()),
+            })
             .and_then(|()| fs::remove_dir_all(job.join("parent")))
             .and_then(|()| fs::rename(&job, self.procreation(child)))
     }

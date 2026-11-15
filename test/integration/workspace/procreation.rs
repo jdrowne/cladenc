@@ -118,9 +118,18 @@ fn a_procreation_that_created_its_child_leaves_nothing_running() {
 }
 
 #[test]
-fn a_procreation_that_failed_leaves_no_harness() {
+fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (_directory, workspace) = ended(ProcreationOutcome::Failed);
-    assert!(!workspace.harness(1).exists());
+    assert_eq!(
+        fs::read_to_string(workspace.harness(1).join("new.txt")).unwrap(),
+        "new"
+    );
+}
+
+#[test]
+fn a_procreation_that_failed_leaves_no_directory_for_the_evaluations_of_its_child() {
+    let (_directory, workspace) = ended(ProcreationOutcome::Failed);
+    assert!(!workspace.evaluations(1).exists());
 }
 
 #[test]
@@ -134,9 +143,18 @@ fn a_procreation_that_failed_keeps_only_its_output() {
 }
 
 #[test]
-fn a_procreation_that_timed_out_leaves_no_harness() {
+fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (_directory, workspace) = ended(ProcreationOutcome::TimedOut);
-    assert!(!workspace.harness(1).exists());
+    assert_eq!(
+        fs::read_to_string(workspace.harness(1).join("new.txt")).unwrap(),
+        "new"
+    );
+}
+
+#[test]
+fn a_procreation_that_timed_out_leaves_no_directory_for_the_evaluations_of_its_child() {
+    let (_directory, workspace) = ended(ProcreationOutcome::TimedOut);
+    assert!(!workspace.evaluations(1).exists());
 }
 
 #[test]
