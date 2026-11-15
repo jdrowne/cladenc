@@ -1,4 +1,5 @@
 mod progress;
+mod worker;
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -9,7 +10,7 @@ use std::time::Duration;
 
 use crate::genealogy::HarnessId;
 use crate::job::JobError;
-use crate::journal::{self, Journal, JournalError, Record, Settings};
+use crate::journal::{self, Journal, JournalError, Record, Settings, State};
 use crate::workspace::Workspace;
 
 use progress::Progress;
@@ -19,6 +20,7 @@ const WAIT: Duration = Duration::from_millis(100);
 #[derive(Debug)]
 pub enum SearchError {
     Io(io::Error),
+    Unusable(JournalError),
     Journal(JournalError),
     Stopped(Option<JobError>),
 }
@@ -48,24 +50,62 @@ pub fn search(
                 .map(|journal| (workspace, journal))
                 .map_err(SearchError::Journal)
         })?;
-    let shared = Shared {
-        settings,
-        workspace,
-        halt: AtomicBool::new(false),
-    };
     let mut progress = Progress::new(settings, journal, writer);
     progress.record(&Record::Run {
         format: journal::FORMAT,
         settings: settings.clone(),
     });
+    carry_on(settings, workspace, progress, stop)
+}
+
+pub fn resume(
+    run_directory: &Path,
+    stop: &AtomicBool,
+    writer: Option<&mut dyn Write>,
+) -> Result<Found, SearchError> {
+    let (journal, state) = Journal::open_existing(run_directory)
+        .and_then(|journal| journal::read(run_directory).map(|state| (journal, state)))
+        .map_err(SearchError::Unusable)?;
+    let State {
+        settings,
+        genealogy,
+        unfinished,
+        next_job,
+        best_harness,
+    } = state;
+    let workspace = Workspace::at(run_directory);
+    match best_harness {
+        Some(best_harness) => Ok(Found {
+            best_harness,
+            directory: workspace.harness(best_harness),
+        }),
+        None => {
+            let progress =
+                Progress::new(&settings, journal, writer).resumed(genealogy, unfinished, next_job);
+            carry_on(&settings, workspace, progress, stop)
+        }
+    }
+}
+
+fn carry_on(
+    settings: &Settings,
+    workspace: Workspace,
+    mut progress: Progress<'_>,
+    stop: &AtomicBool,
+) -> Result<Found, SearchError> {
+    let shared = Shared {
+        settings,
+        workspace,
+        halt: AtomicBool::new(false),
+    };
     thread::scope(|scope| {
         let (sender, receiver) = mpsc::channel();
         loop {
             while !progress.halted(stop) && progress.running() < settings.workers {
-                let Some(job) = progress.next() else {
+                let Some((job, again)) = progress.take() else {
                     break;
                 };
-                progress.start(job, &shared, scope, &sender);
+                progress.hand_over(job, again, &shared, scope, &sender);
             }
             if progress.running() == 0 {
                 break;

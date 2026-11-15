@@ -1,6 +1,7 @@
 mod cli {
     mod checks;
     mod missing;
+    mod resume;
     mod run;
     mod values;
 }
@@ -17,6 +18,7 @@ mod genealogy {
 }
 
 mod journal {
+    mod existing;
     mod lock;
     mod rebuild;
     mod records;

@@ -6,8 +6,12 @@ mod job {
 }
 
 mod search {
+    mod again;
+    mod ended;
     mod finished;
+    mod resumed;
     mod stopped;
+    mod unusable;
     mod workers;
 }
 

@@ -1,12 +1,12 @@
 mod checks;
 
 use std::io::Write;
-use std::path::{self, PathBuf};
+use std::path::{self, Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use clap::{Args, Parser, Subcommand};
 
-use crate::search::{self, SearchError};
+use crate::search::{self, Found, SearchError};
 
 pub use checks::Refused;
 
@@ -24,6 +24,8 @@ pub struct Cli {
 pub enum Command {
     #[command(about = "Start a new search and print the directory of its best harness")]
     Run(RunOptions),
+    #[command(about = "Continue a search that stopped before its end")]
+    Resume(ResumeOptions),
 }
 
 #[derive(Clone, Debug, Args)]
@@ -108,33 +110,31 @@ pub struct RunOptions {
     pub quiet: bool,
 }
 
-pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
-    match &cli.command {
-        Command::Run(options) => run(options, stop, output, errors),
-    }
+#[derive(Clone, Debug, Args)]
+pub struct ResumeOptions {
+    #[arg(
+        long,
+        value_name = "DIR",
+        help = "The run directory of the search to continue"
+    )]
+    pub run_dir: PathBuf,
+    #[arg(long, help = "Print nothing on standard error")]
+    pub quiet: bool,
 }
 
-fn run(
-    options: &RunOptions,
-    stop: &AtomicBool,
-    output: &mut dyn Write,
-    errors: &mut dyn Write,
-) -> u8 {
-    let mut errors = (!options.quiet).then_some(errors);
-    let found = options
-        .settings()
-        .map_err(|refused| (2, refused.to_string()))
-        .and_then(|settings| {
-            path::absolute(&options.run_dir)
-                .map(|run_directory| (settings, run_directory))
-                .map_err(|error| (2, format!("--run-dir takes a path: {error}")))
-        })
-        .and_then(|(settings, run_directory)| {
-            let writer = errors
-                .as_mut()
-                .map(|errors| &mut **errors as &mut dyn Write);
-            search::search(&settings, &run_directory, stop, writer).map_err(stopped)
-        });
+pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
+    let quiet = match &cli.command {
+        Command::Run(options) => options.quiet,
+        Command::Resume(options) => options.quiet,
+    };
+    let mut errors = (!quiet).then_some(errors);
+    let writer = errors
+        .as_mut()
+        .map(|errors| &mut **errors as &mut dyn Write);
+    let found = match &cli.command {
+        Command::Run(options) => run(options, stop, writer),
+        Command::Resume(options) => resume(options, stop, writer),
+    };
     match found {
         Ok(found) => {
             let _ = writeln!(output, "{}", found.directory.display());
@@ -149,9 +149,35 @@ fn run(
     }
 }
 
+fn run(
+    options: &RunOptions,
+    stop: &AtomicBool,
+    writer: Option<&mut dyn Write>,
+) -> Result<Found, (u8, String)> {
+    let settings = options
+        .settings()
+        .map_err(|refused| (2, refused.to_string()))?;
+    let run_directory = absolute(&options.run_dir)?;
+    search::search(&settings, &run_directory, stop, writer).map_err(stopped)
+}
+
+fn resume(
+    options: &ResumeOptions,
+    stop: &AtomicBool,
+    writer: Option<&mut dyn Write>,
+) -> Result<Found, (u8, String)> {
+    let run_directory = absolute(&options.run_dir)?;
+    search::resume(&run_directory, stop, writer).map_err(stopped)
+}
+
+fn absolute(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
+    path::absolute(run_dir).map_err(|error| (2, format!("--run-dir takes a path: {error}")))
+}
+
 fn stopped(error: SearchError) -> (u8, String) {
     match error {
         SearchError::Io(error) => (2, format!("the run directory cannot be made: {error}")),
+        SearchError::Unusable(error) => (2, format!("the run directory cannot be used: {error:?}")),
         error => (1, format!("the search stopped before its end: {error:?}")),
     }
 }

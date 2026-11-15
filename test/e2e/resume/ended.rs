@@ -1,0 +1,73 @@
+use std::fs;
+use std::path::Path;
+use std::process::{Command, Output};
+
+use tempfile::TempDir;
+
+fn ended() -> (TempDir, Output) {
+    let directory = test_inputs::temporary_directory();
+    let options = [
+        ("--progenitor", test_inputs::progenitor(directory.path())),
+        ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
+        (
+            "--expander",
+            test_inputs::sample("e2e", "expand-solve-one-more.sh"),
+        ),
+        (
+            "--evaluator",
+            test_inputs::sample("e2e", "evaluate-listed.sh"),
+        ),
+        ("--run-dir", directory.path().join("run")),
+        ("--budget", "10".into()),
+        ("--genealogy-growth", "0".into()),
+        ("--confidence", "99".into()),
+        ("--initial-expansions", "0".into()),
+        ("--workers", "1".into()),
+        ("--expansion-timeout", "30".into()),
+        ("--evaluation-timeout", "30".into()),
+        ("--seed", "7".into()),
+    ]
+    .map(|(option, value)| format!("{option}={}", value.display()));
+    let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("run")
+        .args(options)
+        .arg("--quiet")
+        .output()
+        .unwrap();
+    (directory, output)
+}
+
+fn resume(directory: &Path) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("resume")
+        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn resume_on_a_run_that_ended_prints_the_path_the_run_printed() {
+    let (directory, run) = ended();
+    assert_eq!(resume(directory.path()).stdout, run.stdout);
+}
+
+#[test]
+fn resume_on_a_run_that_ended_exits_with_0() {
+    let (directory, _run) = ended();
+    assert_eq!(resume(directory.path()).status.code(), Some(0));
+}
+
+#[test]
+fn resume_on_a_run_that_ended_leaves_the_journal_unchanged() {
+    let (directory, _run) = ended();
+    let journal = directory.path().join("run/journal.jsonl");
+    let before = fs::read(&journal).unwrap();
+    resume(directory.path());
+    assert_eq!(fs::read(&journal).unwrap(), before);
+}
+
+#[test]
+fn resume_on_a_run_that_ended_prints_nothing_on_standard_error() {
+    let (directory, _run) = ended();
+    assert!(resume(directory.path()).stderr.is_empty());
+}

@@ -36,10 +36,17 @@ pub fn path(run_directory: &Path) -> PathBuf {
 
 impl Journal {
     pub fn open(run_directory: &Path) -> Result<Self, JournalError> {
-        let mut file = OpenOptions::new()
+        Self::locked(OpenOptions::new().create(true), run_directory)
+    }
+
+    pub fn open_existing(run_directory: &Path) -> Result<Self, JournalError> {
+        Self::locked(&mut OpenOptions::new(), run_directory)
+    }
+
+    fn locked(options: &mut OpenOptions, run_directory: &Path) -> Result<Self, JournalError> {
+        let mut file = options
             .read(true)
             .append(true)
-            .create(true)
             .open(path(run_directory))
             .map_err(JournalError::Io)?;
         file.try_lock().map_err(|_| JournalError::Locked)?;
@@ -56,6 +63,12 @@ impl Journal {
             .write_all(line.as_bytes())
             .and_then(|()| self.file.sync_all())
             .map_err(JournalError::Io)
+    }
+}
+
+impl Drop for Journal {
+    fn drop(&mut self) {
+        let _ = self.file.unlock();
     }
 }
 
