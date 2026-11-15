@@ -38,6 +38,10 @@ fn resume(directory: &Path) -> Output {
 }
 
 fn interrupted() -> TempDir {
+    stopped_by(Signal::SIGINT)
+}
+
+fn stopped_by(signal: Signal) -> TempDir {
     let directory = test_inputs::temporary_directory();
     let hold = directory.path().join("hold");
     fs::write(&hold, "").unwrap();
@@ -48,7 +52,7 @@ fn interrupted() -> TempDir {
         .path()
         .join("run/running/evaluation-0-t1/output/pid");
     test_inputs::within_ten_seconds(|| test_inputs::pid_is_written(&pid_file));
-    kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGINT).unwrap();
+    kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
     fs::remove_file(hold).unwrap();
     directory
@@ -79,6 +83,12 @@ fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_search_finished()
             .unwrap()
             .starts_with(r#"{"record":"search_finished""#)
     );
+}
+
+#[test]
+fn after_a_hangup_stops_a_run_resume_finishes_it_and_exits_with_0() {
+    let directory = stopped_by(Signal::SIGHUP);
+    assert_eq!(resume(directory.path()).status.code(), Some(0));
 }
 
 #[test]

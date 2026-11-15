@@ -52,6 +52,22 @@ fn a_request_to_end_during_a_run_gives_exit_status_1() {
 }
 
 #[test]
+fn a_hangup_during_a_run_gives_exit_status_1() {
+    let (_directory, status) = signalled(Signal::SIGHUP);
+    assert_eq!(status.code(), Some(1));
+}
+
+#[test]
+fn a_hangup_during_a_run_leaves_no_sample_program_running() {
+    let (directory, _status) = signalled(Signal::SIGHUP);
+    assert!(test_inputs::process_is_gone(
+        &directory
+            .path()
+            .join("run/running/evaluation-0-t1/output/pid")
+    ));
+}
+
+#[test]
 fn an_interrupt_during_a_run_leaves_no_sample_program_running() {
     let (directory, _status) = signalled(Signal::SIGINT);
     assert!(test_inputs::process_is_gone(
