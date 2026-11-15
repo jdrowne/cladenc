@@ -29,4 +29,4 @@
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and progenitor for the one a search starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
 - [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — the sub-command was `cladenc run` until 2026-11-15; older issues and memories that say so mean `start`
-- [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows each sub-command as a command block, then a table of its flags in alphabetical order
+- [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows `cladenc` and each sub-command as a command block, then a table of its flags in alphabetical order, with text about a sub-command under it

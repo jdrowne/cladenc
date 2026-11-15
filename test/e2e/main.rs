@@ -1,3 +1,5 @@
+mod bare;
+
 mod report {
     mod ended;
     mod unended;

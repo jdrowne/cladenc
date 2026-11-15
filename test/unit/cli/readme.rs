@@ -6,6 +6,7 @@ use std::path::Path;
 use cladenc::cli::Cli;
 use clap::{Arg, Command, CommandFactory};
 
+const CLADENC: &str = "cladenc";
 const HEAD_OF_SUB_COMMANDS: &str = "\n| Sub-command | Description |\n| --- | --- |\n";
 const HEAD_OF_FLAGS: &str = "\n| Flag | Required | Description |\n| --- | --- | --- |\n";
 
@@ -17,13 +18,35 @@ fn sub_commands() -> Vec<Command> {
     Cli::command().get_subcommands().cloned().collect()
 }
 
-fn heading_of(sub_command: &Command) -> String {
-    format!("\n### `cladenc {}`\n", sub_command.get_name())
+fn cladenc() -> Command {
+    let mut cladenc = Cli::command();
+    cladenc.build();
+    cladenc
 }
 
-fn section_of(readme: &str, sub_command: &Command) -> String {
+fn commands() -> Vec<Command> {
+    iter::once(cladenc()).chain(sub_commands()).collect()
+}
+
+fn called(command: &Command) -> String {
+    match command.get_name() {
+        CLADENC => CLADENC.to_owned(),
+        name => format!("{CLADENC} {name}"),
+    }
+}
+
+fn heading_of(command: &Command) -> String {
+    let level = if command.get_name() == CLADENC {
+        "##"
+    } else {
+        "###"
+    };
+    format!("\n{level} `{}`\n", called(command))
+}
+
+fn section_of(readme: &str, command: &Command) -> String {
     readme
-        .split_once(&heading_of(sub_command))
+        .split_once(&heading_of(command))
         .map(|(_, after)| after.split("\n##").next().unwrap_or_default().to_owned())
         .unwrap_or_default()
 }
@@ -41,16 +64,16 @@ fn written(flag: &Arg) -> String {
     }
 }
 
-fn flags_in_order(sub_command: &Command) -> Vec<String> {
-    let mut flags: Vec<&Arg> = sub_command.get_arguments().collect();
+fn flags_in_order(command: &Command) -> Vec<String> {
+    let mut flags: Vec<&Arg> = command.get_arguments().collect();
     flags.sort_by_key(|flag| name_of(flag));
     flags.into_iter().map(written).collect()
 }
 
-fn command_of(sub_command: &Command) -> String {
-    let lines: Vec<String> = iter::once(format!("cladenc {}", sub_command.get_name()))
+fn command_of(command: &Command) -> String {
+    let lines: Vec<String> = iter::once(called(command))
         .chain(
-            flags_in_order(sub_command)
+            flags_in_order(command)
                 .iter()
                 .map(|flag| format!("  {flag}")),
         )
@@ -76,20 +99,19 @@ fn flags_with_a_row_in(section: &str) -> Vec<String> {
         .collect()
 }
 
-fn sub_commands_whose_section(lacks: impl Fn(&Command, &str) -> bool) -> Vec<String> {
+fn commands_whose_section(lacks: impl Fn(&Command, &str) -> bool) -> Vec<String> {
     let readme = readme();
-    sub_commands()
+    commands()
         .iter()
-        .filter(|sub_command| lacks(sub_command, &section_of(&readme, sub_command)))
-        .map(|sub_command| sub_command.get_name().to_owned())
+        .filter(|command| lacks(command, &section_of(&readme, command)))
+        .map(called)
         .collect()
 }
 
 fn flags_of_cladenc() -> BTreeSet<String> {
-    sub_commands()
+    commands()
         .iter()
-        .flat_map(|sub_command| sub_command.get_arguments().map(name_of).collect::<Vec<_>>())
-        .chain(["--help".to_owned(), "--version".to_owned()])
+        .flat_map(|command| command.get_arguments().map(name_of).collect::<Vec<_>>())
         .collect()
 }
 
@@ -123,10 +145,10 @@ fn the_table_of_sub_commands_has_a_row_for_every_sub_command() {
 }
 
 #[test]
-fn the_readme_has_a_section_for_every_sub_command() {
+fn the_readme_has_a_section_for_cladenc_and_for_every_sub_command() {
     let readme = readme();
     assert_eq!(
-        sub_commands()
+        commands()
             .iter()
             .map(heading_of)
             .filter(|heading| !readme.contains(heading))
@@ -136,28 +158,26 @@ fn the_readme_has_a_section_for_every_sub_command() {
 }
 
 #[test]
-fn the_section_of_a_sub_command_starts_with_its_command_with_each_flag_on_a_line_of_its_own() {
+fn the_section_of_a_command_starts_with_the_command_with_each_flag_on_a_line_of_its_own() {
     assert_eq!(
-        sub_commands_whose_section(|sub_command, section| {
-            !section.starts_with(&command_of(sub_command))
-        }),
+        commands_whose_section(|command, section| !section.starts_with(&command_of(command))),
         Vec::<String>::new()
     );
 }
 
 #[test]
-fn the_table_of_a_sub_command_is_headed_flag_required_and_description() {
+fn the_table_of_a_command_is_headed_flag_required_and_description() {
     assert_eq!(
-        sub_commands_whose_section(|_, section| !section.contains(HEAD_OF_FLAGS)),
+        commands_whose_section(|_, section| !section.contains(HEAD_OF_FLAGS)),
         Vec::<String>::new()
     );
 }
 
 #[test]
-fn the_table_of_a_sub_command_says_of_each_of_its_flags_whether_it_is_required() {
+fn the_table_of_a_command_says_of_each_of_its_flags_whether_it_is_required() {
     assert_eq!(
-        sub_commands_whose_section(|sub_command, section| {
-            sub_command
+        commands_whose_section(|command, section| {
+            command
                 .get_arguments()
                 .any(|flag| !section.contains(&row_of(flag)))
         }),
@@ -166,10 +186,10 @@ fn the_table_of_a_sub_command_says_of_each_of_its_flags_whether_it_is_required()
 }
 
 #[test]
-fn the_table_of_a_sub_command_lists_its_flags_in_alphabetical_order() {
+fn the_table_of_a_command_lists_its_flags_in_alphabetical_order() {
     assert_eq!(
-        sub_commands_whose_section(|sub_command, section| {
-            flags_with_a_row_in(section) != flags_in_order(sub_command)
+        commands_whose_section(|command, section| {
+            flags_with_a_row_in(section) != flags_in_order(command)
         }),
         Vec::<String>::new()
     );
