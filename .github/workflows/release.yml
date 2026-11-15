@@ -104,8 +104,25 @@ jobs:
       - yamllint
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "build-debug placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build the program and the tests
+        run: |
+          cargo test --locked --no-run \
+            --message-format=json-render-diagnostics \
+            --test unit --test integration --test e2e > build.json
+          for tier in unit integration e2e; do
+            built="select(.profile.test and .target.name == \"$tier\")"
+            cp "$(jq -r "$built.executable" build.json)" \
+              "target/debug/test-$tier"
+          done
+          tar -cf debug.tar target/debug/cladenc target/debug/test-*
+      - name: Hand on what was built
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug
+          path: debug.tar
+          retention-days: 1
   build-release:
     needs:
       - e2e-test-debug
@@ -125,8 +142,16 @@ jobs:
     needs: build-debug
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "e2e-test-debug placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: debug
+      - name: E2E tests
+        run: |
+          tar -xf debug.tar
+          target/debug/test-e2e
   integration-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-latest
@@ -137,8 +162,16 @@ jobs:
     needs: build-debug
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "integration-test-debug placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: debug
+      - name: Integration tests
+        run: |
+          tar -xf debug.tar
+          target/debug/test-integration
   package:
     needs: build-release
     runs-on: ubuntu-latest
@@ -174,8 +207,16 @@ jobs:
     needs: build-debug
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "unit-test-debug placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: debug
+      - name: Unit tests
+        run: |
+          tar -xf debug.tar
+          target/debug/test-unit
   yamllint:
     runs-on: ubuntu-latest
     steps:
