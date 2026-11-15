@@ -12,6 +12,7 @@
 - [Repositories outside jdrowne stay out of the record](repositories-outside-jdrowne-stay-out-of-the-record.md) — not mentioned in a memory, and nothing from one quoted in anything public
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
 - [The work does not wait for CI](the-work-does-not-wait-for-ci.md) — after a push go straight on, commits and pushes included; the organization's free-tier runners are shared, so a run can stay queued for hours
+- [What CI can do is done in CI](what-ci-can-do-is-done-in-ci.md) — no workflow check is run locally before a push: no test tier, clippy, format check, coverage, markdownlint or assert tool
 - [Every run is watched](every-run-is-watched.md) — each run a push starts gets a background watch to its end; the work goes on, and a failure is fixed when the watch reports it
 - [Long-running commands in the background](long-running-commands-in-the-background.md) — a command that can take more than about a minute is a background Bash call or a Monitor, with a time limit, never followed by a foreground wait
 - [cargo is not on the shell's PATH](cargo-is-not-on-the-shell-path.md) — Rust is installed in ~/.cargo/bin; put it on PATH before calling cargo, and do not install it again
