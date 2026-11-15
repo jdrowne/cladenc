@@ -1,7 +1,7 @@
 mod job {
     mod evaluation;
-    mod expansion;
     mod limits;
+    mod mutation;
     mod program;
 }
 
@@ -20,5 +20,5 @@ mod workspace {
     mod create;
     mod discard;
     mod evaluation;
-    mod expansion;
+    mod mutation;
 }

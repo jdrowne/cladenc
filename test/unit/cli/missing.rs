@@ -5,15 +5,15 @@ use clap::error::ErrorKind;
 const OPTIONS: [(&str, &str); 13] = [
     ("--progenitor", "/progenitor"),
     ("--tasks", "/tasks"),
-    ("--expander", "/expander"),
+    ("--mutator", "/mutator"),
     ("--evaluator", "/evaluator"),
     ("--run-dir", "/run"),
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
-    ("--initial-expansions", "5"),
+    ("--initial-mutations", "5"),
     ("--workers", "8"),
-    ("--expansion-timeout", "3600"),
+    ("--mutation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
     ("--seed", "7"),
 ];
@@ -56,9 +56,9 @@ fn leaving_out_the_tasks_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_expander_is_an_error() {
+fn leaving_out_the_mutator_is_an_error() {
     assert_eq!(
-        refusal_without("--expander"),
+        refusal_without("--mutator"),
         ErrorKind::MissingRequiredArgument
     );
 }
@@ -104,9 +104,9 @@ fn leaving_out_the_confidence_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_initial_expansions_is_an_error() {
+fn leaving_out_the_initial_mutations_is_an_error() {
     assert_eq!(
-        refusal_without("--initial-expansions"),
+        refusal_without("--initial-mutations"),
         ErrorKind::MissingRequiredArgument
     );
 }
@@ -120,9 +120,9 @@ fn leaving_out_the_workers_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_expansion_timeout_is_an_error() {
+fn leaving_out_the_mutation_timeout_is_an_error() {
     assert_eq!(
-        refusal_without("--expansion-timeout"),
+        refusal_without("--mutation-timeout"),
         ErrorKind::MissingRequiredArgument
     );
 }

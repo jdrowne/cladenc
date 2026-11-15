@@ -6,15 +6,15 @@ fn a_run_an_evaluator_stopped_says_which_evaluation_and_how_it_ended() {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory.path())),
         ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
-        ("--expander", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--mutator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--evaluator", test_inputs::sample("e2e", "exit-2.sh")),
         ("--run-dir", directory.path().join("run")),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-expansions", "0".into()),
+        ("--initial-mutations", "0".into()),
         ("--workers", "1".into()),
-        ("--expansion-timeout", "60".into()),
+        ("--mutation-timeout", "60".into()),
         ("--evaluation-timeout", "60".into()),
         ("--seed", "7".into()),
     ]

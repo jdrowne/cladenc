@@ -6,20 +6,20 @@ use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::report::{self, Report};
 use tempfile::TempDir;
 
-const CUT_SHORT: &str = "{\"record\":\"expansion_fin";
+const CUT_SHORT: &str = "{\"record\":\"mutation_fin";
 
 fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned()],
-        expander: PathBuf::from("/expander"),
+        mutator: PathBuf::from("/mutator"),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 0,
+        initial_mutations: 0,
         workers: 1,
-        expansion_timeout: 60,
+        mutation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
@@ -41,7 +41,7 @@ fn run_directory(last_line: &str) -> TempDir {
             task: "t1".to_owned(),
             outcome: EvaluationOutcome::Success,
         },
-        Record::ExpansionStarted {
+        Record::MutationStarted {
             child: 1,
             parent: 0,
         },
@@ -60,7 +60,7 @@ fn of_the_records() -> Report {
     genealogy
         .end_evaluation(0, "t1", EvaluationOutcome::Success)
         .unwrap();
-    genealogy.start_expansion(0).unwrap();
+    genealogy.start_mutation(0).unwrap();
     Report::of(&settings(), &genealogy)
 }
 

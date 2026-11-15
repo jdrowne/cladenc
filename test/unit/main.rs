@@ -13,10 +13,10 @@ mod genealogy {
     mod clade;
     mod created;
     mod evaluation;
-    mod expansion;
+    mod mutation;
     mod progenitor;
     mod refused_evaluation;
-    mod refused_expansion;
+    mod refused_mutation;
     mod tasks;
     mod worded;
 }
@@ -39,10 +39,10 @@ mod journal {
 mod policy {
     mod best;
     mod evaluation;
-    mod expansion;
     mod focus;
     mod growth;
     mod lower_bound;
+    mod mutation;
     mod no_job;
     mod repeatable;
 }

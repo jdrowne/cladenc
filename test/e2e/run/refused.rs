@@ -5,15 +5,15 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
     [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--tasks", test_inputs::task_file(directory, &["t1"])),
-        ("--expander", test_inputs::sample("e2e", "exit-0.sh")),
+        ("--mutator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--evaluator", test_inputs::sample("e2e", "exit-0.sh")),
         ("--run-dir", run_directory.to_owned()),
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-expansions", "0".into()),
+        ("--initial-mutations", "0".into()),
         ("--workers", "1".into()),
-        ("--expansion-timeout", "30".into()),
+        ("--mutation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
         ("--seed", "7".into()),
     ]

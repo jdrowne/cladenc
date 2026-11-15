@@ -4,7 +4,7 @@
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; the rule limiting work to only what was asked was deleted at their request
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the sibling repos; here, code shared by the test tiers
-- [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly, and let cladenc leave the paper where a change improves it
+- [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words, and let cladenc leave the paper where a change improves it
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
 - [The work does not wait for CI](the-work-does-not-wait-for-ci.md) — after a push go straight on, commits and pushes included; the organization's free-tier runners are shared, so a run can stay queued for hours

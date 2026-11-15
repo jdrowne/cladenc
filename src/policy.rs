@@ -10,7 +10,7 @@ pub use best::lower_bound;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Job {
-    Expansion { parent: HarnessId },
+    Mutation { parent: HarnessId },
     Evaluation { harness: HarnessId, task: String },
 }
 
@@ -27,7 +27,7 @@ pub fn focus(budget: u64, started: u64) -> f64 {
     budget as f64 / (budget as f64 - started as f64)
 }
 
-pub fn expansion_is_due(harness_count: u64, started: u64, growth: f64) -> bool {
+pub fn mutation_is_due(harness_count: u64, started: u64, growth: f64) -> bool {
     harness_count as f64 <= (started as f64).powf(growth)
 }
 
@@ -41,7 +41,7 @@ impl Policy {
         let mut generator = ChaCha8Rng::seed_from_u64(self.seed);
         generator.set_stream(job);
         let created = genealogy.created_harnesses();
-        if expansion_is_due(genealogy.harness_count(), started, self.growth) {
+        if mutation_is_due(genealogy.harness_count(), started, self.growth) {
             let clades = created.iter().map(|harness| {
                 (
                     *harness,
@@ -49,7 +49,7 @@ impl Policy {
                     harness.clade_failures(),
                 )
             });
-            return largest_draw(&mut generator, focus, clades).map(|parent| Job::Expansion {
+            return largest_draw(&mut generator, focus, clades).map(|parent| Job::Mutation {
                 parent: parent.id(),
             });
         }

@@ -1,13 +1,13 @@
 use super::Shared;
-use crate::genealogy::{EvaluationOutcome, ExpansionOutcome, HarnessId};
+use crate::genealogy::{EvaluationOutcome, HarnessId, MutationOutcome};
 use crate::job::{self, JobError};
 use crate::journal::Started;
 
 pub(super) enum Ended {
-    Expansion {
+    Mutation {
         child: HarnessId,
         parent: HarnessId,
-        result: Result<ExpansionOutcome, JobError>,
+        result: Result<MutationOutcome, JobError>,
     },
     Evaluation {
         harness: HarnessId,
@@ -19,23 +19,23 @@ pub(super) enum Ended {
 pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended {
     let settings = shared.settings;
     match job {
-        Started::Expansion { child, parent } => {
+        Started::Mutation { child, parent } => {
             let cleared = if again {
-                shared.workspace.discard_expansion(child)
+                shared.workspace.discard_mutation(child)
             } else {
                 Ok(())
             };
             let result = cleared.map_err(JobError::Io).and_then(|()| {
-                job::run_expansion(
+                job::run_mutation(
                     &shared.workspace,
-                    &settings.expander,
+                    &settings.mutator,
                     child,
                     parent,
-                    settings.expansion_timeout,
+                    settings.mutation_timeout,
                     &shared.halt,
                 )
             });
-            Ended::Expansion {
+            Ended::Mutation {
                 child,
                 parent,
                 result,

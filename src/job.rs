@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
-use crate::genealogy::{EvaluationOutcome, ExpansionOutcome, HarnessId};
+use crate::genealogy::{EvaluationOutcome, HarnessId, MutationOutcome};
 use crate::workspace::{Workspace, holds_only_harness_files};
 
 use program::{Ending, run};
@@ -33,20 +33,20 @@ impl Display for JobError {
 
 impl Error for JobError {}
 
-pub fn run_expansion(
+pub fn run_mutation(
     workspace: &Workspace,
-    expander: &Path,
+    mutator: &Path,
     child: HarnessId,
     parent: HarnessId,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<ExpansionOutcome, JobError> {
+) -> Result<MutationOutcome, JobError> {
     workspace
-        .start_expansion(child, parent)
+        .start_mutation(child, parent)
         .map_err(JobError::Io)?;
-    let job = workspace.running_expansion(child);
+    let job = workspace.running_mutation(child);
     let made = job.join("child");
-    let mut command = Command::new(expander);
+    let mut command = Command::new(mutator);
     command
         .arg(job.join("parent"))
         .arg(&made)
@@ -54,13 +54,13 @@ pub fn run_expansion(
         .arg(job.join("output"));
     let outcome = match run(command, &job, time_limit, stop)? {
         Ending::Passed if holds_only_harness_files(&made).unwrap_or(false) => {
-            ExpansionOutcome::Created
+            MutationOutcome::Created
         }
-        Ending::Passed | Ending::Failed => ExpansionOutcome::Failed,
-        Ending::TimedOut => ExpansionOutcome::TimedOut,
+        Ending::Passed | Ending::Failed => MutationOutcome::Failed,
+        Ending::TimedOut => MutationOutcome::TimedOut,
     };
     workspace
-        .end_expansion(child, outcome)
+        .end_mutation(child, outcome)
         .map(|()| outcome)
         .map_err(JobError::Io)
 }

@@ -9,14 +9,14 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     let mut settings = Settings {
         progenitor: test_inputs::progenitor(directory.path()),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
-        expander: test_inputs::sample("integration", "expand-solve-one-more.sh"),
+        mutator: test_inputs::sample("integration", "mutate-solve-one-more.sh"),
         evaluator: test_inputs::sample("integration", "evaluate-listed.sh"),
         budget: 12,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 3,
+        initial_mutations: 3,
         workers: 3,
-        expansion_timeout: 30,
+        mutation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
     };
@@ -35,11 +35,11 @@ fn most_running_at_once(records: &[Record]) -> usize {
     let mut most = 0;
     for record in records {
         match record {
-            Record::ExpansionStarted { .. } | Record::EvaluationStarted { .. } => {
+            Record::MutationStarted { .. } | Record::EvaluationStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
-            Record::ExpansionFinished { .. } | Record::EvaluationFinished { .. } => running -= 1,
+            Record::MutationFinished { .. } | Record::EvaluationFinished { .. } => running -= 1,
             Record::Run { .. } | Record::SearchFinished { .. } => {}
         }
     }
@@ -68,15 +68,15 @@ fn with_three_workers_the_journal_still_holds_exactly_as_many_evaluations_as_the
 }
 
 #[test]
-fn with_a_growth_of_0_and_three_workers_exactly_one_expansion_starts() {
+fn with_a_growth_of_0_and_three_workers_exactly_one_mutation_starts() {
     let records = records(|settings| {
         settings.genealogy_growth = 0.0;
-        settings.initial_expansions = 0;
+        settings.initial_mutations = 0;
     });
     assert_eq!(
         count(&records, |record| matches!(
             record,
-            Record::ExpansionStarted { .. }
+            Record::MutationStarted { .. }
         )),
         1
     );

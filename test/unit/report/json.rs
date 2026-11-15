@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cladenc::genealogy::{EvaluationOutcome, ExpansionOutcome, Genealogy};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -8,14 +8,14 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned()],
-        expander: PathBuf::from("/expander"),
+        mutator: PathBuf::from("/mutator"),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 0,
+        initial_mutations: 0,
         workers: 1,
-        expansion_timeout: 60,
+        mutation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
@@ -28,7 +28,7 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     genealogy
         .end_evaluation(0, "t1", EvaluationOutcome::Success)
         .unwrap();
-    genealogy.start_expansion(0).unwrap();
+    genealogy.start_mutation(0).unwrap();
     assert_eq!(
         Report::of(&settings(), &genealogy).json(),
         concat!(
@@ -46,9 +46,9 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
 #[test]
 fn the_state_of_a_failed_harness_is_written_as_failed() {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_expansion(0).unwrap();
+    let child = genealogy.start_mutation(0).unwrap();
     genealogy
-        .end_expansion(child, ExpansionOutcome::Failed)
+        .end_mutation(child, MutationOutcome::Failed)
         .unwrap();
     assert!(
         Report::of(&settings(), &genealogy)

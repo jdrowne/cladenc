@@ -12,23 +12,23 @@ fn settings(directory: &Path, evaluator: &str) -> Settings {
     Settings {
         progenitor: test_inputs::progenitor(directory),
         tasks: vec!["t1".to_owned()],
-        expander: test_inputs::sample("integration", "expand-solve-one-more-or-exit-2.sh"),
+        mutator: test_inputs::sample("integration", "mutate-solve-one-more-or-exit-2.sh"),
         evaluator: test_inputs::sample("integration", evaluator),
         budget: 4,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 1,
+        initial_mutations: 1,
         workers: 1,
-        expansion_timeout: 60,
+        mutation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
 }
 
-fn resumed_after_a_stop_at(job: &str, leftover: &str, initial_expansions: u64) -> TempDir {
+fn resumed_after_a_stop_at(job: &str, leftover: &str, initial_mutations: u64) -> TempDir {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), "evaluate-listed-or-exit-2.sh");
-    settings.initial_expansions = initial_expansions;
+    settings.initial_mutations = initial_mutations;
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
     let marker = directory.path().join("exit-2-at");
@@ -40,8 +40,8 @@ fn resumed_after_a_stop_at(job: &str, leftover: &str, initial_expansions: u64) -
     directory
 }
 
-fn resumed_after_an_expansion_stopped() -> TempDir {
-    resumed_after_a_stop_at("expansion-1", "expansion-1/child/leftover", 1)
+fn resumed_after_a_mutation_stopped() -> TempDir {
+    resumed_after_a_stop_at("mutation-1", "mutation-1/child/leftover", 1)
 }
 
 fn resumed_after_an_evaluation_stopped() -> TempDir {
@@ -50,7 +50,7 @@ fn resumed_after_an_evaluation_stopped() -> TempDir {
 
 fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
     let mut settings = settings(directory, "spawn.sh");
-    settings.initial_expansions = 0;
+    settings.initial_mutations = 0;
     settings.workers = 2;
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.progenitor).unwrap();
@@ -78,14 +78,14 @@ fn records(run_directory: &Path) -> usize {
 }
 
 #[test]
-fn what_an_expansion_left_under_running_is_gone_before_it_runs_again() {
-    let directory = resumed_after_an_expansion_stopped();
+fn what_a_mutation_left_under_running_is_gone_before_it_runs_again() {
+    let directory = resumed_after_a_mutation_stopped();
     assert!(!directory.path().join("run/harnesses/1/leftover").exists());
 }
 
 #[test]
-fn an_expansion_that_runs_again_ends_with_its_child_in_place() {
-    let directory = resumed_after_an_expansion_stopped();
+fn a_mutation_that_runs_again_ends_with_its_child_in_place() {
+    let directory = resumed_after_a_mutation_stopped();
     assert!(directory.path().join("run/harnesses/1/solved").is_file());
 }
 

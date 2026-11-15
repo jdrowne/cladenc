@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cladenc::genealogy::{EvaluationOutcome, ExpansionOutcome, Genealogy};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, MutationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -8,14 +8,14 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
-        expander: PathBuf::from("/expander"),
+        mutator: PathBuf::from("/mutator"),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 0,
+        initial_mutations: 0,
         workers: 1,
-        expansion_timeout: 60,
+        mutation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
@@ -36,7 +36,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 fn the_table_holds_a_line_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table(|genealogy| {
         evaluated(genealogy, "t1", EvaluationOutcome::Success);
-        genealogy.start_expansion(0).unwrap();
+        genealogy.start_mutation(0).unwrap();
     });
     assert_eq!(
         table,
@@ -51,9 +51,9 @@ fn the_table_holds_a_line_for_the_run_a_header_and_a_row_for_each_harness() {
 #[test]
 fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
     let table = table(|genealogy| {
-        let child = genealogy.start_expansion(0).unwrap();
+        let child = genealogy.start_mutation(0).unwrap();
         genealogy
-            .end_expansion(child, ExpansionOutcome::Failed)
+            .end_mutation(child, MutationOutcome::Failed)
             .unwrap();
     });
     assert_eq!(

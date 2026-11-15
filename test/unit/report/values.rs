@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cladenc::genealogy::{EvaluationOutcome, ExpansionOutcome, Genealogy, HarnessState};
+use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessState, MutationOutcome};
 use cladenc::journal::Settings;
 use cladenc::policy::lower_bound;
 use cladenc::report::Report;
@@ -9,14 +9,14 @@ fn settings() -> Settings {
     Settings {
         progenitor: PathBuf::from("/progenitor"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
-        expander: PathBuf::from("/expander"),
+        mutator: PathBuf::from("/mutator"),
         evaluator: PathBuf::from("/evaluator"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 0,
+        initial_mutations: 0,
         workers: 1,
-        expansion_timeout: 60,
+        mutation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
     }
@@ -24,9 +24,9 @@ fn settings() -> Settings {
 
 fn a_child_that_succeeds_where_its_parent_fails() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_expansion(0).unwrap();
+    let child = genealogy.start_mutation(0).unwrap();
     genealogy
-        .end_expansion(child, ExpansionOutcome::Created)
+        .end_mutation(child, MutationOutcome::Created)
         .unwrap();
     genealogy.start_evaluation(0, "t1").unwrap();
     genealogy
@@ -41,11 +41,11 @@ fn a_child_that_succeeds_where_its_parent_fails() -> Genealogy {
 
 fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let failed = genealogy.start_expansion(0).unwrap();
+    let failed = genealogy.start_mutation(0).unwrap();
     genealogy
-        .end_expansion(failed, ExpansionOutcome::Failed)
+        .end_mutation(failed, MutationOutcome::Failed)
         .unwrap();
-    genealogy.start_expansion(0).unwrap();
+    genealogy.start_mutation(0).unwrap();
     genealogy.start_evaluation(0, "t1").unwrap();
     genealogy
 }
@@ -155,7 +155,7 @@ fn the_progenitor_has_no_parent() {
 }
 
 #[test]
-fn the_parent_of_a_child_is_the_harness_it_was_expanded_from() {
+fn the_parent_of_a_child_is_the_harness_it_was_mutated_from() {
     let report = report(&a_child_that_succeeds_where_its_parent_fails());
     assert_eq!(report.harnesses[1].parent, Some(0));
 }

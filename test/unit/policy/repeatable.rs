@@ -1,4 +1,4 @@
-use cladenc::genealogy::{ExpansionOutcome, Genealogy};
+use cladenc::genealogy::{Genealogy, MutationOutcome};
 use cladenc::policy::{Job, Policy};
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -20,9 +20,9 @@ fn policy(seed: u64) -> Policy {
 
 fn with_a_child() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_expansion(0).unwrap();
+    let child = genealogy.start_mutation(0).unwrap();
     genealogy
-        .end_expansion(child, ExpansionOutcome::Created)
+        .end_mutation(child, MutationOutcome::Created)
         .unwrap();
     genealogy
 }

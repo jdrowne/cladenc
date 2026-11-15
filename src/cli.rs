@@ -48,9 +48,9 @@ pub struct RunOptions {
     #[arg(
         long,
         value_name = "FILE",
-        help = "The program that carries out an expansion"
+        help = "The program that carries out a mutation"
     )]
-    pub expander: PathBuf,
+    pub mutator: PathBuf,
     #[arg(
         long,
         value_name = "FILE",
@@ -87,9 +87,9 @@ pub struct RunOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "Expansions of the progenitor made before the first evaluation"
+        help = "Mutations of the progenitor made before the first evaluation"
     )]
-    pub initial_expansions: u64,
+    pub initial_mutations: u64,
     #[arg(
         long,
         value_name = "COUNT",
@@ -101,9 +101,9 @@ pub struct RunOptions {
         long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one expansion"
+        help = "The time limit of one mutation"
     )]
-    pub expansion_timeout: u64,
+    pub mutation_timeout: u64,
     #[arg(
         long,
         value_name = "SECONDS",

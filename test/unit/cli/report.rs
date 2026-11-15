@@ -40,19 +40,19 @@ fn reported(json: bool) -> (Ran, String) {
             settings: Settings {
                 progenitor: PathBuf::from("/progenitor"),
                 tasks: vec!["t1".to_owned()],
-                expander: PathBuf::from("/expander"),
+                mutator: PathBuf::from("/mutator"),
                 evaluator: PathBuf::from("/evaluator"),
                 budget: 800,
                 genealogy_growth: 0.6,
                 confidence: 99.0,
-                initial_expansions: 0,
+                initial_mutations: 0,
                 workers: 1,
-                expansion_timeout: 60,
+                mutation_timeout: 60,
                 evaluation_timeout: 60,
                 seed: 7,
             },
         },
-        Record::ExpansionStarted {
+        Record::MutationStarted {
             child: 1,
             parent: 0,
         },

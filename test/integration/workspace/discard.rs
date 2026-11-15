@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use cladenc::genealogy::{EvaluationOutcome, ExpansionOutcome};
+use cladenc::genealogy::{EvaluationOutcome, MutationOutcome};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -12,13 +12,11 @@ fn made() -> (TempDir, Workspace) {
     (directory, workspace)
 }
 
-fn with_an_expansion_discarded_after_it_ended() -> (TempDir, Workspace) {
+fn with_a_mutation_discarded_after_it_ended() -> (TempDir, Workspace) {
     let (directory, workspace) = made();
-    workspace.start_expansion(1, 0).unwrap();
-    workspace
-        .end_expansion(1, ExpansionOutcome::Created)
-        .unwrap();
-    workspace.discard_expansion(1).unwrap();
+    workspace.start_mutation(1, 0).unwrap();
+    workspace.end_mutation(1, MutationOutcome::Created).unwrap();
+    workspace.discard_mutation(1).unwrap();
     (directory, workspace)
 }
 
@@ -37,34 +35,34 @@ fn entries(directory: PathBuf) -> usize {
 }
 
 #[test]
-fn discarding_an_expansion_that_is_running_leaves_nothing_running() {
+fn discarding_a_mutation_that_is_running_leaves_nothing_running() {
     let (_directory, workspace) = made();
-    workspace.start_expansion(1, 0).unwrap();
-    workspace.discard_expansion(1).unwrap();
-    assert!(!workspace.running_expansion(1).exists());
+    workspace.start_mutation(1, 0).unwrap();
+    workspace.discard_mutation(1).unwrap();
+    assert!(!workspace.running_mutation(1).exists());
 }
 
 #[test]
-fn discarding_an_expansion_that_ended_leaves_no_harness() {
-    let (_directory, workspace) = with_an_expansion_discarded_after_it_ended();
+fn discarding_a_mutation_that_ended_leaves_no_harness() {
+    let (_directory, workspace) = with_a_mutation_discarded_after_it_ended();
     assert!(!workspace.harness(1).exists());
 }
 
 #[test]
-fn discarding_an_expansion_that_ended_leaves_no_directory_of_the_expansion() {
-    let (_directory, workspace) = with_an_expansion_discarded_after_it_ended();
-    assert!(!workspace.expansion(1).exists());
+fn discarding_a_mutation_that_ended_leaves_no_directory_of_the_mutation() {
+    let (_directory, workspace) = with_a_mutation_discarded_after_it_ended();
+    assert!(!workspace.mutation(1).exists());
 }
 
 #[test]
-fn discarding_an_expansion_that_ended_leaves_no_directory_for_the_evaluations_of_its_child() {
-    let (_directory, workspace) = with_an_expansion_discarded_after_it_ended();
+fn discarding_a_mutation_that_ended_leaves_no_directory_for_the_evaluations_of_its_child() {
+    let (_directory, workspace) = with_a_mutation_discarded_after_it_ended();
     assert!(!workspace.evaluations(1).exists());
 }
 
 #[test]
-fn discarding_an_expansion_leaves_the_parent_as_it_was() {
-    let (_directory, workspace) = with_an_expansion_discarded_after_it_ended();
+fn discarding_a_mutation_leaves_the_parent_as_it_was() {
+    let (_directory, workspace) = with_a_mutation_discarded_after_it_ended();
     assert!(workspace.harness(0).join("harness.sh").is_file());
 }
 
@@ -91,5 +89,5 @@ fn discarding_an_evaluation_keeps_the_directory_for_the_evaluations_of_its_harne
 #[test]
 fn discarding_a_job_that_left_nothing_is_not_an_error() {
     let (_directory, workspace) = made();
-    assert!(workspace.discard_expansion(1).is_ok());
+    assert!(workspace.discard_mutation(1).is_ok());
 }

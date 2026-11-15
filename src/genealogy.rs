@@ -10,7 +10,7 @@ pub type HarnessId = u64;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum ExpansionOutcome {
+pub enum MutationOutcome {
     Created,
     Failed,
     TimedOut,
@@ -63,7 +63,7 @@ impl Genealogy {
             .collect()
     }
 
-    pub fn start_expansion(&mut self, parent: HarnessId) -> Result<HarnessId, GenealogyError> {
+    pub fn start_mutation(&mut self, parent: HarnessId) -> Result<HarnessId, GenealogyError> {
         if self
             .harness_in_state(parent, HarnessState::Created)
             .is_none()
@@ -79,17 +79,17 @@ impl Genealogy {
         Ok(child)
     }
 
-    pub fn end_expansion(
+    pub fn end_mutation(
         &mut self,
         child: HarnessId,
-        outcome: ExpansionOutcome,
+        outcome: MutationOutcome,
     ) -> Result<(), GenealogyError> {
         let created = self
             .harness_in_state(child, HarnessState::BeingCreated)
             .ok_or(GenealogyError::ChildNotBeingCreated { child })?;
         created.set_state(match outcome {
-            ExpansionOutcome::Created => HarnessState::Created,
-            ExpansionOutcome::Failed | ExpansionOutcome::TimedOut => HarnessState::Failed,
+            MutationOutcome::Created => HarnessState::Created,
+            MutationOutcome::Failed | MutationOutcome::TimedOut => HarnessState::Failed,
         });
         Ok(())
     }

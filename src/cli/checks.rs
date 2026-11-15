@@ -25,14 +25,14 @@ impl RunOptions {
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
             tasks: tasks(&self.tasks)?,
-            expander: program(&self.expander, "--expander")?,
+            mutator: program(&self.mutator, "--mutator")?,
             evaluator: program(&self.evaluator, "--evaluator")?,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
-            initial_expansions: self.initial_expansions,
+            initial_mutations: self.initial_mutations,
             workers: self.workers,
-            expansion_timeout: self.expansion_timeout,
+            mutation_timeout: self.mutation_timeout,
             evaluation_timeout: self.evaluation_timeout,
             seed: self.seed,
         })

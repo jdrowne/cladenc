@@ -18,15 +18,15 @@ fn options(directory: &Path) -> RunOptions {
     RunOptions {
         progenitor: test_inputs::progenitor(directory),
         tasks: test_inputs::task_file(directory, &["t1", "t2"]),
-        expander: program(directory, "expand", 0o755),
+        mutator: program(directory, "mutate", 0o755),
         evaluator: program(directory, "evaluate", 0o755),
         run_dir: directory.join("run"),
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_expansions: 5,
+        initial_mutations: 5,
         workers: 8,
-        expansion_timeout: 3600,
+        mutation_timeout: 3600,
         evaluation_timeout: 1800,
         seed: 7,
         quiet: false,
@@ -60,14 +60,14 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
         Ok(Settings {
             progenitor: root.join("progenitor"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
-            expander: root.join("expand"),
+            mutator: root.join("mutate"),
             evaluator: root.join("evaluate"),
             budget: 800,
             genealogy_growth: 0.6,
             confidence: 99.0,
-            initial_expansions: 5,
+            initial_mutations: 5,
             workers: 8,
-            expansion_timeout: 3600,
+            mutation_timeout: 3600,
             evaluation_timeout: 1800,
             seed: 7,
         })
@@ -91,7 +91,7 @@ fn a_progenitor_that_does_not_exist_is_refused() {
 #[test]
 fn a_progenitor_that_is_a_file_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.progenitor = options.expander.clone()),
+        option_refused(|_, options| options.progenitor = options.mutator.clone()),
         "--progenitor"
     );
 }
@@ -159,28 +159,28 @@ fn task_ids_of_letters_digits_dots_underscores_and_hyphens_are_accepted() {
 }
 
 #[test]
-fn an_expander_that_does_not_exist_is_refused() {
+fn a_mutator_that_does_not_exist_is_refused() {
     assert_eq!(
-        option_refused(|directory, options| options.expander = directory.path().join("missing")),
-        "--expander"
+        option_refused(|directory, options| options.mutator = directory.path().join("missing")),
+        "--mutator"
     );
 }
 
 #[test]
-fn an_expander_that_is_not_executable_is_refused() {
+fn a_mutator_that_is_not_executable_is_refused() {
     assert_eq!(
         option_refused(|directory, options| {
-            options.expander = program(directory.path(), "plain", 0o644);
+            options.mutator = program(directory.path(), "plain", 0o644);
         }),
-        "--expander"
+        "--mutator"
     );
 }
 
 #[test]
-fn an_expander_that_is_a_directory_is_refused() {
+fn a_mutator_that_is_a_directory_is_refused() {
     assert_eq!(
-        option_refused(|_, options| options.expander = options.progenitor.clone()),
-        "--expander"
+        option_refused(|_, options| options.mutator = options.progenitor.clone()),
+        "--mutator"
     );
 }
 
@@ -205,8 +205,8 @@ fn an_evaluator_that_is_not_executable_is_refused() {
 #[test]
 fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
     let refused = Refused {
-        option: "--expander",
+        option: "--mutator",
         accepted: "an executable file",
     };
-    assert_eq!(refused.to_string(), "--expander takes an executable file");
+    assert_eq!(refused.to_string(), "--mutator takes an executable file");
 }
