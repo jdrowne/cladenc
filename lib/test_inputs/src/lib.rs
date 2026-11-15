@@ -21,3 +21,11 @@ pub fn progenitor(directory: &Path) -> PathBuf {
         .expect("the symbolic link can be made");
     progenitor
 }
+
+pub fn sample(tier: &str, name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test")
+        .join(tier)
+        .join("samples")
+        .join(name)
+}

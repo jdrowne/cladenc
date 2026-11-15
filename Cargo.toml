@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+nix = { version = "0.32.0", features = ["signal"] }
 rand = "0.10.3"
 rand_chacha = "0.10.0"
 rand_distr = "0.6.0"
