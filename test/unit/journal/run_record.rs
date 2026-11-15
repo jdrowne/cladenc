@@ -245,7 +245,7 @@ fn the_settings_give_the_policy_made_from_five_of_them() {
             budget: 800,
             growth: 0.6,
             confidence: 99.0,
-            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            tasks: vec!["benchmark/t1".to_owned(), "benchmark/t2".to_owned()],
             seed: 7,
         }
     );

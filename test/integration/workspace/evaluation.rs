@@ -88,6 +88,12 @@ fn a_started_evaluation_holds_no_copy_of_the_check() {
 }
 
 #[test]
+fn a_started_evaluation_has_an_empty_directory_for_its_benchmark_among_those_of_its_harness() {
+    let (_directory, workspace) = started();
+    assert_eq!(entries(workspace.evaluations(0).join("benchmark")), 0);
+}
+
+#[test]
 fn an_evaluation_on_a_task_the_run_directory_does_not_hold_cannot_be_started() {
     let (_directory, workspace) = made();
     assert!(workspace.start_evaluation(0, "benchmark/t9").is_err());

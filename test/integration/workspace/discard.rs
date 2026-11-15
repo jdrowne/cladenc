@@ -116,7 +116,19 @@ fn discarding_an_evaluation_that_ended_leaves_no_directory_of_the_evaluation() {
 #[test]
 fn discarding_an_evaluation_keeps_the_directory_for_the_evaluations_of_its_harness() {
     let (_directory, workspace) = with_an_evaluation_discarded_after_it_ended();
-    assert_eq!(entries(workspace.evaluations(0)), 0);
+    assert!(workspace.evaluations(0).is_dir());
+}
+
+#[test]
+fn discarding_an_evaluation_that_ended_leaves_no_evaluation_in_the_directory_of_its_benchmark() {
+    let (_directory, workspace) = with_an_evaluation_discarded_after_it_ended();
+    assert_eq!(entries(workspace.evaluations(0).join("benchmark")), 0);
+}
+
+#[test]
+fn a_discarded_evaluation_can_be_started_again() {
+    let (_directory, workspace) = with_an_evaluation_discarded_after_it_ended();
+    assert!(workspace.start_evaluation(0, "benchmark/t1").is_ok());
 }
 
 #[test]

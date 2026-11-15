@@ -79,10 +79,6 @@ fn one_task(_: &Path, benchmarks: &mut Vec<PathBuf>) {
     *benchmarks = vec![benchmarks[0].join("t1")];
 }
 
-fn with_no_check_in_a_task(_: &Path, benchmarks: &mut Vec<PathBuf>) {
-    fs::remove_file(benchmarks[0].join("t2/check")).unwrap();
-}
-
 fn with_a_space_in_its_name(directory: &Path, benchmarks: &mut Vec<PathBuf>) {
     *benchmarks = vec![test_inputs::benchmark_named(
         directory,
@@ -140,7 +136,9 @@ fn a_benchmark_that_is_one_task_is_said_to_be_one_task() {
 
 #[test]
 fn a_benchmark_that_is_refused_for_a_task_names_the_benchmark_the_task_and_what_it_lacks() {
-    let (directory, reason) = reason_of(with_no_check_in_a_task);
+    let (directory, reason) = reason_of(|_, benchmarks| {
+        fs::remove_file(benchmarks[0].join("t2/check")).unwrap();
+    });
     assert_eq!(
         reason,
         format!(

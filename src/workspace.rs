@@ -128,12 +128,13 @@ impl Workspace {
     pub fn start_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         let job = self.running_evaluation(harness, task);
         let given = self.task(task);
+        let kept = self.evaluation(harness, task);
         fs::create_dir(&job)
             .and_then(|()| fs::create_dir(job.join("check")))
             .and_then(|()| copy_tree(&self.harness(harness), &job.join("harness")))
             .and_then(|()| copy_tree(&given.join("files"), &job.join("work")))
             .and_then(|()| fs::copy(given.join("statement"), job.join("statement")))
-            .map(|_| ())
+            .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
     pub fn end_evaluation(
@@ -148,11 +149,9 @@ impl Workspace {
             EvaluationOutcome::Failure => "failure\n",
             EvaluationOutcome::TimedOut => "timed_out\n",
         };
-        let kept = self.evaluation(harness, task);
         fs::remove_dir_all(job.join("harness"))
             .and_then(|()| fs::write(job.join("outcome"), word))
-            .and_then(|()| kept.parent().map_or(Ok(()), fs::create_dir_all))
-            .and_then(|()| fs::rename(&job, &kept))
+            .and_then(|()| fs::rename(&job, self.evaluation(harness, task)))
     }
 
     pub fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
