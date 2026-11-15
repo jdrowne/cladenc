@@ -2,6 +2,11 @@
 
 CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation of the [Huxley-Gödel Machine](https://arxiv.org/abs/2510.21614) for agentic coding harnesses.
 
+- [`cladenc`](#cladenc-1)
+  - [`cladenc report`](#cladenc-report)
+  - [`cladenc resume`](#cladenc-resume)
+  - [`cladenc start`](#cladenc-start)
+
 ## `cladenc`
 
 ```text
@@ -17,15 +22,41 @@ cladenc \
 
 `cladenc` does its work through a sub-command. Called with neither a sub-command nor a flag, it prints what `--help` prints, on standard error, and exits with status 2.
 
-## Sub-commands
-
 | Sub-command | Description |
 | --- | --- |
-| `cladenc start` | Starts a new search and prints the directory of its best harness. |
-| `cladenc resume` | Continues a search that stopped before its end. |
 | `cladenc report` | Prints the state of a search without changing it. |
+| `cladenc resume` | Continues a search that stopped before its end. |
+| `cladenc start` | Starts a new search and prints the directory of its best harness. |
 
 `--help` after a sub-command prints its flags.
+
+### `cladenc report`
+
+```text
+cladenc report \
+  --json \
+  --run-dir <DIR>
+```
+
+| Flag | Required | Description |
+| --- | --- | --- |
+| `--json` | Not Required | Print one JSON object in place of the table. |
+| `--run-dir <DIR>` | Required | The run directory of the search to report on. |
+
+### `cladenc resume`
+
+```text
+cladenc resume \
+  --quiet \
+  --run-dir <DIR>
+```
+
+| Flag | Required | Description |
+| --- | --- | --- |
+| `--quiet` | Not Required | Print nothing on standard error. |
+| `--run-dir <DIR>` | Required | The run directory of the search to continue. |
+
+The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then ends the jobs it has running and exits with status 1, and a search that stopped again can be continued again.
 
 ### `cladenc start`
 
@@ -68,32 +99,4 @@ cladenc start \
 | `--tasks <FILE>` | Required | A file of task ids, one on each line. |
 | `--workers <COUNT>` | Required | The most jobs running at once. |
 
-A search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then ends the jobs it has running and exits with status 1, and `cladenc resume` carries the search on from where it stopped.
-
-### `cladenc resume`
-
-```text
-cladenc resume \
-  --quiet \
-  --run-dir <DIR>
-```
-
-| Flag | Required | Description |
-| --- | --- | --- |
-| `--quiet` | Not Required | Print nothing on standard error. |
-| `--run-dir <DIR>` | Required | The run directory of the search to continue. |
-
-The search goes on until its budget is spent, and it is stopped in the same way as one that `cladenc start` started: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and a search that stopped again can be continued again.
-
-### `cladenc report`
-
-```text
-cladenc report \
-  --json \
-  --run-dir <DIR>
-```
-
-| Flag | Required | Description |
-| --- | --- | --- |
-| `--json` | Not Required | Print one JSON object in place of the table. |
-| `--run-dir <DIR>` | Required | The run directory of the search to report on. |
+A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.

@@ -15,7 +15,9 @@ fn readme() -> String {
 }
 
 fn sub_commands() -> Vec<Command> {
-    Cli::command().get_subcommands().cloned().collect()
+    let mut sub_commands: Vec<Command> = Cli::command().get_subcommands().cloned().collect();
+    sub_commands.sort_by(|one, other| one.get_name().cmp(other.get_name()));
+    sub_commands
 }
 
 fn cladenc() -> Command {
@@ -42,6 +44,13 @@ fn heading_of(command: &Command) -> String {
         "###"
     };
     format!("\n{level} `{}`\n", called(command))
+}
+
+fn link_to(command: &Command) -> String {
+    match command.get_name() {
+        CLADENC => format!("- [`{CLADENC}`](#{CLADENC}-1)"),
+        name => format!("  - [`{CLADENC} {name}`](#{CLADENC}-{name})"),
+    }
 }
 
 fn section_of(readme: &str, command: &Command) -> String {
@@ -127,6 +136,30 @@ fn flags_named_in(readme: &str) -> BTreeSet<String> {
 }
 
 #[test]
+fn the_table_of_contents_follows_the_first_paragraph_and_links_to_the_section_of_every_command() {
+    let readme = readme();
+    let contents = commands()
+        .iter()
+        .map(link_to)
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert_eq!(readme.split("\n\n").nth(2), Some(contents.as_str()));
+}
+
+#[test]
+fn the_headings_under_the_title_are_cladenc_and_then_its_sub_commands_in_alphabetical_order() {
+    assert_eq!(
+        readme()
+            .lines()
+            .skip(1)
+            .filter(|line| line.starts_with('#'))
+            .map(|line| format!("\n{line}\n"))
+            .collect::<Vec<_>>(),
+        commands().iter().map(heading_of).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn the_table_of_sub_commands_is_headed_sub_command_and_description() {
     assert!(readme().contains(HEAD_OF_SUB_COMMANDS));
 }
@@ -145,15 +178,18 @@ fn the_table_of_sub_commands_has_a_row_for_every_sub_command() {
 }
 
 #[test]
-fn the_readme_has_a_section_for_cladenc_and_for_every_sub_command() {
-    let readme = readme();
+fn the_table_of_sub_commands_lists_them_in_alphabetical_order() {
     assert_eq!(
-        commands()
-            .iter()
-            .map(heading_of)
-            .filter(|heading| !readme.contains(heading))
+        readme()
+            .lines()
+            .filter_map(|line| line.strip_prefix("| `cladenc "))
+            .filter_map(|rest| rest.split_once('`'))
+            .map(|(name, _)| name.to_owned())
             .collect::<Vec<_>>(),
-        Vec::<String>::new()
+        sub_commands()
+            .iter()
+            .map(|sub_command| sub_command.get_name().to_owned())
+            .collect::<Vec<_>>()
     );
 }
 
