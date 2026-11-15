@@ -219,11 +219,23 @@ fn docker_is_asked_to_build_once() {
 }
 
 #[test]
-fn docker_is_not_told_to_fetch_anything() {
+fn docker_is_not_asked_to_fetch_when_it_builds_the_image() {
     let (_directory, arguments) = arguments_of_a_docker_that_records_them();
-    assert!(
-        !arguments
-            .iter()
-            .any(|argument| argument.starts_with("--pull"))
-    );
+    let build = arguments
+        .split(|argument| argument == "run")
+        .next()
+        .unwrap_or_default();
+    assert!(!build.iter().any(|argument| argument.starts_with("--pull")));
+}
+
+#[test]
+fn docker_is_told_never_to_fetch_the_image_it_built_at_any_container() {
+    let (_directory, arguments) = arguments_of_a_docker_that_records_them();
+    let recorded = arguments.join("\n");
+    let containers: Vec<&str> = recorded.split("\nrun\n").skip(1).collect();
+    let told_never = containers
+        .iter()
+        .filter(|container| container.starts_with("--rm\n--pull\nnever\n"))
+        .count();
+    assert_eq!((told_never > 0, told_never), (true, containers.len()));
 }

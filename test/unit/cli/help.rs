@@ -84,15 +84,60 @@ fn the_long_help_of_start_says_what_docker_is_given_to_build_an_image_from() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_cladenc_tells_docker_to_fetch_nothing() {
-    assert!(help_of_start(true).contains("cladenc tells Docker to\nfetch nothing"));
+fn the_long_help_of_start_says_that_cladenc_fetches_no_image_and_has_no_flag_for_a_registry() {
+    assert!(help_of_start(true).contains(
+        "cladenc fetches no image, and has no flag for a registry, the server that\nDocker \
+         fetches an image from."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_name_of_an_image_says_which_registry_it_is_of() {
+    assert!(help_of_start(true).contains(
+        "The name of an image says which registry it\nis of, as \
+         registry.example:5000/tools/harness:1 does, and a name that says\nnone is of Docker Hub."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_an_image_is_brought_to_the_machine() {
+    assert!(help_of_start(true).contains(
+        "The image that --docker-image names has to be on\nthe machine before the search: \
+         fetched there with `docker pull`, carried\nthere as a file with `docker save` and \
+         `docker load`, or built there."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_container() {
+    assert!(help_of_start(true).contains(
+        "cladenc tells Docker never to fetch the image of a container, so a search\nwhose image \
+         is not on the machine stops at its first container, and\n`cladenc resume` continues \
+         it once the image is there."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection() {
+    assert!(help_of_start(true).contains(
+        "A Dockerfile whose\nbase image is on the machine, and whose steps fetch nothing, is \
+         built with\nno connection to the internet."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does_not_hold() {
+    assert!(help_of_start(true).contains(
+        "cladenc does not ask Docker to fetch a base\nimage and cannot forbid it: Docker \
+         fetches a base image that is not on the\nmachine, from the registry of its name."
+    ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_resume_builds_no_image() {
     assert!(
         help_of_start(true)
-            .contains("`cladenc resume` starts its containers from it and builds nothing.\n")
+            .contains("`cladenc resume`\nstarts its containers from it and builds nothing.\n")
     );
 }
 

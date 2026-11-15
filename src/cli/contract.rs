@@ -13,12 +13,24 @@ cladenc builds when the search is started, from the Dockerfile that
           the image
 
 The build has the time limit that --docker-build-timeout gives, and image
-in the run directory keeps what Docker printed. cladenc tells Docker to
-fetch nothing: a Dockerfile whose base image is on the machine, and whose
-steps fetch nothing, is built with no connection to the internet. An image
-that is not built stops `cladenc start` with exit status 2, before the
-search has a journal. The image stays on the machine when the search ends:
-`cladenc resume` starts its containers from it and builds nothing.
+in the run directory keeps what Docker printed. An image that is not built
+stops `cladenc start` with exit status 2, before the search has a journal.
+The image stays on the machine when the search ends: `cladenc resume`
+starts its containers from it and builds nothing.
+
+cladenc fetches no image, and has no flag for a registry, the server that
+Docker fetches an image from. The name of an image says which registry it
+is of, as registry.example:5000/tools/harness:1 does, and a name that says
+none is of Docker Hub. The image that --docker-image names has to be on
+the machine before the search: fetched there with `docker pull`, carried
+there as a file with `docker save` and `docker load`, or built there.
+cladenc tells Docker never to fetch the image of a container, so a search
+whose image is not on the machine stops at its first container, and
+`cladenc resume` continues it once the image is there. A Dockerfile whose
+base image is on the machine, and whose steps fetch nothing, is built with
+no connection to the internet. cladenc does not ask Docker to fetch a base
+image and cannot forbid it: Docker fetches a base image that is not on the
+machine, from the registry of its name.
 
 A harness is started in a container of the image of the search, as
 

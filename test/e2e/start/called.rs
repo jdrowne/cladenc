@@ -192,6 +192,16 @@ fn the_key_is_on_no_command_line_of_docker() {
 }
 
 #[test]
+fn docker_is_told_never_to_fetch_the_image_of_a_container() {
+    let arguments = ran_with_a_docker_that_records_its_arguments();
+    let containers = arguments.lines().filter(|line| *line == "run").count();
+    assert_eq!(
+        arguments.matches("run\n--rm\n--pull\nnever\n").count(),
+        containers.max(1)
+    );
+}
+
+#[test]
 fn every_container_is_started_so_that_it_can_name_the_machine_cladenc_runs_on() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
     assert!(arguments.contains("--add-host\nhost.docker.internal:host-gateway\n"));

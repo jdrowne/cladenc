@@ -36,7 +36,7 @@ impl Container<'_> {
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
         let mut docker = Command::new("docker");
         docker
-            .args(["run", "--rm", "--name", &name, "--user"])
+            .args(["run", "--rm", "--pull", "never", "--name", &name, "--user"])
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
             .args(["--add-host", MACHINE])
             .args(["--workdir", self.working_directory]);
