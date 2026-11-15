@@ -51,7 +51,6 @@ Each file is under `.claude/memories/`.
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
 | An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
 | An issue documents one indivisible problem. | `one-indivisible-problem-per-issue.md` |
-| A problem found along the way is filed, and solved now only when the work cannot go on without it. | `a-problem-found-along-the-way-is-filed.md` |
 | A `blocked_by` edge is written only where the block is real. | `a-blocked-by-edge-states-a-real-block.md` |
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
