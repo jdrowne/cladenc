@@ -1,0 +1,19 @@
+---
+arch: ${ARCH}
+contents:
+  - dst: /usr/bin/cladenc
+    file_info:
+      mode: 0755
+    src: stage/cladenc
+description: >-
+  Searches for a better agentic coding harness by letting harnesses
+  modify themselves.
+homepage: https://github.com/jdrowne/cladenc
+license: All rights reserved
+maintainer: Jose Drowne
+name: cladenc
+platform: linux
+section: utils
+vendor: Jose Drowne
+version: ${VERSION}
+version_schema: none

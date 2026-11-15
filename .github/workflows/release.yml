@@ -2,6 +2,9 @@
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.ref }}
+defaults:
+  run:
+    shell: bash
 jobs:
   assert-coverage:
     needs:
@@ -10,8 +13,31 @@ jobs:
       - unit-test-coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "assert-coverage placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - name: Take the instrumented build and the profiles of each tier
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: coverage-*
+      - name: Assert that the tests reach every line, region and function
+        run: |
+          for packed in coverage.tar profiles-*.tar; do
+            tar -xPf "$packed"
+          done
+          source coverage.env
+          cargo llvm-cov report --show-missing-lines \
+            --fail-under-functions 100 \
+            --fail-under-lines 100 \
+            --fail-under-regions 100
   assert-no-comments:
     runs-on: ubuntu-latest
     steps:
@@ -32,8 +58,19 @@ jobs:
   assert-no-empty-test-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "assert-no-empty-test-files placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Assert that every test file holds a test
+        run: |
+          tests=('test/*.rs' ':!*/main.rs')
+          found="$(git grep -LF '#[test]' -- "${tests[@]}" || true)"
+          if [ -n "$found" ]; then
+            for file in $found; do
+              said="$file is a test file that holds no test"
+              echo "::error file=$file::$said"
+            done
+            exit 1
+          fi
   assert-no-inline-directives:
     runs-on: ubuntu-latest
     steps:
@@ -51,6 +88,21 @@ jobs:
           --tools markdownlint,yamllint
           --verbose
           ${{ github.workspace }}
+      - name: Assert that no attribute in a Rust file silences a tool
+        run: |
+          levels='allow|expect|warn|deny|forbid'
+          others='rustfmt::skip|coverage|cfg_attr'
+          attribute="#!?\[[[:space:]]*($levels|$others)[[:space:]]*[](]"
+          gate='cfg!?\((not\()?[[:space:]]*coverage'
+          found="$(git grep -nE "$attribute|$gate" -- '*.rs' || true)"
+          if [ -n "$found" ]; then
+            said='sets the level of a lint or switches a tool off'
+            echo "$found" | sed -E "s/^([^:]+):([0-9]+):.*/\1 \2/" |
+              while read -r file line; do
+                echo "::error file=$file,line=$line::$file:$line $said"
+              done
+            exit 1
+          fi
   assert-no-linter-config-files:
     runs-on: ubuntu-latest
     steps:
@@ -68,11 +120,31 @@ jobs:
           --linters markdownlint,yamllint
           --verbose
           ${{ github.workspace }}
+      - name: Assert that no file configures a linter or formatter of Rust
+        run: |
+          names='(^|/)\.?(rustfmt|clippy)\.toml$'
+          found="$(git ls-files | grep -E "$names" || true)"
+          if [ -n "$found" ]; then
+            said='configures a linter or a formatter of Rust'
+            for file in $found; do
+              echo "::error file=$file::$file $said"
+            done
+            exit 1
+          fi
   assert-no-oversized-source-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "assert-no-oversized-source-files placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Assert that no Rust file has more than 1000 lines
+        run: |
+          git ls-files -z '*.rs' | xargs -0 wc -l | awk -v limit=1000 '
+            $2 != "total" && $1 > limit {
+              said = $2 " has " $1 " lines, and the limit is " limit
+              print "::error file=" $2 "::" said
+              over = 1
+            }
+            END { exit over }'
   assert-one-assert-per-test:
     runs-on: ubuntu-latest
     steps:
@@ -89,9 +161,37 @@ jobs:
   build-coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "build-coverage placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - name: Build the program and the tests with coverage instrumentation
+        run: |
+          cargo llvm-cov show-env --sh > coverage.env
+          source coverage.env
+          cargo test --locked --no-run \
+            --message-format=json-render-diagnostics \
+            --test unit --test integration --test e2e > build.json
+          for tier in unit integration e2e; do
+            built="select(.profile.test and .target.name == \"$tier\")"
+            jq -r "$built.executable" build.json > "target/test-$tier"
+          done
+          tar -cPf coverage.tar coverage.env target/debug/cladenc \
+            target/test-* $(cat target/test-*)
+      - name: Hand on what was built
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-build
+          path: coverage.tar
+          retention-days: 1
   build-debug:
+    name: build-debug-${{ matrix.platform }}
     needs:
       - assert-coverage
       - assert-no-comments
@@ -100,12 +200,15 @@ jobs:
       - assert-no-linter-config-files
       - assert-no-oversized-source-files
       - assert-one-assert-per-test
+      - clippy
       - rustfmt
       - yamllint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
       - name: Build the program and the tests
         run: |
           cargo test --locked --no-run \
@@ -120,46 +223,106 @@ jobs:
       - name: Hand on what was built
         uses: actions/upload-artifact@v4
         with:
-          name: debug
+          name: debug-${{ matrix.platform }}
           path: debug.tar
           retention-days: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86-64
+            runner: ubuntu-latest
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
   build-release:
+    name: build-release-${{ matrix.platform }}
     needs:
       - e2e-test-debug
       - integration-test-debug
       - unit-test-debug
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build the program for release
+        run: |
+          cargo build --locked --release
+          cp target/release/cladenc "cladenc-${{ matrix.platform }}"
+      - name: Hand on the program
+        uses: actions/upload-artifact@v4
+        with:
+          name: program-${{ matrix.platform }}
+          path: cladenc-${{ matrix.platform }}
+          retention-days: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86-64
+            runner: ubuntu-latest
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+  clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "build-release placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
   e2e-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "e2e-test-coverage placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-build
+      - name: E2E tests, keeping their profiles
+        run: |
+          tar -xPf coverage.tar
+          source coverage.env
+          export LLVM_PROFILE_FILE="$PWD/target/e2e-%p-%m.profraw"
+          "$(cat target/test-e2e)"
+          tar -cf profiles-e2e.tar target/*.profraw
+      - name: Hand on the profiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-e2e
+          path: profiles-e2e.tar
+          retention-days: 1
   e2e-test-debug:
+    name: e2e-test-debug-${{ matrix.platform }}
     needs: build-debug
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug
+          name: debug-${{ matrix.platform }}
       - name: E2E tests
         run: |
           tar -xf debug.tar
           target/debug/test-e2e
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86-64
+            runner: ubuntu-latest
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
   integration-test-coverage:
     needs: build-coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Placeholder
-        run: echo "integration-test-coverage placeholder"
-  integration-test-debug:
-    needs: build-debug
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -167,44 +330,173 @@ jobs:
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug
+          name: coverage-build
+      - name: Integration tests, keeping their profiles
+        run: |
+          tar -xPf coverage.tar
+          source coverage.env
+          export LLVM_PROFILE_FILE="$PWD/target/integration-%p-%m.profraw"
+          "$(cat target/test-integration)"
+          tar -cf profiles-integration.tar target/*.profraw
+      - name: Hand on the profiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: profiles-integration.tar
+          retention-days: 1
+  integration-test-debug:
+    name: integration-test-debug-${{ matrix.platform }}
+    needs: build-debug
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-${{ matrix.platform }}
       - name: Integration tests
         run: |
           tar -xf debug.tar
           target/debug/test-integration
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86-64
+            runner: ubuntu-latest
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
   package:
     needs: build-release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "package placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take the programs
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: programs
+          pattern: program-*
+      - id: version
+        name: Number the release by the time
+        run: echo "version=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+      - env:
+          VERSION: ${{ steps.version.outputs.version }}
+        name: Make a .deb and an RPM for each platform
+        run: |
+          mkdir packages stage
+          for platform in linux-x86-64 linux-arm64; do
+            case "$platform" in
+              linux-x86-64) export ARCH=amd64 ;;
+              linux-arm64) export ARCH=arm64 ;;
+            esac
+            cp "programs/cladenc-$platform" stage/cladenc
+            for format in deb rpm; do
+              docker run --rm --volume "$PWD:/work" --workdir /work \
+                --env ARCH --env VERSION goreleaser/nfpm package \
+                --config etc/nfpm/nfpm.yaml --packager "$format" \
+                --target "packages/cladenc-$platform.$format"
+            done
+          done
+      - name: Hand on the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: packages
+          retention-days: 1
   release:
-    needs: test-package
+    if: github.ref_name == 'main'
+    needs:
+      - package
+      - test-package
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder
-        run: echo "release placeholder"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take the programs
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: release
+          pattern: program-*
+      - name: Take the packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: release
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ needs.package.outputs.version }}
+        name: Publish the release and move the tag latest to it
+        run: |
+          test "$TAG" != v
+          gh release create "$TAG" --generate-notes \
+            --target "$GITHUB_SHA" release/*
+          git tag --force latest
+          git push --force origin latest
   rustfmt:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: rustfmt
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: rustfmt, on every crate
         run: cargo fmt --all --check
+      - name: rustfmt, on every Rust file, built or not
+        run: rustfmt --check --edition 2024 $(git ls-files '*.rs')
   test-package:
+    name: test-package-${{ matrix.platform }}-${{ matrix.format }}
     needs: package
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
-      - name: Placeholder
-        run: echo "test-package placeholder"
+      - name: Take the packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages
+      - env:
+          IMAGE: ${{ matrix.image }}
+          INSTALL: ${{ matrix.install }}
+          PACKAGE: cladenc-${{ matrix.platform }}.${{ matrix.format }}
+        name: Install the package on a clean system and run cladenc
+        run: >-
+          docker run --rm --volume "$PWD/packages:/packages:ro" "$IMAGE"
+          sh -ec "$INSTALL /packages/$PACKAGE && cladenc --version"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - format: deb
+            image: ubuntu:latest
+            install: dpkg --install
+            platform: linux-x86-64
+            runner: ubuntu-latest
+          - format: rpm
+            image: fedora:latest
+            install: rpm --install
+            platform: linux-x86-64
+            runner: ubuntu-latest
+          - format: deb
+            image: ubuntu:latest
+            install: dpkg --install
+            platform: linux-arm64
+            runner: ubuntu-24.04-arm
+          - format: rpm
+            image: fedora:latest
+            install: rpm --install
+            platform: linux-arm64
+            runner: ubuntu-24.04-arm
   unit-test-coverage:
     needs: build-coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Placeholder
-        run: echo "unit-test-coverage placeholder"
-  unit-test-debug:
-    needs: build-debug
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -212,11 +504,43 @@ jobs:
       - name: Take what was built
         uses: actions/download-artifact@v4
         with:
-          name: debug
+          name: coverage-build
+      - name: Unit tests, keeping their profiles
+        run: |
+          tar -xPf coverage.tar
+          source coverage.env
+          export LLVM_PROFILE_FILE="$PWD/target/unit-%p-%m.profraw"
+          "$(cat target/test-unit)"
+          tar -cf profiles-unit.tar target/*.profraw
+      - name: Hand on the profiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: profiles-unit.tar
+          retention-days: 1
+  unit-test-debug:
+    name: unit-test-debug-${{ matrix.platform }}
+    needs: build-debug
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Take what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-${{ matrix.platform }}
       - name: Unit tests
         run: |
           tar -xf debug.tar
           target/debug/test-unit
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86-64
+            runner: ubuntu-latest
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
   yamllint:
     runs-on: ubuntu-latest
     steps:
@@ -246,6 +570,7 @@ on:
       - ".github/workflows/release.yml"
       - "Cargo.lock"
       - "Cargo.toml"
+      - "etc/**"
       - "lib/**"
       - "src/**"
       - "test/**"
