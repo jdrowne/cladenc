@@ -33,6 +33,19 @@ impl Workspace {
             .map(|()| workspace)
     }
 
+    pub fn copy_benchmark(&self, benchmark: &Path, tasks: &[String]) -> io::Result<()> {
+        fs::create_dir(self.run_directory.join("benchmark")).and_then(|()| {
+            tasks.iter().try_for_each(|task| {
+                fs::canonicalize(benchmark.join(task))
+                    .and_then(|resolved| copy_tree(&resolved, &self.task(task)))
+            })
+        })
+    }
+
+    pub fn task(&self, task: &str) -> PathBuf {
+        self.run_directory.join("benchmark").join(task)
+    }
+
     pub fn harness(&self, id: HarnessId) -> PathBuf {
         self.run_directory.join("harnesses").join(id.to_string())
     }

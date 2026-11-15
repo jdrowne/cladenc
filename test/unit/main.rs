@@ -1,3 +1,9 @@
+mod benchmark {
+    mod refused;
+    mod tasks;
+    mod worded;
+}
+
 mod cli {
     mod checks;
     mod help;

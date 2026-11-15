@@ -20,6 +20,7 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
+        benchmark: test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: None,
@@ -180,4 +181,17 @@ fn a_journal_cut_before_the_finished_record_of_a_job_in_place_continues_to_the_s
     fs::write(&journal, cut).unwrap();
     search::resume(&run_directory, &stop, None).unwrap();
     assert_eq!(fs::read_to_string(&journal).unwrap(), whole);
+}
+
+#[test]
+fn a_search_is_resumed_without_the_directory_its_benchmark_was_given_in() {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path());
+    let stop = AtomicBool::new(false);
+    let run_directory = directory.path().join("run");
+    test_inputs::end_with_125_at(&settings.progenitor, 0);
+    let _ = search::search(&settings, &run_directory, &stop, None);
+    test_inputs::end_with_125_no_more(&run_directory);
+    fs::remove_dir_all(&settings.benchmark).unwrap();
+    assert!(search::resume(&run_directory, &stop, None).is_ok());
 }

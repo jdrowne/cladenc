@@ -25,7 +25,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        tasks: test_inputs::task_file(directory.path(), &["t1"]),
+        benchmark: test_inputs::benchmark(directory.path(), &["t1"]),
         docker_image: "image".to_owned(),
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
@@ -55,8 +55,8 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     }
 }
 
-fn with_a_missing_task_file(directory: &Path, options: &mut StartOptions) {
-    options.tasks = directory.join("missing");
+fn with_a_missing_benchmark(directory: &Path, options: &mut StartOptions) {
+    options.benchmark = directory.join("missing");
 }
 
 fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) {
@@ -73,27 +73,36 @@ fn in_a_run_directory_with_a_colon_in_its_path(directory: &Path, options: &mut S
 
 #[test]
 fn a_refused_value_gives_exit_status_2() {
-    assert_eq!(ran(with_a_missing_task_file).status, 2);
+    assert_eq!(ran(with_a_missing_benchmark).status, 2);
 }
 
 #[test]
 fn a_refused_value_is_reported_on_standard_error() {
     assert!(
-        ran(with_a_missing_task_file)
+        ran(with_a_missing_benchmark)
             .errors
-            .starts_with("cladenc: --tasks takes ")
+            .starts_with("cladenc: --benchmark takes ")
+    );
+}
+
+#[test]
+fn a_refused_benchmark_is_reported_with_what_is_wrong_with_it() {
+    assert!(
+        ran(with_a_missing_benchmark)
+            .errors
+            .ends_with(": what was given is not a directory that can be read\n")
     );
 }
 
 #[test]
 fn a_refused_value_prints_nothing_on_standard_output() {
-    assert_eq!(ran(with_a_missing_task_file).output, "");
+    assert_eq!(ran(with_a_missing_benchmark).output, "");
 }
 
 #[test]
 fn with_quiet_a_refused_value_prints_nothing_on_standard_error() {
     let quiet = ran(|directory, options| {
-        with_a_missing_task_file(directory, options);
+        with_a_missing_benchmark(directory, options);
         options.quiet = true;
     });
     assert_eq!(quiet.errors, "");

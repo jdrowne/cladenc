@@ -20,6 +20,7 @@ mod search {
 }
 
 mod workspace {
+    mod benchmark;
     mod build;
     mod copy;
     mod create;

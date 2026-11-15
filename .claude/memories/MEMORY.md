@@ -7,6 +7,7 @@
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words, and let cladenc leave the paper where a change improves it
 - [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: a person brings the progenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
+- [cladenc works offline and self-hosted](cladenc-works-offline-and-self-hosted.md) — the user's rule: no connection to the internet is needed, cladenc fetches nothing, and the person brings each thing a search uses, the whole benchmark among them
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Every build is for Linux arm64](every-build-is-for-linux-arm64.md) — what CI compiles, tests, packages and releases is for Linux arm64 and no other platform
 - [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora

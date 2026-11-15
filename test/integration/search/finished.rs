@@ -14,6 +14,7 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
+        benchmark: test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: None,
@@ -85,6 +86,27 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
             settings: Box::new(settings),
         }
     );
+}
+
+#[test]
+fn a_search_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
+    let (directory, _found) = searched(over_one_task);
+    assert_eq!(
+        fs::read_to_string(directory.path().join("run/benchmark/t1/statement")).unwrap(),
+        "Finish the work of t1.\n"
+    );
+}
+
+#[test]
+fn a_search_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
+    let (directory, _found) = searched(over_one_task);
+    assert!(!directory.path().join("run/benchmark/t2").exists());
+}
+
+#[test]
+fn a_search_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory() {
+    let (_directory, found) = searched(|settings| settings.tasks.push("missing".to_owned()));
+    assert!(matches!(found, Err(SearchError::Io(_))));
 }
 
 #[test]

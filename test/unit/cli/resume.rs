@@ -46,6 +46,7 @@ fn started_with_a_key_whose_file_is_gone() -> (TempDir, PathBuf) {
             model: "a-model".to_owned(),
             model_url: "http://models.example/v1".to_owned(),
             model_key_file: Some(file.clone()),
+            benchmark: PathBuf::from("/abs/benchmark"),
             tasks: vec!["t1".to_owned()],
             docker_image: "image".to_owned(),
             harness_build_command: None,

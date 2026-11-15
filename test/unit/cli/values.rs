@@ -8,7 +8,7 @@ const OPTIONS: [(&str, &str); 16] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--tasks", "/tasks"),
+    ("--benchmark", "/benchmark"),
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--evaluator", "/evaluator"),
@@ -139,6 +139,19 @@ fn a_model_key_file_is_the_path_that_is_written() {
 #[test]
 fn an_empty_model_key_file_is_an_error() {
     assert!(with_the_key_in(Some("")).is_err());
+}
+
+#[test]
+fn a_benchmark_is_the_path_that_is_written() {
+    assert!(matches!(
+        with("--benchmark", "benchmarks/parsing").unwrap().command,
+        Command::Start(options) if options.benchmark == Path::new("benchmarks/parsing")
+    ));
+}
+
+#[test]
+fn an_empty_benchmark_is_an_error() {
+    assert!(with("--benchmark", "").is_err());
 }
 
 #[test]

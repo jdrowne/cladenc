@@ -18,6 +18,7 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: Some(key_file.to_owned()),
+        benchmark: test_inputs::benchmark(directory, &["t1"]),
         tasks: vec!["t1".to_owned()],
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: None,

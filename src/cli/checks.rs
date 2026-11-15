@@ -1,10 +1,10 @@
-use std::collections::BTreeSet;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
+use crate::benchmark::{self, BenchmarkError};
 use crate::journal::Settings;
 use crate::model;
 use crate::workspace::holds_only_harness_files;
@@ -13,16 +13,25 @@ use crate::workspace::holds_only_harness_files;
 pub struct Refused {
     pub option: &'static str,
     pub accepted: &'static str,
+    pub reason: Option<String>,
 }
 
 impl Display for Refused {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{} takes {}", self.option, self.accepted)
+        match &self.reason {
+            Some(reason) => write!(
+                formatter,
+                "{} takes {}: {reason}",
+                self.option, self.accepted
+            ),
+            None => write!(formatter, "{} takes {}", self.option, self.accepted),
+        }
     }
 }
 
 impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
+        let (benchmark, tasks) = benchmark(&self.benchmark)?;
         Ok(Settings {
             progenitor: progenitor(&self.progenitor)?,
             model: self.model.clone(),
@@ -35,7 +44,8 @@ impl StartOptions {
             docker_image: self.docker_image.clone(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
-            tasks: tasks(&self.tasks)?,
+            benchmark,
+            tasks,
             evaluator: program(&self.evaluator, "--evaluator")?,
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
@@ -77,6 +87,7 @@ fn progenitor(given: &Path) -> Result<PathBuf, Refused> {
             option: "--progenitor",
             accepted: "an existing directory that holds only regular files, directories and \
                        symbolic links",
+            reason: None,
         })
 }
 
@@ -87,33 +98,23 @@ fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
         .ok_or(Refused {
             option: "--model-key-file",
             accepted: "a file that holds a key on one line and nothing else",
+            reason: None,
         })
 }
 
-fn tasks(given: &Path) -> Result<Vec<String>, Refused> {
-    fs::read_to_string(given)
+fn benchmark(given: &Path) -> Result<(PathBuf, Vec<String>), Refused> {
+    fs::canonicalize(given)
         .ok()
-        .map(|text| text.lines().map(str::to_owned).collect::<Vec<_>>())
-        .filter(|ids| {
-            !ids.is_empty()
-                && ids.iter().all(|id| is_task_id(id))
-                && ids.iter().collect::<BTreeSet<_>>().len() == ids.len()
+        .filter(|directory| directory.to_str().is_some())
+        .ok_or(BenchmarkError::NotADirectory)
+        .and_then(|directory| benchmark::tasks(&directory).map(|tasks| (directory, tasks)))
+        .map_err(|error| Refused {
+            option: "--benchmark",
+            accepted: "the directory of a benchmark, in which every directory is a task that \
+                       holds a file of text named statement, a directory named files and an \
+                       executable file named check",
+            reason: Some(error.to_string()),
         })
-        .ok_or(Refused {
-            option: "--tasks",
-            accepted: "a file of task ids, one per line and at least one, each made of letters, \
-                       digits, dots, underscores and hyphens, none of them . or .. and none \
-                       repeated",
-        })
-}
-
-fn is_task_id(id: &str) -> bool {
-    !id.is_empty()
-        && id != "."
-        && id != ".."
-        && id
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
 }
 
 fn program(given: &Path, option: &'static str) -> Result<PathBuf, Refused> {
@@ -128,5 +129,6 @@ fn program(given: &Path, option: &'static str) -> Result<PathBuf, Refused> {
         .ok_or(Refused {
             option,
             accepted: "an executable file",
+            reason: None,
         })
 }

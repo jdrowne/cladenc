@@ -9,7 +9,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--tasks", test_inputs::task_file(directory, &["t1"])),
+        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
         (

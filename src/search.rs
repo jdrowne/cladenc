@@ -40,6 +40,11 @@ pub fn search(
 ) -> Result<Found, SearchError> {
     let key = settings.model_key().map_err(SearchError::Key)?;
     let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
+        .and_then(|workspace| {
+            workspace
+                .copy_benchmark(&settings.benchmark, &settings.tasks)
+                .map(|()| workspace)
+        })
         .map_err(SearchError::Io)
         .and_then(|workspace| {
             Journal::open(run_directory)

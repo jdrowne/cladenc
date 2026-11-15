@@ -11,7 +11,7 @@ fn start(directory: &Path, evaluator: &str) -> Command {
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--tasks", test_inputs::task_file(directory, &["t1"])),
+        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
         ("--evaluator", test_inputs::sample("e2e", evaluator)),

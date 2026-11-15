@@ -6,7 +6,7 @@ const OPTIONS: [(&str, &str); 16] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--tasks", "/tasks"),
+    ("--benchmark", "/benchmark"),
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--evaluator", "/evaluator"),
@@ -67,9 +67,9 @@ fn leaving_out_the_address_of_the_model_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_tasks_is_an_error() {
+fn leaving_out_the_benchmark_is_an_error() {
     assert_eq!(
-        refusal_without("--tasks"),
+        refusal_without("--benchmark"),
         ErrorKind::MissingRequiredArgument
     );
 }

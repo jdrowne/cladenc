@@ -9,7 +9,10 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--progenitor", test_inputs::progenitor(directory.path())),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--tasks", test_inputs::task_file(directory.path(), &["t1"])),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory.path(), &["t1"]),
+        ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
         ("--harness-run-command", "exit 0".into()),

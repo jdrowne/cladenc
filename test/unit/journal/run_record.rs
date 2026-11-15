@@ -15,6 +15,7 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
+        benchmark: PathBuf::from("/abs/benchmark"),
         tasks: vec!["t1".to_owned(), "t2".to_owned()],
         docker_image: "image".to_owned(),
         harness_build_command: None,
@@ -64,8 +65,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_4() {
-    assert_eq!(journal::FORMAT, 4);
+fn the_format_of_the_journal_is_5() {
+    assert_eq!(journal::FORMAT, 5);
 }
 
 #[test]
@@ -73,11 +74,11 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":4,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":5,"progenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
-            r#""tasks":["t1","t2"],"#,
+            r#""benchmark":"/abs/benchmark","tasks":["t1","t2"],"#,
             r#""evaluator":"/abs/evaluate","budget":800,"#,
             r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"workers":8,"#,
             r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#

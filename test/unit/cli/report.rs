@@ -42,6 +42,7 @@ fn reported(json: bool) -> (Ran, String) {
                 model: "a-model".to_owned(),
                 model_url: "http://models.example/v1".to_owned(),
                 model_key_file: None,
+                benchmark: PathBuf::from("/abs/benchmark"),
                 tasks: vec!["t1".to_owned()],
                 docker_image: "image".to_owned(),
                 harness_build_command: None,

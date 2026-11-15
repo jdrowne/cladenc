@@ -82,12 +82,30 @@ How a build ends decides what is recorded:
 A build that leaves anything but regular files, directories and symbolic
 links has failed.
 
+A benchmark is a directory that holds one directory for each task. The name
+of a task's directory is the id of the task, made of letters, digits, dots,
+underscores and hyphens, and the directory holds
+
+  statement  a file of text that says what is to be done
+  files      a directory of the files the work starts from, which may hold
+             none
+  check      an executable file, the program that says by its exit status
+             whether the work passes
+
+and may hold more, such as tests that the check runs. A file that is in the
+benchmark and in no task is left alone. A benchmark that holds no task is
+refused, and so is one with a task that lacks one of the three. The tasks
+are copied into benchmark in the run directory when a search is started, so
+the search keeps the tasks it started with, and `cladenc resume` does not
+read the directory that --benchmark named.
+
 The evaluator is run once for each evaluation, as
 
     EVALUATOR <harness> <task> <output>
 
   <harness>  a copy of the harness to try
-  <task>     the id of the task, a line of the task file
+  <task>     the id of the task, the name of its directory in the
+             benchmark
   <output>   an empty directory for anything worth keeping, which is
              also the working directory
 

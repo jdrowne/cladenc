@@ -125,6 +125,42 @@ fn the_long_help_of_start_says_what_each_way_the_evaluator_ends_means() {
 }
 
 #[test]
+fn the_short_help_of_start_names_the_flag_that_names_the_benchmark() {
+    assert!(help_of_start(false).contains("--benchmark <DIR>"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_benchmark_holds_a_directory_for_each_task() {
+    assert!(
+        help_of_start(true)
+            .contains("A benchmark is a directory that holds one directory for each task.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
+    let help = help_of_start(true);
+    let held = [
+        "  statement  a file of text that says what is to be done\n",
+        "  files      a directory of the files the work starts from",
+        "  check      an executable file, the program that says by its exit status\n",
+    ];
+    assert!(held.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_run_directory() {
+    assert!(help_of_start(true).contains("are copied into benchmark in the run directory when a"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_id_of_a_task_is_the_name_of_its_directory() {
+    assert!(help_of_start(true).contains(
+        "  <task>     the id of the task, the name of its directory in the\n             benchmark\n"
+    ));
+}
+
+#[test]
 fn the_short_help_of_start_does_not_show_how_a_harness_is_started() {
     assert!(!help_of_start(false).contains("sh -c <COMMAND>"));
 }

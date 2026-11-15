@@ -17,6 +17,7 @@ pub struct Settings {
     pub docker_image: String,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
+    pub benchmark: PathBuf,
     pub tasks: Vec<String>,
     pub evaluator: PathBuf,
     pub budget: u64,

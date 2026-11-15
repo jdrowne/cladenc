@@ -43,11 +43,29 @@ pub fn progenitor(directory: &Path) -> PathBuf {
     progenitor
 }
 
-pub fn task_file(directory: &Path, tasks: &[&str]) -> PathBuf {
-    let task_file = directory.join("tasks.txt");
-    let lines: String = tasks.iter().map(|task| format!("{task}\n")).collect();
-    fs::write(&task_file, lines).expect("the task file can be written");
-    task_file
+pub fn benchmark(directory: &Path, tasks: &[&str]) -> PathBuf {
+    let benchmark = directory.join("benchmark");
+    fs::create_dir_all(&benchmark).expect("the benchmark can be made");
+    for id in tasks {
+        task(&benchmark, id);
+    }
+    benchmark
+}
+
+pub fn task(benchmark: &Path, id: &str) -> PathBuf {
+    let task = benchmark.join(id);
+    let check = task.join("check");
+    fs::create_dir_all(task.join("files")).expect("the task can be made");
+    fs::write(
+        task.join("statement"),
+        format!("Finish the work of {id}.\n"),
+    )
+    .expect("the statement can be written");
+    fs::write(task.join("files/work.txt"), "to do\n").expect("the file can be written");
+    fs::write(&check, "#!/bin/sh\ngrep -q done work.txt\n").expect("the check can be written");
+    fs::set_permissions(&check, fs::Permissions::from_mode(0o750))
+        .expect("the check can be given its permission bits");
+    task
 }
 
 pub fn sample(tier: &str, name: &str) -> PathBuf {

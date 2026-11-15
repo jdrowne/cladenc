@@ -41,6 +41,12 @@ pub enum Command {
 pub struct StartOptions {
     #[arg(
         long,
+        value_name = "DIR",
+        help = "The directory of the benchmark, which holds a directory for each task"
+    )]
+    pub benchmark: PathBuf,
+    #[arg(
+        long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The number of evaluations to start"
@@ -143,8 +149,6 @@ pub struct StartOptions {
     pub run_dir: PathBuf,
     #[arg(long, value_name = "INTEGER", help = "The seed of every random draw")]
     pub seed: u64,
-    #[arg(long, value_name = "FILE", help = "The task ids, one per line")]
-    pub tasks: PathBuf,
     #[arg(
         long,
         value_name = "COUNT",

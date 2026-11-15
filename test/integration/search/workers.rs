@@ -11,6 +11,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
+        benchmark: test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4", "t5"]),
         tasks: (1..=5).map(|number| format!("t{number}")).collect(),
         docker_image: test_inputs::IMAGE.to_owned(),
         harness_build_command: None,

@@ -62,6 +62,7 @@ The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, o
 
 ```text
 cladenc start \
+  --benchmark <DIR> \
   --budget <COUNT> \
   --confidence <PERCENT> \
   --docker-image <IMAGE> \
@@ -79,12 +80,12 @@ cladenc start \
   --quiet \
   --run-dir <DIR> \
   --seed <INTEGER> \
-  --tasks <FILE> \
   --workers <COUNT>
 ```
 
 | Flag | Required | Description |
 | --- | --- | --- |
+| `--benchmark <DIR>` | Required | The directory of the benchmark, which holds a directory for each task. `cladenc` fetches no benchmark: the tasks are read from this directory and copied into the run directory. |
 | `--budget <COUNT>` | Required | The number of evaluations to start. |
 | `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
 | `--docker-image <IMAGE>` | Required | The Docker image every container is started from. |
@@ -102,7 +103,28 @@ cladenc start \
 | `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 | `--seed <INTEGER>` | Required | The seed of every random draw. |
-| `--tasks <FILE>` | Required | A file of task ids, one on each line. |
 | `--workers <COUNT>` | Required | The most jobs running at once. |
+
+A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names the whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
+
+```text
+parsing/
+  add-a-flag/
+    check
+    files/
+    statement
+  fix-the-parser/
+    check
+    files/
+    statement
+  rename-a-module/
+    check
+    files/
+    statement
+```
+
+The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `statement` is a file of text that says what is to be done, `files` is a directory of the files the work starts from, and `check` is an executable file: the program that says by its exit status whether the work passes. The directory of a task may hold more, such as tests that the check runs.
+
+`cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which task. It copies the tasks into `benchmark` in the run directory, so a search keeps the tasks it started with, and `cladenc resume` does not read the directory that `--benchmark` named.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.
