@@ -102,20 +102,9 @@ jobs:
       - name: assert-no-linter-config-files
         run: >-
           assert-no-linter-config-files
-          --linters markdownlint,yamllint
+          --linters clippy,markdownlint,rustc,rustdoc,rustfmt,yamllint
           --verbose
           ${{ github.workspace }}
-      - name: Assert that no file configures a linter or formatter of Rust
-        run: |
-          names='(^|/)\.?(rustfmt|clippy)\.toml$'
-          found="$(git ls-files | grep -E "$names" || true)"
-          if [ -n "$found" ]; then
-            said='configures a linter or a formatter of Rust'
-            for file in $found; do
-              echo "::error file=$file::$file $said"
-            done
-            exit 1
-          fi
   assert-no-oversized-source-files:
     runs-on: ubuntu-latest
     steps:

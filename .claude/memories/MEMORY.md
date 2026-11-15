@@ -26,3 +26,5 @@
 - [A commit closes at least one issue](a-commit-closes-at-least-one-issue.md) — one or more, a Closes #N line each; only a failed run's fix and a change the user asks for directly close none
 - [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — when a run of the session's own push is found to have failed, the fix is the next commit pushed
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
+- [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and progenitor for the one a search starts from
+- [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined

@@ -1,16 +1,22 @@
 ---
 name: cladenc-takes-a-progenitor-and-a-model
-description: "The user's design is that a search is given two things, the progenitor harness's directory and a model, and cladenc does the self-improvement itself; the code of 2026-11-14 asks for a procreator and an evaluator program instead"
+description: "The user's design is that a search is given two things, a directory holding the progenitor harness's source code and a model, and cladenc does the self-improvement itself; the code of 2026-11-14 asks for a procreator and an evaluator program instead"
 metadata:
   node_type: memory
   type: project
   originSessionId: a00ea0c7-d6bd-4711-a4cb-3f7fb2827078
-  modified: 2026-11-15T04:17:51.702Z
+  modified: 2026-11-15T05:32:13.055Z
 ---
 
 # cladenc takes a progenitor and a model
 
-The user's design for `cladenc`: it does recursive self-improvement over coding harnesses after the HGM paper, and a person gives it two things to do so, a directory holding the copy of the progenitor harness and a model.
+The user's design for `cladenc`: it does recursive self-improvement over coding harnesses after the HGM paper, and a person gives it two things to do so, a directory holding the source code of the progenitor harness and a model.
+
+The directory holds the harness's source code, not the harness. The user corrected this on 2026-11-14, when an explanation of issue #28 said the directory held a harness. Say it that way in replies, issues and commits. The same day, still on #28, the user took the view that this calls for Docker: the source code is compiled in a container into a harness that can be run, where it compiles, and is run as it is where it does not. They put it as how things seem to them, not as a final decision.
+
+Issue #28 was decided by the user on 2026-11-15: `cladenc run` gets two new options, one saying how a harness is built, given only where a harness has to be built, and one saying how a harness is run. I had put two heavier designs to them first, a launcher file or a `Dockerfile` required inside the source code, and an image plus a command; they found that overcomplicated and asked for plain options instead. The decision is written into #28's body and its `needs decision` label is removed. The user named the option that says how a harness is run, `--harness-run-command`, in place of the shorter name I had proposed. Mine, not the user's: the name `--harness-build-command`, made to match it, and when each command is run.
+
+Also decided by the user on 2026-11-15: `cladenc` knows about Docker and is what starts the container a harness is built and run in, and Docker is a dependency of the `.deb` package. I had proposed that `cladenc` know nothing of Docker and leave it to the commands a person passes; the user turned that down. The image a container starts from is given in a third option, which the user named `--docker-image` in place of the name I had proposed. Last, the user decided that the source code of every offspring is kept, whether or not it builds, all in one folder, with `cladenc`'s own record saying which built; I had proposed deleting what does not build, and then a separate folder for it. With that, nothing in #28 is left to a person, and its `needs decision` label is off. Still mine and open to the session that does the work: when each command is run, that the source code sits on the machine and is mounted into the container, and that the keep-everything rule also covers an offspring whose making fails some other way. See [[the-simplest-design-is-offered-first]].
 
 The user said this on 2026-11-14 while asking what issue #14 left to decide. They did not recognise a `cladenc` that starts programs its user writes, and the explanation of those programs confused them.
 
