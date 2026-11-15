@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod genealogy;
 pub mod job;
 pub mod journal;

@@ -1,0 +1,212 @@
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
+use std::os::unix::net::UnixListener;
+use std::path::{Path, PathBuf};
+
+use cladenc::cli::{Refused, RunOptions};
+use cladenc::journal::Settings;
+use tempfile::TempDir;
+
+fn program(directory: &Path, name: &str, mode: u32) -> PathBuf {
+    let program = directory.join(name);
+    fs::write(&program, "#!/bin/sh\n").unwrap();
+    fs::set_permissions(&program, fs::Permissions::from_mode(mode)).unwrap();
+    program
+}
+
+fn options(directory: &Path) -> RunOptions {
+    RunOptions {
+        progenitor: test_inputs::progenitor(directory),
+        tasks: test_inputs::task_file(directory, &["t1", "t2"]),
+        expander: program(directory, "expand", 0o755),
+        evaluator: program(directory, "evaluate", 0o755),
+        run_dir: directory.join("run"),
+        budget: 800,
+        genealogy_growth: 0.6,
+        confidence: 99.0,
+        initial_expansions: 5,
+        workers: 8,
+        expansion_timeout: 3600,
+        evaluation_timeout: 1800,
+        seed: 7,
+        quiet: false,
+    }
+}
+
+fn checked(change: impl FnOnce(&TempDir, &mut RunOptions)) -> Result<Settings, Refused> {
+    let directory = test_inputs::temporary_directory();
+    let mut options = options(directory.path());
+    change(&directory, &mut options);
+    options.settings()
+}
+
+fn option_refused(change: impl FnOnce(&TempDir, &mut RunOptions)) -> &'static str {
+    checked(change).unwrap_err().option
+}
+
+fn with_tasks(lines: &'static [&'static str]) -> Result<Settings, Refused> {
+    checked(|directory, options| {
+        options.tasks = test_inputs::task_file(directory.path(), lines);
+    })
+}
+
+#[test]
+fn values_that_fit_their_rows_give_the_settings_of_the_run() {
+    let directory = test_inputs::temporary_directory();
+    let options = options(directory.path());
+    let root = fs::canonicalize(directory.path()).unwrap();
+    assert_eq!(
+        options.settings(),
+        Ok(Settings {
+            progenitor: root.join("progenitor"),
+            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            expander: root.join("expand"),
+            evaluator: root.join("evaluate"),
+            budget: 800,
+            genealogy_growth: 0.6,
+            confidence: 99.0,
+            initial_expansions: 5,
+            workers: 8,
+            expansion_timeout: 3600,
+            evaluation_timeout: 1800,
+            seed: 7,
+        })
+    );
+}
+
+#[test]
+fn a_path_given_from_the_working_directory_is_made_absolute() {
+    let settings = checked(|_, options| options.progenitor = PathBuf::from("src")).unwrap();
+    assert!(settings.progenitor.is_absolute());
+}
+
+#[test]
+fn a_progenitor_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| options.progenitor = directory.path().join("missing")),
+        "--progenitor"
+    );
+}
+
+#[test]
+fn a_progenitor_that_is_a_file_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.progenitor = options.expander.clone()),
+        "--progenitor"
+    );
+}
+
+#[test]
+fn a_progenitor_that_holds_a_socket_is_refused() {
+    let directory = test_inputs::temporary_directory();
+    let options = options(directory.path());
+    let _socket = UnixListener::bind(options.progenitor.join("socket")).unwrap();
+    assert_eq!(options.settings().unwrap_err().option, "--progenitor");
+}
+
+#[test]
+fn a_task_file_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| options.tasks = directory.path().join("missing")),
+        "--tasks"
+    );
+}
+
+#[test]
+fn a_task_file_with_no_line_is_refused() {
+    assert_eq!(with_tasks(&[]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_file_with_a_blank_line_is_refused() {
+    assert_eq!(with_tasks(&["t1", "", "t2"]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_id_with_a_space_is_refused() {
+    assert_eq!(with_tasks(&["task one"]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_id_with_a_slash_is_refused() {
+    assert_eq!(with_tasks(&["tasks/one"]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_id_that_is_a_dot_is_refused() {
+    assert_eq!(with_tasks(&["."]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_id_that_is_two_dots_is_refused() {
+    assert_eq!(with_tasks(&[".."]).unwrap_err().option, "--tasks");
+}
+
+#[test]
+fn a_task_id_that_is_repeated_is_refused() {
+    assert_eq!(
+        with_tasks(&["t1", "t2", "t1"]).unwrap_err().option,
+        "--tasks"
+    );
+}
+
+#[test]
+fn task_ids_of_letters_digits_dots_underscores_and_hyphens_are_accepted() {
+    assert_eq!(
+        with_tasks(&["Task-1.a_b", "...", "2"]).unwrap().tasks,
+        ["Task-1.a_b", "...", "2"]
+    );
+}
+
+#[test]
+fn an_expander_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| options.expander = directory.path().join("missing")),
+        "--expander"
+    );
+}
+
+#[test]
+fn an_expander_that_is_not_executable_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.expander = program(directory.path(), "plain", 0o644);
+        }),
+        "--expander"
+    );
+}
+
+#[test]
+fn an_expander_that_is_a_directory_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.expander = options.progenitor.clone()),
+        "--expander"
+    );
+}
+
+#[test]
+fn an_evaluator_that_does_not_exist_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| options.evaluator = directory.path().join("missing")),
+        "--evaluator"
+    );
+}
+
+#[test]
+fn an_evaluator_that_is_not_executable_is_refused() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.evaluator = program(directory.path(), "plain", 0o644);
+        }),
+        "--evaluator"
+    );
+}
+
+#[test]
+fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
+    let refused = Refused {
+        option: "--expander",
+        accepted: "an executable file",
+    };
+    assert_eq!(refused.to_string(), "--expander takes an executable file");
+}

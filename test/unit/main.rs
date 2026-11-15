@@ -1,3 +1,10 @@
+mod cli {
+    mod checks;
+    mod missing;
+    mod run;
+    mod values;
+}
+
 mod genealogy {
     mod clade;
     mod created;

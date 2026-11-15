@@ -26,6 +26,13 @@ pub fn progenitor(directory: &Path) -> PathBuf {
     progenitor
 }
 
+pub fn task_file(directory: &Path, tasks: &[&str]) -> PathBuf {
+    let task_file = directory.join("tasks.txt");
+    let lines: String = tasks.iter().map(|task| format!("{task}\n")).collect();
+    fs::write(&task_file, lines).expect("the task file can be written");
+    task_file
+}
+
 pub fn sample(tier: &str, name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../test")
