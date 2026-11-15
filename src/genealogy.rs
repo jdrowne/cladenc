@@ -1,17 +1,21 @@
 mod harness;
 
+use serde::{Deserialize, Serialize};
+
 pub use harness::{Harness, HarnessState};
 
 pub type HarnessId = u64;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ExpansionOutcome {
     Created,
     Failed,
     TimedOut,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum EvaluationOutcome {
     Success,
     Failure,

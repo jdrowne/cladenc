@@ -9,6 +9,15 @@ mod genealogy {
     mod tasks;
 }
 
+mod journal {
+    mod lock;
+    mod rebuild;
+    mod records;
+    mod run_record;
+    mod unreadable;
+    mod writing;
+}
+
 mod policy {
     mod best;
     mod evaluation;
