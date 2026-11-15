@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 3c2b70de-42b2-4496-8bfc-c8f6aecc6bad
-  modified: 2026-11-15T00:56:47.155Z
+  modified: 2026-11-15T04:30:53.222Z
 ---
 
 # The work does not wait for CI
@@ -18,5 +18,5 @@ After a push, the session goes straight on with the next work: edits, commits an
 
 - Before a push, run locally what the workflows run on the files the push changes: `yamllint` with the workflow's own rules for a workflow file, `npx --yes markdownlint-cli --dot --disable MD013 --ignore 'test/*/samples/**' -- '**/*.md'` for Markdown, and the `cargo` and `assert-*` checks for code.
 - Push, then take the next work at once. Both workflows cancel their own run for the ref when another push lands, queued or in progress, and that is accepted: the latest push is the one that gets checked.
-- When taking new work, look once at `gh run list --limit 10 --json databaseId,headSha,workflowName,status,conclusion`. A run that completed as a failure is handled per [[a-failed-run-is-fixed-before-other-work]]; a run still queued or cancelled is left alone. No loop and no watch.
-- A watch of a run, should one ever be wanted, goes in the background per [[long-running-commands-in-the-background]], as `gh run watch <id> --exit-status --interval 60`; the user's other repositories found that the default of one poll every 3 seconds trips GitHub's secondary rate limit over a long run.
+- Not waiting is not the same as not looking. Each run the push started is watched to its end in the background, per [[every-run-is-watched]], and the watch holds no work up. Until later on 2026-11-14 this memory had the session look at the runs once, when it took new work, and keep no watch; the user replaced that.
+- A run the watch reports as failed is handled per [[a-failed-run-is-fixed-before-other-work]].

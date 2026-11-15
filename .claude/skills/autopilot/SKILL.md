@@ -39,7 +39,7 @@ The other three:
 
 In a prompt, `<number>` stands for the issue being checked, and `gh api` fills in `{owner}` and `{repo}` from the repository the session runs in.
 
-No reminder tells the session to wait for a run: after a push the work goes straight on, per `.claude/memories/the-work-does-not-wait-for-ci.md`.
+No reminder tells the session to wait for a run: after a push the work goes straight on, per `.claude/memories/the-work-does-not-wait-for-ci.md`, while a background command watches each run the push started, per `.claude/memories/every-run-is-watched.md`.
 
 ## Rules that are memories
 
@@ -57,6 +57,7 @@ Each file is under `.claude/memories/`.
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | After a push the work goes straight on, and no run is waited for. | `the-work-does-not-wait-for-ci.md` |
+| Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
 | A run found to have failed is fixed in the next commit pushed, ahead of other work. | `a-failed-run-is-fixed-before-other-work.md` |
 | After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
 

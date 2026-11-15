@@ -5,12 +5,12 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 3c2b70de-42b2-4496-8bfc-c8f6aecc6bad
-  modified: 2026-11-15T00:57:14.213Z
+  modified: 2026-11-15T04:30:56.115Z
 ---
 
 # Long-running commands in the background
 
-Run every command that can take more than about a minute as a background `Bash` call (`run_in_background: true`) or under `Monitor`, then end the turn and let its notification resume the work. In this repository that covers a `cargo` build or test run that compiles the dependencies, a sweep of `gh` calls over many issues or runs, and a long `grep` or `find` over another of the user's repositories, as well as a watch of a workflow run, should one be wanted, per [[the-work-does-not-wait-for-ci]].
+Run every command that can take more than about a minute as a background `Bash` call (`run_in_background: true`) or under `Monitor`, then end the turn and let its notification resume the work. In this repository that covers a `cargo` build or test run that compiles the dependencies, a sweep of `gh` calls over many issues or runs, and a long `grep` or `find` over another of the user's repositories, as well as the watch of each workflow run, per [[every-run-is-watched]].
 
 **Why:** On 2026-11-14 the user pointed at the memories their other repositories hold on background shells and monitors, and this is the one of them that was missing here. The reason those repositories record: a foreground command holds the turn for as long as it runs, so every scheduled reminder due in that time waits behind it and the user cannot type. A background command frees the turn as soon as it starts.
 
