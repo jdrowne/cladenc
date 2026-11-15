@@ -196,7 +196,7 @@ fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
                 report.table()
             }
         })
-        .map_err(|error| (2, format!("the run directory cannot be used: {error:?}")))
+        .map_err(|error| stopped(SearchError::Unusable(error)))
 }
 
 fn directory(found: Found) -> String {
@@ -208,9 +208,9 @@ fn absolute(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
 }
 
 fn stopped(error: SearchError) -> (u8, String) {
-    match error {
-        SearchError::Io(error) => (2, format!("the run directory cannot be made: {error}")),
-        SearchError::Unusable(error) => (2, format!("the run directory cannot be used: {error:?}")),
-        error => (1, format!("the search stopped before its end: {error:?}")),
-    }
+    let status = match error {
+        SearchError::Io(_) | SearchError::Unusable(_) => 2,
+        SearchError::Journal(_) | SearchError::Asked | SearchError::Job { .. } => 1,
+    };
+    (status, error.to_string())
 }

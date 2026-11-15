@@ -1,7 +1,9 @@
+mod error;
 mod harness;
 
 use serde::{Deserialize, Serialize};
 
+pub use error::GenealogyError;
 pub use harness::{Harness, HarnessState};
 
 pub type HarnessId = u64;
@@ -20,15 +22,6 @@ pub enum EvaluationOutcome {
     Success,
     Failure,
     TimedOut,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum GenealogyError {
-    ParentNotCreated { parent: HarnessId },
-    ChildNotBeingCreated { child: HarnessId },
-    HarnessNotCreated { harness: HarnessId },
-    TaskAlreadyGiven { harness: HarnessId, task: String },
-    EvaluationNotRunning { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

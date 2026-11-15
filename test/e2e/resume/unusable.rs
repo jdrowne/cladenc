@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Output};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -30,25 +30,15 @@ fn run(directory: &Path) -> Command {
     run
 }
 
-fn resume(directory: &Path) -> Option<i32> {
+fn resume(directory: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
         .arg(format!("--run-dir={}", directory.join("run").display()))
-        .arg("--quiet")
         .output()
         .unwrap()
-        .status
-        .code()
 }
 
-#[test]
-fn resume_on_a_missing_run_directory_exits_with_2() {
-    let directory = test_inputs::temporary_directory();
-    assert_eq!(resume(directory.path()), Some(2));
-}
-
-#[test]
-fn a_second_cladenc_on_a_run_directory_in_use_exits_with_2() {
+fn resumed_while_in_use() -> Output {
     let directory = test_inputs::temporary_directory();
     fs::write(directory.path().join("hold"), "").unwrap();
     let mut first = run(directory.path()).spawn().unwrap();
@@ -59,5 +49,24 @@ fn a_second_cladenc_on_a_run_directory_in_use_exits_with_2() {
     let second = resume(directory.path());
     kill(Pid::from_raw(first.id().cast_signed()), Signal::SIGINT).unwrap();
     first.wait().unwrap();
-    assert_eq!(second, Some(2));
+    second
+}
+
+#[test]
+fn resume_on_a_missing_run_directory_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    assert_eq!(resume(directory.path()).status.code(), Some(2));
+}
+
+#[test]
+fn a_second_cladenc_on_a_run_directory_in_use_exits_with_2() {
+    assert_eq!(resumed_while_in_use().status.code(), Some(2));
+}
+
+#[test]
+fn a_second_cladenc_on_a_run_directory_in_use_says_that_another_is_using_it() {
+    assert_eq!(
+        String::from_utf8(resumed_while_in_use().stderr).unwrap(),
+        "cladenc: the run directory cannot be used: another cladenc is using it\n"
+    );
 }

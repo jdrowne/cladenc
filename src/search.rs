@@ -1,7 +1,8 @@
+mod error;
 mod progress;
 mod worker;
 
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -9,21 +10,13 @@ use std::thread;
 use std::time::Duration;
 
 use crate::genealogy::HarnessId;
-use crate::job::JobError;
-use crate::journal::{self, Journal, JournalError, Record, Settings, State};
+use crate::journal::{self, Journal, Record, Settings, State};
 use crate::workspace::Workspace;
 
+pub use error::SearchError;
 use progress::Progress;
 
 const WAIT: Duration = Duration::from_millis(100);
-
-#[derive(Debug)]
-pub enum SearchError {
-    Io(io::Error),
-    Unusable(JournalError),
-    Journal(JournalError),
-    Stopped(Option<JobError>),
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Found {

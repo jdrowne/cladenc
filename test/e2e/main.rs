@@ -12,6 +12,7 @@ mod resume {
 
 mod run {
     mod finished;
+    mod reasons;
     mod refused;
     mod signals;
     mod stopped;

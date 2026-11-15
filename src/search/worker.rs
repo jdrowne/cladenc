@@ -6,6 +6,7 @@ use crate::journal::Started;
 pub(super) enum Ended {
     Expansion {
         child: HarnessId,
+        parent: HarnessId,
         result: Result<ExpansionOutcome, JobError>,
     },
     Evaluation {
@@ -34,7 +35,11 @@ pub(super) fn carry_out(shared: &Shared<'_>, job: Started, again: bool) -> Ended
                     &shared.halt,
                 )
             });
-            Ended::Expansion { child, result }
+            Ended::Expansion {
+                child,
+                parent,
+                result,
+            }
         }
         Started::Evaluation { harness, task } => {
             let cleared = if again {

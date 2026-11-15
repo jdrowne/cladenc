@@ -65,7 +65,10 @@ fn journal_of(searches: &Searches, search: &str) -> String {
 fn an_evaluator_that_exits_with_2_at_a_task_stops_the_search_before_its_end() {
     assert!(matches!(
         stopped_at("t3", 0).stopped,
-        Err(SearchError::Stopped(Some(JobError::Exit(2))))
+        Err(SearchError::Job {
+            error: JobError::Exit(2),
+            ..
+        })
     ));
 }
 
@@ -82,7 +85,10 @@ fn a_search_an_evaluator_stopped_continues_to_the_journal_an_unbroken_search_wri
 fn an_expander_that_exits_with_2_at_an_initial_expansion_stops_the_search_before_its_end() {
     assert!(matches!(
         stopped_at("expansion-2", 0).stopped,
-        Err(SearchError::Stopped(Some(JobError::Exit(2))))
+        Err(SearchError::Job {
+            error: JobError::Exit(2),
+            ..
+        })
     ));
 }
 
@@ -99,7 +105,10 @@ fn a_search_stopped_during_its_initial_expansions_continues_to_the_same_journal_
 fn a_search_resumed_while_its_program_still_fails_stops_again() {
     assert!(matches!(
         stopped_at("t3", 1).stopped,
-        Err(SearchError::Stopped(Some(JobError::Exit(2))))
+        Err(SearchError::Job {
+            error: JobError::Exit(2),
+            ..
+        })
     ));
 }
 

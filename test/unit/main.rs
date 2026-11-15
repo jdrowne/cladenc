@@ -16,6 +16,11 @@ mod genealogy {
     mod refused_evaluation;
     mod refused_expansion;
     mod tasks;
+    mod worded;
+}
+
+mod job {
+    mod worded;
 }
 
 mod journal {
@@ -25,6 +30,7 @@ mod journal {
     mod records;
     mod run_record;
     mod unreadable;
+    mod worded;
     mod writing;
 }
 
@@ -44,4 +50,8 @@ mod report {
     mod reading;
     mod table;
     mod values;
+}
+
+mod search {
+    mod worded;
 }

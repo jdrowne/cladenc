@@ -1,3 +1,4 @@
+use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::path::Path;
 
@@ -8,6 +9,21 @@ use crate::genealogy::{Genealogy, HarnessId};
 pub enum Started {
     Expansion { child: HarnessId, parent: HarnessId },
     Evaluation { harness: HarnessId, task: String },
+}
+
+impl Display for Started {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Expansion { child, parent } => write!(
+                formatter,
+                "the expansion of harness {parent} into harness {child}"
+            ),
+            Self::Evaluation { harness, task } => write!(
+                formatter,
+                "the evaluation of harness {harness} on task {task}"
+            ),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

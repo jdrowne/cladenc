@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::job::JobError;
-use cladenc::journal::{self, Settings};
+use cladenc::journal::{self, Settings, Started};
 use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
@@ -58,7 +58,10 @@ fn a_program_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
     let (_directory, found) = stopped_by_an_evaluator_that_exits_with_2();
     assert!(matches!(
         found,
-        Err(SearchError::Stopped(Some(JobError::Exit(2))))
+        Err(SearchError::Job {
+            error: JobError::Exit(2),
+            ..
+        })
     ));
 }
 
@@ -71,7 +74,41 @@ fn an_expander_that_exits_with_a_status_other_than_0_or_1_stops_the_search() {
     let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
     assert!(matches!(
         found,
-        Err(SearchError::Stopped(Some(JobError::Exit(2))))
+        Err(SearchError::Job {
+            error: JobError::Exit(2),
+            ..
+        })
+    ));
+}
+
+#[test]
+fn a_search_an_evaluator_stopped_names_the_harness_and_the_task_of_that_evaluation() {
+    let (_directory, found) = stopped_by_an_evaluator_that_exits_with_2();
+    assert!(matches!(
+        found,
+        Err(SearchError::Job {
+            job: Started::Evaluation { harness: 0, task },
+            ..
+        }) if task == "t1"
+    ));
+}
+
+#[test]
+fn a_search_an_expander_stopped_names_the_parent_and_the_child_of_that_expansion() {
+    let directory = test_inputs::temporary_directory();
+    let mut settings = settings(directory.path(), "exit-2.sh", "exit-0.sh");
+    settings.initial_expansions = 1;
+    let run_directory = directory.path().join("run");
+    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
+    assert!(matches!(
+        found,
+        Err(SearchError::Job {
+            job: Started::Expansion {
+                child: 1,
+                parent: 0
+            },
+            ..
+        })
     ));
 }
 
@@ -93,7 +130,7 @@ fn a_stopped_search_leaves_no_search_finished_record() {
 #[test]
 fn setting_the_stop_flag_stops_the_search() {
     let (_directory, found) = stopped_by_its_flag();
-    assert!(matches!(found, Err(SearchError::Stopped(None))));
+    assert!(matches!(found, Err(SearchError::Asked)));
 }
 
 #[test]

@@ -1,5 +1,7 @@
 mod program;
 
+use std::error::Error;
+use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::path::Path;
 use std::process::Command;
@@ -17,6 +19,19 @@ pub enum JobError {
     Exit(i32),
     Signal(i32),
 }
+
+impl Display for JobError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Stopped => write!(formatter, "was stopped"),
+            Self::Io(error) => write!(formatter, "could not be carried out: {error}"),
+            Self::Exit(status) => write!(formatter, "exited with status {status}"),
+            Self::Signal(signal) => write!(formatter, "was ended by signal {signal}"),
+        }
+    }
+}
+
+impl Error for JobError {}
 
 pub fn run_expansion(
     workspace: &Workspace,

@@ -114,6 +114,7 @@ impl<'a> Progress<'a> {
             Ended::Expansion {
                 child,
                 result: Ok(outcome),
+                ..
             } => {
                 self.genealogy
                     .end_expansion(child, outcome)
@@ -143,11 +144,21 @@ impl<'a> Progress<'a> {
                 ..
             } => {}
             Ended::Expansion {
-                result: Err(error), ..
-            }
-            | Ended::Evaluation {
-                result: Err(error), ..
-            } => self.fail(SearchError::Stopped(Some(error))),
+                child,
+                parent,
+                result: Err(error),
+            } => self.fail(SearchError::Job {
+                job: Started::Expansion { child, parent },
+                error,
+            }),
+            Ended::Evaluation {
+                harness,
+                task,
+                result: Err(error),
+            } => self.fail(SearchError::Job {
+                job: Started::Evaluation { harness, task },
+                error,
+            }),
         }
     }
 
@@ -157,7 +168,7 @@ impl<'a> Progress<'a> {
         stop: &AtomicBool,
     ) -> Result<Found, SearchError> {
         if self.halted(stop) {
-            return Err(self.failure.unwrap_or(SearchError::Stopped(None)));
+            return Err(self.failure.unwrap_or(SearchError::Asked));
         }
         let best_harness = self.policy.best_harness(&self.genealogy);
         self.record(&Record::SearchFinished { best_harness });

@@ -1,29 +1,16 @@
+mod error;
 mod record;
 mod state;
 
 use std::fs::{File, OpenOptions};
-use std::io::{self, Read, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use crate::genealogy::{GenealogyError, HarnessId};
-
+pub use error::JournalError;
 pub use record::{Record, Settings};
 pub use state::{Started, State, read};
 
 pub const FORMAT: u32 = 1;
-
-#[derive(Debug)]
-pub enum JournalError {
-    Io(io::Error),
-    Locked,
-    NotARecord { line: usize },
-    FirstRecordNotRun,
-    UnknownFormat { format: u32 },
-    RunRecordRepeated { line: usize },
-    Refused { line: usize, error: GenealogyError },
-    WrongChild { line: usize, child: HarnessId },
-    AfterSearchFinished { line: usize },
-}
 
 #[derive(Debug)]
 pub struct Journal {

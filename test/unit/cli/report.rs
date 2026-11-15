@@ -153,6 +153,14 @@ fn a_run_directory_that_does_not_exist_is_reported_on_standard_error() {
 }
 
 #[test]
+fn a_run_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
+    assert_eq!(
+        ran(missing(), false).errors,
+        "cladenc: the run directory cannot be used: No such file or directory (os error 2)\n"
+    );
+}
+
+#[test]
 fn a_run_directory_that_does_not_exist_prints_nothing_on_standard_output() {
     assert_eq!(ran(missing(), false).output, "");
 }
