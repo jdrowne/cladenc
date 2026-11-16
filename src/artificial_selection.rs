@@ -11,7 +11,7 @@ pub use best::lower_bound;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Action {
     Procreation { parent: HarnessId },
-    Evaluation { harness: HarnessId, task: String },
+    Assessment { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,11 +57,11 @@ impl ArtificialSelection {
             .iter()
             .filter(|harness| !harness.tasks_not_given(&self.tasks).is_empty())
             .map(|harness| (*harness, harness.successes(), harness.failures()));
-        let evaluated = largest_draw(&mut generator, focus, with_a_task_left)?;
-        let left = evaluated.tasks_not_given(&self.tasks);
+        let assessed = largest_draw(&mut generator, focus, with_a_task_left)?;
+        let left = assessed.tasks_not_given(&self.tasks);
         let task = left[generator.random_range(0..left.len())].to_owned();
-        Some(Action::Evaluation {
-            harness: evaluated.id(),
+        Some(Action::Assessment {
+            harness: assessed.id(),
             task,
         })
     }

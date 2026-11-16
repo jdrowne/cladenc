@@ -7,7 +7,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
@@ -180,34 +180,34 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 }
 
 #[test]
-fn a_harness_can_read_the_ended_evaluations_of_its_parent_and_none_still_running() {
+fn a_harness_can_read_the_ended_assessments_of_its_parent_and_none_still_running() {
     let (directory, workspace) = made_at("run");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    workspace.start_evaluation(0, "benchmark/t1").unwrap();
+    workspace.start_assessment(0, "benchmark/t1").unwrap();
     workspace
-        .end_evaluation(0, "benchmark/t1", EvaluationOutcome::Failure)
+        .end_assessment(0, "benchmark/t1", AssessmentOutcome::Failure)
         .unwrap();
-    workspace.start_evaluation(0, "benchmark/t2").unwrap();
+    workspace.start_assessment(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /evaluations /evaluations/benchmark > evidence",
+        "ls /assessments /assessments/benchmark > evidence",
         &workspace,
         0,
         30,
     );
     assert_eq!(
         fs::read_to_string(workspace.harness(1).join("evidence")).unwrap(),
-        "/evaluations:\nbenchmark\n\n/evaluations/benchmark:\nt1\n"
+        "/assessments:\nbenchmark\n\n/assessments/benchmark:\nt1\n"
     );
 }
 
 #[test]
-fn a_harness_cannot_write_into_the_evaluations_of_its_parent() {
-    let (_directory, workspace, _result) = procreated("touch /evaluations/written");
-    assert!(!workspace.evaluations(0).join("written").exists());
+fn a_harness_cannot_write_into_the_assessments_of_its_parent() {
+    let (_directory, workspace, _result) = procreated("touch /assessments/written");
+    assert!(!workspace.assessments(0).join("written").exists());
 }
 
 #[test]
@@ -246,9 +246,9 @@ fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_a_directory_for_the_evaluations_of_the_child() {
+fn a_procreation_that_created_its_child_leaves_a_directory_for_the_assessments_of_the_child() {
     let (_directory, workspace, _result) = procreated("exit 0");
-    assert!(workspace.evaluations(1).is_dir());
+    assert!(workspace.assessments(1).is_dir());
 }
 
 #[test]

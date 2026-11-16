@@ -24,7 +24,7 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--evaluation-timeout", "60".into()),
+        ("--assessment-timeout", "60".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     [env!("CARGO_BIN_EXE_cladenc").to_owned(), "start".to_owned()]
@@ -46,7 +46,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .spawn()
         .unwrap();
     let run = directory.path().join("run");
-    let work = run.join("running/evaluation-0-benchmark+t1/work");
+    let work = run.join("running/assessment-0-benchmark+t1/work");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&work.join("id")));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGHUP).unwrap();
     fs::remove_file(run.join("benchmarks/benchmark/t1/files/hold")).unwrap();

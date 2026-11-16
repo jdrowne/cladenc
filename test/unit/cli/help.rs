@@ -359,7 +359,7 @@ fn the_short_help_of_start_names_the_option_that_builds_a_harness() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_the_harness_of_an_evaluation_is_given_of_its_task() {
+fn the_long_help_of_start_says_what_the_harness_of_an_assessment_is_given_of_its_task() {
     assert!(help_of_start(true).contains(
         "/work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds\nthe \
          statement of the task."
@@ -388,11 +388,11 @@ fn the_long_help_of_start_names_what_a_check_is_given() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_each_way_an_evaluation_ends_means() {
+fn the_long_help_of_start_says_what_each_way_an_assessment_ends_means() {
     let help = help_of_start(true);
     let endings = [
-        "  the check exits with status 0    the evaluation succeeded\n",
-        "  the check exits with another     the evaluation failed\n",
+        "  the check exits with status 0    the assessment succeeded\n",
+        "  the check exits with another     the assessment failed\n",
         "  exit status 125 of either step   Docker did not start the container",
         "  the time limit                   the container is removed",
     ];
@@ -400,7 +400,7 @@ fn the_long_help_of_start_says_what_each_way_an_evaluation_ends_means() {
 }
 
 #[test]
-fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_evaluation() {
+fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_assessment() {
     let help = help_of_start(true);
     let kept = [
         "  outcome    one word: success, failure or timed_out\n",
@@ -491,7 +491,7 @@ fn the_long_help_of_start_says_that_two_benchmarks_of_the_same_name_are_refused(
 }
 
 #[test]
-fn the_long_help_of_start_says_where_the_directory_of_an_evaluation_is() {
+fn the_long_help_of_start_says_where_the_directory_of_an_assessment_is() {
     assert!(help_of_start(true).contains(
         "in a directory\nnamed after the harness, in it one named after the benchmark, and in \
          that\none named after the task, which holds"
@@ -499,10 +499,10 @@ fn the_long_help_of_start_says_where_the_directory_of_an_evaluation_is() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_procreation_finds_its_evaluations_by_benchmark() {
+fn the_long_help_of_start_says_that_a_procreation_finds_its_assessments_by_benchmark() {
     assert!(help_of_start(true).contains(
         "one\ndirectory for each benchmark, and in it one for each task, holding what \
-         the\nevaluation of that task kept."
+         the\nassessment of that task kept."
     ));
 }
 

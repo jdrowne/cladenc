@@ -19,7 +19,7 @@ pub enum ProcreationOutcome {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum EvaluationOutcome {
+pub enum AssessmentOutcome {
     Success,
     Failure,
     TimedOut,
@@ -116,15 +116,15 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn start_evaluation(
+    pub fn start_assessment(
         &mut self,
         harness: HarnessId,
         task: &str,
     ) -> Result<(), GenealogyError> {
-        let evaluated = self
+        let assessed = self
             .harness_in_state(harness, HarnessState::Created)
             .ok_or(GenealogyError::HarnessNotCreated { harness })?;
-        if !evaluated.give(task) {
+        if !assessed.give(task) {
             return Err(GenealogyError::TaskAlreadyGiven {
                 harness,
                 task: task.to_owned(),
@@ -134,17 +134,17 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn end_evaluation(
+    pub fn end_assessment(
         &mut self,
         harness: HarnessId,
         task: &str,
-        outcome: EvaluationOutcome,
+        outcome: AssessmentOutcome,
     ) -> Result<(), GenealogyError> {
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|evaluated| evaluated.finish(task, outcome));
+            .is_some_and(|assessed| assessed.finish(task, outcome));
         if !finished {
-            return Err(GenealogyError::EvaluationNotRunning {
+            return Err(GenealogyError::AssessmentNotRunning {
                 harness,
                 task: task.to_owned(),
             });

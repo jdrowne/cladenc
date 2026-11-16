@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -26,7 +26,7 @@ fn settings() -> Settings {
         initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        evaluation_timeout: 60,
+        assessment_timeout: 60,
         seed: 7,
     }
 }
@@ -34,9 +34,9 @@ fn settings() -> Settings {
 #[test]
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_evaluation(0, "t1").unwrap();
+    genealogy.start_assessment(0, "t1").unwrap();
     genealogy
-        .end_evaluation(0, "t1", EvaluationOutcome::Success)
+        .end_assessment(0, "t1", AssessmentOutcome::Success)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
     assert_eq!(

@@ -27,7 +27,7 @@ fn ran() -> (TempDir, Output) {
         ("--initial-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--evaluation-timeout", "30".into()),
+        ("--assessment-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -38,8 +38,8 @@ fn ran() -> (TempDir, Output) {
     (directory, output)
 }
 
-fn outcome_of(directory: &TempDir, evaluation: &str) -> String {
-    let kept = directory.path().join("run/evaluations").join(evaluation);
+fn outcome_of(directory: &TempDir, assessment: &str) -> String {
+    let kept = directory.path().join("run/assessments").join(assessment);
     fs::read_to_string(kept.join("outcome")).unwrap()
 }
 
@@ -93,13 +93,13 @@ fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
     let (directory, _output) = ran();
     assert_eq!(
         ["benchmark", "refactoring"]
-            .map(|name| names_in(&directory.path().join("run/evaluations/1").join(name))),
+            .map(|name| names_in(&directory.path().join("run/assessments/1").join(name))),
         [vec!["t1", "t2"], vec!["t1"]]
     );
 }
 
 #[test]
-fn two_tasks_of_the_same_id_in_two_benchmarks_are_evaluated_apart() {
+fn two_tasks_of_the_same_id_in_two_benchmarks_are_assessed_apart() {
     let (directory, _output) = ran();
     assert_eq!(
         (
@@ -115,6 +115,6 @@ fn the_journal_of_a_run_given_two_benchmarks_names_a_task_by_its_benchmark_and_i
     let (directory, _output) = ran();
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert!(
-        journal.contains(r#"{"record":"evaluation_started","harness":1,"task":"refactoring/t1"}"#)
+        journal.contains(r#"{"record":"assessment_started","harness":1,"task":"refactoring/t1"}"#)
     );
 }

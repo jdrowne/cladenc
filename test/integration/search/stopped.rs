@@ -28,12 +28,12 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        evaluation_timeout: 60,
+        assessment_timeout: 60,
         seed: 7,
     }
 }
 
-fn stopped_at_its_first_evaluation() -> (TempDir, Result<Found, SearchError>) {
+fn stopped_at_its_first_assessment() -> (TempDir, Result<Found, SearchError>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
     let run_directory = directory.path().join("run");
@@ -50,7 +50,7 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
     let run_directory = directory.path().join("run");
-    let id_file = run_directory.join("running/evaluation-0-benchmark+t1/work/id");
+    let id_file = run_directory.join("running/assessment-0-benchmark+t1/work/id");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
@@ -68,8 +68,8 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_an_evaluation_stops_the_search() {
-    let (_directory, found) = stopped_at_its_first_evaluation();
+fn a_container_that_ends_with_status_125_at_an_assessment_stops_the_search() {
+    let (_directory, found) = stopped_at_its_first_assessment();
     assert!(matches!(
         found,
         Err(SearchError::Action {
@@ -109,12 +109,12 @@ fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_sear
 }
 
 #[test]
-fn a_search_an_evaluation_stopped_names_the_harness_and_the_task_of_that_evaluation() {
-    let (_directory, found) = stopped_at_its_first_evaluation();
+fn a_search_an_assessment_stopped_names_the_harness_and_the_task_of_that_assessment() {
+    let (_directory, found) = stopped_at_its_first_assessment();
     assert!(matches!(
         found,
         Err(SearchError::Action {
-            action: Started::Evaluation { harness: 0, task },
+            action: Started::Assessment { harness: 0, task },
             ..
         }) if task == "benchmark/t1"
     ));
@@ -136,16 +136,16 @@ fn a_search_a_container_stopped_names_the_parent_and_the_child_of_that_procreati
 
 #[test]
 fn a_stopped_search_leaves_a_started_record_and_no_finished_record_for_the_action_that_ran() {
-    let (directory, _found) = stopped_at_its_first_evaluation();
+    let (directory, _found) = stopped_at_its_first_assessment();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#
+        r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 
 #[test]
 fn a_stopped_search_leaves_no_search_finished_record() {
-    let (directory, _found) = stopped_at_its_first_evaluation();
+    let (directory, _found) = stopped_at_its_first_assessment();
     assert!(!journal_of(&directory).contains("search_finished"));
 }
 
@@ -161,7 +161,7 @@ fn a_search_stopped_by_its_flag_leaves_no_container_behind() {
     assert!(test_inputs::container_is_gone(
         &directory
             .path()
-            .join("run/running/evaluation-0-benchmark+t1/work/id")
+            .join("run/running/assessment-0-benchmark+t1/work/id")
     ));
 }
 
@@ -170,7 +170,7 @@ fn a_search_stopped_by_its_flag_writes_no_record_for_the_action_that_was_running
     let (directory, _found, _said) = stopped_by_its_flag();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#
+        r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 

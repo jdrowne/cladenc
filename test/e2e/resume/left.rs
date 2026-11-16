@@ -30,7 +30,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "600".into()),
-        ("--evaluation-timeout", "600".into()),
+        ("--assessment-timeout", "600".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -50,7 +50,7 @@ fn killed_outright() -> Left {
     fs::write(directory.path().join("benchmark/t1/files/hold"), "").unwrap();
     let mut cladenc = start.spawn().unwrap();
     let run = directory.path().join("run");
-    let written = run.join("running/evaluation-0-benchmark+t1/work/id");
+    let written = run.join("running/assessment-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&written));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     cladenc.wait().unwrap();

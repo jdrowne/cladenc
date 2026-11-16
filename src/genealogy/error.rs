@@ -10,7 +10,7 @@ pub enum GenealogyError {
     ChildNotBeingCreated { child: HarnessId },
     HarnessNotCreated { harness: HarnessId },
     TaskAlreadyGiven { harness: HarnessId, task: String },
-    EvaluationNotRunning { harness: HarnessId, task: String },
+    AssessmentNotRunning { harness: HarnessId, task: String },
 }
 
 impl Display for GenealogyError {
@@ -28,15 +28,15 @@ impl Display for GenealogyError {
             }
             Self::HarnessNotCreated { harness } => write!(
                 formatter,
-                "harness {harness} cannot be evaluated because it is not a created harness"
+                "harness {harness} cannot be assessed because it is not a created harness"
             ),
             Self::TaskAlreadyGiven { harness, task } => write!(
                 formatter,
                 "harness {harness} has already been given task {task}"
             ),
-            Self::EvaluationNotRunning { harness, task } => write!(
+            Self::AssessmentNotRunning { harness, task } => write!(
                 formatter,
-                "no evaluation of harness {harness} on task {task} is running"
+                "no assessment of harness {harness} on task {task} is running"
             ),
         }
     }

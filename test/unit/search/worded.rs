@@ -107,17 +107,17 @@ fn a_search_whose_progenitor_took_too_long_to_build_says_so() {
 }
 
 #[test]
-fn a_search_an_evaluation_stopped_names_the_harness_and_the_task() {
+fn a_search_an_assessment_stopped_names_the_harness_and_the_task() {
     assert_eq!(
         worded(SearchError::Action {
-            action: Started::Evaluation {
+            action: Started::Assessment {
                 harness: 0,
                 task: "t1".to_owned()
             },
             error: ContainerError::Exit(2)
         }),
         "the search stopped before its end: \
-         the evaluation of harness 0 on task t1 exited with status 2"
+         the assessment of harness 0 on task t1 exited with status 2"
     );
 }
 

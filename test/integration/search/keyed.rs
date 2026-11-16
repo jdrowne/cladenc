@@ -32,7 +32,7 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         initial_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        evaluation_timeout: 30,
+        assessment_timeout: 30,
         seed: 7,
     }
 }

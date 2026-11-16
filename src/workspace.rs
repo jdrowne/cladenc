@@ -5,7 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
 
 pub use copy::{copy_tree, holds_only_harness_files};
 
@@ -26,12 +26,12 @@ impl Workspace {
         fs::create_dir(run_directory)
             .and_then(|()| fs::create_dir(run_directory.join("harnesses")))
             .and_then(|()| fs::create_dir(run_directory.join("procreations")))
-            .and_then(|()| fs::create_dir(run_directory.join("evaluations")))
+            .and_then(|()| fs::create_dir(run_directory.join("assessments")))
             .and_then(|()| fs::create_dir(run_directory.join("running")))
             .and_then(|()| fs::create_dir(run_directory.join("benchmarks")))
             .and_then(|()| fs::canonicalize(progenitor))
             .and_then(|resolved| copy_tree(&resolved, &workspace.harness(0)))
-            .and_then(|()| fs::create_dir(workspace.evaluations(0)))
+            .and_then(|()| fs::create_dir(workspace.assessments(0)))
             .map(|()| workspace)
     }
 
@@ -75,14 +75,14 @@ impl Workspace {
             .join(child.to_string())
     }
 
-    pub fn evaluations(&self, harness: HarnessId) -> PathBuf {
+    pub fn assessments(&self, harness: HarnessId) -> PathBuf {
         self.run_directory
-            .join("evaluations")
+            .join("assessments")
             .join(harness.to_string())
     }
 
-    pub fn evaluation(&self, harness: HarnessId, task: &str) -> PathBuf {
-        self.evaluations(harness).join(task)
+    pub fn assessment(&self, harness: HarnessId, task: &str) -> PathBuf {
+        self.assessments(harness).join(task)
     }
 
     pub fn build(&self, harness: HarnessId) -> PathBuf {
@@ -95,10 +95,10 @@ impl Workspace {
             .join(format!("procreation-{child}"))
     }
 
-    pub fn running_evaluation(&self, harness: HarnessId, task: &str) -> PathBuf {
+    pub fn running_assessment(&self, harness: HarnessId, task: &str) -> PathBuf {
         self.run_directory
             .join("running")
-            .join(format!("evaluation-{harness}-{}", task.replace('/', "+")))
+            .join(format!("assessment-{harness}-{}", task.replace('/', "+")))
     }
 
     pub fn start_procreation(&self, child: HarnessId, parent: HarnessId) -> io::Result<()> {
@@ -113,7 +113,7 @@ impl Workspace {
         let running = self.running_procreation(child);
         fs::rename(running.join("child"), self.harness(child))
             .and_then(|()| match outcome {
-                ProcreationOutcome::Created => fs::create_dir(self.evaluations(child)),
+                ProcreationOutcome::Created => fs::create_dir(self.assessments(child)),
                 ProcreationOutcome::Failed
                 | ProcreationOutcome::BuildFailed
                 | ProcreationOutcome::TimedOut => Ok(()),
@@ -129,10 +129,10 @@ impl Workspace {
             .map(|()| build)
     }
 
-    pub fn start_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
-        let running = self.running_evaluation(harness, task);
+    pub fn start_assessment(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+        let running = self.running_assessment(harness, task);
         let given = self.task(task);
-        let kept = self.evaluation(harness, task);
+        let kept = self.assessment(harness, task);
         fs::create_dir(&running)
             .and_then(|()| fs::create_dir(running.join("check")))
             .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
@@ -141,21 +141,21 @@ impl Workspace {
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
-    pub fn end_evaluation(
+    pub fn end_assessment(
         &self,
         harness: HarnessId,
         task: &str,
-        outcome: EvaluationOutcome,
+        outcome: AssessmentOutcome,
     ) -> io::Result<()> {
-        let running = self.running_evaluation(harness, task);
+        let running = self.running_assessment(harness, task);
         let word = match outcome {
-            EvaluationOutcome::Success => "success\n",
-            EvaluationOutcome::Failure => "failure\n",
-            EvaluationOutcome::TimedOut => "timed_out\n",
+            AssessmentOutcome::Success => "success\n",
+            AssessmentOutcome::Failure => "failure\n",
+            AssessmentOutcome::TimedOut => "timed_out\n",
         };
         fs::remove_dir_all(running.join("harness"))
             .and_then(|()| fs::write(running.join("outcome"), word))
-            .and_then(|()| fs::rename(&running, self.evaluation(harness, task)))
+            .and_then(|()| fs::rename(&running, self.assessment(harness, task)))
     }
 
     pub fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
@@ -163,17 +163,17 @@ impl Workspace {
             self.running_procreation(child),
             self.harness(child),
             self.procreation(child),
-            self.evaluations(child),
+            self.assessments(child),
             self.build(child),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))
     }
 
-    pub fn discard_evaluation(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+    pub fn discard_assessment(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         [
-            self.running_evaluation(harness, task),
-            self.evaluation(harness, task),
+            self.running_assessment(harness, task),
+            self.assessment(harness, task),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))

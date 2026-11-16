@@ -45,6 +45,13 @@ pub enum Command {
 pub struct StartOptions {
     #[arg(
         long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The time limit of one assessment"
+    )]
+    pub assessment_timeout: u64,
+    #[arg(
+        long,
         value_name = "DIR",
         required = true,
         help = "The directory of a benchmark, which holds a directory for each task, given once \
@@ -55,7 +62,7 @@ pub struct StartOptions {
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The number of evaluations to start"
+        help = "The number of assessments to start"
     )]
     pub budget: u64,
     #[arg(
@@ -91,13 +98,6 @@ pub struct StartOptions {
     pub dockerfile: Option<PathBuf>,
     #[arg(
         long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one evaluation"
-    )]
-    pub evaluation_timeout: u64,
-    #[arg(
-        long,
         value_name = "NUMBER",
         value_parser = checks::genealogy_growth,
         help = "How fast the genealogy may grow, from 0 to 1"
@@ -120,7 +120,7 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "Procreations of the progenitor made before the first evaluation"
+        help = "Procreations of the progenitor made before the first assessment"
     )]
     pub initial_procreations: u64,
     #[arg(

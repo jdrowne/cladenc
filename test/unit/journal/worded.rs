@@ -93,13 +93,13 @@ fn a_procreation_is_named_by_its_parent_and_its_child() {
 }
 
 #[test]
-fn an_evaluation_is_named_by_its_harness_and_its_task() {
+fn an_assessment_is_named_by_its_harness_and_its_task() {
     assert_eq!(
-        Started::Evaluation {
+        Started::Assessment {
             harness: 0,
             task: "t1".to_owned()
         }
         .to_string(),
-        "the evaluation of harness 0 on task t1"
+        "the assessment of harness 0 on task t1"
     );
 }

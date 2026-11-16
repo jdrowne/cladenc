@@ -58,7 +58,7 @@ fn reported(json: bool) -> (Ran, String) {
                 initial_procreations: 0,
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
-                evaluation_timeout: 60,
+                assessment_timeout: 60,
                 seed: 7,
             }),
         },

@@ -46,9 +46,9 @@ fn a_new_run_directory_holds_a_copy_of_the_progenitor_as_harness_0() {
 }
 
 #[test]
-fn a_new_run_directory_holds_an_empty_directory_for_the_evaluations_of_harness_0() {
+fn a_new_run_directory_holds_an_empty_directory_for_the_assessments_of_harness_0() {
     let (_directory, run_directory) = made();
-    assert_eq!(entries(run_directory.join("evaluations/0")), 0);
+    assert_eq!(entries(run_directory.join("assessments/0")), 0);
 }
 
 #[test]

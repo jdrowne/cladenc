@@ -26,7 +26,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--evaluation-timeout", "30".into()),
+        ("--assessment-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -49,7 +49,7 @@ fn kept_of_what_docker_said(stopped: &Stopped) -> PathBuf {
     stopped
         .directory
         .path()
-        .join("run/running/evaluation-0-benchmark+t1/stderr")
+        .join("run/running/assessment-0-benchmark+t1/stderr")
 }
 
 fn what_docker_said(stopped: &Stopped) -> String {
@@ -80,7 +80,7 @@ fn a_search_whose_image_the_machine_does_not_hold_stops_at_its_first_container()
     assert_eq!(
         said.lines().last().unwrap_or_default(),
         format!(
-            "cladenc: the search stopped before its end: the evaluation of harness 0 on task \
+            "cladenc: the search stopped before its end: the assessment of harness 0 on task \
              benchmark/t1 could not be carried out: Docker did not start its container, and {} \
              holds what Docker said",
             kept_of_what_docker_said(&stopped).display()

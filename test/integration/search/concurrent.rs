@@ -31,7 +31,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         initial_procreations: 3,
         max_concurrent_containers: 3,
         procreation_timeout: 30,
-        evaluation_timeout: 30,
+        assessment_timeout: 30,
         seed: 7,
     };
     change(&mut settings);
@@ -55,11 +55,11 @@ fn most_running_at_once(records: &[Record]) -> usize {
     let mut most = 0;
     for record in records {
         match record {
-            Record::ProcreationStarted { .. } | Record::EvaluationStarted { .. } => {
+            Record::ProcreationStarted { .. } | Record::AssessmentStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
-            Record::ProcreationFinished { .. } | Record::EvaluationFinished { .. } => running -= 1,
+            Record::ProcreationFinished { .. } | Record::AssessmentFinished { .. } => running -= 1,
             Record::Run { .. } | Record::ProgenitorBuilt | Record::SearchFinished { .. } => {}
         }
     }
@@ -76,12 +76,12 @@ fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finishe
 }
 
 #[test]
-fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_evaluations_as_the_budget() {
+fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_assessments_as_the_budget() {
     let records = records(|_| {});
     assert_eq!(
         count(&records, |record| matches!(
             record,
-            Record::EvaluationStarted { .. }
+            Record::AssessmentStarted { .. }
         )),
         12
     );

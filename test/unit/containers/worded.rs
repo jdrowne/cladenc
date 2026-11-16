@@ -41,15 +41,15 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 }
 
 #[test]
-fn the_instruction_says_where_the_evaluations_are() {
+fn the_instruction_says_where_the_assessments_are() {
     assert!(containers::INSTRUCTION.contains(
-        "/evaluations holds one directory for each benchmark, and in it one directory for each \
+        "/assessments holds one directory for each benchmark, and in it one directory for each \
          task you have been tried on. In the directory of a task, "
     ));
 }
 
 #[test]
-fn the_instruction_says_what_each_evaluation_keeps_of_the_task_and_of_the_harness() {
+fn the_instruction_says_what_each_assessment_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
         "the file named statement says what you were asked to do, the file named outcome reads \
          success, failure or timed_out, the directory named work holds the files of the task as \

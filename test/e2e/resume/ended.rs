@@ -23,7 +23,7 @@ fn ended() -> (TempDir, Output) {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--evaluation-timeout", "30".into()),
+        ("--assessment-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))

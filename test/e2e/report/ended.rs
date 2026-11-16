@@ -24,7 +24,7 @@ fn ended() -> TempDir {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--evaluation-timeout", "30".into()),
+        ("--assessment-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     Command::new(env!("CARGO_BIN_EXE_cladenc"))

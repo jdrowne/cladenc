@@ -90,9 +90,9 @@ line, out of the journal and out of what it prints.
 A procreation is carried out by the harness that procreates. /work holds a
 second copy of its source code, and the instruction asks the harness to
 improve that copy: what the harness leaves in /work is its child.
-/evaluations holds the finished evaluations of the harness, to read: one
+/assessments holds the finished assessments of the harness, to read: one
 directory for each benchmark, and in it one for each task, holding what the
-evaluation of that task kept.
+assessment of that task kept.
 
 How the harness ends decides what is recorded:
 
@@ -117,7 +117,7 @@ with /harness as the working directory, which holds the source code of the
 harness and is what CLADENC_HARNESS names. A build calls no model, and is
 given none of the three variables of the model. What the build makes stays
 there, and is part of every copy made of the harness. The progenitor is
-built before any procreation or evaluation, within the time limit of one
+built before any procreation or assessment, within the time limit of one
 procreation. A child is built as the last step of its procreation, within
 what is left of the time limit of that procreation.
 
@@ -170,7 +170,7 @@ directory named after its benchmark, so the search keeps the tasks it
 started with, and `cladenc resume` does not read the directories that
 --benchmark named.
 
-An evaluation is one harness tried on one task, and cladenc carries it out
+An assessment is one harness tried on one task, and cladenc carries it out
 in two steps. First the harness is started, as it is for a procreation.
 /work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds
 the statement of the task. The harness is given nothing else of the task,
@@ -185,19 +185,19 @@ container of the same image, as
   CLADENC_TASK  /task
 
 A check calls no model, and is given none of the three variables of the
-model. The two steps share the time limit of one evaluation.
+model. The two steps share the time limit of one assessment.
 
-How an evaluation ends decides what is recorded:
+How an assessment ends decides what is recorded:
 
-  the check exits with status 0    the evaluation succeeded
-  the check exits with another     the evaluation failed
+  the check exits with status 0    the assessment succeeded
+  the check exits with another     the assessment failed
   exit status 125 of either step   Docker did not start the container: the
                                    search stops, and `cladenc resume` carries
-                                   out the evaluation again
+                                   out the assessment again
   the time limit                   the container is removed, and the
-                                   evaluation is recorded as timed out
+                                   assessment is recorded as timed out
 
-evaluations in the run directory keeps every evaluation, in a directory
+assessments in the run directory keeps every assessment, in a directory
 named after the harness, in it one named after the benchmark, and in that
 one named after the task, which holds
 

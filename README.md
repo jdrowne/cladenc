@@ -54,7 +54,7 @@ cladenc resume \
 | --- | --- | --- |
 | `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
-`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the search left any running, how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. The shell sends standard error elsewhere, as it does for `cladenc start`: `2>/dev/null` after the command sends it nowhere.
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the search left any running, how far the search had got and each procreation and assessment it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. The shell sends standard error elsewhere, as it does for `cladenc start`: `2>/dev/null` after the command sends it nowhere.
 
 The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a search that stopped again can be continued again.
 
@@ -68,13 +68,13 @@ A `cladenc resume` that is killed outright removes nothing either, and the next 
 
 ```text
 cladenc start \
+  --assessment-timeout <SECONDS> \
   --benchmark <DIR> \
   --budget <COUNT> \
   --confidence <PERCENT> \
   --docker-build-timeout <SECONDS> \
   --docker-image <IMAGE> \
   --dockerfile <FILE> \
-  --evaluation-timeout <SECONDS> \
   --genealogy-growth <NUMBER> \
   --harness-build-command <COMMAND> \
   --harness-run-command <COMMAND> \
@@ -90,17 +90,17 @@ cladenc start \
 
 | Flag | Required | Description |
 | --- | --- | --- |
+| `--assessment-timeout <SECONDS>` | Required | The time limit of one assessment, which is one harness tried on one task. |
 | `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the search. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the run directory. |
-| `--budget <COUNT>` | Required | The number of evaluations to start. |
+| `--budget <COUNT>` | Required | The number of assessments to start. |
 | `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
 | `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
 | `--dockerfile <FILE>` | Not Required | The Dockerfile that `cladenc` builds the image of every container from, in place of `--docker-image`. |
-| `--evaluation-timeout <SECONDS>` | Required | The time limit of one evaluation, which is one harness tried on one task. |
 | `--genealogy-growth <NUMBER>` | Required | How fast the genealogy may grow, from 0 to 1. |
 | `--harness-build-command <COMMAND>` | Not Required | The shell command that builds a harness in a container, where one has to be built. |
 | `--harness-run-command <COMMAND>` | Required | The shell command that runs a harness in a container. |
-| `--initial-procreations <COUNT>` | Required | The number of procreations of the progenitor made before the first evaluation. A procreation is one harness making another. |
+| `--initial-procreations <COUNT>` | Required | The number of procreations of the progenitor made before the first assessment. A procreation is one harness making another. |
 | `--max-concurrent-containers <COUNT>` | Required | The most containers running at once. |
 | `--model <NAME>` | Required | The name of the model the harnesses call, as its server knows it. `cladenc` calls no model itself: it tells each harness the name, the address and the key. |
 | `--model-key-file <FILE>` | Not Required | The file that holds the key the model is called with, on one line, and nothing else. It is given where the server of the model asks for a key. `cladenc resume` reads the file again. |
@@ -139,7 +139,7 @@ The name of a benchmark is the name of its directory, made of letters, digits, d
 
 `cladenc start` copies the tasks into `benchmarks` in the run directory, each into a directory named after its benchmark, so a search keeps the tasks it started with, and `cladenc resume` does not read the directories that `--benchmark` named.
 
-An evaluation is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/work`, the working directory, holds what the harness left, and `/task` holds the directory of the task, to read. A check that exits with status 0 is a success, and one that exits with any other status is a failure. `evaluations` in the run directory keeps what each evaluation left, in a directory named after the harness, the benchmark and the task, as `evaluations/3/parsing/fix-the-parser`.
+An assessment is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/work`, the working directory, holds what the harness left, and `/task` holds the directory of the task, to read. A check that exits with status 0 is a success, and one that exits with any other status is a failure. `assessments` in the run directory keeps what each assessment left, in a directory named after the harness, the benchmark and the task, as `assessments/3/parsing/fix-the-parser`.
 
 Every container of a search is started from one image. `--docker-image` names an image that Docker already holds. `--dockerfile` names a Dockerfile, the text file Docker builds an image from, and `cladenc` builds the image itself, once, when the search is started, within the time limit that `--docker-build-timeout` gives.
 
@@ -151,7 +151,7 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 The build of the image ends itself once its time limit has passed, as a container does, also when `cladenc` was killed outright and is not there to end it. `cladenc` starts `docker build` under `timeout`, with five seconds more than the time limit, so that `cladenc` comes first for as long as it is there. `timeout` is a program the machine has to hold, and on Debian and Ubuntu the package `coreutils` brings it. On a machine that does not hold it no image is built, and `cladenc start` stops with exit status 2.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A procreation or an evaluation that stops the search is said when it happens, and so is the search being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every assessment with how it ended and where what it left is kept, and at the end the best harness. A procreation or an assessment that stops the search is said when it happens, and so is the search being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.
 

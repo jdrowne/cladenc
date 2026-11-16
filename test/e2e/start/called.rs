@@ -31,7 +31,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--initial-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--evaluation-timeout", "30".into()),
+        ("--assessment-timeout", "30".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))
@@ -82,8 +82,8 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("run/harnesses/1").join(file)).unwrap()
 }
 
-fn left_by_the_evaluation(directory: &TempDir, file: &str) -> String {
-    let work = fs::read_dir(directory.path().join("run/evaluations"))
+fn left_by_the_assessment(directory: &TempDir, file: &str) -> String {
+    let work = fs::read_dir(directory.path().join("run/assessments"))
         .unwrap()
         .map(|harness| harness.unwrap().path().join("benchmark/t1/work"))
         .find(|work| work.is_dir())
@@ -110,19 +110,19 @@ fn a_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_harness_of_an_evaluation_is_started_on_the_files_of_the_task() {
+fn the_harness_of_an_assessment_is_started_on_the_files_of_the_task() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_evaluation(&directory, "where"),
+        left_by_the_assessment(&directory, "where"),
         "/harness\n/work\n"
     );
 }
 
 #[test]
-fn the_harness_of_an_evaluation_is_told_the_model_the_address_it_is_served_at_and_its_key() {
+fn the_harness_of_an_assessment_is_told_the_model_the_address_it_is_served_at_and_its_key() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_evaluation(&directory, "model"),
+        left_by_the_assessment(&directory, "model"),
         format!("{TOLD} a-made-up-key\n")
     );
 }
@@ -131,7 +131,7 @@ fn the_harness_of_an_evaluation_is_told_the_model_the_address_it_is_served_at_an
 fn the_check_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_is() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_evaluation(&directory, "where-checked"),
+        left_by_the_assessment(&directory, "where-checked"),
         "/task\n/work\n"
     );
 }
@@ -140,7 +140,7 @@ fn the_check_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_i
 fn the_check_of_a_task_is_told_nothing_of_the_model() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_evaluation(&directory, "model-of-the-check"),
+        left_by_the_assessment(&directory, "model-of-the-check"),
         "none none none\n"
     );
 }
@@ -174,10 +174,10 @@ fn a_harness_is_given_no_key_that_no_file_holds_though_the_environment_of_claden
 }
 
 #[test]
-fn the_harness_of_an_evaluation_is_given_no_key_that_no_file_holds_either() {
+fn the_harness_of_an_assessment_is_given_no_key_that_no_file_holds_either() {
     let directory = ran_with_no_file_of_a_key_and_a_key_in_the_environment();
     assert_eq!(
-        left_by_the_evaluation(&directory, "model"),
+        left_by_the_assessment(&directory, "model"),
         format!("{TOLD} none\n")
     );
 }

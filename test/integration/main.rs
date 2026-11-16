@@ -1,6 +1,6 @@
 mod containers {
+    mod assessment;
     mod build;
-    mod evaluation;
     mod image;
     mod left;
     mod limits;
@@ -22,12 +22,12 @@ mod search {
 }
 
 mod workspace {
+    mod assessment;
     mod benchmark;
     mod build;
     mod copy;
     mod create;
     mod discard;
-    mod evaluation;
     mod image;
     mod procreation;
 }

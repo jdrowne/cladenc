@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use cladenc::artificial_selection::lower_bound;
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessState, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, Genealogy, HarnessState, ProcreationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -27,7 +27,7 @@ fn settings() -> Settings {
         initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        evaluation_timeout: 60,
+        assessment_timeout: 60,
         seed: 7,
     }
 }
@@ -38,13 +38,13 @@ fn a_child_that_succeeds_where_its_parent_fails() -> Genealogy {
     genealogy
         .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
-    genealogy.start_evaluation(0, "t1").unwrap();
+    genealogy.start_assessment(0, "t1").unwrap();
     genealogy
-        .end_evaluation(0, "t1", EvaluationOutcome::Failure)
+        .end_assessment(0, "t1", AssessmentOutcome::Failure)
         .unwrap();
-    genealogy.start_evaluation(child, "t1").unwrap();
+    genealogy.start_assessment(child, "t1").unwrap();
     genealogy
-        .end_evaluation(child, "t1", EvaluationOutcome::Success)
+        .end_assessment(child, "t1", AssessmentOutcome::Success)
         .unwrap();
     genealogy
 }
@@ -56,7 +56,7 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
         .end_procreation(failed, ProcreationOutcome::Failed)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
-    genealogy.start_evaluation(0, "t1").unwrap();
+    genealogy.start_assessment(0, "t1").unwrap();
     genealogy
 }
 
@@ -86,7 +86,7 @@ fn a_harness_that_is_being_created_has_no_lower_bound() {
 }
 
 #[test]
-fn a_clade_with_no_finished_evaluation_has_no_clade_success_rate() {
+fn a_clade_with_no_finished_assessment_has_no_clade_success_rate() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(report.harnesses[0].clade_success_rate, None);
 }
@@ -110,7 +110,7 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
 }
 
 #[test]
-fn the_counts_of_a_harness_are_those_of_its_own_evaluations() {
+fn the_counts_of_a_harness_are_those_of_its_own_assessments() {
     let report = report(&a_child_that_succeeds_where_its_parent_fails());
     assert_eq!(
         (report.harnesses[0].successes, report.harnesses[0].failures),
@@ -143,7 +143,7 @@ fn the_model_reported_is_the_one_the_search_was_started_with() {
 }
 
 #[test]
-fn started_counts_an_evaluation_that_has_not_finished() {
+fn started_counts_an_assessment_that_has_not_finished() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(report.started, 1);
 }

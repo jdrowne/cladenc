@@ -1,6 +1,6 @@
 mod artificial_selection {
+    mod assessment;
     mod best;
-    mod evaluation;
     mod focus;
     mod growth;
     mod lower_bound;
@@ -36,13 +36,13 @@ mod containers {
 }
 
 mod genealogy {
+    mod assessment;
     mod build;
     mod clade;
     mod created;
-    mod evaluation;
     mod procreation;
     mod progenitor;
-    mod refused_evaluation;
+    mod refused_assessment;
     mod refused_procreation;
     mod tasks;
     mod worded;

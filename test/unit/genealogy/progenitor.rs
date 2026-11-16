@@ -24,7 +24,7 @@ fn the_progenitor_has_no_parent() {
 }
 
 #[test]
-fn a_new_genealogy_has_started_no_evaluation() {
+fn a_new_genealogy_has_started_no_assessment() {
     assert_eq!(Genealogy::new().started(), 0);
 }
 

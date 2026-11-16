@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::EvaluationOutcome;
+use cladenc::genealogy::AssessmentOutcome;
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -12,13 +12,13 @@ const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt";
 const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | tail -n 1 > seconds";
 
-struct Evaluated {
+struct Assessed {
     _directory: TempDir,
     workspace: Workspace,
-    result: Result<EvaluationOutcome, ContainerError>,
+    result: Result<AssessmentOutcome, ContainerError>,
 }
 
-struct Evaluation<'a> {
+struct Assessment<'a> {
     run_command: &'a str,
     check: &'a str,
     key: Option<&'a str>,
@@ -26,7 +26,7 @@ struct Evaluation<'a> {
     time_limit: u64,
 }
 
-fn evaluated_as(evaluation: &Evaluation<'_>) -> Evaluated {
+fn assessed_as(assessment: &Assessment<'_>) -> Assessed {
     let directory = test_inputs::temporary_directory();
     let progenitor = test_inputs::progenitor(directory.path());
     let run_directory = directory.path().join("run");
@@ -35,35 +35,35 @@ fn evaluated_as(evaluation: &Evaluation<'_>) -> Evaluated {
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_check(&run_directory, "t1", evaluation.check);
+    test_inputs::kept_check(&run_directory, "t1", assessment.check);
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: evaluation.run_command,
+        run_command: assessment.run_command,
         build_command: None,
         model: Model {
             name: test_inputs::MODEL,
             url: test_inputs::MODEL_URL,
-            key: evaluation.key,
+            key: assessment.key,
         },
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_evaluation(
+    let result = containers::run_assessment(
         &workspace,
         &launch,
-        evaluation.harness,
+        assessment.harness,
         "benchmark/t1",
-        evaluation.time_limit,
+        assessment.time_limit,
         &stop,
     );
-    Evaluated {
+    Assessed {
         _directory: directory,
         workspace,
         result,
     }
 }
 
-fn evaluated(run_command: &str, check: &str) -> Evaluated {
-    evaluated_as(&Evaluation {
+fn assessed(run_command: &str, check: &str) -> Assessed {
+    assessed_as(&Assessment {
         run_command,
         check,
         key: None,
@@ -72,8 +72,8 @@ fn evaluated(run_command: &str, check: &str) -> Evaluated {
     })
 }
 
-fn within(time_limit: u64, run_command: &str, check: &str) -> Evaluated {
-    evaluated_as(&Evaluation {
+fn within(time_limit: u64, run_command: &str, check: &str) -> Assessed {
+    assessed_as(&Assessment {
         run_command,
         check,
         key: None,
@@ -82,27 +82,27 @@ fn within(time_limit: u64, run_command: &str, check: &str) -> Evaluated {
     })
 }
 
-fn kept(evaluated: &Evaluated, file: &str) -> String {
-    fs::read_to_string(evaluated.workspace.evaluation(0, "benchmark/t1").join(file)).unwrap()
+fn kept(assessed: &Assessed, file: &str) -> String {
+    fs::read_to_string(assessed.workspace.assessment(0, "benchmark/t1").join(file)).unwrap()
 }
 
 fn left_by_the_harness(run_command: &str, file: &str) -> String {
-    kept(&evaluated(run_command, FINISHED), &format!("work/{file}"))
+    kept(&assessed(run_command, FINISHED), &format!("work/{file}"))
 }
 
 fn left_by_the_check(check: &str, file: &str) -> String {
-    kept(&evaluated(FINISH, check), &format!("work/{file}"))
+    kept(&assessed(FINISH, check), &format!("work/{file}"))
 }
 
 fn told_of_the_model(key: Option<&str>) -> String {
-    let evaluated = evaluated_as(&Evaluation {
+    let assessed = assessed_as(&Assessment {
         run_command: "env | grep ^CLADENC_MODEL | sort > model",
         check: FINISHED,
         key,
         harness: 0,
         time_limit: 30,
     });
-    kept(&evaluated, "work/model")
+    kept(&assessed, "work/model")
 }
 
 #[test]
@@ -163,9 +163,9 @@ fn the_harness_of_a_search_with_no_key_is_given_none() {
 }
 
 #[test]
-fn the_harness_is_given_neither_the_task_nor_its_own_evaluations() {
+fn the_harness_is_given_neither_the_task_nor_its_own_assessments() {
     assert_eq!(
-        left_by_the_harness("ls -d /task /evaluations > given 2> /dev/null", "given"),
+        left_by_the_harness("ls -d /task /assessments > given 2> /dev/null", "given"),
         ""
     );
 }
@@ -177,40 +177,37 @@ fn the_standard_input_of_the_harness_is_empty() {
 
 #[test]
 fn the_standard_output_of_the_harness_is_kept() {
-    assert_eq!(kept(&evaluated("echo out", FINISHED), "stdout"), "out\n");
+    assert_eq!(kept(&assessed("echo out", FINISHED), "stdout"), "out\n");
 }
 
 #[test]
 fn the_standard_error_of_the_harness_is_kept() {
-    assert_eq!(
-        kept(&evaluated("echo err >&2", FINISHED), "stderr"),
-        "err\n"
-    );
+    assert_eq!(kept(&assessed("echo err >&2", FINISHED), "stderr"), "err\n");
 }
 
 #[test]
-fn the_statement_of_the_task_is_kept_with_the_evaluation() {
+fn the_statement_of_the_task_is_kept_with_the_assessment() {
     assert_eq!(
-        kept(&evaluated(FINISH, FINISHED), "statement"),
+        kept(&assessed(FINISH, FINISHED), "statement"),
         "Finish the work of t1.\n"
     );
 }
 
 #[test]
 fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
-    let evaluated = evaluated("echo changed > /harness/harness.sh", FINISHED);
+    let assessed = assessed("echo changed > /harness/harness.sh", FINISHED);
     assert_eq!(
-        fs::read_to_string(evaluated.workspace.harness(0).join("harness.sh")).unwrap(),
+        fs::read_to_string(assessed.workspace.harness(0).join("harness.sh")).unwrap(),
         "#!/bin/sh\necho harness\n"
     );
 }
 
 #[test]
 fn a_harness_that_changes_the_files_leaves_the_task_unchanged() {
-    let evaluated = evaluated(FINISH, FINISHED);
+    let assessed = assessed(FINISH, FINISHED);
     assert_eq!(
         fs::read_to_string(
-            evaluated
+            assessed
                 .workspace
                 .task("benchmark/t1")
                 .join("files/work.txt")
@@ -223,32 +220,32 @@ fn a_harness_that_changes_the_files_leaves_the_task_unchanged() {
 #[test]
 fn a_check_that_exits_with_0_on_what_the_harness_left_is_a_success() {
     assert!(matches!(
-        evaluated(FINISH, FINISHED).result,
-        Ok(EvaluationOutcome::Success)
+        assessed(FINISH, FINISHED).result,
+        Ok(AssessmentOutcome::Success)
     ));
 }
 
 #[test]
 fn a_check_that_exits_with_1_is_a_failure() {
     assert!(matches!(
-        evaluated("true", FINISHED).result,
-        Ok(EvaluationOutcome::Failure)
+        assessed("true", FINISHED).result,
+        Ok(AssessmentOutcome::Failure)
     ));
 }
 
 #[test]
 fn a_check_that_exits_with_another_status_is_a_failure() {
     assert!(matches!(
-        evaluated(FINISH, "exit 2").result,
-        Ok(EvaluationOutcome::Failure)
+        assessed(FINISH, "exit 2").result,
+        Ok(AssessmentOutcome::Failure)
     ));
 }
 
 #[test]
 fn a_harness_that_exits_with_another_status_than_0_is_still_checked() {
     assert!(matches!(
-        evaluated("echo done > work.txt; exit 3", FINISHED).result,
-        Ok(EvaluationOutcome::Success)
+        assessed("echo done > work.txt; exit 3", FINISHED).result,
+        Ok(AssessmentOutcome::Success)
     ));
 }
 
@@ -278,9 +275,9 @@ fn the_check_is_given_the_files_the_work_started_from() {
 
 #[test]
 fn the_check_cannot_change_its_task() {
-    let evaluated = evaluated(FINISH, "echo changed > /task/statement");
+    let assessed = assessed(FINISH, "echo changed > /task/statement");
     assert_eq!(
-        fs::read_to_string(evaluated.workspace.task("benchmark/t1").join("statement")).unwrap(),
+        fs::read_to_string(assessed.workspace.task("benchmark/t1").join("statement")).unwrap(),
         "Finish the work of t1.\n"
     );
 }
@@ -295,32 +292,29 @@ fn the_check_is_told_nothing_of_the_model() {
 
 #[test]
 fn the_standard_output_of_the_check_is_kept_apart_from_that_of_the_harness() {
-    assert_eq!(
-        kept(&evaluated(FINISH, "echo out"), "check/stdout"),
-        "out\n"
-    );
+    assert_eq!(kept(&assessed(FINISH, "echo out"), "check/stdout"), "out\n");
 }
 
 #[test]
 fn the_standard_error_of_the_check_is_kept_apart_from_that_of_the_harness() {
     assert_eq!(
-        kept(&evaluated(FINISH, "echo err >&2"), "check/stderr"),
+        kept(&assessed(FINISH, "echo err >&2"), "check/stderr"),
         "err\n"
     );
 }
 
 #[test]
-fn an_evaluation_that_ended_leaves_its_outcome_in_its_place() {
-    assert_eq!(kept(&evaluated(FINISH, FINISHED), "outcome"), "success\n");
+fn an_assessment_that_ended_leaves_its_outcome_in_its_place() {
+    assert_eq!(kept(&assessed(FINISH, FINISHED), "outcome"), "success\n");
 }
 
 #[test]
-fn an_evaluation_that_ended_keeps_no_copy_of_the_harness() {
-    let evaluated = evaluated(FINISH, FINISHED);
+fn an_assessment_that_ended_keeps_no_copy_of_the_harness() {
+    let assessed = assessed(FINISH, FINISHED);
     assert!(
-        !evaluated
+        !assessed
             .workspace
-            .evaluation(0, "benchmark/t1")
+            .assessment(0, "benchmark/t1")
             .join("harness")
             .exists()
     );
@@ -330,17 +324,17 @@ fn an_evaluation_that_ended_keeps_no_copy_of_the_harness() {
 fn a_harness_that_runs_past_the_time_limit_times_out() {
     assert!(matches!(
         within(1, "sleep 300", FINISHED).result,
-        Ok(EvaluationOutcome::TimedOut)
+        Ok(AssessmentOutcome::TimedOut)
     ));
 }
 
 #[test]
 fn a_harness_that_timed_out_is_not_checked() {
-    let evaluated = within(1, "sleep 300", "touch checked");
+    let assessed = within(1, "sleep 300", "touch checked");
     assert!(
-        !evaluated
+        !assessed
             .workspace
-            .evaluation(0, "benchmark/t1")
+            .assessment(0, "benchmark/t1")
             .join("work/checked")
             .exists()
     );
@@ -350,7 +344,7 @@ fn a_harness_that_timed_out_is_not_checked() {
 fn a_check_that_runs_past_what_is_left_of_the_time_limit_times_out() {
     assert!(matches!(
         within(3, FINISH, "sleep 300").result,
-        Ok(EvaluationOutcome::TimedOut)
+        Ok(AssessmentOutcome::TimedOut)
     ));
 }
 
@@ -365,7 +359,7 @@ fn the_timer_of_a_harness_waits_five_seconds_longer_than_the_time_limit() {
 #[test]
 fn the_timer_of_a_check_waits_for_what_the_harness_left_of_the_time_limit() {
     let seconds = kept(
-        &evaluated("sleep 2", SAY_THE_SECONDS_OF_THE_TIMER),
+        &assessed("sleep 2", SAY_THE_SECONDS_OF_THE_TIMER),
         "work/seconds",
     );
     assert!(seconds.trim().parse::<u64>().unwrap() <= 33);
@@ -379,7 +373,7 @@ fn the_command_of_a_harness_is_not_the_first_process_of_its_container() {
 #[test]
 fn a_harness_whose_container_docker_did_not_start_is_an_error() {
     assert!(matches!(
-        evaluated("exit 125", FINISHED).result,
+        assessed("exit 125", FINISHED).result,
         Err(ContainerError::Docker(_))
     ));
 }
@@ -387,41 +381,41 @@ fn a_harness_whose_container_docker_did_not_start_is_an_error() {
 #[test]
 fn a_check_whose_container_docker_did_not_start_is_an_error() {
     assert!(matches!(
-        evaluated(FINISH, "exit 125").result,
+        assessed(FINISH, "exit 125").result,
         Err(ContainerError::Docker(_))
     ));
 }
 
 #[test]
 fn what_docker_said_of_a_check_it_did_not_start_is_kept_with_the_check() {
-    let evaluated = evaluated(FINISH, "exit 125");
-    let kept = evaluated
+    let assessed = assessed(FINISH, "exit 125");
+    let kept = assessed
         .workspace
-        .running_evaluation(0, "benchmark/t1")
+        .running_assessment(0, "benchmark/t1")
         .join("check/stderr");
-    assert!(matches!(evaluated.result, Err(ContainerError::Docker(said)) if said == kept));
+    assert!(matches!(assessed.result, Err(ContainerError::Docker(said)) if said == kept));
 }
 
 #[test]
-fn after_an_error_the_directory_of_an_evaluation_is_still_under_running() {
-    let evaluated = evaluated("exit 125", FINISHED);
+fn after_an_error_the_directory_of_an_assessment_is_still_under_running() {
+    let assessed = assessed("exit 125", FINISHED);
     assert!(
-        evaluated
+        assessed
             .workspace
-            .running_evaluation(0, "benchmark/t1")
+            .running_assessment(0, "benchmark/t1")
             .join("stdout")
             .is_file()
     );
 }
 
 #[test]
-fn an_evaluation_of_a_harness_that_is_not_there_is_an_error() {
-    let evaluated = evaluated_as(&Evaluation {
+fn an_assessment_of_a_harness_that_is_not_there_is_an_error() {
+    let assessed = assessed_as(&Assessment {
         run_command: FINISH,
         check: FINISHED,
         key: None,
         harness: 9,
         time_limit: 30,
     });
-    assert!(matches!(evaluated.result, Err(ContainerError::Io(_))));
+    assert!(matches!(assessed.result, Err(ContainerError::Io(_))));
 }

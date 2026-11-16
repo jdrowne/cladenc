@@ -19,7 +19,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--evaluation-timeout", "60".into()),
+        ("--assessment-timeout", "60".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -52,7 +52,7 @@ fn report_exits_with_0_on_a_run_that_is_still_going() {
         .unwrap();
     let id_file = directory
         .path()
-        .join("run/running/evaluation-0-benchmark+t1/work/id");
+        .join("run/running/assessment-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let status = report(directory.path());
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();

@@ -34,7 +34,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        evaluation_timeout: 30,
+        assessment_timeout: 30,
         seed: 7,
     }
 }
@@ -68,7 +68,7 @@ fn resumed_after_its_progenitor_did_not_build() -> Searched {
     (directory, resumed)
 }
 
-fn resumed_after_an_evaluation_stopped_it() -> Searched {
+fn resumed_after_an_assessment_stopped_it() -> Searched {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), COUNT_THE_BUILDS);
     let run_directory = directory.path().join("run");
@@ -189,13 +189,13 @@ fn a_search_whose_progenitor_was_built_on_resuming_goes_on_to_its_end() {
 
 #[test]
 fn a_resumed_search_whose_progenitor_was_built_does_not_build_it_again() {
-    let (directory, _resumed) = resumed_after_an_evaluation_stopped_it();
+    let (directory, _resumed) = resumed_after_an_assessment_stopped_it();
     assert_eq!(builds_of(&directory, 0), "built\n");
 }
 
 #[test]
 fn a_resumed_search_whose_progenitor_was_built_goes_on_to_its_end() {
-    let (_directory, resumed) = resumed_after_an_evaluation_stopped_it();
+    let (_directory, resumed) = resumed_after_an_assessment_stopped_it();
     assert_eq!(resumed.unwrap().best_harness, 1);
 }
 

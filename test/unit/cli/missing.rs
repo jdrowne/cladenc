@@ -16,7 +16,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--initial-procreations", "5"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--evaluation-timeout", "3600"),
+    ("--assessment-timeout", "3600"),
 ];
 
 fn without(left_out: &str) -> Result<Cli, clap::Error> {
@@ -145,9 +145,9 @@ fn leaving_out_the_procreation_timeout_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_evaluation_timeout_is_an_error() {
+fn leaving_out_the_assessment_timeout_is_an_error() {
     assert_eq!(
-        refusal_without("--evaluation-timeout"),
+        refusal_without("--assessment-timeout"),
         ErrorKind::MissingRequiredArgument
     );
 }

@@ -10,7 +10,7 @@ pub use error::JournalError;
 pub use record::{Record, Settings};
 pub use state::{Started, State, read};
 
-pub const FORMAT: u32 = 9;
+pub const FORMAT: u32 = 10;
 
 #[derive(Debug)]
 pub struct Journal {

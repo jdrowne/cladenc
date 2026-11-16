@@ -4,7 +4,7 @@ use cladenc::genealogy::GenealogyError;
 use cladenc::journal::{self, JournalError};
 
 const RUN: &str = concat!(
-    r#"{"record":"run","format":9,"progenitor":"/abs/harness","model":"a-model","#,
+    r#"{"record":"run","format":10,"progenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
     r#""harness_build_command":null,"harness_run_command":"run a harness","#,
@@ -12,7 +12,7 @@ const RUN: &str = concat!(
     r#""budget":800,"#,
     r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"assessment_timeout":3600,"seed":7}"#
 );
 
 fn run_that_builds() -> String {
@@ -68,10 +68,28 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_9_cannot_be_read() {
+fn a_journal_whose_format_is_not_10_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":9"#, r#""format":10"#)]),
-        JournalError::UnknownFormat { format: 10 }
+        error_of(&[&RUN.replace(r#""format":10"#, r#""format":11"#)]),
+        JournalError::UnknownFormat { format: 11 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_9_is_refused_for_its_format_since_it_names_evaluations() {
+    assert!(matches!(
+        error_of(&[concat!(
+            r#"{"record":"run","format":9,"progenitor":"/abs/harness","model":"a-model","#,
+            r#""model_url":"http://models.example/v1","model_key_file":null,"#,
+            r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
+            r#""harness_build_command":null,"harness_run_command":"run a harness","#,
+            r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
+            r#""budget":800,"#,
+            r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"#,
+            r#""max_concurrent_containers":8,"#,
+            r#""procreation_timeout":3600,"evaluation_timeout":3600,"seed":7}"#
+        )]),
+        JournalError::UnknownFormat { format: 9 }
     ));
 }
 
@@ -175,7 +193,7 @@ fn a_journal_of_format_3_is_refused_for_its_format_since_it_names_no_model() {
 #[test]
 fn a_journal_of_format_2_is_refused_for_its_format_though_this_cladenc_could_read_its_records() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":9"#, r#""format":2"#)]),
+        error_of(&[&RUN.replace(r#""format":10"#, r#""format":2"#)]),
         JournalError::UnknownFormat { format: 2 }
     ));
 }
@@ -196,7 +214,7 @@ fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_other
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":9,"progenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":10,"progenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -338,11 +356,11 @@ fn a_journal_that_starts_a_procreation_before_its_progenitor_was_built_cannot_be
 }
 
 #[test]
-fn a_journal_that_starts_an_evaluation_before_its_progenitor_was_built_cannot_be_read() {
+fn a_journal_that_starts_an_assessment_before_its_progenitor_was_built_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             &run_that_builds(),
-            r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
+            r#"{"record":"assessment_started","harness":0,"task":"t1"}"#
         ]),
         JournalError::Refused {
             line: 2,
@@ -356,8 +374,8 @@ fn a_journal_that_gives_a_harness_one_task_twice_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#,
-            r#"{"record":"evaluation_started","harness":0,"task":"t1"}"#
+            r#"{"record":"assessment_started","harness":0,"task":"t1"}"#,
+            r#"{"record":"assessment_started","harness":0,"task":"t1"}"#
         ]),
         JournalError::Refused {
             line: 3,
@@ -367,15 +385,15 @@ fn a_journal_that_gives_a_harness_one_task_twice_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_with_the_end_of_an_evaluation_that_never_started_cannot_be_read() {
+fn a_journal_with_the_end_of_an_assessment_that_never_started_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"evaluation_finished","harness":0,"task":"t1","outcome":"success"}"#
+            r#"{"record":"assessment_finished","harness":0,"task":"t1","outcome":"success"}"#
         ]),
         JournalError::Refused {
             line: 2,
-            error: GenealogyError::EvaluationNotRunning { harness: 0, .. }
+            error: GenealogyError::AssessmentNotRunning { harness: 0, .. }
         }
     ));
 }

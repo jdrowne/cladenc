@@ -34,7 +34,7 @@ fn settings(directory: &Path) -> Settings {
         initial_procreations: 2,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        evaluation_timeout: 30,
+        assessment_timeout: 30,
         seed: 7,
     }
 }
@@ -152,18 +152,18 @@ fn a_search_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory
 }
 
 #[test]
-fn the_initial_procreations_all_end_before_the_first_evaluation_starts() {
+fn the_initial_procreations_all_end_before_the_first_assessment_starts() {
     let (directory, _found) = searched(|settings| {
         settings.initial_procreations = 3;
         settings.max_concurrent_containers = 2;
     });
     let journal = journal_of(&directory);
-    let before_the_first_evaluation = journal
-        .split("\"record\":\"evaluation_started\"")
+    let before_the_first_assessment = journal
+        .split("\"record\":\"assessment_started\"")
         .next()
         .unwrap();
     assert_eq!(
-        before_the_first_evaluation
+        before_the_first_assessment
             .matches("\"record\":\"procreation_finished\"")
             .count(),
         3
@@ -171,15 +171,15 @@ fn the_initial_procreations_all_end_before_the_first_evaluation_starts() {
 }
 
 #[test]
-fn a_search_that_spends_its_budget_starts_exactly_as_many_evaluations() {
+fn a_search_that_spends_its_budget_starts_exactly_as_many_assessments() {
     let (directory, _found) = searched(|_| {});
-    assert_eq!(started(&journal_of(&directory), "evaluation"), 6);
+    assert_eq!(started(&journal_of(&directory), "assessment"), 6);
 }
 
 #[test]
 fn a_search_over_one_task_ends_once_every_created_harness_has_been_given_it() {
     let (directory, _found) = searched(over_one_task);
-    assert_eq!(started(&journal_of(&directory), "evaluation"), 2);
+    assert_eq!(started(&journal_of(&directory), "assessment"), 2);
 }
 
 #[test]
@@ -252,11 +252,11 @@ fn a_search_says_as_many_starts_as_its_journal_records() {
 }
 
 #[test]
-fn a_search_says_the_number_of_each_evaluation_it_starts_and_its_budget() {
+fn a_search_says_the_number_of_each_assessment_it_starts_and_its_budget() {
     let (_directory, said) = said_over_one_task();
     assert!(said.iter().any(|line| {
-        line.starts_with("cladenc: started the evaluation of harness ")
-            && line.ends_with(" on task benchmark/t1, evaluation 2 of 10")
+        line.starts_with("cladenc: started the assessment of harness ")
+            && line.ends_with(" on task benchmark/t1, assessment 2 of 10")
     }));
 }
 
@@ -270,11 +270,11 @@ fn a_search_says_how_a_procreation_ended_and_where_its_child_is_kept() {
 }
 
 #[test]
-fn a_search_says_how_an_evaluation_ended_and_where_what_it_left_is_kept() {
+fn a_search_says_how_an_assessment_ended_and_where_what_it_left_is_kept() {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
-        "cladenc: the evaluation of harness 1 on task benchmark/t1 succeeded: what it left is kept in {}",
-        directory.path().join("run/evaluations/1/benchmark/t1").display()
+        "cladenc: the assessment of harness 1 on task benchmark/t1 succeeded: what it left is kept in {}",
+        directory.path().join("run/assessments/1/benchmark/t1").display()
     )));
 }
 
@@ -284,7 +284,7 @@ fn a_search_says_last_that_it_finished_and_which_harness_is_its_best() {
     assert_eq!(
         said.last().unwrap(),
         &format!(
-            "cladenc: the search finished with 2 evaluations started and 2 harnesses: its best \
+            "cladenc: the search finished with 2 assessments started and 2 harnesses: its best \
              harness is harness 1, kept in {}",
             directory.path().join("run/harnesses/1").display()
         )

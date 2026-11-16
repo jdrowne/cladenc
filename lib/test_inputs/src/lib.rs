@@ -16,7 +16,7 @@ pub const MODEL_URL: &str = "http://models.example/v1";
 
 pub const MODEL_KEY: &str = "a-made-up-key";
 
-pub const SOLVE_ONE_MORE: &str = r#"if [ -d /evaluations ]
+pub const SOLVE_ONE_MORE: &str = r#"if [ -d /assessments ]
 then
   touch solved
   echo "t$(($(wc -l < solved) + 1))" >> solved
@@ -25,7 +25,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /evaluations ]
+pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /assessments ]
 then
   touch solved
   solved=$(($(wc -l < solved)))
@@ -37,7 +37,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /evaluations ]
+pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /assessments ]
 then
   cp /solved-by-the-image solved
 else

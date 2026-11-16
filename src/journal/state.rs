@@ -10,7 +10,7 @@ use crate::genealogy::{Genealogy, HarnessId};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Started {
     Procreation { child: HarnessId, parent: HarnessId },
-    Evaluation { harness: HarnessId, task: String },
+    Assessment { harness: HarnessId, task: String },
 }
 
 impl Display for Started {
@@ -20,9 +20,9 @@ impl Display for Started {
                 formatter,
                 "the procreation of harness {child} by harness {parent}"
             ),
-            Self::Evaluation { harness, task } => write!(
+            Self::Assessment { harness, task } => write!(
                 formatter,
-                "the evaluation of harness {harness} on task {task}"
+                "the assessment of harness {harness} on task {task}"
             ),
         }
     }
@@ -100,21 +100,21 @@ impl State {
                 self.unfinished
                     .retain(|(_, action)| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
             }
-            Record::EvaluationStarted { harness, task } => {
+            Record::AssessmentStarted { harness, task } => {
                 self.genealogy
-                    .start_evaluation(harness, &task)
+                    .start_assessment(harness, &task)
                     .map_err(refused)?;
-                self.start(Started::Evaluation { harness, task });
+                self.start(Started::Assessment { harness, task });
             }
-            Record::EvaluationFinished {
+            Record::AssessmentFinished {
                 harness,
                 task,
                 outcome,
             } => {
                 self.genealogy
-                    .end_evaluation(harness, &task, outcome)
+                    .end_assessment(harness, &task, outcome)
                     .map_err(refused)?;
-                let finished = Started::Evaluation { harness, task };
+                let finished = Started::Assessment { harness, task };
                 self.unfinished.retain(|(_, action)| *action != finished);
             }
             Record::SearchFinished { best_harness } => self.best_harness = Some(best_harness),

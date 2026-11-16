@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
 use cladenc::journal::{self, Journal, Record, Settings, Started, State};
 use tempfile::TempDir;
 
@@ -28,7 +28,7 @@ fn settings() -> Settings {
         initial_procreations: 5,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        evaluation_timeout: 3600,
+        assessment_timeout: 3600,
         seed: 7,
     }
 }
@@ -41,15 +41,15 @@ fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
     Record::ProcreationFinished { child, outcome }
 }
 
-fn evaluation_started(harness: u64, task: &str) -> Record {
-    Record::EvaluationStarted {
+fn assessment_started(harness: u64, task: &str) -> Record {
+    Record::AssessmentStarted {
         harness,
         task: task.to_owned(),
     }
 }
 
-fn evaluation_finished(harness: u64, task: &str, outcome: EvaluationOutcome) -> Record {
-    Record::EvaluationFinished {
+fn assessment_finished(harness: u64, task: &str, outcome: AssessmentOutcome) -> Record {
+    Record::AssessmentFinished {
         harness,
         task: task.to_owned(),
         outcome,
@@ -101,11 +101,11 @@ fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
 fn four_actions_of_which_two_finished() -> [Record; 6] {
     [
         procreation_started(1, 0),
-        evaluation_started(0, "t1"),
+        assessment_started(0, "t1"),
         procreation_started(2, 0),
-        evaluation_started(0, "t2"),
+        assessment_started(0, "t2"),
         procreation_finished(1, ProcreationOutcome::Created),
-        evaluation_finished(0, "t1", EvaluationOutcome::Success),
+        assessment_finished(0, "t1", AssessmentOutcome::Success),
     ]
 }
 
@@ -150,14 +150,14 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     genealogy
         .end_procreation(1, ProcreationOutcome::Created)
         .unwrap();
-    genealogy.start_evaluation(1, "t2").unwrap();
+    genealogy.start_assessment(1, "t2").unwrap();
     genealogy
-        .end_evaluation(1, "t2", EvaluationOutcome::Success)
+        .end_assessment(1, "t2", AssessmentOutcome::Success)
         .unwrap();
     genealogy.start_procreation(1).unwrap();
-    genealogy.start_evaluation(0, "t1").unwrap();
+    genealogy.start_assessment(0, "t1").unwrap();
     genealogy
-        .end_evaluation(0, "t1", EvaluationOutcome::TimedOut)
+        .end_assessment(0, "t1", AssessmentOutcome::TimedOut)
         .unwrap();
     genealogy
         .end_procreation(2, ProcreationOutcome::Failed)
@@ -165,11 +165,11 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
-        evaluation_started(1, "t2"),
-        evaluation_finished(1, "t2", EvaluationOutcome::Success),
+        assessment_started(1, "t2"),
+        assessment_finished(1, "t2", AssessmentOutcome::Success),
         procreation_started(2, 1),
-        evaluation_started(0, "t1"),
-        evaluation_finished(0, "t1", EvaluationOutcome::TimedOut),
+        assessment_started(0, "t1"),
+        assessment_finished(0, "t1", AssessmentOutcome::TimedOut),
         procreation_finished(2, ProcreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
@@ -189,7 +189,7 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started_with_thei
             ),
             (
                 3,
-                Started::Evaluation {
+                Started::Assessment {
                     harness: 0,
                     task: "t2".to_owned()
                 }
@@ -203,8 +203,8 @@ fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
-        evaluation_started(1, "t1"),
-        evaluation_finished(1, "t1", EvaluationOutcome::Failure),
+        assessment_started(1, "t1"),
+        assessment_finished(1, "t1", AssessmentOutcome::Failure),
     ]);
     assert_eq!(state.unfinished, []);
 }

@@ -27,7 +27,7 @@ fn options(directory: &Path) -> StartOptions {
         initial_procreations: 5,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        evaluation_timeout: 1800,
+        assessment_timeout: 1800,
     }
 }
 
@@ -93,7 +93,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             initial_procreations: 5,
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
-            evaluation_timeout: 1800,
+            assessment_timeout: 1800,
             seed: settings.seed,
         }
     );

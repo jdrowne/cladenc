@@ -28,7 +28,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         initial_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        evaluation_timeout: 60,
+        assessment_timeout: 60,
         seed: 7,
     }
 }
@@ -65,12 +65,12 @@ fn resumed_after_a_procreation_stopped() -> TempDir {
     resumed_after_a_stop_at(0, None, "procreation-1/child/leftover", 1)
 }
 
-fn resumed_after_an_evaluation_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, Some("t1"), "evaluation-0-benchmark+t1/work/leftover", 0)
+fn resumed_after_an_assessment_stopped() -> TempDir {
+    resumed_after_a_stop_at(99, Some("t1"), "assessment-0-benchmark+t1/work/leftover", 0)
 }
 
-fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
-    let mut settings = settings(directory, "[ -d /evaluations ] || sleep 300");
+fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
+    let mut settings = settings(directory, "[ -d /assessments ] || sleep 300");
     settings.initial_procreations = 0;
     settings.max_concurrent_containers = 2;
     let run_directory = directory.join("run");
@@ -86,7 +86,7 @@ fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
         })
         .unwrap();
     journal
-        .append(&Record::EvaluationStarted {
+        .append(&Record::AssessmentStarted {
             harness: 0,
             task: "benchmark/t1".to_owned(),
         })
@@ -114,34 +114,34 @@ fn a_procreation_that_runs_again_ends_with_its_child_in_place() {
 }
 
 #[test]
-fn what_an_evaluation_left_under_running_is_gone_before_it_runs_again() {
-    let directory = resumed_after_an_evaluation_stopped();
+fn what_an_assessment_left_under_running_is_gone_before_it_runs_again() {
+    let directory = resumed_after_an_assessment_stopped();
     assert!(
         !directory
             .path()
-            .join("run/evaluations/0/benchmark/t1/work/leftover")
+            .join("run/assessments/0/benchmark/t1/work/leftover")
             .exists()
     );
 }
 
 #[test]
-fn an_evaluation_that_runs_again_ends_with_its_directory_in_place() {
-    let directory = resumed_after_an_evaluation_stopped();
+fn an_assessment_that_runs_again_ends_with_its_directory_in_place() {
+    let directory = resumed_after_an_assessment_stopped();
     assert!(
         directory
             .path()
-            .join("run/evaluations/0/benchmark/t1/outcome")
+            .join("run/assessments/0/benchmark/t1/outcome")
             .is_file()
     );
 }
 
 #[test]
 fn an_action_that_runs_again_writes_no_second_started_record() {
-    let directory = resumed_after_an_evaluation_stopped();
+    let directory = resumed_after_an_assessment_stopped();
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert_eq!(
         journal
-            .matches(r#"{"record":"evaluation_started","harness":0,"task":"benchmark/t1"}"#)
+            .matches(r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#)
             .count(),
         1
     );
@@ -150,7 +150,7 @@ fn an_action_that_runs_again_writes_no_second_started_record() {
 #[test]
 fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let directory = test_inputs::temporary_directory();
-    let run_directory = with_one_evaluation_left_running(directory.path());
+    let run_directory = with_one_assessment_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
         scope.spawn(|| search::resume(&run_directory, &stop, &mut io::sink()));

@@ -20,7 +20,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--evaluation-timeout", "60".into()),
+        ("--assessment-timeout", "60".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -48,7 +48,7 @@ fn resumed_while_in_use() -> InUse {
         .unwrap();
     let id_file = directory
         .path()
-        .join("run/running/evaluation-0-benchmark+t1/work/id");
+        .join("run/running/assessment-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let second = resume(directory.path());
     let the_container_of_the_first_went_on = test_inputs::container_is_running(&id_file);

@@ -1,4 +1,4 @@
-use cladenc::genealogy::{EvaluationOutcome, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
 use cladenc::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -13,8 +13,8 @@ fn procreation_finished(outcome: ProcreationOutcome) -> Record {
     Record::ProcreationFinished { child: 1, outcome }
 }
 
-fn evaluation_finished(outcome: EvaluationOutcome) -> Record {
-    Record::EvaluationFinished {
+fn assessment_finished(outcome: AssessmentOutcome) -> Record {
+    Record::AssessmentFinished {
         harness: 1,
         task: "t2".to_owned(),
         outcome,
@@ -78,37 +78,37 @@ fn the_build_of_the_progenitor_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_start_of_an_evaluation_is_written_with_its_harness_and_task() {
+fn the_start_of_an_assessment_is_written_with_its_harness_and_task() {
     assert_eq!(
-        line(&Record::EvaluationStarted {
+        line(&Record::AssessmentStarted {
             harness: 1,
             task: "t2".to_owned()
         }),
-        r#"{"record":"evaluation_started","harness":1,"task":"t2"}"#
+        r#"{"record":"assessment_started","harness":1,"task":"t2"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_evaluation_that_succeeded_is_written_as_success() {
+fn the_end_of_an_assessment_that_succeeded_is_written_as_success() {
     assert_eq!(
-        line(&evaluation_finished(EvaluationOutcome::Success)),
-        r#"{"record":"evaluation_finished","harness":1,"task":"t2","outcome":"success"}"#
+        line(&assessment_finished(AssessmentOutcome::Success)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"success"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_evaluation_that_failed_is_written_as_failure() {
+fn the_end_of_an_assessment_that_failed_is_written_as_failure() {
     assert_eq!(
-        line(&evaluation_finished(EvaluationOutcome::Failure)),
-        r#"{"record":"evaluation_finished","harness":1,"task":"t2","outcome":"failure"}"#
+        line(&assessment_finished(AssessmentOutcome::Failure)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"failure"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_evaluation_that_timed_out_is_written_as_timed_out() {
+fn the_end_of_an_assessment_that_timed_out_is_written_as_timed_out() {
     assert_eq!(
-        line(&evaluation_finished(EvaluationOutcome::TimedOut)),
-        r#"{"record":"evaluation_finished","harness":1,"task":"t2","outcome":"timed_out"}"#
+        line(&assessment_finished(AssessmentOutcome::TimedOut)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"timed_out"}"#
     );
 }
 
@@ -136,8 +136,8 @@ fn the_end_of_a_procreation_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_start_of_an_evaluation_survives_being_written_and_read_back() {
-    let record = Record::EvaluationStarted {
+fn the_start_of_an_assessment_survives_being_written_and_read_back() {
+    let record = Record::AssessmentStarted {
         harness: 1,
         task: "t2".to_owned(),
     };
@@ -145,8 +145,8 @@ fn the_start_of_an_evaluation_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_an_evaluation_survives_being_written_and_read_back() {
-    let record = evaluation_finished(EvaluationOutcome::TimedOut);
+fn the_end_of_an_assessment_survives_being_written_and_read_back() {
+    let record = assessment_finished(AssessmentOutcome::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 

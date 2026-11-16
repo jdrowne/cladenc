@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{EvaluationOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -26,14 +26,14 @@ fn settings() -> Settings {
         initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        evaluation_timeout: 60,
+        assessment_timeout: 60,
         seed: 7,
     }
 }
 
-fn evaluated(genealogy: &mut Genealogy, task: &str, outcome: EvaluationOutcome) {
-    genealogy.start_evaluation(0, task).unwrap();
-    genealogy.end_evaluation(0, task, outcome).unwrap();
+fn assessed(genealogy: &mut Genealogy, task: &str, outcome: AssessmentOutcome) {
+    genealogy.start_assessment(0, task).unwrap();
+    genealogy.end_assessment(0, task, outcome).unwrap();
 }
 
 fn table(build: impl FnOnce(&mut Genealogy)) -> String {
@@ -45,7 +45,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table(|genealogy| {
-        evaluated(genealogy, "t1", EvaluationOutcome::Success);
+        assessed(genealogy, "t1", AssessmentOutcome::Success);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
@@ -81,9 +81,9 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        evaluated(genealogy, "t1", EvaluationOutcome::Success);
-        evaluated(genealogy, "t2", EvaluationOutcome::Failure);
-        evaluated(genealogy, "t3", EvaluationOutcome::Failure);
+        assessed(genealogy, "t1", AssessmentOutcome::Success);
+        assessed(genealogy, "t2", AssessmentOutcome::Failure);
+        assessed(genealogy, "t3", AssessmentOutcome::Failure);
     });
     assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
 }

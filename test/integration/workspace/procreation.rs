@@ -96,9 +96,9 @@ fn a_procreation_that_created_its_child_leaves_the_files_of_the_child_as_its_har
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_evaluations() {
+fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_assessments() {
     let (_directory, workspace) = ended(ProcreationOutcome::Created);
-    assert_eq!(entries(workspace.evaluations(1)), 0);
+    assert_eq!(entries(workspace.assessments(1)), 0);
 }
 
 #[test]
@@ -123,9 +123,9 @@ fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses()
 }
 
 #[test]
-fn a_procreation_that_failed_leaves_no_directory_for_the_evaluations_of_its_child() {
+fn a_procreation_that_failed_leaves_no_directory_for_the_assessments_of_its_child() {
     let (_directory, workspace) = ended(ProcreationOutcome::Failed);
-    assert!(!workspace.evaluations(1).exists());
+    assert!(!workspace.assessments(1).exists());
 }
 
 #[test]
@@ -144,9 +144,9 @@ fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesse
 }
 
 #[test]
-fn a_procreation_that_timed_out_leaves_no_directory_for_the_evaluations_of_its_child() {
+fn a_procreation_that_timed_out_leaves_no_directory_for_the_assessments_of_its_child() {
     let (_directory, workspace) = ended(ProcreationOutcome::TimedOut);
-    assert!(!workspace.evaluations(1).exists());
+    assert!(!workspace.assessments(1).exists());
 }
 
 #[test]
@@ -156,9 +156,9 @@ fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_t
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_evaluations() {
+fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_assessments() {
     let (_directory, workspace) = ended(ProcreationOutcome::BuildFailed);
-    assert!(!workspace.evaluations(1).exists());
+    assert!(!workspace.assessments(1).exists());
 }
 
 #[test]

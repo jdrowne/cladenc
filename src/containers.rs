@@ -12,7 +12,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
-use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
 use crate::model::Model;
 use crate::workspace::{Workspace, holds_only_harness_files};
 
@@ -24,7 +24,7 @@ use program::{Ending, deadline};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes solves \
-    more coding tasks than you do. /evaluations holds one directory for each benchmark, and in it \
+    more coding tasks than you do. /assessments holds one directory for each benchmark, and in it \
     one directory for each task you have been tried on. In the directory of a task, the file \
     named statement says what you were asked to do, the file named outcome reads success, failure \
     or timed_out, the directory named work holds the files of the task as you left them, the \
@@ -34,7 +34,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
 
 const HARNESS: &str = "/harness";
 const WORK: &str = "/work";
-const EVALUATIONS: &str = "/evaluations";
+const ASSESSMENTS: &str = "/assessments";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -93,7 +93,7 @@ pub fn run_procreation(
     let running = workspace.running_procreation(child);
     let source = running.join("parent");
     let made = running.join("child");
-    let evaluations = workspace.evaluations(parent);
+    let assessments = workspace.assessments(parent);
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
@@ -118,8 +118,8 @@ pub fn run_procreation(
                 read_only: false,
             },
             Mount {
-                from: &evaluations,
-                to: EVALUATIONS,
+                from: &assessments,
+                to: ASSESSMENTS,
                 read_only: true,
             },
         ],
@@ -139,17 +139,17 @@ pub fn run_procreation(
         .map_err(ContainerError::Io)
 }
 
-pub fn run_evaluation(
+pub fn run_assessment(
     workspace: &Workspace,
     launch: &Launch<'_>,
     harness: HarnessId,
     task: &str,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<EvaluationOutcome, ContainerError> {
-    let running = workspace.running_evaluation(harness, task);
+) -> Result<AssessmentOutcome, ContainerError> {
+    let running = workspace.running_assessment(harness, task);
     let statement = workspace
-        .start_evaluation(harness, task)
+        .start_assessment(harness, task)
         .and_then(|()| fs::read_to_string(running.join("statement")))
         .map_err(ContainerError::Io)?;
     let source = running.join("harness");
@@ -183,10 +183,10 @@ pub fn run_evaluation(
     };
     let outcome = match container.run(&running, deadline, stop)? {
         Ending::Exited(_) => check::run(workspace, launch.image, task, &running, deadline, stop)?,
-        Ending::TimedOut => EvaluationOutcome::TimedOut,
+        Ending::TimedOut => AssessmentOutcome::TimedOut,
     };
     workspace
-        .end_evaluation(harness, task, outcome)
+        .end_assessment(harness, task, outcome)
         .map(|()| outcome)
         .map_err(ContainerError::Io)
 }

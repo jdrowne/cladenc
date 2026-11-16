@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::containers::ContainerError;
-use crate::genealogy::{EvaluationOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
 use crate::workspace::Workspace;
 
@@ -50,7 +50,7 @@ pub enum Said<'a> {
     Started {
         action: &'a Started,
         again: bool,
-        evaluations: u64,
+        assessments: u64,
         budget: u64,
     },
     Procreated {
@@ -59,10 +59,10 @@ pub enum Said<'a> {
         outcome: ProcreationOutcome,
         workspace: &'a Workspace,
     },
-    Evaluated {
+    Assessed {
         harness: HarnessId,
         task: &'a str,
-        outcome: EvaluationOutcome,
+        outcome: AssessmentOutcome,
         workspace: &'a Workspace,
     },
     Failed {
@@ -74,7 +74,7 @@ pub enum Said<'a> {
         running: u64,
     },
     Finished {
-        evaluations: u64,
+        assessments: u64,
         harnesses: u64,
         best_harness: HarnessId,
         directory: &'a Path,
@@ -127,7 +127,7 @@ impl Display for Said<'_> {
             } => write!(
                 formatter,
                 "continuing the search in {}, which has started {started} of its {budget} \
-                 evaluations and holds {}",
+                 assessments and holds {}",
                 run_directory.display(),
                 counted(*harnesses, "harness", "harnesses")
             ),
@@ -149,12 +149,12 @@ impl Display for Said<'_> {
             Self::Started {
                 action,
                 again,
-                evaluations,
+                assessments,
                 budget,
             } => match (action, again) {
-                (Started::Evaluation { .. }, false) => write!(
+                (Started::Assessment { .. }, false) => write!(
                     formatter,
-                    "started {action}, evaluation {evaluations} of {budget}"
+                    "started {action}, assessment {assessments} of {budget}"
                 ),
                 (_, false) => write!(formatter, "started {action}"),
                 (_, true) => write!(formatter, "started again {action}"),
@@ -190,22 +190,22 @@ impl Display for Said<'_> {
                     kept.display()
                 )
             }
-            Self::Evaluated {
+            Self::Assessed {
                 harness,
                 task,
                 outcome,
                 workspace,
             } => {
                 let how = match outcome {
-                    EvaluationOutcome::Success => "succeeded",
-                    EvaluationOutcome::Failure => "failed",
-                    EvaluationOutcome::TimedOut => "ran past its time limit",
+                    AssessmentOutcome::Success => "succeeded",
+                    AssessmentOutcome::Failure => "failed",
+                    AssessmentOutcome::TimedOut => "ran past its time limit",
                 };
                 write!(
                     formatter,
-                    "the evaluation of harness {harness} on task {task} {how}: what it left is \
+                    "the assessment of harness {harness} on task {task} {how}: what it left is \
                      kept in {}",
-                    workspace.evaluation(*harness, task).display()
+                    workspace.assessment(*harness, task).display()
                 )
             }
             Self::Failed { action, error } => write!(formatter, "{action} {error}"),
@@ -222,7 +222,7 @@ impl Display for Said<'_> {
                 )
             }
             Self::Finished {
-                evaluations,
+                assessments,
                 harnesses,
                 best_harness,
                 directory,
@@ -230,7 +230,7 @@ impl Display for Said<'_> {
                 formatter,
                 "the search finished with {} started and {}: its best harness is harness \
                  {best_harness}, kept in {}",
-                counted(*evaluations, "evaluation", "evaluations"),
+                counted(*assessments, "assessment", "assessments"),
                 counted(*harnesses, "harness", "harnesses"),
                 directory.display()
             ),
