@@ -20,12 +20,14 @@
 - [cargo is not on the shell's PATH](cargo-is-not-on-the-shell-path.md) — Rust is installed in ~/.cargo/bin; put it on PATH before calling cargo, and do not install it again
 - [Reminders drive the loop](reminders-drive-the-loop.md) — an autopilot reminder only for a rule that says what to do next when it fires, one rule and one action each; every other rule is a memory
 - [The work in hand can be several issues](the-work-in-hand-can-be-several-issues.md) — the autopilot takes the lowest unblocked issue, alone or with others it chooses; a blocked issue joins only with all its open blockers
+- [Issues have no fixed form](issues-have-no-fixed-form.md) — no house layout and no section owed; write each issue in whatever form lets a session that never saw the conversation act on it
 - [Issues are sized to one context](issues-are-sized-to-one-context.md) — split a plan too large for one context into stand-alone issues, re-using the original, ordered by blocked_by edges
 - [One indivisible problem per issue](one-indivisible-problem-per-issue.md) — an issue documenting more than one problem is split, re-using the issue as one of the splits
 - [An issue is brought up to date before work](an-issue-is-brought-up-to-date-before-work.md) — correct its title and body against the code as it stands before working on it, without adding work it does not ask for
 - [A blocked_by edge states a real block](a-blocked-by-edge-states-a-real-block.md) — only where the waiting issue cannot be finished until the other closes; written with gh api and -F issue_id
 - [Before an issue is labelled needs decision](before-an-issue-is-labelled-needs-decision.md) — check the memories and the code first, then write into its body what a person has to decide
 - [Tests are written before code](tests-are-written-before-code.md) — the tests of a change come first and land in the same commit as its code
+- [The checks the code faces](the-checks-the-code-faces.md) — written to pass release.yml: no comments, one assertion per test, no silencing directive, no linter config file, no Rust file over 1000 lines, every line covered, clippy, rustfmt
 - [A commit closes at least one issue](a-commit-closes-at-least-one-issue.md) — one or more, a Closes #N line each; only a failed run's fix and a change the user asks for directly close none
 - [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — when a run of the session's own push is found to have failed, the fix is the next commit pushed
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open

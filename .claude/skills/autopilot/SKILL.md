@@ -70,9 +70,11 @@ Each file is under `.claude/memories/`.
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
 | An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
 | An issue documents one indivisible problem. | `one-indivisible-problem-per-issue.md` |
+| An issue has no fixed form and owes no section that other issues carry. | `issues-have-no-fixed-form.md` |
 | A `blocked_by` edge is written only where the block is real. | `a-blocked-by-edge-states-a-real-block.md` |
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
+| The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | After a push the work goes straight on, and no run is waited for. | `the-work-does-not-wait-for-ci.md` |
@@ -86,7 +88,7 @@ Each `--skip-label <label>` puts `map(select(all(.labels[]; .name != "<label>"))
 
 An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by` lists an open issue.
 
-1. Say which model this session runs on, as its system prompt names it. The issues that build `cladenc` ask, under "Working rules", for the latest Fable model at Extra High effort, and only the user can set either. When the model is another, say so and stop here.
+1. Say which model this session runs on, as its system prompt names it. The work on `cladenc` is done on the latest Fable model at Extra High effort, whether or not an issue says so, and only the user can set either. When the model is another, say so and stop here.
 2. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
 3. Run the listing's command once, its `--skip-label` filters in place. When it names no issue that can be taken, say so, say which label or blocking issue holds back each open issue, and stop: there is nothing to schedule reminders for.
 4. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute.
