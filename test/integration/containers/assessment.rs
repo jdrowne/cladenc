@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::AssessmentOutcome;
+use cladenc::genealogy::Score;
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -15,7 +15,7 @@ const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | t
 struct Assessed {
     _directory: TempDir,
     workspace: Workspace,
-    result: Result<AssessmentOutcome, ContainerError>,
+    result: Result<Score, ContainerError>,
 }
 
 struct Assessment<'a> {
@@ -235,26 +235,26 @@ fn a_harness_that_changes_the_files_leaves_the_task_unchanged() {
 }
 
 #[test]
-fn a_check_that_exits_with_0_on_what_the_harness_left_is_a_success() {
+fn a_check_that_exits_with_0_on_what_the_harness_left_scores_a_success() {
     assert!(matches!(
         assessed(FINISH, FINISHED).result,
-        Ok(AssessmentOutcome::Success)
+        Ok(Score::Success)
     ));
 }
 
 #[test]
-fn a_check_that_exits_with_1_is_a_failure() {
+fn a_check_that_exits_with_1_scores_a_failure() {
     assert!(matches!(
         assessed("true", FINISHED).result,
-        Ok(AssessmentOutcome::Failure)
+        Ok(Score::Failure)
     ));
 }
 
 #[test]
-fn a_check_that_exits_with_another_status_is_a_failure() {
+fn a_check_that_exits_with_another_status_scores_a_failure() {
     assert!(matches!(
         assessed(FINISH, "exit 2").result,
-        Ok(AssessmentOutcome::Failure)
+        Ok(Score::Failure)
     ));
 }
 
@@ -262,7 +262,7 @@ fn a_check_that_exits_with_another_status_is_a_failure() {
 fn a_harness_that_exits_with_another_status_than_0_is_still_checked() {
     assert!(matches!(
         assessed("echo done > work.txt; exit 3", FINISHED).result,
-        Ok(AssessmentOutcome::Success)
+        Ok(Score::Success)
     ));
 }
 
@@ -343,8 +343,8 @@ fn the_standard_error_of_the_check_is_kept_apart_from_that_of_the_harness() {
 }
 
 #[test]
-fn an_assessment_that_ended_leaves_its_outcome_in_its_place() {
-    assert_eq!(kept(&assessed(FINISH, FINISHED), "outcome"), "success\n");
+fn an_assessment_that_ended_leaves_the_score_of_its_harness_in_its_place() {
+    assert_eq!(kept(&assessed(FINISH, FINISHED), "score"), "success\n");
 }
 
 #[test]
@@ -363,7 +363,7 @@ fn an_assessment_that_ended_keeps_no_copy_of_the_harness() {
 fn a_harness_that_runs_past_the_time_limit_times_out() {
     assert!(matches!(
         within(1, "sleep 300", FINISHED).result,
-        Ok(AssessmentOutcome::TimedOut)
+        Ok(Score::TimedOut)
     ));
 }
 
@@ -383,7 +383,7 @@ fn a_harness_that_timed_out_is_not_checked() {
 fn a_check_that_runs_past_what_is_left_of_the_time_limit_times_out() {
     assert!(matches!(
         within(20, FINISH, "sleep 300").result,
-        Ok(AssessmentOutcome::TimedOut)
+        Ok(Score::TimedOut)
     ));
 }
 

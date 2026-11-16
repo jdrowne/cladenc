@@ -152,21 +152,21 @@ impl<'a> Progress<'a> {
             Ended::Assessment {
                 harness,
                 task,
-                result: Ok(outcome),
+                result: Ok(score),
             } => {
                 self.genealogy
-                    .end_assessment(harness, &task, outcome)
+                    .end_assessment(harness, &task, score)
                     .expect("an assessment that ended was started");
-                self.say(&Said::Assessed {
+                self.say(&Said::Scored {
                     harness,
                     task: &task,
-                    outcome,
+                    score,
                     workspace,
                 });
                 self.record(&Record::AssessmentFinished {
                     harness,
                     task,
-                    outcome,
+                    score,
                 });
             }
             Ended::Procreation {

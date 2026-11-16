@@ -12,7 +12,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
-use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
 use crate::model::Model;
 use crate::workspace::{Workspace, holds_only_harness_files};
 
@@ -26,7 +26,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     copy of your own source code. Improve that source code, so that the harness it makes solves \
     more coding tasks than you do. /var/log/cladenc/assessments holds one directory for each \
     benchmark, and in it one directory for each task you have been tried on. In the directory of \
-    a task, the file named statement says what you were asked to do, the file named outcome reads \
+    a task, the file named statement says what you were asked to do, the file named score reads \
     success, failure or timed_out, the directory named work holds the files of the task as you \
     left them, the files named stdout and stderr hold what you printed, and the directory named \
     check holds what the check of the task printed. Use them to find what to improve. Change \
@@ -147,7 +147,7 @@ pub fn run_assessment(
     task: &str,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<AssessmentOutcome, ContainerError> {
+) -> Result<Score, ContainerError> {
     let running = workspace.running_assessment(harness, task);
     let statement = workspace
         .start_assessment(harness, task)
@@ -182,12 +182,12 @@ pub fn run_assessment(
         working_directory: WORK,
         environment: &environment,
     };
-    let outcome = match container.run(&running, deadline, stop)? {
+    let score = match container.run(&running, deadline, stop)? {
         Ending::Exited(_) => check::run(workspace, launch.image, task, &running, deadline, stop)?,
-        Ending::TimedOut => AssessmentOutcome::TimedOut,
+        Ending::TimedOut => Score::TimedOut,
     };
     workspace
-        .end_assessment(harness, task, outcome)
-        .map(|()| outcome)
+        .end_assessment(harness, task, score)
+        .map(|()| score)
         .map_err(ContainerError::Io)
 }

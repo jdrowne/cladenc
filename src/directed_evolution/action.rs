@@ -1,6 +1,6 @@
 use super::Shared;
 use crate::containers::{self, ContainerError};
-use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
 use crate::journal::Started;
 
 pub(super) enum Ended {
@@ -12,7 +12,7 @@ pub(super) enum Ended {
     Assessment {
         harness: HarnessId,
         task: String,
-        result: Result<AssessmentOutcome, ContainerError>,
+        result: Result<Score, ContainerError>,
     },
 }
 

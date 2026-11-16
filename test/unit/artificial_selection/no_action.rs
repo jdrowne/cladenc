@@ -1,5 +1,5 @@
 use cladenc::artificial_selection::ArtificialSelection;
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
 
 fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
@@ -23,9 +23,7 @@ fn with_every_task_given() -> Genealogy {
         .unwrap();
     for task in tasks() {
         genealogy.start_assessment(0, &task).unwrap();
-        genealogy
-            .end_assessment(0, &task, AssessmentOutcome::Success)
-            .unwrap();
+        genealogy.end_assessment(0, &task, Score::Success).unwrap();
     }
     genealogy
 }

@@ -7,7 +7,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
+use cladenc::genealogy::{ProcreationOutcome, Score};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
@@ -191,7 +191,7 @@ fn a_harness_can_read_the_ended_assessments_of_its_parent_and_none_still_running
         .unwrap();
     workspace.start_assessment(0, "benchmark/t1").unwrap();
     workspace
-        .end_assessment(0, "benchmark/t1", AssessmentOutcome::Failure)
+        .end_assessment(0, "benchmark/t1", Score::Failure)
         .unwrap();
     workspace.start_assessment(0, "benchmark/t2").unwrap();
     let _ = started_from(

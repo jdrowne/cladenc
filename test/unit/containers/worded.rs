@@ -51,7 +51,7 @@ fn the_instruction_says_where_the_assessments_are() {
 #[test]
 fn the_instruction_says_what_each_assessment_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
-        "the file named statement says what you were asked to do, the file named outcome reads \
+        "the file named statement says what you were asked to do, the file named score reads \
          success, failure or timed_out, the directory named work holds the files of the task as \
          you left them"
     ));

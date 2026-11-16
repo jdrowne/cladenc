@@ -1,4 +1,4 @@
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, GenealogyError, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, GenealogyError, ProcreationOutcome, Score};
 
 fn with_a_child_being_created() -> Genealogy {
     let mut genealogy = Genealogy::new();
@@ -22,9 +22,7 @@ fn with_an_assessment_running() -> Genealogy {
 
 fn with_an_assessment_ended() -> Genealogy {
     let mut genealogy = with_an_assessment_running();
-    genealogy
-        .end_assessment(0, "a", AssessmentOutcome::Success)
-        .unwrap();
+    genealogy.end_assessment(0, "a", Score::Success).unwrap();
     genealogy
 }
 
@@ -120,7 +118,7 @@ fn a_refused_second_assessment_on_an_ended_task_changes_nothing() {
 #[test]
 fn the_end_of_an_assessment_of_a_harness_that_is_not_in_the_genealogy_is_refused() {
     assert_eq!(
-        Genealogy::new().end_assessment(7, "a", AssessmentOutcome::Success),
+        Genealogy::new().end_assessment(7, "a", Score::Success),
         Err(not_running(7, "a"))
     );
 }
@@ -128,14 +126,14 @@ fn the_end_of_an_assessment_of_a_harness_that_is_not_in_the_genealogy_is_refused
 #[test]
 fn a_refused_end_of_an_assessment_of_a_missing_harness_changes_nothing() {
     let mut genealogy = Genealogy::new();
-    let _ = genealogy.end_assessment(7, "a", AssessmentOutcome::Success);
+    let _ = genealogy.end_assessment(7, "a", Score::Success);
     assert_eq!(genealogy, Genealogy::new());
 }
 
 #[test]
 fn the_end_of_an_assessment_on_a_task_never_given_is_refused() {
     assert_eq!(
-        with_an_assessment_running().end_assessment(0, "b", AssessmentOutcome::Success),
+        with_an_assessment_running().end_assessment(0, "b", Score::Success),
         Err(not_running(0, "b"))
     );
 }
@@ -143,14 +141,14 @@ fn the_end_of_an_assessment_on_a_task_never_given_is_refused() {
 #[test]
 fn a_refused_end_of_an_assessment_on_a_task_never_given_changes_nothing() {
     let mut genealogy = with_an_assessment_running();
-    let _ = genealogy.end_assessment(0, "b", AssessmentOutcome::Success);
+    let _ = genealogy.end_assessment(0, "b", Score::Success);
     assert_eq!(genealogy, with_an_assessment_running());
 }
 
 #[test]
 fn a_second_end_of_an_assessment_is_refused() {
     assert_eq!(
-        with_an_assessment_ended().end_assessment(0, "a", AssessmentOutcome::Failure),
+        with_an_assessment_ended().end_assessment(0, "a", Score::Failure),
         Err(not_running(0, "a"))
     );
 }
@@ -158,6 +156,6 @@ fn a_second_end_of_an_assessment_is_refused() {
 #[test]
 fn a_refused_second_end_of_an_assessment_changes_nothing() {
     let mut genealogy = with_an_assessment_ended();
-    let _ = genealogy.end_assessment(0, "a", AssessmentOutcome::Failure);
+    let _ = genealogy.end_assessment(0, "a", Score::Failure);
     assert_eq!(genealogy, with_an_assessment_ended());
 }

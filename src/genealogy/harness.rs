@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use serde::Serialize;
 
-use super::{AssessmentOutcome, HarnessId};
+use super::{HarnessId, Score};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -89,21 +89,21 @@ impl Harness {
         self.given.insert(task.to_owned()) && self.running.insert(task.to_owned())
     }
 
-    pub(super) fn finish(&mut self, task: &str, outcome: AssessmentOutcome) -> bool {
+    pub(super) fn finish(&mut self, task: &str, score: Score) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            match outcome {
-                AssessmentOutcome::Success => self.successes += 1,
-                AssessmentOutcome::Failure | AssessmentOutcome::TimedOut => self.failures += 1,
+            match score {
+                Score::Success => self.successes += 1,
+                Score::Failure | Score::TimedOut => self.failures += 1,
             }
         }
         was_running
     }
 
-    pub(super) fn count_in_clade(&mut self, outcome: AssessmentOutcome) {
-        match outcome {
-            AssessmentOutcome::Success => self.clade_successes += 1,
-            AssessmentOutcome::Failure | AssessmentOutcome::TimedOut => self.clade_failures += 1,
+    pub(super) fn count_in_clade(&mut self, score: Score) {
+        match score {
+            Score::Success => self.clade_successes += 1,
+            Score::Failure | Score::TimedOut => self.clade_failures += 1,
         }
     }
 }

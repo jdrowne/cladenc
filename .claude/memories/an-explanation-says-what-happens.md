@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: ef2131eb-746a-4fc0-939f-1dbeaa241ced
-  modified: 2026-11-16T12:09:32.267Z
+  modified: 2026-11-16T13:08:14.786Z
 ---
 
 # An explanation says what happens
@@ -18,4 +18,4 @@ An explanation written for the user says who does what, with a plain verb and ev
 
 **Why:** It is the user's rule. My reading of the reason: a phrase built as "the X of a Y" from the project's words has to be unpacked before it says anything, where a subject and a verb say it at once.
 
-**How to apply:** Before sending an explanation, look for each "the X of a Y" built from the project's words, and for each "has a ...", and rewrite it as who does what. The scope is my reading, not the user's statement: replies to the user, and the part of an issue the user has to read to decide something. Whether the exact words stay in the rest of an issue is not settled. Related: [[the-simplest-design-is-offered-first]], which names words the user finds undefined and holds a reply to one point, and [[issues-have-no-fixed-form]].
+**How to apply:** Before sending an explanation, look for each "the X of a Y" built from the project's words, and for each "has a ...", and rewrite it as who does what. The scope is my reading, not the user's statement: replies to the user, and the part of an issue the user has to read to decide something. Whether the exact words stay in the rest of an issue is not settled. Related: [[the-simplest-design-is-offered-first]], which names words the user finds undefined and holds a reply to one point, [[assessing-is-not-scoring]], which says when the word is scored and when it is assessed, and [[issues-have-no-fixed-form]].

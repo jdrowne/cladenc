@@ -37,9 +37,9 @@ fn ran() -> (TempDir, Output) {
     (directory, output)
 }
 
-fn outcome_of(directory: &TempDir, assessment: &str) -> String {
+fn score_of(directory: &TempDir, assessment: &str) -> String {
     let kept = directory.path().join("run/assessments").join(assessment);
-    fs::read_to_string(kept.join("outcome")).unwrap()
+    fs::read_to_string(kept.join("score")).unwrap()
 }
 
 fn names_in(directory: &Path) -> Vec<String> {
@@ -98,12 +98,12 @@ fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
 }
 
 #[test]
-fn two_tasks_of_the_same_id_in_two_benchmarks_are_assessed_apart() {
+fn two_tasks_of_the_same_id_in_two_benchmarks_are_scored_apart() {
     let (directory, _output) = ran();
     assert_eq!(
         (
-            outcome_of(&directory, "1/benchmark/t1"),
-            outcome_of(&directory, "1/refactoring/t1")
+            score_of(&directory, "1/benchmark/t1"),
+            score_of(&directory, "1/refactoring/t1")
         ),
         ("success\n".to_owned(), "success\n".to_owned())
     );

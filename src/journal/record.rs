@@ -6,7 +6,7 @@ use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
-use crate::genealogy::{AssessmentOutcome, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{Genealogy, HarnessId, ProcreationOutcome, Score};
 use crate::model::{self, Model};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -104,7 +104,7 @@ pub enum Record {
     AssessmentFinished {
         harness: HarnessId,
         task: String,
-        outcome: AssessmentOutcome,
+        score: Score,
     },
     DirectedEvolutionFinished {
         best_harness: HarnessId,

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use cladenc::containers::ContainerError;
 use cladenc::directed_evolution::Said;
-use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
+use cladenc::genealogy::{ProcreationOutcome, Score};
 use cladenc::journal::Started;
 use cladenc::workspace::Workspace;
 
@@ -44,11 +44,11 @@ fn procreated(outcome: ProcreationOutcome) -> String {
     .to_string()
 }
 
-fn assessed(outcome: AssessmentOutcome) -> String {
-    Said::Assessed {
+fn scored(score: Score) -> String {
+    Said::Scored {
         harness: 3,
         task: "fix-the-parser",
-        outcome,
+        score,
         workspace: &workspace(),
     }
     .to_string()
@@ -280,29 +280,29 @@ fn a_procreation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn an_assessment_that_succeeded_is_said_with_where_what_it_left_is_kept() {
+fn a_harness_scored_a_success_is_said_with_where_what_the_assessment_left_is_kept() {
     assert_eq!(
-        assessed(AssessmentOutcome::Success),
-        "the assessment of harness 3 on task fix-the-parser succeeded: what it left is kept in \
-         /run/assessments/3/fix-the-parser"
+        scored(Score::Success),
+        "harness 3 was scored a success on task fix-the-parser: what the assessment left is kept \
+         in /run/assessments/3/fix-the-parser"
     );
 }
 
 #[test]
-fn an_assessment_that_failed_is_said_to_have_failed() {
+fn a_harness_scored_a_failure_is_said_to_have_been_scored_a_failure() {
     assert_eq!(
-        assessed(AssessmentOutcome::Failure),
-        "the assessment of harness 3 on task fix-the-parser failed: what it left is kept in \
-         /run/assessments/3/fix-the-parser"
+        scored(Score::Failure),
+        "harness 3 was scored a failure on task fix-the-parser: what the assessment left is kept \
+         in /run/assessments/3/fix-the-parser"
     );
 }
 
 #[test]
-fn an_assessment_that_timed_out_is_said_to_have_run_past_its_time_limit() {
+fn a_harness_whose_assessment_timed_out_is_said_to_have_been_scored_a_failure_for_it() {
     assert_eq!(
-        assessed(AssessmentOutcome::TimedOut),
-        "the assessment of harness 3 on task fix-the-parser ran past its time limit: what it \
-         left is kept in /run/assessments/3/fix-the-parser"
+        scored(Score::TimedOut),
+        "harness 3 was scored a failure on task fix-the-parser, as the assessment ran past its \
+         time limit: what the assessment left is kept in /run/assessments/3/fix-the-parser"
     );
 }
 

@@ -1,4 +1,4 @@
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
 
 fn tasks(ids: &[&str]) -> Vec<String> {
     ids.iter().map(|id| (*id).to_owned()).collect()
@@ -26,9 +26,7 @@ fn the_tasks_not_given_leave_out_a_task_whose_assessment_has_ended() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
     genealogy.start_assessment(0, "a").unwrap();
-    genealogy
-        .end_assessment(0, "a", AssessmentOutcome::Success)
-        .unwrap();
+    genealogy.end_assessment(0, "a", Score::Success).unwrap();
     assert_eq!(genealogy.harnesses()[0].tasks_not_given(&list), ["b"]);
 }
 

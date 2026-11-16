@@ -4,7 +4,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
+use cladenc::genealogy::{ProcreationOutcome, Score};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
@@ -17,11 +17,7 @@ const MODEL: Model<'static> = Model {
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 
-type Assessed = (
-    TempDir,
-    Workspace,
-    Result<AssessmentOutcome, ContainerError>,
-);
+type Assessed = (TempDir, Workspace, Result<Score, ContainerError>);
 type Procreated = (
     TempDir,
     Workspace,

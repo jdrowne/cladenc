@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
 use cladenc::journal::{self, Journal, Record, Settings, Started, State};
 use tempfile::TempDir;
 
@@ -47,11 +47,11 @@ fn assessment_started(harness: u64, task: &str) -> Record {
     }
 }
 
-fn assessment_finished(harness: u64, task: &str, outcome: AssessmentOutcome) -> Record {
+fn assessment_finished(harness: u64, task: &str, score: Score) -> Record {
     Record::AssessmentFinished {
         harness,
         task: task.to_owned(),
-        outcome,
+        score,
     }
 }
 
@@ -104,7 +104,7 @@ fn four_actions_of_which_two_finished() -> [Record; 6] {
         procreation_started(2, 0),
         assessment_started(0, "t2"),
         procreation_finished(1, ProcreationOutcome::Created),
-        assessment_finished(0, "t1", AssessmentOutcome::Success),
+        assessment_finished(0, "t1", Score::Success),
     ]
 }
 
@@ -150,14 +150,10 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
         .end_procreation(1, ProcreationOutcome::Created)
         .unwrap();
     genealogy.start_assessment(1, "t2").unwrap();
-    genealogy
-        .end_assessment(1, "t2", AssessmentOutcome::Success)
-        .unwrap();
+    genealogy.end_assessment(1, "t2", Score::Success).unwrap();
     genealogy.start_procreation(1).unwrap();
     genealogy.start_assessment(0, "t1").unwrap();
-    genealogy
-        .end_assessment(0, "t1", AssessmentOutcome::TimedOut)
-        .unwrap();
+    genealogy.end_assessment(0, "t1", Score::TimedOut).unwrap();
     genealogy
         .end_procreation(2, ProcreationOutcome::Failed)
         .unwrap();
@@ -165,10 +161,10 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
         assessment_started(1, "t2"),
-        assessment_finished(1, "t2", AssessmentOutcome::Success),
+        assessment_finished(1, "t2", Score::Success),
         procreation_started(2, 1),
         assessment_started(0, "t1"),
-        assessment_finished(0, "t1", AssessmentOutcome::TimedOut),
+        assessment_finished(0, "t1", Score::TimedOut),
         procreation_finished(2, ProcreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
@@ -197,7 +193,7 @@ fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
         assessment_started(1, "t1"),
-        assessment_finished(1, "t1", AssessmentOutcome::Failure),
+        assessment_finished(1, "t1", Score::Failure),
     ]);
     assert_eq!(state.unfinished, []);
 }

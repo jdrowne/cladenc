@@ -280,11 +280,11 @@ fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept
 }
 
 #[test]
-fn a_directed_evolution_says_how_an_assessment_ended_and_where_what_it_left_is_kept() {
+fn a_directed_evolution_says_how_a_harness_was_scored_and_where_what_the_assessment_left_is_kept() {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
-        "cladenc: the assessment of harness 1 on task benchmark/t1 succeeded: what it left is \
-         kept in {}",
+        "cladenc: harness 1 was scored a success on task benchmark/t1: what the assessment left \
+         is kept in {}",
         directory.path().join("run/assessments/1/benchmark/t1").display()
     )));
 }

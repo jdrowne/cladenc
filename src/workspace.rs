@@ -5,7 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
 
 pub use copy::{copy_tree, holds_only_harness_files};
 
@@ -141,20 +141,15 @@ impl Workspace {
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
-    pub fn end_assessment(
-        &self,
-        harness: HarnessId,
-        task: &str,
-        outcome: AssessmentOutcome,
-    ) -> io::Result<()> {
+    pub fn end_assessment(&self, harness: HarnessId, task: &str, score: Score) -> io::Result<()> {
         let running = self.running_assessment(harness, task);
-        let word = match outcome {
-            AssessmentOutcome::Success => "success\n",
-            AssessmentOutcome::Failure => "failure\n",
-            AssessmentOutcome::TimedOut => "timed_out\n",
+        let word = match score {
+            Score::Success => "success\n",
+            Score::Failure => "failure\n",
+            Score::TimedOut => "timed_out\n",
         };
         fs::remove_dir_all(running.join("harness"))
-            .and_then(|()| fs::write(running.join("outcome"), word))
+            .and_then(|()| fs::write(running.join("score"), word))
             .and_then(|()| fs::rename(&running, self.assessment(harness, task)))
     }
 

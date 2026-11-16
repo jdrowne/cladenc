@@ -109,10 +109,10 @@ impl State {
             Record::AssessmentFinished {
                 harness,
                 task,
-                outcome,
+                score,
             } => {
                 self.genealogy
-                    .end_assessment(harness, &task, outcome)
+                    .end_assessment(harness, &task, score)
                     .map_err(refused)?;
                 let finished = Started::Assessment { harness, task };
                 self.unfinished.retain(|action| *action != finished);

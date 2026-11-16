@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
+use cladenc::genealogy::{ProcreationOutcome, Score};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -31,7 +31,7 @@ fn with_an_assessment_discarded_after_it_ended() -> (TempDir, Workspace) {
     let (directory, workspace) = made();
     workspace.start_assessment(0, "benchmark/t1").unwrap();
     workspace
-        .end_assessment(0, "benchmark/t1", AssessmentOutcome::Success)
+        .end_assessment(0, "benchmark/t1", Score::Success)
         .unwrap();
     workspace.discard_assessment(0, "benchmark/t1").unwrap();
     (directory, workspace)

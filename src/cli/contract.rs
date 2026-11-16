@@ -192,21 +192,22 @@ run in a second container of the same image, as
 A check calls no model, and is given none of the three variables of the
 model. The two steps share the time limit of one assessment.
 
-How an assessment ends decides what is recorded:
+How an assessment ends decides how the harness is scored:
 
-  the check exits with status 0    the assessment succeeded
-  the check exits with another     the assessment failed
+  the check exits with status 0    the harness is scored a success
+  the check exits with another     the harness is scored a failure
   exit status 125 of either step   Docker did not start the container: the
                                    directed evolution stops, and `cladenc
                                    resume` carries out the assessment again
   the time limit                   the container is removed, and the
-                                   assessment is recorded as timed out
+                                   harness is scored a failure, which is
+                                   recorded as timed_out
 
 assessments in the run directory keeps every assessment, in a directory
 named after the harness, in it one named after the benchmark, and in that
 one named after the task, which holds
 
-  outcome    one word: success, failure or timed_out
+  score      one word: success, failure or timed_out
   statement  the statement of the task
   work       the files of the task as the harness left them
   stdout     the standard output of the harness

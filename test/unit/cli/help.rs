@@ -396,11 +396,19 @@ fn the_long_help_of_start_names_what_a_check_is_given() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_each_way_an_assessment_ends_means() {
+fn the_long_help_of_start_says_that_how_an_assessment_ends_decides_the_score() {
+    assert!(
+        help_of_start(true)
+            .contains("\nHow an assessment ends decides how the harness is scored:\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_how_each_way_an_assessment_ends_scores_the_harness() {
     let help = help_of_start(true);
     let endings = [
-        "  the check exits with status 0    the assessment succeeded\n",
-        "  the check exits with another     the assessment failed\n",
+        "  the check exits with status 0    the harness is scored a success\n",
+        "  the check exits with another     the harness is scored a failure\n",
         "  exit status 125 of either step   Docker did not start the container",
         "  the time limit                   the container is removed",
     ];
@@ -408,10 +416,18 @@ fn the_long_help_of_start_says_what_each_way_an_assessment_ends_means() {
 }
 
 #[test]
+fn the_long_help_of_start_says_that_the_time_limit_scores_a_failure_recorded_as_timed_out() {
+    assert!(help_of_start(true).contains(
+        "harness is scored a failure, which is\n                                   recorded as \
+         timed_out\n"
+    ));
+}
+
+#[test]
 fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_assessment() {
     let help = help_of_start(true);
     let kept = [
-        "  outcome    one word: success, failure or timed_out\n",
+        "  score      one word: success, failure or timed_out\n",
         "  statement  the statement of the task\n",
         "  work       the files of the task as the harness left them\n",
         "  stdout     the standard output of the harness\n",

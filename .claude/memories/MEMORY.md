@@ -6,6 +6,7 @@
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; no rule limits the work to only what was asked
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words (directed evolution, artificial selection, assessment), and let cladenc leave the paper where a change improves it
+- [Assessing is not scoring](assessing-is-not-scoring.md) — a harness is assessed on a task or a benchmark and scored a success or a failure; an assessment never succeeds, fails or has an outcome, and what a harness is given is its score
 - [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: a person brings the progenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
 - [cladenc works offline and self-hosted](cladenc-works-offline-and-self-hosted.md) — the user's rule: no connection to the internet is needed, cladenc fetches nothing, and the person brings each thing a directed evolution uses, the whole benchmark among them
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either

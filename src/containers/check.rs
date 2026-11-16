@@ -5,7 +5,7 @@ use std::time::Instant;
 use super::container::{Container, Mount};
 use super::program::Ending;
 use super::{ContainerError, WORK};
-use crate::genealogy::AssessmentOutcome;
+use crate::genealogy::Score;
 use crate::workspace::Workspace;
 
 const TASK: &str = "/var/lib/cladenc/task";
@@ -18,7 +18,7 @@ pub(super) fn run(
     running: &Path,
     deadline: Instant,
     stop: &AtomicBool,
-) -> Result<AssessmentOutcome, ContainerError> {
+) -> Result<Score, ContainerError> {
     let work = running.join("work");
     let task = workspace.task(task);
     let container = Container {
@@ -42,9 +42,9 @@ pub(super) fn run(
     };
     Ok(
         match container.run(&running.join("check"), deadline, stop)? {
-            Ending::Exited(0) => AssessmentOutcome::Success,
-            Ending::Exited(_) => AssessmentOutcome::Failure,
-            Ending::TimedOut => AssessmentOutcome::TimedOut,
+            Ending::Exited(0) => Score::Success,
+            Ending::Exited(_) => Score::Failure,
+            Ending::TimedOut => Score::TimedOut,
         },
     )
 }

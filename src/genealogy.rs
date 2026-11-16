@@ -19,7 +19,7 @@ pub enum ProcreationOutcome {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AssessmentOutcome {
+pub enum Score {
     Success,
     Failure,
     TimedOut,
@@ -138,11 +138,11 @@ impl Genealogy {
         &mut self,
         harness: HarnessId,
         task: &str,
-        outcome: AssessmentOutcome,
+        score: Score,
     ) -> Result<(), GenealogyError> {
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|assessed| assessed.finish(task, outcome));
+            .is_some_and(|assessed| assessed.finish(task, score));
         if !finished {
             return Err(GenealogyError::AssessmentNotRunning {
                 harness,
@@ -151,7 +151,7 @@ impl Genealogy {
         }
         let mut member = Some(harness);
         while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
-            ancestor.count_in_clade(outcome);
+            ancestor.count_in_clade(score);
             member = ancestor.parent();
         }
         Ok(())

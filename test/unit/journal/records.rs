@@ -1,4 +1,4 @@
-use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
+use cladenc::genealogy::{ProcreationOutcome, Score};
 use cladenc::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -13,11 +13,11 @@ fn procreation_finished(outcome: ProcreationOutcome) -> Record {
     Record::ProcreationFinished { child: 1, outcome }
 }
 
-fn assessment_finished(outcome: AssessmentOutcome) -> Record {
+fn assessment_finished(score: Score) -> Record {
     Record::AssessmentFinished {
         harness: 1,
         task: "t2".to_owned(),
-        outcome,
+        score,
     }
 }
 
@@ -89,26 +89,26 @@ fn the_start_of_an_assessment_is_written_with_its_harness_and_task() {
 }
 
 #[test]
-fn the_end_of_an_assessment_that_succeeded_is_written_as_success() {
+fn the_end_of_an_assessment_is_written_with_a_score_of_success() {
     assert_eq!(
-        line(&assessment_finished(AssessmentOutcome::Success)),
-        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"success"}"#
+        line(&assessment_finished(Score::Success)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","score":"success"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_assessment_that_failed_is_written_as_failure() {
+fn the_end_of_an_assessment_is_written_with_a_score_of_failure() {
     assert_eq!(
-        line(&assessment_finished(AssessmentOutcome::Failure)),
-        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"failure"}"#
+        line(&assessment_finished(Score::Failure)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","score":"failure"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_assessment_that_timed_out_is_written_as_timed_out() {
+fn the_end_of_an_assessment_is_written_with_a_score_of_timed_out() {
     assert_eq!(
-        line(&assessment_finished(AssessmentOutcome::TimedOut)),
-        r#"{"record":"assessment_finished","harness":1,"task":"t2","outcome":"timed_out"}"#
+        line(&assessment_finished(Score::TimedOut)),
+        r#"{"record":"assessment_finished","harness":1,"task":"t2","score":"timed_out"}"#
     );
 }
 
@@ -146,7 +146,7 @@ fn the_start_of_an_assessment_survives_being_written_and_read_back() {
 
 #[test]
 fn the_end_of_an_assessment_survives_being_written_and_read_back() {
-    let record = assessment_finished(AssessmentOutcome::TimedOut);
+    let record = assessment_finished(Score::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -30,9 +30,9 @@ fn settings() -> Settings {
     }
 }
 
-fn assessed(genealogy: &mut Genealogy, task: &str, outcome: AssessmentOutcome) {
+fn scored(genealogy: &mut Genealogy, task: &str, score: Score) {
     genealogy.start_assessment(0, task).unwrap();
-    genealogy.end_assessment(0, task, outcome).unwrap();
+    genealogy.end_assessment(0, task, score).unwrap();
 }
 
 fn table(build: impl FnOnce(&mut Genealogy)) -> String {
@@ -44,7 +44,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table(|genealogy| {
-        assessed(genealogy, "t1", AssessmentOutcome::Success);
+        scored(genealogy, "t1", Score::Success);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
@@ -80,9 +80,9 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        assessed(genealogy, "t1", AssessmentOutcome::Success);
-        assessed(genealogy, "t2", AssessmentOutcome::Failure);
-        assessed(genealogy, "t3", AssessmentOutcome::Failure);
+        scored(genealogy, "t1", Score::Success);
+        scored(genealogy, "t2", Score::Failure);
+        scored(genealogy, "t3", Score::Failure);
     });
     assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
 }

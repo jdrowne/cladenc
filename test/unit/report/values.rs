@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use cladenc::artificial_selection::lower_bound;
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, HarnessState, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, HarnessState, ProcreationOutcome, Score};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -38,12 +38,10 @@ fn a_child_that_succeeds_where_its_parent_fails() -> Genealogy {
         .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
     genealogy.start_assessment(0, "t1").unwrap();
-    genealogy
-        .end_assessment(0, "t1", AssessmentOutcome::Failure)
-        .unwrap();
+    genealogy.end_assessment(0, "t1", Score::Failure).unwrap();
     genealogy.start_assessment(child, "t1").unwrap();
     genealogy
-        .end_assessment(child, "t1", AssessmentOutcome::Success)
+        .end_assessment(child, "t1", Score::Success)
         .unwrap();
     genealogy
 }
@@ -85,7 +83,7 @@ fn a_harness_that_is_being_created_has_no_lower_bound() {
 }
 
 #[test]
-fn a_clade_with_no_finished_assessment_has_no_clade_success_rate() {
+fn a_clade_with_no_harness_scored_has_no_clade_success_rate() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(report.harnesses[0].clade_success_rate, None);
 }

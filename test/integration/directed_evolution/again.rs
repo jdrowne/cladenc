@@ -125,7 +125,7 @@ fn an_assessment_that_runs_again_ends_with_its_directory_in_place() {
     assert!(
         directory
             .path()
-            .join("run/assessments/0/benchmark/t1/outcome")
+            .join("run/assessments/0/benchmark/t1/score")
             .is_file()
     );
 }

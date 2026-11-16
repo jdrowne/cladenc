@@ -1,5 +1,5 @@
 use cladenc::artificial_selection::{Action, ArtificialSelection};
-use cladenc::genealogy::{AssessmentOutcome, Genealogy, HarnessId, ProcreationOutcome};
+use cladenc::genealogy::{Genealogy, HarnessId, ProcreationOutcome, Score};
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -20,10 +20,10 @@ fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOu
     genealogy.end_procreation(child, outcome).unwrap();
 }
 
-fn assess(genealogy: &mut Genealogy, harness: HarnessId, count: usize, outcome: AssessmentOutcome) {
+fn assess(genealogy: &mut Genealogy, harness: HarnessId, count: usize, score: Score) {
     for task in tasks().iter().take(count) {
         genealogy.start_assessment(harness, task).unwrap();
-        genealogy.end_assessment(harness, task, outcome).unwrap();
+        genealogy.end_assessment(harness, task, score).unwrap();
     }
 }
 
@@ -33,10 +33,10 @@ fn two_lines() -> Genealogy {
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
     child_of(&mut genealogy, 1, ProcreationOutcome::Created);
     child_of(&mut genealogy, 2, ProcreationOutcome::Created);
-    assess(&mut genealogy, 1, 4, AssessmentOutcome::Failure);
-    assess(&mut genealogy, 3, 8, AssessmentOutcome::Success);
-    assess(&mut genealogy, 2, 4, AssessmentOutcome::Success);
-    assess(&mut genealogy, 4, 8, AssessmentOutcome::Failure);
+    assess(&mut genealogy, 1, 4, Score::Failure);
+    assess(&mut genealogy, 3, 8, Score::Success);
+    assess(&mut genealogy, 2, 4, Score::Success);
+    assess(&mut genealogy, 4, 8, Score::Failure);
     genealogy
 }
 
@@ -52,7 +52,7 @@ fn times_parent(genealogy: &Genealogy, parent: HarnessId) -> usize {
 #[test]
 fn a_procreation_is_the_next_action_when_the_harness_count_is_within_started_to_the_growth() {
     let mut genealogy = Genealogy::new();
-    assess(&mut genealogy, 0, 1, AssessmentOutcome::Success);
+    assess(&mut genealogy, 0, 1, Score::Success);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Procreation { parent: 0 })
@@ -78,7 +78,7 @@ fn a_created_child_can_be_the_parent() {
 fn a_harness_that_is_being_created_is_never_the_parent() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
-    assess(&mut genealogy, 0, 2, AssessmentOutcome::Failure);
+    assess(&mut genealogy, 0, 2, Score::Failure);
     assert_eq!(times_parent(&genealogy, 0), 200);
 }
 
@@ -86,14 +86,14 @@ fn a_harness_that_is_being_created_is_never_the_parent() {
 fn a_failed_harness_is_never_the_parent() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    assess(&mut genealogy, 0, 2, AssessmentOutcome::Failure);
+    assess(&mut genealogy, 0, 2, Score::Failure);
     assert_eq!(times_parent(&genealogy, 0), 200);
 }
 
 #[test]
 fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new();
-    assess(&mut genealogy, 0, 20, AssessmentOutcome::Success);
+    assess(&mut genealogy, 0, 20, Score::Success);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Procreation { parent: 0 })

@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::containers::ContainerError;
-use crate::genealogy::{AssessmentOutcome, HarnessId, ProcreationOutcome};
+use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
 use crate::journal::Started;
 use crate::workspace::Workspace;
 
@@ -59,10 +59,10 @@ pub enum Said<'a> {
         outcome: ProcreationOutcome,
         workspace: &'a Workspace,
     },
-    Assessed {
+    Scored {
         harness: HarnessId,
         task: &'a str,
-        outcome: AssessmentOutcome,
+        score: Score,
         workspace: &'a Workspace,
     },
     Failed {
@@ -191,21 +191,21 @@ impl Display for Said<'_> {
                     kept.display()
                 )
             }
-            Self::Assessed {
+            Self::Scored {
                 harness,
                 task,
-                outcome,
+                score,
                 workspace,
             } => {
-                let how = match outcome {
-                    AssessmentOutcome::Success => "succeeded",
-                    AssessmentOutcome::Failure => "failed",
-                    AssessmentOutcome::TimedOut => "ran past its time limit",
+                let (how, why) = match score {
+                    Score::Success => ("a success", ""),
+                    Score::Failure => ("a failure", ""),
+                    Score::TimedOut => ("a failure", ", as the assessment ran past its time limit"),
                 };
                 write!(
                     formatter,
-                    "the assessment of harness {harness} on task {task} {how}: what it left is \
-                     kept in {}",
+                    "harness {harness} was scored {how} on task {task}{why}: what the assessment \
+                     left is kept in {}",
                     workspace.assessment(*harness, task).display()
                 )
             }

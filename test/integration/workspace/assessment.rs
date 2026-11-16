@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::AssessmentOutcome;
+use cladenc::genealogy::Score;
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -23,17 +23,15 @@ fn started() -> (TempDir, Workspace) {
     (directory, workspace)
 }
 
-fn ended(outcome: AssessmentOutcome) -> (TempDir, Workspace) {
+fn ended(score: Score) -> (TempDir, Workspace) {
     let (directory, workspace) = started();
-    workspace
-        .end_assessment(0, "benchmark/t1", outcome)
-        .unwrap();
+    workspace.end_assessment(0, "benchmark/t1", score).unwrap();
     (directory, workspace)
 }
 
-fn outcome_written(outcome: AssessmentOutcome) -> String {
-    let (_directory, workspace) = ended(outcome);
-    fs::read_to_string(workspace.assessment(0, "benchmark/t1").join("outcome")).unwrap()
+fn score_written(score: Score) -> String {
+    let (_directory, workspace) = ended(score);
+    fs::read_to_string(workspace.assessment(0, "benchmark/t1").join("score")).unwrap()
 }
 
 fn held_while_running(file: &str) -> String {
@@ -100,23 +98,23 @@ fn an_assessment_on_a_task_the_run_directory_does_not_hold_cannot_be_started() {
 }
 
 #[test]
-fn an_assessment_that_succeeded_leaves_the_word_success_as_its_outcome() {
-    assert_eq!(outcome_written(AssessmentOutcome::Success), "success\n");
+fn a_harness_scored_a_success_leaves_the_word_success_as_its_score() {
+    assert_eq!(score_written(Score::Success), "success\n");
 }
 
 #[test]
-fn an_assessment_that_failed_leaves_the_word_failure_as_its_outcome() {
-    assert_eq!(outcome_written(AssessmentOutcome::Failure), "failure\n");
+fn a_harness_scored_a_failure_leaves_the_word_failure_as_its_score() {
+    assert_eq!(score_written(Score::Failure), "failure\n");
 }
 
 #[test]
-fn an_assessment_that_timed_out_leaves_the_word_timed_out_as_its_outcome() {
-    assert_eq!(outcome_written(AssessmentOutcome::TimedOut), "timed_out\n");
+fn a_harness_whose_assessment_timed_out_leaves_the_word_timed_out_as_its_score() {
+    assert_eq!(score_written(Score::TimedOut), "timed_out\n");
 }
 
 #[test]
 fn an_ended_assessment_keeps_no_copy_of_its_harness() {
-    let (_directory, workspace) = ended(AssessmentOutcome::Success);
+    let (_directory, workspace) = ended(Score::Success);
     assert!(
         !workspace
             .assessment(0, "benchmark/t1")
@@ -127,7 +125,7 @@ fn an_ended_assessment_keeps_no_copy_of_its_harness() {
 
 #[test]
 fn an_ended_assessment_keeps_the_work() {
-    let (_directory, workspace) = ended(AssessmentOutcome::Success);
+    let (_directory, workspace) = ended(Score::Success);
     assert!(
         workspace
             .assessment(0, "benchmark/t1")
@@ -138,7 +136,7 @@ fn an_ended_assessment_keeps_the_work() {
 
 #[test]
 fn an_ended_assessment_keeps_the_statement_of_its_task() {
-    let (_directory, workspace) = ended(AssessmentOutcome::Success);
+    let (_directory, workspace) = ended(Score::Success);
     assert!(
         workspace
             .assessment(0, "benchmark/t1")
@@ -149,7 +147,7 @@ fn an_ended_assessment_keeps_the_statement_of_its_task() {
 
 #[test]
 fn an_ended_assessment_leaves_nothing_running() {
-    let (_directory, workspace) = ended(AssessmentOutcome::Success);
+    let (_directory, workspace) = ended(Score::Success);
     assert!(!workspace.running_assessment(0, "benchmark/t1").exists());
 }
 
@@ -180,9 +178,7 @@ fn an_assessment_that_ends_after_another_on_a_task_of_the_same_benchmark_is_kept
         .unwrap();
     for task in ["benchmark/t1", "benchmark/t2"] {
         workspace.start_assessment(0, task).unwrap();
-        workspace
-            .end_assessment(0, task, AssessmentOutcome::Success)
-            .unwrap();
+        workspace.end_assessment(0, task, Score::Success).unwrap();
     }
     assert_eq!(entries(workspace.assessments(0).join("benchmark")), 2);
 }
