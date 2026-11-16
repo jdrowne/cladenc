@@ -34,9 +34,21 @@ machine, from the registry of its name.
 
 A harness is started in a container of the image of the search, as
 
-    sh -c <COMMAND>
+    sh -c <TIMER> <COMMAND> <SECONDS>
 
-where <COMMAND> is the value of --harness-run-command. In the container,
+  <TIMER>    sh -c \"$0\" & run=$!; (sleep \"$1\"; kill -9 $run) & wait $run
+  <COMMAND>  the value of --harness-run-command
+  <SECONDS>  what is left of the time limit when the container is started,
+             in whole seconds, and five seconds more
+
+The timer is a line of shell that starts the command, ends it once the
+seconds have passed, and hands on its exit status. Every container of a
+search is started under it, so that a container ends itself once its time
+limit has passed, also when cladenc was killed outright, as by `kill -9`,
+and is not there to remove it. The image of the search has to hold sh and
+sleep.
+
+In the container of a harness,
 
   /harness             holds the source code of the harness, a copy made
                        for this container
@@ -88,8 +100,9 @@ harnesses in the run directory, created or not.
 Where --harness-build-command is given, a harness is built before it is
 run for the first time, in a container of the same image, as
 
-    sh -c <COMMAND>
+    sh -c <TIMER> <COMMAND> <SECONDS>
 
+where <COMMAND> is the value of that flag and the timer is the same one,
 with /harness as the working directory, which holds the source code of the
 harness and is what CLADENC_HARNESS names. A build calls no model, and is
 given none of the three variables of the model. What the build makes stays
@@ -155,7 +168,7 @@ so it can neither read nor change the check. When the harness has ended,
 with whatever exit status, the check of the task is run in a second
 container of the same image, as
 
-    /task/check
+    sh -c <TIMER> /task/check <SECONDS>
 
   /work         holds what the harness left, and is the working directory
   /task         holds the directory of the task, to read and not to change

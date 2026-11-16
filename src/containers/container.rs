@@ -11,6 +11,8 @@ use super::program::{self, Ending};
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
+const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
+const LEEWAY: u64 = 5;
 
 pub(super) struct Mount<'a> {
     pub from: &'a Path,
@@ -33,6 +35,7 @@ impl Container<'_> {
         deadline: Instant,
         stop: &AtomicBool,
     ) -> Result<Ending, ContainerError> {
+        let seconds = seconds_of_the_timer(deadline);
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
         let mut docker = Command::new("docker");
         docker
@@ -46,7 +49,9 @@ impl Container<'_> {
         for &(variable, value) in self.environment {
             docker.args(["--env", variable]).env(variable, value);
         }
-        docker.args([self.image, "sh", "-c", self.command]);
+        docker
+            .args([self.image, "sh", "-c", TIMER, self.command])
+            .arg(seconds.to_string());
         let ended = program::run(docker, running, deadline, stop);
         if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
             remove(&name);
@@ -68,6 +73,11 @@ impl Mount<'_> {
         }
         written
     }
+}
+
+fn seconds_of_the_timer(deadline: Instant) -> u64 {
+    let left = deadline.saturating_duration_since(Instant::now());
+    left.as_secs() + u64::from(left.subsec_nanos() > 0) + LEEWAY
 }
 
 fn remove(name: &str) {

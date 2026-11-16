@@ -60,6 +60,8 @@ cladenc resume \
 
 The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a search that stopped again can be continued again.
 
+A `cladenc resume` that is killed outright, by `SIGKILL`, removes nothing, as a `cladenc start` that is killed outright removes nothing: each of its containers ends itself once its time limit has passed.
+
 ### `cladenc start`
 
 ```text
@@ -150,3 +152,5 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 `cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A procreation or an evaluation that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.
+
+`cladenc` cannot listen for `SIGKILL`, the signal that `kill -9` sends, and that Linux sends a program when the machine runs out of memory. A `cladenc` that is ended by it is killed outright: it removes no container, and Docker goes on running each one. So that none outlives its time limit, `cladenc` starts the command of every container under a timer, a line of shell that ends the command once what was left of the time limit has passed, and five seconds more. A container therefore ends itself, whether `cladenc` is still there or not, and Docker removes it. The timer is made of `sh` and `sleep`, which the image has to hold.

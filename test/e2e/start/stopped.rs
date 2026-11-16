@@ -1,3 +1,4 @@
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
@@ -7,7 +8,7 @@ use tempfile::TempDir;
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 
-fn start(directory: &Path, run_command: &str) -> Command {
+fn start(directory: &Path, run_command: &str, evaluation_timeout: &str) -> Command {
     let options = [
         ("--progenitor", test_inputs::progenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
@@ -22,7 +23,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--initial-procreations", "0".into()),
         ("--workers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--evaluation-timeout", "60".into()),
+        ("--evaluation-timeout", evaluation_timeout.into()),
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
@@ -37,16 +38,28 @@ fn id_file(directory: &TempDir) -> PathBuf {
         .join("run/running/evaluation-0-benchmark+t1/work/id")
 }
 
-fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
+fn signalled_within(signal: Signal, evaluation_timeout: &str) -> (TempDir, ExitStatus) {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = start(directory.path(), SAY_THE_CONTAINER_AND_STAY)
-        .spawn()
-        .unwrap();
+    let mut cladenc = start(
+        directory.path(),
+        SAY_THE_CONTAINER_AND_STAY,
+        evaluation_timeout,
+    )
+    .spawn()
+    .unwrap();
     let id_file = id_file(&directory);
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     let status = cladenc.wait().unwrap();
     (directory, status)
+}
+
+fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
+    signalled_within(signal, "60")
+}
+
+fn killed_outright() -> (TempDir, ExitStatus) {
+    signalled_within(Signal::SIGKILL, "3")
 }
 
 #[test]
@@ -92,8 +105,20 @@ fn an_interrupt_during_a_run_leaves_no_container_behind() {
 }
 
 #[test]
+fn a_cladenc_that_is_killed_outright_during_a_run_is_ended_by_the_signal() {
+    let (_directory, status) = killed_outright();
+    assert_eq!(status.signal(), Some(Signal::SIGKILL as i32));
+}
+
+#[test]
+fn a_container_ends_itself_at_its_time_limit_when_cladenc_was_killed_outright() {
+    let (directory, _status) = killed_outright();
+    assert!(test_inputs::container_is_gone(&id_file(&directory)));
+}
+
+#[test]
 fn a_container_that_docker_does_not_start_gives_exit_status_1() {
     let directory = test_inputs::temporary_directory();
-    let status = start(directory.path(), "exit 125").status().unwrap();
+    let status = start(directory.path(), "exit 125", "60").status().unwrap();
     assert_eq!(status.code(), Some(1));
 }

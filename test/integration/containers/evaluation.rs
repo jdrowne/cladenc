@@ -10,6 +10,7 @@ use tempfile::TempDir;
 
 const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt";
+const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | tail -n 1 > seconds";
 
 struct Evaluated {
     _directory: TempDir,
@@ -351,6 +352,28 @@ fn a_check_that_runs_past_what_is_left_of_the_time_limit_times_out() {
         within(3, FINISH, "sleep 300").result,
         Ok(EvaluationOutcome::TimedOut)
     ));
+}
+
+#[test]
+fn the_timer_of_a_harness_waits_five_seconds_longer_than_the_time_limit() {
+    assert_eq!(
+        left_by_the_harness(SAY_THE_SECONDS_OF_THE_TIMER, "seconds"),
+        "35\n"
+    );
+}
+
+#[test]
+fn the_timer_of_a_check_waits_for_what_the_harness_left_of_the_time_limit() {
+    let seconds = kept(
+        &evaluated("sleep 2", SAY_THE_SECONDS_OF_THE_TIMER),
+        "work/seconds",
+    );
+    assert!(seconds.trim().parse::<u64>().unwrap() <= 33);
+}
+
+#[test]
+fn the_command_of_a_harness_is_not_the_first_process_of_its_container() {
+    assert_ne!(left_by_the_harness("echo $$ > process", "process"), "1\n");
 }
 
 #[test]

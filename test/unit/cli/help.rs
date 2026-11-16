@@ -15,7 +15,56 @@ fn help_of_start(long: bool) -> String {
 
 #[test]
 fn the_long_help_of_start_shows_how_a_harness_is_started() {
-    assert!(help_of_start(true).contains("    sh -c <COMMAND>\n"));
+    assert!(help_of_start(true).contains("    sh -c <TIMER> <COMMAND> <SECONDS>\n"));
+}
+
+#[test]
+fn the_long_help_of_start_shows_the_timer_that_every_container_is_started_under() {
+    assert!(help_of_start(true).contains(
+        "  <TIMER>    sh -c \"$0\" & run=$!; (sleep \"$1\"; kill -9 $run) & wait $run\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_command_the_timer_of_a_harness_starts() {
+    assert!(help_of_start(true).contains("  <COMMAND>  the value of --harness-run-command\n"));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_long_the_timer_of_a_container_waits() {
+    assert!(help_of_start(true).contains(
+        "  <SECONDS>  what is left of the time limit when the container is started,\n             \
+         in whole seconds, and five seconds more\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_timer_does() {
+    assert!(help_of_start(true).contains(
+        "The timer is a line of shell that starts the command, ends it once the\nseconds have \
+         passed, and hands on its exit status."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_container_ends_itself_when_cladenc_was_killed_outright() {
+    assert!(help_of_start(true).contains(
+        "a container ends itself once its time\nlimit has passed, also when cladenc was killed \
+         outright, as by `kill -9`,\nand is not there to remove it."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_image_has_to_hold_for_the_timer() {
+    assert!(help_of_start(true).contains("The image of the search has to hold sh and\nsleep.\n"));
+}
+
+#[test]
+fn the_long_help_of_start_shows_how_a_harness_is_built() {
+    assert!(help_of_start(true).contains(
+        "in a container of the same image, as\n\n    sh -c <TIMER> <COMMAND> <SECONDS>\n\nwhere \
+         <COMMAND> is the value of that flag and the timer is the same one,\n"
+    ));
 }
 
 #[test]
@@ -203,7 +252,7 @@ fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_
 
 #[test]
 fn the_long_help_of_start_shows_how_the_check_of_a_task_is_called() {
-    assert!(help_of_start(true).contains("\n    /task/check\n"));
+    assert!(help_of_start(true).contains("\n    sh -c <TIMER> /task/check <SECONDS>\n"));
 }
 
 #[test]
@@ -338,7 +387,7 @@ fn the_long_help_of_start_says_that_a_procreation_finds_its_evaluations_by_bench
 
 #[test]
 fn the_short_help_of_start_does_not_show_how_a_harness_is_started() {
-    assert!(!help_of_start(false).contains("sh -c <COMMAND>"));
+    assert!(!help_of_start(false).contains("sh -c <TIMER>"));
 }
 
 #[test]
