@@ -13,6 +13,89 @@ fn help_of_start(long: bool) -> String {
     help.to_string()
 }
 
+fn help_of_resume(long: bool) -> String {
+    let mut cladenc = Cli::command();
+    let resume = cladenc.find_subcommand_mut("resume").unwrap();
+    let help = if long {
+        resume.render_long_help()
+    } else {
+        resume.render_help()
+    };
+    help.to_string()
+}
+
+#[test]
+fn the_long_help_of_resume_says_that_a_cladenc_killed_outright_ends_none_of_its_containers() {
+    assert!(help_of_resume(true).contains(
+        "A cladenc that is killed outright, as by `kill -9`, ends none of its\ncontainers, and \
+         each goes on until its time limit has passed."
+    ));
+}
+
+#[test]
+fn the_long_help_of_resume_says_that_it_first_removes_the_containers_the_search_left_running() {
+    assert!(help_of_resume(true).contains(
+        "Before it\ndoes anything else, `cladenc resume` removes the containers that the \
+         search\nleft running, so that it never works beside one of them."
+    ));
+}
+
+#[test]
+fn the_long_help_of_resume_shows_the_label_that_every_container_of_a_search_carries() {
+    assert!(help_of_resume(true).contains(
+        "\n    cladenc.search=<DIR>\n\nwhere <DIR> is the path of the run directory, with every \
+         symbolic link in\nit resolved."
+    ));
+}
+
+#[test]
+fn the_long_help_of_resume_says_that_the_containers_are_removed_once_no_other_cladenc_is_there() {
+    assert!(help_of_resume(true).contains(
+        "Once it has the run directory to itself, `cladenc resume` asks\nDocker for the \
+         containers that carry the label of its search, removes them,\nand says how many it \
+         removed."
+    ));
+}
+
+#[test]
+fn the_long_help_of_resume_says_what_it_does_where_docker_cannot_be_asked() {
+    assert!(
+        help_of_resume(true).contains(
+            "Where Docker cannot be asked, it exits with\nstatus 2 and continues nothing."
+        )
+    );
+}
+
+#[test]
+fn the_long_help_of_resume_shows_how_the_containers_of_a_search_are_listed_by_hand() {
+    assert!(help_of_resume(true).contains(
+        "Where the search is not resumed, its containers are removed by hand.\n\n    docker ps \
+         --filter label=cladenc.search=<DIR>\n\nlists them"
+    ));
+}
+
+#[test]
+fn the_long_help_of_resume_says_how_a_container_is_ended_by_hand() {
+    assert!(help_of_resume(true).contains(
+        "their names begin cladenc-, and `docker kill` with a name ends\nthat container. Docker \
+         removes a container of cladenc once it has ended."
+    ));
+}
+
+#[test]
+fn the_short_help_of_resume_does_not_show_the_label_of_a_search() {
+    assert!(!help_of_resume(false).contains("cladenc.search"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_resume_removes_the_containers_a_search_left_running() {
+    assert!(help_of_start(true).contains(
+        "Until then a container that was left goes on. `cladenc resume` removes the\ncontainers \
+         that the search left running before it does anything else, and\nits long help says \
+         how they are found, and how they are removed by hand\nwhere the search is not resumed."
+    ));
+}
+
 #[test]
 fn the_long_help_of_start_shows_how_a_harness_is_started() {
     assert!(help_of_start(true).contains("    sh -c <TIMER> <COMMAND> <SECONDS>\n"));

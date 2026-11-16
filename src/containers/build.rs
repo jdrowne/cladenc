@@ -76,6 +76,7 @@ impl Build<'_> {
             .start_build(self.harness)
             .map_err(ContainerError::Io)?;
         let container = Container {
+            workspace,
             image: self.image,
             command: self.command,
             mounts: &[Mount {

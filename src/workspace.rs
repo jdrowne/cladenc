@@ -35,6 +35,10 @@ impl Workspace {
             .map(|()| workspace)
     }
 
+    pub fn run_directory(&self) -> &Path {
+        &self.run_directory
+    }
+
     pub fn copy_benchmark(&self, benchmark: &Benchmark) -> io::Result<()> {
         let kept = self.run_directory.join("benchmarks").join(benchmark.name());
         fs::create_dir(&kept).and_then(|()| {

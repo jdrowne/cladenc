@@ -7,7 +7,9 @@ use std::time::Instant;
 use nix::unistd::{Gid, Uid};
 
 use super::ContainerError;
+use super::left;
 use super::program::{self, Ending};
+use crate::workspace::Workspace;
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
@@ -21,6 +23,7 @@ pub(super) struct Mount<'a> {
 }
 
 pub(super) struct Container<'a> {
+    pub workspace: &'a Workspace,
     pub image: &'a str,
     pub command: &'a str,
     pub mounts: &'a [Mount<'a>],
@@ -39,7 +42,9 @@ impl Container<'_> {
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
         let mut docker = Command::new("docker");
         docker
-            .args(["run", "--rm", "--pull", "never", "--name", &name, "--user"])
+            .args(["run", "--rm", "--pull", "never", "--name", &name, "--label"])
+            .arg(left::label(self.workspace))
+            .arg("--user")
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
             .args(["--add-host", MACHINE])
             .args(["--workdir", self.working_directory]);

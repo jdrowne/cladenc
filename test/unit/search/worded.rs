@@ -36,6 +36,17 @@ fn a_key_that_cannot_be_read_is_worded_with_its_file_and_what_the_file_has_to_ho
 }
 
 #[test]
+fn containers_that_cannot_be_removed_are_worded_with_what_docker_said() {
+    assert_eq!(
+        worded(SearchError::Left(io::Error::other(
+            "Cannot connect to the Docker daemon"
+        ))),
+        "the containers that the search left running cannot be removed: Cannot connect to the \
+         Docker daemon"
+    );
+}
+
+#[test]
 fn a_journal_that_could_not_be_written_is_worded_with_the_system_s_reason() {
     assert_eq!(
         worded(SearchError::Journal(JournalError::Io(

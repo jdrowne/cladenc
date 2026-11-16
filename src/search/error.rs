@@ -11,6 +11,7 @@ pub enum SearchError {
     Io(io::Error),
     Unusable(JournalError),
     Key(PathBuf),
+    Left(io::Error),
     Image(ContainerError),
     Journal(JournalError),
     Asked,
@@ -33,6 +34,10 @@ impl Display for SearchError {
                 "the key of the model cannot be read: {} is not a file that holds a key on one \
                  line and nothing else",
                 file.display()
+            ),
+            Self::Left(error) => write!(
+                formatter,
+                "the containers that the search left running cannot be removed: {error}"
             ),
             Self::Image(error) => write!(
                 formatter,

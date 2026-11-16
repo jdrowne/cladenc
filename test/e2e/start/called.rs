@@ -60,7 +60,10 @@ fn ran_with_no_file_of_a_key_and_a_key_in_the_environment() -> TempDir {
 }
 
 fn ran_with_a_docker_that_records_its_arguments() -> String {
-    let directory = test_inputs::temporary_directory();
+    ran_in_with_a_docker_that_records_its_arguments(&test_inputs::temporary_directory())
+}
+
+fn ran_in_with_a_docker_that_records_its_arguments(directory: &TempDir) -> String {
     let key_file = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
     let arguments = directory.path().join("arguments-of-docker");
     let path = format!(
@@ -228,4 +231,18 @@ fn the_timer_of_a_harness_is_given_its_command_and_five_seconds_more_than_the_ti
 fn the_timer_of_a_check_is_given_the_check_of_the_task() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
     assert!(arguments.contains(&format!("{TIMER}\n/task/check\n")));
+}
+
+#[test]
+fn every_container_carries_the_label_of_its_search() {
+    let directory = test_inputs::temporary_directory();
+    let arguments = ran_in_with_a_docker_that_records_its_arguments(&directory);
+    let run = fs::canonicalize(directory.path().join("run")).unwrap();
+    let containers = arguments.lines().filter(|line| *line == "run").count();
+    assert_eq!(
+        arguments
+            .matches(&format!("\n--label\ncladenc.search={}\n", run.display()))
+            .count(),
+        containers.max(1)
+    );
 }

@@ -56,11 +56,15 @@ cladenc resume \
 | `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
-`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the search left any running, how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
 
 The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a search that stopped again can be continued again.
 
-A `cladenc resume` that is killed outright, by `SIGKILL`, removes nothing, as a `cladenc start` that is killed outright removes nothing: each of its containers ends itself once its time limit has passed.
+A `cladenc` that was killed outright, by `SIGKILL`, ended none of its containers, and each goes on until its time limit has passed. Before it does anything else, `cladenc resume` removes the containers that the search left running, so that it never works beside one of them. Every container of a search carries the Docker label `cladenc.search`, whose value is the path of the run directory, and `cladenc resume` removes each container that carries the label of its search, once it has the run directory to itself. Where Docker cannot be asked, `cladenc resume` exits with status 2 and continues nothing.
+
+Where the search is not resumed, its containers are removed by hand: `docker ps` lists them under names that begin `cladenc-`, and `docker kill` with a name ends that container. Docker removes a container of `cladenc` by itself once the container has ended.
+
+A `cladenc resume` that is killed outright removes nothing either, and the next `cladenc resume` removes what it left.
 
 ### `cladenc start`
 
@@ -153,4 +157,4 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.
 
-`cladenc` cannot listen for `SIGKILL`, the signal that `kill -9` sends, and that Linux sends a program when the machine runs out of memory. A `cladenc` that is ended by it is killed outright: it removes no container, and Docker goes on running each one. So that none outlives its time limit, `cladenc` starts the command of every container under a timer, a line of shell that ends the command once what was left of the time limit has passed, and five seconds more. A container therefore ends itself, whether `cladenc` is still there or not, and Docker removes it. The timer is made of `sh` and `sleep`, which the image has to hold.
+`cladenc` cannot listen for `SIGKILL`, the signal that `kill -9` sends, and that Linux sends a program when the machine runs out of memory. A `cladenc` that is ended by it is killed outright: it removes no container, and Docker goes on running each one. So that none outlives its time limit, `cladenc` starts the command of every container under a timer, a line of shell that ends the command once what was left of the time limit has passed, and five seconds more. A container therefore ends itself, whether `cladenc` is still there or not, and Docker removes it. The timer is made of `sh` and `sleep`, which the image has to hold. Until its time limit has passed, a container that was left goes on, unless `cladenc resume` continues the search: it removes the containers that the search left running before it does anything else.

@@ -102,6 +102,26 @@ fn one_task_is_not_said_to_be_several() {
     );
 }
 
+fn removed(containers: u64) -> String {
+    Said::Removed { containers }.to_string()
+}
+
+#[test]
+fn the_containers_a_search_left_running_are_said_to_be_removed_with_their_number() {
+    assert_eq!(
+        removed(2),
+        "removed 2 containers that the search left running"
+    );
+}
+
+#[test]
+fn one_container_is_not_said_to_be_several() {
+    assert_eq!(
+        removed(1),
+        "removed 1 container that the search left running"
+    );
+}
+
 #[test]
 fn a_search_that_is_continued_is_said_with_how_far_it_had_got() {
     assert_eq!(

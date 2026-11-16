@@ -48,6 +48,11 @@ limit has passed, also when cladenc was killed outright, as by `kill -9`,
 and is not there to remove it. The image of the search has to hold sh and
 sleep.
 
+Until then a container that was left goes on. `cladenc resume` removes the
+containers that the search left running before it does anything else, and
+its long help says how they are found, and how they are removed by hand
+where the search is not resumed.
+
 In the container of a harness,
 
   /harness             holds the source code of the harness, a copy made
@@ -197,3 +202,27 @@ one named after the task, which holds
   stdout     the standard output of the harness
   stderr     the standard error of the harness
   check      the standard output and the standard error of the check";
+
+pub(super) const RESUMING: &str = "\
+A cladenc that is killed outright, as by `kill -9`, ends none of its
+containers, and each goes on until its time limit has passed. Before it
+does anything else, `cladenc resume` removes the containers that the search
+left running, so that it never works beside one of them.
+
+Every container of a search carries a Docker label, a name and a value that
+Docker keeps with a container:
+
+    cladenc.search=<DIR>
+
+where <DIR> is the path of the run directory, with every symbolic link in
+it resolved. Once it has the run directory to itself, `cladenc resume` asks
+Docker for the containers that carry the label of its search, removes them,
+and says how many it removed. Where Docker cannot be asked, it exits with
+status 2 and continues nothing.
+
+Where the search is not resumed, its containers are removed by hand.
+
+    docker ps --filter label=cladenc.search=<DIR>
+
+lists them, their names begin cladenc-, and `docker kill` with a name ends
+that container. Docker removes a container of cladenc once it has ended.";

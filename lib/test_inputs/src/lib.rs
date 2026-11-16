@@ -160,6 +160,15 @@ pub fn container_is_gone(id_file: &Path) -> bool {
     })
 }
 
+pub fn container_is_running(id_file: &Path) -> bool {
+    let id = fs::read_to_string(id_file).expect("the file of the container id can be read");
+    let filter = format!("id={}", id.trim());
+    Command::new("docker")
+        .args(["ps", "--quiet", "--filter", &filter])
+        .output()
+        .is_ok_and(|listed| listed.status.success() && !listed.stdout.is_empty())
+}
+
 pub fn end_with_125_at(progenitor: &Path, solved: u64) {
     fs::write(progenitor.join("end-with-125-at"), format!("{solved}\n"))
         .expect("the marker can be written");

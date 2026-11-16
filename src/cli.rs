@@ -31,7 +31,10 @@ pub enum Command {
         after_long_help = contract::CONTRACT
     )]
     Start(Box<StartOptions>),
-    #[command(about = "Continue a search that stopped before its end")]
+    #[command(
+        about = "Continue a search that stopped before its end",
+        after_long_help = contract::RESUMING
+    )]
     Resume(ResumeOptions),
     #[command(about = "Print the state of a search without changing it")]
     Report(ReportOptions),
@@ -287,6 +290,7 @@ fn stopped(error: SearchError) -> (u8, String) {
         SearchError::Io(_)
         | SearchError::Unusable(_)
         | SearchError::Key(_)
+        | SearchError::Left(_)
         | SearchError::Image(_) => 2,
         SearchError::Journal(_)
         | SearchError::Asked

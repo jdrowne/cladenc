@@ -6,19 +6,23 @@ use super::container::{Container, Mount};
 use super::program::Ending;
 use super::{ContainerError, WORK};
 use crate::genealogy::EvaluationOutcome;
+use crate::workspace::Workspace;
 
 const TASK: &str = "/task";
 const CHECK: &str = "/task/check";
 
 pub(super) fn run(
+    workspace: &Workspace,
     image: &str,
-    task: &Path,
+    task: &str,
     running: &Path,
     deadline: Instant,
     stop: &AtomicBool,
 ) -> Result<EvaluationOutcome, ContainerError> {
     let work = running.join("work");
+    let task = workspace.task(task);
     let container = Container {
+        workspace,
         image,
         command: CHECK,
         mounts: &[
@@ -28,7 +32,7 @@ pub(super) fn run(
                 read_only: false,
             },
             Mount {
-                from: task,
+                from: &task,
                 to: TASK,
                 read_only: true,
             },

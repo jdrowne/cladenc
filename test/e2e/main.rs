@@ -9,6 +9,7 @@ mod report {
 mod resume {
     mod continued;
     mod ended;
+    mod left;
     mod unusable;
 }
 

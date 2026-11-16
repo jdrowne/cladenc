@@ -142,6 +142,15 @@ pub fn resume(
             })
         }
         None => {
+            let removed = containers::remove_left_behind(&workspace).map_err(SearchError::Left)?;
+            if removed > 0 {
+                say(
+                    &mut writer,
+                    &Said::Removed {
+                        containers: removed,
+                    },
+                );
+            }
             let key = settings.model_key().map_err(SearchError::Key)?;
             let continuing = Said::Continuing {
                 run_directory,

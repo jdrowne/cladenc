@@ -2,6 +2,7 @@ mod build;
 mod check;
 mod container;
 mod image;
+mod left;
 mod program;
 
 use std::error::Error;
@@ -18,6 +19,7 @@ use crate::workspace::{Workspace, holds_only_harness_files};
 pub use build::build_progenitor;
 use container::{Container, Mount};
 pub use image::build_image;
+pub use left::remove_left_behind;
 use program::{Ending, deadline};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
@@ -101,6 +103,7 @@ pub fn run_procreation(
     .chain(launch.model.environment())
     .collect();
     let container = Container {
+        workspace,
         image: launch.image,
         command: launch.run_command,
         mounts: &[
@@ -160,6 +163,7 @@ pub fn run_evaluation(
     .chain(launch.model.environment())
     .collect();
     let container = Container {
+        workspace,
         image: launch.image,
         command: launch.run_command,
         mounts: &[
@@ -178,13 +182,7 @@ pub fn run_evaluation(
         environment: &environment,
     };
     let outcome = match container.run(&running, deadline, stop)? {
-        Ending::Exited(_) => check::run(
-            launch.image,
-            &workspace.task(task),
-            &running,
-            deadline,
-            stop,
-        )?,
+        Ending::Exited(_) => check::run(workspace, launch.image, task, &running, deadline, stop)?,
         Ending::TimedOut => EvaluationOutcome::TimedOut,
     };
     workspace

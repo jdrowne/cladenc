@@ -28,6 +28,9 @@ pub enum Said<'a> {
         error: &'a ContainerError,
         workspace: &'a Workspace,
     },
+    Removed {
+        containers: u64,
+    },
     Continuing {
         run_directory: &'a Path,
         started: u64,
@@ -110,6 +113,11 @@ impl Display for Said<'_> {
                 formatter,
                 "the build of the image {error}: what Docker printed is kept in {}",
                 workspace.image().display()
+            ),
+            Self::Removed { containers } => write!(
+                formatter,
+                "removed {} that the search left running",
+                counted(*containers, "container", "containers")
             ),
             Self::Continuing {
                 run_directory,
