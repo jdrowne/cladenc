@@ -8,13 +8,12 @@ use nix::unistd::{Gid, Uid};
 
 use super::ContainerError;
 use super::left;
-use super::program::{self, Ending};
+use super::program::{self, Ending, LEEWAY};
 use crate::workspace::Workspace;
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
 const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
-const LEEWAY: u64 = 5;
 
 pub(super) struct Mount<'a> {
     pub from: &'a Path,

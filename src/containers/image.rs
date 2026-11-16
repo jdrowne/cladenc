@@ -3,7 +3,7 @@ use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
 use super::ContainerError;
-use super::program::{self, Ending, deadline};
+use super::program::{self, Ending, LEEWAY, deadline};
 use crate::workspace::Workspace;
 
 pub fn build_image(
@@ -16,12 +16,14 @@ pub fn build_image(
     let kept = workspace
         .start_image(dockerfile)
         .map_err(ContainerError::Io)?;
-    let mut docker = Command::new("docker");
-    docker
-        .args(["build", "--tag", image, "--file"])
+    let mut build = Command::new("timeout");
+    build
+        .args(["-s", "KILL"])
+        .arg(time_limit.saturating_add(LEEWAY).to_string())
+        .args(["docker", "build", "--tag", image, "--file"])
         .arg(kept.join("Dockerfile"))
         .arg(kept.join("context"));
-    match program::run(docker, &kept, deadline(time_limit), stop)? {
+    match program::run(build, &kept, deadline(time_limit), stop)? {
         Ending::Exited(0) => Ok(()),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
         Ending::TimedOut => Err(ContainerError::TimeLimit),

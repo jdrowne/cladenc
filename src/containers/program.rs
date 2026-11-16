@@ -13,6 +13,8 @@ use super::ContainerError;
 
 const LOOK: Duration = Duration::from_millis(20);
 
+pub(super) const LEEWAY: u64 = 5;
+
 pub(super) enum Ending {
     Exited(i32),
     TimedOut,

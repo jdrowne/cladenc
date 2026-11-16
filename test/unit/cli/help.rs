@@ -201,18 +201,46 @@ fn the_short_help_of_start_names_the_flag_that_names_the_file_of_the_key() {
 
 #[test]
 fn the_long_help_of_start_shows_how_an_image_is_built_from_a_dockerfile() {
-    assert!(help_of_start(true).contains("    docker build --tag <NAME> --file <FILE> <DIR>\n"));
+    assert!(
+        help_of_start(true).contains(
+            "    timeout -s KILL <SECONDS> docker build --tag <NAME> --file <FILE> <DIR>\n"
+        )
+    );
 }
 
 #[test]
 fn the_long_help_of_start_says_what_docker_is_given_to_build_an_image_from() {
     let help = help_of_start(true);
     let given = [
-        "  <NAME>  the name cladenc gives the image: ",
-        "  <FILE>  a copy of the Dockerfile, kept in image in the run directory\n",
-        "  <DIR>   an empty directory, so the Dockerfile has no file to copy into",
+        "  <NAME>     the name cladenc gives the image: ",
+        "  <FILE>     a copy of the Dockerfile, kept in image in the run directory\n",
+        "  <DIR>      an empty directory, so the Dockerfile has no file to copy into",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_long_the_timeout_of_the_build_of_the_image_waits() {
+    assert!(
+        help_of_start(true)
+            .contains("  <SECONDS>  the value of --docker-build-timeout, and five seconds more\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_build_of_the_image_ends_itself_at_its_time_limit() {
+    assert!(help_of_start(true).contains(
+        "cladenc ends a build that\nruns past its time limit, and the build ends itself five \
+         seconds later\nwhere cladenc was killed outright, as by `kill -9`, and is not there to \
+         end\nit."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_machine_has_to_hold_timeout() {
+    assert!(help_of_start(true).contains(
+        "The machine cladenc runs on has to hold timeout, which the package\ncoreutils brings."
+    ));
 }
 
 #[test]
@@ -269,7 +297,7 @@ fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does
 fn the_long_help_of_start_says_that_resume_builds_no_image() {
     assert!(
         help_of_start(true)
-            .contains("`cladenc resume`\nstarts its containers from it and builds nothing.\n")
+            .contains("`cladenc resume` starts its containers from\nit and builds nothing.\n")
     );
 }
 

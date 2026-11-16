@@ -4,19 +4,24 @@ search. It is the image that --docker-image names, or the image that
 cladenc builds when the search is started, from the Dockerfile that
 --dockerfile names, as
 
-    docker build --tag <NAME> --file <FILE> <DIR>
+    timeout -s KILL <SECONDS> docker build --tag <NAME> --file <FILE> <DIR>
 
-  <NAME>  the name cladenc gives the image: cladenc- and sixteen random
-          hexadecimal digits
-  <FILE>  a copy of the Dockerfile, kept in image in the run directory
-  <DIR>   an empty directory, so the Dockerfile has no file to copy into
-          the image
+  <SECONDS>  the value of --docker-build-timeout, and five seconds more
+  <NAME>     the name cladenc gives the image: cladenc- and sixteen random
+             hexadecimal digits
+  <FILE>     a copy of the Dockerfile, kept in image in the run directory
+  <DIR>      an empty directory, so the Dockerfile has no file to copy into
+             the image
 
 The build has the time limit that --docker-build-timeout gives, and image
-in the run directory keeps what Docker printed. An image that is not built
-stops `cladenc start` with exit status 2, before the search has a journal.
-The image stays on the machine when the search ends: `cladenc resume`
-starts its containers from it and builds nothing.
+in the run directory keeps what Docker printed. cladenc ends a build that
+runs past its time limit, and the build ends itself five seconds later
+where cladenc was killed outright, as by `kill -9`, and is not there to end
+it. The machine cladenc runs on has to hold timeout, which the package
+coreutils brings. An image that is not built stops `cladenc start` with
+exit status 2, before the search has a journal. The image stays on the
+machine when the search ends: `cladenc resume` starts its containers from
+it and builds nothing.
 
 cladenc fetches no image, and has no flag for a registry, the server that
 Docker fetches an image from. The name of an image says which registry it
