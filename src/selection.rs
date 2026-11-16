@@ -15,7 +15,7 @@ pub enum Action {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Policy {
+pub struct Selection {
     pub budget: u64,
     pub growth: f64,
     pub confidence: f64,
@@ -31,7 +31,7 @@ pub fn procreation_is_due(harness_count: u64, started: u64, growth: f64) -> bool
     harness_count as f64 <= (started as f64).powf(growth)
 }
 
-impl Policy {
+impl Selection {
     pub fn next_action(&self, genealogy: &Genealogy, action: u64) -> Option<Action> {
         let started = genealogy.started();
         if started >= self.budget {

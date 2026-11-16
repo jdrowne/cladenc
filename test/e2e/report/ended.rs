@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
 
-use cladenc::policy::lower_bound;
+use cladenc::selection::lower_bound;
 use tempfile::TempDir;
 
 fn ended() -> TempDir {

@@ -1,4 +1,4 @@
-use cladenc::policy::lower_bound;
+use cladenc::selection::lower_bound;
 
 #[test]
 fn a_harness_with_no_evaluations_has_a_lower_bound_of_one_hundredth() {

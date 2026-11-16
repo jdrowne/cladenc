@@ -53,17 +53,6 @@ mod model {
     mod key;
 }
 
-mod policy {
-    mod best;
-    mod evaluation;
-    mod focus;
-    mod growth;
-    mod lower_bound;
-    mod no_action;
-    mod procreation;
-    mod repeatable;
-}
-
 mod report {
     mod json;
     mod reading;
@@ -74,4 +63,15 @@ mod report {
 mod search {
     mod said;
     mod worded;
+}
+
+mod selection {
+    mod best;
+    mod evaluation;
+    mod focus;
+    mod growth;
+    mod lower_bound;
+    mod no_action;
+    mod procreation;
+    mod repeatable;
 }

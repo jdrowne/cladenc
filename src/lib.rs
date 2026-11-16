@@ -4,7 +4,7 @@ pub mod containers;
 pub mod genealogy;
 pub mod journal;
 pub mod model;
-pub mod policy;
 pub mod report;
 pub mod search;
+pub mod selection;
 pub mod workspace;

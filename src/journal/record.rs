@@ -7,7 +7,7 @@ use crate::benchmark::Benchmark;
 use crate::containers::Launch;
 use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use crate::model::{self, Model};
-use crate::policy::Policy;
+use crate::selection::Selection;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
@@ -70,8 +70,8 @@ impl Settings {
             .collect()
     }
 
-    pub fn policy(&self) -> Policy {
-        Policy {
+    pub fn selection(&self) -> Selection {
+        Selection {
             budget: self.budget,
             growth: self.genealogy_growth,
             confidence: self.confidence,

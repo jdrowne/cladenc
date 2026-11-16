@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessState, ProcreationOutcome};
 use cladenc::journal::Settings;
-use cladenc::policy::lower_bound;
 use cladenc::report::Report;
+use cladenc::selection::lower_bound;
 
 fn settings() -> Settings {
     Settings {
@@ -119,11 +119,11 @@ fn the_counts_of_a_harness_are_those_of_its_own_evaluations() {
 }
 
 #[test]
-fn the_best_harness_reported_is_the_one_the_policy_chooses() {
+fn the_best_harness_reported_is_the_one_the_selection_chooses() {
     let genealogy = a_child_that_succeeds_where_its_parent_fails();
     assert_eq!(
         report(&genealogy).best_harness,
-        settings().policy().best_harness(&genealogy)
+        settings().selection().best_harness(&genealogy)
     );
 }
 

@@ -8,7 +8,7 @@ use cladenc::containers::Launch;
 use cladenc::genealogy::Genealogy;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::model::Model;
-use cladenc::policy::Policy;
+use cladenc::selection::Selection;
 
 fn settings() -> Settings {
     Settings {
@@ -246,10 +246,10 @@ fn the_largest_seed_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_settings_give_the_policy_made_from_five_of_them() {
+fn the_settings_give_the_selection_made_from_five_of_them() {
     assert_eq!(
-        settings().policy(),
-        Policy {
+        settings().selection(),
+        Selection {
             budget: 800,
             growth: 0.6,
             confidence: 99.0,

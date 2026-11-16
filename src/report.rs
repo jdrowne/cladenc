@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 use crate::journal::{self, JournalError, Settings};
-use crate::policy::lower_bound;
+use crate::selection::lower_bound;
 
 const HEADER: [&str; 9] = [
     "id",
@@ -53,7 +53,7 @@ impl Report {
             model_url: settings.model_url.clone(),
             started: genealogy.started(),
             budget: settings.budget,
-            best_harness: settings.policy().best_harness(genealogy),
+            best_harness: settings.selection().best_harness(genealogy),
             harnesses: genealogy
                 .harnesses()
                 .iter()

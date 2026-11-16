@@ -14,7 +14,7 @@ metadata:
 
 The seed of the random draws is not a flag. `cladenc` draws it when a search is started and writes it in the journal, and `cladenc resume` reads it from there.
 
-**Why:** It is the user's rule: `cladenc` assumes no value and does nothing that was not spelled out. Having to choose every value of a search, the budget and the numbers of the policy among them, is no problem to them, not even a small one of convenience. That the seed is drawn is the user's decision too: no value of it is better than another, and a search cannot be repeated, so a person has no reason to choose one.
+**Why:** It is the user's rule: `cladenc` assumes no value and does nothing that was not spelled out. Having to choose every value of a search, the budget and the numbers the selection works from among them, is no problem to them, not even a small one of convenience. That the seed is drawn is the user's decision too: no value of it is better than another, and a search cannot be repeated, so a person has no reason to choose one.
 
 **How to apply:** Do not propose a default for a flag, in an issue, in a decision put to the user or in a design, and do not file the number of required flags as a problem. A new flag that takes a value is required. Do not propose a flag for the seed. The inputs of [[cladenc-takes-a-progenitor-and-a-model]] are what a person brings to a search, not a count of flags, so a long command line does not go against that design.
 

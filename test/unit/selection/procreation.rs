@@ -1,12 +1,12 @@
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use cladenc::policy::{Action, Policy};
+use cladenc::selection::{Action, Selection};
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
 }
 
-fn policy(seed: u64) -> Policy {
-    Policy {
+fn selection(seed: u64) -> Selection {
+    Selection {
         budget: 1000,
         growth: 1.0,
         confidence: 99.0,
@@ -48,7 +48,7 @@ fn two_lines() -> Genealogy {
 fn times_parent(genealogy: &Genealogy, parent: HarnessId) -> usize {
     (0..200)
         .filter(|seed| {
-            policy(*seed).next_action(genealogy, 0) == Some(Action::Procreation { parent })
+            selection(*seed).next_action(genealogy, 0) == Some(Action::Procreation { parent })
         })
         .count()
 }
@@ -58,7 +58,7 @@ fn a_procreation_is_the_next_action_when_the_harness_count_is_within_started_to_
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 1, EvaluationOutcome::Success);
     assert_eq!(
-        policy(0).next_action(&genealogy, 0),
+        selection(0).next_action(&genealogy, 0),
         Some(Action::Procreation { parent: 0 })
     );
 }
@@ -99,7 +99,7 @@ fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new();
     evaluate(&mut genealogy, 0, 20, EvaluationOutcome::Success);
     assert_eq!(
-        policy(0).next_action(&genealogy, 0),
+        selection(0).next_action(&genealogy, 0),
         Some(Action::Procreation { parent: 0 })
     );
 }
