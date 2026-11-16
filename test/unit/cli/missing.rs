@@ -2,7 +2,7 @@ use cladenc::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 15] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -17,7 +17,6 @@ const OPTIONS: [(&str, &str); 15] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
-    ("--seed", "7"),
 ];
 
 fn without(left_out: &str) -> Result<Cli, clap::Error> {
@@ -149,14 +148,6 @@ fn leaving_out_the_procreation_timeout_is_an_error() {
 fn leaving_out_the_evaluation_timeout_is_an_error() {
     assert_eq!(
         refusal_without("--evaluation-timeout"),
-        ErrorKind::MissingRequiredArgument
-    );
-}
-
-#[test]
-fn leaving_out_the_seed_is_an_error() {
-    assert_eq!(
-        refusal_without("--seed"),
         ErrorKind::MissingRequiredArgument
     );
 }

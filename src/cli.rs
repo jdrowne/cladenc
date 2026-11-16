@@ -169,8 +169,6 @@ pub struct StartOptions {
         help = "The run directory, which start creates"
     )]
     pub run_dir: PathBuf,
-    #[arg(long, value_name = "INTEGER", help = "The seed of every random draw")]
-    pub seed: u64,
 }
 
 #[derive(Clone, Debug, Args)]

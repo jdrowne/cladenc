@@ -30,7 +30,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         evaluation_timeout: 30,
-        seed: 7,
     };
     change(directory.path(), &mut options);
     let mut output = Vec::new();

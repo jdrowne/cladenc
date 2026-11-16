@@ -21,7 +21,6 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--evaluation-timeout", "60".into()),
-        ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));

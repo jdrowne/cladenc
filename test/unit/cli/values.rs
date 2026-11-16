@@ -4,7 +4,7 @@ use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 15] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -19,7 +19,6 @@ const OPTIONS: [(&str, &str); 15] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
-    ("--seed", "7"),
 ];
 
 fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
@@ -307,21 +306,11 @@ fn an_evaluation_timeout_of_0_is_an_error() {
 }
 
 #[test]
-fn a_seed_below_0_is_an_error() {
-    assert_eq!(refusal("--seed", "-1"), ErrorKind::ValueValidation);
-}
-
-#[test]
-fn a_seed_above_the_largest_is_an_error() {
+fn the_seed_is_no_flag_of_start() {
     assert_eq!(
-        refusal("--seed", "18446744073709551616"),
-        ErrorKind::ValueValidation
+        and(Some("--seed=7".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
     );
-}
-
-#[test]
-fn the_largest_seed_is_accepted() {
-    assert!(with("--seed", "18446744073709551615").is_ok());
 }
 
 #[test]

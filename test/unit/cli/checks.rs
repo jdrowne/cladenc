@@ -28,7 +28,6 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         evaluation_timeout: 1800,
-        seed: 7,
     }
 }
 
@@ -71,9 +70,10 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
     let directory = test_inputs::temporary_directory();
     let options = options(directory.path());
     let root = fs::canonicalize(directory.path()).unwrap();
+    let settings = options.settings().unwrap();
     assert_eq!(
-        options.settings(),
-        Ok(Settings {
+        settings,
+        Settings {
             progenitor: root.join("progenitor"),
             model: "a-model".to_owned(),
             model_url: "http://models.example/v1".to_owned(),
@@ -94,8 +94,18 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
             evaluation_timeout: 1800,
-            seed: 7,
-        })
+            seed: settings.seed,
+        }
+    );
+}
+
+#[test]
+fn two_searches_started_from_one_command_line_are_given_different_seeds() {
+    let directory = test_inputs::temporary_directory();
+    let options = options(directory.path());
+    assert_ne!(
+        options.settings().unwrap().seed,
+        options.settings().unwrap().seed
     );
 }
 

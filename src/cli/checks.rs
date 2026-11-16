@@ -53,7 +53,7 @@ impl StartOptions {
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             evaluation_timeout: self.evaluation_timeout,
-            seed: self.seed,
+            seed: rand::random(),
         })
     }
 }

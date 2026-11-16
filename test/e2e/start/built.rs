@@ -24,7 +24,6 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
-        ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))

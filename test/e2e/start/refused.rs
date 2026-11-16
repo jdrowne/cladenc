@@ -18,7 +18,6 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
-        ("--seed", "7".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))
@@ -133,6 +132,35 @@ fn quiet_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expecte
 fn quiet_which_is_no_flag_of_start_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_quiet(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_a_seed(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .into_iter()
+        .chain(["--seed=7".to_owned()])
+        .collect()
+}
+
+#[test]
+fn a_seed_which_is_no_flag_of_start_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_seed(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_seed_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_seed(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--seed' found\n"));
+}
+
+#[test]
+fn a_seed_which_is_no_flag_of_start_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_seed(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

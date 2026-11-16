@@ -85,8 +85,7 @@ cladenc start \
   --model-url <URL> \
   --procreation-timeout <SECONDS> \
   --progenitor <DIR> \
-  --run-dir <DIR> \
-  --seed <INTEGER>
+  --run-dir <DIR>
 ```
 
 | Flag | Required | Description |
@@ -109,7 +108,8 @@ cladenc start \
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation. |
 | `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
-| `--seed <INTEGER>` | Required | The seed of every random draw. |
+
+A search chooses partly by chance which harness procreates and which harness is tried on which task. The seed, the number that those random draws are worked out from, is not given by a flag: `cladenc start` draws it and writes it in `journal.jsonl` in the run directory, and `cladenc resume` goes on with the seed it finds there.
 
 A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
 

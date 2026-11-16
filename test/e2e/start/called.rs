@@ -32,7 +32,6 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
-        ("--seed", "7".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))

@@ -30,7 +30,6 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         evaluation_timeout: 1800,
-        seed: 7,
     }
 }
 
