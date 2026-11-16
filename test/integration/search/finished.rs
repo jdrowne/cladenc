@@ -32,7 +32,7 @@ fn settings(directory: &Path) -> Settings {
         genealogy_growth: 0.6,
         confidence: 99.0,
         initial_procreations: 2,
-        workers: 1,
+        max_concurrent_containers: 1,
         procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
@@ -83,7 +83,7 @@ fn started(journal: &str, action: &str) -> usize {
 }
 
 #[test]
-fn with_one_worker_two_searches_with_the_same_settings_write_identical_journals() {
+fn with_one_container_at_a_time_two_searches_with_the_same_settings_write_identical_journals() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let first = directory.path().join("first");
@@ -155,7 +155,7 @@ fn a_search_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory
 fn the_initial_procreations_all_end_before_the_first_evaluation_starts() {
     let (directory, _found) = searched(|settings| {
         settings.initial_procreations = 3;
-        settings.workers = 2;
+        settings.max_concurrent_containers = 2;
     });
     let journal = journal_of(&directory);
     let before_the_first_evaluation = journal

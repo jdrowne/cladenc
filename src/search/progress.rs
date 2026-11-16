@@ -4,8 +4,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread::Scope;
 
+use super::action::{Ended, carry_out};
 use super::said::say;
-use super::worker::{self, Ended};
 use super::{Found, Said, SearchError, Shared};
 use crate::containers::ContainerError;
 use crate::genealogy::Genealogy;
@@ -128,7 +128,7 @@ impl<'a> Progress<'a> {
                 },
             );
             scope.spawn(move || {
-                let _ = sender.send(worker::carry_out(shared, action, again));
+                let _ = sender.send(carry_out(shared, action, again));
             })
         });
         self.running += u64::from(recorded);

@@ -26,7 +26,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         genealogy_growth: 0.6,
         confidence: 99.0,
         initial_procreations: 1,
-        workers: 1,
+        max_concurrent_containers: 1,
         procreation_timeout: 60,
         evaluation_timeout: 60,
         seed: 7,
@@ -72,7 +72,7 @@ fn resumed_after_an_evaluation_stopped() -> TempDir {
 fn with_one_evaluation_left_running(directory: &Path) -> PathBuf {
     let mut settings = settings(directory, "[ -d /evaluations ] || sleep 300");
     settings.initial_procreations = 0;
-    settings.workers = 2;
+    settings.max_concurrent_containers = 2;
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.progenitor)
         .unwrap()

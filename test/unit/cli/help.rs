@@ -200,6 +200,16 @@ fn the_short_help_of_start_names_the_flag_that_names_the_file_of_the_key() {
 }
 
 #[test]
+fn the_short_help_of_start_names_the_flag_that_limits_the_containers_running_at_once() {
+    assert!(help_of_start(false).contains("--max-concurrent-containers <COUNT>"));
+}
+
+#[test]
+fn the_short_help_of_start_says_that_the_limit_is_the_most_containers_running_at_once() {
+    assert!(help_of_start(false).contains("The most containers running at once"));
+}
+
+#[test]
 fn the_long_help_of_start_shows_how_an_image_is_built_from_a_dockerfile() {
     assert!(
         help_of_start(true).contains(

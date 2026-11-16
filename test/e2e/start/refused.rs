@@ -15,7 +15,7 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
         ("--initial-procreations", "0".into()),
-        ("--workers", "1".into()),
+        ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
         ("--seed", "7".into()),
@@ -133,6 +133,40 @@ fn quiet_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expecte
 fn quiet_which_is_no_flag_of_start_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_quiet(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(
+    directory: &Path,
+) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .iter()
+        .map(|option| option.replace("--max-concurrent-containers=", "--workers="))
+        .collect()
+}
+
+#[test]
+fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options =
+        with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_is_refused_for_the_name() {
+    let directory = test_inputs::temporary_directory();
+    let options =
+        with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--workers' found\n"));
+}
+
+#[test]
+fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options =
+        with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

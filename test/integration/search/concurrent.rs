@@ -29,7 +29,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         genealogy_growth: 0.6,
         confidence: 99.0,
         initial_procreations: 3,
-        workers: 3,
+        max_concurrent_containers: 3,
         procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
@@ -71,12 +71,12 @@ fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
 }
 
 #[test]
-fn with_three_workers_the_journal_holds_three_actions_started_and_not_finished_at_most() {
+fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finished_at_most() {
     assert_eq!(most_running_at_once(&records(|_| {})), 3);
 }
 
 #[test]
-fn with_three_workers_the_journal_still_holds_exactly_as_many_evaluations_as_the_budget() {
+fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_evaluations_as_the_budget() {
     let records = records(|_| {});
     assert_eq!(
         count(&records, |record| matches!(
@@ -88,7 +88,7 @@ fn with_three_workers_the_journal_still_holds_exactly_as_many_evaluations_as_the
 }
 
 #[test]
-fn with_a_growth_of_0_and_three_workers_exactly_one_procreation_starts() {
+fn with_a_growth_of_0_and_a_limit_of_three_exactly_one_procreation_starts() {
     let records = records(|settings| {
         settings.genealogy_growth = 0.0;
         settings.initial_procreations = 0;

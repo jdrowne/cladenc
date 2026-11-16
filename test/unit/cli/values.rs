@@ -16,7 +16,7 @@ const OPTIONS: [(&str, &str); 15] = [
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--initial-procreations", "5"),
-    ("--workers", "8"),
+    ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
     ("--seed", "7"),
@@ -259,8 +259,35 @@ fn no_initial_procreations_are_accepted() {
 }
 
 #[test]
-fn no_workers_are_an_error() {
-    assert_eq!(refusal("--workers", "0"), ErrorKind::ValueValidation);
+fn a_limit_of_0_concurrent_containers_is_an_error() {
+    assert_eq!(
+        refusal("--max-concurrent-containers", "0"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_limit_of_concurrent_containers_that_is_not_a_number_is_an_error() {
+    assert_eq!(
+        refusal("--max-concurrent-containers", "many"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn the_limit_of_concurrent_containers_is_the_number_given() {
+    assert!(matches!(
+        with("--max-concurrent-containers", "3").unwrap().command,
+        Command::Start(options) if options.max_concurrent_containers == 3
+    ));
+}
+
+#[test]
+fn the_limit_of_concurrent_containers_has_no_second_name() {
+    assert_eq!(
+        and(Some("--workers=8".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }
 
 #[test]

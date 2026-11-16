@@ -25,7 +25,7 @@ pub struct Settings {
     pub genealogy_growth: f64,
     pub confidence: f64,
     pub initial_procreations: u64,
-    pub workers: u64,
+    pub max_concurrent_containers: u64,
     pub procreation_timeout: u64,
     pub evaluation_timeout: u64,
     pub seed: u64,

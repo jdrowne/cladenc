@@ -33,6 +33,6 @@
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
 - [A search is started with cladenc start](a-search-is-started-with-cladenc-start.md) — older issues call the sub-command `cladenc run` and mean `start`
 - [A flag is not called an option](a-flag-is-not-called-an-option.md) — say flag for a `--name` argument; the README shows `cladenc` and each sub-command as a command block, then a table of its flags in alphabetical order, with text about a sub-command under it
-- [No flag has a default](no-flag-has-a-default.md) — every flag that takes a value is required and nothing about a search is assumed; a default is never proposed, and the count of required flags is not a problem
+- [No flag has a default](no-flag-has-a-default.md) — every flag that takes a value is required and nothing about a search is assumed; a default is never proposed, and the count of required flags is not a problem; the seed is no flag, `cladenc` draws it
 - [A key is given in a file](a-key-is-given-in-a-file.md) — a secret such as a model's key reaches cladenc in a file that a flag names, never as a flag's value or in an environment variable
-- [cladenc does not run jobs](cladenc-does-not-run-jobs.md) — say it brings up a container, for a procreation or for an evaluation; job in an older issue means one of those, and the code says action
+- [cladenc does not run jobs](cladenc-does-not-run-jobs.md) — say it brings up a container, for a procreation or for an evaluation; job in an older issue means one of those, and the code says action; it has no workers either, say the containers running at the same time

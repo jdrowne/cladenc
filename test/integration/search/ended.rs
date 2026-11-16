@@ -24,7 +24,7 @@ fn settings(directory: &Path) -> Settings {
         genealogy_growth: 0.0,
         confidence: 99.0,
         initial_procreations: 0,
-        workers: 1,
+        max_concurrent_containers: 1,
         procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,

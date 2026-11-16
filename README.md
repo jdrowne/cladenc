@@ -79,14 +79,14 @@ cladenc start \
   --harness-build-command <COMMAND> \
   --harness-run-command <COMMAND> \
   --initial-procreations <COUNT> \
+  --max-concurrent-containers <COUNT> \
   --model <NAME> \
   --model-key-file <FILE> \
   --model-url <URL> \
   --procreation-timeout <SECONDS> \
   --progenitor <DIR> \
   --run-dir <DIR> \
-  --seed <INTEGER> \
-  --workers <COUNT>
+  --seed <INTEGER>
 ```
 
 | Flag | Required | Description |
@@ -102,6 +102,7 @@ cladenc start \
 | `--harness-build-command <COMMAND>` | Not Required | The shell command that builds a harness in a container, where one has to be built. |
 | `--harness-run-command <COMMAND>` | Required | The shell command that runs a harness in a container. |
 | `--initial-procreations <COUNT>` | Required | The number of procreations of the progenitor made before the first evaluation. A procreation is one harness making another. |
+| `--max-concurrent-containers <COUNT>` | Required | The most containers running at once. |
 | `--model <NAME>` | Required | The name of the model the harnesses call, as its server knows it. `cladenc` calls no model itself: it tells each harness the name, the address and the key. |
 | `--model-key-file <FILE>` | Not Required | The file that holds the key the model is called with, on one line, and nothing else. It is given where the server of the model asks for a key. `cladenc resume` reads the file again. |
 | `--model-url <URL>` | Required | The address the model is served at, by a provider or by a server of your own. In a container, `host.docker.internal` names the machine `cladenc` runs on. |
@@ -109,7 +110,6 @@ cladenc start \
 | `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 | `--seed <INTEGER>` | Required | The seed of every random draw. |
-| `--workers <COUNT>` | Required | The most containers running at once. |
 
 A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
 

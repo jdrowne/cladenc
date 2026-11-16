@@ -125,6 +125,13 @@ pub struct StartOptions {
     pub initial_procreations: u64,
     #[arg(
         long,
+        value_name = "COUNT",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The most containers running at once"
+    )]
+    pub max_concurrent_containers: u64,
+    #[arg(
+        long,
         value_name = "NAME",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The name of the model the harnesses call, as its server knows it"
@@ -164,13 +171,6 @@ pub struct StartOptions {
     pub run_dir: PathBuf,
     #[arg(long, value_name = "INTEGER", help = "The seed of every random draw")]
     pub seed: u64,
-    #[arg(
-        long,
-        value_name = "COUNT",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The most containers running at once"
-    )]
-    pub workers: u64,
 }
 
 #[derive(Clone, Debug, Args)]

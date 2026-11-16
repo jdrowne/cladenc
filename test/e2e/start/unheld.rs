@@ -24,7 +24,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
         ("--initial-procreations", "0".into()),
-        ("--workers", "1".into()),
+        ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--evaluation-timeout", "30".into()),
         ("--seed", "7".into()),

@@ -1,7 +1,7 @@
+mod action;
 mod error;
 mod progress;
 mod said;
-mod worker;
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -201,7 +201,8 @@ fn carry_on(
     thread::scope(|scope| {
         let (sender, receiver) = mpsc::channel();
         loop {
-            while !progress.halted(stop) && progress.running() < settings.workers {
+            while !progress.halted(stop) && progress.running() < settings.max_concurrent_containers
+            {
                 let Some((action, again)) = progress.take() else {
                     break;
                 };

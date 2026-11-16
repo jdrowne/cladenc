@@ -50,7 +50,7 @@ impl StartOptions {
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
             initial_procreations: self.initial_procreations,
-            workers: self.workers,
+            max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             evaluation_timeout: self.evaluation_timeout,
             seed: self.seed,

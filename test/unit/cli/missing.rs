@@ -14,7 +14,7 @@ const OPTIONS: [(&str, &str); 15] = [
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--initial-procreations", "5"),
-    ("--workers", "8"),
+    ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
     ("--seed", "7"),
@@ -130,9 +130,9 @@ fn leaving_out_the_initial_procreations_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_workers_is_an_error() {
+fn leaving_out_the_limit_of_concurrent_containers_is_an_error() {
     assert_eq!(
-        refusal_without("--workers"),
+        refusal_without("--max-concurrent-containers"),
         ErrorKind::MissingRequiredArgument
     );
 }

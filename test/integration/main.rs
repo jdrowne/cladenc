@@ -11,6 +11,7 @@ mod containers {
 mod search {
     mod again;
     mod built;
+    mod concurrent;
     mod ended;
     mod finished;
     mod image;
@@ -18,7 +19,6 @@ mod search {
     mod resumed;
     mod stopped;
     mod unusable;
-    mod workers;
 }
 
 mod workspace {

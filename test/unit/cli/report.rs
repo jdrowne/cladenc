@@ -56,7 +56,7 @@ fn reported(json: bool) -> (Ran, String) {
                 genealogy_growth: 0.6,
                 confidence: 99.0,
                 initial_procreations: 0,
-                workers: 1,
+                max_concurrent_containers: 1,
                 procreation_timeout: 60,
                 evaluation_timeout: 60,
                 seed: 7,

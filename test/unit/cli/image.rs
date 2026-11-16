@@ -15,7 +15,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--initial-procreations", "5"),
-    ("--workers", "8"),
+    ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--evaluation-timeout", "3600"),
     ("--seed", "7"),
