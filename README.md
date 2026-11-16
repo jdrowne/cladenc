@@ -47,16 +47,14 @@ cladenc report \
 
 ```text
 cladenc resume \
-  --quiet \
   --run-dir <DIR>
 ```
 
 | Flag | Required | Description |
 | --- | --- | --- |
-| `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory of the search to continue. |
 
-`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the search left any running, how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. `--quiet` leaves standard error empty.
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the search left any running, how far the search had got and each procreation and evaluation it starts again, and from there what `cladenc start` says. Of a search that had finished it says that it had, and prints the directory of its best harness again. The shell sends standard error elsewhere, as it does for `cladenc start`: `2>/dev/null` after the command sends it nowhere.
 
 The search goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a search that stopped again can be continued again.
 
@@ -86,7 +84,6 @@ cladenc start \
   --model-url <URL> \
   --procreation-timeout <SECONDS> \
   --progenitor <DIR> \
-  --quiet \
   --run-dir <DIR> \
   --seed <INTEGER> \
   --workers <COUNT>
@@ -110,7 +107,6 @@ cladenc start \
 | `--model-url <URL>` | Required | The address the model is served at, by a provider or by a server of your own. In a container, `host.docker.internal` names the machine `cladenc` runs on. |
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation. |
 | `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the search starts from. |
-| `--quiet` | Not Required | Print nothing on standard error. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 | `--seed <INTEGER>` | Required | The seed of every random draw. |
 | `--workers <COUNT>` | Required | The most containers running at once. |
@@ -155,7 +151,7 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 The build of the image ends itself once its time limit has passed, as a container does, also when `cladenc` was killed outright and is not there to end it. `cladenc` starts `docker build` under `timeout`, with five seconds more than the time limit, so that `cladenc` comes first for as long as it is there. `timeout` is a program the machine has to hold, and on Debian and Ubuntu the package `coreutils` brings it. On a machine that does not hold it no image is built, and `cladenc start` stops with exit status 2.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A procreation or an evaluation that stops the search is said when it happens, and so is the search being asked to stop. `--quiet` leaves standard error empty.
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation and every evaluation with how it ended and where what it left is kept, and at the end the best harness. A procreation or an evaluation that stops the search is said when it happens, and so is the search being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
 
 A search goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the search on from where it stopped.
 

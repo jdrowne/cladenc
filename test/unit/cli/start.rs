@@ -31,7 +31,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         procreation_timeout: 30,
         evaluation_timeout: 30,
         seed: 7,
-        quiet: false,
     };
     change(directory.path(), &mut options);
     let mut output = Vec::new();
@@ -95,15 +94,6 @@ fn a_refused_benchmark_is_reported_with_what_is_wrong_with_it() {
 #[test]
 fn a_refused_value_prints_nothing_on_standard_output() {
     assert_eq!(ran(with_a_missing_benchmark).output, "");
-}
-
-#[test]
-fn with_quiet_a_refused_value_prints_nothing_on_standard_error() {
-    let quiet = ran(|directory, options| {
-        with_a_missing_benchmark(directory, options);
-        options.quiet = true;
-    });
-    assert_eq!(quiet.errors, "");
 }
 
 #[test]

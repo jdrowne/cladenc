@@ -29,7 +29,6 @@ fn options(directory: &Path) -> StartOptions {
         procreation_timeout: 3600,
         evaluation_timeout: 1800,
         seed: 7,
-        quiet: false,
     }
 }
 

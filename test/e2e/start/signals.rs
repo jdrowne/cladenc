@@ -28,14 +28,10 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--seed", "7".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    [
-        env!("CARGO_BIN_EXE_cladenc").to_owned(),
-        "start".to_owned(),
-        "--quiet".to_owned(),
-    ]
-    .into_iter()
-    .chain(options)
-    .collect()
+    [env!("CARGO_BIN_EXE_cladenc").to_owned(), "start".to_owned()]
+        .into_iter()
+        .chain(options)
+        .collect()
 }
 
 #[test]

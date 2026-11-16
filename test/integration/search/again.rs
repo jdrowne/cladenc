@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -50,13 +51,13 @@ fn resumed_after_a_stop_at(
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let _stopped = search::search(&settings, &run_directory, &stop, None);
+    let _stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
     fs::write(run_directory.join("running").join(leftover), "left\n").unwrap();
     test_inputs::end_with_125_no_more(&run_directory);
     if let Some(task) = task {
         test_inputs::end_with_125_on_no_more(&run_directory, task);
     }
-    search::resume(&run_directory, &stop, None).unwrap();
+    search::resume(&run_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 
@@ -152,7 +153,7 @@ fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let run_directory = with_one_evaluation_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
-        scope.spawn(|| search::resume(&run_directory, &stop, None));
+        scope.spawn(|| search::resume(&run_directory, &stop, &mut io::sink()));
         let started = test_inputs::within_ten_seconds(|| records(&run_directory) > 2);
         stop.store(true, Ordering::SeqCst);
         started

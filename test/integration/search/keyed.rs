@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -44,7 +45,12 @@ fn searched_with(key: Option<&str>, stop: bool) -> (Keyed, Result<Found, SearchE
     }
     let run_directory = directory.path().join("run");
     let settings = settings(directory.path(), &key_file);
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(stop), None);
+    let found = search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(stop),
+        &mut io::sink(),
+    );
     let keyed = Keyed {
         directory,
         key_file,
@@ -54,7 +60,11 @@ fn searched_with(key: Option<&str>, stop: bool) -> (Keyed, Result<Found, SearchE
 }
 
 fn resumed(keyed: &Keyed) -> Result<Found, SearchError> {
-    search::resume(&keyed.run_directory, &AtomicBool::new(false), None)
+    search::resume(
+        &keyed.run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
 }
 
 fn key_given_to_the_first_child(keyed: &Keyed) -> String {

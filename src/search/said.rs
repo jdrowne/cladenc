@@ -238,10 +238,8 @@ impl Display for Said<'_> {
     }
 }
 
-pub(super) fn say(writer: &mut Option<&mut dyn Write>, said: &Said<'_>) {
-    if let Some(writer) = writer {
-        let _ = writeln!(writer, "cladenc: {said}");
-    }
+pub(super) fn say(writer: &mut dyn Write, said: &Said<'_>) {
+    let _ = writeln!(writer, "cladenc: {said}");
 }
 
 fn counted(count: u64, one: &str, several: &str) -> String {

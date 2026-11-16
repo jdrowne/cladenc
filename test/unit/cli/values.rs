@@ -30,8 +30,7 @@ fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(
         ["cladenc".to_owned(), "start".to_owned()]
             .into_iter()
-            .chain(options)
-            .chain((changed == "--quiet").then_some(given.to_owned())),
+            .chain(options),
     )
 }
 
@@ -299,22 +298,9 @@ fn the_largest_seed_is_accepted() {
 }
 
 #[test]
-fn quiet_takes_no_value() {
-    assert!(with("--quiet", "--quiet=yes").is_err());
-}
-
-#[test]
-fn writing_quiet_turns_it_on() {
-    assert!(matches!(
-        with("--quiet", "--quiet").unwrap().command,
-        Command::Start(options) if options.quiet
-    ));
-}
-
-#[test]
-fn leaving_quiet_out_leaves_it_off() {
-    assert!(matches!(
-        with("", "").unwrap().command,
-        Command::Start(options) if !options.quiet
-    ));
+fn quiet_is_no_flag_of_start() {
+    assert_eq!(
+        and(Some("--quiet".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }

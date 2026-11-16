@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -36,7 +37,12 @@ fn stopped_at_its_first_evaluation() -> (TempDir, Result<Found, SearchError>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
     let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
+    let found = search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    );
     (directory, found)
 }
 
@@ -52,7 +58,7 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, SearchError>, String) {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        search::search(&settings, &run_directory, &stop, Some(&mut written))
+        search::search(&settings, &run_directory, &stop, &mut written)
     });
     (directory, found, String::from_utf8(written).unwrap())
 }
@@ -78,7 +84,12 @@ fn after_one_procreation_by(run_command: &str) -> Result<Found, SearchError> {
     let mut settings = settings(directory.path(), run_command);
     settings.initial_procreations = 1;
     let run_directory = directory.path().join("run");
-    search::search(&settings, &run_directory, &AtomicBool::new(false), None)
+    search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
 }
 
 #[test]
@@ -177,7 +188,7 @@ fn a_search_a_container_stopped_says_what_docker_did_when_it_happens() {
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _stopped = search::search(&settings, &run_directory, &stop, Some(&mut written));
+    let _stopped = search::search(&settings, &run_directory, &stop, &mut written);
     assert!(String::from_utf8(written).unwrap().contains(
         "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker \
          did not start its container"

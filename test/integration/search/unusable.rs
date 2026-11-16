@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::journal::{self, Journal, JournalError};
@@ -6,7 +7,7 @@ use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
 fn resumed(directory: &TempDir) -> Result<Found, SearchError> {
-    search::resume(directory.path(), &AtomicBool::new(false), None)
+    search::resume(directory.path(), &AtomicBool::new(false), &mut io::sink())
 }
 
 fn holding(journal: &str) -> TempDir {
@@ -20,7 +21,7 @@ fn a_run_directory_that_does_not_exist_cannot_be_resumed() {
     let directory = test_inputs::temporary_directory();
     let missing = directory.path().join("missing");
     assert!(matches!(
-        search::resume(&missing, &AtomicBool::new(false), None),
+        search::resume(&missing, &AtomicBool::new(false), &mut io::sink()),
         Err(SearchError::Unusable(JournalError::Io(_)))
     ));
 }

@@ -39,14 +39,14 @@ pub fn search(
     settings: &Settings,
     run_directory: &Path,
     stop: &AtomicBool,
-    mut writer: Option<&mut dyn Write>,
+    writer: &mut dyn Write,
 ) -> Result<Found, SearchError> {
     let key = settings.model_key().map_err(SearchError::Key)?;
     let making = Said::Making {
         run_directory,
         progenitor: &settings.progenitor,
     };
-    say(&mut writer, &making);
+    say(writer, &making);
     let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
         .and_then(|workspace| {
             settings
@@ -57,15 +57,13 @@ pub fn search(
                         benchmark: &benchmark.directory,
                         tasks: benchmark.tasks.len() as u64,
                     };
-                    say(&mut writer, &copying);
+                    say(writer, &copying);
                     workspace.copy_benchmark(benchmark)
                 })
                 .map(|()| workspace)
         })
         .map_err(SearchError::Io)
-        .and_then(|workspace| {
-            build_image(settings, &workspace, stop, &mut writer).map(|()| workspace)
-        })
+        .and_then(|workspace| build_image(settings, &workspace, stop, writer).map(|()| workspace))
         .and_then(|workspace| {
             Journal::open(run_directory)
                 .map(|journal| (workspace, journal))
@@ -83,7 +81,7 @@ fn build_image(
     settings: &Settings,
     workspace: &Workspace,
     stop: &AtomicBool,
-    writer: &mut Option<&mut dyn Write>,
+    writer: &mut dyn Write,
 ) -> Result<(), SearchError> {
     let given = settings
         .dockerfile
@@ -115,7 +113,7 @@ fn build_image(
 pub fn resume(
     run_directory: &Path,
     stop: &AtomicBool,
-    mut writer: Option<&mut dyn Write>,
+    writer: &mut dyn Write,
 ) -> Result<Found, SearchError> {
     let (journal, state) = Journal::open_existing(run_directory)
         .and_then(|journal| journal::read(run_directory).map(|state| (journal, state)))
@@ -135,7 +133,7 @@ pub fn resume(
                 best_harness,
                 directory: &directory,
             };
-            say(&mut writer, &finished);
+            say(writer, &finished);
             Ok(Found {
                 best_harness,
                 directory,
@@ -145,7 +143,7 @@ pub fn resume(
             let removed = containers::remove_left_behind(&workspace).map_err(SearchError::Left)?;
             if removed > 0 {
                 say(
-                    &mut writer,
+                    writer,
                     &Said::Removed {
                         containers: removed,
                     },
@@ -158,7 +156,7 @@ pub fn resume(
                 budget: settings.budget,
                 harnesses: genealogy.harness_count(),
             };
-            say(&mut writer, &continuing);
+            say(writer, &continuing);
             let progress = Progress::new(&settings, journal, writer).resumed(
                 genealogy,
                 unfinished,

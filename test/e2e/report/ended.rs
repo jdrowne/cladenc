@@ -31,7 +31,6 @@ fn ended() -> TempDir {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
         .args(options)
-        .arg("--quiet")
         .output()
         .unwrap();
     directory

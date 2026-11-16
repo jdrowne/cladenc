@@ -16,7 +16,7 @@ use crate::workspace::Workspace;
 pub(super) struct Progress<'a> {
     policy: Policy,
     journal: Journal,
-    writer: Option<&'a mut dyn Write>,
+    writer: &'a mut dyn Write,
     genealogy: Genealogy,
     again: VecDeque<Started>,
     next_action: u64,
@@ -28,11 +28,7 @@ pub(super) struct Progress<'a> {
 }
 
 impl<'a> Progress<'a> {
-    pub(super) fn new(
-        settings: &Settings,
-        journal: Journal,
-        writer: Option<&'a mut dyn Write>,
-    ) -> Self {
+    pub(super) fn new(settings: &Settings, journal: Journal, writer: &'a mut dyn Write) -> Self {
         Self {
             policy: settings.policy(),
             journal,
@@ -49,7 +45,7 @@ impl<'a> Progress<'a> {
     }
 
     pub(super) fn say(&mut self, said: &Said<'_>) {
-        say(&mut self.writer, said);
+        say(self.writer, said);
     }
 
     pub(super) fn stopping(&mut self) {
@@ -123,7 +119,7 @@ impl<'a> Progress<'a> {
         let sender = sender.clone();
         let _ = recorded.then(|| {
             say(
-                &mut self.writer,
+                self.writer,
                 &Said::Started {
                     action: &action,
                     again,
@@ -222,7 +218,7 @@ impl<'a> Progress<'a> {
         };
         let _ = self.failure.is_none().then(|| {
             say(
-                &mut self.writer,
+                self.writer,
                 &Said::Finished {
                     evaluations: self.genealogy.started(),
                     harnesses: self.genealogy.harness_count(),

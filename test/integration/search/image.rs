@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
@@ -48,7 +49,7 @@ fn searched(steps: &str) -> Searched {
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let found = search::search(&settings, &run_directory, &stop, Some(&mut written));
+    let found = search::search(&settings, &run_directory, &stop, &mut written);
     Searched {
         directory,
         image,
@@ -70,11 +71,11 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Searched {
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_at(&settings.progenitor, 0);
-    let _ = search::search(&settings, &run_directory, &stop, None);
+    let _ = search::search(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_file(directory.path().join("Dockerfile")).unwrap();
     let mut written = Vec::new();
-    let found = search::resume(&run_directory, &stop, Some(&mut written));
+    let found = search::resume(&run_directory, &stop, &mut written);
     Searched {
         directory,
         image,

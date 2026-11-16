@@ -232,6 +232,16 @@ fn the_table_of_a_command_lists_its_flags_in_alphabetical_order() {
 }
 
 #[test]
+fn the_sections_of_resume_and_start_show_how_the_shell_sends_standard_error_nowhere() {
+    assert_eq!(
+        commands_whose_section(|command, section| {
+            matches!(command.get_name(), "resume" | "start") && !section.contains("`2>/dev/null`")
+        }),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
 fn the_readme_names_no_flag_that_cladenc_does_not_have() {
     assert_eq!(
         flags_named_in(&readme())

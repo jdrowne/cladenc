@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -35,7 +35,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    start.arg("start").args(options).arg("--quiet");
+    start.arg("start").args(options).stderr(Stdio::null());
     start
 }
 

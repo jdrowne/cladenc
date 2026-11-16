@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -34,7 +35,13 @@ fn ended() -> (TempDir, PathBuf, Found) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None).unwrap();
+    let found = search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
+    .unwrap();
     (directory, run_directory, found)
 }
 
@@ -42,7 +49,7 @@ fn ended() -> (TempDir, PathBuf, Found) {
 fn resuming_a_search_that_ended_returns_what_the_search_returned() {
     let (_directory, run_directory, found) = ended();
     assert_eq!(
-        search::resume(&run_directory, &AtomicBool::new(false), None).unwrap(),
+        search::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap(),
         found
     );
 }
@@ -51,7 +58,7 @@ fn resuming_a_search_that_ended_returns_what_the_search_returned() {
 fn resuming_a_search_that_ended_leaves_its_journal_unchanged() {
     let (_directory, run_directory, _found) = ended();
     let journal = fs::read(journal::path(&run_directory)).unwrap();
-    search::resume(&run_directory, &AtomicBool::new(false), None).unwrap();
+    search::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap();
     assert_eq!(fs::read(journal::path(&run_directory)).unwrap(), journal);
 }
 
@@ -59,7 +66,7 @@ fn resuming_a_search_that_ended_leaves_its_journal_unchanged() {
 fn resuming_a_search_that_ended_says_that_it_had_finished_and_nothing_else() {
     let (_directory, run_directory, found) = ended();
     let mut written = Vec::new();
-    search::resume(&run_directory, &AtomicBool::new(false), Some(&mut written)).unwrap();
+    search::resume(&run_directory, &AtomicBool::new(false), &mut written).unwrap();
     assert_eq!(
         String::from_utf8(written).unwrap(),
         format!(
@@ -74,7 +81,7 @@ fn resuming_a_search_that_ended_says_that_it_had_finished_and_nothing_else() {
 fn resuming_a_search_that_ended_returns_it_even_when_asked_to_stop() {
     let (_directory, run_directory, found) = ended();
     assert_eq!(
-        search::resume(&run_directory, &AtomicBool::new(true), None).unwrap(),
+        search::resume(&run_directory, &AtomicBool::new(true), &mut io::sink()).unwrap(),
         found
     );
 }

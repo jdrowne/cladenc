@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
@@ -52,20 +53,20 @@ fn stopped_at(solved: u64, task: Option<&str>, resumes_while_stopped: usize) -> 
     fs::create_dir(directory.path().join("unbroken")).unwrap();
     fs::create_dir(directory.path().join("stopped")).unwrap();
     let unbroken = directory.path().join("unbroken/run");
-    let unbroken = search::search(&settings, &unbroken, &stop, None).unwrap();
+    let unbroken = search::search(&settings, &unbroken, &stop, &mut io::sink()).unwrap();
     test_inputs::end_with_125_at(&settings.progenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let mut stopped = search::search(&settings, &run_directory, &stop, None);
+    let mut stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
     for _ in 0..resumes_while_stopped {
-        stopped = search::resume(&run_directory, &stop, None);
+        stopped = search::resume(&run_directory, &stop, &mut io::sink());
     }
     test_inputs::end_with_125_no_more(&run_directory);
     if let Some(task) = task {
         test_inputs::end_with_125_on_no_more(&run_directory, task);
     }
-    let resumed = search::resume(&run_directory, &stop, None);
+    let resumed = search::resume(&run_directory, &stop, &mut io::sink());
     Searches {
         directory,
         unbroken,
@@ -175,9 +176,9 @@ fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<Stri
     let mut stopped = Vec::new();
     let mut resumed = Vec::new();
     test_inputs::end_with_125_on(directory.path(), "t3");
-    let _stopped = search::search(&settings, &run_directory, &stop, Some(&mut stopped));
+    let _stopped = search::search(&settings, &run_directory, &stop, &mut stopped);
     test_inputs::end_with_125_on_no_more(&run_directory, "t3");
-    search::resume(&run_directory, &stop, Some(&mut resumed)).unwrap();
+    search::resume(&run_directory, &stop, &mut resumed).unwrap();
     (directory, lines_of(stopped), lines_of(resumed))
 }
 
@@ -237,12 +238,12 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
     let journal = journal::path(&run_directory);
-    search::search(&settings, &run_directory, &stop, None).unwrap();
+    search::search(&settings, &run_directory, &stop, &mut io::sink()).unwrap();
     let whole = fs::read_to_string(&journal).unwrap();
     let kept = whole.lines().count() - 2;
     let cut: String = whole.split_inclusive('\n').take(kept).collect();
     fs::write(&journal, cut).unwrap();
-    search::resume(&run_directory, &stop, None).unwrap();
+    search::resume(&run_directory, &stop, &mut io::sink()).unwrap();
     assert_eq!(fs::read_to_string(&journal).unwrap(), whole);
 }
 
@@ -253,8 +254,8 @@ fn a_search_is_resumed_without_the_directory_its_benchmark_was_given_in() {
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
     test_inputs::end_with_125_at(&settings.progenitor, 0);
-    let _ = search::search(&settings, &run_directory, &stop, None);
+    let _ = search::search(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_dir_all(&settings.benchmarks[0].directory).unwrap();
-    assert!(search::resume(&run_directory, &stop, None).is_ok());
+    assert!(search::resume(&run_directory, &stop, &mut io::sink()).is_ok());
 }

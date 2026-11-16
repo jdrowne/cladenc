@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -42,7 +43,12 @@ fn searched_with_its_stop_flag_at(build_command: &str, stop: bool) -> Searched {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), build_command);
     let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(stop), None);
+    let found = search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(stop),
+        &mut io::sink(),
+    );
     (directory, found)
 }
 
@@ -56,9 +62,9 @@ fn resumed_after_its_progenitor_did_not_build() -> Searched {
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     fs::write(settings.progenitor.join("do-not-build"), "").unwrap();
-    let _stopped = search::search(&settings, &run_directory, &stop, None);
+    let _stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
     fs::remove_file(run_directory.join("harnesses/0/do-not-build")).unwrap();
-    let resumed = search::resume(&run_directory, &stop, None);
+    let resumed = search::resume(&run_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
@@ -68,9 +74,9 @@ fn resumed_after_an_evaluation_stopped_it() -> Searched {
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t1");
-    let _stopped = search::search(&settings, &run_directory, &stop, None);
+    let _stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_on_no_more(&run_directory, "t1");
-    let resumed = search::resume(&run_directory, &stop, None);
+    let resumed = search::resume(&run_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
@@ -85,7 +91,7 @@ fn stopped_while_its_progenitor_is_built() -> Searched {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        search::search(&settings, &run_directory, &stop, None)
+        search::search(&settings, &run_directory, &stop, &mut io::sink())
     });
     (directory, found)
 }
@@ -96,7 +102,7 @@ fn said_by_a_search_built_with(build_command: &str) -> (TempDir, String) {
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _found = search::search(&settings, &run_directory, &stop, Some(&mut written));
+    let _found = search::search(&settings, &run_directory, &stop, &mut written);
     (directory, String::from_utf8(written).unwrap())
 }
 

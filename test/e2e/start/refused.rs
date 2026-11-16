@@ -29,7 +29,6 @@ fn status(options: &[String]) -> Option<i32> {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
         .args(options)
-        .arg("--quiet")
         .output()
         .unwrap()
         .status
@@ -107,6 +106,35 @@ fn a_benchmark_given_twice_is_said_to_be_given_twice() {
     let directory = test_inputs::temporary_directory();
     let options = with_its_benchmark_given_twice(directory.path());
     assert!(said(&options).ends_with("/benchmark is given twice\n"));
+}
+
+fn with_quiet(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .into_iter()
+        .chain(["--quiet".to_owned()])
+        .collect()
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_start_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_quiet(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_quiet(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--quiet' found\n"));
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_start_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_quiet(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
 }
 
 #[test]

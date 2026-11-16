@@ -156,8 +156,6 @@ pub struct StartOptions {
         help = "The directory of source code copied to make the progenitor"
     )]
     pub progenitor: PathBuf,
-    #[arg(long, help = "Print nothing on standard error")]
-    pub quiet: bool,
     #[arg(
         long,
         value_name = "DIR",
@@ -177,8 +175,6 @@ pub struct StartOptions {
 
 #[derive(Clone, Debug, Args)]
 pub struct ResumeOptions {
-    #[arg(long, help = "Print nothing on standard error")]
-    pub quiet: bool,
     #[arg(
         long,
         value_name = "DIR",
@@ -200,18 +196,9 @@ pub struct ReportOptions {
 }
 
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
-    let quiet = match &cli.command {
-        Command::Start(options) => options.quiet,
-        Command::Resume(options) => options.quiet,
-        Command::Report(_) => false,
-    };
-    let mut errors = (!quiet).then_some(errors);
-    let writer = errors
-        .as_mut()
-        .map(|errors| &mut **errors as &mut dyn Write);
     let printed = match &cli.command {
-        Command::Start(options) => start(options, stop, writer).map(directory),
-        Command::Resume(options) => resume(options, stop, writer).map(directory),
+        Command::Start(options) => start(options, stop, errors).map(directory),
+        Command::Resume(options) => resume(options, stop, errors).map(directory),
         Command::Report(options) => report(options),
     };
     match printed {
@@ -220,9 +207,7 @@ pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mu
             0
         }
         Err((status, reason)) => {
-            if let Some(errors) = errors {
-                let _ = writeln!(errors, "cladenc: {reason}");
-            }
+            let _ = writeln!(errors, "cladenc: {reason}");
             status
         }
     }
@@ -231,7 +216,7 @@ pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mu
 fn start(
     options: &StartOptions,
     stop: &AtomicBool,
-    writer: Option<&mut dyn Write>,
+    writer: &mut dyn Write,
 ) -> Result<Found, (u8, String)> {
     let settings = options
         .settings()
@@ -243,7 +228,7 @@ fn start(
 fn resume(
     options: &ResumeOptions,
     stop: &AtomicBool,
-    writer: Option<&mut dyn Write>,
+    writer: &mut dyn Write,
 ) -> Result<Found, (u8, String)> {
     let run_directory = mountable(&options.run_dir)?;
     search::resume(&run_directory, stop, writer).map_err(stopped)

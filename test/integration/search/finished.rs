@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 use std::fs;
+use std::io;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
@@ -50,7 +51,12 @@ fn searched(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, Searc
     let mut settings = settings(directory.path());
     change(&mut settings);
     let run_directory = directory.path().join("run");
-    let found = search::search(&settings, &run_directory, &AtomicBool::new(false), None);
+    let found = search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    );
     (directory, found)
 }
 
@@ -61,7 +67,7 @@ fn said_over_one_task() -> (TempDir, Vec<String>) {
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    search::search(&settings, &run_directory, &stop, Some(&mut written)).unwrap();
+    search::search(&settings, &run_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -82,8 +88,8 @@ fn with_one_worker_two_searches_with_the_same_settings_write_identical_journals(
     let settings = settings(directory.path());
     let first = directory.path().join("first");
     let second = directory.path().join("second");
-    search::search(&settings, &first, &AtomicBool::new(false), None).unwrap();
-    search::search(&settings, &second, &AtomicBool::new(false), None).unwrap();
+    search::search(&settings, &first, &AtomicBool::new(false), &mut io::sink()).unwrap();
+    search::search(&settings, &second, &AtomicBool::new(false), &mut io::sink()).unwrap();
     assert_eq!(
         fs::read(journal::path(&first)).unwrap(),
         fs::read(journal::path(&second)).unwrap()
@@ -95,7 +101,13 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let run_directory = directory.path().join("run");
-    search::search(&settings, &run_directory, &AtomicBool::new(false), None).unwrap();
+    search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
+    .unwrap();
     let first: Record =
         serde_json::from_str(journal_of(&directory).lines().next().unwrap()).unwrap();
     assert_eq!(
@@ -289,7 +301,12 @@ fn a_search_copies_no_record_of_its_journal_to_its_writer() {
 fn a_search_cannot_start_in_a_run_directory_that_exists() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
-    let found = search::search(&settings, directory.path(), &AtomicBool::new(false), None);
+    let found = search::search(
+        &settings,
+        directory.path(),
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    );
     assert!(matches!(found, Err(SearchError::Io(_))));
 }
 

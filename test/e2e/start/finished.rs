@@ -26,12 +26,11 @@ fn options(directory: &Path) -> Vec<String> {
     .collect()
 }
 
-fn ran(quiet: Option<&str>) -> (TempDir, Output) {
+fn ran() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
         .args(options(directory.path()))
-        .args(quiet)
         .output()
         .unwrap();
     (directory, output)
@@ -39,19 +38,19 @@ fn ran(quiet: Option<&str>) -> (TempDir, Output) {
 
 #[test]
 fn a_run_over_the_sample_programs_prints_the_directory_of_a_harness_on_standard_output() {
-    let (_directory, output) = ran(None);
+    let (_directory, output) = ran();
     assert!(Path::new(String::from_utf8(output.stdout).unwrap().trim_end()).is_dir());
 }
 
 #[test]
 fn a_run_over_the_sample_programs_exits_with_0() {
-    let (_directory, output) = ran(None);
+    let (_directory, output) = ran();
     assert_eq!(output.status.code(), Some(0));
 }
 
 #[test]
 fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
-    let (directory, output) = ran(None);
+    let (directory, output) = ran();
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
         format!("{}\n", directory.path().join("run/harnesses/1").display())
@@ -59,14 +58,8 @@ fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
 }
 
 #[test]
-fn quiet_leaves_standard_error_empty() {
-    let (_directory, output) = ran(Some("--quiet"));
-    assert_eq!(String::from_utf8(output.stderr).unwrap(), "");
-}
-
-#[test]
-fn without_quiet_every_line_of_standard_error_is_a_sentence_of_cladenc() {
-    let (_directory, output) = ran(None);
+fn every_line_of_standard_error_is_a_sentence_of_cladenc() {
+    let (_directory, output) = ran();
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -76,8 +69,8 @@ fn without_quiet_every_line_of_standard_error_is_a_sentence_of_cladenc() {
 }
 
 #[test]
-fn without_quiet_standard_error_starts_with_the_run_directory_being_made() {
-    let (directory, output) = ran(None);
+fn standard_error_starts_with_the_run_directory_being_made() {
+    let (directory, output) = ran();
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
@@ -89,8 +82,8 @@ fn without_quiet_standard_error_starts_with_the_run_directory_being_made() {
 }
 
 #[test]
-fn without_quiet_standard_error_ends_with_the_best_harness_and_where_it_is_kept() {
-    let (directory, output) = ran(None);
+fn standard_error_ends_with_the_best_harness_and_where_it_is_kept() {
+    let (directory, output) = ran();
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()

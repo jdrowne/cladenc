@@ -15,9 +15,9 @@ fn parsed(options: &[&str]) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(["cladenc", "resume"].iter().chain(options).copied())
 }
 
-fn ran(run_dir: PathBuf, quiet: bool) -> Ran {
+fn ran(run_dir: PathBuf) -> Ran {
     let cli = Cli {
-        command: Command::Resume(ResumeOptions { run_dir, quiet }),
+        command: Command::Resume(ResumeOptions { run_dir }),
     };
     let mut output = Vec::new();
     let mut errors = Vec::new();
@@ -36,7 +36,7 @@ fn missing() -> PathBuf {
 #[test]
 fn a_run_directory_with_a_colon_in_its_path_is_refused_before_it_is_looked_at() {
     assert!(
-        ran(PathBuf::from("/first:second"), false)
+        ran(PathBuf::from("/first:second"))
             .errors
             .starts_with("cladenc: --run-dir takes a path that holds no colon")
     );
@@ -46,7 +46,7 @@ fn a_run_directory_with_a_colon_in_its_path_is_refused_before_it_is_looked_at() 
 fn the_run_directory_is_the_one_given() {
     assert!(matches!(
         parsed(&["--run-dir=/run"]).unwrap().command,
-        Command::Resume(ResumeOptions { run_dir, .. }) if run_dir == Path::new("/run")
+        Command::Resume(ResumeOptions { run_dir }) if run_dir == Path::new("/run")
     ));
 }
 
@@ -59,35 +59,22 @@ fn leaving_out_the_run_directory_is_an_error() {
 }
 
 #[test]
-fn quiet_takes_no_value() {
-    assert!(parsed(&["--run-dir=/run", "--quiet=yes"]).is_err());
-}
-
-#[test]
-fn writing_quiet_turns_it_on() {
-    assert!(matches!(
-        parsed(&["--run-dir=/run", "--quiet"]).unwrap().command,
-        Command::Resume(ResumeOptions { quiet: true, .. })
-    ));
-}
-
-#[test]
-fn leaving_quiet_out_leaves_it_off() {
-    assert!(matches!(
-        parsed(&["--run-dir=/run"]).unwrap().command,
-        Command::Resume(ResumeOptions { quiet: false, .. })
-    ));
+fn quiet_is_no_flag_of_resume() {
+    assert_eq!(
+        parsed(&["--run-dir=/run", "--quiet"]).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }
 
 #[test]
 fn a_run_directory_that_does_not_exist_gives_exit_status_2() {
-    assert_eq!(ran(missing(), false).status, 2);
+    assert_eq!(ran(missing()).status, 2);
 }
 
 #[test]
 fn a_run_directory_that_does_not_exist_is_reported_on_standard_error() {
     assert!(
-        ran(missing(), false)
+        ran(missing())
             .errors
             .starts_with("cladenc: the run directory cannot be used: ")
     );
@@ -96,22 +83,17 @@ fn a_run_directory_that_does_not_exist_is_reported_on_standard_error() {
 #[test]
 fn a_run_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
     assert_eq!(
-        ran(missing(), false).errors,
+        ran(missing()).errors,
         "cladenc: the run directory cannot be used: No such file or directory (os error 2)\n"
     );
 }
 
 #[test]
 fn a_run_directory_that_does_not_exist_prints_nothing_on_standard_output() {
-    assert_eq!(ran(missing(), false).output, "");
-}
-
-#[test]
-fn with_quiet_a_run_directory_that_does_not_exist_prints_nothing_on_standard_error() {
-    assert_eq!(ran(missing(), true).errors, "");
+    assert_eq!(ran(missing()).output, "");
 }
 
 #[test]
 fn a_run_directory_with_no_path_gives_exit_status_2() {
-    assert_eq!(ran(PathBuf::new(), false).status, 2);
+    assert_eq!(ran(PathBuf::new()).status, 2);
 }

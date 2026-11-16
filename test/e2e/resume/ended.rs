@@ -30,16 +30,20 @@ fn ended() -> (TempDir, Output) {
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
         .args(options)
-        .arg("--quiet")
         .output()
         .unwrap();
     (directory, output)
 }
 
 fn resume(directory: &Path) -> Output {
+    resume_with(directory, None)
+}
+
+fn resume_with(directory: &Path, another: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
         .arg(format!("--run-dir={}", directory.join("run").display()))
+        .args(another)
         .output()
         .unwrap()
 }
@@ -72,5 +76,33 @@ fn resume_on_a_run_that_ended_says_on_standard_error_that_the_search_had_finishe
         String::from_utf8(resume(directory.path()).stderr)
             .unwrap()
             .starts_with("cladenc: the search had finished: its best harness is harness ")
+    );
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_resume_exits_with_2() {
+    let (directory, _run) = ended();
+    assert_eq!(
+        resume_with(directory.path(), Some("--quiet")).status.code(),
+        Some(2)
+    );
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_resume_is_refused_as_an_argument_that_is_not_expected() {
+    let (directory, _run) = ended();
+    assert!(
+        String::from_utf8(resume_with(directory.path(), Some("--quiet")).stderr)
+            .unwrap()
+            .starts_with("error: unexpected argument '--quiet' found\n")
+    );
+}
+
+#[test]
+fn quiet_which_is_no_flag_of_resume_prints_nothing_on_standard_output() {
+    let (directory, _run) = ended();
+    assert_eq!(
+        resume_with(directory.path(), Some("--quiet")).stdout,
+        Vec::<u8>::new()
     );
 }

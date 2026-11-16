@@ -1,4 +1,5 @@
 use std::fs;
+use std::io;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -35,7 +36,13 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     };
     change(&mut settings);
     let run_directory = directory.path().join("run");
-    search::search(&settings, &run_directory, &AtomicBool::new(false), None).unwrap();
+    search::search(
+        &settings,
+        &run_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
+    .unwrap();
     fs::read_to_string(journal::path(&run_directory))
         .unwrap()
         .lines()
