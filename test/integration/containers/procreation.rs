@@ -123,14 +123,17 @@ fn harness_script(harness: &Path) -> String {
 
 #[test]
 fn the_working_directory_of_a_harness_is_the_copy_that_becomes_its_child() {
-    assert_eq!(left_in_the_child("pwd > where", "where"), "/work\n");
+    assert_eq!(
+        left_in_the_child("pwd > where", "where"),
+        "/var/lib/cladenc/work\n"
+    );
 }
 
 #[test]
 fn a_harness_is_told_where_its_source_code_is() {
     assert_eq!(
         left_in_the_child("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/harness\n"
+        "/var/lib/cladenc/harness\n"
     );
 }
 
@@ -193,21 +196,29 @@ fn a_harness_can_read_the_ended_assessments_of_its_parent_and_none_still_running
     workspace.start_assessment(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /assessments /assessments/benchmark > evidence",
+        "ls /var/log/cladenc/assessments /var/log/cladenc/assessments/benchmark > evidence",
         &workspace,
         0,
         30,
     );
     assert_eq!(
         fs::read_to_string(workspace.harness(1).join("evidence")).unwrap(),
-        "/assessments:\nbenchmark\n\n/assessments/benchmark:\nt1\n"
+        "/var/log/cladenc/assessments:\nbenchmark\n\n/var/log/cladenc/assessments/benchmark:\nt1\n"
     );
 }
 
 #[test]
 fn a_harness_cannot_write_into_the_assessments_of_its_parent() {
-    let (_directory, workspace, _result) = procreated("touch /assessments/written");
+    let (_directory, workspace, _result) = procreated("touch /var/log/cladenc/assessments/written");
     assert!(!workspace.assessments(0).join("written").exists());
+}
+
+#[test]
+fn a_harness_finds_nothing_at_the_top_of_the_filesystem_that_its_image_does_not_hold() {
+    assert_eq!(
+        left_in_the_child("ls / > top", "top"),
+        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
+    );
 }
 
 #[test]

@@ -8,8 +8,8 @@ use super::{ContainerError, WORK};
 use crate::genealogy::AssessmentOutcome;
 use crate::workspace::Workspace;
 
-const TASK: &str = "/task";
-const CHECK: &str = "/task/check";
+const TASK: &str = "/var/lib/cladenc/task";
+const CHECK: &str = "/var/lib/cladenc/task/check";
 
 pub(super) fn run(
     workspace: &Workspace,

@@ -61,11 +61,12 @@ by hand where the directed evolution is not resumed.
 
 In the container of a harness,
 
-  /harness             holds the source code of the harness, a copy made
-                       for this container
-  /work                is the directory the harness works in, and the
-                       working directory
-  CLADENC_HARNESS      /harness
+  /var/lib/cladenc/harness  holds the source code of the harness, a copy
+                            made for this container
+  /var/lib/cladenc/work     is the directory the harness works in, and the
+                            working directory
+
+  CLADENC_HARNESS      /var/lib/cladenc/harness
   CLADENC_INSTRUCTION  what the harness is asked to do
   CLADENC_MODEL        the name of the model, the value of --model
   CLADENC_MODEL_URL    the address the model is served at, the value of
@@ -88,12 +89,12 @@ reach. The key is read from its file when a directed evolution is started,
 and again each time the directed evolution is resumed. cladenc keeps the
 key off every command line, out of the journal and out of what it prints.
 
-A procreation is carried out by the harness that procreates. /work holds a
-second copy of its source code, and the instruction asks the harness to
-improve that copy: what the harness leaves in /work is its child.
-/assessments holds the finished assessments of the harness, to read: one
-directory for each benchmark, and in it one for each task, holding what the
-assessment of that task kept.
+A procreation is carried out by the harness that procreates.
+/var/lib/cladenc/work holds a second copy of its source code, and the
+instruction asks the harness to improve that copy: what the harness leaves
+there is its child. /var/log/cladenc/assessments holds the finished
+assessments of the harness, to read: one directory for each benchmark, and
+in it one for each task, holding what the assessment of that task kept.
 
 How the harness ends decides what is recorded:
 
@@ -115,13 +116,13 @@ run for the first time, in a container of the same image, as
     sh -c <TIMER> <COMMAND> <SECONDS>
 
 where <COMMAND> is the value of that flag and the timer is the same one,
-with /harness as the working directory, which holds the source code of the
-harness and is what CLADENC_HARNESS names. A build calls no model, and is
-given none of the three variables of the model. What the build makes stays
-there, and is part of every copy made of the harness. The progenitor is
-built before any procreation or assessment, within the time limit of one
-procreation. A child is built as the last step of its procreation, within
-what is left of the time limit of that procreation.
+with /var/lib/cladenc/harness as the working directory, which holds the
+source code of the harness and is what CLADENC_HARNESS names. A build calls
+no model, and is given none of the three variables of the model. What the
+build makes stays there, and is part of every copy made of the harness. The
+progenitor is built before any procreation or assessment, within the time
+limit of one procreation. A child is built as the last step of its
+procreation, within what is left of the time limit of that procreation.
 
 builds in the run directory keeps the standard output and standard error
 of every build, in a directory named after the harness.
@@ -174,17 +175,19 @@ directories that --benchmark named.
 
 An assessment is one harness tried on one task, and cladenc carries it out
 in two steps. First the harness is started, as it is for a procreation.
-/work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds
-the statement of the task. The harness is given nothing else of the task,
-so it can neither read nor change the check. When the harness has ended,
-with whatever exit status, the check of the task is run in a second
-container of the same image, as
+/var/lib/cladenc/work holds a copy of the files of the task, and
+CLADENC_INSTRUCTION holds the statement of the task. The harness is given
+nothing else of the task, so it can neither read nor change the check. When
+the harness has ended, with whatever exit status, the check of the task is
+run in a second container of the same image, as
 
-    sh -c <TIMER> /task/check <SECONDS>
+    sh -c <TIMER> /var/lib/cladenc/task/check <SECONDS>
 
-  /work         holds what the harness left, and is the working directory
-  /task         holds the directory of the task, to read and not to change
-  CLADENC_TASK  /task
+  /var/lib/cladenc/work  holds what the harness left, and is the working
+                         directory
+  /var/lib/cladenc/task  holds the directory of the task, to read and not
+                         to change
+  CLADENC_TASK           /var/lib/cladenc/task
 
 A check calls no model, and is given none of the three variables of the
 model. The two steps share the time limit of one assessment.

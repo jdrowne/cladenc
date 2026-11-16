@@ -115,17 +115,20 @@ fn the_harness_works_on_a_copy_of_the_files_of_the_task() {
 
 #[test]
 fn the_working_directory_of_the_harness_holds_the_files_of_the_task() {
-    assert_eq!(left_by_the_harness("pwd > where", "where"), "/work\n");
+    assert_eq!(
+        left_by_the_harness("pwd > where", "where"),
+        "/var/lib/cladenc/work\n"
+    );
 }
 
 #[test]
 fn the_harness_is_told_where_its_source_code_is() {
     assert_eq!(
         left_by_the_harness(
-            "echo \"$CLADENC_HARNESS\" > told; cat /harness/harness.sh >> told",
+            "echo \"$CLADENC_HARNESS\" > told; cat /var/lib/cladenc/harness/harness.sh >> told",
             "told"
         ),
-        "/harness\n#!/bin/sh\necho harness\n"
+        "/var/lib/cladenc/harness\n#!/bin/sh\necho harness\n"
     );
 }
 
@@ -165,8 +168,19 @@ fn the_harness_of_a_directed_evolution_with_no_key_is_given_none() {
 #[test]
 fn the_harness_is_given_neither_the_task_nor_its_own_assessments() {
     assert_eq!(
-        left_by_the_harness("ls -d /task /assessments > given 2> /dev/null", "given"),
+        left_by_the_harness(
+            "ls -d /var/lib/cladenc/task /var/log/cladenc/assessments > given 2> /dev/null",
+            "given"
+        ),
         ""
+    );
+}
+
+#[test]
+fn the_harness_finds_nothing_at_the_top_of_the_filesystem_that_its_image_does_not_hold() {
+    assert_eq!(
+        left_by_the_harness("ls / > top", "top"),
+        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
     );
 }
 
@@ -195,7 +209,10 @@ fn the_statement_of_the_task_is_kept_with_the_assessment() {
 
 #[test]
 fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
-    let assessed = assessed("echo changed > /harness/harness.sh", FINISHED);
+    let assessed = assessed(
+        "echo changed > /var/lib/cladenc/harness/harness.sh",
+        FINISHED,
+    );
     assert_eq!(
         fs::read_to_string(assessed.workspace.harness(0).join("harness.sh")).unwrap(),
         "#!/bin/sh\necho harness\n"
@@ -251,34 +268,56 @@ fn a_harness_that_exits_with_another_status_than_0_is_still_checked() {
 
 #[test]
 fn the_working_directory_of_the_check_holds_what_the_harness_left() {
-    assert_eq!(left_by_the_check("pwd > where", "where"), "/work\n");
+    assert_eq!(
+        left_by_the_check("pwd > where", "where"),
+        "/var/lib/cladenc/work\n"
+    );
 }
 
 #[test]
 fn the_check_is_told_where_the_directory_of_its_task_is() {
     assert_eq!(
         left_by_the_check(
-            "echo \"$CLADENC_TASK\" > told; cat /task/statement >> told",
+            "echo \"$CLADENC_TASK\" > told; cat /var/lib/cladenc/task/statement >> told",
             "told"
         ),
-        "/task\nFinish the work of t1.\n"
+        "/var/lib/cladenc/task\nFinish the work of t1.\n"
     );
 }
 
 #[test]
 fn the_check_is_given_the_files_the_work_started_from() {
     assert_eq!(
-        left_by_the_check("cat /task/files/work.txt > started", "started"),
+        left_by_the_check(
+            "cat /var/lib/cladenc/task/files/work.txt > started",
+            "started"
+        ),
         "to do\n"
     );
 }
 
 #[test]
 fn the_check_cannot_change_its_task() {
-    let assessed = assessed(FINISH, "echo changed > /task/statement");
+    let assessed = assessed(FINISH, "echo changed > /var/lib/cladenc/task/statement");
     assert_eq!(
         fs::read_to_string(assessed.workspace.task("benchmark/t1").join("statement")).unwrap(),
         "Finish the work of t1.\n"
+    );
+}
+
+#[test]
+fn the_check_that_is_run_is_the_one_in_the_directory_of_its_task() {
+    assert_eq!(
+        left_by_the_check("echo \"$0\" > called", "called"),
+        "/var/lib/cladenc/task/check\n"
+    );
+}
+
+#[test]
+fn the_check_finds_nothing_at_the_top_of_the_filesystem_that_its_image_does_not_hold() {
+    assert_eq!(
+        left_by_the_check("ls / > top", "top"),
+        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
     );
 }
 

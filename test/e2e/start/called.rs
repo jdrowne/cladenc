@@ -97,7 +97,7 @@ fn a_harness_is_started_in_a_container_that_holds_its_source_code_and_the_copy_t
     let (directory, _output) = ran();
     assert_eq!(
         kept_by_the_harness(&directory, "where"),
-        "/harness\n/work\n"
+        "/var/lib/cladenc/harness\n/var/lib/cladenc/work\n"
     );
 }
 
@@ -115,7 +115,7 @@ fn the_harness_of_an_assessment_is_started_on_the_files_of_the_task() {
     let (directory, _output) = ran();
     assert_eq!(
         left_by_the_assessment(&directory, "where"),
-        "/harness\n/work\n"
+        "/var/lib/cladenc/harness\n/var/lib/cladenc/work\n"
     );
 }
 
@@ -133,7 +133,7 @@ fn the_check_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_i
     let (directory, _output) = ran();
     assert_eq!(
         left_by_the_assessment(&directory, "where-checked"),
-        "/task\n/work\n"
+        "/var/lib/cladenc/task\n/var/lib/cladenc/work\n"
     );
 }
 
@@ -230,7 +230,7 @@ fn the_timer_of_a_harness_is_given_its_command_and_five_seconds_more_than_the_ti
 #[test]
 fn the_timer_of_a_check_is_given_the_check_of_the_task() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("{TIMER}\n/task/check\n")));
+    assert!(arguments.contains(&format!("{TIMER}\n/var/lib/cladenc/task/check\n")));
 }
 
 #[test]

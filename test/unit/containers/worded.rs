@@ -43,8 +43,8 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 #[test]
 fn the_instruction_says_where_the_assessments_are() {
     assert!(containers::INSTRUCTION.contains(
-        "/assessments holds one directory for each benchmark, and in it one directory for each \
-         task you have been tried on. In the directory of a task, "
+        "than you do. /var/log/cladenc/assessments holds one directory for each benchmark, and in \
+         it one directory for each task you have been tried on. In the directory of a task, "
     ));
 }
 

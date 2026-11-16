@@ -242,6 +242,29 @@ fn the_sections_of_resume_and_start_show_how_the_shell_sends_standard_error_nowh
 }
 
 #[test]
+fn the_readme_says_where_the_check_of_a_task_finds_what_the_harness_left() {
+    assert!(readme().contains(
+        "there `/var/lib/cladenc/work`, the working directory, holds what the harness left"
+    ));
+}
+
+#[test]
+fn the_readme_says_where_the_check_of_a_task_finds_the_directory_of_its_task() {
+    assert!(readme().contains("`/var/lib/cladenc/task` holds the directory of the task, to read"));
+}
+
+#[test]
+fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
+    assert_eq!(
+        ["`/harness`", "`/work`", "`/task`", "`/assessments`"]
+            .into_iter()
+            .filter(|top| readme().contains(top))
+            .collect::<Vec<&str>>(),
+        Vec::<&str>::new()
+    );
+}
+
+#[test]
 fn the_readme_names_no_flag_that_cladenc_does_not_have() {
     assert_eq!(
         flags_named_in(&readme())

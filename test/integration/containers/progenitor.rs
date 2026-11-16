@@ -53,14 +53,25 @@ fn the_progenitor_is_built_in_its_place_among_the_harnesses() {
 
 #[test]
 fn the_working_directory_of_the_build_of_the_progenitor_is_its_source_code() {
-    assert_eq!(left_in_the_progenitor("pwd > where", "where"), "/harness\n");
+    assert_eq!(
+        left_in_the_progenitor("pwd > where", "where"),
+        "/var/lib/cladenc/harness\n"
+    );
 }
 
 #[test]
 fn the_build_of_the_progenitor_is_told_where_the_source_code_is() {
     assert_eq!(
         left_in_the_progenitor("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/harness\n"
+        "/var/lib/cladenc/harness\n"
+    );
+}
+
+#[test]
+fn the_build_of_the_progenitor_finds_nothing_at_the_top_of_the_filesystem_that_its_image_lacks() {
+    assert_eq!(
+        left_in_the_progenitor("ls / > top", "top"),
+        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
     );
 }
 

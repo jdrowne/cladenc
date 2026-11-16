@@ -63,7 +63,10 @@ fn resumed_after_an_assessment_stopped() -> TempDir {
 }
 
 fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
-    let mut settings = settings(directory, "[ -d /assessments ] || sleep 300");
+    let mut settings = settings(
+        directory,
+        "[ -d /var/log/cladenc/assessments ] || sleep 300",
+    );
     settings.max_concurrent_containers = 2;
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.progenitor)

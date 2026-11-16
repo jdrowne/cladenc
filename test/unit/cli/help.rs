@@ -158,9 +158,9 @@ fn the_long_help_of_start_shows_how_a_harness_is_built() {
 fn the_long_help_of_start_names_what_a_harness_is_told() {
     let help = help_of_start(true);
     let told = [
-        "  /harness             ",
-        "  /work                ",
-        "  CLADENC_HARNESS      /harness\n",
+        "  /var/lib/cladenc/harness  holds the source code of the harness",
+        "  /var/lib/cladenc/work     is the directory the harness works in",
+        "  CLADENC_HARNESS      /var/lib/cladenc/harness\n",
         "  CLADENC_INSTRUCTION  ",
     ];
     assert!(told.iter().all(|line| help.contains(line)));
@@ -187,7 +187,7 @@ fn the_long_help_of_start_says_how_a_harness_reaches_the_machine_cladenc_runs_on
 #[test]
 fn the_long_help_of_start_says_that_a_build_is_not_told_the_model() {
     assert!(help_of_start(true).contains(
-        "A build calls no model, and is\ngiven none of the three variables of the model."
+        "A build calls\nno model, and is given none of the three variables of the model."
     ));
 }
 
@@ -340,7 +340,7 @@ fn the_long_help_of_start_says_where_a_harness_is_built() {
     let help = help_of_start(true);
     let said = [
         "Where --harness-build-command is given, a harness is built before it is\n",
-        "with /harness as the working directory",
+        "with /var/lib/cladenc/harness as the working directory",
         "builds in the run directory",
     ];
     assert!(said.iter().all(|line| help.contains(line)));
@@ -367,8 +367,8 @@ fn the_short_help_of_start_names_the_option_that_builds_a_harness() {
 #[test]
 fn the_long_help_of_start_says_what_the_harness_of_an_assessment_is_given_of_its_task() {
     assert!(help_of_start(true).contains(
-        "/work holds a copy of the files of the task, and CLADENC_INSTRUCTION holds\nthe \
-         statement of the task."
+        "/var/lib/cladenc/work holds a copy of the files of the task, \
+         and\nCLADENC_INSTRUCTION holds the statement of the task."
     ));
 }
 
@@ -379,16 +379,18 @@ fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_
 
 #[test]
 fn the_long_help_of_start_shows_how_the_check_of_a_task_is_called() {
-    assert!(help_of_start(true).contains("\n    sh -c <TIMER> /task/check <SECONDS>\n"));
+    assert!(
+        help_of_start(true).contains("\n    sh -c <TIMER> /var/lib/cladenc/task/check <SECONDS>\n")
+    );
 }
 
 #[test]
 fn the_long_help_of_start_names_what_a_check_is_given() {
     let help = help_of_start(true);
     let given = [
-        "  /work         holds what the harness left, and is the working directory\n",
-        "  /task         holds the directory of the task, to read and not to change\n",
-        "  CLADENC_TASK  /task\n",
+        "  /var/lib/cladenc/work  holds what the harness left, and is the working\n",
+        "  /var/lib/cladenc/task  holds the directory of the task, to read and not\n",
+        "  CLADENC_TASK           /var/lib/cladenc/task\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
 }
@@ -507,9 +509,39 @@ fn the_long_help_of_start_says_where_the_directory_of_an_assessment_is() {
 #[test]
 fn the_long_help_of_start_says_that_a_procreation_finds_its_assessments_by_benchmark() {
     assert!(help_of_start(true).contains(
-        "one\ndirectory for each benchmark, and in it one for each task, holding what \
-         the\nassessment of that task kept."
+        "one directory for each benchmark, and\nin it one for each task, holding what the \
+         assessment of that task kept."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_a_procreation_finds_its_assessments() {
+    assert!(help_of_start(true).contains(
+        "/var/log/cladenc/assessments holds the finished\nassessments of the harness, to read:"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_copy_that_a_procreation_improves_is() {
+    assert!(help_of_start(true).contains(
+        "/var/lib/cladenc/work holds a second copy of its source code, and the\ninstruction asks \
+         the harness to improve that copy: what the harness leaves\nthere is its child."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
+    assert_eq!(
+        help_of_start(true)
+            .split_whitespace()
+            .filter(|word| {
+                ["/harness", "/work", "/task", "/assessments"]
+                    .iter()
+                    .any(|top| word.starts_with(top))
+            })
+            .collect::<Vec<&str>>(),
+        Vec::<&str>::new()
+    );
 }
 
 #[test]

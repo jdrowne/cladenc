@@ -92,14 +92,25 @@ fn kept_of_the_build(build_command: &str, file: &str) -> String {
 
 #[test]
 fn the_working_directory_of_the_build_of_a_child_is_the_source_code_of_the_child() {
-    assert_eq!(left_in_the_child("pwd > where", "where"), "/harness\n");
+    assert_eq!(
+        left_in_the_child("pwd > where", "where"),
+        "/var/lib/cladenc/harness\n"
+    );
 }
 
 #[test]
 fn the_build_of_a_child_is_told_where_the_source_code_is() {
     assert_eq!(
         left_in_the_child("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/harness\n"
+        "/var/lib/cladenc/harness\n"
+    );
+}
+
+#[test]
+fn the_build_of_a_child_finds_nothing_at_the_top_of_the_filesystem_that_its_image_lacks() {
+    assert_eq!(
+        left_in_the_child("ls / > top", "top"),
+        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
     );
 }
 
