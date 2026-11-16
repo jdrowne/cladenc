@@ -1,4 +1,4 @@
-use cladenc::selection::procreation_is_due;
+use cladenc::artificial_selection::procreation_is_due;
 
 fn procreations(growth: f64, budget: u64, harnesses: u64) -> Vec<u64> {
     let mut harness_count = harnesses;

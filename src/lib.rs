@@ -1,3 +1,4 @@
+pub mod artificial_selection;
 pub mod benchmark;
 pub mod cli;
 pub mod containers;
@@ -6,5 +7,4 @@ pub mod journal;
 pub mod model;
 pub mod report;
 pub mod search;
-pub mod selection;
 pub mod workspace;

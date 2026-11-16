@@ -1,19 +1,19 @@
+use cladenc::artificial_selection::ArtificialSelection;
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use cladenc::selection::Selection;
 
 fn tasks() -> Vec<String> {
     (0..5).map(|number| format!("task-{number}")).collect()
 }
 
 fn best(genealogy: &Genealogy) -> HarnessId {
-    let selection = Selection {
+    let artificial_selection = ArtificialSelection {
         budget: 100,
         growth: 0.6,
         confidence: 99.0,
         tasks: tasks(),
         seed: 0,
     };
-    selection.best_harness(genealogy)
+    artificial_selection.best_harness(genealogy)
 }
 
 fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {

@@ -1,14 +1,14 @@
 use std::collections::BTreeSet;
 
+use cladenc::artificial_selection::{Action, ArtificialSelection};
 use cladenc::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
-use cladenc::selection::{Action, Selection};
 
 fn tasks(count: usize) -> Vec<String> {
     (0..count).map(|number| format!("task-{number}")).collect()
 }
 
-fn selection(seed: u64, task_count: usize) -> Selection {
-    Selection {
+fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
+    ArtificialSelection {
         budget: 1000,
         growth: 0.0,
         confidence: 99.0,
@@ -48,7 +48,7 @@ fn two_lines() -> Genealogy {
 }
 
 fn evaluation(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<(HarnessId, String)> {
-    selection(seed, task_count)
+    artificial_selection(seed, task_count)
         .next_action(genealogy, 0)
         .and_then(|action| match action {
             Action::Evaluation { harness, task } => Some((harness, task)),
@@ -154,11 +154,11 @@ fn a_task_whose_evaluation_is_running_is_not_drawn_again() {
 
 #[test]
 fn every_harness_is_given_every_task_exactly_once() {
-    let selection = selection(3, 5);
+    let artificial_selection = artificial_selection(3, 5);
     let mut genealogy = Genealogy::new();
     let mut given = Vec::new();
     let mut number = 0;
-    while let Some(action) = selection.next_action(&genealogy, number) {
+    while let Some(action) = artificial_selection.next_action(&genealogy, number) {
         match action {
             Action::Procreation { parent } => {
                 child_of(&mut genealogy, parent, ProcreationOutcome::Created)

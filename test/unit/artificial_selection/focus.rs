@@ -1,4 +1,4 @@
-use cladenc::selection::focus;
+use cladenc::artificial_selection::focus;
 
 #[test]
 fn focus_is_1_when_no_evaluation_has_started() {

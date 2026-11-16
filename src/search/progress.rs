@@ -7,14 +7,14 @@ use std::thread::Scope;
 use super::action::{Ended, carry_out};
 use super::said::say;
 use super::{Found, Said, SearchError, Shared};
+use crate::artificial_selection::{Action, ArtificialSelection};
 use crate::containers::ContainerError;
 use crate::genealogy::Genealogy;
 use crate::journal::{Journal, Record, Settings, Started};
-use crate::selection::{Action, Selection};
 use crate::workspace::Workspace;
 
 pub(super) struct Progress<'a> {
-    selection: Selection,
+    artificial_selection: ArtificialSelection,
     journal: Journal,
     writer: &'a mut dyn Write,
     genealogy: Genealogy,
@@ -30,7 +30,7 @@ pub(super) struct Progress<'a> {
 impl<'a> Progress<'a> {
     pub(super) fn new(settings: &Settings, journal: Journal, writer: &'a mut dyn Write) -> Self {
         Self {
-            selection: settings.selection(),
+            artificial_selection: settings.artificial_selection(),
             journal,
             writer,
             genealogy: settings.genealogy(),
@@ -124,7 +124,7 @@ impl<'a> Progress<'a> {
                     action: &action,
                     again,
                     evaluations: self.genealogy.started(),
-                    budget: self.selection.budget,
+                    budget: self.artificial_selection.budget,
                 },
             );
             scope.spawn(move || {
@@ -210,7 +210,7 @@ impl<'a> Progress<'a> {
         if self.halted(stop) {
             return Err(self.failure.unwrap_or(SearchError::Asked));
         }
-        let best_harness = self.selection.best_harness(&self.genealogy);
+        let best_harness = self.artificial_selection.best_harness(&self.genealogy);
         self.record(&Record::SearchFinished { best_harness });
         let found = Found {
             best_harness,
@@ -238,7 +238,7 @@ impl<'a> Progress<'a> {
         self.initial_ended = self.initial_ended || self.running == 0;
         self.initial_ended
             .then(|| {
-                self.selection
+                self.artificial_selection
                     .next_action(&self.genealogy, self.next_action)
             })
             .flatten()

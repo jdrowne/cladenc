@@ -1,6 +1,6 @@
 use statrs::function::beta::inv_beta_reg;
 
-use super::Selection;
+use super::ArtificialSelection;
 use crate::genealogy::{Genealogy, HarnessId};
 
 pub fn lower_bound(successes: u64, failures: u64, confidence: f64) -> f64 {
@@ -11,7 +11,7 @@ pub fn lower_bound(successes: u64, failures: u64, confidence: f64) -> f64 {
     )
 }
 
-impl Selection {
+impl ArtificialSelection {
     pub fn best_harness(&self, genealogy: &Genealogy) -> HarnessId {
         let mut best = (0, f64::NEG_INFINITY);
         for harness in genealogy.created_harnesses() {

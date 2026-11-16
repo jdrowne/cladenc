@@ -3,11 +3,11 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use super::JournalError;
+use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
 use crate::genealogy::{EvaluationOutcome, Genealogy, HarnessId, ProcreationOutcome};
 use crate::model::{self, Model};
-use crate::selection::Selection;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
@@ -70,8 +70,8 @@ impl Settings {
             .collect()
     }
 
-    pub fn selection(&self) -> Selection {
-        Selection {
+    pub fn artificial_selection(&self) -> ArtificialSelection {
+        ArtificialSelection {
             budget: self.budget,
             growth: self.genealogy_growth,
             confidence: self.confidence,

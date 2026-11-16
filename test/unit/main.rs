@@ -1,3 +1,14 @@
+mod artificial_selection {
+    mod best;
+    mod evaluation;
+    mod focus;
+    mod growth;
+    mod lower_bound;
+    mod no_action;
+    mod procreation;
+    mod repeatable;
+}
+
 mod benchmark {
     mod named;
     mod refused;
@@ -63,15 +74,4 @@ mod report {
 mod search {
     mod said;
     mod worded;
-}
-
-mod selection {
-    mod best;
-    mod evaluation;
-    mod focus;
-    mod growth;
-    mod lower_bound;
-    mod no_action;
-    mod procreation;
-    mod repeatable;
 }

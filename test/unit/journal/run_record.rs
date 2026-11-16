@@ -3,12 +3,12 @@ use std::fs;
 use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
+use cladenc::artificial_selection::ArtificialSelection;
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::Launch;
 use cladenc::genealogy::Genealogy;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::model::Model;
-use cladenc::selection::Selection;
 
 fn settings() -> Settings {
     Settings {
@@ -246,10 +246,10 @@ fn the_largest_seed_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_settings_give_the_selection_made_from_five_of_them() {
+fn the_settings_give_the_artificial_selection_made_from_five_of_them() {
     assert_eq!(
-        settings().selection(),
-        Selection {
+        settings().artificial_selection(),
+        ArtificialSelection {
             budget: 800,
             growth: 0.6,
             confidence: 99.0,
