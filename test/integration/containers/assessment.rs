@@ -28,9 +28,9 @@ struct Assessment<'a> {
 
 fn assessed_as(assessment: &Assessment<'_>) -> Assessed {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let run_directory = directory.path().join("run");
-    let workspace = Workspace::create(&run_directory, &progenitor).unwrap();
+    let workspace = Workspace::create(&run_directory, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())

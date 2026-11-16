@@ -16,7 +16,7 @@ struct Keyed {
 
 fn settings(directory: &Path, key_file: &Path) -> Settings {
     Settings {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: Some(key_file.to_owned()),

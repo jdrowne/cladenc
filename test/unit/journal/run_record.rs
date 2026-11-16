@@ -12,7 +12,7 @@ use cladenc::model::Model;
 
 fn settings() -> Settings {
     Settings {
-        progenitor: PathBuf::from("/abs/harness"),
+        primogenitor: PathBuf::from("/abs/harness"),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
@@ -71,14 +71,14 @@ fn read_back(record: &Record) -> Record {
 
 fn with_a_path_that_is_not_utf8() -> Record {
     run(Settings {
-        progenitor: PathBuf::from(OsStr::from_bytes(&[0xff])),
+        primogenitor: PathBuf::from(OsStr::from_bytes(&[0xff])),
         ..settings()
     })
 }
 
 #[test]
-fn the_format_of_the_journal_is_13() {
-    assert_eq!(journal::FORMAT, 13);
+fn the_format_of_the_journal_is_14() {
+    assert_eq!(journal::FORMAT, 14);
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":13,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":14,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
@@ -231,12 +231,12 @@ fn settings_with_no_build_command_give_a_launch_that_builds_nothing() {
 }
 
 #[test]
-fn settings_with_a_build_command_give_a_genealogy_whose_progenitor_awaits_its_build() {
+fn settings_with_a_build_command_give_a_genealogy_whose_primogenitor_awaits_its_build() {
     assert_eq!(built_with("make harness").genealogy(), Genealogy::unbuilt());
 }
 
 #[test]
-fn settings_with_no_build_command_give_a_genealogy_whose_progenitor_is_created() {
+fn settings_with_no_build_command_give_a_genealogy_whose_primogenitor_is_created() {
     assert_eq!(settings().genealogy(), Genealogy::new());
 }
 

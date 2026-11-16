@@ -12,7 +12,7 @@ use tempfile::TempDir;
 
 fn settings(directory: &Path) -> Settings {
     Settings {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
@@ -151,7 +151,7 @@ fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_r
 }
 
 #[test]
-fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_progenitor() {
+fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_primogenitor() {
     let (directory, _found) = evolved(|settings| settings.budget = 2);
     assert!(
         journal_of(&directory)
@@ -163,7 +163,7 @@ fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_p
 }
 
 #[test]
-fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_progenitor() {
+fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_primogenitor() {
     let (directory, _found) = evolved(|settings| settings.budget = 2);
     assert_eq!(
         journal_of(&directory).lines().nth(3).unwrap(),
@@ -172,7 +172,7 @@ fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_progenitor() 
 }
 
 #[test]
-fn with_a_growth_of_0_a_directed_evolution_starts_with_a_procreation_of_the_progenitor() {
+fn with_a_growth_of_0_a_directed_evolution_starts_with_a_procreation_of_the_primogenitor() {
     let (directory, _found) = evolved(over_one_task);
     assert_eq!(
         journal_of(&directory).lines().nth(1).unwrap(),
@@ -217,14 +217,15 @@ fn the_directory_returned_is_that_of_the_best_harness_in_the_run_directory() {
 }
 
 #[test]
-fn a_directed_evolution_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_progenitor() {
+fn a_directed_evolution_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_primogenitor()
+{
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said[0],
         format!(
-            "cladenc: making the run directory {} with a copy of the progenitor {}",
+            "cladenc: making the run directory {} with a copy of the primogenitor {}",
             directory.path().join("run").display(),
-            directory.path().join("progenitor").display()
+            directory.path().join("primogenitor").display()
         )
     );
 }
@@ -325,8 +326,8 @@ fn a_directed_evolution_cannot_start_in_a_run_directory_that_exists() {
 fn a_directed_evolution_whose_run_record_cannot_be_written_stops_before_any_action() {
     let (_directory, found) = evolved(|settings| {
         let unwritable = OsStr::from_bytes(&[b'p', 0xff]);
-        settings.progenitor =
-            test_inputs::progenitor(&settings.progenitor.with_file_name(unwritable));
+        settings.primogenitor =
+            test_inputs::primogenitor(&settings.primogenitor.with_file_name(unwritable));
     });
     assert!(matches!(found, Err(DirectedEvolutionError::Journal(_))));
 }

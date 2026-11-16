@@ -29,7 +29,7 @@ fn assess(genealogy: &mut Genealogy, harness: HarnessId, count: usize, score: Sc
 }
 
 #[test]
-fn the_progenitor_alone_is_the_best_harness() {
+fn the_primogenitor_alone_is_the_best_harness() {
     assert_eq!(best(&Genealogy::new()), 0);
 }
 

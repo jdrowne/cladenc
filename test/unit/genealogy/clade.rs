@@ -43,7 +43,7 @@ fn a_success_reaches_the_clade_successes_of_its_parent() {
 }
 
 #[test]
-fn a_success_reaches_the_clade_successes_of_the_progenitor() {
+fn a_success_reaches_the_clade_successes_of_the_primogenitor() {
     let genealogy = family_after(2, Score::Success);
     assert_eq!(genealogy.harnesses()[0].clade_successes(), 1);
 }
@@ -61,13 +61,13 @@ fn a_failure_reaches_the_clade_failures_of_its_parent() {
 }
 
 #[test]
-fn a_failure_reaches_the_clade_failures_of_the_progenitor() {
+fn a_failure_reaches_the_clade_failures_of_the_primogenitor() {
     let genealogy = family_after(2, Score::Failure);
     assert_eq!(genealogy.harnesses()[0].clade_failures(), 1);
 }
 
 #[test]
-fn a_score_of_timed_out_reaches_the_clade_failures_of_the_progenitor() {
+fn a_score_of_timed_out_reaches_the_clade_failures_of_the_primogenitor() {
     let genealogy = family_after(2, Score::TimedOut);
     assert_eq!(genealogy.harnesses()[0].clade_failures(), 1);
 }
@@ -121,7 +121,7 @@ fn the_clade_failures_are_summed_over_the_clade() {
 }
 
 #[test]
-fn the_clade_of_the_progenitor_is_the_whole_genealogy() {
+fn the_clade_of_the_primogenitor_is_the_whole_genealogy() {
     let genealogy = family_with_every_harness_finishing(Score::Success);
     assert_eq!(genealogy.harnesses()[0].clade_successes(), 4);
 }

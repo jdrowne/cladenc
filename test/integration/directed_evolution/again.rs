@@ -12,7 +12,7 @@ use tempfile::TempDir;
 
 fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
@@ -40,7 +40,7 @@ fn resumed_after_a_stop_at(solved: u64, task: Option<&str>, leftover: &str) -> T
     );
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
-    test_inputs::end_with_125_at(&settings.progenitor, solved);
+    test_inputs::end_with_125_at(&settings.primogenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
@@ -69,7 +69,7 @@ fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
     );
     settings.max_concurrent_containers = 2;
     let run_directory = directory.join("run");
-    Workspace::create(&run_directory, &settings.progenitor)
+    Workspace::create(&run_directory, &settings.primogenitor)
         .unwrap()
         .copy_benchmark(&settings.benchmarks[0])
         .unwrap();

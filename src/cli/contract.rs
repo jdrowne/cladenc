@@ -120,7 +120,7 @@ with /var/lib/cladenc/harness as the working directory, which holds the
 source code of the harness and is what CLADENC_HARNESS names. A build calls
 no model, and is given none of the three variables of the model. What the
 build makes stays there, and is part of every copy made of the harness. The
-progenitor is built before any procreation or assessment, within the time
+primogenitor is built before any procreation or assessment, within the time
 limit of one procreation. A child is built as the last step of its
 procreation, within what is left of the time limit of that procreation.
 
@@ -133,10 +133,10 @@ How a build ends decides what is recorded:
   exit status 125   Docker did not start the container: the directed
                     evolution stops, and `cladenc resume` builds again
   any other status  a child is recorded as build_failed, and is not
-                    created; for the progenitor the directed evolution
+                    created; for the primogenitor the directed evolution
                     stops, and `cladenc resume` builds it again
   the time limit    the container is removed, and the procreation of a
-                    child is recorded as timed out; for the progenitor the
+                    child is recorded as timed out; for the primogenitor the
                     directed evolution stops
 
 A build that leaves anything but regular files, directories and symbolic

@@ -8,8 +8,8 @@ use tempfile::TempDir;
 
 fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
-    let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
+    let primogenitor = test_inputs::primogenitor(directory.path());
+    let workspace = Workspace::create(&directory.path().join("run"), &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
@@ -170,8 +170,8 @@ fn the_directory_of_a_running_assessment_names_its_benchmark_and_its_task_in_one
 #[test]
 fn an_assessment_that_ends_after_another_on_a_task_of_the_same_benchmark_is_kept_beside_it() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
-    let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
+    let primogenitor = test_inputs::primogenitor(directory.path());
+    let workspace = Workspace::create(&directory.path().join("run"), &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())

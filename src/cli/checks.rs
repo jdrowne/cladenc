@@ -32,7 +32,7 @@ impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
         let benchmarks = benchmarks(&self.benchmark)?;
         Ok(Settings {
-            progenitor: progenitor(&self.progenitor)?,
+            primogenitor: primogenitor(&self.primogenitor)?,
             model: self.model.clone(),
             model_url: self.model_url.clone(),
             model_key_file: self
@@ -73,7 +73,7 @@ pub(super) fn confidence(given: &str) -> Result<f64, String> {
         .ok_or_else(|| "a number above 0 and below 100 is expected".to_owned())
 }
 
-fn progenitor(given: &Path) -> Result<PathBuf, Refused> {
+fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {
     fs::canonicalize(given)
         .ok()
         .filter(|directory| {
@@ -82,7 +82,7 @@ fn progenitor(given: &Path) -> Result<PathBuf, Refused> {
                 && holds_only_harness_files(directory).unwrap_or(false)
         })
         .ok_or(Refused {
-            option: "--progenitor",
+            option: "--primogenitor",
             accepted: "an existing directory that holds only regular files, directories and \
                        symbolic links",
             reason: None,

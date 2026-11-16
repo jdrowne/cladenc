@@ -9,16 +9,16 @@ use tempfile::TempDir;
 
 fn copied() -> (TempDir, PathBuf) {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let copy = directory.path().join("copy");
-    copy_tree(&progenitor, &copy).unwrap();
+    copy_tree(&primogenitor, &copy).unwrap();
     (directory, copy)
 }
 
 fn with_a_socket(directory: &Path) -> PathBuf {
-    let progenitor = test_inputs::progenitor(directory);
-    let _socket = UnixListener::bind(progenitor.join("prompts/socket")).unwrap();
-    progenitor
+    let primogenitor = test_inputs::primogenitor(directory);
+    let _socket = UnixListener::bind(primogenitor.join("prompts/socket")).unwrap();
+    primogenitor
 }
 
 #[test]
@@ -80,8 +80,8 @@ fn copying_a_tree_that_does_not_exist_is_an_error() {
 #[test]
 fn a_tree_of_files_directories_and_symbolic_links_holds_only_what_a_harness_may() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
-    assert!(holds_only_harness_files(&progenitor).unwrap());
+    let primogenitor = test_inputs::primogenitor(directory.path());
+    assert!(holds_only_harness_files(&primogenitor).unwrap());
 }
 
 #[test]

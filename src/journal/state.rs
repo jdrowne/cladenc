@@ -85,7 +85,7 @@ impl State {
         let refused = |error| JournalError::Refused { line, error };
         match record {
             Record::Run { .. } => return Err(JournalError::RunRecordRepeated { line }),
-            Record::ProgenitorBuilt => self.genealogy.build_progenitor().map_err(refused)?,
+            Record::PrimogenitorBuilt => self.genealogy.build_primogenitor().map_err(refused)?,
             Record::ProcreationStarted { child, parent } => {
                 if child != self.genealogy.harness_count() {
                     return Err(JournalError::WrongChild { line, child });

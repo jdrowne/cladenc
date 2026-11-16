@@ -5,8 +5,8 @@ use tempfile::TempDir;
 
 fn made() -> (TempDir, Workspace) {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
-    let workspace = Workspace::create(&directory.path().join("run"), &progenitor).unwrap();
+    let primogenitor = test_inputs::primogenitor(directory.path());
+    let workspace = Workspace::create(&directory.path().join("run"), &primogenitor).unwrap();
     (directory, workspace)
 }
 

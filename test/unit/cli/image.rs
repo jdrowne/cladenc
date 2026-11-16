@@ -5,7 +5,7 @@ use clap::Parser;
 use clap::error::ErrorKind;
 
 const OPTIONS: [(&str, &str); 12] = [
-    ("--progenitor", "/progenitor"),
+    ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),

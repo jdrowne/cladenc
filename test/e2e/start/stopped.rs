@@ -10,7 +10,7 @@ const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 
 fn start(directory: &Path, run_command: &str, assessment_timeout: &str) -> Command {
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),

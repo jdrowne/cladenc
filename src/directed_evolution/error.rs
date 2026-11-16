@@ -54,7 +54,7 @@ impl Display for DirectedEvolutionError {
             ),
             Self::Build(error) => write!(
                 formatter,
-                "the directed evolution stopped before its end: the build of the progenitor {error}"
+                "the directed evolution stopped before its end: the build of the primogenitor {error}"
             ),
             Self::Action { action, error } => {
                 write!(

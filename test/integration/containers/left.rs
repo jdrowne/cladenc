@@ -56,9 +56,9 @@ fn removed_from(left: &Left, run: &str) -> io::Result<u64> {
 
 fn the_container_of_an_assessment_is_listed_under_the_label_of_its_directed_evolution() -> bool {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let run_directory = directory.path().join("run");
-    let workspace = Workspace::create(&run_directory, &progenitor).unwrap();
+    let workspace = Workspace::create(&run_directory, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())

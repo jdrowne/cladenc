@@ -16,10 +16,10 @@ fn benchmark_of(directory: &Path, ids: &[&str]) -> Benchmark {
 
 fn copied(ids: &[&str]) -> (TempDir, PathBuf, io::Result<()>) {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]);
     let run_directory = directory.path().join("run");
-    let workspace = Workspace::create(&run_directory, &progenitor).unwrap();
+    let workspace = Workspace::create(&run_directory, &primogenitor).unwrap();
     let result = workspace.copy_benchmark(&benchmark_of(&benchmark, ids));
     (directory, run_directory, result)
 }
@@ -82,12 +82,12 @@ fn the_workspace_says_where_the_copy_of_a_task_is() {
 #[test]
 fn a_task_given_through_a_symbolic_link_is_copied_as_the_directory_it_leads_to() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     let elsewhere = test_inputs::task(directory.path(), "kept-elsewhere");
     symlink(elsewhere, benchmark.join("t2")).unwrap();
     let run_directory = directory.path().join("run");
-    let workspace = Workspace::create(&run_directory, &progenitor).unwrap();
+    let workspace = Workspace::create(&run_directory, &primogenitor).unwrap();
     workspace
         .copy_benchmark(&benchmark_of(&benchmark, &["t1", "t2"]))
         .unwrap();

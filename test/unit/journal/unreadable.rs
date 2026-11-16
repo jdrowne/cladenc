@@ -4,6 +4,18 @@ use cladenc::genealogy::GenealogyError;
 use cladenc::journal::{self, JournalError};
 
 const RUN: &str = concat!(
+    r#"{"record":"run","format":14,"primogenitor":"/abs/harness","model":"a-model","#,
+    r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
+    r#""dockerfile":null,"docker_build_timeout":null,"#,
+    r#""harness_build_command":null,"harness_run_command":"run a harness","#,
+    r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
+    r#""budget":800,"#,
+    r#""genealogy_growth":0.6,"confidence":99.0,"#,
+    r#""max_concurrent_containers":8,"#,
+    r#""procreation_timeout":3600,"assessment_timeout":3600,"seed":7}"#
+);
+
+const RUN_OF_FORMAT_13: &str = concat!(
     r#"{"record":"run","format":13,"progenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
@@ -80,10 +92,18 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_13_cannot_be_read() {
+fn a_journal_whose_format_is_not_14_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":13"#, r#""format":14"#)]),
-        JournalError::UnknownFormat { format: 14 }
+        error_of(&[&RUN.replace(r#""format":14"#, r#""format":15"#)]),
+        JournalError::UnknownFormat { format: 15 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_13_is_refused_for_its_format_since_it_names_the_progenitor() {
+    assert!(matches!(
+        error_of(&[RUN_OF_FORMAT_13, r#"{"record":"progenitor_built"}"#]),
+        JournalError::UnknownFormat { format: 13 }
     ));
 }
 
@@ -91,7 +111,7 @@ fn a_journal_whose_format_is_not_13_cannot_be_read() {
 fn a_journal_of_format_12_is_refused_for_its_format_since_it_calls_a_score_an_outcome() {
     assert!(matches!(
         error_of(&[
-            &RUN.replace(r#""format":13"#, r#""format":12"#),
+            &RUN_OF_FORMAT_13.replace(r#""format":13"#, r#""format":12"#),
             r#"{"record":"assessment_started","harness":0,"task":"t1"}"#,
             r#"{"record":"assessment_finished","harness":0,"task":"t1","outcome":"success"}"#
         ]),
@@ -236,7 +256,7 @@ fn a_journal_of_format_3_is_refused_for_its_format_since_it_names_no_model() {
 #[test]
 fn a_journal_of_format_2_is_refused_for_its_format_though_this_cladenc_could_read_its_records() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":13"#, r#""format":2"#)]),
+        error_of(&[&RUN.replace(r#""format":14"#, r#""format":2"#)]),
         JournalError::UnknownFormat { format: 2 }
     ));
 }
@@ -257,8 +277,24 @@ fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_other
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":13,"progenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":14,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
+    ));
+}
+
+#[test]
+fn a_run_record_of_this_format_that_names_the_progenitor_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[&RUN.replace(r#""primogenitor":"#, r#""progenitor":"#)]),
+        JournalError::NotARecord { line: 1 }
+    ));
+}
+
+#[test]
+fn a_record_of_this_format_named_progenitor_built_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[&run_that_builds(), r#"{"record":"progenitor_built"}"#]),
+        JournalError::NotARecord { line: 2 }
     ));
 }
 
@@ -383,33 +419,33 @@ fn a_journal_with_the_end_of_a_procreation_that_never_started_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_with_the_build_of_a_progenitor_that_awaited_none_cannot_be_read() {
+fn a_journal_with_the_build_of_a_primogenitor_that_awaited_none_cannot_be_read() {
     assert!(matches!(
-        error_of(&[RUN, r#"{"record":"progenitor_built"}"#]),
+        error_of(&[RUN, r#"{"record":"primogenitor_built"}"#]),
         JournalError::Refused {
             line: 2,
-            error: GenealogyError::ProgenitorNotAwaitingBuild
+            error: GenealogyError::PrimogenitorNotAwaitingBuild
         }
     ));
 }
 
 #[test]
-fn a_journal_that_builds_its_progenitor_twice_cannot_be_read() {
+fn a_journal_that_builds_its_primogenitor_twice_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             &run_that_builds(),
-            r#"{"record":"progenitor_built"}"#,
-            r#"{"record":"progenitor_built"}"#
+            r#"{"record":"primogenitor_built"}"#,
+            r#"{"record":"primogenitor_built"}"#
         ]),
         JournalError::Refused {
             line: 3,
-            error: GenealogyError::ProgenitorNotAwaitingBuild
+            error: GenealogyError::PrimogenitorNotAwaitingBuild
         }
     ));
 }
 
 #[test]
-fn a_journal_that_starts_a_procreation_before_its_progenitor_was_built_cannot_be_read() {
+fn a_journal_that_starts_a_procreation_before_its_primogenitor_was_built_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             &run_that_builds(),
@@ -423,7 +459,7 @@ fn a_journal_that_starts_a_procreation_before_its_progenitor_was_built_cannot_be
 }
 
 #[test]
-fn a_journal_that_starts_an_assessment_before_its_progenitor_was_built_cannot_be_read() {
+fn a_journal_that_starts_an_assessment_before_its_primogenitor_was_built_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             &run_that_builds(),

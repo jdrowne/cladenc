@@ -17,7 +17,7 @@ const SAY_WHAT_THE_CHECK_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checke
 
 fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),

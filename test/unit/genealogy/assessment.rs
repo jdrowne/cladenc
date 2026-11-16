@@ -36,8 +36,8 @@ fn started_counts_the_assessments_of_every_harness() {
 fn a_harness_whose_assessment_has_not_ended_is_scored_neither_a_success_nor_a_failure() {
     let mut genealogy = Genealogy::new();
     genealogy.start_assessment(0, "a").unwrap();
-    let progenitor = &genealogy.harnesses()[0];
-    assert_eq!((progenitor.successes(), progenitor.failures()), (0, 0));
+    let primogenitor = &genealogy.harnesses()[0];
+    assert_eq!((primogenitor.successes(), primogenitor.failures()), (0, 0));
 }
 
 #[test]

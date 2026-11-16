@@ -13,7 +13,7 @@ struct Stopped {
 
 fn start(directory: &Path, image: &str) -> Command {
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),

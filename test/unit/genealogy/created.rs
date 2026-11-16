@@ -14,7 +14,7 @@ fn procreate(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationO
 }
 
 #[test]
-fn the_progenitor_is_the_one_created_harness_of_a_new_genealogy() {
+fn the_primogenitor_is_the_one_created_harness_of_a_new_genealogy() {
     assert_eq!(created_ids(&Genealogy::new()), [0]);
 }
 

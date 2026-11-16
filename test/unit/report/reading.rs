@@ -11,7 +11,7 @@ const CUT_SHORT: &str = "{\"record\":\"procreation_fin";
 
 fn settings() -> Settings {
     Settings {
-        progenitor: PathBuf::from("/progenitor"),
+        primogenitor: PathBuf::from("/primogenitor"),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,

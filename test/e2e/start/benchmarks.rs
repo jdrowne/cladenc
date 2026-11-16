@@ -7,7 +7,10 @@ use tempfile::TempDir;
 fn ran() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory.path())),
+        (
+            "--primogenitor",
+            test_inputs::primogenitor(directory.path()),
+        ),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (

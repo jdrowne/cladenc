@@ -10,7 +10,7 @@ const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostnam
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),

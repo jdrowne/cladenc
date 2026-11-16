@@ -8,9 +8,9 @@ use tempfile::TempDir;
 
 fn made() -> (TempDir, PathBuf) {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let run_directory = directory.path().join("run");
-    Workspace::create(&run_directory, &progenitor).unwrap();
+    Workspace::create(&run_directory, &primogenitor).unwrap();
     (directory, run_directory)
 }
 
@@ -21,23 +21,23 @@ fn entries(directory: PathBuf) -> usize {
 #[test]
 fn making_a_run_directory_where_a_directory_exists_is_refused() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
-    let refused = Workspace::create(directory.path(), &progenitor).unwrap_err();
+    let primogenitor = test_inputs::primogenitor(directory.path());
+    let refused = Workspace::create(directory.path(), &primogenitor).unwrap_err();
     assert_eq!(refused.kind(), ErrorKind::AlreadyExists);
 }
 
 #[test]
 fn making_a_run_directory_where_a_file_exists_is_refused() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let taken = directory.path().join("run");
     fs::write(&taken, "").unwrap();
-    let refused = Workspace::create(&taken, &progenitor).unwrap_err();
+    let refused = Workspace::create(&taken, &primogenitor).unwrap_err();
     assert_eq!(refused.kind(), ErrorKind::AlreadyExists);
 }
 
 #[test]
-fn a_new_run_directory_holds_a_copy_of_the_progenitor_as_harness_0() {
+fn a_new_run_directory_holds_a_copy_of_the_primogenitor_as_harness_0() {
     let (_directory, run_directory) = made();
     assert_eq!(
         fs::read_to_string(run_directory.join("harnesses/0/prompts/system.txt")).unwrap(),
@@ -70,11 +70,11 @@ fn a_new_run_directory_holds_nothing_running() {
 }
 
 #[test]
-fn a_progenitor_given_through_a_symbolic_link_is_copied_as_the_directory_it_leads_to() {
+fn a_primogenitor_given_through_a_symbolic_link_is_copied_as_the_directory_it_leads_to() {
     let directory = test_inputs::temporary_directory();
-    let progenitor = test_inputs::progenitor(directory.path());
+    let primogenitor = test_inputs::primogenitor(directory.path());
     let link = directory.path().join("link");
-    symlink(&progenitor, &link).unwrap();
+    symlink(&primogenitor, &link).unwrap();
     let run_directory = directory.path().join("run");
     Workspace::create(&run_directory, &link).unwrap();
     assert!(
@@ -85,7 +85,7 @@ fn a_progenitor_given_through_a_symbolic_link_is_copied_as_the_directory_it_lead
 }
 
 #[test]
-fn a_progenitor_that_does_not_exist_cannot_be_copied() {
+fn a_primogenitor_that_does_not_exist_cannot_be_copied() {
     let directory = test_inputs::temporary_directory();
     let missing = directory.path().join("missing");
     let refused = Workspace::create(&directory.path().join("run"), &missing).unwrap_err();

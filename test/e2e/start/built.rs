@@ -6,7 +6,10 @@ use tempfile::TempDir;
 fn ran(build_command: &str) -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let options = [
-        ("--progenitor", test_inputs::progenitor(directory.path())),
+        (
+            "--primogenitor",
+            test_inputs::primogenitor(directory.path()),
+        ),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
@@ -39,7 +42,7 @@ fn left_in_the_run(build_command: &str, file: &str) -> String {
 }
 
 #[test]
-fn a_run_given_a_build_command_builds_the_progenitor() {
+fn a_run_given_a_build_command_builds_the_primogenitor() {
     assert_eq!(
         left_in_the_run("echo built >> built", "harnesses/0/built"),
         "built\n"
@@ -63,19 +66,19 @@ fn a_run_keeps_what_the_build_of_a_harness_wrote_under_builds() {
 }
 
 #[test]
-fn a_run_whose_progenitor_does_not_build_exits_with_1() {
+fn a_run_whose_primogenitor_does_not_build_exits_with_1() {
     let (_directory, output) = ran("exit 3");
     assert_eq!(output.status.code(), Some(1));
 }
 
 #[test]
-fn a_run_whose_progenitor_does_not_build_says_how_the_build_ended() {
+fn a_run_whose_primogenitor_does_not_build_says_how_the_build_ended() {
     let (_directory, output) = ran("exit 3");
     assert_eq!(
         String::from_utf8(output.stderr).unwrap().lines().last(),
         Some(
             "cladenc: the directed evolution stopped before its end: \
-             the build of the progenitor exited with status 3"
+             the build of the primogenitor exited with status 3"
         )
     );
 }

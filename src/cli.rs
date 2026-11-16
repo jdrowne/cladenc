@@ -147,17 +147,17 @@ pub struct StartOptions {
     pub model_url: String,
     #[arg(
         long,
+        value_name = "DIR",
+        help = "The directory of source code copied to make the primogenitor"
+    )]
+    pub primogenitor: PathBuf,
+    #[arg(
+        long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The time limit of one procreation"
     )]
     pub procreation_timeout: u64,
-    #[arg(
-        long,
-        value_name = "DIR",
-        help = "The directory of source code copied to make the progenitor"
-    )]
-    pub progenitor: PathBuf,
     #[arg(
         long,
         value_name = "DIR",

@@ -45,8 +45,8 @@ mod genealogy {
     mod build;
     mod clade;
     mod created;
+    mod primogenitor;
     mod procreation;
-    mod progenitor;
     mod refused_assessment;
     mod refused_procreation;
     mod tasks;

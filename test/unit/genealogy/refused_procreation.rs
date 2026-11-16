@@ -75,7 +75,7 @@ fn a_refused_end_of_a_procreation_of_a_missing_child_changes_nothing() {
 }
 
 #[test]
-fn the_end_of_a_procreation_of_the_progenitor_is_refused() {
+fn the_end_of_a_procreation_of_the_primogenitor_is_refused() {
     assert_eq!(
         Genealogy::new().end_procreation(0, ProcreationOutcome::Failed),
         Err(GenealogyError::ChildNotBeingCreated { child: 0 })
@@ -83,7 +83,7 @@ fn the_end_of_a_procreation_of_the_progenitor_is_refused() {
 }
 
 #[test]
-fn a_refused_end_of_a_procreation_of_the_progenitor_changes_nothing() {
+fn a_refused_end_of_a_procreation_of_the_primogenitor_changes_nothing() {
     let mut genealogy = Genealogy::new();
     let _ = genealogy.end_procreation(0, ProcreationOutcome::Failed);
     assert_eq!(genealogy, Genealogy::new());

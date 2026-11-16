@@ -44,10 +44,10 @@ pub fn start(
     let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
     let making = Said::Making {
         run_directory,
-        progenitor: &settings.progenitor,
+        primogenitor: &settings.primogenitor,
     };
     say(writer, &making);
-    let (workspace, journal) = Workspace::create(run_directory, &settings.progenitor)
+    let (workspace, journal) = Workspace::create(run_directory, &settings.primogenitor)
         .and_then(|workspace| {
             settings
                 .benchmarks
@@ -179,7 +179,7 @@ fn carry_on(
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
         progress.say(&Said::Building);
-        containers::build_progenitor(&workspace, &launch, time_limit, stop).map_err(|error| {
+        containers::build_primogenitor(&workspace, &launch, time_limit, stop).map_err(|error| {
             match error {
                 ContainerError::Stopped => DirectedEvolutionError::Asked,
                 error => {

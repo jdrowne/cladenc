@@ -4,7 +4,7 @@ use std::process::Command;
 
 fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
     [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
@@ -225,6 +225,35 @@ fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_leaves_no_ru
     let directory = test_inputs::temporary_directory();
     let options =
         with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_the_primogenitor_under_a_name_it_does_not_have(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .iter()
+        .map(|option| option.replace("--primogenitor=", "--progenitor="))
+        .collect()
+}
+
+#[test]
+fn the_primogenitor_under_a_name_it_does_not_have_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_the_primogenitor_under_a_name_it_does_not_have(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn the_primogenitor_under_a_name_it_does_not_have_is_refused_for_the_name() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_the_primogenitor_under_a_name_it_does_not_have(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--progenitor' found\n"));
+}
+
+#[test]
+fn the_primogenitor_under_a_name_it_does_not_have_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_the_primogenitor_under_a_name_it_does_not_have(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

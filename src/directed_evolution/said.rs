@@ -10,7 +10,7 @@ use crate::workspace::Workspace;
 pub enum Said<'a> {
     Making {
         run_directory: &'a Path,
-        progenitor: &'a Path,
+        primogenitor: &'a Path,
     },
     CopyingTasks {
         benchmark: &'a Path,
@@ -86,12 +86,12 @@ impl Display for Said<'_> {
         match self {
             Self::Making {
                 run_directory,
-                progenitor,
+                primogenitor,
             } => write!(
                 formatter,
-                "making the run directory {} with a copy of the progenitor {}",
+                "making the run directory {} with a copy of the primogenitor {}",
                 run_directory.display(),
-                progenitor.display()
+                primogenitor.display()
             ),
             Self::CopyingTasks { benchmark, tasks } => write!(
                 formatter,
@@ -140,11 +140,11 @@ impl Display for Said<'_> {
                  {best_harness}, kept in {}",
                 directory.display()
             ),
-            Self::Building => write!(formatter, "building the progenitor"),
-            Self::Built => write!(formatter, "the progenitor is built"),
+            Self::Building => write!(formatter, "building the primogenitor"),
+            Self::Built => write!(formatter, "the primogenitor is built"),
             Self::BuildFailed { error, workspace } => write!(
                 formatter,
-                "the build of the progenitor {error}: what it printed is kept in {}",
+                "the build of the primogenitor {error}: what it printed is kept in {}",
                 workspace.build(0).display()
             ),
             Self::Started {

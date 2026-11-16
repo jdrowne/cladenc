@@ -7,7 +7,7 @@ use tempfile::TempDir;
 
 fn options(directory: &Path) -> Vec<String> {
     [
-        ("--progenitor", test_inputs::progenitor(directory)),
+        ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
@@ -97,7 +97,7 @@ fn standard_error_starts_with_the_run_directory_being_made() {
         String::from_utf8(output.stderr)
             .unwrap()
             .starts_with(&format!(
-                "cladenc: making the run directory {} with a copy of the progenitor ",
+                "cladenc: making the run directory {} with a copy of the primogenitor ",
                 directory.path().join("run").display()
             ))
     );

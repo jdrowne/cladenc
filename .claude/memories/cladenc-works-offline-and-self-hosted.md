@@ -23,4 +23,4 @@ metadata:
 
 Mine, not the user's: that a model served somewhere else stays something a person may give, since the rule says what `cladenc` has to be able to do and not what a person may point it at; that a benchmark is a directory which holds a directory for each task; and that the rule reaches Docker, so every `docker run` is told `--pull never`, the image of a directed evolution is on the machine before the directed evolution, and `cladenc` has no flag for a registry, since the name of an image says which registry it is of. `docker build` has no flag that forbids fetching a base image the machine does not hold, and the README says so.
 
-Related: [[cladenc-takes-a-progenitor-and-a-model]], [[the-simplest-design-is-offered-first]], [[no-flag-has-a-default]].
+Related: [[cladenc-takes-a-primogenitor-and-a-model]], [[the-simplest-design-is-offered-first]], [[no-flag-has-a-default]].

@@ -16,7 +16,7 @@ use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
 use crate::model::Model;
 use crate::workspace::{Workspace, holds_only_harness_files};
 
-pub use build::build_progenitor;
+pub use build::build_primogenitor;
 use container::{Container, Mount};
 pub use image::build_image;
 pub use left::remove_left_behind;

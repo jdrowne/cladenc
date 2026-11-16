@@ -8,7 +8,7 @@ use cladenc::report::Report;
 
 fn settings() -> Settings {
     Settings {
-        progenitor: PathBuf::from("/progenitor"),
+        primogenitor: PathBuf::from("/primogenitor"),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
@@ -165,7 +165,7 @@ fn the_harnesses_are_listed_in_ascending_id_order() {
 }
 
 #[test]
-fn the_progenitor_has_no_parent() {
+fn the_primogenitor_has_no_parent() {
     let report = report(&Genealogy::new());
     assert_eq!(report.harnesses[0].parent, None);
 }
@@ -177,7 +177,7 @@ fn the_parent_of_a_child_is_the_harness_that_procreated_it() {
 }
 
 #[test]
-fn a_progenitor_that_awaits_its_build_is_reported_as_being_created() {
+fn a_primogenitor_that_awaits_its_build_is_reported_as_being_created() {
     assert_eq!(
         report(&Genealogy::unbuilt()).harnesses[0].state,
         HarnessState::BeingCreated
@@ -185,7 +185,7 @@ fn a_progenitor_that_awaits_its_build_is_reported_as_being_created() {
 }
 
 #[test]
-fn a_directed_evolution_whose_progenitor_awaits_its_build_reports_harness_0_as_its_best() {
+fn a_directed_evolution_whose_primogenitor_awaits_its_build_reports_harness_0_as_its_best() {
     assert_eq!(report(&Genealogy::unbuilt()).best_harness, 0);
 }
 

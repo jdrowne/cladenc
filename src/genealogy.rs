@@ -39,14 +39,14 @@ impl Default for Genealogy {
 
 impl Genealogy {
     pub fn new() -> Self {
-        Self::of_a_progenitor(HarnessState::Created)
+        Self::of_a_primogenitor(HarnessState::Created)
     }
 
     pub fn unbuilt() -> Self {
-        Self::of_a_progenitor(HarnessState::BeingCreated)
+        Self::of_a_primogenitor(HarnessState::BeingCreated)
     }
 
-    fn of_a_progenitor(state: HarnessState) -> Self {
+    fn of_a_primogenitor(state: HarnessState) -> Self {
         Self {
             harnesses: vec![Harness::new(0, None, state)],
             started: 0,
@@ -57,9 +57,9 @@ impl Genealogy {
         self.harnesses[0].state() == HarnessState::BeingCreated
     }
 
-    pub fn build_progenitor(&mut self) -> Result<(), GenealogyError> {
+    pub fn build_primogenitor(&mut self) -> Result<(), GenealogyError> {
         self.harness_in_state(0, HarnessState::BeingCreated)
-            .ok_or(GenealogyError::ProgenitorNotAwaitingBuild)?
+            .ok_or(GenealogyError::PrimogenitorNotAwaitingBuild)?
             .set_state(HarnessState::Created);
         Ok(())
     }

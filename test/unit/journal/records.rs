@@ -65,16 +65,19 @@ fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed
 }
 
 #[test]
-fn the_build_of_the_progenitor_is_written_with_its_name_alone() {
+fn the_build_of_the_primogenitor_is_written_with_its_name_alone() {
     assert_eq!(
-        line(&Record::ProgenitorBuilt),
-        r#"{"record":"progenitor_built"}"#
+        line(&Record::PrimogenitorBuilt),
+        r#"{"record":"primogenitor_built"}"#
     );
 }
 
 #[test]
-fn the_build_of_the_progenitor_survives_being_written_and_read_back() {
-    assert_eq!(read_back(&Record::ProgenitorBuilt), Record::ProgenitorBuilt);
+fn the_build_of_the_primogenitor_survives_being_written_and_read_back() {
+    assert_eq!(
+        read_back(&Record::PrimogenitorBuilt),
+        Record::PrimogenitorBuilt
+    );
 }
 
 #[test]

@@ -80,9 +80,9 @@ impl<'a> Progress<'a> {
 
     pub(super) fn built(&mut self) {
         self.genealogy
-            .build_progenitor()
-            .expect("a progenitor that was built was waiting to be");
-        self.record(&Record::ProgenitorBuilt);
+            .build_primogenitor()
+            .expect("a primogenitor that was built was waiting to be");
+        self.record(&Record::PrimogenitorBuilt);
         self.say(&Said::Built);
     }
 

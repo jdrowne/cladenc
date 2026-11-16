@@ -11,7 +11,7 @@ use crate::model::{self, Model};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
-    pub progenitor: PathBuf,
+    pub primogenitor: PathBuf,
     pub model: String,
     pub model_url: String,
     pub model_key_file: Option<PathBuf>,
@@ -88,7 +88,7 @@ pub enum Record {
         #[serde(flatten)]
         settings: Box<Settings>,
     },
-    ProgenitorBuilt,
+    PrimogenitorBuilt,
     ProcreationStarted {
         child: HarnessId,
         parent: HarnessId,

@@ -3,7 +3,7 @@ use clap::Parser;
 use clap::error::ErrorKind;
 
 const OPTIONS: [(&str, &str); 13] = [
-    ("--progenitor", "/progenitor"),
+    ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
@@ -40,9 +40,9 @@ fn a_command_line_with_every_option_is_accepted() {
 }
 
 #[test]
-fn leaving_out_the_progenitor_is_an_error() {
+fn leaving_out_the_primogenitor_is_an_error() {
     assert_eq!(
-        refusal_without("--progenitor"),
+        refusal_without("--primogenitor"),
         ErrorKind::MissingRequiredArgument
     );
 }

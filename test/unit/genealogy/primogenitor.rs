@@ -6,12 +6,12 @@ fn a_new_genealogy_holds_one_harness() {
 }
 
 #[test]
-fn the_progenitor_is_harness_0() {
+fn the_primogenitor_is_harness_0() {
     assert_eq!(Genealogy::new().harnesses()[0].id(), 0);
 }
 
 #[test]
-fn the_progenitor_is_created_from_the_start() {
+fn the_primogenitor_is_created_from_the_start() {
     assert_eq!(
         Genealogy::new().harnesses()[0].state(),
         HarnessState::Created
@@ -19,7 +19,7 @@ fn the_progenitor_is_created_from_the_start() {
 }
 
 #[test]
-fn the_progenitor_has_no_parent() {
+fn the_primogenitor_has_no_parent() {
     assert_eq!(Genealogy::new().harnesses()[0].parent(), None);
 }
 
@@ -29,12 +29,12 @@ fn a_new_genealogy_has_started_no_assessment() {
 }
 
 #[test]
-fn the_progenitor_starts_with_no_successes() {
+fn the_primogenitor_starts_with_no_successes() {
     assert_eq!(Genealogy::new().harnesses()[0].successes(), 0);
 }
 
 #[test]
-fn the_progenitor_starts_with_no_failures() {
+fn the_primogenitor_starts_with_no_failures() {
     assert_eq!(Genealogy::new().harnesses()[0].failures(), 0);
 }
 

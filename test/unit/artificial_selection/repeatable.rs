@@ -71,13 +71,13 @@ fn action_k_draws_from_stream_k_of_the_seeded_generator_for_the_harness_and_then
 fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_is_assessed() {
     let mut generator = generator(11, 5);
     let beta = Beta::new(1.0, 1.0).unwrap();
-    let progenitor: f64 = beta.sample(&mut generator);
+    let primogenitor: f64 = beta.sample(&mut generator);
     let child: f64 = beta.sample(&mut generator);
     let task = tasks()[generator.random_range(0..20)].clone();
     assert_eq!(
         artificial_selection(11).next_action(&with_a_child(), 5),
         Some(Action::Assessment {
-            harness: u64::from(child > progenitor),
+            harness: u64::from(child > primogenitor),
             task
         })
     );

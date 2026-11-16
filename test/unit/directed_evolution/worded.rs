@@ -90,20 +90,20 @@ fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
 }
 
 #[test]
-fn a_directed_evolution_the_build_of_its_progenitor_stopped_says_how_the_build_ended() {
+fn a_directed_evolution_the_build_of_its_primogenitor_stopped_says_how_the_build_ended() {
     assert_eq!(
         worded(DirectedEvolutionError::Build(ContainerError::Exit(2))),
-        "the directed evolution stopped before its end: the build of the progenitor exited with \
+        "the directed evolution stopped before its end: the build of the primogenitor exited with \
          status 2"
     );
 }
 
 #[test]
-fn a_directed_evolution_whose_progenitor_took_too_long_to_build_says_so() {
+fn a_directed_evolution_whose_primogenitor_took_too_long_to_build_says_so() {
     assert_eq!(
         worded(DirectedEvolutionError::Build(ContainerError::TimeLimit)),
         "the directed evolution stopped before its end: \
-         the build of the progenitor ran past its time limit"
+         the build of the primogenitor ran past its time limit"
     );
 }
 

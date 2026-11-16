@@ -86,18 +86,18 @@ pub fn temporary_directory() -> TempDir {
     tempfile::tempdir().expect("a temporary directory can be made")
 }
 
-pub fn progenitor(directory: &Path) -> PathBuf {
-    let progenitor = directory.join("progenitor");
-    let script = progenitor.join("harness.sh");
-    fs::create_dir_all(progenitor.join("prompts")).expect("the progenitor can be made");
+pub fn primogenitor(directory: &Path) -> PathBuf {
+    let primogenitor = directory.join("primogenitor");
+    let script = primogenitor.join("harness.sh");
+    fs::create_dir_all(primogenitor.join("prompts")).expect("the primogenitor can be made");
     fs::write(&script, "#!/bin/sh\necho harness\n").expect("the script can be written");
     fs::set_permissions(&script, fs::Permissions::from_mode(0o750))
         .expect("the script can be given its permission bits");
-    fs::write(progenitor.join("prompts/system.txt"), "Solve the task.\n")
+    fs::write(primogenitor.join("prompts/system.txt"), "Solve the task.\n")
         .expect("the prompt can be written");
-    symlink("prompts/system.txt", progenitor.join("prompt.txt"))
+    symlink("prompts/system.txt", primogenitor.join("prompt.txt"))
         .expect("the symbolic link can be made");
-    progenitor
+    primogenitor
 }
 
 pub fn benchmark(directory: &Path, tasks: &[&str]) -> PathBuf {
@@ -169,8 +169,8 @@ pub fn container_is_running(id_file: &Path) -> bool {
         .is_ok_and(|listed| listed.status.success() && !listed.stdout.is_empty())
 }
 
-pub fn end_with_125_at(progenitor: &Path, solved: u64) {
-    fs::write(progenitor.join("end-with-125-at"), format!("{solved}\n"))
+pub fn end_with_125_at(primogenitor: &Path, solved: u64) {
+    fs::write(primogenitor.join("end-with-125-at"), format!("{solved}\n"))
         .expect("the marker can be written");
 }
 

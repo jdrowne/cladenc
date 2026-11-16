@@ -9,7 +9,7 @@ use cladenc::journal::{self, Record, Settings};
 fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     let directory = test_inputs::temporary_directory();
     let mut settings = Settings {
-        progenitor: test_inputs::progenitor(directory.path()),
+        primogenitor: test_inputs::primogenitor(directory.path()),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
@@ -60,7 +60,7 @@ fn most_running_at_once(records: &[Record]) -> usize {
             }
             Record::ProcreationFinished { .. } | Record::AssessmentFinished { .. } => running -= 1,
             Record::Run { .. }
-            | Record::ProgenitorBuilt
+            | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}
         }
     }

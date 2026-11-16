@@ -7,7 +7,7 @@
 - [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words (directed evolution, artificial selection, assessment), and let cladenc leave the paper where a change improves it
 - [Assessing is not scoring](assessing-is-not-scoring.md) — a harness is assessed on a task or a benchmark and scored a success or a failure; an assessment never succeeds, fails or has an outcome, and what a harness is given is its score
-- [cladenc takes a progenitor and a model](cladenc-takes-a-progenitor-and-a-model.md) — the user's design: a person brings the progenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
+- [cladenc takes a primogenitor and a model](cladenc-takes-a-primogenitor-and-a-model.md) — the user's design: a person brings the primogenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
 - [cladenc works offline and self-hosted](cladenc-works-offline-and-self-hosted.md) — the user's rule: no connection to the internet is needed, cladenc fetches nothing, and the person brings each thing a directed evolution uses, the whole benchmark among them
 - [The work is clean-room](the-work-is-clean-room.md) — the paper is the only source; never read the authors' code, the Darwin Gödel Machine code, or a port or derivative of either
 - [Every build is for Linux arm64](every-build-is-for-linux-arm64.md) — what CI compiles, tests, packages and releases is for Linux arm64 and no other platform
@@ -32,7 +32,9 @@
 - [A commit closes at least one issue](a-commit-closes-at-least-one-issue.md) — one or more, a Closes #N line each; only a failed run's fix and a change the user asks for directly close none
 - [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — when a run of the session's own push is found to have failed, the fix is the next commit pushed
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
-- [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and progenitor for the one a directed evolution starts from
+- [The first harness is the primogenitor](the-first-harness-is-the-primogenitor.md) — never the progenitor, which is any harness with a child; parent stays the word for the harness that procreates
+- [A procreation has a parent, a copy and a child](a-procreation-has-a-parent-a-copy-and-a-child.md) — whatever is written about a procreation says which of the three harnesses it means
+- [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and primogenitor for the one a directed evolution starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
 - [An explanation says what happens](an-explanation-says-what-happens.md) — for the user, say who does what in everyday words: which harness procreates, a harness has been scored; not the noun phrases of the issues and the code
 - [A directed evolution is started with cladenc start](a-directed-evolution-is-started-with-cladenc-start.md) — older issues call the sub-command `cladenc run` and mean `start`

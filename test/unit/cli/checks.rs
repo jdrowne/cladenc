@@ -10,7 +10,7 @@ use tempfile::TempDir;
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
@@ -73,7 +73,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
     assert_eq!(
         settings,
         Settings {
-            progenitor: root.join("progenitor"),
+            primogenitor: root.join("primogenitor"),
             model: "a-model".to_owned(),
             model_url: "http://models.example/v1".to_owned(),
             model_key_file: None,
@@ -109,34 +109,34 @@ fn two_directed_evolutions_started_from_one_command_line_are_given_different_see
 
 #[test]
 fn a_path_given_from_the_working_directory_is_made_absolute() {
-    let settings = checked(|_, options| options.progenitor = PathBuf::from("src")).unwrap();
-    assert!(settings.progenitor.is_absolute());
+    let settings = checked(|_, options| options.primogenitor = PathBuf::from("src")).unwrap();
+    assert!(settings.primogenitor.is_absolute());
 }
 
 #[test]
-fn a_progenitor_that_does_not_exist_is_refused() {
+fn a_primogenitor_that_does_not_exist_is_refused() {
     assert_eq!(
-        option_refused(|directory, options| options.progenitor = directory.path().join("missing")),
-        "--progenitor"
+        option_refused(|directory, options| options.primogenitor = directory.path().join("missing")),
+        "--primogenitor"
     );
 }
 
 #[test]
-fn a_progenitor_that_is_a_file_is_refused() {
+fn a_primogenitor_that_is_a_file_is_refused() {
     assert_eq!(
         option_refused(|directory, options| {
-            options.progenitor = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
+            options.primogenitor = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
         }),
-        "--progenitor"
+        "--primogenitor"
     );
 }
 
 #[test]
-fn a_progenitor_that_holds_a_socket_is_refused() {
+fn a_primogenitor_that_holds_a_socket_is_refused() {
     let directory = test_inputs::temporary_directory();
     let options = options(directory.path());
-    let _socket = UnixListener::bind(options.progenitor.join("socket")).unwrap();
-    assert_eq!(options.settings().unwrap_err().option, "--progenitor");
+    let _socket = UnixListener::bind(options.primogenitor.join("socket")).unwrap();
+    assert_eq!(options.settings().unwrap_err().option, "--primogenitor");
 }
 
 #[test]
@@ -213,7 +213,7 @@ fn a_dockerfile_that_is_a_directory_is_refused() {
     assert_eq!(
         option_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.dockerfile = Some(options.progenitor.clone());
+            options.dockerfile = Some(options.primogenitor.clone());
         }),
         "--dockerfile"
     );
@@ -298,7 +298,7 @@ fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_ta
 #[test]
 fn a_value_refused_for_what_its_option_takes_alone_has_no_reason() {
     let refused = checked(|directory, options| {
-        options.progenitor = directory.path().join("missing");
+        options.primogenitor = directory.path().join("missing");
     })
     .unwrap_err();
     assert_eq!(refused.reason, None);

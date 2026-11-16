@@ -15,7 +15,7 @@ struct Build<'a> {
     source: &'a Path,
 }
 
-pub fn build_progenitor(
+pub fn build_primogenitor(
     workspace: &Workspace,
     launch: &Launch<'_>,
     time_limit: u64,

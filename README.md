@@ -1,6 +1,6 @@
 # CladeNC
 
-CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation of the [Huxley-Gödel Machine](https://arxiv.org/abs/2510.21614) for agentic coding harnesses. It works by directed evolution. A directed evolution starts from one harness, the progenitor. Harnesses procreate, each making a changed copy of its own source code, and are assessed on the tasks of benchmarks. Artificial selection chooses which harness procreates and which is assessed next, and at the end names the best harness.
+CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation of the [Huxley-Gödel Machine](https://arxiv.org/abs/2510.21614) for agentic coding harnesses. It works by directed evolution. A directed evolution starts from one harness, the primogenitor. Harnesses procreate, each making a changed copy of its own source code, and are assessed on the tasks of benchmarks. Artificial selection chooses which harness procreates and which is assessed next, and at the end names the best harness.
 
 - [`cladenc`](#cladenc-1)
   - [`cladenc report`](#cladenc-report)
@@ -82,8 +82,8 @@ cladenc start \
   --model <NAME> \
   --model-key-file <FILE> \
   --model-url <URL> \
+  --primogenitor <DIR> \
   --procreation-timeout <SECONDS> \
-  --progenitor <DIR> \
   --run-dir <DIR>
 ```
 
@@ -103,8 +103,8 @@ cladenc start \
 | `--model <NAME>` | Required | The name of the model the harnesses call, as its server knows it. `cladenc` calls no model itself: it tells each harness the name, the address and the key. |
 | `--model-key-file <FILE>` | Not Required | The file that holds the key the model is called with, on one line, and nothing else. It is given where the server of the model asks for a key. `cladenc resume` reads the file again. |
 | `--model-url <URL>` | Required | The address the model is served at, by a provider or by a server of your own. In a container, `host.docker.internal` names the machine `cladenc` runs on. |
+| `--primogenitor <DIR>` | Required | The directory of source code that is copied to make the primogenitor, the harness the directed evolution starts from. |
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation, which is one harness making another. |
-| `--progenitor <DIR>` | Required | The directory of source code that is copied to make the progenitor, the harness the directed evolution starts from. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 
 A directed evolution chooses partly by chance which harness procreates and which harness is tried on which task. The seed, the number that those random draws are worked out from, is not given by a flag: `cladenc start` draws it and writes it in `journal.jsonl` in the run directory, and `cladenc resume` goes on with the seed it finds there.
@@ -149,7 +149,7 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 The build of the image ends itself once its time limit has passed, as a container does, also when `cladenc` was killed outright and is not there to end it. `cladenc` starts `docker build` under `timeout`, with five seconds more than the time limit, so that `cladenc` comes first for as long as it is there. `timeout` is a program the machine has to hold, and on Debian and Ubuntu the package `coreutils` brings it. On a machine that does not hold it no image is built, and `cladenc start` stops with exit status 2.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the progenitor being built where it has to be, every procreation with how it ended, every assessment with how its harness was scored, each with where what it left is kept, and at the end the best harness. A procreation or an assessment that stops the directed evolution is said when it happens, and so is the directed evolution being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the primogenitor being built where it has to be, every procreation with how it ended, every assessment with how its harness was scored, each with where what it left is kept, and at the end the best harness. A procreation or an assessment that stops the directed evolution is said when it happens, and so is the directed evolution being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
 
 A directed evolution goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the directed evolution on from where it stopped.
 

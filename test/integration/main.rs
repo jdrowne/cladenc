@@ -4,8 +4,8 @@ mod containers {
     mod image;
     mod left;
     mod limits;
+    mod primogenitor;
     mod procreation;
-    mod progenitor;
 }
 
 mod directed_evolution {

@@ -1,6 +1,6 @@
 ---
-name: cladenc-takes-a-progenitor-and-a-model
-description: "The user's design: a person brings the source code of the progenitor, a model, remote or self-hosted, and one or more benchmarks, and cladenc does the self-improvement itself, starting every harness in Docker and calling no model itself"
+name: cladenc-takes-a-primogenitor-and-a-model
+description: "The user's design: a person brings the source code of the primogenitor, a model, remote or self-hosted, and one or more benchmarks, and cladenc does the self-improvement itself, starting every harness in Docker and calling no model itself"
 metadata:
   node_type: memory
   type: project
@@ -8,11 +8,11 @@ metadata:
   modified: 2026-11-15T15:40:19.165Z
 ---
 
-# cladenc takes a progenitor and a model
+# cladenc takes a primogenitor and a model
 
 The user's design for `cladenc`: it does recursive self-improvement over coding harnesses, after the HGM paper, and it does all of it itself. A person brings three things to a directed evolution:
 
-- **The progenitor**, as a directory that holds the harness's source code. The directory holds source code, not a harness; say it that way in replies, issues and commits.
+- **The primogenitor**, as a directory that holds the harness's source code. The directory holds source code, not a harness; say it that way in replies, issues and commits.
 - **A model**, which may be remote or self-hosted. `cladenc` supports both. A self-hosted model needs the address it is served at as well as its name, so the model is not designed as a name alone, or as a hosted provider's alone. Ollama is an example of how a self-hosted model can be served, not a requirement.
 - **One or more benchmarks**, each given with the flag `--benchmark`, which names the whole benchmark and not one task. A benchmark is a set of tasks, and a task is one item of it. The person brings each benchmark and `cladenc` fetches none, per [[cladenc-works-offline-and-self-hosted]]. A directed evolution that is given several looks for one harness that does well across all of them, where the paper gives each benchmark a run of its own.
 

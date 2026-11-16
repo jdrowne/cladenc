@@ -12,7 +12,7 @@ const TAKES: &str = "the directory of a benchmark, in which every directory is a
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,

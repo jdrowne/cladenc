@@ -21,7 +21,7 @@ impl Workspace {
         }
     }
 
-    pub fn create(run_directory: &Path, progenitor: &Path) -> io::Result<Self> {
+    pub fn create(run_directory: &Path, primogenitor: &Path) -> io::Result<Self> {
         let workspace = Self::at(run_directory);
         fs::create_dir(run_directory)
             .and_then(|()| fs::create_dir(run_directory.join("harnesses")))
@@ -29,7 +29,7 @@ impl Workspace {
             .and_then(|()| fs::create_dir(run_directory.join("assessments")))
             .and_then(|()| fs::create_dir(run_directory.join("running")))
             .and_then(|()| fs::create_dir(run_directory.join("benchmarks")))
-            .and_then(|()| fs::canonicalize(progenitor))
+            .and_then(|()| fs::canonicalize(primogenitor))
             .and_then(|resolved| copy_tree(&resolved, &workspace.harness(0)))
             .and_then(|()| fs::create_dir(workspace.assessments(0)))
             .map(|()| workspace)

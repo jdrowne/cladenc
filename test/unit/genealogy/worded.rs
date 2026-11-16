@@ -15,10 +15,10 @@ fn a_parent_that_is_not_created_is_worded() {
 }
 
 #[test]
-fn a_progenitor_that_does_not_await_its_build_is_worded() {
+fn a_primogenitor_that_does_not_await_its_build_is_worded() {
     assert_eq!(
-        worded(GenealogyError::ProgenitorNotAwaitingBuild),
-        "the progenitor is not waiting to be built"
+        worded(GenealogyError::PrimogenitorNotAwaitingBuild),
+        "the primogenitor is not waiting to be built"
     );
 }
 

@@ -18,7 +18,7 @@ struct DirectedEvolutions {
 
 fn settings(directory: &Path) -> Settings {
     Settings {
-        progenitor: test_inputs::progenitor(directory),
+        primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
@@ -53,7 +53,7 @@ fn stopped_at(solved: u64, task: Option<&str>, resumes_while_stopped: usize) -> 
     fs::create_dir(directory.path().join("stopped")).unwrap();
     let unbroken = directory.path().join("unbroken/run");
     let unbroken = directed_evolution::start(&settings, &unbroken, &stop, &mut io::sink()).unwrap();
-    test_inputs::end_with_125_at(&settings.progenitor, solved);
+    test_inputs::end_with_125_at(&settings.primogenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
@@ -256,7 +256,7 @@ fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
-    test_inputs::end_with_125_at(&settings.progenitor, 0);
+    test_inputs::end_with_125_at(&settings.primogenitor, 0);
     let _ = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_dir_all(&settings.benchmarks[0].directory).unwrap();

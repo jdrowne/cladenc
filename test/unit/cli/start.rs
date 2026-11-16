@@ -12,7 +12,7 @@ struct Ran {
 fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     let directory = test_inputs::temporary_directory();
     let mut options = StartOptions {
-        progenitor: test_inputs::progenitor(directory.path()),
+        primogenitor: test_inputs::primogenitor(directory.path()),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,

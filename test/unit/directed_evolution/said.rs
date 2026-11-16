@@ -75,14 +75,14 @@ fn continuing(harnesses: u64) -> String {
 }
 
 #[test]
-fn the_run_directory_is_said_to_be_made_with_a_copy_of_the_progenitor() {
+fn the_run_directory_is_said_to_be_made_with_a_copy_of_the_primogenitor() {
     assert_eq!(
         Said::Making {
             run_directory: Path::new("/run"),
-            progenitor: Path::new("/progenitor"),
+            primogenitor: Path::new("/primogenitor"),
         }
         .to_string(),
-        "making the run directory /run with a copy of the progenitor /progenitor"
+        "making the run directory /run with a copy of the primogenitor /primogenitor"
     );
 }
 
@@ -190,24 +190,24 @@ fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() 
 }
 
 #[test]
-fn the_progenitor_is_said_to_be_being_built() {
-    assert_eq!(Said::Building.to_string(), "building the progenitor");
+fn the_primogenitor_is_said_to_be_being_built() {
+    assert_eq!(Said::Building.to_string(), "building the primogenitor");
 }
 
 #[test]
-fn the_progenitor_is_said_to_be_built() {
-    assert_eq!(Said::Built.to_string(), "the progenitor is built");
+fn the_primogenitor_is_said_to_be_built() {
+    assert_eq!(Said::Built.to_string(), "the primogenitor is built");
 }
 
 #[test]
-fn a_build_of_the_progenitor_that_failed_is_said_with_where_what_it_printed_is_kept() {
+fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is_kept() {
     assert_eq!(
         Said::BuildFailed {
             error: &ContainerError::Exit(2),
             workspace: &workspace(),
         }
         .to_string(),
-        "the build of the progenitor exited with status 2: what it printed is kept in \
+        "the build of the primogenitor exited with status 2: what it printed is kept in \
          /run/builds/0"
     );
 }

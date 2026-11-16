@@ -9,7 +9,7 @@ use tempfile::TempDir;
 
 fn settings() -> Settings {
     Settings {
-        progenitor: PathBuf::from("/abs/harness"),
+        primogenitor: PathBuf::from("/abs/harness"),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
@@ -114,12 +114,13 @@ fn the_settings_of_the_run_record_come_back() {
 }
 
 #[test]
-fn a_journal_that_holds_no_action_gives_a_genealogy_of_the_progenitor_alone() {
+fn a_journal_that_holds_no_action_gives_a_genealogy_of_the_primogenitor_alone() {
     assert_eq!(rebuilt(&[]).genealogy, Genealogy::new());
 }
 
 #[test]
-fn a_journal_that_names_a_build_command_and_holds_no_build_gives_a_progenitor_awaiting_its_build() {
+fn a_journal_that_names_a_build_command_and_holds_no_build_gives_a_primogenitor_awaiting_its_build()
+{
     assert_eq!(
         rebuilt_of_a_directed_evolution_that_builds(&[]).genealogy,
         Genealogy::unbuilt()
@@ -127,17 +128,17 @@ fn a_journal_that_names_a_build_command_and_holds_no_build_gives_a_progenitor_aw
 }
 
 #[test]
-fn a_journal_that_holds_the_build_of_its_progenitor_gives_a_created_progenitor() {
+fn a_journal_that_holds_the_build_of_its_primogenitor_gives_a_created_primogenitor() {
     assert_eq!(
-        rebuilt_of_a_directed_evolution_that_builds(&[Record::ProgenitorBuilt]).genealogy,
+        rebuilt_of_a_directed_evolution_that_builds(&[Record::PrimogenitorBuilt]).genealogy,
         Genealogy::new()
     );
 }
 
 #[test]
-fn the_build_of_the_progenitor_is_not_counted_as_an_action() {
+fn the_build_of_the_primogenitor_is_not_counted_as_an_action() {
     assert_eq!(
-        rebuilt_of_a_directed_evolution_that_builds(&[Record::ProgenitorBuilt]).next_action,
+        rebuilt_of_a_directed_evolution_that_builds(&[Record::PrimogenitorBuilt]).next_action,
         0
     );
 }
