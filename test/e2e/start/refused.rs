@@ -14,7 +14,6 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--assessment-timeout", "30".into()),
@@ -161,6 +160,37 @@ fn a_seed_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expect
 fn a_seed_which_is_no_flag_of_start_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_seed(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_initial_procreations(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .into_iter()
+        .chain(["--initial-procreations=5".to_owned()])
+        .collect()
+}
+
+#[test]
+fn initial_procreations_which_are_no_flag_of_start_exit_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_initial_procreations(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn initial_procreations_which_are_no_flag_of_start_are_refused_as_an_argument_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_initial_procreations(directory.path());
+    assert!(
+        said(&options).starts_with("error: unexpected argument '--initial-procreations' found\n")
+    );
+}
+
+#[test]
+fn initial_procreations_which_are_no_flag_of_start_leave_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_initial_procreations(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

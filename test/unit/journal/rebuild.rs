@@ -25,7 +25,6 @@ fn settings() -> Settings {
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 5,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         assessment_timeout: 3600,
@@ -176,24 +175,18 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
 }
 
 #[test]
-fn the_actions_that_did_not_finish_come_back_in_the_order_they_started_with_their_numbers() {
+fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
     assert_eq!(
         rebuilt(&four_actions_of_which_two_finished()).unfinished,
         [
-            (
-                2,
-                Started::Procreation {
-                    child: 2,
-                    parent: 0
-                }
-            ),
-            (
-                3,
-                Started::Assessment {
-                    harness: 0,
-                    task: "t2".to_owned()
-                }
-            ),
+            Started::Procreation {
+                child: 2,
+                parent: 0
+            },
+            Started::Assessment {
+                harness: 0,
+                task: "t2".to_owned()
+            },
         ]
     );
 }

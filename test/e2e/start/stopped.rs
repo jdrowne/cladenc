@@ -20,7 +20,6 @@ fn start(directory: &Path, run_command: &str, assessment_timeout: &str) -> Comma
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--assessment-timeout", assessment_timeout.into()),

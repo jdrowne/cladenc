@@ -2,7 +2,7 @@ use cladenc::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 14] = [
+const OPTIONS: [(&str, &str); 13] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -13,7 +13,6 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
-    ("--initial-procreations", "5"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--assessment-timeout", "3600"),
@@ -116,14 +115,6 @@ fn leaving_out_the_genealogy_growth_is_an_error() {
 fn leaving_out_the_confidence_is_an_error() {
     assert_eq!(
         refusal_without("--confidence"),
-        ErrorKind::MissingRequiredArgument
-    );
-}
-
-#[test]
-fn leaving_out_the_initial_procreations_is_an_error() {
-    assert_eq!(
-        refusal_without("--initial-procreations"),
         ErrorKind::MissingRequiredArgument
     );
 }

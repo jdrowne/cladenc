@@ -29,7 +29,6 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         budget: 1,
         genealogy_growth: 0.0,
         confidence: 99.0,
-        initial_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         assessment_timeout: 30,

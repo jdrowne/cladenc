@@ -49,7 +49,6 @@ impl StartOptions {
             budget: self.budget,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
-            initial_procreations: self.initial_procreations,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             assessment_timeout: self.assessment_timeout,

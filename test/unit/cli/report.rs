@@ -55,7 +55,6 @@ fn reported(json: bool) -> (Ran, String) {
                 budget: 800,
                 genealogy_growth: 0.6,
                 confidence: 99.0,
-                initial_procreations: 0,
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
                 assessment_timeout: 60,

@@ -17,7 +17,6 @@ fn options(directory: &Path) -> Vec<String> {
         ("--budget", "10".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--assessment-timeout", "30".into()),

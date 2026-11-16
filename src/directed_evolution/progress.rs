@@ -20,8 +20,6 @@ pub(super) struct Progress<'a> {
     genealogy: Genealogy,
     again: VecDeque<Started>,
     next_action: u64,
-    initial_left: u64,
-    initial_ended: bool,
     running: u64,
     failure: Option<DirectedEvolutionError>,
     stopping: bool,
@@ -36,8 +34,6 @@ impl<'a> Progress<'a> {
             genealogy: settings.genealogy(),
             again: VecDeque::new(),
             next_action: 0,
-            initial_left: settings.initial_procreations,
-            initial_ended: false,
             running: 0,
             failure: None,
             stopping: false,
@@ -61,15 +57,11 @@ impl<'a> Progress<'a> {
     pub(super) fn resumed(
         mut self,
         genealogy: Genealogy,
-        unfinished: Vec<(u64, Started)>,
+        unfinished: Vec<Started>,
         next_action: u64,
     ) -> Self {
-        let initial = self.initial_left;
-        self.initial_left = initial.saturating_sub(next_action);
-        self.initial_ended =
-            self.initial_left == 0 && unfinished.iter().all(|(action, _)| *action >= initial);
         self.genealogy = genealogy;
-        self.again = unfinished.into_iter().map(|(_, action)| action).collect();
+        self.again = unfinished.into();
         self.next_action = next_action;
         self
     }
@@ -104,7 +96,11 @@ impl<'a> Progress<'a> {
         self.again
             .pop_front()
             .map(|action| (action, true))
-            .or_else(|| self.next().map(|action| (self.start(action), false)))
+            .or_else(|| {
+                self.artificial_selection
+                    .next_action(&self.genealogy, self.next_action)
+                    .map(|action| (self.start(action), false))
+            })
     }
 
     pub(super) fn hand_over<'scope>(
@@ -228,20 +224,6 @@ impl<'a> Progress<'a> {
             );
         });
         self.failure.map_or(Ok(found), Err)
-    }
-
-    fn next(&mut self) -> Option<Action> {
-        if self.initial_left > 0 {
-            self.initial_left -= 1;
-            return Some(Action::Procreation { parent: 0 });
-        }
-        self.initial_ended = self.initial_ended || self.running == 0;
-        self.initial_ended
-            .then(|| {
-                self.artificial_selection
-                    .next_action(&self.genealogy, self.next_action)
-            })
-            .flatten()
     }
 
     fn start(&mut self, action: Action) -> Started {

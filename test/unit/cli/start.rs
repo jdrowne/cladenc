@@ -26,7 +26,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         budget: 2,
         genealogy_growth: 0.0,
         confidence: 99.0,
-        initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         assessment_timeout: 30,

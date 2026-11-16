@@ -4,7 +4,7 @@ use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 14] = [
+const OPTIONS: [(&str, &str); 13] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -15,7 +15,6 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
-    ("--initial-procreations", "5"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--assessment-timeout", "3600"),
@@ -245,19 +244,6 @@ fn a_confidence_between_0_and_100_is_accepted() {
 }
 
 #[test]
-fn initial_procreations_below_0_are_an_error() {
-    assert_eq!(
-        refusal("--initial-procreations", "-1"),
-        ErrorKind::ValueValidation
-    );
-}
-
-#[test]
-fn no_initial_procreations_are_accepted() {
-    assert!(with("--initial-procreations", "0").is_ok());
-}
-
-#[test]
 fn a_limit_of_0_concurrent_containers_is_an_error() {
     assert_eq!(
         refusal("--max-concurrent-containers", "0"),
@@ -309,6 +295,16 @@ fn an_assessment_timeout_of_0_is_an_error() {
 fn the_seed_is_no_flag_of_start() {
     assert_eq!(
         and(Some("--seed=7".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
+fn initial_procreations_are_no_flag_of_start() {
+    assert_eq!(
+        and(Some("--initial-procreations=5".to_owned()))
+            .unwrap_err()
+            .kind(),
         ErrorKind::UnknownArgument
     );
 }

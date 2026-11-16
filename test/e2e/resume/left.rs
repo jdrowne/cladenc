@@ -27,7 +27,6 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "600".into()),
         ("--assessment-timeout", "600".into()),

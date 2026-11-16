@@ -25,7 +25,6 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         assessment_timeout: 60,
@@ -79,10 +78,10 @@ fn a_container_that_ends_with_status_125_at_an_assessment_stops_the_directed_evo
     ));
 }
 
-fn after_one_procreation_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
+fn started_with_a_procreation_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), run_command);
-    settings.initial_procreations = 1;
+    settings.genealogy_growth = 0.0;
     let run_directory = directory.path().join("run");
     directed_evolution::start(
         &settings,
@@ -93,9 +92,9 @@ fn after_one_procreation_by(run_command: &str) -> Result<Found, DirectedEvolutio
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_stops_the_directed_evolution() {
+fn a_container_that_ends_with_status_125_at_a_procreation_stops_the_directed_evolution() {
     assert!(matches!(
-        after_one_procreation_by("exit 125"),
+        started_with_a_procreation_by("exit 125"),
         Err(DirectedEvolutionError::Action {
             error: ContainerError::Docker(_),
             ..
@@ -105,7 +104,7 @@ fn a_container_that_ends_with_status_125_stops_the_directed_evolution() {
 
 #[test]
 fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_directed_evolution() {
-    assert!(after_one_procreation_by("exit 2").is_ok());
+    assert!(started_with_a_procreation_by("exit 2").is_ok());
 }
 
 #[test]
@@ -123,7 +122,7 @@ fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task_of_
 #[test]
 fn a_directed_evolution_a_container_stopped_names_the_parent_and_the_child_of_that_procreation() {
     assert!(matches!(
-        after_one_procreation_by("exit 125"),
+        started_with_a_procreation_by("exit 125"),
         Err(DirectedEvolutionError::Action {
             action: Started::Procreation {
                 child: 1,
@@ -184,7 +183,7 @@ fn a_directed_evolution_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_w
 fn a_directed_evolution_a_container_stopped_says_what_docker_did_when_it_happens() {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), "exit 125");
-    settings.initial_procreations = 1;
+    settings.genealogy_growth = 0.0;
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);

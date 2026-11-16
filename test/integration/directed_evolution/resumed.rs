@@ -37,7 +37,6 @@ fn settings(directory: &Path) -> Settings {
         budget: 12,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 3,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         assessment_timeout: 30,
@@ -105,19 +104,18 @@ fn a_directed_evolution_an_assessment_stopped_continues_to_the_journal_an_unbrok
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_an_initial_procreation_stops_the_directed_evolution() {
+fn a_container_that_ends_with_status_125_at_a_procreation_stops_it_before_its_end() {
     assert!(matches!(
         stopped_at(0, None, 0).stopped,
         Err(DirectedEvolutionError::Action {
+            action: Started::Procreation { .. },
             error: ContainerError::Docker(_),
-            ..
         })
     ));
 }
 
 #[test]
-fn a_directed_evolution_stopped_during_its_initial_procreations_continues_to_the_same_journal_too()
-{
+fn a_directed_evolution_a_procreation_stopped_continues_to_the_journal_an_unbroken_one_writes() {
     let directed_evolutions = stopped_at(0, None, 0);
     assert_eq!(
         journal_of(&directed_evolutions, "stopped"),

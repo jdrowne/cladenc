@@ -31,7 +31,6 @@ fn settings(directory: &Path) -> Settings {
         budget: 6,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 2,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         assessment_timeout: 30,
@@ -42,7 +41,6 @@ fn settings(directory: &Path) -> Settings {
 fn over_one_task(settings: &mut Settings) {
     settings.benchmarks[0].tasks = vec!["t1".to_owned()];
     settings.genealogy_growth = 0.0;
-    settings.initial_procreations = 0;
     settings.budget = 10;
 }
 
@@ -153,21 +151,32 @@ fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_r
 }
 
 #[test]
-fn the_initial_procreations_all_end_before_the_first_assessment_starts() {
-    let (directory, _found) = evolved(|settings| {
-        settings.initial_procreations = 3;
-        settings.max_concurrent_containers = 2;
-    });
-    let journal = journal_of(&directory);
-    let before_the_first_assessment = journal
-        .split("\"record\":\"assessment_started\"")
-        .next()
-        .unwrap();
+fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_progenitor() {
+    let (directory, _found) = evolved(|settings| settings.budget = 2);
+    assert!(
+        journal_of(&directory)
+            .lines()
+            .nth(1)
+            .unwrap()
+            .starts_with(r#"{"record":"assessment_started","harness":0,"#)
+    );
+}
+
+#[test]
+fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_progenitor() {
+    let (directory, _found) = evolved(|settings| settings.budget = 2);
     assert_eq!(
-        before_the_first_assessment
-            .matches("\"record\":\"procreation_finished\"")
-            .count(),
-        3
+        journal_of(&directory).lines().nth(3).unwrap(),
+        r#"{"record":"procreation_started","child":1,"parent":0}"#
+    );
+}
+
+#[test]
+fn with_a_growth_of_0_a_directed_evolution_starts_with_a_procreation_of_the_progenitor() {
+    let (directory, _found) = evolved(over_one_task);
+    assert_eq!(
+        journal_of(&directory).lines().nth(1).unwrap(),
+        r#"{"record":"procreation_started","child":1,"parent":0}"#
     );
 }
 

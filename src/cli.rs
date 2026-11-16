@@ -121,12 +121,6 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "Procreations of the progenitor made before the first assessment"
-    )]
-    pub initial_procreations: u64,
-    #[arg(
-        long,
-        value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The most containers running at once"
     )]

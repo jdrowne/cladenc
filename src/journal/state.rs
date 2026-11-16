@@ -38,7 +38,7 @@ enum First {
 pub struct State {
     pub settings: Settings,
     pub genealogy: Genealogy,
-    pub unfinished: Vec<(u64, Started)>,
+    pub unfinished: Vec<Started>,
     pub next_action: u64,
     pub best_harness: Option<HarnessId>,
 }
@@ -98,7 +98,7 @@ impl State {
                     .end_procreation(child, outcome)
                     .map_err(refused)?;
                 self.unfinished
-                    .retain(|(_, action)| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
+                    .retain(|action| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
             }
             Record::AssessmentStarted { harness, task } => {
                 self.genealogy
@@ -115,7 +115,7 @@ impl State {
                     .end_assessment(harness, &task, outcome)
                     .map_err(refused)?;
                 let finished = Started::Assessment { harness, task };
-                self.unfinished.retain(|(_, action)| *action != finished);
+                self.unfinished.retain(|action| *action != finished);
             }
             Record::DirectedEvolutionFinished { best_harness } => {
                 self.best_harness = Some(best_harness)
@@ -125,7 +125,7 @@ impl State {
     }
 
     fn start(&mut self, action: Started) {
-        self.unfinished.push((self.next_action, action));
+        self.unfinished.push(action);
         self.next_action += 1;
     }
 }

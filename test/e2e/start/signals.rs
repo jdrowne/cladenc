@@ -21,7 +21,6 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--budget", "2".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--assessment-timeout", "60".into()),

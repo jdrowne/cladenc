@@ -4,7 +4,7 @@ use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 12] = [
     ("--progenitor", "/progenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -14,7 +14,6 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--budget", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
-    ("--initial-procreations", "5"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--assessment-timeout", "3600"),

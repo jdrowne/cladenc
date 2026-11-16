@@ -30,7 +30,6 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--budget", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
-        ("--initial-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--assessment-timeout", "30".into()),

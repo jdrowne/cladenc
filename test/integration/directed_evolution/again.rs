@@ -25,7 +25,6 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         budget: 4,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         assessment_timeout: 60,
@@ -33,18 +32,12 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
     }
 }
 
-fn resumed_after_a_stop_at(
-    solved: u64,
-    task: Option<&str>,
-    leftover: &str,
-    initial_procreations: u64,
-) -> TempDir {
+fn resumed_after_a_stop_at(solved: u64, task: Option<&str>, leftover: &str) -> TempDir {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(
+    let settings = settings(
         directory.path(),
         test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125,
     );
-    settings.initial_procreations = initial_procreations;
     let stop = AtomicBool::new(false);
     let run_directory = directory.path().join("run");
     test_inputs::end_with_125_at(&settings.progenitor, solved);
@@ -62,16 +55,15 @@ fn resumed_after_a_stop_at(
 }
 
 fn resumed_after_a_procreation_stopped() -> TempDir {
-    resumed_after_a_stop_at(0, None, "procreation-1/child/leftover", 1)
+    resumed_after_a_stop_at(0, None, "procreation-1/child/leftover")
 }
 
 fn resumed_after_an_assessment_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, Some("t1"), "assessment-0-benchmark+t1/work/leftover", 0)
+    resumed_after_a_stop_at(99, Some("t1"), "assessment-0-benchmark+t1/work/leftover")
 }
 
 fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
     let mut settings = settings(directory, "[ -d /assessments ] || sleep 300");
-    settings.initial_procreations = 0;
     settings.max_concurrent_containers = 2;
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.progenitor)

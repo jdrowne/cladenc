@@ -28,7 +28,6 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         budget: 12,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 3,
         max_concurrent_containers: 3,
         procreation_timeout: 30,
         assessment_timeout: 30,
@@ -91,10 +90,7 @@ fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_assessments_as_
 
 #[test]
 fn with_a_growth_of_0_and_a_limit_of_three_exactly_one_procreation_starts() {
-    let records = records(|settings| {
-        settings.genealogy_growth = 0.0;
-        settings.initial_procreations = 0;
-    });
+    let records = records(|settings| settings.genealogy_growth = 0.0);
     assert_eq!(
         count(&records, |record| matches!(
             record,

@@ -26,7 +26,6 @@ fn options(directory: &Path) -> StartOptions {
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 5,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         assessment_timeout: 1800,

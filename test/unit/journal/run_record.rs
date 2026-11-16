@@ -28,7 +28,6 @@ fn settings() -> Settings {
         budget: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
-        initial_procreations: 5,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         assessment_timeout: 3600,
@@ -78,8 +77,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_11() {
-    assert_eq!(journal::FORMAT, 11);
+fn the_format_of_the_journal_is_12() {
+    assert_eq!(journal::FORMAT, 12);
 }
 
 #[test]
@@ -87,13 +86,13 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":11,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":12,"progenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
             r#""budget":800,"#,
-            r#""genealogy_growth":0.6,"confidence":99.0,"initial_procreations":5,"#,
+            r#""genealogy_growth":0.6,"confidence":99.0,"#,
             r#""max_concurrent_containers":8,"#,
             r#""procreation_timeout":3600,"assessment_timeout":3600,"seed":7}"#
         )
@@ -103,8 +102,18 @@ fn the_run_record_is_written_key_for_key() {
 #[test]
 fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_settings() {
     assert!(run(settings()).line().unwrap().contains(
-        r#""initial_procreations":5,"max_concurrent_containers":8,"procreation_timeout":3600,"#
+        r#""confidence":99.0,"max_concurrent_containers":8,"procreation_timeout":3600,"#
     ));
+}
+
+#[test]
+fn the_run_record_holds_no_initial_procreations() {
+    assert!(
+        !run(settings())
+            .line()
+            .unwrap()
+            .contains("initial_procreations")
+    );
 }
 
 #[test]

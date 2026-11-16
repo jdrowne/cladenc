@@ -31,7 +31,6 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         budget: 10,
         genealogy_growth: 0.0,
         confidence: 99.0,
-        initial_procreations: 0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         assessment_timeout: 30,
