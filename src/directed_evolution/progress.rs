@@ -135,7 +135,7 @@ impl<'a> Progress<'a> {
         match ended {
             Ended::Procreation {
                 child,
-                parent,
+                progenitor,
                 result: Ok(outcome),
             } => {
                 self.genealogy
@@ -144,7 +144,7 @@ impl<'a> Progress<'a> {
                 self.record(&Record::ProcreationFinished { child, outcome });
                 self.say(&Said::Procreated {
                     child,
-                    parent,
+                    progenitor,
                     outcome,
                     workspace,
                 });
@@ -179,9 +179,9 @@ impl<'a> Progress<'a> {
             } => {}
             Ended::Procreation {
                 child,
-                parent,
+                progenitor,
                 result: Err(error),
-            } => self.failed(Started::Procreation { child, parent }, error),
+            } => self.failed(Started::Procreation { child, progenitor }, error),
             Ended::Assessment {
                 harness,
                 task,
@@ -228,13 +228,13 @@ impl<'a> Progress<'a> {
 
     fn start(&mut self, action: Action) -> Started {
         let started = match action {
-            Action::Procreation { parent } => {
+            Action::Procreation { progenitor } => {
                 let child = self
                     .genealogy
-                    .start_procreation(parent)
-                    .expect("the parent of a procreation is a created harness");
-                self.record(&Record::ProcreationStarted { child, parent });
-                Started::Procreation { child, parent }
+                    .start_procreation(progenitor)
+                    .expect("the progenitor of a procreation is a created harness");
+                self.record(&Record::ProcreationStarted { child, progenitor });
+                Started::Procreation { child, progenitor }
             }
             Action::Assessment { harness, task } => {
                 self.genealogy

@@ -19,8 +19,8 @@ fn the_primogenitor_is_created_from_the_start() {
 }
 
 #[test]
-fn the_primogenitor_has_no_parent() {
-    assert_eq!(Genealogy::new().harnesses()[0].parent(), None);
+fn the_primogenitor_has_no_progenitor() {
+    assert_eq!(Genealogy::new().harnesses()[0].progenitor(), None);
 }
 
 #[test]

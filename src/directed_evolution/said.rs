@@ -55,7 +55,7 @@ pub enum Said<'a> {
     },
     Procreated {
         child: HarnessId,
-        parent: HarnessId,
+        progenitor: HarnessId,
         outcome: ProcreationOutcome,
         workspace: &'a Workspace,
     },
@@ -162,7 +162,7 @@ impl Display for Said<'_> {
             },
             Self::Procreated {
                 child,
-                parent,
+                progenitor,
                 outcome,
                 workspace,
             } => {
@@ -187,7 +187,7 @@ impl Display for Said<'_> {
                 };
                 write!(
                     formatter,
-                    "the procreation of harness {child} by harness {parent} {how} {}",
+                    "the procreation of harness {child} by harness {progenitor} {how} {}",
                     kept.display()
                 )
             }

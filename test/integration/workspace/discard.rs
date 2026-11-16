@@ -94,7 +94,7 @@ fn discarding_a_procreation_leaves_the_build_of_another_harness_as_it_was() {
 }
 
 #[test]
-fn discarding_a_procreation_leaves_the_parent_as_it_was() {
+fn discarding_a_procreation_leaves_the_progenitor_as_it_was() {
     let (_directory, workspace) = with_a_procreation_discarded_after_it_ended();
     assert!(workspace.harness(0).join("harness.sh").is_file());
 }

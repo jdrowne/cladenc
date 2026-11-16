@@ -127,7 +127,7 @@ fn a_build_is_told_nothing_of_the_model() {
 }
 
 #[test]
-fn the_build_of_a_child_works_on_what_its_parent_left() {
+fn the_build_of_a_child_works_on_what_its_progenitor_left() {
     let (_directory, workspace, _result) = procreated("echo changed > source", "cp source product");
     assert_eq!(
         fs::read_to_string(workspace.harness(1).join("product")).unwrap(),

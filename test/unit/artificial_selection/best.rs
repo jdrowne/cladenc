@@ -16,8 +16,8 @@ fn best(genealogy: &Genealogy) -> HarnessId {
     artificial_selection.best_harness(genealogy)
 }
 
-fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
-    let child = genealogy.start_procreation(parent).unwrap();
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
 

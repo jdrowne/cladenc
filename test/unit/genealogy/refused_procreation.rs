@@ -18,7 +18,7 @@ fn with_a_failed_child() -> Genealogy {
 fn a_procreation_of_a_harness_that_is_not_in_the_genealogy_is_refused() {
     assert_eq!(
         Genealogy::new().start_procreation(7),
-        Err(GenealogyError::ParentNotCreated { parent: 7 })
+        Err(GenealogyError::ProgenitorNotCreated { progenitor: 7 })
     );
 }
 
@@ -33,7 +33,7 @@ fn a_refused_procreation_of_a_missing_harness_changes_nothing() {
 fn a_procreation_of_a_harness_that_is_being_created_is_refused() {
     assert_eq!(
         with_a_child_being_created().start_procreation(1),
-        Err(GenealogyError::ParentNotCreated { parent: 1 })
+        Err(GenealogyError::ProgenitorNotCreated { progenitor: 1 })
     );
 }
 
@@ -48,7 +48,7 @@ fn a_refused_procreation_of_a_harness_being_created_changes_nothing() {
 fn a_procreation_of_a_failed_harness_is_refused() {
     assert_eq!(
         with_a_failed_child().start_procreation(1),
-        Err(GenealogyError::ParentNotCreated { parent: 1 })
+        Err(GenealogyError::ProgenitorNotCreated { progenitor: 1 })
     );
 }
 

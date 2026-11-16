@@ -15,7 +15,7 @@ pub enum HarnessState {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Harness {
     id: HarnessId,
-    parent: Option<HarnessId>,
+    progenitor: Option<HarnessId>,
     state: HarnessState,
     given: BTreeSet<String>,
     running: BTreeSet<String>,
@@ -26,10 +26,10 @@ pub struct Harness {
 }
 
 impl Harness {
-    pub(super) fn new(id: HarnessId, parent: Option<HarnessId>, state: HarnessState) -> Self {
+    pub(super) fn new(id: HarnessId, progenitor: Option<HarnessId>, state: HarnessState) -> Self {
         Self {
             id,
-            parent,
+            progenitor,
             state,
             given: BTreeSet::new(),
             running: BTreeSet::new(),
@@ -44,8 +44,8 @@ impl Harness {
         self.id
     }
 
-    pub fn parent(&self) -> Option<HarnessId> {
-        self.parent
+    pub fn progenitor(&self) -> Option<HarnessId> {
+        self.progenitor
     }
 
     pub fn state(&self) -> HarnessState {

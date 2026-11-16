@@ -59,7 +59,7 @@ fn building_a_primogenitor_twice_is_refused() {
 fn a_primogenitor_that_awaits_its_build_cannot_procreate() {
     assert_eq!(
         Genealogy::unbuilt().start_procreation(0),
-        Err(GenealogyError::ParentNotCreated { parent: 0 })
+        Err(GenealogyError::ProgenitorNotCreated { progenitor: 0 })
     );
 }
 

@@ -2,8 +2,8 @@ use cladenc::genealogy::{Genealogy, HarnessId, ProcreationOutcome, Score};
 
 fn family() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    for parent in [0, 1, 0] {
-        let child = genealogy.start_procreation(parent).unwrap();
+    for progenitor in [0, 1, 0] {
+        let child = genealogy.start_procreation(progenitor).unwrap();
         genealogy
             .end_procreation(child, ProcreationOutcome::Created)
             .unwrap();
@@ -37,7 +37,7 @@ fn a_success_reaches_the_clade_successes_of_its_own_harness() {
 }
 
 #[test]
-fn a_success_reaches_the_clade_successes_of_its_parent() {
+fn a_success_reaches_the_clade_successes_of_its_progenitor() {
     let genealogy = family_after(2, Score::Success);
     assert_eq!(genealogy.harnesses()[1].clade_successes(), 1);
 }
@@ -55,7 +55,7 @@ fn a_failure_reaches_the_clade_failures_of_its_own_harness() {
 }
 
 #[test]
-fn a_failure_reaches_the_clade_failures_of_its_parent() {
+fn a_failure_reaches_the_clade_failures_of_its_progenitor() {
     let genealogy = family_after(2, Score::Failure);
     assert_eq!(genealogy.harnesses()[1].clade_failures(), 1);
 }
@@ -85,7 +85,7 @@ fn a_failure_adds_nothing_to_the_clade_successes() {
 }
 
 #[test]
-fn a_success_stays_out_of_the_clade_successes_of_a_sibling_of_its_parent() {
+fn a_success_stays_out_of_the_clade_successes_of_a_sibling_of_its_progenitor() {
     let genealogy = family_after(2, Score::Success);
     assert_eq!(genealogy.harnesses()[3].clade_successes(), 0);
 }
@@ -97,7 +97,7 @@ fn a_success_stays_out_of_the_clade_successes_of_a_child() {
 }
 
 #[test]
-fn a_failure_stays_out_of_the_clade_failures_of_a_sibling_of_its_parent() {
+fn a_failure_stays_out_of_the_clade_failures_of_a_sibling_of_its_progenitor() {
     let genealogy = family_after(2, Score::Failure);
     assert_eq!(genealogy.harnesses()[3].clade_failures(), 0);
 }

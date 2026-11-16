@@ -130,7 +130,7 @@ fn the_primogenitor_of_a_directed_evolution_is_built_once() {
 }
 
 #[test]
-fn a_child_is_built_once_more_than_the_parent_it_was_copied_from() {
+fn a_child_is_built_once_more_than_the_progenitor_it_was_copied_from() {
     let (directory, _found) = evolved(COUNT_THE_BUILDS);
     assert_eq!(builds_of(&directory, 1), "built\nbuilt\n");
 }

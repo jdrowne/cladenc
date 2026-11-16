@@ -83,17 +83,20 @@ impl Genealogy {
             .collect()
     }
 
-    pub fn start_procreation(&mut self, parent: HarnessId) -> Result<HarnessId, GenealogyError> {
+    pub fn start_procreation(
+        &mut self,
+        progenitor: HarnessId,
+    ) -> Result<HarnessId, GenealogyError> {
         if self
-            .harness_in_state(parent, HarnessState::Created)
+            .harness_in_state(progenitor, HarnessState::Created)
             .is_none()
         {
-            return Err(GenealogyError::ParentNotCreated { parent });
+            return Err(GenealogyError::ProgenitorNotCreated { progenitor });
         }
         let child = self.harness_count();
         self.harnesses.push(Harness::new(
             child,
-            Some(parent),
+            Some(progenitor),
             HarnessState::BeingCreated,
         ));
         Ok(child)
@@ -152,7 +155,7 @@ impl Genealogy {
         let mut member = Some(harness);
         while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
             ancestor.count_in_clade(score);
-            member = ancestor.parent();
+            member = ancestor.progenitor();
         }
         Ok(())
     }

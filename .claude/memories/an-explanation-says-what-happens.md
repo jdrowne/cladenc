@@ -1,6 +1,6 @@
 ---
 name: an-explanation-says-what-happens
-description: "An explanation for the user says who does what, with a plain verb and everyday words, not the noun phrases the issues and the code use: which harness procreates, not the parent of a procreation; a harness has been scored, not has a finished assessment"
+description: "An explanation for the user says who does what, with a plain verb and everyday words, not the noun phrases the issues and the code use: the progenitor procreates, not a procreation has a progenitor; a harness has been scored, not has a finished assessment"
 metadata:
   node_type: memory
   type: feedback
@@ -12,7 +12,7 @@ metadata:
 
 An explanation written for the user says who does what, with a plain verb and everyday words. The noun phrases that the issues and the code are written in are hard for the user to read.
 
-- Say which harness procreates, with that harness as the subject of the sentence. It is named the parent, per [[a-procreation-has-a-parent-a-copy-and-a-child]]: the parent procreates, not a procreation has a parent.
+- Say which harness procreates, with that harness as the subject of the sentence. It is named the progenitor, per [[a-procreation-has-a-progenitor-a-copy-and-a-child]]: the progenitor procreates, not a procreation has a progenitor.
 - Say that a harness has been scored, not that it has a finished assessment or that an assessment of it has finished.
 - Name what the sentence is really about. A harness that improves itself with nothing to read makes a change that is a guess; the sentence is about its change, not about its child.
 

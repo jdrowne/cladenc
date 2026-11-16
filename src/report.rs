@@ -9,7 +9,7 @@ use crate::journal::{self, JournalError, Settings};
 
 const HEADER: [&str; 9] = [
     "id",
-    "parent",
+    "progenitor",
     "state",
     "successes",
     "failures",
@@ -32,7 +32,7 @@ pub struct Report {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct HarnessReport {
     pub id: HarnessId,
-    pub parent: Option<HarnessId>,
+    pub progenitor: Option<HarnessId>,
     pub state: HarnessState,
     pub successes: u64,
     pub failures: u64,
@@ -94,7 +94,7 @@ impl HarnessReport {
         let created = harness.state() == HarnessState::Created;
         Self {
             id: harness.id(),
-            parent: harness.parent(),
+            progenitor: harness.progenitor(),
             state: harness.state(),
             successes: harness.successes(),
             failures: harness.failures(),
@@ -114,7 +114,7 @@ impl HarnessReport {
         };
         [
             self.id.to_string(),
-            shown(self.parent.map(|parent| parent.to_string())),
+            shown(self.progenitor.map(|progenitor| progenitor.to_string())),
             state.to_owned(),
             self.successes.to_string(),
             self.failures.to_string(),

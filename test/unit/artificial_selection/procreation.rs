@@ -15,8 +15,8 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
-    let child = genealogy.start_procreation(parent).unwrap();
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
 
@@ -40,11 +40,11 @@ fn two_lines() -> Genealogy {
     genealogy
 }
 
-fn times_parent(genealogy: &Genealogy, parent: HarnessId) -> usize {
+fn times_progenitor(genealogy: &Genealogy, progenitor: HarnessId) -> usize {
     (0..200)
         .filter(|seed| {
             artificial_selection(*seed).next_action(genealogy, 0)
-                == Some(Action::Procreation { parent })
+                == Some(Action::Procreation { progenitor })
         })
         .count()
 }
@@ -55,39 +55,39 @@ fn a_procreation_is_the_next_action_when_the_harness_count_is_within_started_to_
     assess(&mut genealogy, 0, 1, Score::Success);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
-        Some(Action::Procreation { parent: 0 })
+        Some(Action::Procreation { progenitor: 0 })
     );
 }
 
 #[test]
-fn a_harness_with_the_better_clade_is_the_parent_more_often_than_one_with_better_results() {
+fn a_harness_with_the_better_clade_is_the_progenitor_more_often_than_one_with_better_results() {
     let genealogy = two_lines();
-    assert!(times_parent(&genealogy, 1) > times_parent(&genealogy, 2));
+    assert!(times_progenitor(&genealogy, 1) > times_progenitor(&genealogy, 2));
 }
 
 #[test]
-fn a_created_child_can_be_the_parent() {
+fn a_created_child_can_be_the_progenitor() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
     genealogy.start_assessment(0, "task-0").unwrap();
     genealogy.start_assessment(0, "task-1").unwrap();
-    assert!(times_parent(&genealogy, 1) > 0);
+    assert!(times_progenitor(&genealogy, 1) > 0);
 }
 
 #[test]
-fn a_harness_that_is_being_created_is_never_the_parent() {
+fn a_harness_that_is_being_created_is_never_the_progenitor() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
     assess(&mut genealogy, 0, 2, Score::Failure);
-    assert_eq!(times_parent(&genealogy, 0), 200);
+    assert_eq!(times_progenitor(&genealogy, 0), 200);
 }
 
 #[test]
-fn a_failed_harness_is_never_the_parent() {
+fn a_failed_harness_is_never_the_progenitor() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
     assess(&mut genealogy, 0, 2, Score::Failure);
-    assert_eq!(times_parent(&genealogy, 0), 200);
+    assert_eq!(times_progenitor(&genealogy, 0), 200);
 }
 
 #[test]
@@ -96,6 +96,6 @@ fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
     assess(&mut genealogy, 0, 20, Score::Success);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
-        Some(Action::Procreation { parent: 0 })
+        Some(Action::Procreation { progenitor: 0 })
     );
 }

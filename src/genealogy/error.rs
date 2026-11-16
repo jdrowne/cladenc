@@ -6,7 +6,7 @@ use super::HarnessId;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GenealogyError {
     PrimogenitorNotAwaitingBuild,
-    ParentNotCreated { parent: HarnessId },
+    ProgenitorNotCreated { progenitor: HarnessId },
     ChildNotBeingCreated { child: HarnessId },
     HarnessNotCreated { harness: HarnessId },
     TaskAlreadyGiven { harness: HarnessId, task: String },
@@ -19,9 +19,9 @@ impl Display for GenealogyError {
             Self::PrimogenitorNotAwaitingBuild => {
                 write!(formatter, "the primogenitor is not waiting to be built")
             }
-            Self::ParentNotCreated { parent } => write!(
+            Self::ProgenitorNotCreated { progenitor } => write!(
                 formatter,
-                "harness {parent} cannot procreate because it is not a created harness"
+                "harness {progenitor} cannot procreate because it is not a created harness"
             ),
             Self::ChildNotBeingCreated { child } => {
                 write!(formatter, "harness {child} is not being created")

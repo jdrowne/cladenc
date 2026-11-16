@@ -32,8 +32,8 @@ fn settings() -> Settings {
     }
 }
 
-fn procreation_started(child: u64, parent: u64) -> Record {
-    Record::ProcreationStarted { child, parent }
+fn procreation_started(child: u64, progenitor: u64) -> Record {
+    Record::ProcreationStarted { child, progenitor }
 }
 
 fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
@@ -178,7 +178,7 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
         [
             Started::Procreation {
                 child: 2,
-                parent: 0
+                progenitor: 0
             },
             Started::Assessment {
                 harness: 0,

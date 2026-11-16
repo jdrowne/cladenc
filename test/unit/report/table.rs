@@ -52,9 +52,9 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         "model a-model at http://models.example/v1\n\
          started 1 of 800, best harness 0\n\
          \n\
-         id  parent  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
-         0   -       created        1          0         1                0               1.000               0.100\n\
-         1   0       being created  0          0         0                0               -                   -\n"
+         id  progenitor  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
+         0   -           created        1          0         1                0               1.000               0.100\n\
+         1   0           being created  0          0         0                0               -                   -\n"
     );
 }
 
@@ -71,9 +71,9 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
         "model a-model at http://models.example/v1\n\
          started 0 of 800, best harness 0\n\
          \n\
-         id  parent  state    successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
-         0   -       created  0          0         0                0               -                   0.010\n\
-         1   0       failed   0          0         0                0               -                   -\n"
+         id  progenitor  state    successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
+         0   -           created  0          0         0                0               -                   0.010\n\
+         1   0           failed   0          0         0                0               -                   -\n"
     );
 }
 

@@ -17,8 +17,8 @@ fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
-    let child = genealogy.start_procreation(parent).unwrap();
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
 
@@ -155,8 +155,8 @@ fn every_harness_is_given_every_task_exactly_once() {
     let mut number = 0;
     while let Some(action) = artificial_selection.next_action(&genealogy, number) {
         match action {
-            Action::Procreation { parent } => {
-                child_of(&mut genealogy, parent, ProcreationOutcome::Created)
+            Action::Procreation { progenitor } => {
+                child_of(&mut genealogy, progenitor, ProcreationOutcome::Created)
             }
             Action::Assessment { harness, task } => {
                 genealogy.start_assessment(harness, &task).unwrap();

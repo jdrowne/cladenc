@@ -63,7 +63,7 @@ fn reported(json: bool) -> (Ran, String) {
         },
         Record::ProcreationStarted {
             child: 1,
-            parent: 0,
+            progenitor: 0,
         },
     ];
     let lines: String = records
@@ -124,9 +124,9 @@ fn a_report_prints_the_table_on_standard_output() {
         "model a-model at http://models.example/v1\n\
          started 0 of 800, best harness 0\n\
          \n\
-         id  parent  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
-         0   -       created        0          0         0                0               -                   0.010\n\
-         1   0       being created  0          0         0                0               -                   -\n"
+         id  progenitor  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
+         0   -           created        0          0         0                0               -                   0.010\n\
+         1   0           being created  0          0         0                0               -                   -\n"
     );
 }
 

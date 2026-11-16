@@ -50,7 +50,7 @@ fn a_run_given_a_build_command_builds_the_primogenitor() {
 }
 
 #[test]
-fn a_run_given_a_build_command_builds_a_child_after_its_parent() {
+fn a_run_given_a_build_command_builds_a_child_after_its_progenitor() {
     assert_eq!(
         left_in_the_run("echo built >> built", "harnesses/1/built"),
         "built\nbuilt\n"

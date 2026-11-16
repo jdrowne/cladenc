@@ -37,7 +37,7 @@ fn started_from(
     image: &str,
     run_command: &str,
     workspace: &Workspace,
-    parent: u64,
+    progenitor: u64,
     time_limit: u64,
 ) -> Result<ProcreationOutcome, ContainerError> {
     let launch = Launch {
@@ -50,19 +50,19 @@ fn started_from(
         workspace,
         &launch,
         1,
-        parent,
+        progenitor,
         time_limit,
         &AtomicBool::new(false),
     )
 }
 
-fn procreated_by(run_command: &str, parent: u64, time_limit: u64) -> Procreated {
+fn procreated_by(run_command: &str, progenitor: u64, time_limit: u64) -> Procreated {
     let (directory, workspace) = made_at("run");
     let result = started_from(
         test_inputs::IMAGE,
         run_command,
         &workspace,
-        parent,
+        progenitor,
         time_limit,
     );
     (directory, workspace, result)
@@ -139,7 +139,7 @@ fn a_harness_is_told_where_its_source_code_is() {
 }
 
 #[test]
-fn the_source_code_a_harness_is_told_of_is_that_of_its_parent() {
+fn the_source_code_a_harness_is_told_of_is_that_of_its_progenitor() {
     assert_eq!(
         left_in_the_child("cp \"$CLADENC_HARNESS/harness.sh\" copied", "copied"),
         "#!/bin/sh\necho harness\n"
@@ -184,7 +184,7 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 }
 
 #[test]
-fn a_harness_can_read_the_ended_assessments_of_its_parent_and_none_still_running() {
+fn a_harness_can_read_the_ended_assessments_of_its_progenitor_and_none_still_running() {
     let (directory, workspace) = made_at("run");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     workspace
@@ -209,7 +209,7 @@ fn a_harness_can_read_the_ended_assessments_of_its_parent_and_none_still_running
 }
 
 #[test]
-fn a_harness_cannot_write_into_the_assessments_of_its_parent() {
+fn a_harness_cannot_write_into_the_assessments_of_its_progenitor() {
     let (_directory, workspace, _result) = procreated("touch /var/log/cladenc/assessments/written");
     assert!(!workspace.assessments(0).join("written").exists());
 }
@@ -336,7 +336,7 @@ fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
 }
 
 #[test]
-fn a_harness_that_writes_into_the_source_code_it_runs_from_leaves_its_parent_unchanged() {
+fn a_harness_that_writes_into_the_source_code_it_runs_from_leaves_its_progenitor_unchanged() {
     let (_directory, workspace, _result) =
         procreated("echo changed > \"$CLADENC_HARNESS/harness.sh\"");
     assert_eq!(

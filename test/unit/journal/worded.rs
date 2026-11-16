@@ -81,11 +81,11 @@ fn a_record_after_the_directed_evolution_finished_is_worded() {
 }
 
 #[test]
-fn a_procreation_is_named_by_its_parent_and_its_child() {
+fn a_procreation_is_named_by_its_progenitor_and_its_child() {
     assert_eq!(
         Started::Procreation {
             child: 3,
-            parent: 0
+            progenitor: 0
         }
         .to_string(),
         "the procreation of harness 3 by harness 0"

@@ -167,7 +167,7 @@ fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_primogenitor(
     let (directory, _found) = evolved(|settings| settings.budget = 2);
     assert_eq!(
         journal_of(&directory).lines().nth(3).unwrap(),
-        r#"{"record":"procreation_started","child":1,"parent":0}"#
+        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
     );
 }
 
@@ -176,7 +176,7 @@ fn with_a_growth_of_0_a_directed_evolution_starts_with_a_procreation_of_the_prim
     let (directory, _found) = evolved(over_one_task);
     assert_eq!(
         journal_of(&directory).lines().nth(1).unwrap(),
-        r#"{"record":"procreation_started","child":1,"parent":0}"#
+        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
     );
 }
 

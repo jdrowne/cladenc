@@ -3,8 +3,8 @@ use std::fs;
 use cladenc::journal::{self, Journal, JournalError, Record};
 use tempfile::TempDir;
 
-const FIRST: &str = r#"{"record":"procreation_started","child":1,"parent":0}"#;
-const SECOND: &str = r#"{"record":"procreation_started","child":2,"parent":0}"#;
+const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}"#;
+const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
 
 fn holding(text: &str) -> TempDir {
     let run_directory = tempfile::tempdir().unwrap();
@@ -17,7 +17,7 @@ fn after_appending_the_second(run_directory: &TempDir) -> String {
         .unwrap()
         .append(&Record::ProcreationStarted {
             child: 2,
-            parent: 0,
+            progenitor: 0,
         })
         .unwrap();
     fs::read_to_string(journal::path(run_directory.path())).unwrap()

@@ -34,16 +34,16 @@ fn harness_script(harness: PathBuf) -> String {
 }
 
 #[test]
-fn a_started_procreation_holds_a_copy_of_its_parent_to_run() {
+fn a_started_procreation_holds_a_copy_of_its_progenitor_to_run() {
     let (_directory, workspace) = started();
     assert_eq!(
-        harness_script(workspace.running_procreation(1).join("parent")),
+        harness_script(workspace.running_procreation(1).join("progenitor")),
         harness_script(workspace.harness(0))
     );
 }
 
 #[test]
-fn a_started_procreation_holds_a_copy_of_its_parent_to_modify() {
+fn a_started_procreation_holds_a_copy_of_its_progenitor_to_modify() {
     let (_directory, workspace) = started();
     assert_eq!(
         harness_script(workspace.running_procreation(1).join("child")),
@@ -65,9 +65,11 @@ fn a_procreation_cannot_be_started_twice() {
 }
 
 #[test]
-fn writing_into_the_parent_of_a_started_procreation_leaves_the_harness_unchanged() {
+fn writing_into_the_progenitor_of_a_started_procreation_leaves_the_harness_unchanged() {
     let (_directory, workspace) = started();
-    let copy = workspace.running_procreation(1).join("parent/harness.sh");
+    let copy = workspace
+        .running_procreation(1)
+        .join("progenitor/harness.sh");
     fs::write(copy, "changed").unwrap();
     assert_eq!(
         harness_script(workspace.harness(0)),

@@ -91,7 +91,7 @@ pub enum Record {
     PrimogenitorBuilt,
     ProcreationStarted {
         child: HarnessId,
-        parent: HarnessId,
+        progenitor: HarnessId,
     },
     ProcreationFinished {
         child: HarnessId,

@@ -6,7 +6,7 @@ use crate::journal::Started;
 pub(super) enum Ended {
     Procreation {
         child: HarnessId,
-        parent: HarnessId,
+        progenitor: HarnessId,
         result: Result<ProcreationOutcome, ContainerError>,
     },
     Assessment {
@@ -19,7 +19,7 @@ pub(super) enum Ended {
 pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> Ended {
     let settings = shared.settings;
     match action {
-        Started::Procreation { child, parent } => {
+        Started::Procreation { child, progenitor } => {
             let cleared = if again {
                 shared.workspace.discard_procreation(child)
             } else {
@@ -30,14 +30,14 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                     &shared.workspace,
                     &shared.launch,
                     child,
-                    parent,
+                    progenitor,
                     settings.procreation_timeout,
                     &shared.halt,
                 )
             });
             Ended::Procreation {
                 child,
-                parent,
+                progenitor,
                 result,
             }
         }

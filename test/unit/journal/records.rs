@@ -22,13 +22,13 @@ fn assessment_finished(score: Score) -> Record {
 }
 
 #[test]
-fn the_start_of_a_procreation_is_written_with_its_child_and_parent() {
+fn the_start_of_a_procreation_is_written_with_its_child_and_progenitor() {
     assert_eq!(
         line(&Record::ProcreationStarted {
             child: 1,
-            parent: 0
+            progenitor: 0
         }),
-        r#"{"record":"procreation_started","child":1,"parent":0}"#
+        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
     );
 }
 
@@ -127,7 +127,7 @@ fn the_end_of_a_directed_evolution_is_written_with_its_best_harness() {
 fn the_start_of_a_procreation_survives_being_written_and_read_back() {
     let record = Record::ProcreationStarted {
         child: 1,
-        parent: 0,
+        progenitor: 0,
     };
     assert_eq!(read_back(&record), record);
 }

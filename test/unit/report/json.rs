@@ -41,10 +41,10 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""started":1,"budget":800,"best_harness":0,"harnesses":["#,
-            r#"{"id":0,"parent":null,"state":"created","successes":1,"failures":0,"#,
+            r#"{"id":0,"progenitor":null,"state":"created","successes":1,"failures":0,"#,
             r#""clade_successes":1,"clade_failures":0,"clade_success_rate":1.0,"#,
             r#""lower_bound":0.09999999999999981},"#,
-            r#"{"id":1,"parent":0,"state":"being_created","successes":0,"failures":0,"#,
+            r#"{"id":1,"progenitor":0,"state":"being_created","successes":0,"failures":0,"#,
             r#""clade_successes":0,"clade_failures":0,"clade_success_rate":null,"#,
             r#""lower_bound":null}]}"#
         )
@@ -61,6 +61,6 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
     assert!(
         Report::of(&settings(), &genealogy)
             .json()
-            .contains(r#""id":1,"parent":0,"state":"failed""#)
+            .contains(r#""id":1,"progenitor":0,"state":"failed""#)
     );
 }

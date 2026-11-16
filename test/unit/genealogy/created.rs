@@ -8,8 +8,8 @@ fn created_ids(genealogy: &Genealogy) -> Vec<HarnessId> {
         .collect()
 }
 
-fn procreate(genealogy: &mut Genealogy, parent: HarnessId, outcome: ProcreationOutcome) {
-    let child = genealogy.start_procreation(parent).unwrap();
+fn procreate(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+    let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
 

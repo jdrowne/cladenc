@@ -33,17 +33,17 @@ fn a_child_carries_its_own_id() {
 }
 
 #[test]
-fn a_child_is_joined_to_its_parent() {
+fn a_child_is_joined_to_its_progenitor() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
-    assert_eq!(genealogy.harnesses()[1].parent(), Some(0));
+    assert_eq!(genealogy.harnesses()[1].progenitor(), Some(0));
 }
 
 #[test]
 fn a_child_of_a_child_is_joined_to_that_child() {
     let mut genealogy = procreated(ProcreationOutcome::Created);
     genealogy.start_procreation(1).unwrap();
-    assert_eq!(genealogy.harnesses()[2].parent(), Some(1));
+    assert_eq!(genealogy.harnesses()[2].progenitor(), Some(1));
 }
 
 #[test]

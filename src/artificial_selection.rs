@@ -10,7 +10,7 @@ pub use best::lower_bound;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Action {
-    Procreation { parent: HarnessId },
+    Procreation { progenitor: HarnessId },
     Assessment { harness: HarnessId, task: String },
 }
 
@@ -49,8 +49,10 @@ impl ArtificialSelection {
                     harness.clade_failures(),
                 )
             });
-            return largest_draw(&mut generator, focus, clades).map(|parent| Action::Procreation {
-                parent: parent.id(),
+            return largest_draw(&mut generator, focus, clades).map(|progenitor| {
+                Action::Procreation {
+                    progenitor: progenitor.id(),
+                }
             });
         }
         let with_a_task_left = created

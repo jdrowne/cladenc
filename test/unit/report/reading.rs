@@ -52,7 +52,7 @@ fn run_directory(last_line: &str) -> TempDir {
         },
         Record::ProcreationStarted {
             child: 1,
-            parent: 0,
+            progenitor: 0,
         },
     ];
     let lines: String = records

@@ -123,12 +123,12 @@ fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task() {
 }
 
 #[test]
-fn a_directed_evolution_a_procreation_stopped_names_the_parent_and_the_child() {
+fn a_directed_evolution_a_procreation_stopped_names_the_progenitor_and_the_child() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
             action: Started::Procreation {
                 child: 3,
-                parent: 0
+                progenitor: 0
             },
             error: ContainerError::Signal(9)
         }),

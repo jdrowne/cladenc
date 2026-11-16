@@ -77,8 +77,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_14() {
-    assert_eq!(journal::FORMAT, 14);
+fn the_format_of_the_journal_is_15() {
+    assert_eq!(journal::FORMAT, 15);
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":14,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":15,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,

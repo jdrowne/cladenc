@@ -9,16 +9,22 @@ use crate::genealogy::{Genealogy, HarnessId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Started {
-    Procreation { child: HarnessId, parent: HarnessId },
-    Assessment { harness: HarnessId, task: String },
+    Procreation {
+        child: HarnessId,
+        progenitor: HarnessId,
+    },
+    Assessment {
+        harness: HarnessId,
+        task: String,
+    },
 }
 
 impl Display for Started {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Procreation { child, parent } => write!(
+            Self::Procreation { child, progenitor } => write!(
                 formatter,
-                "the procreation of harness {child} by harness {parent}"
+                "the procreation of harness {child} by harness {progenitor}"
             ),
             Self::Assessment { harness, task } => write!(
                 formatter,
@@ -86,12 +92,14 @@ impl State {
         match record {
             Record::Run { .. } => return Err(JournalError::RunRecordRepeated { line }),
             Record::PrimogenitorBuilt => self.genealogy.build_primogenitor().map_err(refused)?,
-            Record::ProcreationStarted { child, parent } => {
+            Record::ProcreationStarted { child, progenitor } => {
                 if child != self.genealogy.harness_count() {
                     return Err(JournalError::WrongChild { line, child });
                 }
-                self.genealogy.start_procreation(parent).map_err(refused)?;
-                self.start(Started::Procreation { child, parent });
+                self.genealogy
+                    .start_procreation(progenitor)
+                    .map_err(refused)?;
+                self.start(Started::Procreation { child, progenitor });
             }
             Record::ProcreationFinished { child, outcome } => {
                 self.genealogy

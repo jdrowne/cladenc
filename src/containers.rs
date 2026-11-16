@@ -84,17 +84,17 @@ pub fn run_procreation(
     workspace: &Workspace,
     launch: &Launch<'_>,
     child: HarnessId,
-    parent: HarnessId,
+    progenitor: HarnessId,
     time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<ProcreationOutcome, ContainerError> {
     workspace
-        .start_procreation(child, parent)
+        .start_procreation(child, progenitor)
         .map_err(ContainerError::Io)?;
     let running = workspace.running_procreation(child);
-    let source = running.join("parent");
+    let source = running.join("progenitor");
     let made = running.join("child");
-    let assessments = workspace.assessments(parent);
+    let assessments = workspace.assessments(progenitor);
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),

@@ -101,11 +101,11 @@ impl Workspace {
             .join(format!("assessment-{harness}-{}", task.replace('/', "+")))
     }
 
-    pub fn start_procreation(&self, child: HarnessId, parent: HarnessId) -> io::Result<()> {
+    pub fn start_procreation(&self, child: HarnessId, progenitor: HarnessId) -> io::Result<()> {
         let running = self.running_procreation(child);
-        let harness = self.harness(parent);
+        let harness = self.harness(progenitor);
         fs::create_dir(&running)
-            .and_then(|()| copy_tree(&harness, &running.join("parent")))
+            .and_then(|()| copy_tree(&harness, &running.join("progenitor")))
             .and_then(|()| copy_tree(&harness, &running.join("child")))
     }
 
@@ -118,7 +118,7 @@ impl Workspace {
                 | ProcreationOutcome::BuildFailed
                 | ProcreationOutcome::TimedOut => Ok(()),
             })
-            .and_then(|()| fs::remove_dir_all(running.join("parent")))
+            .and_then(|()| fs::remove_dir_all(running.join("progenitor")))
             .and_then(|()| fs::rename(&running, self.procreation(child)))
     }
 

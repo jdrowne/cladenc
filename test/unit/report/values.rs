@@ -31,7 +31,7 @@ fn settings() -> Settings {
     }
 }
 
-fn a_child_that_succeeds_where_its_parent_fails() -> Genealogy {
+fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
@@ -63,7 +63,7 @@ fn report(genealogy: &Genealogy) -> Report {
 
 #[test]
 fn a_created_harness_has_the_lower_bound_of_its_own_results_at_the_confidence_of_the_run() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         report.harnesses[1].lower_bound,
         Some(lower_bound(1, 0, 99.0))
@@ -90,13 +90,13 @@ fn a_clade_with_no_harness_scored_has_no_clade_success_rate() {
 
 #[test]
 fn the_clade_success_rate_of_a_harness_counts_its_descendants() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.harnesses[0].clade_success_rate, Some(0.5));
 }
 
 #[test]
 fn the_clade_counts_of_a_harness_count_its_descendants() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
             report.harnesses[0].clade_successes,
@@ -108,7 +108,7 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
 
 #[test]
 fn the_counts_of_a_harness_are_those_of_its_own_assessments() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (report.harnesses[0].successes, report.harnesses[0].failures),
         (0, 1)
@@ -117,7 +117,7 @@ fn the_counts_of_a_harness_are_those_of_its_own_assessments() {
 
 #[test]
 fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
-    let genealogy = a_child_that_succeeds_where_its_parent_fails();
+    let genealogy = a_child_that_succeeds_where_its_progenitor_fails();
     assert_eq!(
         report(&genealogy).best_harness,
         settings().artificial_selection().best_harness(&genealogy)
@@ -126,7 +126,7 @@ fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
 
 #[test]
 fn the_best_harness_reported_is_the_created_harness_with_the_largest_lower_bound() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.best_harness, 1);
 }
 
@@ -165,15 +165,15 @@ fn the_harnesses_are_listed_in_ascending_id_order() {
 }
 
 #[test]
-fn the_primogenitor_has_no_parent() {
+fn the_primogenitor_has_no_progenitor() {
     let report = report(&Genealogy::new());
-    assert_eq!(report.harnesses[0].parent, None);
+    assert_eq!(report.harnesses[0].progenitor, None);
 }
 
 #[test]
-fn the_parent_of_a_child_is_the_harness_that_procreated_it() {
-    let report = report(&a_child_that_succeeds_where_its_parent_fails());
-    assert_eq!(report.harnesses[1].parent, Some(0));
+fn the_progenitor_of_a_child_is_the_harness_that_procreated_it() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(report.harnesses[1].progenitor, Some(0));
 }
 
 #[test]

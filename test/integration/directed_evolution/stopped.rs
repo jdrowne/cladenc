@@ -120,13 +120,14 @@ fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task_of_
 }
 
 #[test]
-fn a_directed_evolution_a_container_stopped_names_the_parent_and_the_child_of_that_procreation() {
+fn a_directed_evolution_a_container_stopped_names_the_progenitor_and_the_child_of_that_procreation()
+{
     assert!(matches!(
         started_with_a_procreation_by("exit 125"),
         Err(DirectedEvolutionError::Action {
             action: Started::Procreation {
                 child: 1,
-                parent: 0
+                progenitor: 0
             },
             ..
         })

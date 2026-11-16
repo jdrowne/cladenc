@@ -13,7 +13,7 @@ fn workspace() -> Workspace {
 fn procreation() -> Started {
     Started::Procreation {
         child: 3,
-        parent: 1,
+        progenitor: 1,
     }
 }
 
@@ -37,7 +37,7 @@ fn started(action: &Started, again: bool) -> String {
 fn procreated(outcome: ProcreationOutcome) -> String {
     Said::Procreated {
         child: 3,
-        parent: 1,
+        progenitor: 1,
         outcome,
         workspace: &workspace(),
     }

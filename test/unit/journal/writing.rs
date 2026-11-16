@@ -4,11 +4,14 @@ use std::path::Path;
 use cladenc::journal::{self, Journal, JournalError, Record};
 use tempfile::TempDir;
 
-const FIRST: &str = r#"{"record":"procreation_started","child":1,"parent":0}"#;
-const SECOND: &str = r#"{"record":"procreation_started","child":2,"parent":0}"#;
+const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}"#;
+const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
 
 fn started(child: u64) -> Record {
-    Record::ProcreationStarted { child, parent: 0 }
+    Record::ProcreationStarted {
+        child,
+        progenitor: 0,
+    }
 }
 
 fn holding(text: &str) -> TempDir {
