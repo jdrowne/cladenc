@@ -8,10 +8,12 @@ use tempfile::TempDir;
 const TOLD: &str = "a-model http://models.example/v1";
 const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
-     echo \"$CLADENC_MODEL $CLADENC_MODEL_URL ${CLADENC_MODEL_KEY-none}\" > model";
-const SAY_WHAT_THE_CHECK_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> where-checked; \
-     echo \"${CLADENC_MODEL-none} ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" > \
-     model-of-the-check";
+                                             echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
+                                             ${CLADENC_MODEL_KEY-none}\" > model";
+const SAY_WHAT_THE_CHECK_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> \
+                                           where-checked; echo \"${CLADENC_MODEL-none} \
+                                           ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
+                                           > model-of-the-check";
 
 fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     let options = [
@@ -233,14 +235,17 @@ fn the_timer_of_a_check_is_given_the_check_of_the_task() {
 }
 
 #[test]
-fn every_container_carries_the_label_of_its_search() {
+fn every_container_carries_the_label_of_its_directed_evolution() {
     let directory = test_inputs::temporary_directory();
     let arguments = ran_in_with_a_docker_that_records_its_arguments(&directory);
     let run = fs::canonicalize(directory.path().join("run")).unwrap();
     let containers = arguments.lines().filter(|line| *line == "run").count();
     assert_eq!(
         arguments
-            .matches(&format!("\n--label\ncladenc.search={}\n", run.display()))
+            .matches(&format!(
+                "\n--label\ncladenc.directed-evolution={}\n",
+                run.display()
+            ))
             .count(),
         containers.max(1)
     );

@@ -8,7 +8,7 @@ mod containers {
     mod progenitor;
 }
 
-mod search {
+mod directed_evolution {
     mod again;
     mod built;
     mod concurrent;

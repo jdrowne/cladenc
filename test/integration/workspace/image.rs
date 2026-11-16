@@ -21,7 +21,7 @@ fn started() -> (TempDir, Workspace) {
 }
 
 #[test]
-fn what_is_kept_of_the_image_of_a_search_is_in_image_in_the_run_directory() {
+fn what_is_kept_of_the_image_of_a_directed_evolution_is_in_image_in_the_run_directory() {
     assert_eq!(
         Workspace::at(Path::new("/run")).image(),
         Path::new("/run/image")

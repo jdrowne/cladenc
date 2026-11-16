@@ -65,7 +65,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
     (directory, workspace, result)
 }
 
-fn left_by_a_build_of_a_search_with_a_key(build_command: &str, file: &str) -> String {
+fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file: &str) -> String {
     let (_directory, workspace) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
@@ -106,7 +106,7 @@ fn the_build_of_a_child_is_told_where_the_source_code_is() {
 #[test]
 fn a_build_is_told_nothing_of_the_model() {
     assert_eq!(
-        left_by_a_build_of_a_search_with_a_key(
+        left_by_a_build_of_a_directed_evolution_with_a_key(
             "echo \"${CLADENC_MODEL-none} ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
              > told",
             "told"

@@ -5,17 +5,17 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
-use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 use test_inputs::Image;
 
 const SOLVES_T1: &str = "RUN echo t1 > /solved-by-the-image\n";
 
-struct Searched {
+struct Evolved {
     directory: TempDir,
     image: Image,
-    found: Result<Found, SearchError>,
+    found: Result<Found, DirectedEvolutionError>,
     said: String,
 }
 
@@ -42,15 +42,15 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
     }
 }
 
-fn searched(steps: &str) -> Searched {
+fn evolved(steps: &str) -> Evolved {
     let directory = test_inputs::temporary_directory();
     let image = test_inputs::image();
     let settings = settings(directory.path(), &image, steps);
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let found = search::search(&settings, &run_directory, &stop, &mut written);
-    Searched {
+    let found = directed_evolution::start(&settings, &run_directory, &stop, &mut written);
+    Evolved {
         directory,
         image,
         found,
@@ -58,7 +58,7 @@ fn searched(steps: &str) -> Searched {
     }
 }
 
-fn stopped_and_resumed_with_its_dockerfile_gone() -> Searched {
+fn stopped_and_resumed_with_its_dockerfile_gone() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let image = test_inputs::image();
     let settings = Settings {
@@ -71,12 +71,12 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Searched {
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_at(&settings.progenitor, 0);
-    let _ = search::search(&settings, &run_directory, &stop, &mut io::sink());
+    let _ = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&run_directory);
     fs::remove_file(directory.path().join("Dockerfile")).unwrap();
     let mut written = Vec::new();
-    let found = search::resume(&run_directory, &stop, &mut written);
-    Searched {
+    let found = directed_evolution::resume(&run_directory, &stop, &mut written);
+    Evolved {
         directory,
         image,
         found,
@@ -84,47 +84,47 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Searched {
     }
 }
 
-fn run_of(searched: &Searched) -> String {
-    searched.directory.path().join("run").display().to_string()
+fn run_of(evolved: &Evolved) -> String {
+    evolved.directory.path().join("run").display().to_string()
 }
 
-fn solved_by_harness_1(searched: &Searched) -> String {
-    fs::read_to_string(searched.directory.path().join("run/harnesses/1/solved")).unwrap()
-}
-
-#[test]
-fn a_search_given_a_dockerfile_runs_its_harnesses_in_the_image_built_from_it() {
-    assert_eq!(solved_by_harness_1(&searched(SOLVES_T1)), "t1\n");
+fn solved_by_harness_1(evolved: &Evolved) -> String {
+    fs::read_to_string(evolved.directory.path().join("run/harnesses/1/solved")).unwrap()
 }
 
 #[test]
-fn a_search_given_a_dockerfile_finds_the_harness_made_in_its_image_to_be_the_best() {
-    assert_eq!(searched(SOLVES_T1).found.unwrap().best_harness, 1);
+fn a_directed_evolution_given_a_dockerfile_runs_its_harnesses_in_the_image_built_from_it() {
+    assert_eq!(solved_by_harness_1(&evolved(SOLVES_T1)), "t1\n");
 }
 
 #[test]
-fn a_search_says_that_it_builds_its_image_and_that_the_image_is_built() {
-    let searched = searched(SOLVES_T1);
+fn a_directed_evolution_given_a_dockerfile_finds_the_harness_made_in_its_image_to_be_the_best() {
+    assert_eq!(evolved(SOLVES_T1).found.unwrap().best_harness, 1);
+}
+
+#[test]
+fn a_directed_evolution_says_that_it_builds_its_image_and_that_the_image_is_built() {
+    let evolved = evolved(SOLVES_T1);
     let said = format!(
         "cladenc: building the image {0} from the Dockerfile {1}\n\
          cladenc: the image {0} is built: what Docker printed is kept in {2}/image\n",
-        searched.image.name,
-        searched.directory.path().join("Dockerfile").display(),
-        run_of(&searched)
+        evolved.image.name,
+        evolved.directory.path().join("Dockerfile").display(),
+        run_of(&evolved)
     );
-    assert!(searched.said.contains(&said));
+    assert!(evolved.said.contains(&said));
 }
 
 #[test]
 fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
-    let searched = searched(SOLVES_T1);
+    let evolved = evolved(SOLVES_T1);
     let places = [
         "cladenc: copying the 1 task ",
         "cladenc: building the image ",
         "cladenc: started the ",
     ]
     .map(|start| {
-        searched
+        evolved
             .said
             .lines()
             .position(|line| line.starts_with(start))
@@ -134,35 +134,35 @@ fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
 
 #[test]
 fn the_run_record_names_the_image_that_was_built_its_dockerfile_and_the_time_limit() {
-    let searched = searched(SOLVES_T1);
-    let journal = fs::read_to_string(journal::path(Path::new(&run_of(&searched)))).unwrap();
+    let evolved = evolved(SOLVES_T1);
+    let journal = fs::read_to_string(journal::path(Path::new(&run_of(&evolved)))).unwrap();
     let named = format!(
         r#""docker_image":"{}","dockerfile":"{}","docker_build_timeout":60,"#,
-        searched.image.name,
-        searched.directory.path().join("Dockerfile").display()
+        evolved.image.name,
+        evolved.directory.path().join("Dockerfile").display()
     );
     assert!(journal.lines().next().unwrap().contains(&named));
 }
 
 #[test]
-fn a_dockerfile_that_is_not_built_stops_the_search_before_its_first_action() {
+fn a_dockerfile_that_is_not_built_stops_the_directed_evolution_before_its_first_action() {
     assert!(matches!(
-        searched("RUN exit 3\n").found,
-        Err(SearchError::Image(ContainerError::Exit(_)))
+        evolved("RUN exit 3\n").found,
+        Err(DirectedEvolutionError::Image(ContainerError::Exit(_)))
     ));
 }
 
 #[test]
-fn a_dockerfile_that_is_not_built_leaves_the_search_no_journal() {
-    let searched = searched("RUN exit 3\n");
-    assert!(!journal::path(Path::new(&run_of(&searched))).exists());
+fn a_dockerfile_that_is_not_built_leaves_the_directed_evolution_no_journal() {
+    let evolved = evolved("RUN exit 3\n");
+    assert!(!journal::path(Path::new(&run_of(&evolved))).exists());
 }
 
 #[test]
 fn an_image_that_was_not_built_is_said_with_how_its_build_ended() {
-    let searched = searched("RUN exit 3\n");
+    let evolved = evolved("RUN exit 3\n");
     assert!(
-        searched
+        evolved
             .said
             .lines()
             .last()
@@ -173,16 +173,16 @@ fn an_image_that_was_not_built_is_said_with_how_its_build_ended() {
 
 #[test]
 fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
-    let searched = searched("RUN exit 3\n");
+    let evolved = evolved("RUN exit 3\n");
     let kept = format!(
         ": what Docker printed is kept in {}/image\n",
-        run_of(&searched)
+        run_of(&evolved)
     );
-    assert!(searched.said.ends_with(&kept));
+    assert!(evolved.said.ends_with(&kept));
 }
 
 #[test]
-fn a_search_that_is_resumed_builds_no_image() {
+fn a_directed_evolution_that_is_resumed_builds_no_image() {
     assert!(
         !stopped_and_resumed_with_its_dockerfile_gone()
             .said
@@ -191,7 +191,7 @@ fn a_search_that_is_resumed_builds_no_image() {
 }
 
 #[test]
-fn a_search_that_is_resumed_runs_its_harnesses_in_the_image_that_was_built() {
+fn a_directed_evolution_that_is_resumed_runs_its_harnesses_in_the_image_that_was_built() {
     assert_eq!(
         solved_by_harness_1(&stopped_and_resumed_with_its_dockerfile_gone()),
         "t1\n"
@@ -199,6 +199,6 @@ fn a_search_that_is_resumed_runs_its_harnesses_in_the_image_that_was_built() {
 }
 
 #[test]
-fn a_search_that_is_resumed_ends_though_the_dockerfile_it_was_given_is_gone() {
+fn a_directed_evolution_that_is_resumed_ends_though_the_dockerfile_it_was_given_is_gone() {
     assert!(stopped_and_resumed_with_its_dockerfile_gone().found.is_ok());
 }

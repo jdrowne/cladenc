@@ -72,13 +72,13 @@ fn resumed_once_the_file_of_its_key_is_gone() -> (PathBuf, Output) {
 }
 
 #[test]
-fn resume_on_a_search_whose_file_of_the_key_is_gone_exits_with_2() {
+fn resume_on_a_directed_evolution_whose_file_of_the_key_is_gone_exits_with_2() {
     let (_key_file, resumed) = resumed_once_the_file_of_its_key_is_gone();
     assert_eq!(resumed.status.code(), Some(2));
 }
 
 #[test]
-fn resume_on_a_search_whose_file_of_the_key_is_gone_names_the_file() {
+fn resume_on_a_directed_evolution_whose_file_of_the_key_is_gone_names_the_file() {
     let (key_file, resumed) = resumed_once_the_file_of_its_key_is_gone();
     assert_eq!(
         String::from_utf8(resumed.stderr).unwrap(),

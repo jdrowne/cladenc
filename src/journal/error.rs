@@ -14,7 +14,7 @@ pub enum JournalError {
     RunRecordRepeated { line: usize },
     Refused { line: usize, error: GenealogyError },
     WrongChild { line: usize, child: HarnessId },
-    AfterSearchFinished { line: usize },
+    AfterDirectedEvolutionFinished { line: usize },
 }
 
 impl Display for JournalError {
@@ -46,9 +46,9 @@ impl Display for JournalError {
                 formatter,
                 "line {line} of its journal starts harness {child} out of order"
             ),
-            Self::AfterSearchFinished { line } => write!(
+            Self::AfterDirectedEvolutionFinished { line } => write!(
                 formatter,
-                "line {line} of its journal comes after the search finished"
+                "line {line} of its journal comes after the directed evolution finished"
             ),
         }
     }

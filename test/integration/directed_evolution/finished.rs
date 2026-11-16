@@ -6,8 +6,8 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Record, Settings};
-use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
 fn settings(directory: &Path) -> Settings {
@@ -46,12 +46,12 @@ fn over_one_task(settings: &mut Settings) {
     settings.budget = 10;
 }
 
-fn searched(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, SearchError>) {
+fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, DirectedEvolutionError>) {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path());
     change(&mut settings);
     let run_directory = directory.path().join("run");
-    let found = search::search(
+    let found = directed_evolution::start(
         &settings,
         &run_directory,
         &AtomicBool::new(false),
@@ -67,7 +67,7 @@ fn said_over_one_task() -> (TempDir, Vec<String>) {
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    search::search(&settings, &run_directory, &stop, &mut written).unwrap();
+    directed_evolution::start(&settings, &run_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -83,13 +83,14 @@ fn started(journal: &str, action: &str) -> usize {
 }
 
 #[test]
-fn with_one_container_at_a_time_two_searches_with_the_same_settings_write_identical_journals() {
+fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_the_same_journal() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let first = directory.path().join("first");
     let second = directory.path().join("second");
-    search::search(&settings, &first, &AtomicBool::new(false), &mut io::sink()).unwrap();
-    search::search(&settings, &second, &AtomicBool::new(false), &mut io::sink()).unwrap();
+    directed_evolution::start(&settings, &first, &AtomicBool::new(false), &mut io::sink()).unwrap();
+    directed_evolution::start(&settings, &second, &AtomicBool::new(false), &mut io::sink())
+        .unwrap();
     assert_eq!(
         fs::read(journal::path(&first)).unwrap(),
         fs::read(journal::path(&second)).unwrap()
@@ -97,11 +98,11 @@ fn with_one_container_at_a_time_two_searches_with_the_same_settings_write_identi
 }
 
 #[test]
-fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
+fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let run_directory = directory.path().join("run");
-    search::search(
+    directed_evolution::start(
         &settings,
         &run_directory,
         &AtomicBool::new(false),
@@ -120,8 +121,8 @@ fn the_first_record_of_a_search_is_the_run_record_with_its_settings() {
 }
 
 #[test]
-fn a_search_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
-    let (directory, _found) = searched(over_one_task);
+fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
+    let (directory, _found) = evolved(over_one_task);
     assert_eq!(
         fs::read_to_string(
             directory
@@ -134,8 +135,8 @@ fn a_search_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
 }
 
 #[test]
-fn a_search_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
-    let (directory, _found) = searched(over_one_task);
+fn a_directed_evolution_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
+    let (directory, _found) = evolved(over_one_task);
     assert!(
         !directory
             .path()
@@ -145,15 +146,15 @@ fn a_search_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
 }
 
 #[test]
-fn a_search_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory() {
+fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory() {
     let (_directory, found) =
-        searched(|settings| settings.benchmarks[0].tasks.push("missing".to_owned()));
-    assert!(matches!(found, Err(SearchError::Io(_))));
+        evolved(|settings| settings.benchmarks[0].tasks.push("missing".to_owned()));
+    assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
 }
 
 #[test]
 fn the_initial_procreations_all_end_before_the_first_assessment_starts() {
-    let (directory, _found) = searched(|settings| {
+    let (directory, _found) = evolved(|settings| {
         settings.initial_procreations = 3;
         settings.max_concurrent_containers = 2;
     });
@@ -171,35 +172,35 @@ fn the_initial_procreations_all_end_before_the_first_assessment_starts() {
 }
 
 #[test]
-fn a_search_that_spends_its_budget_starts_exactly_as_many_assessments() {
-    let (directory, _found) = searched(|_| {});
+fn a_directed_evolution_that_spends_its_budget_starts_exactly_as_many_assessments() {
+    let (directory, _found) = evolved(|_| {});
     assert_eq!(started(&journal_of(&directory), "assessment"), 6);
 }
 
 #[test]
-fn a_search_over_one_task_ends_once_every_created_harness_has_been_given_it() {
-    let (directory, _found) = searched(over_one_task);
+fn a_directed_evolution_over_one_task_ends_once_every_created_harness_has_been_given_it() {
+    let (directory, _found) = evolved(over_one_task);
     assert_eq!(started(&journal_of(&directory), "assessment"), 2);
 }
 
 #[test]
-fn the_journal_of_a_search_that_ended_with_budget_left_over_ends_with_search_finished() {
-    let (directory, _found) = searched(over_one_task);
+fn a_directed_evolution_that_ended_with_budget_left_ends_its_journal_with_its_finished_record() {
+    let (directory, _found) = evolved(over_one_task);
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"search_finished","best_harness":1}"#
+        r#"{"record":"directed_evolution_finished","best_harness":1}"#
     );
 }
 
 #[test]
 fn the_harness_returned_is_the_one_the_samples_make_best() {
-    let (_directory, found) = searched(over_one_task);
+    let (_directory, found) = evolved(over_one_task);
     assert_eq!(found.unwrap().best_harness, 1);
 }
 
 #[test]
 fn the_directory_returned_is_that_of_the_best_harness_in_the_run_directory() {
-    let (directory, found) = searched(over_one_task);
+    let (directory, found) = evolved(over_one_task);
     assert_eq!(
         found.unwrap().directory,
         directory.path().join("run/harnesses/1")
@@ -207,7 +208,7 @@ fn the_directory_returned_is_that_of_the_best_harness_in_the_run_directory() {
 }
 
 #[test]
-fn a_search_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_progenitor() {
+fn a_directed_evolution_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_progenitor() {
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said[0],
@@ -220,7 +221,7 @@ fn a_search_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_progen
 }
 
 #[test]
-fn a_search_says_next_that_it_copies_the_tasks_of_its_benchmark() {
+fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said[1],
@@ -232,7 +233,7 @@ fn a_search_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 }
 
 #[test]
-fn a_search_says_each_action_as_it_starts() {
+fn a_directed_evolution_says_each_action_as_it_starts() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
         said[2],
@@ -241,7 +242,7 @@ fn a_search_says_each_action_as_it_starts() {
 }
 
 #[test]
-fn a_search_says_as_many_starts_as_its_journal_records() {
+fn a_directed_evolution_says_as_many_starts_as_its_journal_records() {
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said.iter()
@@ -252,7 +253,7 @@ fn a_search_says_as_many_starts_as_its_journal_records() {
 }
 
 #[test]
-fn a_search_says_the_number_of_each_assessment_it_starts_and_its_budget() {
+fn a_directed_evolution_says_the_number_of_each_assessment_it_starts_and_its_budget() {
     let (_directory, said) = said_over_one_task();
     assert!(said.iter().any(|line| {
         line.starts_with("cladenc: started the assessment of harness ")
@@ -261,7 +262,7 @@ fn a_search_says_the_number_of_each_assessment_it_starts_and_its_budget() {
 }
 
 #[test]
-fn a_search_says_how_a_procreation_ended_and_where_its_child_is_kept() {
+fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept() {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
         "cladenc: the procreation of harness 1 by harness 0 created harness 1, kept in {}",
@@ -270,52 +271,53 @@ fn a_search_says_how_a_procreation_ended_and_where_its_child_is_kept() {
 }
 
 #[test]
-fn a_search_says_how_an_assessment_ended_and_where_what_it_left_is_kept() {
+fn a_directed_evolution_says_how_an_assessment_ended_and_where_what_it_left_is_kept() {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
-        "cladenc: the assessment of harness 1 on task benchmark/t1 succeeded: what it left is kept in {}",
+        "cladenc: the assessment of harness 1 on task benchmark/t1 succeeded: what it left is \
+         kept in {}",
         directory.path().join("run/assessments/1/benchmark/t1").display()
     )));
 }
 
 #[test]
-fn a_search_says_last_that_it_finished_and_which_harness_is_its_best() {
+fn a_directed_evolution_says_last_that_it_finished_and_which_harness_is_its_best() {
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said.last().unwrap(),
         &format!(
-            "cladenc: the search finished with 2 assessments started and 2 harnesses: its best \
-             harness is harness 1, kept in {}",
+            "cladenc: the directed evolution finished with 2 assessments started and 2 \
+             harnesses: its best harness is harness 1, kept in {}",
             directory.path().join("run/harnesses/1").display()
         )
     );
 }
 
 #[test]
-fn a_search_copies_no_record_of_its_journal_to_its_writer() {
+fn a_directed_evolution_copies_no_record_of_its_journal_to_its_writer() {
     let (_directory, said) = said_over_one_task();
     assert!(!said.iter().any(|line| line.contains("\"record\"")));
 }
 
 #[test]
-fn a_search_cannot_start_in_a_run_directory_that_exists() {
+fn a_directed_evolution_cannot_start_in_a_run_directory_that_exists() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
-    let found = search::search(
+    let found = directed_evolution::start(
         &settings,
         directory.path(),
         &AtomicBool::new(false),
         &mut io::sink(),
     );
-    assert!(matches!(found, Err(SearchError::Io(_))));
+    assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
 }
 
 #[test]
-fn a_search_whose_run_record_cannot_be_written_stops_before_any_action() {
-    let (_directory, found) = searched(|settings| {
+fn a_directed_evolution_whose_run_record_cannot_be_written_stops_before_any_action() {
+    let (_directory, found) = evolved(|settings| {
         let unwritable = OsStr::from_bytes(&[b'p', 0xff]);
         settings.progenitor =
             test_inputs::progenitor(&settings.progenitor.with_file_name(unwritable));
     });
-    assert!(matches!(found, Err(SearchError::Journal(_))));
+    assert!(matches!(found, Err(DirectedEvolutionError::Journal(_))));
 }

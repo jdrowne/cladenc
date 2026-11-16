@@ -33,18 +33,18 @@ fn the_long_help_of_resume_says_that_a_cladenc_killed_outright_ends_none_of_its_
 }
 
 #[test]
-fn the_long_help_of_resume_says_that_it_first_removes_the_containers_the_search_left_running() {
+fn the_long_help_of_resume_says_that_it_first_removes_the_containers_that_were_left_running() {
     assert!(help_of_resume(true).contains(
-        "Before it\ndoes anything else, `cladenc resume` removes the containers that the \
-         search\nleft running, so that it never works beside one of them."
+        "Before it\ndoes anything else, `cladenc resume` removes the containers that \
+         the\ndirected evolution left running, so that it never works beside one of them."
     ));
 }
 
 #[test]
-fn the_long_help_of_resume_shows_the_label_that_every_container_of_a_search_carries() {
+fn the_long_help_of_resume_shows_the_label_that_every_container_of_a_directed_evolution_carries() {
     assert!(help_of_resume(true).contains(
-        "\n    cladenc.search=<DIR>\n\nwhere <DIR> is the path of the run directory, with every \
-         symbolic link in\nit resolved."
+        "\n    cladenc.directed-evolution=<DIR>\n\nwhere <DIR> is the path of the run directory, \
+         with every symbolic link in\nit resolved."
     ));
 }
 
@@ -52,8 +52,8 @@ fn the_long_help_of_resume_shows_the_label_that_every_container_of_a_search_carr
 fn the_long_help_of_resume_says_that_the_containers_are_removed_once_no_other_cladenc_is_there() {
     assert!(help_of_resume(true).contains(
         "Once it has the run directory to itself, `cladenc resume` asks\nDocker for the \
-         containers that carry the label of its search, removes them,\nand says how many it \
-         removed."
+         containers that carry the label of its directed evolution,\nremoves them, and says how \
+         many it removed."
     ));
 }
 
@@ -61,16 +61,16 @@ fn the_long_help_of_resume_says_that_the_containers_are_removed_once_no_other_cl
 fn the_long_help_of_resume_says_what_it_does_where_docker_cannot_be_asked() {
     assert!(
         help_of_resume(true).contains(
-            "Where Docker cannot be asked, it exits with\nstatus 2 and continues nothing."
+            "Where Docker cannot be asked,\nit exits with status 2 and continues nothing."
         )
     );
 }
 
 #[test]
-fn the_long_help_of_resume_shows_how_the_containers_of_a_search_are_listed_by_hand() {
+fn the_long_help_of_resume_shows_how_the_containers_of_a_directed_evolution_are_listed_by_hand() {
     assert!(help_of_resume(true).contains(
-        "Where the search is not resumed, its containers are removed by hand.\n\n    docker ps \
-         --filter label=cladenc.search=<DIR>\n\nlists them"
+        "Where the directed evolution is not resumed, its containers are removed \
+         by\nhand.\n\n    docker ps --filter label=cladenc.directed-evolution=<DIR>\n\nlists them"
     ));
 }
 
@@ -83,16 +83,17 @@ fn the_long_help_of_resume_says_how_a_container_is_ended_by_hand() {
 }
 
 #[test]
-fn the_short_help_of_resume_does_not_show_the_label_of_a_search() {
-    assert!(!help_of_resume(false).contains("cladenc.search"));
+fn the_short_help_of_resume_does_not_show_the_label_of_a_directed_evolution() {
+    assert!(!help_of_resume(false).contains("cladenc.directed-evolution"));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_resume_removes_the_containers_a_search_left_running() {
+fn the_long_help_of_start_says_that_resume_removes_the_containers_that_were_left_running() {
     assert!(help_of_start(true).contains(
         "Until then a container that was left goes on. `cladenc resume` removes the\ncontainers \
-         that the search left running before it does anything else, and\nits long help says \
-         how they are found, and how they are removed by hand\nwhere the search is not resumed."
+         that the directed evolution left running before it does anything\nelse, and its long \
+         help says how they are found, and how they are removed\nby hand where the directed \
+         evolution is not resumed."
     ));
 }
 
@@ -132,14 +133,17 @@ fn the_long_help_of_start_says_what_the_timer_does() {
 #[test]
 fn the_long_help_of_start_says_that_a_container_ends_itself_when_cladenc_was_killed_outright() {
     assert!(help_of_start(true).contains(
-        "a container ends itself once its time\nlimit has passed, also when cladenc was killed \
-         outright, as by `kill -9`,\nand is not there to remove it."
+        "a container ends itself\nonce its time limit has passed, also when cladenc was killed \
+         outright, as\nby `kill -9`, and is not there to remove it."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_what_the_image_has_to_hold_for_the_timer() {
-    assert!(help_of_start(true).contains("The image of the search has to hold sh and\nsleep.\n"));
+    assert!(
+        help_of_start(true)
+            .contains("The image of the directed\nevolution has to hold sh and sleep.\n")
+    );
 }
 
 #[test]
@@ -272,34 +276,34 @@ fn the_long_help_of_start_says_that_the_name_of_an_image_says_which_registry_it_
 #[test]
 fn the_long_help_of_start_says_how_an_image_is_brought_to_the_machine() {
     assert!(help_of_start(true).contains(
-        "The image that --docker-image names has to be on\nthe machine before the search: \
-         fetched there with `docker pull`, carried\nthere as a file with `docker save` and \
-         `docker load`, or built there."
+        "The image that --docker-image names has to be on the\nmachine before the directed \
+         evolution: fetched there with `docker pull`,\ncarried there as a file with `docker \
+         save` and `docker load`, or built\nthere."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_container() {
     assert!(help_of_start(true).contains(
-        "cladenc tells Docker never to fetch the image of a container, so a search\nwhose image \
-         is not on the machine stops at its first container, and\n`cladenc resume` continues \
-         it once the image is there."
+        "cladenc tells Docker never to fetch the image of a container, so a\ndirected evolution \
+         whose image is not on the machine stops at its first\ncontainer, and `cladenc resume` \
+         continues it once the image is there."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection() {
     assert!(help_of_start(true).contains(
-        "A Dockerfile whose\nbase image is on the machine, and whose steps fetch nothing, is \
-         built with\nno connection to the internet."
+        "A\nDockerfile whose base image is on the machine, and whose steps fetch\nnothing, is \
+         built with no connection to the internet."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does_not_hold() {
     assert!(help_of_start(true).contains(
-        "cladenc does not ask Docker to fetch a base\nimage and cannot forbid it: Docker \
-         fetches a base image that is not on the\nmachine, from the registry of its name."
+        "cladenc does not ask\nDocker to fetch a base image and cannot forbid it: Docker fetches \
+         a base\nimage that is not on the machine, from the registry of its name."
     ));
 }
 
@@ -307,7 +311,7 @@ fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does
 fn the_long_help_of_start_says_that_resume_builds_no_image() {
     assert!(
         help_of_start(true)
-            .contains("`cladenc resume` starts its containers from\nit and builds nothing.\n")
+            .contains("`cladenc resume` starts\nits containers from it and builds nothing.\n")
     );
 }
 
@@ -323,7 +327,8 @@ fn the_long_help_of_start_says_what_each_way_a_harness_ends_means() {
     let help = help_of_start(true);
     let endings = [
         "  exit status 0     the procreation created a harness\n",
-        "  exit status 125   Docker did not start the container: the search stops",
+        "  exit status 125   Docker did not start the container: the \
+         directed\n                    evolution stops",
         "  any other status  the procreation failed\n",
         "  the time limit    the container is removed",
     ];
@@ -346,7 +351,8 @@ fn the_long_help_of_start_says_what_each_way_a_build_ends_means() {
     let help = help_of_start(true);
     let endings = [
         "  exit status 0     the harness is built\n",
-        "  exit status 125   Docker did not start the container: the search stops",
+        "  exit status 125   Docker did not start the container: the \
+         directed\n                    evolution stops",
         "  any other status  a child is recorded as build_failed",
         "  the time limit    the container is removed",
     ];
@@ -440,8 +446,8 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
 #[test]
 fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_run_directory() {
     assert!(help_of_start(true).contains(
-        "The tasks are copied into\nbenchmarks in the run directory when a search is started, each \
-         into a\ndirectory named after its benchmark"
+        "The tasks are copied into\nbenchmarks in the run directory when a directed evolution is \
+         started, each\ninto a directory named after its benchmark"
     ));
 }
 
@@ -459,10 +465,10 @@ fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_b
 }
 
 #[test]
-fn the_long_help_of_start_says_what_a_search_given_several_benchmarks_looks_for() {
+fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
     assert!(help_of_start(true).contains(
-        "A search that\nis given several tries its harnesses on the tasks of all of them, and \
-         looks\nfor the one harness that passes the largest share of those tasks."
+        "A\ndirected evolution that is given several tries its harnesses on the tasks\nof all of \
+         them, and looks for the one harness that passes the largest share\nof those tasks."
     ));
 }
 
@@ -470,15 +476,15 @@ fn the_long_help_of_start_says_what_a_search_given_several_benchmarks_looks_for(
 fn the_long_help_of_start_says_that_every_task_counts_the_same() {
     assert!(
         help_of_start(true)
-            .contains("Every\ntask counts the same, so a benchmark with more tasks weighs more.")
+            .contains("Every task counts the same, so a benchmark with more tasks\nweighs more.")
     );
 }
 
 #[test]
-fn the_long_help_of_start_says_how_a_task_of_a_search_is_known() {
+fn the_long_help_of_start_says_how_a_task_of_a_directed_evolution_is_known() {
     assert!(help_of_start(true).contains(
-        "a task of a search is known by the two together,\nas\n\n    <BENCHMARK>/<TASK>\n\nso \
-         two benchmarks may each hold a task of the same id."
+        "a task of a directed\nevolution is known by the two together, as\n\n    \
+         <BENCHMARK>/<TASK>\n\nso two benchmarks may each hold a task of the same id."
     ));
 }
 
@@ -528,12 +534,12 @@ fn the_help_of_every_sub_command_lists_its_flags_in_alphabetical_order() {
 }
 
 #[test]
-fn the_help_of_cladenc_names_start_as_the_sub_command_that_starts_a_search() {
+fn the_help_of_cladenc_names_start_as_the_sub_command_that_starts_a_directed_evolution() {
     assert!(
         Cli::command()
             .render_help()
             .to_string()
-            .contains("  start   Start a new search")
+            .contains("  start   Start a new directed evolution")
     );
 }
 

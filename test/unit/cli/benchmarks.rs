@@ -169,7 +169,7 @@ fn a_benchmark_given_from_the_working_directory_is_made_absolute() {
 }
 
 #[test]
-fn a_task_of_a_search_is_known_by_the_name_of_its_benchmark_and_its_id() {
+fn a_task_of_a_directed_evolution_is_known_by_the_name_of_its_benchmark_and_its_id() {
     assert_eq!(
         settings_of(from_the_working_directory).tasks(),
         ["benchmark/add-a-flag", "benchmark/fix-the-parser"]
@@ -194,7 +194,7 @@ fn a_benchmark_given_through_a_symbolic_link_is_named_after_the_directory_it_lea
 }
 
 #[test]
-fn a_search_given_two_benchmarks_has_the_tasks_of_both() {
+fn a_directed_evolution_given_two_benchmarks_has_the_tasks_of_both() {
     assert_eq!(
         settings_of(with_a_second).tasks(),
         [
@@ -207,13 +207,13 @@ fn a_search_given_two_benchmarks_has_the_tasks_of_both() {
 }
 
 #[test]
-fn two_benchmarks_that_each_hold_a_task_of_the_same_id_give_the_search_two_tasks() {
+fn two_benchmarks_that_each_hold_a_task_of_the_same_id_give_the_directed_evolution_two_tasks() {
     let tasks = settings_of(with_a_second).tasks();
     assert_eq!(tasks.iter().filter(|task| task.ends_with("/t1")).count(), 2);
 }
 
 #[test]
-fn the_benchmarks_of_a_search_are_in_the_order_of_their_names_and_not_as_they_were_given() {
+fn the_benchmarks_of_a_directed_evolution_are_in_the_order_of_their_names_and_not_as_given() {
     let settings = settings_of(|directory, benchmarks| {
         benchmarks.insert(
             0,

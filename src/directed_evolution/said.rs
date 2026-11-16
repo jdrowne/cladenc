@@ -116,7 +116,7 @@ impl Display for Said<'_> {
             ),
             Self::Removed { containers } => write!(
                 formatter,
-                "removed {} that the search left running",
+                "removed {} that the directed evolution left running",
                 counted(*containers, "container", "containers")
             ),
             Self::Continuing {
@@ -126,8 +126,8 @@ impl Display for Said<'_> {
                 harnesses,
             } => write!(
                 formatter,
-                "continuing the search in {}, which has started {started} of its {budget} \
-                 assessments and holds {}",
+                "continuing the directed evolution in {}, which has started {started} of its \
+                 {budget} assessments and holds {}",
                 run_directory.display(),
                 counted(*harnesses, "harness", "harnesses")
             ),
@@ -136,7 +136,8 @@ impl Display for Said<'_> {
                 directory,
             } => write!(
                 formatter,
-                "the search had finished: its best harness is harness {best_harness}, kept in {}",
+                "the directed evolution had finished: its best harness is harness \
+                 {best_harness}, kept in {}",
                 directory.display()
             ),
             Self::Building => write!(formatter, "building the progenitor"),
@@ -213,7 +214,7 @@ impl Display for Said<'_> {
                 let why = if *asked {
                     "asked to stop"
                 } else {
-                    "stopping the search"
+                    "stopping the directed evolution"
                 };
                 write!(
                     formatter,
@@ -228,8 +229,8 @@ impl Display for Said<'_> {
                 directory,
             } => write!(
                 formatter,
-                "the search finished with {} started and {}: its best harness is harness \
-                 {best_harness}, kept in {}",
+                "the directed evolution finished with {} started and {}: its best harness is \
+                 harness {best_harness}, kept in {}",
                 counted(*assessments, "assessment", "assessments"),
                 counted(*harnesses, "harness", "harnesses"),
                 directory.display()

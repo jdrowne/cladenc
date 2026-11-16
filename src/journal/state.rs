@@ -73,7 +73,7 @@ pub fn read(run_directory: &Path) -> Result<State, JournalError> {
     for record in records {
         let (line, record) = record?;
         if state.best_harness.is_some() {
-            return Err(JournalError::AfterSearchFinished { line });
+            return Err(JournalError::AfterDirectedEvolutionFinished { line });
         }
         state.apply(line, record)?;
     }
@@ -117,7 +117,9 @@ impl State {
                 let finished = Started::Assessment { harness, task };
                 self.unfinished.retain(|(_, action)| *action != finished);
             }
-            Record::SearchFinished { best_harness } => self.best_harness = Some(best_harness),
+            Record::DirectedEvolutionFinished { best_harness } => {
+                self.best_harness = Some(best_harness)
+            }
         }
         Ok(())
     }

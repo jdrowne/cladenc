@@ -107,7 +107,7 @@ pub enum Record {
         task: String,
         outcome: AssessmentOutcome,
     },
-    SearchFinished {
+    DirectedEvolutionFinished {
         best_harness: HarnessId,
     },
 }

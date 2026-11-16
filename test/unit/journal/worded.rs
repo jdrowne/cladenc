@@ -73,10 +73,10 @@ fn a_child_out_of_order_is_worded() {
 }
 
 #[test]
-fn a_record_after_the_search_finished_is_worded() {
+fn a_record_after_the_directed_evolution_finished_is_worded() {
     assert_eq!(
-        worded(JournalError::AfterSearchFinished { line: 3 }),
-        "line 3 of its journal comes after the search finished"
+        worded(JournalError::AfterDirectedEvolutionFinished { line: 3 }),
+        "line 3 of its journal comes after the directed evolution finished"
     );
 }
 

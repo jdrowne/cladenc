@@ -69,20 +69,20 @@ fn resumed_once_the_machine_holds_the_image(stopped: &Stopped) -> Output {
 }
 
 #[test]
-fn a_search_whose_image_the_machine_does_not_hold_exits_with_1() {
+fn a_directed_evolution_whose_image_the_machine_does_not_hold_exits_with_1() {
     assert_eq!(stopped().output.status.code(), Some(1));
 }
 
 #[test]
-fn a_search_whose_image_the_machine_does_not_hold_stops_at_its_first_container() {
+fn a_directed_evolution_whose_image_the_machine_does_not_hold_stops_at_its_first_container() {
     let stopped = stopped();
     let said = String::from_utf8_lossy(&stopped.output.stderr);
     assert_eq!(
         said.lines().last().unwrap_or_default(),
         format!(
-            "cladenc: the search stopped before its end: the assessment of harness 0 on task \
-             benchmark/t1 could not be carried out: Docker did not start its container, and {} \
-             holds what Docker said",
+            "cladenc: the directed evolution stopped before its end: the assessment of harness 0 \
+             on task benchmark/t1 could not be carried out: Docker did not start its container, \
+             and {} holds what Docker said",
             kept_of_what_docker_said(&stopped).display()
         )
     );
@@ -99,7 +99,7 @@ fn docker_does_not_look_in_a_registry_for_an_image_the_machine_does_not_hold() {
 }
 
 #[test]
-fn a_search_that_stopped_for_its_image_is_continued_once_the_machine_holds_the_image() {
+fn a_directed_evolution_that_stopped_for_its_image_is_continued_once_the_machine_holds_the_image() {
     let stopped = stopped();
     assert_eq!(
         resumed_once_the_machine_holds_the_image(&stopped)
@@ -110,7 +110,7 @@ fn a_search_that_stopped_for_its_image_is_continued_once_the_machine_holds_the_i
 }
 
 #[test]
-fn a_search_continued_once_the_machine_holds_its_image_prints_the_directory_of_a_harness() {
+fn a_directed_evolution_continued_once_its_image_is_there_prints_the_directory_of_a_harness() {
     let stopped = stopped();
     let resumed = resumed_once_the_machine_holds_the_image(&stopped);
     let harnesses = stopped.directory.path().join("run/harnesses");

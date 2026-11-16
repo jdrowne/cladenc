@@ -234,18 +234,18 @@ fn a_machine_that_does_not_hold_timeout_is_told_that_the_build_could_not_be_carr
             .lines()
             .last()
             .unwrap_or_default(),
-        "cladenc: the image of the search was not built: its build could not be carried out: No \
-         such file or directory (os error 2)"
+        "cladenc: the image of the directed evolution was not built: its build could not be \
+         carried out: No such file or directory (os error 2)"
     );
 }
 
 #[test]
-fn a_search_given_a_dockerfile_exits_with_0() {
+fn a_directed_evolution_given_a_dockerfile_exits_with_0() {
     assert_eq!(ran(SOLVES_T1).status, Some(0));
 }
 
 #[test]
-fn a_search_given_a_dockerfile_prints_the_harness_made_in_the_image_it_built() {
+fn a_directed_evolution_given_a_dockerfile_prints_the_harness_made_in_the_image_it_built() {
     let ran = ran(SOLVES_T1);
     assert_eq!(
         ran.output,
@@ -262,7 +262,7 @@ fn the_image_cladenc_builds_is_named_cladenc_and_sixteen_hexadecimal_digits() {
 }
 
 #[test]
-fn the_image_stays_on_the_machine_when_the_search_ends() {
+fn the_image_stays_on_the_machine_when_the_directed_evolution_ends() {
     assert!(docker_holds(name_of_the_image(&ran(SOLVES_T1))));
 }
 
@@ -281,14 +281,9 @@ fn a_dockerfile_that_is_not_built_exits_with_2() {
 
 #[test]
 fn a_dockerfile_that_is_not_built_is_reported_last_on_standard_error() {
-    assert!(
-        ran(FAILS)
-            .said
-            .lines()
-            .last()
-            .unwrap()
-            .starts_with("cladenc: the image of the search was not built: its build exited with ")
-    );
+    assert!(ran(FAILS).said.lines().last().unwrap().starts_with(
+        "cladenc: the image of the directed evolution was not built: its build exited with "
+    ));
 }
 
 #[test]

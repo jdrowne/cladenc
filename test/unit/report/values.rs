@@ -134,7 +134,7 @@ fn the_best_harness_reported_is_the_created_harness_with_the_largest_lower_bound
 }
 
 #[test]
-fn the_model_reported_is_the_one_the_search_was_started_with() {
+fn the_model_reported_is_the_one_the_directed_evolution_was_started_with() {
     let report = report(&Genealogy::new());
     assert_eq!(
         (report.model.as_str(), report.model_url.as_str()),
@@ -188,7 +188,7 @@ fn a_progenitor_that_awaits_its_build_is_reported_as_being_created() {
 }
 
 #[test]
-fn a_search_whose_progenitor_awaits_its_build_reports_harness_0_as_its_best() {
+fn a_directed_evolution_whose_progenitor_awaits_its_build_reports_harness_0_as_its_best() {
     assert_eq!(report(&Genealogy::unbuilt()).best_harness, 0);
 }
 

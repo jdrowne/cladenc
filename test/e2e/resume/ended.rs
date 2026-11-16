@@ -69,12 +69,14 @@ fn resume_on_a_run_that_ended_leaves_the_journal_unchanged() {
 }
 
 #[test]
-fn resume_on_a_run_that_ended_says_on_standard_error_that_the_search_had_finished() {
+fn resume_on_a_run_that_ended_says_on_standard_error_that_the_directed_evolution_had_finished() {
     let (directory, _run) = ended();
     assert!(
         String::from_utf8(resume(directory.path()).stderr)
             .unwrap()
-            .starts_with("cladenc: the search had finished: its best harness is harness ")
+            .starts_with(
+                "cladenc: the directed evolution had finished: its best harness is harness "
+            )
     );
 }
 

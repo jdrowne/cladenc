@@ -8,7 +8,7 @@ use std::sync::atomic::AtomicBool;
 use clap::builder::NonEmptyStringValueParser;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
-use crate::search::{self, Found, SearchError};
+use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 
 pub use checks::Refused;
 
@@ -16,7 +16,8 @@ pub use checks::Refused;
 #[command(
     name = "cladenc",
     version,
-    about = "Searches for a better agentic coding harness by letting harnesses modify themselves",
+    about = "Makes a better agentic coding harness by directed evolution, letting harnesses \
+             modify themselves",
     disable_help_subcommand = true
 )]
 pub struct Cli {
@@ -27,16 +28,16 @@ pub struct Cli {
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
     #[command(
-        about = "Start a new search and print the directory of its best harness",
+        about = "Start a new directed evolution and print the directory of its best harness",
         after_long_help = contract::CONTRACT
     )]
     Start(Box<StartOptions>),
     #[command(
-        about = "Continue a search that stopped before its end",
+        about = "Continue a directed evolution that stopped before its end",
         after_long_help = contract::RESUMING
     )]
     Resume(ResumeOptions),
-    #[command(about = "Print the state of a search without changing it")]
+    #[command(about = "Print the state of a directed evolution without changing it")]
     Report(ReportOptions),
 }
 
@@ -176,7 +177,7 @@ pub struct ResumeOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The run directory of the search to continue"
+        help = "The run directory of the directed evolution to continue"
     )]
     pub run_dir: PathBuf,
 }
@@ -188,7 +189,7 @@ pub struct ReportOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The run directory of the search to report on"
+        help = "The run directory of the directed evolution to report on"
     )]
     pub run_dir: PathBuf,
 }
@@ -220,7 +221,7 @@ fn start(
         .settings()
         .map_err(|refused| (2, refused.to_string()))?;
     let run_directory = mountable(&options.run_dir)?;
-    search::search(&settings, &run_directory, stop, writer).map_err(stopped)
+    directed_evolution::start(&settings, &run_directory, stop, writer).map_err(stopped)
 }
 
 fn resume(
@@ -229,7 +230,7 @@ fn resume(
     writer: &mut dyn Write,
 ) -> Result<Found, (u8, String)> {
     let run_directory = mountable(&options.run_dir)?;
-    search::resume(&run_directory, stop, writer).map_err(stopped)
+    directed_evolution::resume(&run_directory, stop, writer).map_err(stopped)
 }
 
 fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
@@ -242,7 +243,7 @@ fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
                 report.table()
             }
         })
-        .map_err(|error| stopped(SearchError::Unusable(error)))
+        .map_err(|error| stopped(DirectedEvolutionError::Unusable(error)))
 }
 
 fn directory(found: Found) -> String {
@@ -268,17 +269,17 @@ fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
     })
 }
 
-fn stopped(error: SearchError) -> (u8, String) {
+fn stopped(error: DirectedEvolutionError) -> (u8, String) {
     let status = match error {
-        SearchError::Io(_)
-        | SearchError::Unusable(_)
-        | SearchError::Key(_)
-        | SearchError::Left(_)
-        | SearchError::Image(_) => 2,
-        SearchError::Journal(_)
-        | SearchError::Asked
-        | SearchError::Build(_)
-        | SearchError::Action { .. } => 1,
+        DirectedEvolutionError::Io(_)
+        | DirectedEvolutionError::Unusable(_)
+        | DirectedEvolutionError::Key(_)
+        | DirectedEvolutionError::Left(_)
+        | DirectedEvolutionError::Image(_) => 2,
+        DirectedEvolutionError::Journal(_)
+        | DirectedEvolutionError::Asked
+        | DirectedEvolutionError::Build(_)
+        | DirectedEvolutionError::Action { .. } => 1,
     };
     (status, error.to_string())
 }

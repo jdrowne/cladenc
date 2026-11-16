@@ -117,7 +117,7 @@ fn resume_removes_the_container_that_a_cladenc_killed_outright_left_running() {
 }
 
 #[test]
-fn after_cladenc_was_killed_outright_resume_finishes_the_search_and_exits_with_0() {
+fn after_cladenc_was_killed_outright_resume_finishes_the_directed_evolution_and_exits_with_0() {
     let (_left, output) = resumed_after_being_killed_outright();
     assert_eq!(output.status.code(), Some(0));
 }
@@ -130,12 +130,12 @@ fn resume_says_how_many_containers_it_removed() {
             .lines()
             .next()
             .unwrap_or_default(),
-        "cladenc: removed 1 container that the search left running"
+        "cladenc: removed 1 container that the directed evolution left running"
     );
 }
 
 #[test]
-fn a_search_reached_through_a_symbolic_link_has_its_containers_removed_too() {
+fn a_directed_evolution_reached_through_a_symbolic_link_has_its_containers_removed_too() {
     let left = killed_outright();
     let link = left.directory.path().join("link-to-the-run-directory");
     symlink(left.directory.path().join("run"), &link).unwrap();
@@ -151,13 +151,13 @@ fn resume_says_nothing_of_containers_where_none_was_left() {
 }
 
 #[test]
-fn resume_asks_docker_first_for_the_containers_that_carry_the_label_of_its_search() {
+fn resume_asks_docker_first_for_the_containers_that_carry_the_label_of_its_directed_evolution() {
     let directory = stopped();
     let run = fs::canonicalize(directory.path().join("run")).unwrap();
     resumed_with_the_docker_of("fake", &directory);
     let arguments = fs::read_to_string(directory.path().join("arguments-of-docker")).unwrap();
     assert!(arguments.starts_with(&format!(
-        "ps\n--all\n--quiet\n--filter\nlabel=cladenc.search={}\n",
+        "ps\n--all\n--quiet\n--filter\nlabel=cladenc.directed-evolution={}\n",
         run.display()
     )));
 }
@@ -174,8 +174,8 @@ fn a_resume_whose_docker_cannot_be_asked_exits_with_2() {
 fn a_resume_whose_docker_cannot_be_asked_says_what_docker_said() {
     assert_eq!(
         last_line_said(&resumed_with_a_docker_that("unreachable")),
-        "cladenc: the containers that the search left running cannot be removed: Cannot connect \
-         to the Docker daemon"
+        "cladenc: the containers that the directed evolution left running cannot be removed: \
+         Cannot connect to the Docker daemon"
     );
 }
 
@@ -200,8 +200,8 @@ fn a_resume_whose_docker_does_not_remove_a_container_exits_with_2() {
 fn a_resume_whose_docker_does_not_remove_a_container_says_what_docker_said() {
     assert_eq!(
         last_line_said(&resumed_with_a_docker_that("unremoved")),
-        "cladenc: the containers that the search left running cannot be removed: cannot remove \
-         container 0123456789ab"
+        "cladenc: the containers that the directed evolution left running cannot be removed: \
+         cannot remove container 0123456789ab"
     );
 }
 

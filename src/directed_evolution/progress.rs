@@ -6,7 +6,7 @@ use std::thread::Scope;
 
 use super::action::{Ended, carry_out};
 use super::said::say;
-use super::{Found, Said, SearchError, Shared};
+use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
 use crate::containers::ContainerError;
 use crate::genealogy::Genealogy;
@@ -23,7 +23,7 @@ pub(super) struct Progress<'a> {
     initial_left: u64,
     initial_ended: bool,
     running: u64,
-    failure: Option<SearchError>,
+    failure: Option<DirectedEvolutionError>,
     stopping: bool,
 }
 
@@ -96,7 +96,7 @@ impl<'a> Progress<'a> {
 
     pub(super) fn record(&mut self, record: &Record) {
         if let Err(error) = self.journal.append(record) {
-            self.fail(SearchError::Journal(error));
+            self.fail(DirectedEvolutionError::Journal(error));
         }
     }
 
@@ -199,19 +199,19 @@ impl<'a> Progress<'a> {
             action: &action,
             error: &error,
         });
-        self.fail(SearchError::Action { action, error });
+        self.fail(DirectedEvolutionError::Action { action, error });
     }
 
     pub(super) fn finish(
         mut self,
         workspace: &Workspace,
         stop: &AtomicBool,
-    ) -> Result<Found, SearchError> {
+    ) -> Result<Found, DirectedEvolutionError> {
         if self.halted(stop) {
-            return Err(self.failure.unwrap_or(SearchError::Asked));
+            return Err(self.failure.unwrap_or(DirectedEvolutionError::Asked));
         }
         let best_harness = self.artificial_selection.best_harness(&self.genealogy);
-        self.record(&Record::SearchFinished { best_harness });
+        self.record(&Record::DirectedEvolutionFinished { best_harness });
         let found = Found {
             best_harness,
             directory: workspace.harness(best_harness),
@@ -269,7 +269,7 @@ impl<'a> Progress<'a> {
         started
     }
 
-    fn fail(&mut self, error: SearchError) {
+    fn fail(&mut self, error: DirectedEvolutionError) {
         self.failure = self.failure.take().or(Some(error));
     }
 }

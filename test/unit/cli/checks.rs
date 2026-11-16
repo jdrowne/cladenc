@@ -100,7 +100,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
 }
 
 #[test]
-fn two_searches_started_from_one_command_line_are_given_different_seeds() {
+fn two_directed_evolutions_started_from_one_command_line_are_given_different_seeds() {
     let directory = test_inputs::temporary_directory();
     let options = options(directory.path());
     assert_ne!(
@@ -158,7 +158,7 @@ fn the_image_and_the_run_command_are_settings_as_they_were_given() {
 }
 
 #[test]
-fn a_search_given_an_image_has_no_dockerfile_and_no_time_limit_of_a_build() {
+fn a_directed_evolution_given_an_image_has_no_dockerfile_and_no_time_limit_of_a_build() {
     let settings = checked(|_, _| {}).unwrap();
     assert_eq!(
         (settings.dockerfile, settings.docker_build_timeout),
@@ -186,13 +186,13 @@ fn a_dockerfile_is_a_setting_with_the_time_limit_of_its_build() {
 }
 
 #[test]
-fn a_search_given_a_dockerfile_is_given_an_image_named_cladenc_and_sixteen_hexadecimal_digits() {
+fn the_image_built_from_a_dockerfile_is_named_cladenc_and_sixteen_hexadecimal_digits() {
     let settings = checked(with_a_dockerfile).unwrap();
     assert!(is_named_by_cladenc(&settings.docker_image));
 }
 
 #[test]
-fn two_searches_given_a_dockerfile_are_given_images_of_different_names() {
+fn two_directed_evolutions_given_a_dockerfile_are_given_images_of_different_names() {
     assert_ne!(
         checked(with_a_dockerfile).unwrap().docker_image,
         checked(with_a_dockerfile).unwrap().docker_image

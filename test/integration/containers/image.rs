@@ -100,7 +100,7 @@ fn a_build_that_runs_past_its_time_limit_is_ended() {
 }
 
 #[test]
-fn a_build_is_ended_when_the_search_is_asked_to_stop() {
+fn a_build_is_ended_when_the_directed_evolution_is_asked_to_stop() {
     assert!(matches!(
         built_within(MADE, 60, true).result,
         Err(ContainerError::Stopped)

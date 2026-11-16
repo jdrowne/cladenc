@@ -37,9 +37,9 @@ fn a_run_a_container_stopped_says_which_assessment_and_where_what_docker_said_is
     assert_eq!(
         said_last(&mut start(directory.path(), "exit 125")),
         format!(
-            "cladenc: the search stopped before its end: the assessment of harness 0 on task benchmark/t1 \
-             could not be carried out: Docker did not start its container, and {} holds what \
-             Docker said",
+            "cladenc: the directed evolution stopped before its end: the assessment of harness 0 \
+             on task benchmark/t1 could not be carried out: Docker did not start its container, \
+             and {} holds what Docker said",
             directory
                 .path()
                 .join("run/running/assessment-0-benchmark+t1/stderr")
@@ -62,8 +62,8 @@ fn a_run_stopped_by_a_docker_that_a_signal_ended_says_which_assessment_and_which
         .env("CLADENC_TEST_SIGNAL_OF_DOCKER", "TERM");
     assert_eq!(
         said_last(&mut start),
-        "cladenc: the search stopped before its end: the assessment of harness 0 on task benchmark/t1 was \
-         ended by signal 15"
+        "cladenc: the directed evolution stopped before its end: the assessment of harness 0 on \
+         task benchmark/t1 was ended by signal 15"
     );
 }
 
@@ -74,8 +74,8 @@ fn a_run_on_a_machine_where_docker_is_not_found_says_that_its_assessment_could_n
     let mut start = start(directory.path(), "exit 0");
     start.env("PATH", directory.path());
     assert!(said_last(&mut start).starts_with(
-        "cladenc: the search stopped before its end: the assessment of harness 0 on task benchmark/t1 \
-         could not be carried out: "
+        "cladenc: the directed evolution stopped before its end: the assessment of harness 0 on \
+         task benchmark/t1 could not be carried out: "
     ));
 }
 

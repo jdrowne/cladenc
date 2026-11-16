@@ -35,6 +35,11 @@ mod containers {
     mod worded;
 }
 
+mod directed_evolution {
+    mod said;
+    mod worded;
+}
+
 mod genealogy {
     mod assessment;
     mod build;
@@ -69,9 +74,4 @@ mod report {
     mod reading;
     mod table;
     mod values;
-}
-
-mod search {
-    mod said;
-    mod worded;
 }

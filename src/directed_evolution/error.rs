@@ -7,7 +7,7 @@ use crate::containers::ContainerError;
 use crate::journal::{JournalError, Started};
 
 #[derive(Debug)]
-pub enum SearchError {
+pub enum DirectedEvolutionError {
     Io(io::Error),
     Unusable(JournalError),
     Key(PathBuf),
@@ -22,7 +22,7 @@ pub enum SearchError {
     },
 }
 
-impl Display for SearchError {
+impl Display for DirectedEvolutionError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Io(error) => write!(formatter, "the run directory cannot be made: {error}"),
@@ -37,32 +37,33 @@ impl Display for SearchError {
             ),
             Self::Left(error) => write!(
                 formatter,
-                "the containers that the search left running cannot be removed: {error}"
+                "the containers that the directed evolution left running cannot be removed: {error}"
             ),
             Self::Image(error) => write!(
                 formatter,
-                "the image of the search was not built: its build {error}"
+                "the image of the directed evolution was not built: its build {error}"
             ),
             Self::Journal(error) => write!(
                 formatter,
-                "the search stopped before its end: its journal could not be written: {error}"
+                "the directed evolution stopped before its end: its journal could not be \
+                 written: {error}"
             ),
             Self::Asked => write!(
                 formatter,
-                "the search stopped before its end: it was asked to stop"
+                "the directed evolution stopped before its end: it was asked to stop"
             ),
             Self::Build(error) => write!(
                 formatter,
-                "the search stopped before its end: the build of the progenitor {error}"
+                "the directed evolution stopped before its end: the build of the progenitor {error}"
             ),
             Self::Action { action, error } => {
                 write!(
                     formatter,
-                    "the search stopped before its end: {action} {error}"
+                    "the directed evolution stopped before its end: {action} {error}"
                 )
             }
         }
     }
 }
 
-impl Error for SearchError {}
+impl Error for DirectedEvolutionError {}

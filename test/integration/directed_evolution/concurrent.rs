@@ -3,8 +3,8 @@ use std::io;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::directed_evolution;
 use cladenc::journal::{self, Record, Settings};
-use cladenc::search;
 
 fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     let directory = test_inputs::temporary_directory();
@@ -36,7 +36,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     };
     change(&mut settings);
     let run_directory = directory.path().join("run");
-    search::search(
+    directed_evolution::start(
         &settings,
         &run_directory,
         &AtomicBool::new(false),
@@ -60,7 +60,9 @@ fn most_running_at_once(records: &[Record]) -> usize {
                 most = most.max(running);
             }
             Record::ProcreationFinished { .. } | Record::AssessmentFinished { .. } => running -= 1,
-            Record::Run { .. } | Record::ProgenitorBuilt | Record::SearchFinished { .. } => {}
+            Record::Run { .. }
+            | Record::ProgenitorBuilt
+            | Record::DirectedEvolutionFinished { .. } => {}
         }
     }
     most

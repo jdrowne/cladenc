@@ -1,9 +1,9 @@
 use std::path::Path;
 
 use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::Said;
 use cladenc::genealogy::{AssessmentOutcome, ProcreationOutcome};
 use cladenc::journal::Started;
-use cladenc::search::Said;
 use cladenc::workspace::Workspace;
 
 fn workspace() -> Workspace {
@@ -107,10 +107,10 @@ fn removed(containers: u64) -> String {
 }
 
 #[test]
-fn the_containers_a_search_left_running_are_said_to_be_removed_with_their_number() {
+fn the_containers_a_directed_evolution_left_running_are_said_to_be_removed_with_their_number() {
     assert_eq!(
         removed(2),
-        "removed 2 containers that the search left running"
+        "removed 2 containers that the directed evolution left running"
     );
 }
 
@@ -118,16 +118,16 @@ fn the_containers_a_search_left_running_are_said_to_be_removed_with_their_number
 fn one_container_is_not_said_to_be_several() {
     assert_eq!(
         removed(1),
-        "removed 1 container that the search left running"
+        "removed 1 container that the directed evolution left running"
     );
 }
 
 #[test]
-fn a_search_that_is_continued_is_said_with_how_far_it_had_got() {
+fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
     assert_eq!(
         continuing(2),
-        "continuing the search in /run, which has started 5 of its 800 assessments and holds 2 \
-         harnesses"
+        "continuing the directed evolution in /run, which has started 5 of its 800 assessments \
+         and holds 2 harnesses"
     );
 }
 
@@ -135,20 +135,21 @@ fn a_search_that_is_continued_is_said_with_how_far_it_had_got() {
 fn one_harness_is_not_said_to_be_several() {
     assert_eq!(
         continuing(1),
-        "continuing the search in /run, which has started 5 of its 800 assessments and holds 1 \
-         harness"
+        "continuing the directed evolution in /run, which has started 5 of its 800 assessments \
+         and holds 1 harness"
     );
 }
 
 #[test]
-fn a_search_that_had_finished_is_said_with_its_best_harness() {
+fn a_directed_evolution_that_had_finished_is_said_with_its_best_harness() {
     assert_eq!(
         Said::HadFinished {
             best_harness: 3,
             directory: Path::new("/run/harnesses/3"),
         }
         .to_string(),
-        "the search had finished: its best harness is harness 3, kept in /run/harnesses/3"
+        "the directed evolution had finished: its best harness is harness 3, kept in \
+         /run/harnesses/3"
     );
 }
 
@@ -306,7 +307,7 @@ fn an_assessment_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn an_action_that_stops_the_search_is_said_with_what_became_of_it() {
+fn an_action_that_stops_the_directed_evolution_is_said_with_what_became_of_it() {
     assert_eq!(
         Said::Failed {
             action: &assessment(),
@@ -318,7 +319,7 @@ fn an_action_that_stops_the_search_is_said_with_what_became_of_it() {
 }
 
 #[test]
-fn a_search_asked_to_stop_is_said_with_the_number_of_containers_running() {
+fn a_directed_evolution_asked_to_stop_is_said_with_the_number_of_containers_running() {
     assert_eq!(
         Said::Stopping {
             asked: true,
@@ -330,19 +331,19 @@ fn a_search_asked_to_stop_is_said_with_the_number_of_containers_running() {
 }
 
 #[test]
-fn a_search_that_stops_over_a_failure_is_said_to_be_stopping() {
+fn a_directed_evolution_that_stops_over_a_failure_is_said_to_be_stopping() {
     assert_eq!(
         Said::Stopping {
             asked: false,
             running: 1,
         }
         .to_string(),
-        "stopping the search, with 1 container running"
+        "stopping the directed evolution, with 1 container running"
     );
 }
 
 #[test]
-fn the_end_of_a_search_is_said_with_its_best_harness_and_where_it_is_kept() {
+fn the_end_of_a_directed_evolution_is_said_with_its_best_harness_and_where_it_is_kept() {
     assert_eq!(
         Said::Finished {
             assessments: 800,
@@ -351,7 +352,7 @@ fn the_end_of_a_search_is_said_with_its_best_harness_and_where_it_is_kept() {
             directory: Path::new("/run/harnesses/12"),
         }
         .to_string(),
-        "the search finished with 800 assessments started and 31 harnesses: its best harness is \
-         harness 12, kept in /run/harnesses/12"
+        "the directed evolution finished with 800 assessments started and 31 harnesses: its best \
+         harness is harness 12, kept in /run/harnesses/12"
     );
 }

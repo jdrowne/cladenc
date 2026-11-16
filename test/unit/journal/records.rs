@@ -113,10 +113,10 @@ fn the_end_of_an_assessment_that_timed_out_is_written_as_timed_out() {
 }
 
 #[test]
-fn the_end_of_a_search_is_written_with_its_best_harness() {
+fn the_end_of_a_directed_evolution_is_written_with_its_best_harness() {
     assert_eq!(
-        line(&Record::SearchFinished { best_harness: 1 }),
-        r#"{"record":"search_finished","best_harness":1}"#
+        line(&Record::DirectedEvolutionFinished { best_harness: 1 }),
+        r#"{"record":"directed_evolution_finished","best_harness":1}"#
     );
 }
 
@@ -151,7 +151,7 @@ fn the_end_of_an_assessment_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_a_search_survives_being_written_and_read_back() {
-    let record = Record::SearchFinished { best_harness: 1 };
+fn the_end_of_a_directed_evolution_survives_being_written_and_read_back() {
+    let record = Record::DirectedEvolutionFinished { best_harness: 1 };
     assert_eq!(read_back(&record), record);
 }

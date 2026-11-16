@@ -75,7 +75,7 @@ fn a_run_whose_progenitor_does_not_build_says_how_the_build_ended() {
     assert_eq!(
         String::from_utf8(output.stderr).unwrap().lines().last(),
         Some(
-            "cladenc: the search stopped before its end: \
+            "cladenc: the directed evolution stopped before its end: \
              the build of the progenitor exited with status 3"
         )
     );

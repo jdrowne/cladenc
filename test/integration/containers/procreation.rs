@@ -167,7 +167,7 @@ fn a_harness_is_given_the_key_the_model_is_called_with() {
 }
 
 #[test]
-fn a_harness_of_a_search_with_no_key_is_given_none() {
+fn a_harness_of_a_directed_evolution_with_no_key_is_given_none() {
     assert_eq!(
         left_in_the_child("echo \"${CLADENC_MODEL_KEY-none}\" > given", "given"),
         "none\n"

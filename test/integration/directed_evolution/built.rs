@@ -6,11 +6,11 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
-use cladenc::search::{self, Found, SearchError};
 use tempfile::TempDir;
 
-type Searched = (TempDir, Result<Found, SearchError>);
+type Evolved = (TempDir, Result<Found, DirectedEvolutionError>);
 
 const COUNT_THE_BUILDS: &str = "echo built >> built";
 const BUILD_ONLY_WHAT_SOLVES_NOTHING: &str = "[ ! -e solved ]";
@@ -39,11 +39,11 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
     }
 }
 
-fn searched_with_its_stop_flag_at(build_command: &str, stop: bool) -> Searched {
+fn evolved_with_its_stop_flag_at(build_command: &str, stop: bool) -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), build_command);
     let run_directory = directory.path().join("run");
-    let found = search::search(
+    let found = directed_evolution::start(
         &settings,
         &run_directory,
         &AtomicBool::new(stop),
@@ -52,35 +52,35 @@ fn searched_with_its_stop_flag_at(build_command: &str, stop: bool) -> Searched {
     (directory, found)
 }
 
-fn searched(build_command: &str) -> Searched {
-    searched_with_its_stop_flag_at(build_command, false)
+fn evolved(build_command: &str) -> Evolved {
+    evolved_with_its_stop_flag_at(build_command, false)
 }
 
-fn resumed_after_its_progenitor_did_not_build() -> Searched {
+fn resumed_after_its_progenitor_did_not_build() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), BUILD_UNLESS_TOLD_NOT_TO);
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     fs::write(settings.progenitor.join("do-not-build"), "").unwrap();
-    let _stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
     fs::remove_file(run_directory.join("harnesses/0/do-not-build")).unwrap();
-    let resumed = search::resume(&run_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
-fn resumed_after_an_assessment_stopped_it() -> Searched {
+fn resumed_after_an_assessment_stopped_it() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), COUNT_THE_BUILDS);
     let run_directory = directory.path().join("run");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t1");
-    let _stopped = search::search(&settings, &run_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_on_no_more(&run_directory, "t1");
-    let resumed = search::resume(&run_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
-fn stopped_while_its_progenitor_is_built() -> Searched {
+fn stopped_while_its_progenitor_is_built() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
     let run_directory = directory.path().join("run");
@@ -91,18 +91,18 @@ fn stopped_while_its_progenitor_is_built() -> Searched {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        search::search(&settings, &run_directory, &stop, &mut io::sink())
+        directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink())
     });
     (directory, found)
 }
 
-fn said_by_a_search_built_with(build_command: &str) -> (TempDir, String) {
+fn said_by_a_directed_evolution_built_with(build_command: &str) -> (TempDir, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), build_command);
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _found = search::search(&settings, &run_directory, &stop, &mut written);
+    let _found = directed_evolution::start(&settings, &run_directory, &stop, &mut written);
     (directory, String::from_utf8(written).unwrap())
 }
 
@@ -117,7 +117,7 @@ fn builds_of(directory: &TempDir, harness: u64) -> String {
 
 #[test]
 fn the_build_of_the_progenitor_is_recorded_right_after_the_run_record() {
-    let (directory, _found) = searched(COUNT_THE_BUILDS);
+    let (directory, _found) = evolved(COUNT_THE_BUILDS);
     assert_eq!(
         journal_of(&directory).lines().nth(1),
         Some(r#"{"record":"progenitor_built"}"#)
@@ -125,26 +125,26 @@ fn the_build_of_the_progenitor_is_recorded_right_after_the_run_record() {
 }
 
 #[test]
-fn the_progenitor_of_a_search_is_built_once() {
-    let (directory, _found) = searched(COUNT_THE_BUILDS);
+fn the_progenitor_of_a_directed_evolution_is_built_once() {
+    let (directory, _found) = evolved(COUNT_THE_BUILDS);
     assert_eq!(builds_of(&directory, 0), "built\n");
 }
 
 #[test]
 fn a_child_is_built_once_more_than_the_parent_it_was_copied_from() {
-    let (directory, _found) = searched(COUNT_THE_BUILDS);
+    let (directory, _found) = evolved(COUNT_THE_BUILDS);
     assert_eq!(builds_of(&directory, 1), "built\nbuilt\n");
 }
 
 #[test]
-fn a_search_that_builds_its_harnesses_returns_the_harness_the_samples_make_best() {
-    let (_directory, found) = searched(COUNT_THE_BUILDS);
+fn a_directed_evolution_that_builds_its_harnesses_returns_the_harness_the_samples_make_best() {
+    let (_directory, found) = evolved(COUNT_THE_BUILDS);
     assert_eq!(found.unwrap().best_harness, 1);
 }
 
 #[test]
 fn a_child_that_does_not_build_is_recorded_as_build_failed() {
-    let (directory, _found) = searched(BUILD_ONLY_WHAT_SOLVES_NOTHING);
+    let (directory, _found) = evolved(BUILD_ONLY_WHAT_SOLVES_NOTHING);
     assert!(
         journal_of(&directory)
             .contains(r#"{"record":"procreation_finished","child":1,"outcome":"build_failed"}"#)
@@ -152,28 +152,28 @@ fn a_child_that_does_not_build_is_recorded_as_build_failed() {
 }
 
 #[test]
-fn a_search_goes_on_to_its_end_past_a_child_that_did_not_build() {
-    let (_directory, found) = searched(BUILD_ONLY_WHAT_SOLVES_NOTHING);
+fn a_directed_evolution_goes_on_to_its_end_past_a_child_that_did_not_build() {
+    let (_directory, found) = evolved(BUILD_ONLY_WHAT_SOLVES_NOTHING);
     assert_eq!(found.unwrap().best_harness, 0);
 }
 
 #[test]
-fn a_progenitor_that_does_not_build_stops_the_search_with_the_status_of_its_build() {
-    let (_directory, found) = searched("exit 3");
+fn a_progenitor_that_does_not_build_stops_the_directed_evolution_with_the_status_of_its_build() {
+    let (_directory, found) = evolved("exit 3");
     assert!(matches!(
         found,
-        Err(SearchError::Build(ContainerError::Exit(3)))
+        Err(DirectedEvolutionError::Build(ContainerError::Exit(3)))
     ));
 }
 
 #[test]
-fn a_search_whose_progenitor_did_not_build_holds_only_its_run_record() {
-    let (directory, _found) = searched("exit 3");
+fn a_directed_evolution_whose_progenitor_did_not_build_holds_only_its_run_record() {
+    let (directory, _found) = evolved("exit 3");
     assert_eq!(journal_of(&directory).lines().count(), 1);
 }
 
 #[test]
-fn a_search_whose_progenitor_did_not_build_builds_it_when_resumed() {
+fn a_directed_evolution_whose_progenitor_did_not_build_builds_it_when_resumed() {
     let (directory, _resumed) = resumed_after_its_progenitor_did_not_build();
     assert_eq!(
         journal_of(&directory).lines().nth(1),
@@ -182,31 +182,31 @@ fn a_search_whose_progenitor_did_not_build_builds_it_when_resumed() {
 }
 
 #[test]
-fn a_search_whose_progenitor_was_built_on_resuming_goes_on_to_its_end() {
+fn a_directed_evolution_whose_progenitor_was_built_on_resuming_goes_on_to_its_end() {
     let (_directory, resumed) = resumed_after_its_progenitor_did_not_build();
     assert_eq!(resumed.unwrap().best_harness, 1);
 }
 
 #[test]
-fn a_resumed_search_whose_progenitor_was_built_does_not_build_it_again() {
+fn a_resumed_directed_evolution_whose_progenitor_was_built_does_not_build_it_again() {
     let (directory, _resumed) = resumed_after_an_assessment_stopped_it();
     assert_eq!(builds_of(&directory, 0), "built\n");
 }
 
 #[test]
-fn a_resumed_search_whose_progenitor_was_built_goes_on_to_its_end() {
+fn a_resumed_directed_evolution_whose_progenitor_was_built_goes_on_to_its_end() {
     let (_directory, resumed) = resumed_after_an_assessment_stopped_it();
     assert_eq!(resumed.unwrap().best_harness, 1);
 }
 
 #[test]
-fn a_search_asked_to_stop_while_its_progenitor_is_built_stops() {
+fn a_directed_evolution_asked_to_stop_while_its_progenitor_is_built_stops() {
     let (_directory, found) = stopped_while_its_progenitor_is_built();
-    assert!(matches!(found, Err(SearchError::Asked)));
+    assert!(matches!(found, Err(DirectedEvolutionError::Asked)));
 }
 
 #[test]
-fn a_search_asked_to_stop_while_its_progenitor_is_built_leaves_no_container_behind() {
+fn a_directed_evolution_asked_to_stop_while_its_progenitor_is_built_leaves_no_container_behind() {
     let (directory, _found) = stopped_while_its_progenitor_is_built();
     assert!(test_inputs::container_is_gone(
         &directory.path().join("run/harnesses/0/id")
@@ -214,26 +214,27 @@ fn a_search_asked_to_stop_while_its_progenitor_is_built_leaves_no_container_behi
 }
 
 #[test]
-fn a_search_asked_to_stop_before_it_starts_stops() {
-    let (_directory, found) = searched_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
-    assert!(matches!(found, Err(SearchError::Asked)));
+fn a_directed_evolution_asked_to_stop_before_it_starts_stops() {
+    let (_directory, found) = evolved_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
+    assert!(matches!(found, Err(DirectedEvolutionError::Asked)));
 }
 
 #[test]
-fn a_search_asked_to_stop_before_it_starts_does_not_build_its_progenitor() {
-    let (directory, _found) = searched_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
+fn a_directed_evolution_asked_to_stop_before_it_starts_does_not_build_its_progenitor() {
+    let (directory, _found) = evolved_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
     assert!(!directory.path().join("run/builds").exists());
 }
 
 #[test]
-fn a_search_says_that_it_builds_its_progenitor_and_then_that_it_is_built() {
-    let (_directory, said) = said_by_a_search_built_with(COUNT_THE_BUILDS);
+fn a_directed_evolution_says_that_it_builds_its_progenitor_and_then_that_it_is_built() {
+    let (_directory, said) = said_by_a_directed_evolution_built_with(COUNT_THE_BUILDS);
     assert!(said.contains("cladenc: building the progenitor\ncladenc: the progenitor is built\n"));
 }
 
 #[test]
-fn a_search_whose_progenitor_does_not_build_says_where_what_the_build_printed_is_kept() {
-    let (directory, said) = said_by_a_search_built_with("exit 3");
+fn a_directed_evolution_whose_progenitor_does_not_build_says_where_what_the_build_printed_is_kept()
+{
+    let (directory, said) = said_by_a_directed_evolution_built_with("exit 3");
     assert!(said.ends_with(&format!(
         "cladenc: the build of the progenitor exited with status 3: what it printed is kept in \
          {}\n",
@@ -242,8 +243,8 @@ fn a_search_whose_progenitor_does_not_build_says_where_what_the_build_printed_is
 }
 
 #[test]
-fn a_search_says_of_a_child_that_did_not_build_where_what_its_build_printed_is_kept() {
-    let (directory, said) = said_by_a_search_built_with(BUILD_ONLY_WHAT_SOLVES_NOTHING);
+fn a_directed_evolution_says_of_a_child_that_did_not_build_where_what_its_build_printed_is_kept() {
+    let (directory, said) = said_by_a_directed_evolution_built_with(BUILD_ONLY_WHAT_SOLVES_NOTHING);
     assert!(said.contains(&format!(
         "cladenc: the procreation of harness 1 by harness 0 made a harness that did not build: \
          what its build printed is kept in {}\n",

@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 
 pub(super) fn label(workspace: &Workspace) -> OsString {
     let run_directory = workspace.run_directory();
-    let mut label = OsString::from("cladenc.search=");
+    let mut label = OsString::from("cladenc.directed-evolution=");
     label.push(
         fs::canonicalize(run_directory)
             .as_deref()

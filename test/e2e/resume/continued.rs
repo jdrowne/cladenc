@@ -71,7 +71,7 @@ fn after_an_interrupt_stops_a_run_resume_prints_the_directory_of_a_harness() {
 }
 
 #[test]
-fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_search_finished() {
+fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolution_finished() {
     let directory = interrupted();
     resume(directory.path());
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
@@ -80,7 +80,7 @@ fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_search_finished()
             .lines()
             .last()
             .unwrap()
-            .starts_with(r#"{"record":"search_finished""#)
+            .starts_with(r#"{"record":"directed_evolution_finished""#)
     );
 }
 
@@ -97,7 +97,7 @@ fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
 }
 
 #[test]
-fn a_search_that_stops_again_under_resume_exits_with_1() {
+fn a_directed_evolution_that_stops_again_under_resume_exits_with_1() {
     let directory = test_inputs::temporary_directory();
     start(directory.path(), "exit 125").status().unwrap();
     assert_eq!(resume(directory.path()).status.code(), Some(1));

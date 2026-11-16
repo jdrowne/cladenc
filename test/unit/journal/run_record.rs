@@ -78,8 +78,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_10() {
-    assert_eq!(journal::FORMAT, 10);
+fn the_format_of_the_journal_is_11() {
+    assert_eq!(journal::FORMAT, 11);
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":10,"progenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":11,"progenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
@@ -108,7 +108,7 @@ fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_set
 }
 
 #[test]
-fn the_run_record_of_a_search_that_builds_its_harnesses_holds_the_build_command() {
+fn the_run_record_of_a_directed_evolution_that_builds_its_harnesses_holds_the_build_command() {
     assert!(
         run(built_with("make harness"))
             .line()
@@ -118,7 +118,7 @@ fn the_run_record_of_a_search_that_builds_its_harnesses_holds_the_build_command(
 }
 
 #[test]
-fn the_run_record_of_a_search_given_a_dockerfile_holds_it_with_its_image_and_its_time_limit() {
+fn the_run_record_holds_a_dockerfile_that_was_given_with_its_image_and_its_time_limit() {
     assert!(run(given_a_dockerfile()).line().unwrap().contains(concat!(
         r#""docker_image":"cladenc-0123456789abcdef","#,
         r#""dockerfile":"/abs/images/Dockerfile","docker_build_timeout":600,"#
@@ -142,7 +142,7 @@ fn the_image_a_harness_is_started_from_is_the_one_built_from_the_dockerfile() {
 }
 
 #[test]
-fn the_run_record_of_a_search_with_a_key_holds_the_file_of_the_key() {
+fn the_run_record_of_a_directed_evolution_with_a_key_holds_the_file_of_the_key() {
     assert!(
         run(keyed())
             .line()

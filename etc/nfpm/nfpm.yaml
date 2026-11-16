@@ -8,8 +8,8 @@ contents:
 depends:
   - docker.io | docker-ce
 description: >-
-  Searches for a better agentic coding harness by letting harnesses
-  modify themselves.
+  Makes a better agentic coding harness by directed evolution, letting
+  harnesses modify themselves.
 homepage: https://github.com/jdrowne/cladenc
 license: All rights reserved
 maintainer: Jose Drowne

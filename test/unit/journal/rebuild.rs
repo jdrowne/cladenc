@@ -79,7 +79,7 @@ fn rebuilt(records: &[Record]) -> State {
     journal::read(journal_of(records).path()).unwrap()
 }
 
-fn rebuilt_of_a_search_that_builds(records: &[Record]) -> State {
+fn rebuilt_of_a_directed_evolution_that_builds(records: &[Record]) -> State {
     let settings = Settings {
         harness_build_command: Some("make harness".to_owned()),
         ..settings()
@@ -120,9 +120,9 @@ fn a_journal_that_holds_no_action_gives_a_genealogy_of_the_progenitor_alone() {
 }
 
 #[test]
-fn a_journal_of_a_search_that_builds_and_holds_no_build_gives_a_progenitor_awaiting_its_build() {
+fn a_journal_that_names_a_build_command_and_holds_no_build_gives_a_progenitor_awaiting_its_build() {
     assert_eq!(
-        rebuilt_of_a_search_that_builds(&[]).genealogy,
+        rebuilt_of_a_directed_evolution_that_builds(&[]).genealogy,
         Genealogy::unbuilt()
     );
 }
@@ -130,7 +130,7 @@ fn a_journal_of_a_search_that_builds_and_holds_no_build_gives_a_progenitor_await
 #[test]
 fn a_journal_that_holds_the_build_of_its_progenitor_gives_a_created_progenitor() {
     assert_eq!(
-        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).genealogy,
+        rebuilt_of_a_directed_evolution_that_builds(&[Record::ProgenitorBuilt]).genealogy,
         Genealogy::new()
     );
 }
@@ -138,7 +138,7 @@ fn a_journal_that_holds_the_build_of_its_progenitor_gives_a_created_progenitor()
 #[test]
 fn the_build_of_the_progenitor_is_not_counted_as_an_action() {
     assert_eq!(
-        rebuilt_of_a_search_that_builds(&[Record::ProgenitorBuilt]).next_action,
+        rebuilt_of_a_directed_evolution_that_builds(&[Record::ProgenitorBuilt]).next_action,
         0
     );
 }
@@ -223,17 +223,17 @@ fn the_first_action_of_a_journal_that_holds_no_action_takes_number_0() {
 }
 
 #[test]
-fn a_journal_that_holds_the_end_of_its_search_names_the_best_harness() {
+fn a_journal_that_holds_the_end_of_its_directed_evolution_names_the_best_harness() {
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
-        Record::SearchFinished { best_harness: 1 },
+        Record::DirectedEvolutionFinished { best_harness: 1 },
     ]);
     assert_eq!(state.best_harness, Some(1));
 }
 
 #[test]
-fn a_journal_that_does_not_hold_the_end_of_its_search_names_no_best_harness() {
+fn a_journal_that_does_not_hold_the_end_of_its_directed_evolution_names_no_best_harness() {
     assert_eq!(rebuilt(&[procreation_started(1, 0)]).best_harness, None);
 }
 
@@ -248,8 +248,10 @@ fn a_cut_short_last_line_is_ignored_when_the_journal_is_read() {
 
 #[test]
 fn a_whole_record_with_no_newline_at_its_end_is_ignored_as_cut_short() {
-    let state =
-        rebuilt_with_a_last_line_of(&[], "{\"record\":\"search_finished\",\"best_harness\":0}");
+    let state = rebuilt_with_a_last_line_of(
+        &[],
+        "{\"record\":\"directed_evolution_finished\",\"best_harness\":0}",
+    );
     assert_eq!(state.best_harness, None);
 }
 

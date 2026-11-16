@@ -151,7 +151,7 @@ fn the_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_harness_of_a_search_with_no_key_is_given_none() {
+fn the_harness_of_a_directed_evolution_with_no_key_is_given_none() {
     assert_eq!(
         told_of_the_model(None),
         format!(

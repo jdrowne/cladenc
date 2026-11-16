@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::directed_evolution::{self, Found};
 use cladenc::journal::{self, Settings};
-use cladenc::search::{self, Found};
 use tempfile::TempDir;
 
 fn settings(directory: &Path) -> Settings {
@@ -35,7 +35,7 @@ fn ended() -> (TempDir, PathBuf, Found) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let run_directory = directory.path().join("run");
-    let found = search::search(
+    let found = directed_evolution::start(
         &settings,
         &run_directory,
         &AtomicBool::new(false),
@@ -46,31 +46,33 @@ fn ended() -> (TempDir, PathBuf, Found) {
 }
 
 #[test]
-fn resuming_a_search_that_ended_returns_what_the_search_returned() {
+fn resuming_a_directed_evolution_that_ended_returns_what_the_directed_evolution_returned() {
     let (_directory, run_directory, found) = ended();
     assert_eq!(
-        search::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap(),
+        directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut io::sink())
+            .unwrap(),
         found
     );
 }
 
 #[test]
-fn resuming_a_search_that_ended_leaves_its_journal_unchanged() {
+fn resuming_a_directed_evolution_that_ended_leaves_its_journal_unchanged() {
     let (_directory, run_directory, _found) = ended();
     let journal = fs::read(journal::path(&run_directory)).unwrap();
-    search::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap();
+    directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap();
     assert_eq!(fs::read(journal::path(&run_directory)).unwrap(), journal);
 }
 
 #[test]
-fn resuming_a_search_that_ended_says_that_it_had_finished_and_nothing_else() {
+fn resuming_a_directed_evolution_that_ended_says_that_it_had_finished_and_nothing_else() {
     let (_directory, run_directory, found) = ended();
     let mut written = Vec::new();
-    search::resume(&run_directory, &AtomicBool::new(false), &mut written).unwrap();
+    directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut written).unwrap();
     assert_eq!(
         String::from_utf8(written).unwrap(),
         format!(
-            "cladenc: the search had finished: its best harness is harness {}, kept in {}\n",
+            "cladenc: the directed evolution had finished: its best harness is harness {}, kept \
+             in {}\n",
             found.best_harness,
             found.directory.display()
         )
@@ -78,10 +80,11 @@ fn resuming_a_search_that_ended_says_that_it_had_finished_and_nothing_else() {
 }
 
 #[test]
-fn resuming_a_search_that_ended_returns_it_even_when_asked_to_stop() {
+fn resuming_a_directed_evolution_that_ended_returns_it_even_when_asked_to_stop() {
     let (_directory, run_directory, found) = ended();
     assert_eq!(
-        search::resume(&run_directory, &AtomicBool::new(true), &mut io::sink()).unwrap(),
+        directed_evolution::resume(&run_directory, &AtomicBool::new(true), &mut io::sink())
+            .unwrap(),
         found
     );
 }

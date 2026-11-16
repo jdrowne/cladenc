@@ -15,7 +15,7 @@ use crate::genealogy::HarnessId;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::workspace::Workspace;
 
-pub use error::SearchError;
+pub use error::DirectedEvolutionError;
 use progress::Progress;
 pub use said::Said;
 use said::say;
@@ -35,13 +35,13 @@ struct Shared<'a> {
     halt: AtomicBool,
 }
 
-pub fn search(
+pub fn start(
     settings: &Settings,
     run_directory: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<Found, SearchError> {
-    let key = settings.model_key().map_err(SearchError::Key)?;
+) -> Result<Found, DirectedEvolutionError> {
+    let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
     let making = Said::Making {
         run_directory,
         progenitor: &settings.progenitor,
@@ -62,12 +62,12 @@ pub fn search(
                 })
                 .map(|()| workspace)
         })
-        .map_err(SearchError::Io)
+        .map_err(DirectedEvolutionError::Io)
         .and_then(|workspace| build_image(settings, &workspace, stop, writer).map(|()| workspace))
         .and_then(|workspace| {
             Journal::open(run_directory)
                 .map(|journal| (workspace, journal))
-                .map_err(SearchError::Journal)
+                .map_err(DirectedEvolutionError::Journal)
         })?;
     let mut progress = Progress::new(settings, journal, writer);
     progress.record(&Record::Run {
@@ -82,7 +82,7 @@ fn build_image(
     workspace: &Workspace,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<(), SearchError> {
+) -> Result<(), DirectedEvolutionError> {
     let given = settings
         .dockerfile
         .as_deref()
@@ -105,7 +105,7 @@ fn build_image(
                     workspace,
                 },
             );
-            Err(SearchError::Image(error))
+            Err(DirectedEvolutionError::Image(error))
         }
     }
 }
@@ -114,10 +114,10 @@ pub fn resume(
     run_directory: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<Found, SearchError> {
+) -> Result<Found, DirectedEvolutionError> {
     let (journal, state) = Journal::open_existing(run_directory)
         .and_then(|journal| journal::read(run_directory).map(|state| (journal, state)))
-        .map_err(SearchError::Unusable)?;
+        .map_err(DirectedEvolutionError::Unusable)?;
     let State {
         settings,
         genealogy,
@@ -140,7 +140,8 @@ pub fn resume(
             })
         }
         None => {
-            let removed = containers::remove_left_behind(&workspace).map_err(SearchError::Left)?;
+            let removed =
+                containers::remove_left_behind(&workspace).map_err(DirectedEvolutionError::Left)?;
             if removed > 0 {
                 say(
                     writer,
@@ -149,7 +150,7 @@ pub fn resume(
                     },
                 );
             }
-            let key = settings.model_key().map_err(SearchError::Key)?;
+            let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
                 run_directory,
                 started: genealogy.started(),
@@ -173,20 +174,20 @@ fn carry_on(
     workspace: Workspace,
     mut progress: Progress<'_>,
     stop: &AtomicBool,
-) -> Result<Found, SearchError> {
+) -> Result<Found, DirectedEvolutionError> {
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
         progress.say(&Said::Building);
         containers::build_progenitor(&workspace, &launch, time_limit, stop).map_err(|error| {
             match error {
-                ContainerError::Stopped => SearchError::Asked,
+                ContainerError::Stopped => DirectedEvolutionError::Asked,
                 error => {
                     progress.say(&Said::BuildFailed {
                         error: &error,
                         workspace: &workspace,
                     });
-                    SearchError::Build(error)
+                    DirectedEvolutionError::Build(error)
                 }
             }
         })?;
