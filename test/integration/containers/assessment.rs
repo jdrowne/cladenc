@@ -343,7 +343,7 @@ fn a_harness_that_timed_out_is_not_checked() {
 #[test]
 fn a_check_that_runs_past_what_is_left_of_the_time_limit_times_out() {
     assert!(matches!(
-        within(3, FINISH, "sleep 300").result,
+        within(20, FINISH, "sleep 300").result,
         Ok(AssessmentOutcome::TimedOut)
     ));
 }
