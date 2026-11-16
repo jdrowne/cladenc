@@ -372,8 +372,9 @@ jobs:
         name: Publish the release and move the tag latest to it
         run: |
           test "$TAG" != v
-          gh release create "$TAG" --generate-notes \
-            --target "$GITHUB_SHA" release/*
+          gh release view "$TAG" > /dev/null 2>&1 ||
+            gh release create "$TAG" --generate-notes \
+              --target "$GITHUB_SHA" release/*
           git tag --force latest
           git push --force origin latest
   rustfmt:
