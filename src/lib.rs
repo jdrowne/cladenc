@@ -7,4 +7,4 @@ pub mod genealogy;
 pub mod journal;
 pub mod model;
 pub mod report;
-pub mod workspace;
+pub mod run_directory;

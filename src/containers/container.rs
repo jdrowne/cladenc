@@ -9,7 +9,7 @@ use nix::unistd::{Gid, Uid};
 use super::ContainerError;
 use super::left;
 use super::program::{self, Ending, LEEWAY};
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
@@ -22,7 +22,7 @@ pub(super) struct Mount<'a> {
 }
 
 pub(super) struct Container<'a> {
-    pub workspace: &'a Workspace,
+    pub run_directory: &'a RunDirectory,
     pub image: &'a str,
     pub command: &'a str,
     pub mounts: &'a [Mount<'a>],
@@ -42,7 +42,7 @@ impl Container<'_> {
         let mut docker = Command::new("docker");
         docker
             .args(["run", "--rm", "--pull", "never", "--name", &name, "--label"])
-            .arg(left::label(self.workspace))
+            .arg(left::label(self.run_directory))
             .arg("--user")
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
             .args(["--add-host", MACHINE])

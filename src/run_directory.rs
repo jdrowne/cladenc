@@ -10,37 +10,37 @@ use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 pub use copy::{copy_tree, holds_only_harness_files};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Workspace {
-    run_directory: PathBuf,
+pub struct RunDirectory {
+    path: PathBuf,
 }
 
-impl Workspace {
-    pub fn at(run_directory: &Path) -> Self {
+impl RunDirectory {
+    pub fn at(path: &Path) -> Self {
         Self {
-            run_directory: run_directory.to_owned(),
+            path: path.to_owned(),
         }
     }
 
-    pub fn create(run_directory: &Path, primogenitor: &Path) -> io::Result<Self> {
-        let workspace = Self::at(run_directory);
-        fs::create_dir(run_directory)
-            .and_then(|()| fs::create_dir(run_directory.join("harnesses")))
-            .and_then(|()| fs::create_dir(run_directory.join("procreations")))
-            .and_then(|()| fs::create_dir(run_directory.join("attempts")))
-            .and_then(|()| fs::create_dir(run_directory.join("running")))
-            .and_then(|()| fs::create_dir(run_directory.join("benchmarks")))
+    pub fn create(path: &Path, primogenitor: &Path) -> io::Result<Self> {
+        let run_directory = Self::at(path);
+        fs::create_dir(path)
+            .and_then(|()| fs::create_dir(path.join("harnesses")))
+            .and_then(|()| fs::create_dir(path.join("procreations")))
+            .and_then(|()| fs::create_dir(path.join("attempts")))
+            .and_then(|()| fs::create_dir(path.join("running")))
+            .and_then(|()| fs::create_dir(path.join("benchmarks")))
             .and_then(|()| fs::canonicalize(primogenitor))
-            .and_then(|resolved| copy_tree(&resolved, &workspace.harness(0)))
-            .and_then(|()| fs::create_dir(workspace.attempts(0)))
-            .map(|()| workspace)
+            .and_then(|resolved| copy_tree(&resolved, &run_directory.harness(0)))
+            .and_then(|()| fs::create_dir(run_directory.attempts(0)))
+            .map(|()| run_directory)
     }
 
-    pub fn run_directory(&self) -> &Path {
-        &self.run_directory
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub fn copy_benchmark(&self, benchmark: &Benchmark) -> io::Result<()> {
-        let kept = self.run_directory.join("benchmarks").join(benchmark.name());
+        let kept = self.path.join("benchmarks").join(benchmark.name());
         fs::create_dir(&kept).and_then(|()| {
             benchmark.tasks.iter().try_for_each(|id| {
                 fs::canonicalize(benchmark.directory.join(id))
@@ -50,11 +50,11 @@ impl Workspace {
     }
 
     pub fn task(&self, task: &str) -> PathBuf {
-        self.run_directory.join("benchmarks").join(task)
+        self.path.join("benchmarks").join(task)
     }
 
     pub fn image(&self) -> PathBuf {
-        self.run_directory.join("image")
+        self.path.join("image")
     }
 
     pub fn start_image(&self, dockerfile: &Path) -> io::Result<PathBuf> {
@@ -66,19 +66,15 @@ impl Workspace {
     }
 
     pub fn harness(&self, id: HarnessId) -> PathBuf {
-        self.run_directory.join("harnesses").join(id.to_string())
+        self.path.join("harnesses").join(id.to_string())
     }
 
     pub fn procreation(&self, child: HarnessId) -> PathBuf {
-        self.run_directory
-            .join("procreations")
-            .join(child.to_string())
+        self.path.join("procreations").join(child.to_string())
     }
 
     pub fn attempts(&self, harness: HarnessId) -> PathBuf {
-        self.run_directory
-            .join("attempts")
-            .join(harness.to_string())
+        self.path.join("attempts").join(harness.to_string())
     }
 
     pub fn attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
@@ -86,17 +82,17 @@ impl Workspace {
     }
 
     pub fn build(&self, harness: HarnessId) -> PathBuf {
-        self.run_directory.join("builds").join(harness.to_string())
+        self.path.join("builds").join(harness.to_string())
     }
 
     pub fn running_procreation(&self, child: HarnessId) -> PathBuf {
-        self.run_directory
+        self.path
             .join("running")
             .join(format!("procreation-{child}"))
     }
 
     pub fn running_attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
-        self.run_directory
+        self.path
             .join("running")
             .join(format!("attempt-{harness}-{}", task.replace('/', "+")))
     }

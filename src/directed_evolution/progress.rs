@@ -11,7 +11,7 @@ use crate::artificial_selection::{Action, ArtificialSelection};
 use crate::containers::ContainerError;
 use crate::genealogy::Genealogy;
 use crate::journal::{Journal, Record, Settings, Started};
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
 pub(super) struct Progress<'a> {
     artificial_selection: ArtificialSelection,
@@ -130,7 +130,7 @@ impl<'a> Progress<'a> {
         self.running += u64::from(recorded);
     }
 
-    pub(super) fn end(&mut self, ended: Ended, workspace: &Workspace) {
+    pub(super) fn end(&mut self, ended: Ended, run_directory: &RunDirectory) {
         self.running -= 1;
         match ended {
             Ended::Procreation {
@@ -146,7 +146,7 @@ impl<'a> Progress<'a> {
                     child,
                     progenitor,
                     outcome,
-                    workspace,
+                    run_directory,
                 });
             }
             Ended::Attempt {
@@ -161,7 +161,7 @@ impl<'a> Progress<'a> {
                     harness,
                     task: &task,
                     result,
-                    workspace,
+                    run_directory,
                 });
                 self.record(&Record::AttemptFinished {
                     harness,
@@ -200,7 +200,7 @@ impl<'a> Progress<'a> {
 
     pub(super) fn finish(
         mut self,
-        workspace: &Workspace,
+        run_directory: &RunDirectory,
         stop: &AtomicBool,
     ) -> Result<Found, DirectedEvolutionError> {
         if self.halted(stop) {
@@ -210,7 +210,7 @@ impl<'a> Progress<'a> {
         self.record(&Record::DirectedEvolutionFinished { best_harness });
         let found = Found {
             best_harness,
-            directory: workspace.harness(best_harness),
+            directory: run_directory.harness(best_harness),
         };
         let _ = self.failure.is_none().then(|| {
             say(

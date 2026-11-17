@@ -5,7 +5,7 @@ use std::path::Path;
 use crate::containers::ContainerError;
 use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
 pub enum Said<'a> {
     Making {
@@ -22,11 +22,11 @@ pub enum Said<'a> {
     },
     ImageBuilt {
         image: &'a str,
-        workspace: &'a Workspace,
+        run_directory: &'a RunDirectory,
     },
     ImageNotBuilt {
         error: &'a ContainerError,
-        workspace: &'a Workspace,
+        run_directory: &'a RunDirectory,
     },
     Removed {
         containers: u64,
@@ -45,7 +45,7 @@ pub enum Said<'a> {
     Built,
     BuildFailed {
         error: &'a ContainerError,
-        workspace: &'a Workspace,
+        run_directory: &'a RunDirectory,
     },
     Started {
         action: &'a Started,
@@ -57,13 +57,13 @@ pub enum Said<'a> {
         child: HarnessId,
         progenitor: HarnessId,
         outcome: ProcreationOutcome,
-        workspace: &'a Workspace,
+        run_directory: &'a RunDirectory,
     },
     Attempted {
         harness: HarnessId,
         task: &'a str,
         result: AttemptResult,
-        workspace: &'a Workspace,
+        run_directory: &'a RunDirectory,
     },
     Failed {
         action: &'a Started,
@@ -104,15 +104,21 @@ impl Display for Said<'_> {
                 "building the image {image} from the Dockerfile {}",
                 dockerfile.display()
             ),
-            Self::ImageBuilt { image, workspace } => write!(
+            Self::ImageBuilt {
+                image,
+                run_directory,
+            } => write!(
                 formatter,
                 "the image {image} is built: what Docker printed is kept in {}",
-                workspace.image().display()
+                run_directory.image().display()
             ),
-            Self::ImageNotBuilt { error, workspace } => write!(
+            Self::ImageNotBuilt {
+                error,
+                run_directory,
+            } => write!(
                 formatter,
                 "the build of the image {error}: what Docker printed is kept in {}",
-                workspace.image().display()
+                run_directory.image().display()
             ),
             Self::Removed { containers } => write!(
                 formatter,
@@ -142,10 +148,13 @@ impl Display for Said<'_> {
             ),
             Self::Building => write!(formatter, "building the primogenitor"),
             Self::Built => write!(formatter, "the primogenitor is built"),
-            Self::BuildFailed { error, workspace } => write!(
+            Self::BuildFailed {
+                error,
+                run_directory,
+            } => write!(
                 formatter,
                 "the build of the primogenitor {error}: what it printed is kept in {}",
-                workspace.build(0).display()
+                run_directory.build(0).display()
             ),
             Self::Started {
                 action,
@@ -164,25 +173,25 @@ impl Display for Said<'_> {
                 child,
                 progenitor,
                 outcome,
-                workspace,
+                run_directory,
             } => {
                 let (how, kept) = match outcome {
                     ProcreationOutcome::Created => (
                         format!("created harness {child}, kept in"),
-                        workspace.harness(*child),
+                        run_directory.harness(*child),
                     ),
                     ProcreationOutcome::Failed => (
                         "failed: what the harness printed is kept in".to_owned(),
-                        workspace.procreation(*child),
+                        run_directory.procreation(*child),
                     ),
                     ProcreationOutcome::BuildFailed => (
                         "made a harness that did not build: what its build printed is kept in"
                             .to_owned(),
-                        workspace.build(*child),
+                        run_directory.build(*child),
                     ),
                     ProcreationOutcome::TimedOut => (
                         "ran past its time limit: what the harness printed is kept in".to_owned(),
-                        workspace.procreation(*child),
+                        run_directory.procreation(*child),
                     ),
                 };
                 write!(
@@ -195,7 +204,7 @@ impl Display for Said<'_> {
                 harness,
                 task,
                 result,
-                workspace,
+                run_directory,
             } => {
                 let (how, why) = match result {
                     AttemptResult::Completed => ("completed", ""),
@@ -208,7 +217,7 @@ impl Display for Said<'_> {
                 write!(
                     formatter,
                     "harness {harness} {how} task {task}{why}: what the attempt left is kept in {}",
-                    workspace.attempt(*harness, task).display()
+                    run_directory.attempt(*harness, task).display()
                 )
             }
             Self::Failed { action, error } => write!(formatter, "{action} {error}"),

@@ -6,13 +6,13 @@ use super::container::{Container, Mount};
 use super::program::Ending;
 use super::{ContainerError, WORK};
 use crate::genealogy::AttemptResult;
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
 const TASK: &str = "/var/lib/cladenc/task";
 const GRADER: &str = "/var/lib/cladenc/task/grader";
 
 pub(super) fn run(
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     image: &str,
     task: &str,
     running: &Path,
@@ -20,9 +20,9 @@ pub(super) fn run(
     stop: &AtomicBool,
 ) -> Result<AttemptResult, ContainerError> {
     let work = running.join("work");
-    let task = workspace.task(task);
+    let task = run_directory.task(task);
     let container = Container {
-        workspace,
+        run_directory,
         image,
         command: GRADER,
         mounts: &[

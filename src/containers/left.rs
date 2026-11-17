@@ -3,22 +3,18 @@ use std::fs;
 use std::io;
 use std::process::{Command, Stdio};
 
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
-pub(super) fn label(workspace: &Workspace) -> OsString {
-    let run_directory = workspace.run_directory();
+pub(super) fn label(run_directory: &RunDirectory) -> OsString {
+    let path = run_directory.path();
     let mut label = OsString::from("cladenc.directed-evolution=");
-    label.push(
-        fs::canonicalize(run_directory)
-            .as_deref()
-            .unwrap_or(run_directory),
-    );
+    label.push(fs::canonicalize(path).as_deref().unwrap_or(path));
     label
 }
 
-pub fn remove_left_behind(workspace: &Workspace) -> io::Result<u64> {
+pub fn remove_left_behind(run_directory: &RunDirectory) -> io::Result<u64> {
     let mut filter = OsString::from("label=");
-    filter.push(label(workspace));
+    filter.push(label(run_directory));
     let mut list = Command::new("docker");
     list.args(["ps", "--all", "--quiet", "--filter"])
         .arg(filter);

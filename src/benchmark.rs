@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::workspace::holds_only_harness_files;
+use crate::run_directory::holds_only_harness_files;
 
 pub const SPECIFICATION: &str = "specification";
 pub const WORKSPACE: &str = "workspace";

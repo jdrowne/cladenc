@@ -6,7 +6,7 @@ use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::model::Model;
-use cladenc::workspace::Workspace;
+use cladenc::run_directory::RunDirectory;
 use tempfile::TempDir;
 
 const MODEL: Model<'static> = Model {
@@ -17,22 +17,22 @@ const MODEL: Model<'static> = Model {
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 
-type Attempted = (TempDir, Workspace, Result<AttemptResult, ContainerError>);
+type Attempted = (TempDir, RunDirectory, Result<AttemptResult, ContainerError>);
 type Procreated = (
     TempDir,
-    Workspace,
+    RunDirectory,
     Result<ProcreationOutcome, ContainerError>,
 );
 
-fn made() -> (TempDir, Workspace) {
+fn made() -> (TempDir, RunDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let workspace = Workspace::create(&directory.path().join("run"), &primogenitor).unwrap();
+    let run_directory = RunDirectory::create(&directory.path().join("run"), &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    workspace
+    run_directory
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    (directory, workspace)
+    (directory, run_directory)
 }
 
 fn launch(run_command: &str) -> Launch<'_> {
@@ -59,75 +59,81 @@ fn stopped_once_written<Outcome>(
 }
 
 fn timed_out() -> Attempted {
-    let (directory, workspace) = made();
+    let (directory, run_directory) = made();
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
     let stop = AtomicBool::new(false);
-    let result = containers::run_attempt(&workspace, &launch, 0, "benchmark/t1", 3, &stop);
-    (directory, workspace, result)
+    let result = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 3, &stop);
+    (directory, run_directory, result)
 }
 
 fn stopped_while_its_harness_runs() -> Attempted {
-    let (directory, workspace) = made();
+    let (directory, run_directory) = made();
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
-    let id_file = workspace.running_attempt(0, "benchmark/t1").join("work/id");
+    let id_file = run_directory
+        .running_attempt(0, "benchmark/t1")
+        .join("work/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&workspace, &launch, 0, "benchmark/t1", 60, stop)
+        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, stop)
     });
-    (directory, workspace, result)
+    (directory, run_directory, result)
 }
 
 fn stopped_while_its_grader_runs() -> Attempted {
-    let (directory, workspace) = made();
+    let (directory, run_directory) = made();
     test_inputs::kept_grader(
         &directory.path().join("run"),
         "t1",
         SAY_THE_CONTAINER_AND_STAY,
     );
     let launch = launch("true");
-    let id_file = workspace.running_attempt(0, "benchmark/t1").join("work/id");
+    let id_file = run_directory
+        .running_attempt(0, "benchmark/t1")
+        .join("work/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&workspace, &launch, 0, "benchmark/t1", 60, stop)
+        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, stop)
     });
-    (directory, workspace, result)
+    (directory, run_directory, result)
 }
 
 fn procreation_stopped_while_running() -> Procreated {
-    let (directory, workspace) = made();
+    let (directory, run_directory) = made();
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
-    let id_file = workspace.running_procreation(1).join("child/id");
+    let id_file = run_directory.running_procreation(1).join("child/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_procreation(&workspace, &launch, 1, 0, 60, stop)
+        containers::run_procreation(&run_directory, &launch, 1, 0, 60, stop)
     });
-    (directory, workspace, result)
+    (directory, run_directory, result)
 }
 
 #[test]
 fn the_time_limit_of_an_attempt_leaves_no_container_behind() {
-    let (_directory, workspace, _result) = timed_out();
+    let (_directory, run_directory, _result) = timed_out();
     assert!(test_inputs::container_is_gone(
-        &workspace.attempt(0, "benchmark/t1").join("work/id")
+        &run_directory.attempt(0, "benchmark/t1").join("work/id")
     ));
 }
 
 #[test]
 fn an_attempt_whose_stop_flag_is_set_reports_that_it_was_stopped() {
-    let (_directory, _workspace, result) = stopped_while_its_harness_runs();
+    let (_directory, _run_directory, result) = stopped_while_its_harness_runs();
     assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]
 fn an_attempt_whose_stop_flag_is_set_leaves_no_container_behind() {
-    let (_directory, workspace, _result) = stopped_while_its_harness_runs();
+    let (_directory, run_directory, _result) = stopped_while_its_harness_runs();
     assert!(test_inputs::container_is_gone(
-        &workspace.running_attempt(0, "benchmark/t1").join("work/id")
+        &run_directory
+            .running_attempt(0, "benchmark/t1")
+            .join("work/id")
     ));
 }
 
 #[test]
 fn an_attempt_whose_stop_flag_is_set_leaves_its_directory_under_running() {
-    let (_directory, workspace, _result) = stopped_while_its_harness_runs();
+    let (_directory, run_directory, _result) = stopped_while_its_harness_runs();
     assert!(
-        workspace
+        run_directory
             .running_attempt(0, "benchmark/t1")
             .join("harness")
             .is_dir()
@@ -136,25 +142,27 @@ fn an_attempt_whose_stop_flag_is_set_leaves_its_directory_under_running() {
 
 #[test]
 fn an_attempt_stopped_while_its_grader_runs_reports_that_it_was_stopped() {
-    let (_directory, _workspace, result) = stopped_while_its_grader_runs();
+    let (_directory, _run_directory, result) = stopped_while_its_grader_runs();
     assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]
 fn an_attempt_stopped_while_its_grader_runs_leaves_no_container_behind() {
-    let (_directory, workspace, _result) = stopped_while_its_grader_runs();
+    let (_directory, run_directory, _result) = stopped_while_its_grader_runs();
     assert!(test_inputs::container_is_gone(
-        &workspace.running_attempt(0, "benchmark/t1").join("work/id")
+        &run_directory
+            .running_attempt(0, "benchmark/t1")
+            .join("work/id")
     ));
 }
 
 #[test]
 fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
-    let (_directory, workspace) = made();
+    let (_directory, run_directory) = made();
     let stop = AtomicBool::new(true);
     assert!(matches!(
         containers::run_attempt(
-            &workspace,
+            &run_directory,
             &launch("sleep 300"),
             0,
             "benchmark/t1",
@@ -167,24 +175,24 @@ fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
 
 #[test]
 fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
-    let (_directory, workspace) = made();
+    let (_directory, run_directory) = made();
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        containers::run_procreation(&workspace, &launch("sleep 300"), 1, 0, 60, &stop),
+        containers::run_procreation(&run_directory, &launch("sleep 300"), 1, 0, 60, &stop),
         Err(ContainerError::Stopped)
     ));
 }
 
 #[test]
 fn a_procreation_whose_stop_flag_is_set_reports_that_it_was_stopped() {
-    let (_directory, _workspace, result) = procreation_stopped_while_running();
+    let (_directory, _run_directory, result) = procreation_stopped_while_running();
     assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]
 fn a_procreation_whose_stop_flag_is_set_leaves_no_container_behind() {
-    let (_directory, workspace, _result) = procreation_stopped_while_running();
+    let (_directory, run_directory, _result) = procreation_stopped_while_running();
     assert!(test_inputs::container_is_gone(
-        &workspace.running_procreation(1).join("child/id")
+        &run_directory.running_procreation(1).join("child/id")
     ));
 }

@@ -7,7 +7,7 @@ use std::thread;
 use cladenc::benchmark::Benchmark;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Journal, Record, Settings};
-use cladenc::workspace::Workspace;
+use cladenc::run_directory::RunDirectory;
 use tempfile::TempDir;
 
 fn settings(directory: &Path, run_command: &str) -> Settings {
@@ -68,7 +68,7 @@ fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
     test_inputs::task(&settings.benchmarks[0].directory, "t2");
     settings.benchmarks[0].tasks.push("t2".to_owned());
     let run_directory = directory.join("run");
-    Workspace::create(&run_directory, &settings.primogenitor)
+    RunDirectory::create(&run_directory, &settings.primogenitor)
         .unwrap()
         .copy_benchmark(&settings.benchmarks[0])
         .unwrap();

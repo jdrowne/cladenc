@@ -21,7 +21,7 @@ mod directed_evolution {
     mod unusable;
 }
 
-mod workspace {
+mod run_directory {
     mod attempt;
     mod benchmark;
     mod build;

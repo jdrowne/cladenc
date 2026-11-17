@@ -14,7 +14,7 @@ use std::sync::atomic::AtomicBool;
 
 use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::model::Model;
-use crate::workspace::{Workspace, holds_only_harness_files};
+use crate::run_directory::{RunDirectory, holds_only_harness_files};
 
 pub use build::build_primogenitor;
 use container::{Container, Mount};
@@ -81,20 +81,20 @@ impl Display for ContainerError {
 impl Error for ContainerError {}
 
 pub fn run_procreation(
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     launch: &Launch<'_>,
     child: HarnessId,
     progenitor: HarnessId,
     time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<ProcreationOutcome, ContainerError> {
-    workspace
+    run_directory
         .start_procreation(child, progenitor)
         .map_err(ContainerError::Io)?;
-    let running = workspace.running_procreation(child);
+    let running = run_directory.running_procreation(child);
     let source = running.join("progenitor");
     let made = running.join("child");
-    let attempts = workspace.attempts(progenitor);
+    let attempts = run_directory.attempts(progenitor);
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
@@ -104,7 +104,7 @@ pub fn run_procreation(
     .chain(launch.model.environment())
     .collect();
     let container = Container {
-        workspace,
+        run_directory,
         image: launch.image,
         command: launch.run_command,
         mounts: &[
@@ -129,27 +129,27 @@ pub fn run_procreation(
     };
     let outcome = match container.run(&running, deadline, stop)? {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
-            build::build_child(workspace, launch, child, &made, deadline, stop)?
+            build::build_child(run_directory, launch, child, &made, deadline, stop)?
         }
         Ending::Exited(_) => ProcreationOutcome::Failed,
         Ending::TimedOut => ProcreationOutcome::TimedOut,
     };
-    workspace
+    run_directory
         .end_procreation(child, outcome)
         .map(|()| outcome)
         .map_err(ContainerError::Io)
 }
 
 pub fn run_attempt(
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     launch: &Launch<'_>,
     harness: HarnessId,
     task: &str,
     time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<AttemptResult, ContainerError> {
-    let running = workspace.running_attempt(harness, task);
-    let specification = workspace
+    let running = run_directory.running_attempt(harness, task);
+    let specification = run_directory
         .start_attempt(harness, task)
         .and_then(|()| fs::read_to_string(running.join("specification")))
         .map_err(ContainerError::Io)?;
@@ -164,7 +164,7 @@ pub fn run_attempt(
     .chain(launch.model.environment())
     .collect();
     let container = Container {
-        workspace,
+        run_directory,
         image: launch.image,
         command: launch.run_command,
         mounts: &[
@@ -183,10 +183,12 @@ pub fn run_attempt(
         environment: &environment,
     };
     let result = match container.run(&running, deadline, stop)? {
-        Ending::Exited(_) => grader::run(workspace, launch.image, task, &running, deadline, stop)?,
+        Ending::Exited(_) => {
+            grader::run(run_directory, launch.image, task, &running, deadline, stop)?
+        }
         Ending::TimedOut => AttemptResult::TimedOut,
     };
-    workspace
+    run_directory
         .end_attempt(harness, task, result)
         .map(|()| result)
         .map_err(ContainerError::Io)

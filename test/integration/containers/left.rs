@@ -9,7 +9,7 @@ use std::thread;
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, Launch};
 use cladenc::model::Model;
-use cladenc::workspace::Workspace;
+use cladenc::run_directory::RunDirectory;
 use tempfile::TempDir;
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
@@ -28,20 +28,20 @@ impl Drop for Left {
     }
 }
 
-fn label_of(run_directory: &Path) -> String {
+fn label_of(path: &Path) -> String {
     format!(
         "cladenc.directed-evolution={}",
-        fs::canonicalize(run_directory).unwrap().display()
+        fs::canonicalize(path).unwrap().display()
     )
 }
 
 fn left_by_a_directed_evolution_in(run: &str) -> Left {
     let directory = test_inputs::temporary_directory();
-    let run_directory = directory.path().join(run);
-    fs::create_dir(&run_directory).unwrap();
+    let path = directory.path().join(run);
+    fs::create_dir(&path).unwrap();
     let started = Command::new("docker")
         .args(["run", "--detach", "--rm", "--pull", "never", "--label"])
-        .arg(label_of(&run_directory))
+        .arg(label_of(&path))
         .args([test_inputs::IMAGE, "sleep", "300"])
         .output()
         .unwrap();
@@ -51,16 +51,16 @@ fn left_by_a_directed_evolution_in(run: &str) -> Left {
 }
 
 fn removed_from(left: &Left, run: &str) -> io::Result<u64> {
-    containers::remove_left_behind(&Workspace::at(&left.directory.path().join(run)))
+    containers::remove_left_behind(&RunDirectory::at(&left.directory.path().join(run)))
 }
 
 fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution() -> bool {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let run_directory = directory.path().join("run");
-    let workspace = Workspace::create(&run_directory, &primogenitor).unwrap();
+    let path = directory.path().join("run");
+    let run_directory = RunDirectory::create(&path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    workspace
+    run_directory
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
     let launch = Launch {
@@ -73,20 +73,22 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             key: None,
         },
     };
-    let id_file = workspace.running_attempt(0, "benchmark/t1").join("work/id");
+    let id_file = run_directory
+        .running_attempt(0, "benchmark/t1")
+        .join("work/id");
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
         let listed = scope.spawn(|| {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             let listed = Command::new("docker")
                 .args(["ps", "--quiet", "--no-trunc", "--filter"])
-                .arg(format!("label={}", label_of(&run_directory)))
+                .arg(format!("label={}", label_of(&path)))
                 .output()
                 .unwrap();
             stop.store(true, Ordering::SeqCst);
             String::from_utf8(listed.stdout).unwrap()
         });
-        let _ = containers::run_attempt(&workspace, &launch, 0, "benchmark/t1", 60, &stop);
+        let _ = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, &stop);
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })
@@ -109,7 +111,7 @@ fn the_number_of_containers_removed_is_returned() {
 fn a_directed_evolution_that_left_no_container_has_none_removed() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(
-        containers::remove_left_behind(&Workspace::at(directory.path())).ok(),
+        containers::remove_left_behind(&RunDirectory::at(directory.path())).ok(),
         Some(0)
     );
 }
@@ -118,7 +120,7 @@ fn a_directed_evolution_that_left_no_container_has_none_removed() {
 fn a_run_directory_that_is_not_there_has_no_container_removed() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(
-        containers::remove_left_behind(&Workspace::at(&directory.path().join("missing"))).ok(),
+        containers::remove_left_behind(&RunDirectory::at(&directory.path().join("missing"))).ok(),
         Some(0)
     );
 }

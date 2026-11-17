@@ -13,7 +13,7 @@ use std::time::Duration;
 use crate::containers::{self, ContainerError, Launch};
 use crate::genealogy::HarnessId;
 use crate::journal::{self, Journal, Record, Settings, State};
-use crate::workspace::Workspace;
+use crate::run_directory::RunDirectory;
 
 pub use error::DirectedEvolutionError;
 use progress::Progress;
@@ -31,24 +31,24 @@ pub struct Found {
 struct Shared<'a> {
     settings: &'a Settings,
     launch: Launch<'a>,
-    workspace: Workspace,
+    run_directory: RunDirectory,
     halt: AtomicBool,
 }
 
 pub fn start(
     settings: &Settings,
-    run_directory: &Path,
+    path: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<Found, DirectedEvolutionError> {
     let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
     let making = Said::Making {
-        run_directory,
+        run_directory: path,
         primogenitor: &settings.primogenitor,
     };
     say(writer, &making);
-    let (workspace, journal) = Workspace::create(run_directory, &settings.primogenitor)
-        .and_then(|workspace| {
+    let (run_directory, journal) = RunDirectory::create(path, &settings.primogenitor)
+        .and_then(|run_directory| {
             settings
                 .benchmarks
                 .iter()
@@ -58,15 +58,17 @@ pub fn start(
                         tasks: benchmark.tasks.len() as u64,
                     };
                     say(writer, &copying);
-                    workspace.copy_benchmark(benchmark)
+                    run_directory.copy_benchmark(benchmark)
                 })
-                .map(|()| workspace)
+                .map(|()| run_directory)
         })
         .map_err(DirectedEvolutionError::Io)
-        .and_then(|workspace| build_image(settings, &workspace, stop, writer).map(|()| workspace))
-        .and_then(|workspace| {
-            Journal::open(run_directory)
-                .map(|journal| (workspace, journal))
+        .and_then(|run_directory| {
+            build_image(settings, &run_directory, stop, writer).map(|()| run_directory)
+        })
+        .and_then(|run_directory| {
+            Journal::open(path)
+                .map(|journal| (run_directory, journal))
                 .map_err(DirectedEvolutionError::Journal)
         })?;
     let mut progress = Progress::new(settings, journal, writer);
@@ -74,12 +76,12 @@ pub fn start(
         format: journal::FORMAT,
         settings: Box::new(settings.clone()),
     });
-    carry_on(settings, key.as_deref(), workspace, progress, stop)
+    carry_on(settings, key.as_deref(), run_directory, progress, stop)
 }
 
 fn build_image(
     settings: &Settings,
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<(), DirectedEvolutionError> {
@@ -92,9 +94,15 @@ fn build_image(
     };
     let image = &settings.docker_image;
     say(writer, &Said::BuildingImage { image, dockerfile });
-    match containers::build_image(workspace, dockerfile, image, time_limit, stop) {
+    match containers::build_image(run_directory, dockerfile, image, time_limit, stop) {
         Ok(()) => {
-            say(writer, &Said::ImageBuilt { image, workspace });
+            say(
+                writer,
+                &Said::ImageBuilt {
+                    image,
+                    run_directory,
+                },
+            );
             Ok(())
         }
         Err(error) => {
@@ -102,7 +110,7 @@ fn build_image(
                 writer,
                 &Said::ImageNotBuilt {
                     error: &error,
-                    workspace,
+                    run_directory,
                 },
             );
             Err(DirectedEvolutionError::Image(error))
@@ -111,12 +119,12 @@ fn build_image(
 }
 
 pub fn resume(
-    run_directory: &Path,
+    path: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<Found, DirectedEvolutionError> {
-    let (journal, state) = Journal::open_existing(run_directory)
-        .and_then(|journal| journal::read(run_directory).map(|state| (journal, state)))
+    let (journal, state) = Journal::open_existing(path)
+        .and_then(|journal| journal::read(path).map(|state| (journal, state)))
         .map_err(DirectedEvolutionError::Unusable)?;
     let State {
         settings,
@@ -125,10 +133,10 @@ pub fn resume(
         next_action,
         best_harness,
     } = state;
-    let workspace = Workspace::at(run_directory);
+    let run_directory = RunDirectory::at(path);
     match best_harness {
         Some(best_harness) => {
-            let directory = workspace.harness(best_harness);
+            let directory = run_directory.harness(best_harness);
             let finished = Said::HadFinished {
                 best_harness,
                 directory: &directory,
@@ -140,8 +148,8 @@ pub fn resume(
             })
         }
         None => {
-            let removed =
-                containers::remove_left_behind(&workspace).map_err(DirectedEvolutionError::Left)?;
+            let removed = containers::remove_left_behind(&run_directory)
+                .map_err(DirectedEvolutionError::Left)?;
             if removed > 0 {
                 say(
                     writer,
@@ -152,7 +160,7 @@ pub fn resume(
             }
             let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
-                run_directory,
+                run_directory: path,
                 started: genealogy.started(),
                 budget: settings.budget,
                 harnesses: genealogy.harness_count(),
@@ -163,7 +171,7 @@ pub fn resume(
                 unfinished,
                 next_action,
             );
-            carry_on(&settings, key.as_deref(), workspace, progress, stop)
+            carry_on(&settings, key.as_deref(), run_directory, progress, stop)
         }
     }
 }
@@ -171,7 +179,7 @@ pub fn resume(
 fn carry_on(
     settings: &Settings,
     key: Option<&str>,
-    workspace: Workspace,
+    run_directory: RunDirectory,
     mut progress: Progress<'_>,
     stop: &AtomicBool,
 ) -> Result<Found, DirectedEvolutionError> {
@@ -179,24 +187,24 @@ fn carry_on(
     if progress.awaits_build(stop) {
         let time_limit = settings.procreation_timeout;
         progress.say(&Said::Building);
-        containers::build_primogenitor(&workspace, &launch, time_limit, stop).map_err(|error| {
-            match error {
+        containers::build_primogenitor(&run_directory, &launch, time_limit, stop).map_err(
+            |error| match error {
                 ContainerError::Stopped => DirectedEvolutionError::Asked,
                 error => {
                     progress.say(&Said::BuildFailed {
                         error: &error,
-                        workspace: &workspace,
+                        run_directory: &run_directory,
                     });
                     DirectedEvolutionError::Build(error)
                 }
-            }
-        })?;
+            },
+        )?;
         progress.built();
     }
     let shared = Shared {
         settings,
         launch,
-        workspace,
+        run_directory,
         halt: AtomicBool::new(false),
     };
     thread::scope(|scope| {
@@ -213,7 +221,7 @@ fn carry_on(
                 break;
             }
             if let Ok(ended) = receiver.recv_timeout(WAIT) {
-                progress.end(ended, &shared.workspace);
+                progress.end(ended, &shared.run_directory);
             }
             if progress.halted(stop) {
                 progress.stopping();
@@ -221,5 +229,5 @@ fn carry_on(
             }
         }
     });
-    progress.finish(&shared.workspace, stop)
+    progress.finish(&shared.run_directory, stop)
 }

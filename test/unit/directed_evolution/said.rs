@@ -4,10 +4,10 @@ use cladenc::containers::ContainerError;
 use cladenc::directed_evolution::Said;
 use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::journal::Started;
-use cladenc::workspace::Workspace;
+use cladenc::run_directory::RunDirectory;
 
-fn workspace() -> Workspace {
-    Workspace::at(Path::new("/run"))
+fn run_directory() -> RunDirectory {
+    RunDirectory::at(Path::new("/run"))
 }
 
 fn procreation() -> Started {
@@ -39,7 +39,7 @@ fn procreated(outcome: ProcreationOutcome) -> String {
         child: 3,
         progenitor: 1,
         outcome,
-        workspace: &workspace(),
+        run_directory: &run_directory(),
     }
     .to_string()
 }
@@ -49,7 +49,7 @@ fn attempted(result: AttemptResult) -> String {
         harness: 3,
         task: "fix-the-parser",
         result,
-        workspace: &workspace(),
+        run_directory: &run_directory(),
     }
     .to_string()
 }
@@ -170,7 +170,7 @@ fn an_image_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::ImageBuilt {
             image: IMAGE,
-            workspace: &workspace(),
+            run_directory: &run_directory(),
         }
         .to_string(),
         "the image cladenc-0123456789abcdef is built: what Docker printed is kept in /run/image"
@@ -182,7 +182,7 @@ fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() 
     assert_eq!(
         Said::ImageNotBuilt {
             error: &ContainerError::Exit(1),
-            workspace: &workspace(),
+            run_directory: &run_directory(),
         }
         .to_string(),
         "the build of the image exited with status 1: what Docker printed is kept in /run/image"
@@ -204,7 +204,7 @@ fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is
     assert_eq!(
         Said::BuildFailed {
             error: &ContainerError::Exit(2),
-            workspace: &workspace(),
+            run_directory: &run_directory(),
         }
         .to_string(),
         "the build of the primogenitor exited with status 2: what it printed is kept in \

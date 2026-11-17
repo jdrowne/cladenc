@@ -6,7 +6,7 @@ use super::container::{Container, Mount};
 use super::program::{Ending, deadline};
 use super::{ContainerError, HARNESS, Launch};
 use crate::genealogy::{HarnessId, ProcreationOutcome};
-use crate::workspace::{Workspace, holds_only_harness_files};
+use crate::run_directory::{RunDirectory, holds_only_harness_files};
 
 struct Build<'a> {
     image: &'a str,
@@ -16,7 +16,7 @@ struct Build<'a> {
 }
 
 pub fn build_primogenitor(
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     launch: &Launch<'_>,
     time_limit: u64,
     stop: &AtomicBool,
@@ -24,14 +24,14 @@ pub fn build_primogenitor(
     let Some(command) = launch.build_command else {
         return Ok(());
     };
-    let source = workspace.harness(0);
+    let source = run_directory.harness(0);
     let build = Build {
         image: launch.image,
         command,
         harness: 0,
         source: &source,
     };
-    match build.run(workspace, deadline(time_limit), stop)? {
+    match build.run(run_directory, deadline(time_limit), stop)? {
         Ending::Exited(0) if holds_only_harness_files(&source).unwrap_or(false) => Ok(()),
         Ending::Exited(0) => Err(ContainerError::OtherFiles),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
@@ -40,7 +40,7 @@ pub fn build_primogenitor(
 }
 
 pub(super) fn build_child(
-    workspace: &Workspace,
+    run_directory: &RunDirectory,
     launch: &Launch<'_>,
     child: HarnessId,
     source: &Path,
@@ -56,7 +56,7 @@ pub(super) fn build_child(
         harness: child,
         source,
     };
-    Ok(match build.run(workspace, deadline, stop)? {
+    Ok(match build.run(run_directory, deadline, stop)? {
         Ending::Exited(0) if holds_only_harness_files(source).unwrap_or(false) => {
             ProcreationOutcome::Created
         }
@@ -68,15 +68,15 @@ pub(super) fn build_child(
 impl Build<'_> {
     fn run(
         &self,
-        workspace: &Workspace,
+        run_directory: &RunDirectory,
         deadline: Instant,
         stop: &AtomicBool,
     ) -> Result<Ending, ContainerError> {
-        let kept = workspace
+        let kept = run_directory
             .start_build(self.harness)
             .map_err(ContainerError::Io)?;
         let container = Container {
-            workspace,
+            run_directory,
             image: self.image,
             command: self.command,
             mounts: &[Mount {
