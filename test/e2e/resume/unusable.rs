@@ -14,7 +14,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
         ("--run-dir", directory.join("run")),
-        ("--budget", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

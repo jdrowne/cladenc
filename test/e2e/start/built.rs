@@ -20,7 +20,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--harness-build-command", build_command.into()),
         ("--harness-run-command", "exit 0".into()),
         ("--run-dir", directory.path().join("run")),
-        ("--budget", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

@@ -23,7 +23,7 @@ fn options(directory: &Path) -> StartOptions {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         run_dir: directory.join("run"),
-        budget: 800,
+        max_procreations: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 8,

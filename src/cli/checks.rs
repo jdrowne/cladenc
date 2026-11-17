@@ -46,7 +46,7 @@ impl StartOptions {
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             benchmarks,
-            budget: self.budget,
+            max_procreations: self.max_procreations,
             genealogy_growth: self.genealogy_growth,
             confidence: self.confidence,
             max_concurrent_containers: self.max_concurrent_containers,

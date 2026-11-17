@@ -20,7 +20,7 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        budget: 800,
+        max_procreations: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 1,
@@ -42,7 +42,7 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         Report::of(&settings(), &genealogy).json(),
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
-            r#""started":1,"budget":800,"best_harness":0,"harnesses":["#,
+            r#""procreations_started":1,"max_procreations":800,"best_harness":0,"harnesses":["#,
             r#"{"id":0,"progenitor":null,"state":"created","completed":1,"not_completed":0,"#,
             r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
             r#""lower_bound":0.09999999999999981},"#,

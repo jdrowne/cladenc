@@ -20,7 +20,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--docker-image", image.into()),
         ("--harness-run-command", "exit 0".into()),
         ("--run-dir", directory.join("run")),
-        ("--budget", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

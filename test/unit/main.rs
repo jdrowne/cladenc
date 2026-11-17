@@ -1,12 +1,14 @@
 mod artificial_selection {
     mod attempt;
     mod best;
+    mod due;
     mod focus;
     mod growth;
     mod lower_bound;
     mod no_action;
     mod procreation;
     mod repeatable;
+    mod to_the_end;
 }
 
 mod benchmark {

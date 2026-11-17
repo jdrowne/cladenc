@@ -21,7 +21,7 @@ pub struct Settings {
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
     pub benchmarks: Vec<Benchmark>,
-    pub budget: u64,
+    pub max_procreations: u64,
     pub genealogy_growth: f64,
     pub confidence: f64,
     pub max_concurrent_containers: u64,
@@ -73,7 +73,7 @@ impl Settings {
 
     pub fn artificial_selection(&self) -> ArtificialSelection {
         ArtificialSelection {
-            budget: self.budget,
+            max_procreations: self.max_procreations,
             growth: self.genealogy_growth,
             confidence: self.confidence,
             tasks: self.tasks(),

@@ -162,8 +162,8 @@ pub fn resume(
             let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
                 run_directory: path,
-                started: genealogy.started(),
-                budget: settings.budget,
+                procreations: genealogy.procreations_started(),
+                max_procreations: settings.max_procreations,
                 harnesses: genealogy.harness_count(),
             };
             say(writer, &continuing);

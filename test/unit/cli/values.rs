@@ -12,7 +12,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--run-dir", "/run"),
-    ("--budget", "800"),
+    ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
@@ -175,18 +175,43 @@ fn an_empty_benchmark_is_an_error() {
 }
 
 #[test]
-fn a_budget_of_0_is_an_error() {
-    assert_eq!(refusal("--budget", "0"), ErrorKind::ValueValidation);
+fn the_most_procreations_being_0_is_an_error() {
+    assert_eq!(
+        refusal("--max-procreations", "0"),
+        ErrorKind::ValueValidation
+    );
 }
 
 #[test]
-fn a_budget_below_0_is_an_error() {
-    assert_eq!(refusal("--budget", "-1"), ErrorKind::ValueValidation);
+fn the_most_procreations_being_1_is_accepted() {
+    assert!(matches!(
+        with("--max-procreations", "1").unwrap().command,
+        Command::Start(options) if options.max_procreations == 1
+    ));
 }
 
 #[test]
-fn a_budget_that_is_not_a_number_is_an_error() {
-    assert_eq!(refusal("--budget", "many"), ErrorKind::ValueValidation);
+fn the_most_procreations_being_below_0_is_an_error() {
+    assert_eq!(
+        refusal("--max-procreations", "-1"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn the_most_procreations_not_being_a_number_is_an_error() {
+    assert_eq!(
+        refusal("--max-procreations", "many"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_budget_is_an_argument_that_is_not_expected() {
+    assert_eq!(
+        and(Some("--budget=800".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }
 
 #[test]

@@ -1,16 +1,16 @@
 use cladenc::artificial_selection::focus;
 
 #[test]
-fn focus_is_1_when_no_attempt_has_started() {
+fn focus_is_1_at_the_first_procreation() {
     assert_eq!(focus(800, 0), 1.0);
 }
 
 #[test]
-fn focus_is_2_when_half_the_budget_has_started() {
+fn focus_is_2_when_half_the_procreations_have_started() {
     assert_eq!(focus(800, 400), 2.0);
 }
 
 #[test]
-fn focus_reaches_the_budget_at_the_last_attempt() {
+fn focus_reaches_the_most_procreations_at_the_last_procreation() {
     assert_eq!(focus(800, 799), 800.0);
 }

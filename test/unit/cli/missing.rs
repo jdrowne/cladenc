@@ -10,7 +10,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--run-dir", "/run"),
-    ("--budget", "800"),
+    ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
@@ -96,9 +96,9 @@ fn leaving_out_the_run_directory_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_budget_is_an_error() {
+fn leaving_out_the_most_procreations_is_an_error() {
     assert_eq!(
-        refusal_without("--budget"),
+        refusal_without("--max-procreations"),
         ErrorKind::MissingRequiredArgument
     );
 }

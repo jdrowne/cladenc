@@ -14,7 +14,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
         ("--run-dir", directory.join("run")),
-        ("--budget", "10".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

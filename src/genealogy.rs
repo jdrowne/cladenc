@@ -76,6 +76,10 @@ impl Genealogy {
         self.started
     }
 
+    pub fn procreations_started(&self) -> u64 {
+        self.harness_count() - 1
+    }
+
     pub fn created_harnesses(&self) -> Vec<&Harness> {
         self.harnesses
             .iter()

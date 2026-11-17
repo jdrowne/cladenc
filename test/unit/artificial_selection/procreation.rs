@@ -7,7 +7,7 @@ fn tasks() -> Vec<String> {
 
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
-        budget: 1000,
+        max_procreations: 1000,
         growth: 1.0,
         confidence: 99.0,
         tasks: tasks(),

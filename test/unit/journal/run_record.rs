@@ -25,7 +25,7 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        budget: 800,
+        max_procreations: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 8,
@@ -77,8 +77,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_16() {
-    assert_eq!(journal::FORMAT, 16);
+fn the_format_of_the_journal_is_17() {
+    assert_eq!(journal::FORMAT, 17);
 }
 
 #[test]
@@ -86,12 +86,12 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":16,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":17,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
-            r#""budget":800,"#,
+            r#""max_procreations":800,"#,
             r#""genealogy_growth":0.6,"confidence":99.0,"#,
             r#""max_concurrent_containers":8,"#,
             r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
@@ -281,7 +281,7 @@ fn the_settings_give_the_artificial_selection_made_from_five_of_them() {
     assert_eq!(
         settings().artificial_selection(),
         ArtificialSelection {
-            budget: 800,
+            max_procreations: 800,
             growth: 0.6,
             confidence: 99.0,
             tasks: vec!["benchmark/t1".to_owned(), "benchmark/t2".to_owned()],

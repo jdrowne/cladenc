@@ -22,7 +22,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: run_command.to_owned(),
-        budget: 4,
+        max_procreations: 1,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 1,

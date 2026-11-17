@@ -116,8 +116,7 @@ impl<'a> Progress<'a> {
                 &Said::Started {
                     action: &action,
                     again,
-                    attempts: self.genealogy.started(),
-                    budget: self.artificial_selection.budget,
+                    max_procreations: self.artificial_selection.max_procreations,
                 },
             );
             scope.spawn(move || {

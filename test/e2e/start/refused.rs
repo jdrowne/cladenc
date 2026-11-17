@@ -11,7 +11,7 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
         ("--run-dir", run_directory.to_owned()),
-        ("--budget", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -256,6 +256,87 @@ fn the_primogenitor_under_a_name_it_does_not_have_is_refused_for_the_name() {
 fn the_primogenitor_under_a_name_it_does_not_have_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_the_primogenitor_under_a_name_it_does_not_have(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_a_budget_in_the_place_of_the_most_procreations(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .iter()
+        .map(|option| option.replace("--max-procreations=", "--budget="))
+        .collect()
+}
+
+#[test]
+fn a_budget_which_is_no_flag_of_start_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_budget_in_the_place_of_the_most_procreations(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_budget_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_budget_in_the_place_of_the_most_procreations(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--budget' found\n"));
+}
+
+#[test]
+fn a_budget_which_is_no_flag_of_start_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_budget_in_the_place_of_the_most_procreations(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn without_the_most_procreations(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .into_iter()
+        .filter(|option| !option.starts_with("--max-procreations="))
+        .collect()
+}
+
+#[test]
+fn a_command_line_without_the_most_procreations_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = without_the_most_procreations(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_command_line_without_the_most_procreations_is_refused_for_the_flag_it_lacks() {
+    let directory = test_inputs::temporary_directory();
+    let options = without_the_most_procreations(directory.path());
+    assert!(said(&options).contains("  --max-procreations <COUNT>\n"));
+}
+
+fn with_no_procreation_at_most(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("run"))
+        .iter()
+        .map(|option| option.replace("--max-procreations=1", "--max-procreations=0"))
+        .collect()
+}
+
+#[test]
+fn the_most_procreations_being_0_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_no_procreation_at_most(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn the_most_procreations_being_0_is_refused_for_the_value() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_no_procreation_at_most(directory.path());
+    assert!(
+        said(&options).starts_with("error: invalid value '0' for '--max-procreations <COUNT>': ")
+    );
+}
+
+#[test]
+fn the_most_procreations_being_0_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_no_procreation_at_most(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

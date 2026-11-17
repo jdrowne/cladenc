@@ -23,8 +23,8 @@ const HEADER: [&str; 9] = [
 pub struct Report {
     pub model: String,
     pub model_url: String,
-    pub started: u64,
-    pub budget: u64,
+    pub procreations_started: u64,
+    pub max_procreations: u64,
     pub best_harness: HarnessId,
     pub harnesses: Vec<HarnessReport>,
 }
@@ -51,8 +51,8 @@ impl Report {
         Self {
             model: settings.model.clone(),
             model_url: settings.model_url.clone(),
-            started: genealogy.started(),
-            budget: settings.budget,
+            procreations_started: genealogy.procreations_started(),
+            max_procreations: settings.max_procreations,
             best_harness: settings.artificial_selection().best_harness(genealogy),
             harnesses: genealogy
                 .harnesses()
@@ -82,9 +82,18 @@ impl Report {
                 format!("{}\n", line.trim_end())
             })
             .collect();
+        let procreations = if self.max_procreations == 1 {
+            "procreation"
+        } else {
+            "procreations"
+        };
         format!(
-            "model {} at {}\nstarted {} of {}, best harness {}\n\n{lines}",
-            self.model, self.model_url, self.started, self.budget, self.best_harness
+            "model {} at {}\nstarted {} of {} {procreations}, best harness {}\n\n{lines}",
+            self.model,
+            self.model_url,
+            self.procreations_started,
+            self.max_procreations,
+            self.best_harness
         )
     }
 }

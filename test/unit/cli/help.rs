@@ -555,12 +555,58 @@ fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation(
 }
 
 #[test]
-fn the_long_help_of_start_says_what_a_harness_that_procreates_takes_from_the_budget() {
+fn the_long_help_of_start_says_that_every_harness_is_benchmarked_in_full() {
     assert!(help_of_start(true).contains(
-        "Each harness that procreates therefore takes as many attempts\nfrom --budget as the \
-         directed evolution has tasks, and a directed\nevolution whose budget is no larger than \
-         the number of its tasks starts no\nprocreation."
+        "Every harness is benchmarked in full, whether it procreates or not: once a\nharness is \
+         created, it attempts every task."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_harness_attempts_next() {
+    assert!(help_of_start(true).contains(
+        "It does not choose which harness attempts\nnext: the created harness with the lowest \
+         id that has a task left attempts\nit."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_most_procreations_counts() {
+    assert!(help_of_start(true).contains(
+        "--max-procreations gives the most procreations a directed evolution\nstarts. A \
+         procreation counts once it is started, whether or not it creates\nits child."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_when_a_directed_evolution_ends() {
+    assert!(help_of_start(true).contains(
+        "The directed evolution ends once that many have been started,\neach of them has ended, \
+         and every created harness has been benchmarked in\nfull."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_growth_never_keeps_a_procreation_from_starting() {
+    assert!(help_of_start(true).contains(
+        "where it lets none start and nothing else is left to start,\na procreation is started \
+         all the same."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_no_budget() {
+    assert!(!help_of_start(true).contains("budget"));
+}
+
+#[test]
+fn the_short_help_of_start_names_the_flag_that_gives_the_most_procreations() {
+    assert!(help_of_start(false).contains("--max-procreations <COUNT>"));
+}
+
+#[test]
+fn the_short_help_of_start_says_that_the_flag_gives_the_most_procreations_to_start() {
+    assert!(help_of_start(false).contains("The most procreations to start"));
 }
 
 #[test]

@@ -11,7 +11,7 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--benchmark", "/benchmark"),
     ("--harness-run-command", "run a harness"),
     ("--run-dir", "/run"),
-    ("--budget", "800"),
+    ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
     ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),

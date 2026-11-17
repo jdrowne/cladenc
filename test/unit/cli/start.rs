@@ -23,7 +23,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         run_dir: directory.path().join("run"),
-        budget: 2,
+        max_procreations: 1,
         genealogy_growth: 0.0,
         confidence: 99.0,
         max_concurrent_containers: 1,

@@ -28,7 +28,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         docker_build_timeout: None,
         harness_build_command: Some(build_command.to_owned()),
         harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
-        budget: 10,
+        max_procreations: 1,
         genealogy_growth: 0.0,
         confidence: 99.0,
         max_concurrent_containers: 1,

@@ -61,13 +61,6 @@ pub struct StartOptions {
     pub benchmark: Vec<PathBuf>,
     #[arg(
         long,
-        value_name = "COUNT",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The number of attempts to start"
-    )]
-    pub budget: u64,
-    #[arg(
-        long,
         value_name = "PERCENT",
         value_parser = checks::confidence,
         help = "The probability behind the lower bound that picks the best harness"
@@ -125,6 +118,13 @@ pub struct StartOptions {
         help = "The most containers running at once"
     )]
     pub max_concurrent_containers: u64,
+    #[arg(
+        long,
+        value_name = "COUNT",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The most procreations to start"
+    )]
+    pub max_procreations: u64,
     #[arg(
         long,
         value_name = "NAME",

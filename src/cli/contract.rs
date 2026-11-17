@@ -101,10 +101,26 @@ attempted every task of every benchmark of the directed evolution, so that
 it finds every task in /var/log/cladenc/attempts. Where a procreation is
 due and no harness has been benchmarked in full yet, an attempt is started
 in its place: the primogenitor attempts every task before the first
-procreation. Each harness that procreates therefore takes as many attempts
-from --budget as the directed evolution has tasks, and a directed
-evolution whose budget is no larger than the number of its tasks starts no
 procreation.
+
+Every harness is benchmarked in full, whether it procreates or not: once a
+harness is created, it attempts every task. cladenc chooses which harness
+procreates, partly by chance. It does not choose which harness attempts
+next: the created harness with the lowest id that has a task left attempts
+it.
+
+--max-procreations gives the most procreations a directed evolution
+starts. A procreation counts once it is started, whether or not it creates
+its child. The directed evolution ends once that many have been started,
+each of them has ended, and every created harness has been benchmarked in
+full. With one benchmark of 5 tasks, --max-procreations 1 has the
+primogenitor attempt the 5 tasks and procreate, and its child attempt the
+5 tasks where the procreation created it.
+
+--genealogy-growth says how soon a procreation is due, and never how many
+are started: where it lets none start and nothing else is left to start,
+a procreation is started all the same. At 0, each child is benchmarked in
+full before the next procreation starts.
 
 How the harness ends decides what is recorded:
 

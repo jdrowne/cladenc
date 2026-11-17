@@ -9,7 +9,7 @@ fn tasks(count: usize) -> Vec<String> {
 
 fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
     ArtificialSelection {
-        budget: 1000,
+        max_procreations: 1000,
         growth: 0.0,
         confidence: 99.0,
         tasks: tasks(task_count),
@@ -29,16 +29,11 @@ fn attempted(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result
     }
 }
 
-fn two_lines() -> Genealogy {
+fn with_two_children() -> Genealogy {
     let mut genealogy = Genealogy::new();
+    attempted(&mut genealogy, 0, 5, AttemptResult::NotCompleted);
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 1, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 2, ProcreationOutcome::Created);
-    attempted(&mut genealogy, 1, 4, AttemptResult::NotCompleted);
-    attempted(&mut genealogy, 3, 8, AttemptResult::Completed);
-    attempted(&mut genealogy, 2, 4, AttemptResult::Completed);
-    attempted(&mut genealogy, 4, 8, AttemptResult::NotCompleted);
     genealogy
 }
 
@@ -61,7 +56,7 @@ fn times_attempting(genealogy: &Genealogy, harness: HarnessId, task_count: usize
         .count()
 }
 
-fn tasks_drawn(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String> {
+fn tasks_attempted(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String> {
     (0..200)
         .filter_map(|seed| attempt(genealogy, seed, task_count))
         .map(|(_, task)| task)
@@ -83,14 +78,23 @@ fn a_procreation_is_not_an_attempt() {
 }
 
 #[test]
-fn an_attempt_takes_the_place_of_a_procreation_that_no_harness_has_attempted_enough_for() {
+fn an_attempt_takes_the_place_of_a_procreation_that_no_harness_is_benchmarked_in_full_for() {
     assert_eq!(attempting(&Genealogy::new(), 0, 20), Some(0));
 }
 
 #[test]
-fn a_harness_with_better_results_attempts_a_task_more_often_than_one_with_the_better_clade() {
-    let genealogy = two_lines();
-    assert!(times_attempting(&genealogy, 2, 20) > times_attempting(&genealogy, 1, 20));
+fn the_harness_with_the_lowest_id_that_has_a_task_not_yet_given_attempts_next() {
+    let mut genealogy = with_two_children();
+    attempted(&mut genealogy, 1, 2, AttemptResult::Completed);
+    assert_eq!(attempting(&genealogy, 0, 5), Some(1));
+}
+
+#[test]
+fn a_harness_with_better_results_does_not_attempt_ahead_of_one_with_a_lower_id() {
+    let mut genealogy = with_two_children();
+    attempted(&mut genealogy, 1, 2, AttemptResult::NotCompleted);
+    attempted(&mut genealogy, 2, 4, AttemptResult::Completed);
+    assert_eq!(times_attempting(&genealogy, 1, 5), 200);
 }
 
 #[test]
@@ -118,66 +122,48 @@ fn a_failed_harness_never_attempts_a_task() {
 }
 
 #[test]
-fn the_only_task_not_yet_given_is_the_one_drawn() {
-    let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    attempted(&mut genealogy, 0, 4, AttemptResult::Completed);
-    assert_eq!(
-        tasks_drawn(&genealogy, 5),
-        BTreeSet::from(["task-4".to_owned()])
-    );
-}
-
-#[test]
-fn every_task_not_yet_given_can_be_drawn() {
+fn the_first_task_not_yet_given_is_the_one_attempted_whatever_the_seed() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
     attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
     assert_eq!(
-        tasks_drawn(&genealogy, 5),
-        BTreeSet::from([
-            "task-2".to_owned(),
-            "task-3".to_owned(),
-            "task-4".to_owned()
-        ])
+        tasks_attempted(&genealogy, 5),
+        BTreeSet::from(["task-2".to_owned()])
     );
 }
 
 #[test]
-fn a_task_whose_attempt_is_running_is_not_drawn_again() {
+fn the_tasks_are_given_in_the_order_they_are_listed_in() {
+    let listed = ArtificialSelection {
+        tasks: vec!["refactoring/t2".to_owned(), "benchmark/t1".to_owned()],
+        ..artificial_selection(0, 0)
+    };
+    assert_eq!(
+        listed.next_action(&Genealogy::new(), 0),
+        Some(Action::Attempt {
+            harness: 0,
+            task: "refactoring/t2".to_owned()
+        })
+    );
+}
+
+#[test]
+fn a_task_whose_attempt_is_running_is_not_given_again() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
     genealogy.start_attempt(0, "task-0").unwrap();
     assert_eq!(
-        tasks_drawn(&genealogy, 2),
+        tasks_attempted(&genealogy, 2),
         BTreeSet::from(["task-1".to_owned()])
     );
 }
 
 #[test]
-fn every_harness_is_given_every_task_exactly_once() {
-    let artificial_selection = artificial_selection(3, 5);
-    let mut genealogy = Genealogy::new();
-    let mut given = Vec::new();
-    let mut number = 0;
-    while let Some(action) = artificial_selection.next_action(&genealogy, number) {
-        match action {
-            Action::Procreation { progenitor } => {
-                child_of(&mut genealogy, progenitor, ProcreationOutcome::Created)
-            }
-            Action::Attempt { harness, task } => {
-                genealogy.start_attempt(harness, &task).unwrap();
-                genealogy
-                    .end_attempt(harness, &task, AttemptResult::Completed)
-                    .unwrap();
-                given.push((harness, task));
-            }
-        }
-        number += 1;
-    }
-    given.sort();
-    let every_pair: Vec<(HarnessId, String)> = (0..2)
-        .flat_map(|harness| tasks(5).into_iter().map(move |task| (harness, task)))
-        .collect();
-    assert_eq!(given, every_pair);
+fn the_action_number_does_not_change_which_attempt_is_next() {
+    let mut genealogy = with_two_children();
+    attempted(&mut genealogy, 1, 2, AttemptResult::Completed);
+    let first = artificial_selection(7, 5).next_action(&genealogy, 0);
+    assert!(
+        (1..50).all(|action| artificial_selection(7, 5).next_action(&genealogy, action) == first)
+    );
 }

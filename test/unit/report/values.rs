@@ -21,7 +21,7 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        budget: 800,
+        max_procreations: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 1,
@@ -145,15 +145,21 @@ fn the_model_reported_is_the_one_the_directed_evolution_was_started_with() {
 }
 
 #[test]
-fn started_counts_an_attempt_that_has_not_finished() {
+fn the_procreations_started_count_one_that_failed_and_one_that_has_not_ended() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
-    assert_eq!(report.started, 1);
+    assert_eq!(report.procreations_started, 2);
 }
 
 #[test]
-fn the_budget_is_that_of_the_run() {
+fn no_procreation_has_started_where_the_primogenitor_is_alone() {
     let report = report(&Genealogy::new());
-    assert_eq!(report.budget, 800);
+    assert_eq!(report.procreations_started, 0);
+}
+
+#[test]
+fn the_most_procreations_is_that_of_the_run() {
+    let report = report(&Genealogy::new());
+    assert_eq!(report.max_procreations, 800);
 }
 
 #[test]

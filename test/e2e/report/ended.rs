@@ -21,7 +21,7 @@ fn ended() -> TempDir {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
         ("--run-dir", directory.path().join("run")),
-        ("--budget", "10".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -56,7 +56,7 @@ fn report_prints_the_table() {
     assert_eq!(
         String::from_utf8(report(directory.path(), None).stdout).unwrap(),
         "model a-model at http://models.example/v1\n\
-         started 2 of 10, best harness 1\n\
+         started 1 of 1 procreation, best harness 1\n\
          \n\
          id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
          0   -           created  0          1              1                1                    0.500        0.005\n\
@@ -72,7 +72,7 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         format!(
             concat!(
                 r#"{{"model":"a-model","model_url":"http://models.example/v1","#,
-                r#""started":2,"budget":10,"best_harness":1,"harnesses":["#,
+                r#""procreations_started":1,"max_procreations":1,"best_harness":1,"harnesses":["#,
                 r#"{{"id":0,"progenitor":null,"state":"created","completed":0,"not_completed":1,"#,
                 r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5,"#,
                 r#""lower_bound":{}}},"#,

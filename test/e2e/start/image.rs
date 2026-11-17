@@ -48,7 +48,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
             test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.into(),
         ),
         ("--run-dir", directory.join("run")),
-        ("--budget", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

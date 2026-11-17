@@ -28,8 +28,7 @@ fn started(action: &Started, again: bool) -> String {
     Said::Started {
         action,
         again,
-        attempts: 5,
-        budget: 800,
+        max_procreations: 800,
     }
     .to_string()
 }
@@ -64,12 +63,12 @@ fn copying(tasks: u64) -> String {
     .to_string()
 }
 
-fn continuing(harnesses: u64) -> String {
+fn continuing(procreations: u64, max_procreations: u64) -> String {
     Said::Continuing {
         run_directory: Path::new("/run"),
-        started: 5,
-        budget: 800,
-        harnesses,
+        procreations,
+        max_procreations,
+        harnesses: procreations + 1,
     }
     .to_string()
 }
@@ -125,18 +124,27 @@ fn one_container_is_not_said_to_be_several() {
 #[test]
 fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
     assert_eq!(
-        continuing(2),
-        "continuing the directed evolution in /run, which has started 5 of its 800 attempts \
-         and holds 2 harnesses"
+        continuing(5, 800),
+        "continuing the directed evolution in /run, which has started 5 of 800 procreations and \
+         holds 6 harnesses"
     );
 }
 
 #[test]
 fn one_harness_is_not_said_to_be_several() {
     assert_eq!(
-        continuing(1),
-        "continuing the directed evolution in /run, which has started 5 of its 800 attempts \
-         and holds 1 harness"
+        continuing(0, 800),
+        "continuing the directed evolution in /run, which has started 0 of 800 procreations and \
+         holds 1 harness"
+    );
+}
+
+#[test]
+fn one_procreation_is_not_said_to_be_several() {
+    assert_eq!(
+        continuing(1, 1),
+        "continuing the directed evolution in /run, which has started 1 of 1 procreation and \
+         holds 2 harnesses"
     );
 }
 
@@ -213,15 +221,15 @@ fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is
 }
 
 #[test]
-fn a_procreation_is_said_to_have_started() {
+fn a_procreation_is_said_to_have_started_with_its_number_and_the_most_there_may_be() {
     assert_eq!(
         started(&procreation(), false),
-        "started the procreation of harness 3 by harness 1"
+        "started the procreation of harness 3 by harness 1, procreation 3 of 800"
     );
 }
 
 #[test]
-fn a_procreation_that_is_run_again_is_said_to_have_started_again() {
+fn a_procreation_that_is_run_again_is_said_to_have_started_again_with_no_number() {
     assert_eq!(
         started(&procreation(), true),
         "started again the procreation of harness 3 by harness 1"
@@ -229,10 +237,10 @@ fn a_procreation_that_is_run_again_is_said_to_have_started_again() {
 }
 
 #[test]
-fn an_attempt_is_said_to_have_started_with_its_number_and_the_budget() {
+fn an_attempt_is_said_to_have_started_with_no_number() {
     assert_eq!(
         started(&attempt(), false),
-        "started the attempt of harness 3 on task fix-the-parser, attempt 5 of 800"
+        "started the attempt of harness 3 on task fix-the-parser"
     );
 }
 

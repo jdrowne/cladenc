@@ -93,3 +93,21 @@ fn harness_count_counts_a_child_that_was_created() {
 fn harness_count_counts_a_child_that_failed() {
     assert_eq!(procreated(ProcreationOutcome::Failed).harness_count(), 2);
 }
+
+#[test]
+fn a_new_genealogy_has_started_no_procreation() {
+    assert_eq!(Genealogy::new().procreations_started(), 0);
+}
+
+#[test]
+fn a_procreation_counts_as_started_while_it_runs() {
+    let mut genealogy = Genealogy::new();
+    genealogy.start_procreation(0).unwrap();
+    assert_eq!(genealogy.procreations_started(), 1);
+}
+
+#[test]
+fn a_procreation_that_failed_still_counts_as_started() {
+    let genealogy = procreated(ProcreationOutcome::Failed);
+    assert_eq!(genealogy.procreations_started(), 1);
+}

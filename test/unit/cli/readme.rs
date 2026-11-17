@@ -262,11 +262,40 @@ fn the_readme_says_that_a_harness_procreates_only_once_it_has_been_benchmarked_i
 }
 
 #[test]
-fn the_readme_says_that_a_budget_no_larger_than_the_number_of_tasks_starts_no_procreation() {
+fn the_readme_says_that_every_harness_is_benchmarked_in_full() {
+    assert!(
+        readme().contains("Every harness is benchmarked in full, whether it procreates or not")
+    );
+}
+
+#[test]
+fn the_readme_says_what_the_most_procreations_counts() {
+    assert!(
+        readme().contains(
+            "A procreation counts once it is started, whether or not it creates its child"
+        )
+    );
+}
+
+#[test]
+fn the_readme_says_when_a_directed_evolution_ends() {
     assert!(readme().contains(
-        "A directed evolution whose budget is no larger than the number of its tasks starts no \
-         procreation"
+        "A directed evolution ends once that many procreations have been started, each of them \
+         has ended, and every created harness has been benchmarked in full"
     ));
+}
+
+#[test]
+fn the_readme_says_that_no_harness_is_chosen_to_attempt_next() {
+    assert!(readme().contains(
+        "It does not choose which harness attempts next: the created harness with the lowest id \
+         that has a task left attempts it"
+    ));
+}
+
+#[test]
+fn the_readme_names_no_budget() {
+    assert!(!readme().contains("budget"));
 }
 
 #[test]

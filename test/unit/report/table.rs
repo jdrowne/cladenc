@@ -20,7 +20,7 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        budget: 800,
+        max_procreations: 800,
         genealogy_growth: 0.6,
         confidence: 99.0,
         max_concurrent_containers: 1,
@@ -50,7 +50,7 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
     assert_eq!(
         table,
         "model a-model at http://models.example/v1\n\
-         started 1 of 800, best harness 0\n\
+         started 1 of 800 procreations, best harness 0\n\
          \n\
          id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
          0   -           created        1          0              1                0                    1.000        0.100\n\
@@ -69,7 +69,7 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
     assert_eq!(
         table,
         "model a-model at http://models.example/v1\n\
-         started 0 of 800, best harness 0\n\
+         started 1 of 800 procreations, best harness 0\n\
          \n\
          id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
          0   -           created  0          0              0                0                    -            0.010\n\
@@ -85,4 +85,17 @@ fn a_rate_is_printed_to_three_decimal_places() {
         attempted(genealogy, "t3", AttemptResult::NotCompleted);
     });
     assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
+}
+
+#[test]
+fn the_most_procreations_being_1_is_not_shown_as_several() {
+    let settings = Settings {
+        max_procreations: 1,
+        ..settings()
+    };
+    let table = Report::of(&settings, &Genealogy::new()).table();
+    assert_eq!(
+        table.lines().nth(1),
+        Some("started 0 of 1 procreation, best harness 0")
+    );
 }

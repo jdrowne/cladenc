@@ -33,8 +33,8 @@ pub enum Said<'a> {
     },
     Continuing {
         run_directory: &'a Path,
-        started: u64,
-        budget: u64,
+        procreations: u64,
+        max_procreations: u64,
         harnesses: u64,
     },
     HadFinished {
@@ -50,8 +50,7 @@ pub enum Said<'a> {
     Started {
         action: &'a Started,
         again: bool,
-        attempts: u64,
-        budget: u64,
+        max_procreations: u64,
     },
     Procreated {
         child: HarnessId,
@@ -127,14 +126,15 @@ impl Display for Said<'_> {
             ),
             Self::Continuing {
                 run_directory,
-                started,
-                budget,
+                procreations,
+                max_procreations,
                 harnesses,
             } => write!(
                 formatter,
-                "continuing the directed evolution in {}, which has started {started} of its \
-                 {budget} attempts and holds {}",
+                "continuing the directed evolution in {}, which has started {procreations} of {} \
+                 and holds {}",
                 run_directory.display(),
+                counted(*max_procreations, "procreation", "procreations"),
                 counted(*harnesses, "harness", "harnesses")
             ),
             Self::HadFinished {
@@ -159,12 +159,11 @@ impl Display for Said<'_> {
             Self::Started {
                 action,
                 again,
-                attempts,
-                budget,
+                max_procreations,
             } => match (action, again) {
-                (Started::Attempt { .. }, false) => write!(
+                (Started::Procreation { child, .. }, false) => write!(
                     formatter,
-                    "started {action}, attempt {attempts} of {budget}"
+                    "started {action}, procreation {child} of {max_procreations}"
                 ),
                 (_, false) => write!(formatter, "started {action}"),
                 (_, true) => write!(formatter, "started again {action}"),
