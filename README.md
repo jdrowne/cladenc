@@ -108,6 +108,6 @@ cladenc start \
 1. It creates the outputs directory, and copies into it the source code of the primogenitor and the tasks of each benchmark.
 2. Where `--dockerfile` is given, it builds the image that every container is started from.
 3. Where `--harness-build-command` is given, it builds the primogenitor.
-4. It has the primogenitor attempt every task of every benchmark. In one container the harness works on the task, and in a second one the grader of the task says whether the harness completed it.
-5. It starts as many procreations as `--max-procreations` gives. In each, a harness makes a changed copy of its own source code, its child, and each child that is created attempts every task as the primogenitor did. `cladenc start` chooses which harness procreates among those that have attempted every task, partly by chance, and more often one that completed, together with its descendants, a larger share of the tasks they attempted.
+4. It benchmarks the primogenitor. For each task of each benchmark, the harness works on the task in one container, and in a second one the grader of the task says whether the harness completed it.
+5. It starts as many procreations as `--max-procreations` gives. In each, a harness makes a changed copy of its own source code, its child, and each child that is created is benchmarked as the primogenitor was. `cladenc start` chooses which harness procreates among those that have been benchmarked in full, partly by chance, and more often one that completed, together with its descendants, a larger share of the tasks they attempted.
 6. It names the best harness: the created harness that completed the most tasks.

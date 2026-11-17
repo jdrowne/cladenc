@@ -1,11 +1,11 @@
 ---
 name: the-words-about-benchmarks
-description: "The user's ten words about benchmarks, each chosen from the industry's names: benchmark, task, task specification, workspace, grader, attempt, completed and not completed, result, to benchmark, score; a new one is chosen by the user, asked one at a time in the text of a reply"
+description: "The user's ten words about benchmarks, each chosen from the industry's names: benchmark, task, task specification, workspace, grader, attempt, completed and not completed, result, to benchmark, score; a harness is said to be benchmarked, not to attempt every task; a new one is chosen by the user, asked one at a time in the text of a reply"
 metadata:
   node_type: memory
   type: feedback
   originSessionId: 39898ed4-3db1-47de-9121-2bc5e7d15159
-  modified: 2026-11-17T03:32:22.300Z
+  modified: 2026-11-17T06:49:55.151Z
 ---
 
 # The words about benchmarks
@@ -30,6 +30,7 @@ The words `cladenc` uses about benchmarks are the user's choice, each taken from
 **How to apply:**
 
 - Say these words in replies, issues, commits, the README, the help, what `cladenc` prints and the names in the code. Assessment, assess, statement, check, success and failure are not said for them, and score is not said for how one attempt ended. An older issue or commit that says them means the words above.
+- What a harness goes through is said with the verb: the primogenitor is benchmarked, a child is benchmarked, `cladenc` benchmarks a harness. It is not said as a harness attempting every task: the user reads a sentence of that kind as wrong, not as another way to put it. Mine, not the user's: that each task takes one attempt is said once, where the word is explained, and attempt stays the word wherever one attempt is what the sentence is about, such as which attempt starts next.
 - Completed is said only where the grader accepted the work. An attempt that has ended, whatever came of it, has finished.
 - An attempt that ran past its time limit is not completed, and is recorded as `timed_out`.
 - A word that is not in the table is chosen by the user. Put the things to them one at a time, one question for each: say what `cladenc` does, what `cladenc` calls it today, and every name the industry has for it, with who uses which. Do not put several words into one choice, do not choose for them, and say plainly where a word they bring is not the industry's. Ask in the text of a reply and not with the question dialog, which holds too few options to list every name.

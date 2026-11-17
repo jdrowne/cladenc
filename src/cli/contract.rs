@@ -101,22 +101,21 @@ A harness procreates only once it has been benchmarked in full: it has
 attempted every task of every benchmark of the directed evolution, so that
 it finds every task in /var/log/cladenc/attempts. Where a procreation is
 due and no harness has been benchmarked in full yet, an attempt is started
-in its place: the primogenitor attempts every task before the first
+in its place: the primogenitor is benchmarked in full before the first
 procreation.
 
-Every harness is benchmarked in full, whether it procreates or not: once a
-harness is created, it attempts every task. cladenc chooses which harness
-procreates, partly by chance. It does not choose which harness attempts
-next: the created harness with the lowest id that has a task left attempts
-it.
+Every harness is benchmarked in full once it is created, whether it
+procreates or not. cladenc chooses which harness procreates, partly by
+chance. It does not choose which harness attempts next: the created harness
+with the lowest id that has a task left attempts it.
 
 --max-procreations gives the most procreations a directed evolution
 starts. A procreation counts once it is started, whether or not it creates
 its child. The directed evolution ends once that many have been started,
 each of them has ended, and every created harness has been benchmarked in
-full. With one benchmark of 5 tasks, --max-procreations 1 has the
-primogenitor attempt the 5 tasks and procreate, and its child attempt the
-5 tasks where the procreation created it.
+full. With one benchmark of 5 tasks and --max-procreations 1, the
+primogenitor is benchmarked on the 5 tasks and procreates, and its child is
+benchmarked on the 5 tasks where the procreation created it.
 
 --genealogy-growth says how soon a procreation is due, and never how many
 are started: where it lets none start and nothing else is left to start,
@@ -185,9 +184,9 @@ the benchmark and in no task is left alone. A benchmark that holds no task
 is refused, and so is one with a task that lacks one of the three.
 
 --benchmark is given once for each benchmark of the directed evolution. A
-directed evolution that is given several has its harnesses attempt the
-tasks of all of them, and looks for the one harness that completes the
-largest share of those tasks. Every task counts the same, so a benchmark
+directed evolution that is given several has each harness benchmarked on
+all of them, and looks for the one harness that completes the largest
+share of their tasks. Every task counts the same, so a benchmark
 with more tasks weighs more. The name of a benchmark is the name of its
 directory, made of the characters the id of a task is made of, and a task
 of a directed evolution is known by the two together, as

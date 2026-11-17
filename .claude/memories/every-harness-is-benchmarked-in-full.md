@@ -5,12 +5,12 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 3ac128cd-9432-4e14-bf1c-720fe0e77c5a
-  modified: 2026-11-17T05:13:26.934Z
+  modified: 2026-11-17T06:49:57.102Z
 ---
 
 # Every harness is benchmarked in full
 
-Every harness of a directed evolution is benchmarked in full: once it is made, it attempts every task of every benchmark. The one number a person gives to bound a directed evolution is the most procreations it starts, with the flag `--max-procreations`. It does not count attempts, and there is no `--budget`. The flag takes 1 or more, and 0 is refused: at 1, the primogenitor and one child are benchmarked.
+Every harness of a directed evolution is benchmarked in full once it is made, on every task of every benchmark. It is said that way, per [[the-words-about-benchmarks]], and not as a harness attempting every task. The one number a person gives to bound a directed evolution is the most procreations it starts, with the flag `--max-procreations`. It does not count attempts, and there is no `--budget`. The flag takes 1 or more, and 0 is refused: at 1, the primogenitor and one child are benchmarked.
 
 `cladenc` chooses which harness procreates. It does not choose which harness attempts next, and no harness is left benchmarked in part.
 

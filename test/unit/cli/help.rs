@@ -484,9 +484,8 @@ fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_b
 #[test]
 fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
     assert!(help_of_start(true).contains(
-        "A\ndirected evolution that is given several has its harnesses attempt the\ntasks of \
-         all of them, and looks for the one harness that completes the\nlargest share of those \
-         tasks."
+        "A\ndirected evolution that is given several has each harness benchmarked on\nall of \
+         them, and looks for the one harness that completes the largest\nshare of their tasks."
     ));
 }
 
@@ -550,7 +549,7 @@ fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_i
 fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation() {
     assert!(help_of_start(true).contains(
         "Where a procreation is\ndue and no harness has been benchmarked in full yet, an \
-         attempt is started\nin its place: the primogenitor attempts every task before the \
+         attempt is started\nin its place: the primogenitor is benchmarked in full before the \
          first\nprocreation."
     ));
 }
@@ -558,16 +557,15 @@ fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation(
 #[test]
 fn the_long_help_of_start_says_that_every_harness_is_benchmarked_in_full() {
     assert!(help_of_start(true).contains(
-        "Every harness is benchmarked in full, whether it procreates or not: once a\nharness is \
-         created, it attempts every task."
+        "Every harness is benchmarked in full once it is created, whether it\nprocreates or not."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_which_harness_attempts_next() {
     assert!(help_of_start(true).contains(
-        "It does not choose which harness attempts\nnext: the created harness with the lowest \
-         id that has a task left attempts\nit."
+        "It does not choose which harness attempts next: the created harness\nwith the lowest \
+         id that has a task left attempts it."
     ));
 }
 
