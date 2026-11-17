@@ -27,7 +27,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
             SAY_WHAT_THE_HARNESS_IS_GIVEN.into(),
         ),
         ("--run-dir", directory.join("run")),
-        ("--budget", "1".into()),
+        ("--budget", "2".into()),
         ("--genealogy-growth", "0".into()),
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),

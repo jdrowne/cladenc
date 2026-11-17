@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
+use std::iter;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
@@ -38,10 +39,23 @@ fn settings(directory: &Path) -> Settings {
     }
 }
 
+const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/assessments ]; then ls \
+                                    /var/log/cladenc/assessments/benchmark > tasks-found; fi";
+
 fn over_one_task(settings: &mut Settings) {
     settings.benchmarks[0].tasks = vec!["t1".to_owned()];
     settings.genealogy_growth = 0.0;
     settings.budget = 10;
+}
+
+fn over_two_benchmarks(settings: &mut Settings) {
+    let directory = settings.primogenitor.parent().unwrap();
+    let refactoring = test_inputs::benchmark_named(directory, "refactoring", &["t1", "t2"]);
+    settings
+        .benchmarks
+        .push(Benchmark::read(&refactoring).unwrap());
+    settings.genealogy_growth = 0.0;
+    settings.budget = 8;
 }
 
 fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, DirectedEvolutionError>) {
@@ -78,6 +92,26 @@ fn started(journal: &str, action: &str) -> usize {
     journal
         .matches(&format!("\"record\":\"{action}_started\""))
         .count()
+}
+
+fn starts(directory: &TempDir) -> Vec<String> {
+    journal_of(directory)
+        .lines()
+        .filter_map(|line| match serde_json::from_str::<Record>(line).unwrap() {
+            Record::AssessmentStarted { harness, .. } => Some(format!("assessment of {harness}")),
+            Record::ProcreationStarted { progenitor, .. } => {
+                Some(format!("procreation by {progenitor}"))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+fn assessments_of_the_primogenitor_and_then(tasks: usize, then: &[&str]) -> Vec<String> {
+    iter::repeat_n("assessment of 0", tasks)
+        .chain(then.iter().copied())
+        .map(str::to_owned)
+        .collect()
 }
 
 #[test]
@@ -163,21 +197,46 @@ fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_p
 }
 
 #[test]
-fn with_a_growth_above_0_the_second_action_is_a_procreation_of_the_primogenitor() {
-    let (directory, _found) = evolved(|settings| settings.budget = 2);
+fn with_a_growth_above_0_the_primogenitor_procreates_once_it_has_been_scored_on_every_task() {
+    let (directory, _found) = evolved(|_| {});
     assert_eq!(
-        journal_of(&directory).lines().nth(3).unwrap(),
-        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+        starts(&directory)[..7],
+        assessments_of_the_primogenitor_and_then(5, &["procreation by 0", "procreation by 0"])
     );
 }
 
 #[test]
-fn with_a_growth_of_0_a_directed_evolution_starts_with_a_procreation_of_the_primogenitor() {
-    let (directory, _found) = evolved(over_one_task);
+fn with_a_growth_of_0_the_primogenitor_is_assessed_on_every_task_and_then_procreates_once() {
+    let (directory, _found) = evolved(|settings| settings.genealogy_growth = 0.0);
     assert_eq!(
-        journal_of(&directory).lines().nth(1).unwrap(),
-        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+        starts(&directory),
+        assessments_of_the_primogenitor_and_then(5, &["procreation by 0", "assessment of 1"])
     );
+}
+
+#[test]
+fn given_two_benchmarks_the_primogenitor_procreates_once_scored_on_every_task_of_both() {
+    let (directory, _found) = evolved(over_two_benchmarks);
+    assert_eq!(
+        starts(&directory),
+        assessments_of_the_primogenitor_and_then(7, &["procreation by 0", "assessment of 1"])
+    );
+}
+
+#[test]
+fn a_progenitor_finds_every_task_of_its_benchmark_in_the_directory_of_its_assessments() {
+    let (directory, _found) =
+        evolved(|settings| settings.harness_run_command = KEEP_THE_TASKS_FOUND.to_owned());
+    assert_eq!(
+        fs::read_to_string(directory.path().join("run/harnesses/1/tasks-found")).unwrap(),
+        "t1\nt2\nt3\nt4\nt5\n"
+    );
+}
+
+#[test]
+fn a_budget_no_larger_than_the_number_of_tasks_starts_no_procreation() {
+    let (directory, _found) = evolved(|settings| settings.budget = 5);
+    assert_eq!(started(&journal_of(&directory), "procreation"), 0);
 }
 
 #[test]
@@ -246,7 +305,7 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 fn a_directed_evolution_says_each_action_as_it_starts() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
-        said[2],
+        said[4],
         "cladenc: started the procreation of harness 1 by harness 0"
     );
 }

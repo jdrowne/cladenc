@@ -77,7 +77,14 @@ fn an_assessment_is_the_next_action_when_no_procreation_is_due() {
 
 #[test]
 fn a_procreation_is_not_an_assessment() {
-    assert_eq!(assessed(&Genealogy::new(), 0, 20), None);
+    let mut genealogy = Genealogy::new();
+    assess(&mut genealogy, 0, 2, Score::Success);
+    assert_eq!(assessed(&genealogy, 0, 2), None);
+}
+
+#[test]
+fn an_assessment_takes_the_place_of_a_procreation_that_no_harness_has_been_scored_enough_for() {
+    assert_eq!(assessed(&Genealogy::new(), 0, 20), Some(0));
 }
 
 #[test]
@@ -160,6 +167,9 @@ fn every_harness_is_given_every_task_exactly_once() {
             }
             Action::Assessment { harness, task } => {
                 genealogy.start_assessment(harness, &task).unwrap();
+                genealogy
+                    .end_assessment(harness, &task, Score::Success)
+                    .unwrap();
                 given.push((harness, task));
             }
         }

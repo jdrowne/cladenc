@@ -42,18 +42,21 @@ impl ArtificialSelection {
         generator.set_stream(action);
         let created = genealogy.created_harnesses();
         if procreation_is_due(genealogy.harness_count(), started, self.growth) {
-            let clades = created.iter().map(|harness| {
-                (
-                    *harness,
-                    harness.clade_successes(),
-                    harness.clade_failures(),
-                )
-            });
-            return largest_draw(&mut generator, focus, clades).map(|progenitor| {
-                Action::Procreation {
+            let clades = created
+                .iter()
+                .filter(|harness| harness.has_been_scored_on_every(&self.tasks))
+                .map(|harness| {
+                    (
+                        *harness,
+                        harness.clade_successes(),
+                        harness.clade_failures(),
+                    )
+                });
+            if let Some(progenitor) = largest_draw(&mut generator, focus, clades) {
+                return Some(Action::Procreation {
                     progenitor: progenitor.id(),
-                }
-            });
+                });
+            }
         }
         let with_a_task_left = created
             .iter()

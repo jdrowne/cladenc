@@ -32,6 +32,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
     }
 }
 
+const END_A_PROCREATION_WITH_125: &str =
+    "if [ -d /var/log/cladenc/assessments ]; then exit 125; fi";
+
 fn stopped_at_its_first_assessment() -> (TempDir, Result<Found, DirectedEvolutionError>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
@@ -78,10 +81,9 @@ fn a_container_that_ends_with_status_125_at_an_assessment_stops_the_directed_evo
     ));
 }
 
-fn started_with_a_procreation_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
+fn evolved_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), run_command);
-    settings.genealogy_growth = 0.0;
+    let settings = settings(directory.path(), run_command);
     let run_directory = directory.path().join("run");
     directed_evolution::start(
         &settings,
@@ -94,7 +96,7 @@ fn started_with_a_procreation_by(run_command: &str) -> Result<Found, DirectedEvo
 #[test]
 fn a_container_that_ends_with_status_125_at_a_procreation_stops_the_directed_evolution() {
     assert!(matches!(
-        started_with_a_procreation_by("exit 125"),
+        evolved_by(END_A_PROCREATION_WITH_125),
         Err(DirectedEvolutionError::Action {
             error: ContainerError::Docker(_),
             ..
@@ -104,7 +106,7 @@ fn a_container_that_ends_with_status_125_at_a_procreation_stops_the_directed_evo
 
 #[test]
 fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_directed_evolution() {
-    assert!(started_with_a_procreation_by("exit 2").is_ok());
+    assert!(evolved_by("exit 2").is_ok());
 }
 
 #[test]
@@ -123,7 +125,7 @@ fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task_of_
 fn a_directed_evolution_a_container_stopped_names_the_progenitor_and_the_child_of_that_procreation()
 {
     assert!(matches!(
-        started_with_a_procreation_by("exit 125"),
+        evolved_by(END_A_PROCREATION_WITH_125),
         Err(DirectedEvolutionError::Action {
             action: Started::Procreation {
                 child: 1,
@@ -183,8 +185,7 @@ fn a_directed_evolution_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_w
 #[test]
 fn a_directed_evolution_a_container_stopped_says_what_docker_did_when_it_happens() {
     let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path(), "exit 125");
-    settings.genealogy_growth = 0.0;
+    let settings = settings(directory.path(), END_A_PROCREATION_WITH_125);
     let run_directory = directory.path().join("run");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);

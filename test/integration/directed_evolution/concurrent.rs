@@ -71,6 +71,24 @@ fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
     records.iter().filter(|record| counted(record)).count()
 }
 
+fn fewest_tasks_a_progenitor_had_been_scored_on(records: &[Record]) -> Option<usize> {
+    records
+        .iter()
+        .enumerate()
+        .filter_map(|(place, record)| match record {
+            Record::ProcreationStarted { progenitor, .. } => {
+                Some(count(&records[..place], |earlier| {
+                    matches!(
+                        earlier,
+                        Record::AssessmentFinished { harness, .. } if harness == progenitor
+                    )
+                }))
+            }
+            _ => None,
+        })
+        .min()
+}
+
 #[test]
 fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finished_at_most() {
     assert_eq!(most_running_at_once(&records(|_| {})), 3);
@@ -97,5 +115,14 @@ fn with_a_growth_of_0_and_a_limit_of_three_exactly_one_procreation_starts() {
             Record::ProcreationStarted { .. }
         )),
         1
+    );
+}
+
+#[test]
+fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_scored_on_every_task() {
+    let records = records(|settings| settings.max_concurrent_containers = 2);
+    assert_eq!(
+        fewest_tasks_a_progenitor_had_been_scored_on(&records),
+        Some(5)
     );
 }

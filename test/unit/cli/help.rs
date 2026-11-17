@@ -538,6 +538,32 @@ fn the_long_help_of_start_says_where_a_procreation_finds_its_assessments() {
 }
 
 #[test]
+fn the_long_help_of_start_says_that_a_harness_procreates_only_once_scored_on_every_task() {
+    assert!(help_of_start(true).contains(
+        "A harness procreates only once it has been scored on every task of every\nbenchmark of \
+         the directed evolution, so that it finds every task in\n/var/log/cladenc/assessments."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_assessment_takes_the_place_of_a_procreation() {
+    assert!(help_of_start(true).contains(
+        "Where a procreation is due and no harness\nhas been scored on every task yet, an \
+         assessment is started in its place:\nthe primogenitor is tried on every task before the \
+         first procreation."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_harness_that_procreates_takes_from_the_budget() {
+    assert!(help_of_start(true).contains(
+        "Each\nharness that procreates therefore takes as many assessments from \
+         --budget\nas the directed evolution has tasks, and a directed evolution whose \
+         budget\nis no larger than the number of its tasks starts no procreation."
+    ));
+}
+
+#[test]
 fn the_long_help_of_start_says_where_the_copy_that_a_procreation_improves_is() {
     assert!(help_of_start(true).contains(
         "/var/lib/cladenc/work holds a second copy of its source code, and the\ninstruction asks \

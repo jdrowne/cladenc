@@ -254,6 +254,22 @@ fn the_readme_says_where_the_check_of_a_task_finds_the_directory_of_its_task() {
 }
 
 #[test]
+fn the_readme_says_that_a_harness_procreates_only_once_it_has_been_scored_on_every_task() {
+    assert!(readme().contains(
+        "A harness procreates only once it has been scored on every task of every benchmark of \
+         the directed evolution."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_budget_no_larger_than_the_number_of_tasks_starts_no_procreation() {
+    assert!(readme().contains(
+        "A directed evolution whose budget is no larger than the number of its tasks starts no \
+         procreation"
+    ));
+}
+
+#[test]
 fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
     assert_eq!(
         ["`/harness`", "`/work`", "`/task`", "`/assessments`"]

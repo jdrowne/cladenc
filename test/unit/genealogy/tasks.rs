@@ -61,3 +61,60 @@ fn a_task_given_to_one_harness_is_not_given_to_another() {
     genealogy.start_assessment(0, "a").unwrap();
     assert_eq!(genealogy.harnesses()[1].tasks_not_given(&list), ["a", "b"]);
 }
+
+fn scored(genealogy: &mut Genealogy, task: &str, score: Score) {
+    genealogy.start_assessment(0, task).unwrap();
+    genealogy.end_assessment(0, task, score).unwrap();
+}
+
+#[test]
+fn a_harness_scored_on_each_task_of_the_list_has_been_scored_on_every_task() {
+    let list = tasks(&["a", "b"]);
+    let mut genealogy = Genealogy::new();
+    scored(&mut genealogy, "a", Score::Success);
+    scored(&mut genealogy, "b", Score::Failure);
+    assert!(genealogy.harnesses()[0].has_been_scored_on_every(&list));
+}
+
+#[test]
+fn a_harness_whose_assessment_ran_past_its_time_limit_has_been_scored_on_that_task() {
+    let list = tasks(&["a"]);
+    let mut genealogy = Genealogy::new();
+    scored(&mut genealogy, "a", Score::TimedOut);
+    assert!(genealogy.harnesses()[0].has_been_scored_on_every(&list));
+}
+
+#[test]
+fn a_harness_given_no_task_has_not_been_scored_on_every_task() {
+    let list = tasks(&["a", "b"]);
+    assert!(!Genealogy::new().harnesses()[0].has_been_scored_on_every(&list));
+}
+
+#[test]
+fn a_harness_not_given_one_task_of_the_list_has_not_been_scored_on_every_task() {
+    let list = tasks(&["a", "b"]);
+    let mut genealogy = Genealogy::new();
+    scored(&mut genealogy, "a", Score::Success);
+    assert!(!genealogy.harnesses()[0].has_been_scored_on_every(&list));
+}
+
+#[test]
+fn a_harness_has_not_been_scored_on_every_task_while_an_assessment_of_it_is_running() {
+    let list = tasks(&["a", "b"]);
+    let mut genealogy = Genealogy::new();
+    scored(&mut genealogy, "a", Score::Success);
+    genealogy.start_assessment(0, "b").unwrap();
+    assert!(!genealogy.harnesses()[0].has_been_scored_on_every(&list));
+}
+
+#[test]
+fn a_task_another_harness_was_scored_on_does_not_count_for_a_harness() {
+    let list = tasks(&["a"]);
+    let mut genealogy = Genealogy::new();
+    let child = genealogy.start_procreation(0).unwrap();
+    genealogy
+        .end_procreation(child, ProcreationOutcome::Created)
+        .unwrap();
+    scored(&mut genealogy, "a", Score::Success);
+    assert!(!genealogy.harnesses()[1].has_been_scored_on_every(&list));
+}

@@ -43,3 +43,14 @@ fn there_is_no_next_action_once_the_budget_is_spent() {
         None
     );
 }
+
+#[test]
+fn there_is_no_next_action_while_the_only_harness_that_could_procreate_is_still_assessed() {
+    let mut genealogy = Genealogy::new();
+    genealogy.start_assessment(0, "task-0").unwrap();
+    genealogy.start_assessment(0, "task-1").unwrap();
+    assert_eq!(
+        artificial_selection(100, 0.0).next_action(&genealogy, 0),
+        None
+    );
+}

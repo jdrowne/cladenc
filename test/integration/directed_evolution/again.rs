@@ -68,6 +68,8 @@ fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
         "[ -d /var/log/cladenc/assessments ] || sleep 300",
     );
     settings.max_concurrent_containers = 2;
+    test_inputs::task(&settings.benchmarks[0].directory, "t2");
+    settings.benchmarks[0].tasks.push("t2".to_owned());
     let run_directory = directory.join("run");
     Workspace::create(&run_directory, &settings.primogenitor)
         .unwrap()

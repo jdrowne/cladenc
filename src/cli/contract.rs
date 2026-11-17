@@ -96,6 +96,15 @@ there is its child. /var/log/cladenc/assessments holds the finished
 assessments of the harness, to read: one directory for each benchmark, and
 in it one for each task, holding what the assessment of that task kept.
 
+A harness procreates only once it has been scored on every task of every
+benchmark of the directed evolution, so that it finds every task in
+/var/log/cladenc/assessments. Where a procreation is due and no harness
+has been scored on every task yet, an assessment is started in its place:
+the primogenitor is tried on every task before the first procreation. Each
+harness that procreates therefore takes as many assessments from --budget
+as the directed evolution has tasks, and a directed evolution whose budget
+is no larger than the number of its tasks starts no procreation.
+
 How the harness ends decides what is recorded:
 
   exit status 0     the procreation created a harness

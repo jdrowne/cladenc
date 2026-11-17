@@ -82,3 +82,15 @@ fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_is_ass
         })
     );
 }
+
+#[test]
+fn an_assessment_in_the_place_of_a_procreation_is_drawn_as_one_where_no_procreation_is_due() {
+    let in_its_place = ArtificialSelection {
+        growth: 0.0,
+        ..artificial_selection(7)
+    };
+    assert_eq!(
+        in_its_place.next_action(&Genealogy::new(), 3),
+        artificial_selection(7).next_action(&Genealogy::new(), 3)
+    );
+}

@@ -81,6 +81,12 @@ impl Harness {
             .collect()
     }
 
+    pub fn has_been_scored_on_every(&self, tasks: &[String]) -> bool {
+        tasks
+            .iter()
+            .all(|task| self.given.contains(task) && !self.running.contains(task))
+    }
+
     pub(super) fn set_state(&mut self, state: HarnessState) {
         self.state = state;
     }
