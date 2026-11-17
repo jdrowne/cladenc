@@ -1,9 +1,8 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
-use std::time::Instant;
 
 use super::container::{Container, Mount};
-use super::program::{Ending, deadline};
+use super::program::{Ending, Limits};
 use super::{ContainerError, HARNESS, Launch};
 use crate::genealogy::{HarnessId, ProcreationOutcome};
 use crate::run_directory::{RunDirectory, holds_only_harness_files};
@@ -18,7 +17,6 @@ struct Build<'a> {
 pub fn build_primogenitor(
     run_directory: &RunDirectory,
     launch: &Launch<'_>,
-    time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<(), ContainerError> {
     let Some(command) = launch.build_command else {
@@ -31,7 +29,8 @@ pub fn build_primogenitor(
         harness: 0,
         source: &source,
     };
-    match build.run(run_directory, deadline(time_limit), stop)? {
+    let limits = Limits::starting_now(launch.procreation_timeout, stop);
+    match build.run(run_directory, limits)? {
         Ending::Exited(0) if holds_only_harness_files(&source).unwrap_or(false) => Ok(()),
         Ending::Exited(0) => Err(ContainerError::OtherFiles),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
@@ -44,8 +43,7 @@ pub(super) fn build_child(
     launch: &Launch<'_>,
     child: HarnessId,
     source: &Path,
-    deadline: Instant,
-    stop: &AtomicBool,
+    limits: Limits<'_>,
 ) -> Result<ProcreationOutcome, ContainerError> {
     let Some(command) = launch.build_command else {
         return Ok(ProcreationOutcome::Created);
@@ -56,7 +54,7 @@ pub(super) fn build_child(
         harness: child,
         source,
     };
-    Ok(match build.run(run_directory, deadline, stop)? {
+    Ok(match build.run(run_directory, limits)? {
         Ending::Exited(0) if holds_only_harness_files(source).unwrap_or(false) => {
             ProcreationOutcome::Created
         }
@@ -69,8 +67,7 @@ impl Build<'_> {
     fn run(
         &self,
         run_directory: &RunDirectory,
-        deadline: Instant,
-        stop: &AtomicBool,
+        limits: Limits<'_>,
     ) -> Result<Ending, ContainerError> {
         let kept = run_directory
             .start_build(self.harness)
@@ -87,6 +84,6 @@ impl Build<'_> {
             working_directory: HARNESS,
             environment: &[("CLADENC_HARNESS", HARNESS)],
         };
-        container.run(&kept, deadline, stop)
+        container.run(&kept, limits)
     }
 }

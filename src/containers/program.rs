@@ -20,15 +20,25 @@ pub(super) enum Ending {
     TimedOut,
 }
 
-pub(super) fn deadline(time_limit: u64) -> Instant {
-    Instant::now() + Duration::from_secs(time_limit)
+#[derive(Clone, Copy)]
+pub(super) struct Limits<'a> {
+    pub deadline: Instant,
+    pub stop: &'a AtomicBool,
+}
+
+impl<'a> Limits<'a> {
+    pub(super) fn starting_now(time_limit: u64, stop: &'a AtomicBool) -> Self {
+        Self {
+            deadline: Instant::now() + Duration::from_secs(time_limit),
+            stop,
+        }
+    }
 }
 
 pub(super) fn run(
     mut command: Command,
     running: &Path,
-    deadline: Instant,
-    stop: &AtomicBool,
+    limits: Limits<'_>,
 ) -> Result<Ending, ContainerError> {
     let mut program = File::create(running.join("stdout"))
         .and_then(|stdout| File::create(running.join("stderr")).map(|stderr| (stdout, stderr)))
@@ -48,11 +58,11 @@ pub(super) fn run(
                 .map(Ending::Exited)
                 .ok_or_else(|| ContainerError::Signal(status.signal().unwrap_or_default()));
         }
-        if stop.load(Ordering::SeqCst) {
+        if limits.stop.load(Ordering::SeqCst) {
             kill(&mut program);
             return Err(ContainerError::Stopped);
         }
-        if Instant::now() >= deadline {
+        if Instant::now() >= limits.deadline {
             kill(&mut program);
             return Ok(Ending::TimedOut);
         }

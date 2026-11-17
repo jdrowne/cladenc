@@ -52,6 +52,8 @@ impl Settings {
             run_command: &self.harness_run_command,
             build_command: self.harness_build_command.as_deref(),
             model: self.model(key),
+            procreation_timeout: self.procreation_timeout,
+            attempt_timeout: self.attempt_timeout,
         }
     }
 

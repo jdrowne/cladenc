@@ -41,6 +41,8 @@ fn launch(run_command: &str) -> Launch<'_> {
         run_command,
         build_command: None,
         model: MODEL,
+        procreation_timeout: 60,
+        attempt_timeout: 60,
     }
 }
 
@@ -60,9 +62,12 @@ fn stopped_once_written<Outcome>(
 
 fn timed_out() -> Attempted {
     let (directory, run_directory) = made();
-    let launch = launch(SAY_THE_CONTAINER_AND_STAY);
+    let launch = Launch {
+        attempt_timeout: 3,
+        ..launch(SAY_THE_CONTAINER_AND_STAY)
+    };
     let stop = AtomicBool::new(false);
-    let result = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 3, &stop);
+    let result = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", &stop);
     (directory, run_directory, result)
 }
 
@@ -73,7 +78,7 @@ fn stopped_while_its_harness_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("work/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, stop)
+        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", stop)
     });
     (directory, run_directory, result)
 }
@@ -90,7 +95,7 @@ fn stopped_while_its_grader_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("work/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, stop)
+        containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", stop)
     });
     (directory, run_directory, result)
 }
@@ -100,7 +105,7 @@ fn procreation_stopped_while_running() -> Procreated {
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
     let id_file = run_directory.running_procreation(1).join("child/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_procreation(&run_directory, &launch, 1, 0, 60, stop)
+        containers::run_procreation(&run_directory, &launch, 1, 0, stop)
     });
     (directory, run_directory, result)
 }
@@ -166,7 +171,6 @@ fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
             &launch("sleep 300"),
             0,
             "benchmark/t1",
-            60,
             &stop
         ),
         Err(ContainerError::Stopped)
@@ -178,7 +182,7 @@ fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let (_directory, run_directory) = made();
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        containers::run_procreation(&run_directory, &launch("sleep 300"), 1, 0, 60, &stop),
+        containers::run_procreation(&run_directory, &launch("sleep 300"), 1, 0, &stop),
         Err(ContainerError::Stopped)
     ));
 }

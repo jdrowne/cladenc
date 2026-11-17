@@ -6,7 +6,7 @@ mod said;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
+use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
@@ -15,6 +15,7 @@ use crate::genealogy::HarnessId;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::run_directory::RunDirectory;
 
+use action::Ended;
 pub use error::DirectedEvolutionError;
 use progress::Progress;
 pub use said::Said;
@@ -29,10 +30,10 @@ pub struct Found {
 }
 
 struct Shared<'a> {
-    settings: &'a Settings,
     launch: Launch<'a>,
     run_directory: RunDirectory,
     halt: AtomicBool,
+    sender: Sender<Ended>,
 }
 
 pub fn start(
@@ -185,9 +186,8 @@ fn carry_on(
 ) -> Result<Found, DirectedEvolutionError> {
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {
-        let time_limit = settings.procreation_timeout;
         progress.say(&Said::Building);
-        containers::build_primogenitor(&run_directory, &launch, time_limit, stop).map_err(
+        containers::build_primogenitor(&run_directory, &launch, stop).map_err(
             |error| match error {
                 ContainerError::Stopped => DirectedEvolutionError::Asked,
                 error => {
@@ -201,21 +201,20 @@ fn carry_on(
         )?;
         progress.built();
     }
+    let (sender, receiver) = mpsc::channel();
     let shared = Shared {
-        settings,
         launch,
         run_directory,
         halt: AtomicBool::new(false),
+        sender,
     };
     thread::scope(|scope| {
-        let (sender, receiver) = mpsc::channel();
         loop {
-            while !progress.halted(stop) && progress.running() < settings.max_concurrent_containers
+            while !progress.halted(stop)
+                && progress.running() < settings.max_concurrent_containers
+                && let Some((action, again)) = progress.take()
             {
-                let Some((action, again)) = progress.take() else {
-                    break;
-                };
-                progress.hand_over(action, again, &shared, scope, &sender);
+                progress.hand_over(action, again, &shared, scope);
             }
             if progress.running() == 0 {
                 break;

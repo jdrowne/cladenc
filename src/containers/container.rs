@@ -1,14 +1,13 @@
 use std::ffi::OsString;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
 use nix::unistd::{Gid, Uid};
 
 use super::ContainerError;
 use super::left;
-use super::program::{self, Ending, LEEWAY};
+use super::program::{self, Ending, LEEWAY, Limits};
 use crate::run_directory::RunDirectory;
 
 const NOT_STARTED: i32 = 125;
@@ -31,13 +30,8 @@ pub(super) struct Container<'a> {
 }
 
 impl Container<'_> {
-    pub(super) fn run(
-        &self,
-        running: &Path,
-        deadline: Instant,
-        stop: &AtomicBool,
-    ) -> Result<Ending, ContainerError> {
-        let seconds = seconds_of_the_timer(deadline);
+    pub(super) fn run(&self, running: &Path, limits: Limits<'_>) -> Result<Ending, ContainerError> {
+        let seconds = seconds_of_the_timer(limits.deadline);
         let name = format!("cladenc-{:016x}", rand::random::<u64>());
         let mut docker = Command::new("docker");
         docker
@@ -56,7 +50,7 @@ impl Container<'_> {
         docker
             .args([self.image, "sh", "-c", TIMER, self.command])
             .arg(seconds.to_string());
-        let ended = program::run(docker, running, deadline, stop);
+        let ended = program::run(docker, running, limits);
         if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
             remove(&name);
         }

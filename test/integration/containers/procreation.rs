@@ -44,13 +44,14 @@ fn started_from(
         run_command,
         build_command: None,
         model: MODEL,
+        procreation_timeout: time_limit,
+        attempt_timeout: time_limit,
     };
     containers::run_procreation(
         run_directory,
         &launch,
         1,
         progenitor,
-        time_limit,
         &AtomicBool::new(false),
     )
 }
@@ -97,8 +98,10 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
             key: Some(test_inputs::MODEL_KEY),
             ..MODEL
         },
+        procreation_timeout: 30,
+        attempt_timeout: 30,
     };
-    let _ = containers::run_procreation(&run_directory, &launch, 1, 0, 30, &AtomicBool::new(false));
+    let _ = containers::run_procreation(&run_directory, &launch, 1, 0, &AtomicBool::new(false));
     fs::read_to_string(run_directory.harness(1).join(file)).unwrap()
 }
 

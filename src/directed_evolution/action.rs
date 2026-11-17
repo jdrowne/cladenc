@@ -17,7 +17,6 @@ pub(super) enum Ended {
 }
 
 pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> Ended {
-    let settings = shared.settings;
     match action {
         Started::Procreation { child, progenitor } => {
             let cleared = if again {
@@ -31,7 +30,6 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                     &shared.launch,
                     child,
                     progenitor,
-                    settings.procreation_timeout,
                     &shared.halt,
                 )
             });
@@ -53,7 +51,6 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                     &shared.launch,
                     harness,
                     &task,
-                    settings.attempt_timeout,
                     &shared.halt,
                 )
             });

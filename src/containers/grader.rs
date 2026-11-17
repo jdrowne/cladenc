@@ -1,9 +1,7 @@
 use std::path::Path;
-use std::sync::atomic::AtomicBool;
-use std::time::Instant;
 
 use super::container::{Container, Mount};
-use super::program::Ending;
+use super::program::{Ending, Limits};
 use super::{ContainerError, WORK};
 use crate::genealogy::AttemptResult;
 use crate::run_directory::RunDirectory;
@@ -16,8 +14,7 @@ pub(super) fn run(
     image: &str,
     task: &str,
     running: &Path,
-    deadline: Instant,
-    stop: &AtomicBool,
+    limits: Limits<'_>,
 ) -> Result<AttemptResult, ContainerError> {
     let work = running.join("work");
     let task = run_directory.task(task);
@@ -40,11 +37,9 @@ pub(super) fn run(
         working_directory: WORK,
         environment: &[("CLADENC_TASK", TASK)],
     };
-    Ok(
-        match container.run(&running.join("grader"), deadline, stop)? {
-            Ending::Exited(0) => AttemptResult::Completed,
-            Ending::Exited(_) => AttemptResult::NotCompleted,
-            Ending::TimedOut => AttemptResult::TimedOut,
-        },
-    )
+    Ok(match container.run(&running.join("grader"), limits)? {
+        Ending::Exited(0) => AttemptResult::Completed,
+        Ending::Exited(_) => AttemptResult::NotCompleted,
+        Ending::TimedOut => AttemptResult::TimedOut,
+    })
 }

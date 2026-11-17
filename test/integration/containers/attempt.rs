@@ -45,6 +45,8 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             url: test_inputs::MODEL_URL,
             key: attempt.key,
         },
+        procreation_timeout: attempt.time_limit,
+        attempt_timeout: attempt.time_limit,
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_attempt(
@@ -52,7 +54,6 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         &launch,
         attempt.harness,
         "benchmark/t1",
-        attempt.time_limit,
         &stop,
     );
     Attempted {

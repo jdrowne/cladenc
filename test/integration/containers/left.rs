@@ -72,6 +72,8 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             url: test_inputs::MODEL_URL,
             key: None,
         },
+        procreation_timeout: 60,
+        attempt_timeout: 60,
     };
     let id_file = run_directory
         .running_attempt(0, "benchmark/t1")
@@ -88,7 +90,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             stop.store(true, Ordering::SeqCst);
             String::from_utf8(listed.stdout).unwrap()
         });
-        let _ = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", 60, &stop);
+        let _ = containers::run_attempt(&run_directory, &launch, 0, "benchmark/t1", &stop);
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })

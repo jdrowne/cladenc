@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::Sender;
 use std::thread::Scope;
 
 use super::action::{Ended, carry_out};
@@ -109,10 +108,8 @@ impl<'a> Progress<'a> {
         again: bool,
         shared: &'scope Shared<'_>,
         scope: &'scope Scope<'scope, '_>,
-        sender: &Sender<Ended>,
     ) {
         let recorded = self.failure.is_none();
-        let sender = sender.clone();
         let _ = recorded.then(|| {
             say(
                 self.writer,
@@ -124,7 +121,7 @@ impl<'a> Progress<'a> {
                 },
             );
             scope.spawn(move || {
-                let _ = sender.send(carry_out(shared, action, again));
+                let _ = shared.sender.send(carry_out(shared, action, again));
             })
         });
         self.running += u64::from(recorded);

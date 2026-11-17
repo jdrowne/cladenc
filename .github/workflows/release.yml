@@ -102,6 +102,7 @@ jobs:
       - name: assert-no-linter-config-files
         run: >-
           assert-no-linter-config-files
+          --exclude ${{ github.workspace }}/etc/clippy/clippy.toml
           --linters clippy,markdownlint,rustc,rustdoc,rustfmt,yamllint
           --verbose
           ${{ github.workspace }}
@@ -214,8 +215,14 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - name: clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - env:
+          CLIPPY_CONF_DIR: ${{ github.workspace }}/etc/clippy
+        name: clippy
+        run: >-
+          cargo clippy --workspace --all-targets --locked --
+          -D warnings
+          -D clippy::cognitive_complexity
+          -D clippy::too_many_lines
   e2e-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-24.04-arm

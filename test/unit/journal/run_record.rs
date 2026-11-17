@@ -221,8 +221,30 @@ fn the_settings_give_how_a_harness_is_built_and_run() {
                 url: "http://models.example/v1",
                 key: None,
             },
+            procreation_timeout: 3600,
+            attempt_timeout: 3600,
         }
     );
+}
+
+#[test]
+fn the_settings_give_how_long_a_procreation_may_take() {
+    let settings = Settings {
+        procreation_timeout: 1800,
+        attempt_timeout: 900,
+        ..settings()
+    };
+    assert_eq!(settings.launch(None).procreation_timeout, 1800);
+}
+
+#[test]
+fn the_settings_give_how_long_an_attempt_may_take() {
+    let settings = Settings {
+        procreation_timeout: 1800,
+        attempt_timeout: 900,
+        ..settings()
+    };
+    assert_eq!(settings.launch(None).attempt_timeout, 900);
 }
 
 #[test]

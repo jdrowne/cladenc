@@ -35,9 +35,11 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
         run_command,
         build_command: Some(build_command),
         model: MODEL,
+        procreation_timeout: time_limit,
+        attempt_timeout: time_limit,
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_procreation(&run_directory, &launch, 1, 0, time_limit, &stop);
+    let result = containers::run_procreation(&run_directory, &launch, 1, 0, &stop);
     (directory, run_directory, result)
 }
 
@@ -52,6 +54,8 @@ fn stopped_while_its_child_is_built() -> Procreated {
         run_command: "exit 0",
         build_command: Some("hostname > id; sleep 300"),
         model: MODEL,
+        procreation_timeout: 60,
+        attempt_timeout: 60,
     };
     let id_file = run_directory.running_procreation(1).join("child/id");
     let stop = AtomicBool::new(false);
@@ -60,7 +64,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        containers::run_procreation(&run_directory, &launch, 1, 0, 60, &stop)
+        containers::run_procreation(&run_directory, &launch, 1, 0, &stop)
     });
     (directory, run_directory, result)
 }
@@ -75,8 +79,10 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
             key: Some(test_inputs::MODEL_KEY),
             ..MODEL
         },
+        procreation_timeout: 30,
+        attempt_timeout: 30,
     };
-    let _ = containers::run_procreation(&run_directory, &launch, 1, 0, 30, &AtomicBool::new(false));
+    let _ = containers::run_procreation(&run_directory, &launch, 1, 0, &AtomicBool::new(false));
     fs::read_to_string(run_directory.harness(1).join(file)).unwrap()
 }
 
@@ -251,10 +257,12 @@ fn a_build_whose_output_cannot_be_kept_is_an_error() {
         run_command: "exit 0",
         build_command: Some("exit 0"),
         model: MODEL,
+        procreation_timeout: 30,
+        attempt_timeout: 30,
     };
     let stop = AtomicBool::new(false);
     assert!(matches!(
-        containers::run_procreation(&run_directory, &launch, 1, 0, 30, &stop),
+        containers::run_procreation(&run_directory, &launch, 1, 0, &stop),
         Err(ContainerError::Io(_))
     ));
 }

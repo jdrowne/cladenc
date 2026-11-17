@@ -20,7 +20,7 @@ pub use build::build_primogenitor;
 use container::{Container, Mount};
 pub use image::build_image;
 pub use left::remove_left_behind;
-use program::{Ending, deadline};
+use program::{Ending, Limits};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes \
@@ -43,6 +43,8 @@ pub struct Launch<'a> {
     pub run_command: &'a str,
     pub build_command: Option<&'a str>,
     pub model: Model<'a>,
+    pub procreation_timeout: u64,
+    pub attempt_timeout: u64,
 }
 
 #[derive(Debug)]
@@ -85,7 +87,6 @@ pub fn run_procreation(
     launch: &Launch<'_>,
     child: HarnessId,
     progenitor: HarnessId,
-    time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<ProcreationOutcome, ContainerError> {
     run_directory
@@ -95,7 +96,7 @@ pub fn run_procreation(
     let source = running.join("progenitor");
     let made = running.join("child");
     let attempts = run_directory.attempts(progenitor);
-    let deadline = deadline(time_limit);
+    let limits = Limits::starting_now(launch.procreation_timeout, stop);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
         ("CLADENC_INSTRUCTION", INSTRUCTION),
@@ -127,9 +128,9 @@ pub fn run_procreation(
         working_directory: WORK,
         environment: &environment,
     };
-    let outcome = match container.run(&running, deadline, stop)? {
+    let outcome = match container.run(&running, limits)? {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
-            build::build_child(run_directory, launch, child, &made, deadline, stop)?
+            build::build_child(run_directory, launch, child, &made, limits)?
         }
         Ending::Exited(_) => ProcreationOutcome::Failed,
         Ending::TimedOut => ProcreationOutcome::TimedOut,
@@ -145,7 +146,6 @@ pub fn run_attempt(
     launch: &Launch<'_>,
     harness: HarnessId,
     task: &str,
-    time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<AttemptResult, ContainerError> {
     let running = run_directory.running_attempt(harness, task);
@@ -155,7 +155,7 @@ pub fn run_attempt(
         .map_err(ContainerError::Io)?;
     let source = running.join("harness");
     let work = running.join("work");
-    let deadline = deadline(time_limit);
+    let limits = Limits::starting_now(launch.attempt_timeout, stop);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
         ("CLADENC_INSTRUCTION", specification.as_str()),
@@ -182,10 +182,8 @@ pub fn run_attempt(
         working_directory: WORK,
         environment: &environment,
     };
-    let result = match container.run(&running, deadline, stop)? {
-        Ending::Exited(_) => {
-            grader::run(run_directory, launch.image, task, &running, deadline, stop)?
-        }
+    let result = match container.run(&running, limits)? {
+        Ending::Exited(_) => grader::run(run_directory, launch.image, task, &running, limits)?,
         Ending::TimedOut => AttemptResult::TimedOut,
     };
     run_directory
