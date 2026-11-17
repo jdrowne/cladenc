@@ -11,18 +11,18 @@ fn worded(error: impl Error) -> String {
 }
 
 #[test]
-fn a_run_directory_that_cannot_be_made_is_worded_with_the_system_s_reason() {
+fn an_outputs_directory_that_cannot_be_made_is_worded_with_the_system_s_reason() {
     assert_eq!(
         worded(DirectedEvolutionError::Io(io::Error::from_raw_os_error(17))),
-        "the run directory cannot be made: File exists (os error 17)"
+        "the outputs directory cannot be made: File exists (os error 17)"
     );
 }
 
 #[test]
-fn a_run_directory_that_cannot_be_used_is_worded_with_the_journal_s_reason() {
+fn an_outputs_directory_that_cannot_be_used_is_worded_with_the_journal_s_reason() {
     assert_eq!(
         worded(DirectedEvolutionError::Unusable(JournalError::Locked)),
-        "the run directory cannot be used: another cladenc is using it"
+        "the outputs directory cannot be used: another cladenc is using it"
     );
 }
 

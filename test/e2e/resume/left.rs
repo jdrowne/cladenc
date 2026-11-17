@@ -23,7 +23,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -36,9 +36,12 @@ fn start(directory: &Path, run_command: &str) -> Command {
     start
 }
 
-fn resume(run_directory: &Path) -> Command {
+fn resume(outputs_directory: &Path) -> Command {
     let mut resume = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    resume.arg("resume").arg("--run-dir").arg(run_directory);
+    resume
+        .arg("resume")
+        .arg("--outputs-dir")
+        .arg(outputs_directory);
     resume
 }
 
@@ -47,20 +50,22 @@ fn killed_outright() -> Left {
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
     fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
     let mut cladenc = start.spawn().unwrap();
-    let run = directory.path().join("run");
-    let written = run.join("running/attempt-0-benchmark+t1/work/id");
+    let outputs = directory.path().join("outputs");
+    let written = outputs.join("running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&written));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     cladenc.wait().unwrap();
     let id_file = directory.path().join("id-of-the-container-left");
     fs::copy(&written, &id_file).unwrap();
-    fs::remove_file(run.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
     Left { directory, id_file }
 }
 
 fn resumed_after_being_killed_outright() -> (Left, Output) {
     let left = killed_outright();
-    let output = resume(&left.directory.path().join("run")).output().unwrap();
+    let output = resume(&left.directory.path().join("outputs"))
+        .output()
+        .unwrap();
     (left, output)
 }
 
@@ -76,7 +81,7 @@ fn resumed_with_the_docker_of(sample: &str, directory: &TempDir) -> Output {
         test_inputs::sample("e2e", sample).display(),
         env::var("PATH").unwrap()
     );
-    resume(&directory.path().join("run"))
+    resume(&directory.path().join("outputs"))
         .env("PATH", path)
         .env(
             "CLADENC_TEST_ARGUMENTS_OF_DOCKER",
@@ -94,7 +99,7 @@ fn resumed_with_no_docker() -> Output {
     let directory = stopped();
     let empty = directory.path().join("no-programs");
     fs::create_dir(&empty).unwrap();
-    resume(&directory.path().join("run"))
+    resume(&directory.path().join("outputs"))
         .env("PATH", empty)
         .output()
         .unwrap()
@@ -135,8 +140,8 @@ fn resume_says_how_many_containers_it_removed() {
 #[test]
 fn a_directed_evolution_reached_through_a_symbolic_link_has_its_containers_removed_too() {
     let left = killed_outright();
-    let link = left.directory.path().join("link-to-the-run-directory");
-    symlink(left.directory.path().join("run"), &link).unwrap();
+    let link = left.directory.path().join("link-to-the-outputs-directory");
+    symlink(left.directory.path().join("outputs"), &link).unwrap();
     resume(&link).output().unwrap();
     assert!(test_inputs::container_is_gone(&left.id_file));
 }
@@ -144,19 +149,19 @@ fn a_directed_evolution_reached_through_a_symbolic_link_has_its_containers_remov
 #[test]
 fn resume_says_nothing_of_containers_where_none_was_left() {
     let directory = stopped();
-    let output = resume(&directory.path().join("run")).output().unwrap();
+    let output = resume(&directory.path().join("outputs")).output().unwrap();
     assert!(!String::from_utf8_lossy(&output.stderr).contains("cladenc: removed"));
 }
 
 #[test]
 fn resume_asks_docker_first_for_the_containers_that_carry_the_label_of_its_directed_evolution() {
     let directory = stopped();
-    let run = fs::canonicalize(directory.path().join("run")).unwrap();
+    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
     resumed_with_the_docker_of("fake", &directory);
     let arguments = fs::read_to_string(directory.path().join("arguments-of-docker")).unwrap();
     assert!(arguments.starts_with(&format!(
         "ps\n--all\n--quiet\n--filter\nlabel=cladenc.directed-evolution={}\n",
-        run.display()
+        outputs.display()
     )));
 }
 
@@ -180,7 +185,7 @@ fn a_resume_whose_docker_cannot_be_asked_says_what_docker_said() {
 #[test]
 fn a_resume_whose_docker_cannot_be_asked_continues_nothing() {
     let directory = stopped();
-    let journal = directory.path().join("run/journal.jsonl");
+    let journal = directory.path().join("outputs/journal.jsonl");
     let before = fs::read_to_string(&journal).unwrap();
     resumed_with_the_docker_of("unreachable", &directory);
     assert_eq!(fs::read_to_string(&journal).unwrap(), before);

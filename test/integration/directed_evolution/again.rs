@@ -7,7 +7,7 @@ use std::thread;
 use cladenc::benchmark::Benchmark;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Journal, Record, Settings};
-use cladenc::run_directory::RunDirectory;
+use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn settings(directory: &Path, run_command: &str) -> Settings {
@@ -38,18 +38,18 @@ fn resumed_after_a_stop_at(solved: u64, task: Option<&str>, leftover: &str) -> T
         test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125,
     );
     let stop = AtomicBool::new(false);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     test_inputs::end_with_125_at(&settings.primogenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
-    fs::write(run_directory.join("running").join(leftover), "left\n").unwrap();
-    test_inputs::end_with_125_no_more(&run_directory);
+    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    fs::write(outputs_directory.join("running").join(leftover), "left\n").unwrap();
+    test_inputs::end_with_125_no_more(&outputs_directory);
     if let Some(task) = task {
-        test_inputs::end_with_125_on_no_more(&run_directory, task);
+        test_inputs::end_with_125_on_no_more(&outputs_directory, task);
     }
-    directed_evolution::resume(&run_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 
@@ -66,12 +66,12 @@ fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
     settings.max_concurrent_containers = 2;
     test_inputs::task(&settings.benchmarks[0].directory, "t2");
     settings.benchmarks[0].tasks.push("t2".to_owned());
-    let run_directory = directory.join("run");
-    RunDirectory::create(&run_directory, &settings.primogenitor)
+    let outputs_directory = directory.join("outputs");
+    OutputsDirectory::create(&outputs_directory, &settings.primogenitor)
         .unwrap()
         .copy_benchmark(&settings.benchmarks[0])
         .unwrap();
-    let mut journal = Journal::open(&run_directory).unwrap();
+    let mut journal = Journal::open(&outputs_directory).unwrap();
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
@@ -84,11 +84,11 @@ fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
             task: "benchmark/t1".to_owned(),
         })
         .unwrap();
-    run_directory
+    outputs_directory
 }
 
-fn records(run_directory: &Path) -> usize {
-    fs::read_to_string(journal::path(run_directory))
+fn records(outputs_directory: &Path) -> usize {
+    fs::read_to_string(journal::path(outputs_directory))
         .unwrap()
         .lines()
         .count()
@@ -97,13 +97,23 @@ fn records(run_directory: &Path) -> usize {
 #[test]
 fn what_a_procreation_left_under_running_is_gone_before_it_runs_again() {
     let directory = resumed_after_a_procreation_stopped();
-    assert!(!directory.path().join("run/harnesses/1/leftover").exists());
+    assert!(
+        !directory
+            .path()
+            .join("outputs/harnesses/1/leftover")
+            .exists()
+    );
 }
 
 #[test]
 fn a_procreation_that_runs_again_ends_with_its_child_in_place() {
     let directory = resumed_after_a_procreation_stopped();
-    assert!(directory.path().join("run/harnesses/1/solved").is_file());
+    assert!(
+        directory
+            .path()
+            .join("outputs/harnesses/1/solved")
+            .is_file()
+    );
 }
 
 #[test]
@@ -112,7 +122,7 @@ fn what_an_attempt_left_under_running_is_gone_before_it_runs_again() {
     assert!(
         !directory
             .path()
-            .join("run/attempts/0/benchmark/t1/work/leftover")
+            .join("outputs/attempts/0/benchmark/t1/work/leftover")
             .exists()
     );
 }
@@ -123,7 +133,7 @@ fn an_attempt_that_runs_again_ends_with_its_directory_in_place() {
     assert!(
         directory
             .path()
-            .join("run/attempts/0/benchmark/t1/result")
+            .join("outputs/attempts/0/benchmark/t1/result")
             .is_file()
     );
 }
@@ -131,7 +141,7 @@ fn an_attempt_that_runs_again_ends_with_its_directory_in_place() {
 #[test]
 fn an_action_that_runs_again_writes_no_second_started_record() {
     let directory = resumed_after_an_attempt_stopped();
-    let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert_eq!(
         journal
             .matches(r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#)
@@ -143,11 +153,11 @@ fn an_action_that_runs_again_writes_no_second_started_record() {
 #[test]
 fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let directory = test_inputs::temporary_directory();
-    let run_directory = with_one_attempt_left_running(directory.path());
+    let outputs_directory = with_one_attempt_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
-        scope.spawn(|| directed_evolution::resume(&run_directory, &stop, &mut io::sink()));
-        let started = test_inputs::within_ten_seconds(|| records(&run_directory) > 2);
+        scope.spawn(|| directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()));
+        let started = test_inputs::within_ten_seconds(|| records(&outputs_directory) > 2);
         stop.store(true, Ordering::SeqCst);
         started
     });

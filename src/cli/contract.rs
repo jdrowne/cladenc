@@ -9,13 +9,14 @@ from the Dockerfile that --dockerfile names, as
   <SECONDS>  the value of --docker-build-timeout, and five seconds more
   <NAME>     the name cladenc gives the image: cladenc- and sixteen random
              hexadecimal digits
-  <FILE>     a copy of the Dockerfile, kept in image in the run directory
+  <FILE>     a copy of the Dockerfile, kept in image in the outputs
+             directory
   <DIR>      an empty directory, so the Dockerfile has no file to copy into
              the image
 
 The build has the time limit that --docker-build-timeout gives, and image
-in the run directory keeps what Docker printed. cladenc ends a build that
-runs past its time limit, and the build ends itself five seconds later
+in the outputs directory keeps what Docker printed. cladenc ends a build
+that runs past its time limit, and the build ends itself five seconds later
 where cladenc was killed outright, as by `kill -9`, and is not there to end
 it. The machine cladenc runs on has to hold timeout, which the package
 coreutils brings. An image that is not built stops `cladenc start` with
@@ -134,7 +135,7 @@ How the harness ends decides what is recorded:
 
 A child that holds anything but regular files, directories and symbolic
 links is a failed procreation. The source code of every child is kept under
-harnesses in the run directory, created or not.
+harnesses in the outputs directory, created or not.
 
 Where --harness-build-command is given, a harness is built before it is
 run for the first time, in a container of the same image, as
@@ -150,7 +151,7 @@ primogenitor is built before any procreation or attempt, within the time
 limit of one procreation. A child is built as the last step of its
 procreation, within what is left of the time limit of that procreation.
 
-builds in the run directory keeps the standard output and standard error
+builds in the outputs directory keeps the standard output and standard error
 of every build, in a directory named after the harness.
 
 How a build ends decides what is recorded:
@@ -195,9 +196,9 @@ of a directed evolution is known by the two together, as
 
 so two benchmarks may each hold a task of the same id. Two benchmarks whose
 directories have the same name are refused. The tasks are copied into
-benchmarks in the run directory when a directed evolution is started, each
-into a directory named after its benchmark, so the directed evolution keeps
-the tasks it started with, and `cladenc resume` does not read the
+benchmarks in the outputs directory when a directed evolution is started,
+each into a directory named after its benchmark, so the directed evolution
+keeps the tasks it started with, and `cladenc resume` does not read the
 directories that --benchmark named.
 
 An attempt is one harness working on one task, once, and cladenc carries it
@@ -230,7 +231,7 @@ How an attempt ends decides its result:
                                    harness did not complete the task,
                                    which is recorded as timed_out
 
-attempts in the run directory keeps every attempt, in a directory named
+attempts in the outputs directory keeps every attempt, in a directory named
 after the harness, in it one named after the benchmark, and in that one
 named after the task, which holds
 
@@ -252,11 +253,11 @@ a value that Docker keeps with a container:
 
     cladenc.directed-evolution=<DIR>
 
-where <DIR> is the path of the run directory, with every symbolic link in
-it resolved. Once it has the run directory to itself, `cladenc resume` asks
-Docker for the containers that carry the label of its directed evolution,
-removes them, and says how many it removed. Where Docker cannot be asked,
-it exits with status 2 and continues nothing.
+where <DIR> is the path of the outputs directory, with every symbolic link
+in it resolved. Once it has the outputs directory to itself,
+`cladenc resume` asks Docker for the containers that carry the label of its
+directed evolution, removes them, and says how many it removed. Where
+Docker cannot be asked, it exits with status 2 and continues nothing.
 
 Where the directed evolution is not resumed, its containers are removed by
 hand.

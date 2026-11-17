@@ -47,7 +47,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
             "--harness-run-command",
             test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.into(),
         ),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -121,7 +121,7 @@ fn docker_holds(image: &str) -> bool {
 }
 
 fn kept_of_the_image(ran: &Ran) -> Vec<String> {
-    let mut kept: Vec<String> = fs::read_dir(ran.directory.path().join("run/image"))
+    let mut kept: Vec<String> = fs::read_dir(ran.directory.path().join("outputs/image"))
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
         .collect();
@@ -179,7 +179,7 @@ fn killed_outright_while_it_builds() -> Killed {
         .map_while(Result::ok)
         .find_map(|line| image_named_in(&line))
         .unwrap();
-    let printed = directory.path().join("run/image");
+    let printed = directory.path().join("outputs/image");
     test_inputs::within_ten_seconds(|| {
         test_inputs::line_is_written(&printed.join("stderr"))
             || test_inputs::line_is_written(&printed.join("stdout"))
@@ -249,7 +249,7 @@ fn a_directed_evolution_given_a_dockerfile_prints_the_harness_made_in_the_image_
         ran.output,
         format!(
             "{}\n",
-            ran.directory.path().join("run/harnesses/1").display()
+            ran.directory.path().join("outputs/harnesses/1").display()
         )
     );
 }
@@ -265,7 +265,7 @@ fn the_image_stays_on_the_machine_when_the_directed_evolution_ends() {
 }
 
 #[test]
-fn the_run_directory_keeps_the_dockerfile_and_what_docker_printed() {
+fn the_outputs_directory_keeps_the_dockerfile_and_what_docker_printed() {
     assert_eq!(
         kept_of_the_image(&ran(SOLVES_T1)),
         ["Dockerfile", "context", "stderr", "stdout"]
@@ -295,7 +295,7 @@ fn a_dockerfile_that_is_not_built_leaves_no_journal() {
         !ran(FAILS)
             .directory
             .path()
-            .join("run/journal.jsonl")
+            .join("outputs/journal.jsonl")
             .exists()
     );
 }
@@ -303,7 +303,7 @@ fn a_dockerfile_that_is_not_built_leaves_no_journal() {
 #[test]
 fn docker_is_asked_to_build_from_the_copy_of_the_dockerfile_with_an_empty_directory_of_files() {
     let (directory, arguments) = arguments_of_a_docker_that_records_them();
-    let kept = directory.path().join("run/image");
+    let kept = directory.path().join("outputs/image");
     assert_eq!(
         [&arguments[..2], &arguments[3..6]].concat(),
         [

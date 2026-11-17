@@ -16,7 +16,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -32,7 +32,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
 fn resume(directory: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
-        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
         .output()
         .unwrap()
 }
@@ -46,12 +49,12 @@ fn stopped_by(signal: Signal) -> TempDir {
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
     fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
     let mut cladenc = start.spawn().unwrap();
-    let run = directory.path().join("run");
-    let id_file = run.join("running/attempt-0-benchmark+t1/work/id");
+    let outputs = directory.path().join("outputs");
+    let id_file = outputs.join("running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
-    fs::remove_file(run.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
     directory
 }
 
@@ -72,7 +75,7 @@ fn after_an_interrupt_stops_a_run_resume_prints_the_directory_of_a_harness() {
 fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolution_finished() {
     let directory = interrupted();
     resume(directory.path());
-    let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert!(
         journal
             .lines()

@@ -4,16 +4,16 @@ use std::sync::atomic::AtomicBool;
 
 use super::ContainerError;
 use super::program::{self, Ending, LEEWAY, Limits};
-use crate::run_directory::RunDirectory;
+use crate::outputs_directory::OutputsDirectory;
 
 pub fn build_image(
-    run_directory: &RunDirectory,
+    outputs_directory: &OutputsDirectory,
     dockerfile: &Path,
     image: &str,
     time_limit: u64,
     stop: &AtomicBool,
 ) -> Result<(), ContainerError> {
-    let kept = run_directory
+    let kept = outputs_directory
         .start_image(dockerfile)
         .map_err(ContainerError::Io)?;
     let mut build = Command::new("timeout");

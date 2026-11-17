@@ -12,7 +12,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -28,7 +28,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
 fn report(directory: &Path) -> Option<i32> {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("report")
-        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
         .output()
         .unwrap()
         .status
@@ -50,7 +53,7 @@ fn report_exits_with_0_on_a_run_that_is_still_going() {
         .unwrap();
     let id_file = directory
         .path()
-        .join("run/running/attempt-0-benchmark+t1/work/id");
+        .join("outputs/running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let status = report(directory.path());
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();

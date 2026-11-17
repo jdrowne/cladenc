@@ -15,7 +15,7 @@ Every fixed path `cladenc` uses on a Linux system follows the Filesystem Hierarc
 - Nothing `cladenc` needs sits at the top of the filesystem: the standard gives no program a directory of its own in the root directory (section 3.1).
 - What `cladenc` gives a container to work with is under `/var/lib/cladenc`, the place the standard gives a program for its data (section 5.8).
 - A record of what happened, kept to be read afterwards, is under `/var/log/cladenc` (section 5.10), as what a harness's attempts left is, at `/var/log/cladenc/attempts`.
-- On the machine, the program is `/usr/bin/cladenc`, and everything a directed evolution makes is in the run directory the person names.
+- On the machine, the program is `/usr/bin/cladenc`, and everything a directed evolution makes is in the outputs directory, which the person names with `--outputs-dir`, per [[the-outputs-directory]].
 
 **Why:** It is the user's rule that the convention is followed, and `/var/log/cladenc` as the place for what a harness's attempts left is the user's own choice. The directory there is named `attempts` after the user's word, per [[the-words-about-benchmarks]]. `/var/lib/cladenc` for the rest is my choice under that rule, not the user's statement.
 

@@ -19,7 +19,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", image.into()),
         ("--harness-run-command", "exit 0".into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -47,7 +47,7 @@ fn kept_of_what_docker_said(stopped: &Stopped) -> PathBuf {
     stopped
         .directory
         .path()
-        .join("run/running/attempt-0-benchmark+t1/stderr")
+        .join("outputs/running/attempt-0-benchmark+t1/stderr")
 }
 
 fn what_docker_said(stopped: &Stopped) -> String {
@@ -60,8 +60,8 @@ fn resumed_once_the_machine_holds_the_image(stopped: &Stopped) -> Output {
         .output()
         .unwrap();
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .args(["resume", "--run-dir"])
-        .arg(stopped.directory.path().join("run"))
+        .args(["resume", "--outputs-dir"])
+        .arg(stopped.directory.path().join("outputs"))
         .output()
         .unwrap()
 }
@@ -111,7 +111,7 @@ fn a_directed_evolution_that_stopped_for_its_image_is_continued_once_the_machine
 fn a_directed_evolution_continued_once_its_image_is_there_prints_the_directory_of_a_harness() {
     let stopped = stopped();
     let resumed = resumed_once_the_machine_holds_the_image(&stopped);
-    let harnesses = stopped.directory.path().join("run/harnesses");
+    let harnesses = stopped.directory.path().join("outputs/harnesses");
     assert!(
         String::from_utf8_lossy(&resumed.stdout).starts_with(&format!("{}/", harnesses.display()))
     );

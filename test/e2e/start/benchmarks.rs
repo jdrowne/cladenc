@@ -23,7 +23,7 @@ fn ran() -> (TempDir, Output) {
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        ("--run-dir", directory.path().join("run")),
+        ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -40,7 +40,7 @@ fn ran() -> (TempDir, Output) {
 }
 
 fn result_of(directory: &TempDir, attempt: &str) -> String {
-    let kept = directory.path().join("run/attempts").join(attempt);
+    let kept = directory.path().join("outputs/attempts").join(attempt);
     fs::read_to_string(kept.join("result")).unwrap()
 }
 
@@ -64,7 +64,7 @@ fn a_run_given_two_benchmarks_keeps_the_tasks_of_each_under_its_name() {
     let (directory, _output) = ran();
     assert_eq!(
         ["benchmark", "refactoring"]
-            .map(|name| { names_in(&directory.path().join("run/benchmarks").join(name)) }),
+            .map(|name| { names_in(&directory.path().join("outputs/benchmarks").join(name)) }),
         [vec!["t1", "t2"], vec!["t1"]]
     );
 }
@@ -78,11 +78,11 @@ fn a_run_given_two_benchmarks_says_that_it_copies_the_tasks_of_each_in_the_order
         said.lines().skip(1).take(2).collect::<Vec<_>>(),
         [
             format!(
-                "cladenc: copying the 2 tasks of the benchmark {} into the run directory",
+                "cladenc: copying the 2 tasks of the benchmark {} into the outputs directory",
                 given_in.join("benchmark").display()
             ),
             format!(
-                "cladenc: copying the 1 task of the benchmark {} into the run directory",
+                "cladenc: copying the 1 task of the benchmark {} into the outputs directory",
                 given_in.join("refactoring").display()
             )
         ]
@@ -94,7 +94,7 @@ fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
     let (directory, _output) = ran();
     assert_eq!(
         ["benchmark", "refactoring"]
-            .map(|name| names_in(&directory.path().join("run/attempts/1").join(name))),
+            .map(|name| names_in(&directory.path().join("outputs/attempts/1").join(name))),
         [vec!["t1", "t2"], vec!["t1"]]
     );
 }
@@ -114,7 +114,7 @@ fn two_tasks_of_the_same_id_in_two_benchmarks_are_attempted_apart() {
 #[test]
 fn the_journal_of_a_run_given_two_benchmarks_names_a_task_by_its_benchmark_and_its_id() {
     let (directory, _output) = ran();
-    let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert!(
         journal.contains(r#"{"record":"attempt_started","harness":1,"task":"refactoring/t1"}"#)
     );

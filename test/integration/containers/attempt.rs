@@ -5,7 +5,7 @@ use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
-use cladenc::run_directory::RunDirectory;
+use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const FINISH: &str = "echo done > work.txt";
@@ -14,7 +14,7 @@ const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | t
 
 struct Attempted {
     _directory: TempDir,
-    run_directory: RunDirectory,
+    outputs_directory: OutputsDirectory,
     result: Result<AttemptResult, ContainerError>,
 }
 
@@ -29,10 +29,10 @@ struct Attempt<'a> {
 fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let path = directory.path().join("run");
-    let run_directory = RunDirectory::create(&path, &primogenitor).unwrap();
+    let path = directory.path().join("outputs");
+    let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    run_directory
+    outputs_directory
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
     test_inputs::kept_grader(&path, "t1", attempt.grader);
@@ -50,7 +50,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_attempt(
-        &run_directory,
+        &outputs_directory,
         &launch,
         attempt.harness,
         "benchmark/t1",
@@ -58,7 +58,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     );
     Attempted {
         _directory: directory,
-        run_directory,
+        outputs_directory,
         result,
     }
 }
@@ -86,7 +86,7 @@ fn within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
 fn kept(attempted: &Attempted, file: &str) -> String {
     fs::read_to_string(
         attempted
-            .run_directory
+            .outputs_directory
             .attempt(0, "benchmark/t1")
             .join(file),
     )
@@ -224,7 +224,7 @@ fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
         FINISHED,
     );
     assert_eq!(
-        fs::read_to_string(attempted.run_directory.harness(0).join("harness.sh")).unwrap(),
+        fs::read_to_string(attempted.outputs_directory.harness(0).join("harness.sh")).unwrap(),
         "#!/bin/sh\necho harness\n"
     );
 }
@@ -235,7 +235,7 @@ fn a_harness_that_changes_its_copy_of_the_workspace_leaves_the_task_unchanged() 
     assert_eq!(
         fs::read_to_string(
             attempted
-                .run_directory
+                .outputs_directory
                 .task("benchmark/t1")
                 .join("workspace/work.txt")
         )
@@ -312,7 +312,7 @@ fn the_grader_cannot_change_its_task() {
     assert_eq!(
         fs::read_to_string(
             attempted
-                .run_directory
+                .outputs_directory
                 .task("benchmark/t1")
                 .join("specification")
         )
@@ -371,7 +371,7 @@ fn an_attempt_that_ended_keeps_no_copy_of_the_harness() {
     let attempted = attempted(FINISH, FINISHED);
     assert!(
         !attempted
-            .run_directory
+            .outputs_directory
             .attempt(0, "benchmark/t1")
             .join("harness")
             .exists()
@@ -391,7 +391,7 @@ fn a_harness_that_timed_out_is_not_checked() {
     let attempted = within(1, "sleep 300", "touch checked");
     assert!(
         !attempted
-            .run_directory
+            .outputs_directory
             .attempt(0, "benchmark/t1")
             .join("work/checked")
             .exists()
@@ -448,7 +448,7 @@ fn a_grader_whose_container_docker_did_not_start_is_an_error() {
 fn what_docker_said_of_a_grader_it_did_not_start_is_kept_with_the_grader() {
     let attempted = attempted(FINISH, "exit 125");
     let kept = attempted
-        .run_directory
+        .outputs_directory
         .running_attempt(0, "benchmark/t1")
         .join("grader/stderr");
     assert!(matches!(attempted.result, Err(ContainerError::Docker(said)) if said == kept));
@@ -459,7 +459,7 @@ fn after_an_error_the_directory_of_an_attempt_is_still_under_running() {
     let attempted = attempted("exit 125", FINISHED);
     assert!(
         attempted
-            .run_directory
+            .outputs_directory
             .running_attempt(0, "benchmark/t1")
             .join("stdout")
             .is_file()

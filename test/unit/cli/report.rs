@@ -19,9 +19,9 @@ fn parsed(options: &[&str]) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(["cladenc", "report"].iter().chain(options).copied())
 }
 
-fn ran(run_dir: PathBuf, json: bool) -> Ran {
+fn ran(outputs_dir: PathBuf, json: bool) -> Ran {
     let cli = Cli {
-        command: Command::Report(ReportOptions { run_dir, json }),
+        command: Command::Report(ReportOptions { outputs_dir, json }),
     };
     let mut output = Vec::new();
     let mut errors = Vec::new();
@@ -34,7 +34,7 @@ fn ran(run_dir: PathBuf, json: bool) -> Ran {
 }
 
 fn reported(json: bool) -> (Ran, String) {
-    let run_directory = test_inputs::temporary_directory();
+    let outputs_directory = test_inputs::temporary_directory();
     let records = [
         Record::Run {
             format: journal::FORMAT,
@@ -69,9 +69,9 @@ fn reported(json: bool) -> (Ran, String) {
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
-    fs::write(journal::path(run_directory.path()), lines).unwrap();
-    let object = report::read(run_directory.path()).unwrap().json();
-    (ran(run_directory.path().to_owned(), json), object)
+    fs::write(journal::path(outputs_directory.path()), lines).unwrap();
+    let object = report::read(outputs_directory.path()).unwrap().json();
+    (ran(outputs_directory.path().to_owned(), json), object)
 }
 
 fn missing() -> PathBuf {
@@ -79,15 +79,15 @@ fn missing() -> PathBuf {
 }
 
 #[test]
-fn the_run_directory_is_the_one_given() {
+fn the_outputs_directory_is_the_one_given() {
     assert!(matches!(
-        parsed(&["--run-dir=/run"]).unwrap().command,
-        Command::Report(ReportOptions { run_dir, .. }) if run_dir == Path::new("/run")
+        parsed(&["--outputs-dir=/outputs"]).unwrap().command,
+        Command::Report(ReportOptions { outputs_dir, .. }) if outputs_dir == Path::new("/outputs")
     ));
 }
 
 #[test]
-fn leaving_out_the_run_directory_is_an_error() {
+fn leaving_out_the_outputs_directory_is_an_error() {
     assert_eq!(
         parsed(&[]).unwrap_err().kind(),
         ErrorKind::MissingRequiredArgument
@@ -96,13 +96,15 @@ fn leaving_out_the_run_directory_is_an_error() {
 
 #[test]
 fn json_takes_no_value() {
-    assert!(parsed(&["--run-dir=/run", "--json=yes"]).is_err());
+    assert!(parsed(&["--outputs-dir=/outputs", "--json=yes"]).is_err());
 }
 
 #[test]
 fn writing_json_turns_it_on() {
     assert!(matches!(
-        parsed(&["--run-dir=/run", "--json"]).unwrap().command,
+        parsed(&["--outputs-dir=/outputs", "--json"])
+            .unwrap()
+            .command,
         Command::Report(ReportOptions { json: true, .. })
     ));
 }
@@ -110,7 +112,7 @@ fn writing_json_turns_it_on() {
 #[test]
 fn leaving_json_out_leaves_it_off() {
     assert!(matches!(
-        parsed(&["--run-dir=/run"]).unwrap().command,
+        parsed(&["--outputs-dir=/outputs"]).unwrap().command,
         Command::Report(ReportOptions { json: false, .. })
     ));
 }
@@ -148,33 +150,33 @@ fn a_report_prints_nothing_on_standard_error() {
 }
 
 #[test]
-fn a_run_directory_that_does_not_exist_gives_exit_status_2() {
+fn an_outputs_directory_that_does_not_exist_gives_exit_status_2() {
     assert_eq!(ran(missing(), false).status, 2);
 }
 
 #[test]
-fn a_run_directory_that_does_not_exist_is_reported_on_standard_error() {
+fn an_outputs_directory_that_does_not_exist_is_reported_on_standard_error() {
     assert!(
         ran(missing(), false)
             .errors
-            .starts_with("cladenc: the run directory cannot be used: ")
+            .starts_with("cladenc: the outputs directory cannot be used: ")
     );
 }
 
 #[test]
-fn a_run_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
+fn an_outputs_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
     assert_eq!(
         ran(missing(), false).errors,
-        "cladenc: the run directory cannot be used: No such file or directory (os error 2)\n"
+        "cladenc: the outputs directory cannot be used: No such file or directory (os error 2)\n"
     );
 }
 
 #[test]
-fn a_run_directory_that_does_not_exist_prints_nothing_on_standard_output() {
+fn an_outputs_directory_that_does_not_exist_prints_nothing_on_standard_output() {
     assert_eq!(ran(missing(), false).output, "");
 }
 
 #[test]
-fn a_run_directory_with_no_path_gives_exit_status_2() {
+fn an_outputs_directory_with_no_path_gives_exit_status_2() {
     assert_eq!(ran(PathBuf::new(), false).status, 2);
 }

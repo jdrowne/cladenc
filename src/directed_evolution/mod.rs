@@ -13,7 +13,7 @@ use std::time::Duration;
 use crate::containers::{self, ContainerError, Launch};
 use crate::genealogy::HarnessId;
 use crate::journal::{self, Journal, Record, Settings, State};
-use crate::run_directory::RunDirectory;
+use crate::outputs_directory::OutputsDirectory;
 
 use action::Ended;
 pub use error::DirectedEvolutionError;
@@ -31,7 +31,7 @@ pub struct Found {
 
 struct Shared<'a> {
     launch: Launch<'a>,
-    run_directory: RunDirectory,
+    outputs_directory: OutputsDirectory,
     halt: AtomicBool,
     sender: Sender<Ended>,
 }
@@ -44,12 +44,12 @@ pub fn start(
 ) -> Result<Found, DirectedEvolutionError> {
     let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
     let making = Said::Making {
-        run_directory: path,
+        outputs_directory: path,
         primogenitor: &settings.primogenitor,
     };
     say(writer, &making);
-    let (run_directory, journal) = RunDirectory::create(path, &settings.primogenitor)
-        .and_then(|run_directory| {
+    let (outputs_directory, journal) = OutputsDirectory::create(path, &settings.primogenitor)
+        .and_then(|outputs_directory| {
             settings
                 .benchmarks
                 .iter()
@@ -59,17 +59,17 @@ pub fn start(
                         tasks: benchmark.tasks.len() as u64,
                     };
                     say(writer, &copying);
-                    run_directory.copy_benchmark(benchmark)
+                    outputs_directory.copy_benchmark(benchmark)
                 })
-                .map(|()| run_directory)
+                .map(|()| outputs_directory)
         })
         .map_err(DirectedEvolutionError::Io)
-        .and_then(|run_directory| {
-            build_image(settings, &run_directory, stop, writer).map(|()| run_directory)
+        .and_then(|outputs_directory| {
+            build_image(settings, &outputs_directory, stop, writer).map(|()| outputs_directory)
         })
-        .and_then(|run_directory| {
+        .and_then(|outputs_directory| {
             Journal::open(path)
-                .map(|journal| (run_directory, journal))
+                .map(|journal| (outputs_directory, journal))
                 .map_err(DirectedEvolutionError::Journal)
         })?;
     let mut progress = Progress::new(settings, journal, writer);
@@ -77,12 +77,12 @@ pub fn start(
         format: journal::FORMAT,
         settings: Box::new(settings.clone()),
     });
-    carry_on(settings, key.as_deref(), run_directory, progress, stop)
+    carry_on(settings, key.as_deref(), outputs_directory, progress, stop)
 }
 
 fn build_image(
     settings: &Settings,
-    run_directory: &RunDirectory,
+    outputs_directory: &OutputsDirectory,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<(), DirectedEvolutionError> {
@@ -95,13 +95,13 @@ fn build_image(
     };
     let image = &settings.docker_image;
     say(writer, &Said::BuildingImage { image, dockerfile });
-    match containers::build_image(run_directory, dockerfile, image, time_limit, stop) {
+    match containers::build_image(outputs_directory, dockerfile, image, time_limit, stop) {
         Ok(()) => {
             say(
                 writer,
                 &Said::ImageBuilt {
                     image,
-                    run_directory,
+                    outputs_directory,
                 },
             );
             Ok(())
@@ -111,7 +111,7 @@ fn build_image(
                 writer,
                 &Said::ImageNotBuilt {
                     error: &error,
-                    run_directory,
+                    outputs_directory,
                 },
             );
             Err(DirectedEvolutionError::Image(error))
@@ -134,10 +134,10 @@ pub fn resume(
         next_action,
         best_harness,
     } = state;
-    let run_directory = RunDirectory::at(path);
+    let outputs_directory = OutputsDirectory::at(path);
     match best_harness {
         Some(best_harness) => {
-            let directory = run_directory.harness(best_harness);
+            let directory = outputs_directory.harness(best_harness);
             let finished = Said::HadFinished {
                 best_harness,
                 directory: &directory,
@@ -149,7 +149,7 @@ pub fn resume(
             })
         }
         None => {
-            let removed = containers::remove_left_behind(&run_directory)
+            let removed = containers::remove_left_behind(&outputs_directory)
                 .map_err(DirectedEvolutionError::Left)?;
             if removed > 0 {
                 say(
@@ -161,7 +161,7 @@ pub fn resume(
             }
             let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
-                run_directory: path,
+                outputs_directory: path,
                 procreations: genealogy.procreations_started(),
                 max_procreations: settings.max_procreations,
                 harnesses: genealogy.harness_count(),
@@ -172,7 +172,7 @@ pub fn resume(
                 unfinished,
                 next_action,
             );
-            carry_on(&settings, key.as_deref(), run_directory, progress, stop)
+            carry_on(&settings, key.as_deref(), outputs_directory, progress, stop)
         }
     }
 }
@@ -180,31 +180,31 @@ pub fn resume(
 fn carry_on(
     settings: &Settings,
     key: Option<&str>,
-    run_directory: RunDirectory,
+    outputs_directory: OutputsDirectory,
     mut progress: Progress<'_>,
     stop: &AtomicBool,
 ) -> Result<Found, DirectedEvolutionError> {
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {
         progress.say(&Said::Building);
-        containers::build_primogenitor(&run_directory, &launch, stop).map_err(
-            |error| match error {
+        containers::build_primogenitor(&outputs_directory, &launch, stop).map_err(|error| {
+            match error {
                 ContainerError::Stopped => DirectedEvolutionError::Asked,
                 error => {
                     progress.say(&Said::BuildFailed {
                         error: &error,
-                        run_directory: &run_directory,
+                        outputs_directory: &outputs_directory,
                     });
                     DirectedEvolutionError::Build(error)
                 }
-            },
-        )?;
+            }
+        })?;
         progress.built();
     }
     let (sender, receiver) = mpsc::channel();
     let shared = Shared {
         launch,
-        run_directory,
+        outputs_directory,
         halt: AtomicBool::new(false),
         sender,
     };
@@ -220,7 +220,7 @@ fn carry_on(
                 break;
             }
             if let Ok(ended) = receiver.recv_timeout(WAIT) {
-                progress.end(ended, &shared.run_directory);
+                progress.end(ended, &shared.outputs_directory);
             }
             if progress.halted(stop) {
                 progress.stopping();
@@ -228,5 +228,5 @@ fn carry_on(
             }
         }
     });
-    progress.finish(&shared.run_directory, stop)
+    progress.finish(&shared.outputs_directory, stop)
 }

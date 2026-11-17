@@ -13,7 +13,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -36,7 +36,7 @@ fn ran() -> (TempDir, Output) {
 }
 
 fn seed_in_the_run_record_of(directory: &TempDir) -> Option<u64> {
-    let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     let run_record: Value = serde_json::from_str(journal.lines().next().unwrap()).unwrap();
     run_record["seed"].as_u64()
 }
@@ -58,7 +58,10 @@ fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
     let (directory, output) = ran();
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
-        format!("{}\n", directory.path().join("run/harnesses/1").display())
+        format!(
+            "{}\n",
+            directory.path().join("outputs/harnesses/1").display()
+        )
     );
 }
 
@@ -90,14 +93,14 @@ fn every_line_of_standard_error_is_a_sentence_of_cladenc() {
 }
 
 #[test]
-fn standard_error_starts_with_the_run_directory_being_made() {
+fn standard_error_starts_with_the_outputs_directory_being_made() {
     let (directory, output) = ran();
     assert!(
         String::from_utf8(output.stderr)
             .unwrap()
             .starts_with(&format!(
-                "cladenc: making the run directory {} with a copy of the primogenitor ",
-                directory.path().join("run").display()
+                "cladenc: making the outputs directory {} with a copy of the primogenitor ",
+                directory.path().join("outputs").display()
             ))
     );
 }
@@ -110,7 +113,7 @@ fn standard_error_ends_with_the_best_harness_and_where_it_is_kept() {
             .unwrap()
             .ends_with(&format!(
                 "its best harness is harness 1, kept in {}\n",
-                directory.path().join("run/harnesses/1").display()
+                directory.path().join("outputs/harnesses/1").display()
             ))
     );
 }

@@ -25,10 +25,10 @@ fn what_could_not_be_carried_out_is_worded_with_the_system_s_reason() {
 fn a_container_that_docker_did_not_start_is_worded_with_the_file_that_holds_what_docker_said() {
     assert_eq!(
         worded(ContainerError::Docker(PathBuf::from(
-            "/run/running/procreation-1/stderr"
+            "/outputs/running/procreation-1/stderr"
         ))),
         "could not be carried out: Docker did not start its container, \
-         and /run/running/procreation-1/stderr holds what Docker said"
+         and /outputs/running/procreation-1/stderr holds what Docker said"
     );
 }
 

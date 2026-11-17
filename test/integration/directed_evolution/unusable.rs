@@ -17,7 +17,7 @@ fn holding(journal: &str) -> TempDir {
 }
 
 #[test]
-fn a_run_directory_that_does_not_exist_cannot_be_resumed() {
+fn an_outputs_directory_that_does_not_exist_cannot_be_resumed() {
     let directory = test_inputs::temporary_directory();
     let missing = directory.path().join("missing");
     assert!(matches!(
@@ -42,7 +42,7 @@ fn a_directory_that_holds_no_journal_is_given_none() {
 }
 
 #[test]
-fn a_run_directory_in_use_cannot_be_resumed() {
+fn an_outputs_directory_in_use_cannot_be_resumed() {
     let directory = holding("");
     let _in_use = Journal::open(directory.path()).unwrap();
     assert!(matches!(
@@ -52,7 +52,7 @@ fn a_run_directory_in_use_cannot_be_resumed() {
 }
 
 #[test]
-fn a_run_directory_whose_journal_cannot_be_read_cannot_be_resumed() {
+fn an_outputs_directory_whose_journal_cannot_be_read_cannot_be_resumed() {
     assert!(matches!(
         resumed(&holding("not a record\n")),
         Err(DirectedEvolutionError::Unusable(JournalError::NotARecord {

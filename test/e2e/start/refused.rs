@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
+fn options(directory: &Path, outputs_directory: &Path) -> Vec<String> {
     [
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
@@ -10,7 +10,7 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
-        ("--run-dir", run_directory.to_owned()),
+        ("--outputs-dir", outputs_directory.to_owned()),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -42,7 +42,7 @@ fn said(options: &[String]) -> String {
 }
 
 fn with_a_dockerfile(directory: &Path, dockerfile: &Path, image_too: bool) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .into_iter()
         .filter(|option| image_too || !option.starts_with("--docker-image="))
         .chain([
@@ -53,7 +53,7 @@ fn with_a_dockerfile(directory: &Path, dockerfile: &Path, image_too: bool) -> Ve
 }
 
 fn with_a_task_that_lacks_its_grader(directory: &Path) -> Vec<String> {
-    let options = options(directory, &directory.join("run"));
+    let options = options(directory, &directory.join("outputs"));
     fs::remove_file(directory.join("benchmark/t1/grader")).unwrap();
     options
 }
@@ -76,15 +76,15 @@ fn a_benchmark_with_a_task_that_lacks_its_grader_is_refused_by_its_directory_and
 }
 
 #[test]
-fn a_benchmark_that_is_refused_leaves_no_run_directory() {
+fn a_benchmark_that_is_refused_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_task_that_lacks_its_grader(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_its_benchmark_given_twice(directory: &Path) -> Vec<String> {
-    let options = options(directory, &directory.join("run"));
+    let options = options(directory, &directory.join("outputs"));
     let again = options
         .iter()
         .filter(|option| option.starts_with("--benchmark="))
@@ -108,7 +108,7 @@ fn a_benchmark_given_twice_is_said_to_be_given_twice() {
 }
 
 fn with_quiet(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .into_iter()
         .chain(["--quiet".to_owned()])
         .collect()
@@ -129,15 +129,15 @@ fn quiet_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expecte
 }
 
 #[test]
-fn quiet_which_is_no_flag_of_start_leaves_no_run_directory() {
+fn quiet_which_is_no_flag_of_start_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_quiet(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_a_seed(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .into_iter()
         .chain(["--seed=7".to_owned()])
         .collect()
@@ -158,15 +158,15 @@ fn a_seed_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expect
 }
 
 #[test]
-fn a_seed_which_is_no_flag_of_start_leaves_no_run_directory() {
+fn a_seed_which_is_no_flag_of_start_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_seed(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_initial_procreations(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .into_iter()
         .chain(["--initial-procreations=5".to_owned()])
         .collect()
@@ -189,17 +189,17 @@ fn initial_procreations_which_are_no_flag_of_start_are_refused_as_an_argument_no
 }
 
 #[test]
-fn initial_procreations_which_are_no_flag_of_start_leave_no_run_directory() {
+fn initial_procreations_which_are_no_flag_of_start_leave_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_initial_procreations(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(
     directory: &Path,
 ) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .iter()
         .map(|option| option.replace("--max-concurrent-containers=", "--workers="))
         .collect()
@@ -222,16 +222,16 @@ fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_is_refused_f
 }
 
 #[test]
-fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_leaves_no_run_directory() {
+fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options =
         with_the_limit_of_concurrent_containers_under_a_name_it_does_not_have(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_the_primogenitor_under_a_name_it_does_not_have(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .iter()
         .map(|option| option.replace("--primogenitor=", "--progenitor="))
         .collect()
@@ -252,15 +252,15 @@ fn the_primogenitor_under_a_name_it_does_not_have_is_refused_for_the_name() {
 }
 
 #[test]
-fn the_primogenitor_under_a_name_it_does_not_have_leaves_no_run_directory() {
+fn the_primogenitor_under_a_name_it_does_not_have_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_the_primogenitor_under_a_name_it_does_not_have(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_a_budget_in_the_place_of_the_most_procreations(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .iter()
         .map(|option| option.replace("--max-procreations=", "--budget="))
         .collect()
@@ -281,15 +281,15 @@ fn a_budget_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expe
 }
 
 #[test]
-fn a_budget_which_is_no_flag_of_start_leaves_no_run_directory() {
+fn a_budget_which_is_no_flag_of_start_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_budget_in_the_place_of_the_most_procreations(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn with_a_confidence(directory: &Path) -> Vec<String> {
-    let mut options = options(directory, &directory.join("run"));
+    let mut options = options(directory, &directory.join("outputs"));
     options.push("--confidence=99".to_owned());
     options
 }
@@ -309,15 +309,15 @@ fn a_confidence_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_
 }
 
 #[test]
-fn a_confidence_which_is_no_flag_of_start_leaves_no_run_directory() {
+fn a_confidence_which_is_no_flag_of_start_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_confidence(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 fn without_the_most_procreations(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .into_iter()
         .filter(|option| !option.starts_with("--max-procreations="))
         .collect()
@@ -338,7 +338,7 @@ fn a_command_line_without_the_most_procreations_is_refused_for_the_flag_it_lacks
 }
 
 fn with_no_procreation_at_most(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("run"))
+    options(directory, &directory.join("outputs"))
         .iter()
         .map(|option| option.replace("--max-procreations=1", "--max-procreations=0"))
         .collect()
@@ -361,22 +361,22 @@ fn the_most_procreations_being_0_is_refused_for_the_value() {
 }
 
 #[test]
-fn the_most_procreations_being_0_leaves_no_run_directory() {
+fn the_most_procreations_being_0_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_no_procreation_at_most(directory.path());
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }
 
 #[test]
 fn a_missing_option_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = options(directory.path(), &directory.path().join("run"));
+    let options = options(directory.path(), &directory.path().join("outputs"));
     assert_eq!(status(&options[..options.len() - 1]), Some(2));
 }
 
 #[test]
-fn a_run_directory_at_which_something_exists_exits_with_2() {
+fn an_outputs_directory_at_which_something_exists_exits_with_2() {
     let directory = test_inputs::temporary_directory();
     let options = options(directory.path(), directory.path());
     assert_eq!(status(&options), Some(2));
@@ -419,9 +419,9 @@ fn a_dockerfile_that_does_not_exist_is_refused_for_what_its_flag_takes() {
 }
 
 #[test]
-fn a_dockerfile_that_is_refused_leaves_no_run_directory() {
+fn a_dockerfile_that_is_refused_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_dockerfile(directory.path(), &directory.path().join("missing"), false);
     let _ = status(&options);
-    assert!(!directory.path().join("run").exists());
+    assert!(!directory.path().join("outputs").exists());
 }

@@ -174,8 +174,10 @@ pub fn end_with_125_at(primogenitor: &Path, solved: u64) {
         .expect("the marker can be written");
 }
 
-pub fn end_with_125_no_more(run_directory: &Path) {
-    for harness in fs::read_dir(run_directory.join("harnesses")).expect("the harnesses are there") {
+pub fn end_with_125_no_more(outputs_directory: &Path) {
+    for harness in
+        fs::read_dir(outputs_directory.join("harnesses")).expect("the harnesses are there")
+    {
         let marker = harness
             .expect("a harness can be listed")
             .path()
@@ -194,8 +196,8 @@ pub fn end_with_125_on(directory: &Path, task: &str) {
     fs::write(marker, "").expect("the marker can be written");
 }
 
-pub fn end_with_125_on_no_more(run_directory: &Path, task: &str) {
-    let marker = run_directory
+pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
+    let marker = outputs_directory
         .join("benchmarks/benchmark")
         .join(task)
         .join("workspace/end-with-125");
@@ -207,8 +209,8 @@ pub fn grader(directory: &Path, task: &str, command: &str) {
     fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
 }
 
-pub fn kept_grader(run_directory: &Path, task: &str, command: &str) {
-    grader(&run_directory.join("benchmarks"), task, command);
+pub fn kept_grader(outputs_directory: &Path, task: &str, command: &str) {
+    grader(&outputs_directory.join("benchmarks"), task, command);
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

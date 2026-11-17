@@ -4,7 +4,7 @@ use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
 use cladenc::benchmark::Benchmark;
-use cladenc::run_directory::RunDirectory;
+use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn benchmark_of(directory: &Path, ids: &[&str]) -> Benchmark {
@@ -18,9 +18,9 @@ fn copied(ids: &[&str]) -> (TempDir, PathBuf, io::Result<()>) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]);
-    let path = directory.path().join("run");
-    let run_directory = RunDirectory::create(&path, &primogenitor).unwrap();
-    let result = run_directory.copy_benchmark(&benchmark_of(&benchmark, ids));
+    let path = directory.path().join("outputs");
+    let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
+    let result = outputs_directory.copy_benchmark(&benchmark_of(&benchmark, ids));
     (directory, path, result)
 }
 
@@ -68,10 +68,10 @@ fn only_the_tasks_that_are_named_are_copied() {
 }
 
 #[test]
-fn the_run_directory_says_where_the_copy_of_a_task_is() {
+fn the_outputs_directory_says_where_the_copy_of_a_task_is() {
     let (_directory, path, _) = copied(&["t1"]);
     assert_eq!(
-        RunDirectory::at(&path).task("benchmark/t1"),
+        OutputsDirectory::at(&path).task("benchmark/t1"),
         path.join("benchmarks/benchmark/t1")
     );
 }
@@ -83,9 +83,9 @@ fn a_task_given_through_a_symbolic_link_is_copied_as_the_directory_it_leads_to()
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     let elsewhere = test_inputs::task(directory.path(), "kept-elsewhere");
     symlink(elsewhere, benchmark.join("t2")).unwrap();
-    let path = directory.path().join("run");
-    let run_directory = RunDirectory::create(&path, &primogenitor).unwrap();
-    run_directory
+    let path = directory.path().join("outputs");
+    let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
+    outputs_directory
         .copy_benchmark(&benchmark_of(&benchmark, &["t1", "t2"]))
         .unwrap();
     assert!(
@@ -102,9 +102,9 @@ fn a_task_that_the_benchmark_does_not_hold_cannot_be_copied() {
 }
 
 #[test]
-fn a_benchmark_cannot_be_copied_into_a_run_directory_that_holds_one_of_its_name() {
+fn a_benchmark_cannot_be_copied_into_an_outputs_directory_that_holds_one_of_its_name() {
     let (directory, path, _) = copied(&["t1"]);
-    let again = RunDirectory::at(&path)
+    let again = OutputsDirectory::at(&path)
         .copy_benchmark(&benchmark_of(&directory.path().join("benchmark"), &["t2"]));
     assert_eq!(again.unwrap_err().kind(), ErrorKind::AlreadyExists);
 }
@@ -113,7 +113,7 @@ fn a_benchmark_cannot_be_copied_into_a_run_directory_that_holds_one_of_its_name(
 fn each_benchmark_is_copied_into_a_directory_named_after_it() {
     let (directory, path, _) = copied(&["t1"]);
     let second = test_inputs::benchmark_named(directory.path(), "refactoring", &["t1"]);
-    RunDirectory::at(&path)
+    OutputsDirectory::at(&path)
         .copy_benchmark(&benchmark_of(&second, &["t1"]))
         .unwrap();
     assert_eq!(
@@ -131,12 +131,13 @@ fn a_task_of_the_same_id_in_two_benchmarks_is_copied_twice() {
         "Refactor the work of t1.\n",
     )
     .unwrap();
-    RunDirectory::at(&path)
+    OutputsDirectory::at(&path)
         .copy_benchmark(&benchmark_of(&second, &["t1"]))
         .unwrap();
     assert_eq!(
         ["benchmark/t1", "refactoring/t1"].map(|task| {
-            fs::read_to_string(RunDirectory::at(&path).task(task).join("specification")).unwrap()
+            fs::read_to_string(OutputsDirectory::at(&path).task(task).join("specification"))
+                .unwrap()
         }),
         ["Finish the work of t1.\n", "Refactor the work of t1.\n"]
     );

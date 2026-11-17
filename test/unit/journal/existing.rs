@@ -7,44 +7,44 @@ const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}
 const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
 
 fn holding(text: &str) -> TempDir {
-    let run_directory = tempfile::tempdir().unwrap();
-    fs::write(journal::path(run_directory.path()), text).unwrap();
-    run_directory
+    let outputs_directory = tempfile::tempdir().unwrap();
+    fs::write(journal::path(outputs_directory.path()), text).unwrap();
+    outputs_directory
 }
 
-fn after_appending_the_second(run_directory: &TempDir) -> String {
-    Journal::open_existing(run_directory.path())
+fn after_appending_the_second(outputs_directory: &TempDir) -> String {
+    Journal::open_existing(outputs_directory.path())
         .unwrap()
         .append(&Record::ProcreationStarted {
             child: 2,
             progenitor: 0,
         })
         .unwrap();
-    fs::read_to_string(journal::path(run_directory.path())).unwrap()
+    fs::read_to_string(journal::path(outputs_directory.path())).unwrap()
 }
 
 #[test]
 fn opening_an_existing_journal_where_there_is_none_is_an_error() {
-    let run_directory = tempfile::tempdir().unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
     assert!(matches!(
-        Journal::open_existing(run_directory.path()),
+        Journal::open_existing(outputs_directory.path()),
         Err(JournalError::Io(_))
     ));
 }
 
 #[test]
 fn opening_an_existing_journal_where_there_is_none_creates_no_file() {
-    let run_directory = tempfile::tempdir().unwrap();
-    let _refused = Journal::open_existing(run_directory.path());
-    assert!(!journal::path(run_directory.path()).exists());
+    let outputs_directory = tempfile::tempdir().unwrap();
+    let _refused = Journal::open_existing(outputs_directory.path());
+    assert!(!journal::path(outputs_directory.path()).exists());
 }
 
 #[test]
 fn an_existing_journal_that_is_open_is_locked() {
-    let run_directory = holding("");
-    let _first = Journal::open_existing(run_directory.path()).unwrap();
+    let outputs_directory = holding("");
+    let _first = Journal::open_existing(outputs_directory.path()).unwrap();
     assert!(matches!(
-        Journal::open_existing(run_directory.path()),
+        Journal::open_existing(outputs_directory.path()),
         Err(JournalError::Locked)
     ));
 }

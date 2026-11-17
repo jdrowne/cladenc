@@ -6,7 +6,7 @@ use super::StartOptions;
 use crate::benchmark::{self, Benchmark, BenchmarkError};
 use crate::journal::Settings;
 use crate::model;
-use crate::run_directory::holds_only_harness_files;
+use crate::outputs_directory::holds_only_harness_files;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Refused {

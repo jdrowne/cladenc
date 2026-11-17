@@ -25,9 +25,9 @@ pub enum DirectedEvolutionError {
 impl Display for DirectedEvolutionError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Io(error) => write!(formatter, "the run directory cannot be made: {error}"),
+            Self::Io(error) => write!(formatter, "the outputs directory cannot be made: {error}"),
             Self::Unusable(error) => {
-                write!(formatter, "the run directory cannot be used: {error}")
+                write!(formatter, "the outputs directory cannot be used: {error}")
             }
             Self::Key(file) => write!(
                 formatter,

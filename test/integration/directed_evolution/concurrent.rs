@@ -33,15 +33,15 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         seed: 7,
     };
     change(&mut settings);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     )
     .unwrap();
-    fs::read_to_string(journal::path(&run_directory))
+    fs::read_to_string(journal::path(&outputs_directory))
         .unwrap()
         .lines()
         .map(|line| serde_json::from_str(line).unwrap())

@@ -10,11 +10,11 @@ use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 pub use copy::{copy_tree, holds_only_harness_files};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RunDirectory {
+pub struct OutputsDirectory {
     path: PathBuf,
 }
 
-impl RunDirectory {
+impl OutputsDirectory {
     pub fn at(path: &Path) -> Self {
         Self {
             path: path.to_owned(),
@@ -22,7 +22,7 @@ impl RunDirectory {
     }
 
     pub fn create(path: &Path, primogenitor: &Path) -> io::Result<Self> {
-        let run_directory = Self::at(path);
+        let outputs_directory = Self::at(path);
         fs::create_dir(path)
             .and_then(|()| fs::create_dir(path.join("harnesses")))
             .and_then(|()| fs::create_dir(path.join("procreations")))
@@ -30,9 +30,9 @@ impl RunDirectory {
             .and_then(|()| fs::create_dir(path.join("running")))
             .and_then(|()| fs::create_dir(path.join("benchmarks")))
             .and_then(|()| fs::canonicalize(primogenitor))
-            .and_then(|resolved| copy_tree(&resolved, &run_directory.harness(0)))
-            .and_then(|()| fs::create_dir(run_directory.attempts(0)))
-            .map(|()| run_directory)
+            .and_then(|resolved| copy_tree(&resolved, &outputs_directory.harness(0)))
+            .and_then(|()| fs::create_dir(outputs_directory.attempts(0)))
+            .map(|()| outputs_directory)
     }
 
     pub fn path(&self) -> &Path {

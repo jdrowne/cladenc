@@ -19,7 +19,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
         ("--harness-run-command", "exit 0".into()),
-        ("--run-dir", directory.path().join("run")),
+        ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -37,7 +37,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
 
 fn left_in_the_run(build_command: &str, file: &str) -> String {
     let (directory, _output) = ran(build_command);
-    fs::read_to_string(directory.path().join("run").join(file)).unwrap()
+    fs::read_to_string(directory.path().join("outputs").join(file)).unwrap()
 }
 
 #[test]

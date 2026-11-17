@@ -17,7 +17,7 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -43,11 +43,11 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
-    let run = directory.path().join("run");
-    let work = run.join("running/attempt-0-benchmark+t1/work");
+    let outputs = directory.path().join("outputs");
+    let work = outputs.join("running/attempt-0-benchmark+t1/work");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&work.join("id")));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGHUP).unwrap();
-    fs::remove_file(run.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
     fs::remove_file(work.join("hold")).unwrap();
     assert_eq!(cladenc.wait().unwrap().code(), Some(0));
 }

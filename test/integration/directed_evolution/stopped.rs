@@ -36,10 +36,10 @@ const END_A_PROCREATION_WITH_125: &str = "if [ -d /var/log/cladenc/attempts ]; t
 fn stopped_at_its_first_attempt() -> (TempDir, Result<Found, DirectedEvolutionError>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     );
@@ -49,8 +49,8 @@ fn stopped_at_its_first_attempt() -> (TempDir, Result<Found, DirectedEvolutionEr
 fn stopped_by_its_flag() -> (TempDir, Result<Found, DirectedEvolutionError>, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
-    let run_directory = directory.path().join("run");
-    let id_file = run_directory.join("running/attempt-0-benchmark+t1/work/id");
+    let outputs_directory = directory.path().join("outputs");
+    let id_file = outputs_directory.join("running/attempt-0-benchmark+t1/work/id");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
@@ -58,13 +58,13 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, DirectedEvolutionError>, Str
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(&settings, &run_directory, &stop, &mut written)
+        directed_evolution::start(&settings, &outputs_directory, &stop, &mut written)
     });
     (directory, found, String::from_utf8(written).unwrap())
 }
 
 fn journal_of(directory: &TempDir) -> String {
-    fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
+    fs::read_to_string(journal::path(&directory.path().join("outputs"))).unwrap()
 }
 
 #[test]
@@ -82,10 +82,10 @@ fn a_container_that_ends_with_status_125_at_an_attempt_stops_the_directed_evolut
 fn evolved_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), run_command);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     )
@@ -161,7 +161,7 @@ fn a_directed_evolution_stopped_by_its_flag_leaves_no_container_behind() {
     assert!(test_inputs::container_is_gone(
         &directory
             .path()
-            .join("run/running/attempt-0-benchmark+t1/work/id")
+            .join("outputs/running/attempt-0-benchmark+t1/work/id")
     ));
 }
 
@@ -184,10 +184,10 @@ fn a_directed_evolution_stopped_by_its_flag_says_that_it_was_asked_to_stop_and_w
 fn a_directed_evolution_a_container_stopped_says_what_docker_did_when_it_happens() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), END_A_PROCREATION_WITH_125);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut written);
+    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut written);
     assert!(String::from_utf8(written).unwrap().contains(
         "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker \
          did not start its container"

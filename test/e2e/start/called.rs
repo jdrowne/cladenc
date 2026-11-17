@@ -26,7 +26,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
             "--harness-run-command",
             SAY_WHAT_THE_HARNESS_IS_GIVEN.into(),
         ),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -79,11 +79,11 @@ fn ran_in_with_a_docker_that_records_its_arguments(directory: &TempDir) -> Strin
 }
 
 fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
-    fs::read_to_string(directory.path().join("run/harnesses/1").join(file)).unwrap()
+    fs::read_to_string(directory.path().join("outputs/harnesses/1").join(file)).unwrap()
 }
 
 fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
-    let work = fs::read_dir(directory.path().join("run/attempts"))
+    let work = fs::read_dir(directory.path().join("outputs/attempts"))
         .unwrap()
         .map(|harness| harness.unwrap().path().join("benchmark/t1/work"))
         .find(|work| work.is_dir())
@@ -148,7 +148,7 @@ fn the_grader_of_a_task_is_told_nothing_of_the_model() {
 #[test]
 fn the_key_is_neither_printed_nor_written_into_the_journal() {
     let (directory, output) = ran();
-    let journal = fs::read(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read(directory.path().join("outputs/journal.jsonl")).unwrap();
     let shown = [output.stdout, output.stderr, journal].concat();
     assert!(!String::from_utf8(shown).unwrap().contains("a-made-up-key"));
 }
@@ -156,7 +156,7 @@ fn the_key_is_neither_printed_nor_written_into_the_journal() {
 #[test]
 fn the_journal_names_the_file_the_key_is_read_from() {
     let (directory, _output) = ran();
-    let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
+    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     let named = format!(
         "\"model_key_file\":\"{}\"",
         directory.path().join("model-key").display()
@@ -236,13 +236,13 @@ fn the_timer_of_a_grader_is_given_the_grader_of_the_task() {
 fn every_container_carries_the_label_of_its_directed_evolution() {
     let directory = test_inputs::temporary_directory();
     let arguments = ran_in_with_a_docker_that_records_its_arguments(&directory);
-    let run = fs::canonicalize(directory.path().join("run")).unwrap();
+    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
     let containers = arguments.lines().filter(|line| *line == "run").count();
     assert_eq!(
         arguments
             .matches(&format!(
                 "\n--label\ncladenc.directed-evolution={}\n",
-                run.display()
+                outputs.display()
             ))
             .count(),
         containers.max(1)

@@ -19,7 +19,7 @@ fn ended() -> TempDir {
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        ("--run-dir", directory.path().join("run")),
+        ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -38,7 +38,10 @@ fn ended() -> TempDir {
 fn report(directory: &Path, json: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("report")
-        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
         .args(json)
         .output()
         .unwrap()
@@ -84,7 +87,7 @@ fn report_exits_with_0() {
 #[test]
 fn report_leaves_the_journal_unchanged() {
     let directory = ended();
-    let journal = directory.path().join("run/journal.jsonl");
+    let journal = directory.path().join("outputs/journal.jsonl");
     let before = fs::read(&journal).unwrap();
     report(directory.path(), None);
     assert_eq!(fs::read(&journal).unwrap(), before);

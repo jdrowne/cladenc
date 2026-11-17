@@ -33,8 +33,8 @@ fn settings() -> Settings {
     }
 }
 
-fn run_directory(last_line: &str) -> TempDir {
-    let run_directory = tempfile::tempdir().unwrap();
+fn outputs_directory(last_line: &str) -> TempDir {
+    let outputs_directory = tempfile::tempdir().unwrap();
     let records = [
         Record::Run {
             format: journal::FORMAT,
@@ -58,8 +58,8 @@ fn run_directory(last_line: &str) -> TempDir {
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
-    fs::write(journal::path(run_directory.path()), lines + last_line).unwrap();
-    run_directory
+    fs::write(journal::path(outputs_directory.path()), lines + last_line).unwrap();
+    outputs_directory
 }
 
 fn of_the_records() -> Report {
@@ -73,18 +73,18 @@ fn of_the_records() -> Report {
 }
 
 #[test]
-fn a_report_is_read_from_the_journal_of_a_run_directory() {
+fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
     assert_eq!(
-        report::read(run_directory("").path()).unwrap(),
+        report::read(outputs_directory("").path()).unwrap(),
         of_the_records()
     );
 }
 
 #[test]
 fn a_directory_that_holds_no_journal_cannot_be_reported_on() {
-    let run_directory = tempfile::tempdir().unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
     assert!(matches!(
-        report::read(run_directory.path()),
+        report::read(outputs_directory.path()),
         Err(JournalError::Io(_))
     ));
 }
@@ -92,17 +92,17 @@ fn a_directory_that_holds_no_journal_cannot_be_reported_on() {
 #[test]
 fn a_last_line_that_was_cut_short_is_ignored() {
     assert_eq!(
-        report::read(run_directory(CUT_SHORT).path()).unwrap(),
+        report::read(outputs_directory(CUT_SHORT).path()).unwrap(),
         of_the_records()
     );
 }
 
 #[test]
 fn a_last_line_that_was_cut_short_is_left_where_it_is() {
-    let run_directory = run_directory(CUT_SHORT);
-    let _report = report::read(run_directory.path());
+    let outputs_directory = outputs_directory(CUT_SHORT);
+    let _report = report::read(outputs_directory.path());
     assert!(
-        fs::read_to_string(journal::path(run_directory.path()))
+        fs::read_to_string(journal::path(outputs_directory.path()))
             .unwrap()
             .ends_with(CUT_SHORT)
     );
@@ -110,7 +110,7 @@ fn a_last_line_that_was_cut_short_is_left_where_it_is() {
 
 #[test]
 fn a_report_is_read_while_the_journal_is_locked() {
-    let run_directory = run_directory("");
-    let _in_use = Journal::open_existing(run_directory.path()).unwrap();
-    assert!(report::read(run_directory.path()).is_ok());
+    let outputs_directory = outputs_directory("");
+    let _in_use = Journal::open_existing(outputs_directory.path()).unwrap();
+    assert!(report::read(outputs_directory.path()).is_ok());
 }

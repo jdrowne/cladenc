@@ -141,6 +141,12 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "DIR",
+        help = "The outputs directory, which start creates"
+    )]
+    pub outputs_dir: PathBuf,
+    #[arg(
+        long,
+        value_name = "DIR",
         help = "The directory of source code copied to make the primogenitor"
     )]
     pub primogenitor: PathBuf,
@@ -151,12 +157,6 @@ pub struct StartOptions {
         help = "The time limit of one procreation"
     )]
     pub procreation_timeout: u64,
-    #[arg(
-        long,
-        value_name = "DIR",
-        help = "The run directory, which start creates"
-    )]
-    pub run_dir: PathBuf,
 }
 
 #[derive(Clone, Debug, Args)]
@@ -164,9 +164,9 @@ pub struct ResumeOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The run directory of the directed evolution to continue"
+        help = "The outputs directory of the directed evolution to continue"
     )]
-    pub run_dir: PathBuf,
+    pub outputs_dir: PathBuf,
 }
 
 #[derive(Clone, Debug, Args)]
@@ -176,9 +176,9 @@ pub struct ReportOptions {
     #[arg(
         long,
         value_name = "DIR",
-        help = "The run directory of the directed evolution to report on"
+        help = "The outputs directory of the directed evolution to report on"
     )]
-    pub run_dir: PathBuf,
+    pub outputs_dir: PathBuf,
 }
 
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
@@ -207,8 +207,8 @@ fn start(
     let settings = options
         .settings()
         .map_err(|refused| (2, refused.to_string()))?;
-    let run_directory = mountable(&options.run_dir)?;
-    directed_evolution::start(&settings, &run_directory, stop, writer).map_err(stopped)
+    let outputs_directory = mountable(&options.outputs_dir)?;
+    directed_evolution::start(&settings, &outputs_directory, stop, writer).map_err(stopped)
 }
 
 fn resume(
@@ -216,13 +216,13 @@ fn resume(
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<Found, (u8, String)> {
-    let run_directory = mountable(&options.run_dir)?;
-    directed_evolution::resume(&run_directory, stop, writer).map_err(stopped)
+    let outputs_directory = mountable(&options.outputs_dir)?;
+    directed_evolution::resume(&outputs_directory, stop, writer).map_err(stopped)
 }
 
 fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
-    let run_directory = absolute(&options.run_dir)?;
-    crate::report::read(&run_directory)
+    let outputs_directory = absolute(&options.outputs_dir)?;
+    crate::report::read(&outputs_directory)
         .map(|report| {
             if options.json {
                 report.json() + "\n"
@@ -237,21 +237,21 @@ fn directory(found: Found) -> String {
     format!("{}\n", found.directory.display())
 }
 
-fn absolute(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
-    path::absolute(run_dir).map_err(|error| (2, format!("--run-dir takes a path: {error}")))
+fn absolute(outputs_dir: &Path) -> Result<PathBuf, (u8, String)> {
+    path::absolute(outputs_dir).map_err(|error| (2, format!("--outputs-dir takes a path: {error}")))
 }
 
-fn mountable(run_dir: &Path) -> Result<PathBuf, (u8, String)> {
-    absolute(run_dir).and_then(|run_directory| {
-        if run_directory.to_string_lossy().contains(':') {
+fn mountable(outputs_dir: &Path) -> Result<PathBuf, (u8, String)> {
+    absolute(outputs_dir).and_then(|outputs_directory| {
+        if outputs_directory.to_string_lossy().contains(':') {
             Err((
                 2,
-                "--run-dir takes a path that holds no colon, because Docker cannot mount a \
+                "--outputs-dir takes a path that holds no colon, because Docker cannot mount a \
                  directory whose path holds one"
                     .to_owned(),
             ))
         } else {
-            Ok(run_directory)
+            Ok(outputs_directory)
         }
     })
 }

@@ -22,7 +22,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        run_dir: directory.path().join("run"),
+        outputs_dir: directory.path().join("outputs"),
         max_procreations: 1,
         genealogy_growth: 0.0,
         max_concurrent_containers: 1,
@@ -57,12 +57,12 @@ fn with_a_missing_dockerfile(directory: &Path, options: &mut StartOptions) {
     options.docker_build_timeout = Some(600);
 }
 
-fn in_a_run_directory_that_exists(directory: &Path, options: &mut StartOptions) {
-    options.run_dir = directory.to_owned();
+fn in_an_outputs_directory_that_exists(directory: &Path, options: &mut StartOptions) {
+    options.outputs_dir = directory.to_owned();
 }
 
-fn in_a_run_directory_with_a_colon_in_its_path(directory: &Path, options: &mut StartOptions) {
-    options.run_dir = directory.join("first:second");
+fn in_an_outputs_directory_with_a_colon_in_its_path(directory: &Path, options: &mut StartOptions) {
+    options.outputs_dir = directory.join("first:second");
 }
 
 #[test]
@@ -120,45 +120,51 @@ fn a_dockerfile_that_does_not_exist_is_refused_for_what_the_flag_takes() {
 }
 
 #[test]
-fn a_run_directory_at_which_something_exists_gives_exit_status_2() {
-    assert_eq!(ran(in_a_run_directory_that_exists).status, 2);
+fn an_outputs_directory_at_which_something_exists_gives_exit_status_2() {
+    assert_eq!(ran(in_an_outputs_directory_that_exists).status, 2);
 }
 
 #[test]
-fn a_run_directory_at_which_something_exists_is_reported_last_on_standard_error() {
+fn an_outputs_directory_at_which_something_exists_is_reported_last_on_standard_error() {
     assert!(
-        ran(in_a_run_directory_that_exists)
+        ran(in_an_outputs_directory_that_exists)
             .errors
             .lines()
             .last()
-            .is_some_and(|line| line.starts_with("cladenc: the run directory cannot be made: "))
+            .is_some_and(|line| line.starts_with("cladenc: the outputs directory cannot be made: "))
     );
 }
 
 #[test]
-fn a_run_directory_that_is_being_made_is_said_first_on_standard_error() {
+fn an_outputs_directory_that_is_being_made_is_said_first_on_standard_error() {
     assert!(
-        ran(in_a_run_directory_that_exists)
+        ran(in_an_outputs_directory_that_exists)
             .errors
-            .starts_with("cladenc: making the run directory ")
+            .starts_with("cladenc: making the outputs directory ")
     );
 }
 
 #[test]
-fn a_run_directory_with_a_colon_in_its_path_gives_exit_status_2() {
-    assert_eq!(ran(in_a_run_directory_with_a_colon_in_its_path).status, 2);
+fn an_outputs_directory_with_a_colon_in_its_path_gives_exit_status_2() {
+    assert_eq!(
+        ran(in_an_outputs_directory_with_a_colon_in_its_path).status,
+        2
+    );
 }
 
 #[test]
-fn a_run_directory_with_a_colon_in_its_path_is_refused_for_what_docker_cannot_mount() {
+fn an_outputs_directory_with_a_colon_in_its_path_is_refused_for_what_docker_cannot_mount() {
     assert_eq!(
-        ran(in_a_run_directory_with_a_colon_in_its_path).errors,
-        "cladenc: --run-dir takes a path that holds no colon, because Docker cannot mount a \
+        ran(in_an_outputs_directory_with_a_colon_in_its_path).errors,
+        "cladenc: --outputs-dir takes a path that holds no colon, because Docker cannot mount a \
          directory whose path holds one\n"
     );
 }
 
 #[test]
-fn a_run_directory_with_no_path_gives_exit_status_2() {
-    assert_eq!(ran(|_, options| options.run_dir = PathBuf::new()).status, 2);
+fn an_outputs_directory_with_no_path_gives_exit_status_2() {
+    assert_eq!(
+        ran(|_, options| options.outputs_dir = PathBuf::new()).status,
+        2
+    );
 }

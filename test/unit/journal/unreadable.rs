@@ -83,9 +83,9 @@ fn run_that_builds() -> String {
 }
 
 fn error_of_text(text: &str) -> JournalError {
-    let run_directory = tempfile::tempdir().unwrap();
-    fs::write(journal::path(run_directory.path()), text).unwrap();
-    journal::read(run_directory.path()).unwrap_err()
+    let outputs_directory = tempfile::tempdir().unwrap();
+    fs::write(journal::path(outputs_directory.path()), text).unwrap();
+    journal::read(outputs_directory.path()).unwrap_err()
 }
 
 fn error_of(lines: &[&str]) -> JournalError {
@@ -99,9 +99,9 @@ fn error_of(lines: &[&str]) -> JournalError {
 
 #[test]
 fn a_journal_whose_file_is_missing_cannot_be_read() {
-    let run_directory = tempfile::tempdir().unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
     assert!(matches!(
-        journal::read(run_directory.path()),
+        journal::read(outputs_directory.path()),
         Err(JournalError::Io(_))
     ));
 }

@@ -21,7 +21,7 @@ mod directed_evolution {
     mod unusable;
 }
 
-mod run_directory {
+mod outputs_directory {
     mod attempt;
     mod benchmark;
     mod build;

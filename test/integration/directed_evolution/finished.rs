@@ -61,10 +61,10 @@ fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, Direct
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path());
     change(&mut settings);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     );
@@ -75,16 +75,16 @@ fn said_over_one_task() -> (TempDir, Vec<String>) {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path());
     over_one_task(&mut settings);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &run_directory, &stop, &mut written).unwrap();
+    directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
 
 fn journal_of(directory: &TempDir) -> String {
-    fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
+    fs::read_to_string(journal::path(&directory.path().join("outputs"))).unwrap()
 }
 
 fn started(journal: &str, action: &str) -> usize {
@@ -160,10 +160,10 @@ fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_th
 fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     )
@@ -180,13 +180,13 @@ fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings(
 }
 
 #[test]
-fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_directory() {
+fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_outputs_directory() {
     let (directory, _found) = evolved(over_one_task);
     assert_eq!(
         fs::read_to_string(
             directory
                 .path()
-                .join("run/benchmarks/benchmark/t1/specification")
+                .join("outputs/benchmarks/benchmark/t1/specification")
         )
         .unwrap(),
         "Finish the work of t1.\n"
@@ -199,13 +199,13 @@ fn a_directed_evolution_copies_no_task_of_its_benchmark_that_is_not_one_of_its_o
     assert!(
         !directory
             .path()
-            .join("run/benchmarks/benchmark/t2")
+            .join("outputs/benchmarks/benchmark/t2")
             .exists()
     );
 }
 
 #[test]
-fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_run_directory() {
+fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_outputs_directory() {
     let (_directory, found) =
         evolved(|settings| settings.benchmarks[0].tasks.push("missing".to_owned()));
     assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
@@ -268,7 +268,7 @@ fn a_progenitor_finds_every_task_of_its_benchmark_in_the_directory_of_its_attemp
     let (directory, _found) =
         evolved(|settings| settings.harness_run_command = KEEP_THE_TASKS_FOUND.to_owned());
     assert_eq!(
-        fs::read_to_string(directory.path().join("run/harnesses/1/tasks-found")).unwrap(),
+        fs::read_to_string(directory.path().join("outputs/harnesses/1/tasks-found")).unwrap(),
         "t1\nt2\nt3\nt4\nt5\n"
     );
 }
@@ -333,23 +333,23 @@ fn the_harness_returned_is_the_one_the_samples_make_best() {
 }
 
 #[test]
-fn the_directory_returned_is_that_of_the_best_harness_in_the_run_directory() {
+fn the_directory_returned_is_that_of_the_best_harness_in_the_outputs_directory() {
     let (directory, found) = evolved(over_one_task);
     assert_eq!(
         found.unwrap().directory,
-        directory.path().join("run/harnesses/1")
+        directory.path().join("outputs/harnesses/1")
     );
 }
 
 #[test]
-fn a_directed_evolution_says_first_that_it_makes_its_run_directory_with_a_copy_of_the_primogenitor()
-{
+fn a_directed_evolution_says_first_that_it_makes_its_outputs_directory_with_a_copy_of_the_primogenitor()
+ {
     let (directory, said) = said_over_one_task();
     assert_eq!(
         said[0],
         format!(
-            "cladenc: making the run directory {} with a copy of the primogenitor {}",
-            directory.path().join("run").display(),
+            "cladenc: making the outputs directory {} with a copy of the primogenitor {}",
+            directory.path().join("outputs").display(),
             directory.path().join("primogenitor").display()
         )
     );
@@ -361,7 +361,7 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
     assert_eq!(
         said[1],
         format!(
-            "cladenc: copying the 1 task of the benchmark {} into the run directory",
+            "cladenc: copying the 1 task of the benchmark {} into the outputs directory",
             directory.path().join("benchmark").display()
         )
     );
@@ -401,7 +401,7 @@ fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
         "cladenc: the procreation of harness 1 by harness 0 created harness 1, kept in {}",
-        directory.path().join("run/harnesses/1").display()
+        directory.path().join("outputs/harnesses/1").display()
     )));
 }
 
@@ -412,7 +412,7 @@ fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what
     assert!(said.contains(&format!(
         "cladenc: harness 1 completed task benchmark/t1: what the attempt left \
          is kept in {}",
-        directory.path().join("run/attempts/1/benchmark/t1").display()
+        directory.path().join("outputs/attempts/1/benchmark/t1").display()
     )));
 }
 
@@ -424,7 +424,7 @@ fn a_directed_evolution_says_last_that_it_finished_and_which_harness_is_its_best
         &format!(
             "cladenc: the directed evolution finished with 2 attempts started and 2 \
              harnesses: its best harness is harness 1, kept in {}",
-            directory.path().join("run/harnesses/1").display()
+            directory.path().join("outputs/harnesses/1").display()
         )
     );
 }
@@ -436,7 +436,7 @@ fn a_directed_evolution_copies_no_record_of_its_journal_to_its_writer() {
 }
 
 #[test]
-fn a_directed_evolution_cannot_start_in_a_run_directory_that_exists() {
+fn a_directed_evolution_cannot_start_in_an_outputs_directory_that_exists() {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let found = directed_evolution::start(

@@ -32,22 +32,22 @@ fn settings(directory: &Path) -> Settings {
 fn ended() -> (TempDir, PathBuf, Found) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     )
     .unwrap();
-    (directory, run_directory, found)
+    (directory, outputs_directory, found)
 }
 
 #[test]
 fn resuming_a_directed_evolution_that_ended_returns_what_the_directed_evolution_returned() {
-    let (_directory, run_directory, found) = ended();
+    let (_directory, outputs_directory, found) = ended();
     assert_eq!(
-        directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut io::sink())
+        directed_evolution::resume(&outputs_directory, &AtomicBool::new(false), &mut io::sink())
             .unwrap(),
         found
     );
@@ -55,17 +55,21 @@ fn resuming_a_directed_evolution_that_ended_returns_what_the_directed_evolution_
 
 #[test]
 fn resuming_a_directed_evolution_that_ended_leaves_its_journal_unchanged() {
-    let (_directory, run_directory, _found) = ended();
-    let journal = fs::read(journal::path(&run_directory)).unwrap();
-    directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut io::sink()).unwrap();
-    assert_eq!(fs::read(journal::path(&run_directory)).unwrap(), journal);
+    let (_directory, outputs_directory, _found) = ended();
+    let journal = fs::read(journal::path(&outputs_directory)).unwrap();
+    directed_evolution::resume(&outputs_directory, &AtomicBool::new(false), &mut io::sink())
+        .unwrap();
+    assert_eq!(
+        fs::read(journal::path(&outputs_directory)).unwrap(),
+        journal
+    );
 }
 
 #[test]
 fn resuming_a_directed_evolution_that_ended_says_that_it_had_finished_and_nothing_else() {
-    let (_directory, run_directory, found) = ended();
+    let (_directory, outputs_directory, found) = ended();
     let mut written = Vec::new();
-    directed_evolution::resume(&run_directory, &AtomicBool::new(false), &mut written).unwrap();
+    directed_evolution::resume(&outputs_directory, &AtomicBool::new(false), &mut written).unwrap();
     assert_eq!(
         String::from_utf8(written).unwrap(),
         format!(
@@ -79,9 +83,9 @@ fn resuming_a_directed_evolution_that_ended_says_that_it_had_finished_and_nothin
 
 #[test]
 fn resuming_a_directed_evolution_that_ended_returns_it_even_when_asked_to_stop() {
-    let (_directory, run_directory, found) = ended();
+    let (_directory, outputs_directory, found) = ended();
     assert_eq!(
-        directed_evolution::resume(&run_directory, &AtomicBool::new(true), &mut io::sink())
+        directed_evolution::resume(&outputs_directory, &AtomicBool::new(true), &mut io::sink())
             .unwrap(),
         found
     );

@@ -13,7 +13,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -29,7 +29,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
 fn resume(directory: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
-        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
         .output()
         .unwrap()
 }
@@ -46,7 +49,7 @@ fn resumed_while_in_use() -> InUse {
         .unwrap();
     let id_file = directory
         .path()
-        .join("run/running/attempt-0-benchmark+t1/work/id");
+        .join("outputs/running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let second = resume(directory.path());
     let the_container_of_the_first_went_on = test_inputs::container_is_running(&id_file);
@@ -89,25 +92,25 @@ fn resume_on_a_directed_evolution_whose_file_of_the_key_is_gone_names_the_file()
 }
 
 #[test]
-fn resume_on_a_missing_run_directory_exits_with_2() {
+fn resume_on_a_missing_outputs_directory_exits_with_2() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(resume(directory.path()).status.code(), Some(2));
 }
 
 #[test]
-fn a_second_cladenc_on_a_run_directory_in_use_exits_with_2() {
+fn a_second_cladenc_on_an_outputs_directory_in_use_exits_with_2() {
     assert_eq!(resumed_while_in_use().second.status.code(), Some(2));
 }
 
 #[test]
-fn a_second_cladenc_on_a_run_directory_in_use_says_that_another_is_using_it() {
+fn a_second_cladenc_on_an_outputs_directory_in_use_says_that_another_is_using_it() {
     assert_eq!(
         String::from_utf8(resumed_while_in_use().second.stderr).unwrap(),
-        "cladenc: the run directory cannot be used: another cladenc is using it\n"
+        "cladenc: the outputs directory cannot be used: another cladenc is using it\n"
     );
 }
 
 #[test]
-fn a_second_cladenc_on_a_run_directory_in_use_removes_no_container_of_the_first() {
+fn a_second_cladenc_on_an_outputs_directory_in_use_removes_no_container_of_the_first() {
     assert!(resumed_while_in_use().the_container_of_the_first_went_on);
 }

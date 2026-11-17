@@ -35,26 +35,26 @@ cladenc \
 ```text
 cladenc report \
   --json \
-  --run-dir <DIR>
+  --outputs-dir <DIR>
 ```
 
 | Flag | Required | Description |
 | --- | --- | --- |
 | `--json` | Not Required | Print one JSON object in place of the table. |
-| `--run-dir <DIR>` | Required | The run directory of the directed evolution to report on. |
+| `--outputs-dir <DIR>` | Required | The outputs directory of the directed evolution to report on. |
 
-`cladenc report` reads the journal in the run directory and prints the state of the directed evolution on standard output, without changing it: the model, how many procreations have been started, the best harness so far, and for each harness its progenitor, whether it was created, how many tasks it completed and did not complete, and the same counts for its clade, which is the harness and all its descendants together.
+`cladenc report` reads the journal in the outputs directory and prints the state of the directed evolution on standard output, without changing it: the model, how many procreations have been started, the best harness so far, and for each harness its progenitor, whether it was created, how many tasks it completed and did not complete, and the same counts for its clade, which is the harness and all its descendants together.
 
 ### `cladenc resume`
 
 ```text
 cladenc resume \
-  --run-dir <DIR>
+  --outputs-dir <DIR>
 ```
 
 | Flag | Required | Description |
 | --- | --- | --- |
-| `--run-dir <DIR>` | Required | The run directory of the directed evolution to continue. |
+| `--outputs-dir <DIR>` | Required | The outputs directory of the directed evolution to continue. |
 
 `cladenc resume` continues a directed evolution that stopped before its end, with the values that `cladenc start` was given, and prints the directory of the best harness on standard output once the directed evolution has ended. It says on standard error what it is doing, and it is stopped in the way `cladenc start` is. Of a directed evolution that had ended already, it prints the directory of the best harness again and does nothing else.
 
@@ -79,15 +79,15 @@ cladenc start \
   --model <NAME> \
   --model-key-file <FILE> \
   --model-url <URL> \
+  --outputs-dir <DIR> \
   --primogenitor <DIR> \
-  --procreation-timeout <SECONDS> \
-  --run-dir <DIR>
+  --procreation-timeout <SECONDS>
 ```
 
 | Flag | Required | Description |
 | --- | --- | --- |
 | `--attempt-timeout <SECONDS>` | Required | The time limit of one attempt, which is one harness working on one task, once. |
-| `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the directed evolution. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the run directory. |
+| `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the directed evolution. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the outputs directory. |
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
 | `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
 | `--dockerfile <FILE>` | Not Required | The Dockerfile that `cladenc` builds the image of every container from, in place of `--docker-image`. |
@@ -99,13 +99,13 @@ cladenc start \
 | `--model <NAME>` | Required | The name of the model the harnesses call, as its server knows it. `cladenc` calls no model itself: it tells each harness the name, the address and the key. |
 | `--model-key-file <FILE>` | Not Required | The file that holds the key the model is called with, on one line, and nothing else. It is given where the server of the model asks for a key. `cladenc resume` reads the file again. |
 | `--model-url <URL>` | Required | The address the model is served at, by a provider or by a server of your own. In a container, `host.docker.internal` names the machine `cladenc` runs on. |
+| `--outputs-dir <DIR>` | Required | The outputs directory, which `start` creates. |
 | `--primogenitor <DIR>` | Required | The directory of source code that is copied to make the primogenitor, the harness the directed evolution starts from. |
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation, which is one harness making another. |
-| `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 
 `cladenc start` starts a new directed evolution, carries it to its end, and prints the directory of the best harness on standard output. It says on standard error what it is doing. Ctrl-C, or one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, stops it sooner: it removes the containers it has running and exits with status 1, and `cladenc resume` continues the directed evolution from there.
 
-1. It creates the run directory, and copies into it the source code of the primogenitor and the tasks of each benchmark.
+1. It creates the outputs directory, and copies into it the source code of the primogenitor and the tasks of each benchmark.
 2. Where `--dockerfile` is given, it builds the image that every container is started from.
 3. Where `--harness-build-command` is given, it builds the primogenitor.
 4. It has the primogenitor attempt every task of every benchmark. In one container the harness works on the task, and in a second one the grader of the task says whether the harness completed it.

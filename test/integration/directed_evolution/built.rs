@@ -40,10 +40,10 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
 fn evolved_with_its_stop_flag_at(build_command: &str, stop: bool) -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), build_command);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(stop),
         &mut io::sink(),
     );
@@ -57,39 +57,39 @@ fn evolved(build_command: &str) -> Evolved {
 fn resumed_after_its_primogenitor_did_not_build() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), BUILD_UNLESS_TOLD_NOT_TO);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     fs::write(settings.primogenitor.join("do-not-build"), "").unwrap();
-    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
-    fs::remove_file(run_directory.join("harnesses/0/do-not-build")).unwrap();
-    let resumed = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    fs::remove_file(outputs_directory.join("harnesses/0/do-not-build")).unwrap();
+    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
 fn resumed_after_an_attempt_stopped_it() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), COUNT_THE_BUILDS);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t1");
-    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
-    test_inputs::end_with_125_on_no_more(&run_directory, "t1");
-    let resumed = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    test_inputs::end_with_125_on_no_more(&outputs_directory, "t1");
+    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
 fn stopped_while_its_primogenitor_is_built() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
-    let run_directory = directory.path().join("run");
-    let id_file = run_directory.join("harnesses/0/id");
+    let outputs_directory = directory.path().join("outputs");
+    let id_file = outputs_directory.join("harnesses/0/id");
     let stop = AtomicBool::new(false);
     let found = thread::scope(|scope| {
         scope.spawn(|| {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink())
+        directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
     });
     (directory, found)
 }
@@ -97,19 +97,19 @@ fn stopped_while_its_primogenitor_is_built() -> Evolved {
 fn said_by_a_directed_evolution_built_with(build_command: &str) -> (TempDir, String) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), build_command);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _found = directed_evolution::start(&settings, &run_directory, &stop, &mut written);
+    let _found = directed_evolution::start(&settings, &outputs_directory, &stop, &mut written);
     (directory, String::from_utf8(written).unwrap())
 }
 
 fn journal_of(directory: &TempDir) -> String {
-    fs::read_to_string(journal::path(&directory.path().join("run"))).unwrap()
+    fs::read_to_string(journal::path(&directory.path().join("outputs"))).unwrap()
 }
 
 fn builds_of(directory: &TempDir, harness: u64) -> String {
-    let built = format!("run/harnesses/{harness}/built");
+    let built = format!("outputs/harnesses/{harness}/built");
     fs::read_to_string(directory.path().join(built)).unwrap()
 }
 
@@ -207,7 +207,7 @@ fn a_directed_evolution_asked_to_stop_while_its_primogenitor_is_built_stops() {
 fn a_directed_evolution_asked_to_stop_while_its_primogenitor_is_built_leaves_no_container_behind() {
     let (directory, _found) = stopped_while_its_primogenitor_is_built();
     assert!(test_inputs::container_is_gone(
-        &directory.path().join("run/harnesses/0/id")
+        &directory.path().join("outputs/harnesses/0/id")
     ));
 }
 
@@ -220,7 +220,7 @@ fn a_directed_evolution_asked_to_stop_before_it_starts_stops() {
 #[test]
 fn a_directed_evolution_asked_to_stop_before_it_starts_does_not_build_its_primogenitor() {
     let (directory, _found) = evolved_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
-    assert!(!directory.path().join("run/builds").exists());
+    assert!(!directory.path().join("outputs/builds").exists());
 }
 
 #[test]
@@ -238,7 +238,7 @@ fn a_directed_evolution_whose_primogenitor_does_not_build_says_where_what_the_bu
     assert!(said.ends_with(&format!(
         "cladenc: the build of the primogenitor exited with status 3: what it printed is kept in \
          {}\n",
-        directory.path().join("run/builds/0").display()
+        directory.path().join("outputs/builds/0").display()
     )));
 }
 
@@ -248,6 +248,6 @@ fn a_directed_evolution_says_of_a_child_that_did_not_build_where_what_its_build_
     assert!(said.contains(&format!(
         "cladenc: the procreation of harness 1 by harness 0 made a harness that did not build: \
          what its build printed is kept in {}\n",
-        directory.path().join("run/builds/1").display()
+        directory.path().join("outputs/builds/1").display()
     )));
 }

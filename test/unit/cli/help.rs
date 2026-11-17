@@ -43,16 +43,16 @@ fn the_long_help_of_resume_says_that_it_first_removes_the_containers_that_were_l
 #[test]
 fn the_long_help_of_resume_shows_the_label_that_every_container_of_a_directed_evolution_carries() {
     assert!(help_of_resume(true).contains(
-        "\n    cladenc.directed-evolution=<DIR>\n\nwhere <DIR> is the path of the run directory, \
-         with every symbolic link in\nit resolved."
+        "\n    cladenc.directed-evolution=<DIR>\n\nwhere <DIR> is the path of the outputs \
+         directory, with every symbolic link\nin it resolved."
     ));
 }
 
 #[test]
 fn the_long_help_of_resume_says_that_the_containers_are_removed_once_no_other_cladenc_is_there() {
     assert!(help_of_resume(true).contains(
-        "Once it has the run directory to itself, `cladenc resume` asks\nDocker for the \
-         containers that carry the label of its directed evolution,\nremoves them, and says how \
+        "Once it has the outputs directory to itself,\n`cladenc resume` asks Docker for the \
+         containers that carry the label of its\ndirected evolution, removes them, and says how \
          many it removed."
     ));
 }
@@ -61,7 +61,7 @@ fn the_long_help_of_resume_says_that_the_containers_are_removed_once_no_other_cl
 fn the_long_help_of_resume_says_what_it_does_where_docker_cannot_be_asked() {
     assert!(
         help_of_resume(true).contains(
-            "Where Docker cannot be asked,\nit exits with status 2 and continues nothing."
+            "Where\nDocker cannot be asked, it exits with status 2 and continues nothing."
         )
     );
 }
@@ -227,7 +227,8 @@ fn the_long_help_of_start_says_what_docker_is_given_to_build_an_image_from() {
     let help = help_of_start(true);
     let given = [
         "  <NAME>     the name cladenc gives the image: ",
-        "  <FILE>     a copy of the Dockerfile, kept in image in the run directory\n",
+        "  <FILE>     a copy of the Dockerfile, kept in image in the outputs\n",
+        "             directory\n",
         "  <DIR>      an empty directory, so the Dockerfile has no file to copy into",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
@@ -244,7 +245,7 @@ fn the_long_help_of_start_says_how_long_the_timeout_of_the_build_of_the_image_wa
 #[test]
 fn the_long_help_of_start_says_that_the_build_of_the_image_ends_itself_at_its_time_limit() {
     assert!(help_of_start(true).contains(
-        "cladenc ends a build that\nruns past its time limit, and the build ends itself five \
+        "cladenc ends a build\nthat runs past its time limit, and the build ends itself five \
          seconds later\nwhere cladenc was killed outright, as by `kill -9`, and is not there to \
          end\nit."
     ));
@@ -341,7 +342,7 @@ fn the_long_help_of_start_says_where_a_harness_is_built() {
     let said = [
         "Where --harness-build-command is given, a harness is built before it is\n",
         "with /var/lib/cladenc/harness as the working directory",
-        "builds in the run directory",
+        "builds in the outputs directory",
     ];
     assert!(said.iter().all(|line| help.contains(line)));
 }
@@ -422,7 +423,7 @@ fn the_long_help_of_start_says_that_the_time_limit_gives_not_completed_recorded_
 }
 
 #[test]
-fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_attempt() {
+fn the_long_help_of_start_names_what_the_outputs_directory_keeps_of_an_attempt() {
     let help = help_of_start(true);
     let kept = [
         "  result         one word: completed, not_completed or timed_out\n",
@@ -460,10 +461,10 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_run_directory() {
+fn the_long_help_of_start_says_that_the_tasks_are_copied_into_the_outputs_directory() {
     assert!(help_of_start(true).contains(
-        "The tasks are copied into\nbenchmarks in the run directory when a directed evolution is \
-         started, each\ninto a directory named after its benchmark"
+        "The tasks are copied into\nbenchmarks in the outputs directory when a directed evolution \
+         is started,\neach into a directory named after its benchmark"
     ));
 }
 

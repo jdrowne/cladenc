@@ -9,7 +9,7 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--benchmark", "/benchmark"),
     ("--docker-image", "image"),
     ("--harness-run-command", "run a harness"),
-    ("--run-dir", "/run"),
+    ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
     ("--max-concurrent-containers", "8"),
@@ -87,9 +87,9 @@ fn leaving_out_the_harness_run_command_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_run_directory_is_an_error() {
+fn leaving_out_the_outputs_directory_is_an_error() {
     assert_eq!(
-        refusal_without("--run-dir"),
+        refusal_without("--outputs-dir"),
         ErrorKind::MissingRequiredArgument
     );
 }

@@ -59,8 +59,8 @@ fn journal_of(records: &[Record]) -> TempDir {
 }
 
 fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
-    let run_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(run_directory.path()).unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
+    let mut journal = Journal::open(outputs_directory.path()).unwrap();
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
@@ -70,7 +70,7 @@ fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
     for record in records {
         journal.append(record).unwrap();
     }
-    run_directory
+    outputs_directory
 }
 
 fn rebuilt(records: &[Record]) -> State {
@@ -86,14 +86,14 @@ fn rebuilt_of_a_directed_evolution_that_builds(records: &[Record]) -> State {
 }
 
 fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
-    let run_directory = journal_of(records);
+    let outputs_directory = journal_of(records);
     OpenOptions::new()
         .append(true)
-        .open(journal::path(run_directory.path()))
+        .open(journal::path(outputs_directory.path()))
         .unwrap()
         .write_all(last_line.as_bytes())
         .unwrap();
-    journal::read(run_directory.path()).unwrap()
+    journal::read(outputs_directory.path()).unwrap()
 }
 
 fn four_actions_of_which_two_finished() -> [Record; 6] {
@@ -250,7 +250,7 @@ fn a_whole_record_with_no_newline_at_its_end_is_ignored_as_cut_short() {
 
 #[test]
 fn reading_a_journal_takes_no_lock() {
-    let run_directory = journal_of(&[]);
-    let _writer = Journal::open(run_directory.path()).unwrap();
-    assert!(journal::read(run_directory.path()).is_ok());
+    let outputs_directory = journal_of(&[]);
+    let _writer = Journal::open(outputs_directory.path()).unwrap();
+    assert!(journal::read(outputs_directory.path()).is_ok());
 }

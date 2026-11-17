@@ -39,8 +39,8 @@ pub struct HarnessReport {
     pub clade_score: Option<f64>,
 }
 
-pub fn read(run_directory: &Path) -> Result<Report, JournalError> {
-    journal::read(run_directory).map(|state| Report::of(&state.settings, &state.genealogy))
+pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
+    journal::read(outputs_directory).map(|state| Report::of(&state.settings, &state.genealogy))
 }
 
 impl Report {

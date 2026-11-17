@@ -47,24 +47,25 @@ fn stopped_at(solved: u64, task: Option<&str>, resumes_while_stopped: usize) -> 
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
-    let run_directory = directory.path().join("stopped/run");
+    let outputs_directory = directory.path().join("stopped/outputs");
     fs::create_dir(directory.path().join("unbroken")).unwrap();
     fs::create_dir(directory.path().join("stopped")).unwrap();
-    let unbroken = directory.path().join("unbroken/run");
+    let unbroken = directory.path().join("unbroken/outputs");
     let unbroken = directed_evolution::start(&settings, &unbroken, &stop, &mut io::sink()).unwrap();
     test_inputs::end_with_125_at(&settings.primogenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let mut stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
+    let mut stopped =
+        directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
     for _ in 0..resumes_while_stopped {
-        stopped = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
+        stopped = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
     }
-    test_inputs::end_with_125_no_more(&run_directory);
+    test_inputs::end_with_125_no_more(&outputs_directory);
     if let Some(task) = task {
-        test_inputs::end_with_125_on_no_more(&run_directory, task);
+        test_inputs::end_with_125_on_no_more(&outputs_directory, task);
     }
-    let resumed = directed_evolution::resume(&run_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
     DirectedEvolutions {
         directory,
         unbroken,
@@ -74,12 +75,12 @@ fn stopped_at(solved: u64, task: Option<&str>, resumes_while_stopped: usize) -> 
 }
 
 fn journal_of(directed_evolutions: &DirectedEvolutions, directed_evolution: &str) -> String {
-    let run_directory = directed_evolutions
+    let outputs_directory = directed_evolutions
         .directory
         .path()
         .join(directed_evolution)
-        .join("run");
-    fs::read_to_string(journal::path(&run_directory)).unwrap()
+        .join("outputs");
+    fs::read_to_string(journal::path(&outputs_directory)).unwrap()
 }
 
 #[test]
@@ -152,7 +153,8 @@ fn a_resumed_directed_evolution_returns_the_harness_an_unbroken_directed_evoluti
 }
 
 #[test]
-fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its_run_directory() {
+fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its_outputs_directory()
+{
     let directed_evolutions = stopped_at(99, Some("t3"), 0);
     let best_harness = directed_evolutions.unbroken.best_harness.to_string();
     assert_eq!(
@@ -160,7 +162,7 @@ fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its
         directed_evolutions
             .directory
             .path()
-            .join("stopped/run/harnesses")
+            .join("stopped/outputs/harnesses")
             .join(best_harness)
     );
 }
@@ -174,13 +176,13 @@ fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<Stri
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let mut stopped = Vec::new();
     let mut resumed = Vec::new();
     test_inputs::end_with_125_on(directory.path(), "t3");
-    let _stopped = directed_evolution::start(&settings, &run_directory, &stop, &mut stopped);
-    test_inputs::end_with_125_on_no_more(&run_directory, "t3");
-    directed_evolution::resume(&run_directory, &stop, &mut resumed).unwrap();
+    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut stopped);
+    test_inputs::end_with_125_on_no_more(&outputs_directory, "t3");
+    directed_evolution::resume(&outputs_directory, &stop, &mut resumed).unwrap();
     (directory, lines_of(stopped), lines_of(resumed))
 }
 
@@ -210,7 +212,7 @@ fn a_resumed_directed_evolution_says_first_how_far_the_directed_evolution_had_go
     let (directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(resumed[0].starts_with(&format!(
         "cladenc: continuing the directed evolution in {}, which has started ",
-        directory.path().join("run").display()
+        directory.path().join("outputs").display()
     )));
 }
 
@@ -239,14 +241,14 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
-    let run_directory = directory.path().join("run");
-    let journal = journal::path(&run_directory);
-    directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink()).unwrap();
+    let outputs_directory = directory.path().join("outputs");
+    let journal = journal::path(&outputs_directory);
+    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
     let whole = fs::read_to_string(&journal).unwrap();
     let kept = whole.lines().count() - 2;
     let cut: String = whole.split_inclusive('\n').take(kept).collect();
     fs::write(&journal, cut).unwrap();
-    directed_evolution::resume(&run_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
     assert_eq!(fs::read_to_string(&journal).unwrap(), whole);
 }
 
@@ -255,10 +257,10 @@ fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let stop = AtomicBool::new(false);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     test_inputs::end_with_125_at(&settings.primogenitor, 0);
-    let _ = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
-    test_inputs::end_with_125_no_more(&run_directory);
+    let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    test_inputs::end_with_125_no_more(&outputs_directory);
     fs::remove_dir_all(&settings.benchmarks[0].directory).unwrap();
-    assert!(directed_evolution::resume(&run_directory, &stop, &mut io::sink()).is_ok());
+    assert!(directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).is_ok());
 }

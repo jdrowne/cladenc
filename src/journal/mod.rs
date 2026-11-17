@@ -17,24 +17,24 @@ pub struct Journal {
     file: File,
 }
 
-pub fn path(run_directory: &Path) -> PathBuf {
-    run_directory.join("journal.jsonl")
+pub fn path(outputs_directory: &Path) -> PathBuf {
+    outputs_directory.join("journal.jsonl")
 }
 
 impl Journal {
-    pub fn open(run_directory: &Path) -> Result<Self, JournalError> {
-        Self::locked(OpenOptions::new().create(true), run_directory)
+    pub fn open(outputs_directory: &Path) -> Result<Self, JournalError> {
+        Self::locked(OpenOptions::new().create(true), outputs_directory)
     }
 
-    pub fn open_existing(run_directory: &Path) -> Result<Self, JournalError> {
-        Self::locked(&mut OpenOptions::new(), run_directory)
+    pub fn open_existing(outputs_directory: &Path) -> Result<Self, JournalError> {
+        Self::locked(&mut OpenOptions::new(), outputs_directory)
     }
 
-    fn locked(options: &mut OpenOptions, run_directory: &Path) -> Result<Self, JournalError> {
+    fn locked(options: &mut OpenOptions, outputs_directory: &Path) -> Result<Self, JournalError> {
         let mut file = options
             .read(true)
             .append(true)
-            .open(path(run_directory))
+            .open(path(outputs_directory))
             .map_err(JournalError::Io)?;
         file.try_lock().map_err(|_| JournalError::Locked)?;
         let mut contents = Vec::new();

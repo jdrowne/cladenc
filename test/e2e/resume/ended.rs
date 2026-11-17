@@ -19,7 +19,7 @@ fn ended() -> (TempDir, Output) {
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
-        ("--run-dir", directory.path().join("run")),
+        ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -42,7 +42,10 @@ fn resume(directory: &Path) -> Output {
 fn resume_with(directory: &Path, another: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
-        .arg(format!("--run-dir={}", directory.join("run").display()))
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
         .args(another)
         .output()
         .unwrap()
@@ -63,7 +66,7 @@ fn resume_on_a_run_that_ended_exits_with_0() {
 #[test]
 fn resume_on_a_run_that_ended_leaves_the_journal_unchanged() {
     let (directory, _run) = ended();
-    let journal = directory.path().join("run/journal.jsonl");
+    let journal = directory.path().join("outputs/journal.jsonl");
     let before = fs::read(&journal).unwrap();
     resume(directory.path());
     assert_eq!(fs::read(&journal).unwrap(), before);

@@ -11,7 +11,7 @@ use tempfile::TempDir;
 struct Keyed {
     directory: TempDir,
     key_file: PathBuf,
-    run_directory: PathBuf,
+    outputs_directory: PathBuf,
 }
 
 fn settings(directory: &Path, key_file: &Path) -> Settings {
@@ -41,32 +41,32 @@ fn evolved_with(key: Option<&str>, stop: bool) -> (Keyed, Result<Found, Directed
     if let Some(key) = key {
         test_inputs::model_key_file(directory.path(), key);
     }
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let settings = settings(directory.path(), &key_file);
     let found = directed_evolution::start(
         &settings,
-        &run_directory,
+        &outputs_directory,
         &AtomicBool::new(stop),
         &mut io::sink(),
     );
     let keyed = Keyed {
         directory,
         key_file,
-        run_directory,
+        outputs_directory,
     };
     (keyed, found)
 }
 
 fn resumed(keyed: &Keyed) -> Result<Found, DirectedEvolutionError> {
     directed_evolution::resume(
-        &keyed.run_directory,
+        &keyed.outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),
     )
 }
 
 fn key_given_to_the_first_child(keyed: &Keyed) -> String {
-    fs::read_to_string(keyed.run_directory.join("harnesses/1/key-given")).unwrap()
+    fs::read_to_string(keyed.outputs_directory.join("harnesses/1/key-given")).unwrap()
 }
 
 #[test]
@@ -78,7 +78,7 @@ fn a_directed_evolution_hands_the_key_its_file_holds_to_its_harnesses() {
 #[test]
 fn the_journal_of_a_directed_evolution_holds_the_file_of_the_key_and_not_the_key() {
     let (keyed, _found) = evolved_with(Some("a-made-up-key\n"), false);
-    let journal = fs::read_to_string(journal::path(&keyed.run_directory)).unwrap();
+    let journal = fs::read_to_string(journal::path(&keyed.outputs_directory)).unwrap();
     assert_eq!(
         (
             journal.contains("a-made-up-key"),
@@ -95,9 +95,9 @@ fn a_directed_evolution_whose_file_of_the_key_holds_no_key_does_not_start() {
 }
 
 #[test]
-fn a_directed_evolution_whose_file_of_the_key_holds_no_key_makes_no_run_directory() {
+fn a_directed_evolution_whose_file_of_the_key_holds_no_key_makes_no_outputs_directory() {
     let (keyed, _found) = evolved_with(None, false);
-    assert!(!keyed.run_directory.exists());
+    assert!(!keyed.outputs_directory.exists());
 }
 
 #[test]
@@ -123,11 +123,11 @@ fn a_directed_evolution_whose_file_of_the_key_is_gone_is_not_resumed() {
 #[test]
 fn a_directed_evolution_that_is_not_resumed_for_its_key_starts_no_action() {
     let (keyed, _stopped) = evolved_with(Some("a-made-up-key\n"), true);
-    let journal = fs::read(journal::path(&keyed.run_directory)).unwrap();
+    let journal = fs::read(journal::path(&keyed.outputs_directory)).unwrap();
     fs::remove_file(&keyed.key_file).unwrap();
     let _ = resumed(&keyed);
     assert_eq!(
-        fs::read(journal::path(&keyed.run_directory)).unwrap(),
+        fs::read(journal::path(&keyed.outputs_directory)).unwrap(),
         journal
     );
 }

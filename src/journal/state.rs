@@ -48,8 +48,8 @@ pub struct State {
     pub best_harness: Option<HarnessId>,
 }
 
-pub fn read(run_directory: &Path) -> Result<State, JournalError> {
-    let contents = fs::read(path(run_directory)).map_err(JournalError::Io)?;
+pub fn read(outputs_directory: &Path) -> Result<State, JournalError> {
+    let contents = fs::read(path(outputs_directory)).map_err(JournalError::Io)?;
     let lines = || whole_lines(&contents).split_inclusive(|byte| *byte == b'\n');
     if let Some(First::Run { format }) = lines()
         .next()

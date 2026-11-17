@@ -302,8 +302,8 @@ fn a_run_record_holding_a_path_that_is_not_utf8_has_no_line() {
 
 #[test]
 fn a_record_that_cannot_be_written_gives_an_error() {
-    let run_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(run_directory.path()).unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
+    let mut journal = Journal::open(outputs_directory.path()).unwrap();
     assert!(matches!(
         journal.append(&with_a_path_that_is_not_utf8()),
         Err(JournalError::Io(_))
@@ -312,11 +312,11 @@ fn a_record_that_cannot_be_written_gives_an_error() {
 
 #[test]
 fn a_record_that_cannot_be_written_appends_nothing() {
-    let run_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(run_directory.path()).unwrap();
+    let outputs_directory = tempfile::tempdir().unwrap();
+    let mut journal = Journal::open(outputs_directory.path()).unwrap();
     let _ = journal.append(&with_a_path_that_is_not_utf8());
     assert_eq!(
-        fs::read_to_string(journal::path(run_directory.path())).unwrap(),
+        fs::read_to_string(journal::path(outputs_directory.path())).unwrap(),
         ""
     );
 }

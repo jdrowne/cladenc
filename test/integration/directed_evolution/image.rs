@@ -44,10 +44,10 @@ fn evolved(steps: &str) -> Evolved {
     let directory = test_inputs::temporary_directory();
     let image = test_inputs::image();
     let settings = settings(directory.path(), &image, steps);
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let found = directed_evolution::start(&settings, &run_directory, &stop, &mut written);
+    let found = directed_evolution::start(&settings, &outputs_directory, &stop, &mut written);
     Evolved {
         directory,
         image,
@@ -66,14 +66,14 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Evolved {
         ),
         ..settings(directory.path(), &image, SOLVES_T1)
     };
-    let run_directory = directory.path().join("run");
+    let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_at(&settings.primogenitor, 0);
-    let _ = directed_evolution::start(&settings, &run_directory, &stop, &mut io::sink());
-    test_inputs::end_with_125_no_more(&run_directory);
+    let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    test_inputs::end_with_125_no_more(&outputs_directory);
     fs::remove_file(directory.path().join("Dockerfile")).unwrap();
     let mut written = Vec::new();
-    let found = directed_evolution::resume(&run_directory, &stop, &mut written);
+    let found = directed_evolution::resume(&outputs_directory, &stop, &mut written);
     Evolved {
         directory,
         image,
@@ -83,11 +83,16 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Evolved {
 }
 
 fn run_of(evolved: &Evolved) -> String {
-    evolved.directory.path().join("run").display().to_string()
+    evolved
+        .directory
+        .path()
+        .join("outputs")
+        .display()
+        .to_string()
 }
 
 fn solved_by_harness_1(evolved: &Evolved) -> String {
-    fs::read_to_string(evolved.directory.path().join("run/harnesses/1/solved")).unwrap()
+    fs::read_to_string(evolved.directory.path().join("outputs/harnesses/1/solved")).unwrap()
 }
 
 #[test]

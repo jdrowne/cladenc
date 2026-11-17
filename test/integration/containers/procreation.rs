@@ -9,7 +9,7 @@ use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::model::Model;
-use cladenc::run_directory::RunDirectory;
+use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
 use tempfile::TempDir;
 
@@ -21,21 +21,22 @@ const MODEL: Model<'static> = Model {
 
 type Procreated = (
     TempDir,
-    RunDirectory,
+    OutputsDirectory,
     Result<ProcreationOutcome, ContainerError>,
 );
 
-fn made_at(name: &str) -> (TempDir, RunDirectory) {
+fn made_at(name: &str) -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let run_directory = RunDirectory::create(&directory.path().join(name), &primogenitor).unwrap();
-    (directory, run_directory)
+    let outputs_directory =
+        OutputsDirectory::create(&directory.path().join(name), &primogenitor).unwrap();
+    (directory, outputs_directory)
 }
 
 fn started_from(
     image: &str,
     run_command: &str,
-    run_directory: &RunDirectory,
+    outputs_directory: &OutputsDirectory,
     progenitor: u64,
     time_limit: u64,
 ) -> Result<ProcreationOutcome, ContainerError> {
@@ -48,7 +49,7 @@ fn started_from(
         attempt_timeout: time_limit,
     };
     containers::run_procreation(
-        run_directory,
+        outputs_directory,
         &launch,
         1,
         progenitor,
@@ -57,15 +58,15 @@ fn started_from(
 }
 
 fn procreated_by(run_command: &str, progenitor: u64, time_limit: u64) -> Procreated {
-    let (directory, run_directory) = made_at("run");
+    let (directory, outputs_directory) = made_at("outputs");
     let result = started_from(
         test_inputs::IMAGE,
         run_command,
-        &run_directory,
+        &outputs_directory,
         progenitor,
         time_limit,
     );
-    (directory, run_directory, result)
+    (directory, outputs_directory, result)
 }
 
 fn procreated(run_command: &str) -> Procreated {
@@ -73,23 +74,23 @@ fn procreated(run_command: &str) -> Procreated {
 }
 
 fn not_started_by_docker() -> Procreated {
-    let (directory, run_directory) = made_at("run");
-    let result = started_from("Not An Image", "exit 0", &run_directory, 0, 30);
-    (directory, run_directory, result)
+    let (directory, outputs_directory) = made_at("outputs");
+    let result = started_from("Not An Image", "exit 0", &outputs_directory, 0, 30);
+    (directory, outputs_directory, result)
 }
 
 fn left_in_the_child(run_command: &str, file: &str) -> String {
-    let (_directory, run_directory, _result) = procreated(run_command);
-    fs::read_to_string(run_directory.harness(1).join(file)).unwrap()
+    let (_directory, outputs_directory, _result) = procreated(run_command);
+    fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
 fn kept_of_the_procreation(run_command: &str, file: &str) -> String {
-    let (_directory, run_directory, _result) = procreated(run_command);
-    fs::read_to_string(run_directory.procreation(1).join(file)).unwrap()
+    let (_directory, outputs_directory, _result) = procreated(run_command);
+    fs::read_to_string(outputs_directory.procreation(1).join(file)).unwrap()
 }
 
 fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
-    let (_directory, run_directory) = made_at("run");
+    let (_directory, outputs_directory) = made_at("outputs");
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command,
@@ -101,8 +102,8 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
         procreation_timeout: 30,
         attempt_timeout: 30,
     };
-    let _ = containers::run_procreation(&run_directory, &launch, 1, 0, &AtomicBool::new(false));
-    fs::read_to_string(run_directory.harness(1).join(file)).unwrap()
+    let _ = containers::run_procreation(&outputs_directory, &launch, 1, 0, &AtomicBool::new(false));
+    fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
 fn heard_from_a_harness_that_says(said: &str) -> String {
@@ -187,34 +188,34 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 
 #[test]
 fn a_harness_can_read_the_ended_attempts_of_its_progenitor_and_none_still_running() {
-    let (directory, run_directory) = made_at("run");
+    let (directory, outputs_directory) = made_at("outputs");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    run_directory
+    outputs_directory
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    run_directory.start_attempt(0, "benchmark/t1").unwrap();
-    run_directory
+    outputs_directory.start_attempt(0, "benchmark/t1").unwrap();
+    outputs_directory
         .end_attempt(0, "benchmark/t1", AttemptResult::NotCompleted)
         .unwrap();
-    run_directory.start_attempt(0, "benchmark/t2").unwrap();
+    outputs_directory.start_attempt(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
         "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence",
-        &run_directory,
+        &outputs_directory,
         0,
         30,
     );
     assert_eq!(
-        fs::read_to_string(run_directory.harness(1).join("evidence")).unwrap(),
+        fs::read_to_string(outputs_directory.harness(1).join("evidence")).unwrap(),
         "/var/log/cladenc/attempts:\nbenchmark\n\n/var/log/cladenc/attempts/benchmark:\nt1\n"
     );
 }
 
 #[test]
 fn a_harness_cannot_write_into_the_attempts_of_its_progenitor() {
-    let (_directory, run_directory, _result) =
+    let (_directory, outputs_directory, _result) =
         procreated("touch /var/log/cladenc/attempts/written");
-    assert!(!run_directory.attempts(0).join("written").exists());
+    assert!(!outputs_directory.attempts(0).join("written").exists());
 }
 
 #[test]
@@ -250,121 +251,121 @@ fn the_standard_error_of_a_harness_is_kept_with_its_procreation() {
 
 #[test]
 fn a_harness_that_exits_with_0_creates_its_child() {
-    let (_directory, _run_directory, result) = procreated("exit 0");
+    let (_directory, _outputs_directory, result) = procreated("exit 0");
     assert!(matches!(result, Ok(ProcreationOutcome::Created)));
 }
 
 #[test]
 fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
-    let (_directory, run_directory, _result) = procreated("exit 0");
-    assert!(!run_directory.build(1).exists());
+    let (_directory, outputs_directory, _result) = procreated("exit 0");
+    assert!(!outputs_directory.build(1).exists());
 }
 
 #[test]
 fn a_procreation_that_created_its_child_leaves_a_directory_for_the_attempts_of_the_child() {
-    let (_directory, run_directory, _result) = procreated("exit 0");
-    assert!(run_directory.attempts(1).is_dir());
+    let (_directory, outputs_directory, _result) = procreated("exit 0");
+    assert!(outputs_directory.attempts(1).is_dir());
 }
 
 #[test]
 fn a_harness_that_exits_with_1_fails_its_child() {
-    let (_directory, _run_directory, result) = procreated("exit 1");
+    let (_directory, _outputs_directory, result) = procreated("exit 1");
     assert!(matches!(result, Ok(ProcreationOutcome::Failed)));
 }
 
 #[test]
 fn a_harness_that_exits_with_another_status_fails_its_child_too() {
-    let (_directory, _run_directory, result) = procreated("exit 2");
+    let (_directory, _outputs_directory, result) = procreated("exit 2");
     assert!(matches!(result, Ok(ProcreationOutcome::Failed)));
 }
 
 #[test]
 fn a_harness_that_a_signal_ends_fails_its_child() {
-    let (_directory, _run_directory, result) = procreated("sh -c 'kill -TERM $$'; exit $?");
+    let (_directory, _outputs_directory, result) = procreated("sh -c 'kill -TERM $$'; exit $?");
     assert!(matches!(result, Ok(ProcreationOutcome::Failed)));
 }
 
 #[test]
 fn a_procreation_that_failed_keeps_what_its_harness_left_beside_the_harnesses() {
-    let (_directory, run_directory, _result) = procreated("touch tried; exit 1");
-    assert!(run_directory.harness(1).join("tried").is_file());
+    let (_directory, outputs_directory, _result) = procreated("touch tried; exit 1");
+    assert!(outputs_directory.harness(1).join("tried").is_file());
 }
 
 #[test]
 fn a_harness_that_runs_past_the_time_limit_times_out() {
-    let (_directory, _run_directory, result) = procreated_by("sleep 300", 0, 1);
+    let (_directory, _outputs_directory, result) = procreated_by("sleep 300", 0, 1);
     assert!(matches!(result, Ok(ProcreationOutcome::TimedOut)));
 }
 
 #[test]
 fn the_time_limit_removes_the_container_of_a_harness() {
-    let (_directory, run_directory, _result) = procreated_by("hostname > id; sleep 300", 0, 5);
+    let (_directory, outputs_directory, _result) = procreated_by("hostname > id; sleep 300", 0, 5);
     assert!(test_inputs::container_is_gone(
-        &run_directory.harness(1).join("id")
+        &outputs_directory.harness(1).join("id")
     ));
 }
 
 #[test]
 fn a_container_that_docker_does_not_start_is_an_error() {
-    let (_directory, _run_directory, result) = not_started_by_docker();
+    let (_directory, _outputs_directory, result) = not_started_by_docker();
     assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
 fn a_container_that_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
-    let (_directory, _run_directory, result) = procreated("exit 125");
+    let (_directory, _outputs_directory, result) = procreated("exit 125");
     assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
 fn the_error_names_the_file_that_holds_what_docker_said() {
-    let (_directory, run_directory, result) = not_started_by_docker();
+    let (_directory, outputs_directory, result) = not_started_by_docker();
     assert!(matches!(
         result,
-        Err(ContainerError::Docker(said)) if said == run_directory.running_procreation(1).join("stderr")
+        Err(ContainerError::Docker(said)) if said == outputs_directory.running_procreation(1).join("stderr")
     ));
 }
 
 #[test]
 fn what_docker_said_is_kept_under_running() {
-    let (_directory, run_directory, _result) = not_started_by_docker();
-    let said = fs::read_to_string(run_directory.running_procreation(1).join("stderr")).unwrap();
+    let (_directory, outputs_directory, _result) = not_started_by_docker();
+    let said = fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap();
     assert!(said.contains("invalid reference format"));
 }
 
 #[test]
 fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
-    let (_directory, _run_directory, result) = procreated_by("exit 0", 9, 30);
+    let (_directory, _outputs_directory, result) = procreated_by("exit 0", 9, 30);
     assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]
 fn a_harness_that_writes_into_the_source_code_it_runs_from_leaves_its_progenitor_unchanged() {
-    let (_directory, run_directory, _result) =
+    let (_directory, outputs_directory, _result) =
         procreated("echo changed > \"$CLADENC_HARNESS/harness.sh\"");
     assert_eq!(
-        harness_script(&run_directory.harness(0)),
+        harness_script(&outputs_directory.harness(0)),
         "#!/bin/sh\necho harness\n"
     );
 }
 
 #[test]
 fn a_child_that_holds_a_named_pipe_is_failed() {
-    let (_directory, _run_directory, result) = procreated("mkfifo pipe");
+    let (_directory, _outputs_directory, result) = procreated("mkfifo pipe");
     assert!(matches!(result, Ok(ProcreationOutcome::Failed)));
 }
 
 #[test]
 fn a_procreation_whose_directory_cannot_be_put_in_place_is_an_error() {
-    let (_directory, run_directory) = made_at("run");
-    fs::create_dir_all(run_directory.procreation(1).join("in the way")).unwrap();
-    let result = started_from(test_inputs::IMAGE, "exit 0", &run_directory, 0, 30);
+    let (_directory, outputs_directory) = made_at("outputs");
+    fs::create_dir_all(outputs_directory.procreation(1).join("in the way")).unwrap();
+    let result = started_from(test_inputs::IMAGE, "exit 0", &outputs_directory, 0, 30);
     assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]
-fn a_run_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_mounted() {
-    let (_directory, run_directory) = made_at("run,a\"b c");
-    let result = started_from(test_inputs::IMAGE, "touch made", &run_directory, 0, 30);
+fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_mounted() {
+    let (_directory, outputs_directory) = made_at("outputs,a\"b c");
+    let result = started_from(test_inputs::IMAGE, "touch made", &outputs_directory, 0, 30);
     assert!(matches!(result, Ok(ProcreationOutcome::Created)));
 }

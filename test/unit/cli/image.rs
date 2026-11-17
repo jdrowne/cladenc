@@ -10,7 +10,7 @@ const OPTIONS: [(&str, &str); 11] = [
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
     ("--harness-run-command", "run a harness"),
-    ("--run-dir", "/run"),
+    ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
     ("--max-concurrent-containers", "8"),

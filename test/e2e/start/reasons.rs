@@ -10,7 +10,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
-        ("--run-dir", directory.join("run")),
+        ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
@@ -40,7 +40,7 @@ fn a_run_a_container_stopped_says_which_attempt_and_where_what_docker_said_is_ke
              and {} holds what Docker said",
             directory
                 .path()
-                .join("run/running/attempt-0-benchmark+t1/stderr")
+                .join("outputs/running/attempt-0-benchmark+t1/stderr")
                 .display()
         )
     );

@@ -6,5 +6,5 @@ pub mod directed_evolution;
 pub mod genealogy;
 pub mod journal;
 pub mod model;
+pub mod outputs_directory;
 pub mod report;
-pub mod run_directory;

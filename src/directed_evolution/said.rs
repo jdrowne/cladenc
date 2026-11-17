@@ -5,11 +5,11 @@ use std::path::Path;
 use crate::containers::ContainerError;
 use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
-use crate::run_directory::RunDirectory;
+use crate::outputs_directory::OutputsDirectory;
 
 pub enum Said<'a> {
     Making {
-        run_directory: &'a Path,
+        outputs_directory: &'a Path,
         primogenitor: &'a Path,
     },
     CopyingTasks {
@@ -22,17 +22,17 @@ pub enum Said<'a> {
     },
     ImageBuilt {
         image: &'a str,
-        run_directory: &'a RunDirectory,
+        outputs_directory: &'a OutputsDirectory,
     },
     ImageNotBuilt {
         error: &'a ContainerError,
-        run_directory: &'a RunDirectory,
+        outputs_directory: &'a OutputsDirectory,
     },
     Removed {
         containers: u64,
     },
     Continuing {
-        run_directory: &'a Path,
+        outputs_directory: &'a Path,
         procreations: u64,
         max_procreations: u64,
         harnesses: u64,
@@ -45,7 +45,7 @@ pub enum Said<'a> {
     Built,
     BuildFailed {
         error: &'a ContainerError,
-        run_directory: &'a RunDirectory,
+        outputs_directory: &'a OutputsDirectory,
     },
     Started {
         action: &'a Started,
@@ -56,13 +56,13 @@ pub enum Said<'a> {
         child: HarnessId,
         progenitor: HarnessId,
         outcome: ProcreationOutcome,
-        run_directory: &'a RunDirectory,
+        outputs_directory: &'a OutputsDirectory,
     },
     Attempted {
         harness: HarnessId,
         task: &'a str,
         result: AttemptResult,
-        run_directory: &'a RunDirectory,
+        outputs_directory: &'a OutputsDirectory,
     },
     Failed {
         action: &'a Started,
@@ -84,17 +84,17 @@ impl Display for Said<'_> {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Making {
-                run_directory,
+                outputs_directory,
                 primogenitor,
             } => write!(
                 formatter,
-                "making the run directory {} with a copy of the primogenitor {}",
-                run_directory.display(),
+                "making the outputs directory {} with a copy of the primogenitor {}",
+                outputs_directory.display(),
                 primogenitor.display()
             ),
             Self::CopyingTasks { benchmark, tasks } => write!(
                 formatter,
-                "copying the {} of the benchmark {} into the run directory",
+                "copying the {} of the benchmark {} into the outputs directory",
                 counted(*tasks, "task", "tasks"),
                 benchmark.display()
             ),
@@ -105,19 +105,19 @@ impl Display for Said<'_> {
             ),
             Self::ImageBuilt {
                 image,
-                run_directory,
+                outputs_directory,
             } => write!(
                 formatter,
                 "the image {image} is built: what Docker printed is kept in {}",
-                run_directory.image().display()
+                outputs_directory.image().display()
             ),
             Self::ImageNotBuilt {
                 error,
-                run_directory,
+                outputs_directory,
             } => write!(
                 formatter,
                 "the build of the image {error}: what Docker printed is kept in {}",
-                run_directory.image().display()
+                outputs_directory.image().display()
             ),
             Self::Removed { containers } => write!(
                 formatter,
@@ -125,7 +125,7 @@ impl Display for Said<'_> {
                 counted(*containers, "container", "containers")
             ),
             Self::Continuing {
-                run_directory,
+                outputs_directory,
                 procreations,
                 max_procreations,
                 harnesses,
@@ -133,7 +133,7 @@ impl Display for Said<'_> {
                 formatter,
                 "continuing the directed evolution in {}, which has started {procreations} of {} \
                  and holds {}",
-                run_directory.display(),
+                outputs_directory.display(),
                 counted(*max_procreations, "procreation", "procreations"),
                 counted(*harnesses, "harness", "harnesses")
             ),
@@ -150,11 +150,11 @@ impl Display for Said<'_> {
             Self::Built => write!(formatter, "the primogenitor is built"),
             Self::BuildFailed {
                 error,
-                run_directory,
+                outputs_directory,
             } => write!(
                 formatter,
                 "the build of the primogenitor {error}: what it printed is kept in {}",
-                run_directory.build(0).display()
+                outputs_directory.build(0).display()
             ),
             Self::Started {
                 action,
@@ -172,25 +172,25 @@ impl Display for Said<'_> {
                 child,
                 progenitor,
                 outcome,
-                run_directory,
+                outputs_directory,
             } => {
                 let (how, kept) = match outcome {
                     ProcreationOutcome::Created => (
                         format!("created harness {child}, kept in"),
-                        run_directory.harness(*child),
+                        outputs_directory.harness(*child),
                     ),
                     ProcreationOutcome::Failed => (
                         "failed: what the harness printed is kept in".to_owned(),
-                        run_directory.procreation(*child),
+                        outputs_directory.procreation(*child),
                     ),
                     ProcreationOutcome::BuildFailed => (
                         "made a harness that did not build: what its build printed is kept in"
                             .to_owned(),
-                        run_directory.build(*child),
+                        outputs_directory.build(*child),
                     ),
                     ProcreationOutcome::TimedOut => (
                         "ran past its time limit: what the harness printed is kept in".to_owned(),
-                        run_directory.procreation(*child),
+                        outputs_directory.procreation(*child),
                     ),
                 };
                 write!(
@@ -203,7 +203,7 @@ impl Display for Said<'_> {
                 harness,
                 task,
                 result,
-                run_directory,
+                outputs_directory,
             } => {
                 let (how, why) = match result {
                     AttemptResult::Completed => ("completed", ""),
@@ -216,7 +216,7 @@ impl Display for Said<'_> {
                 write!(
                     formatter,
                     "harness {harness} {how} task {task}{why}: what the attempt left is kept in {}",
-                    run_directory.attempt(*harness, task).display()
+                    outputs_directory.attempt(*harness, task).display()
                 )
             }
             Self::Failed { action, error } => write!(formatter, "{action} {error}"),

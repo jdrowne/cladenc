@@ -20,13 +20,13 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     match action {
         Started::Procreation { child, progenitor } => {
             let cleared = if again {
-                shared.run_directory.discard_procreation(child)
+                shared.outputs_directory.discard_procreation(child)
             } else {
                 Ok(())
             };
             let result = cleared.map_err(ContainerError::Io).and_then(|()| {
                 containers::run_procreation(
-                    &shared.run_directory,
+                    &shared.outputs_directory,
                     &shared.launch,
                     child,
                     progenitor,
@@ -41,13 +41,13 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
         }
         Started::Attempt { harness, task } => {
             let cleared = if again {
-                shared.run_directory.discard_attempt(harness, &task)
+                shared.outputs_directory.discard_attempt(harness, &task)
             } else {
                 Ok(())
             };
             let result = cleared.map_err(ContainerError::Io).and_then(|()| {
                 containers::run_attempt(
-                    &shared.run_directory,
+                    &shared.outputs_directory,
                     &shared.launch,
                     harness,
                     &task,
