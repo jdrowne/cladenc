@@ -48,9 +48,9 @@ pub struct StartOptions {
         long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one assessment"
+        help = "The time limit of one attempt"
     )]
-    pub assessment_timeout: u64,
+    pub attempt_timeout: u64,
     #[arg(
         long,
         value_name = "DIR",
@@ -63,7 +63,7 @@ pub struct StartOptions {
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The number of assessments to start"
+        help = "The number of attempts to start"
     )]
     pub budget: u64,
     #[arg(

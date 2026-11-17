@@ -51,7 +51,7 @@ impl StartOptions {
             confidence: self.confidence,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
-            assessment_timeout: self.assessment_timeout,
+            attempt_timeout: self.attempt_timeout,
             seed: rand::random(),
         })
     }
@@ -139,8 +139,8 @@ fn refused_benchmark(reason: String) -> Refused {
     Refused {
         option: "--benchmark",
         accepted: "the directory of a benchmark, in which every directory is a task that holds \
-                   a file of text named statement, a directory named files and an executable \
-                   file named check",
+                   a file of text named specification, a directory named workspace and an \
+                   executable file named grader",
         reason: Some(reason),
     }
 }

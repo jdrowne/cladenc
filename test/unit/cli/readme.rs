@@ -242,22 +242,22 @@ fn the_sections_of_resume_and_start_show_how_the_shell_sends_standard_error_nowh
 }
 
 #[test]
-fn the_readme_says_where_the_check_of_a_task_finds_what_the_harness_left() {
+fn the_readme_says_where_the_grader_of_a_task_finds_what_the_harness_left() {
     assert!(readme().contains(
         "there `/var/lib/cladenc/work`, the working directory, holds what the harness left"
     ));
 }
 
 #[test]
-fn the_readme_says_where_the_check_of_a_task_finds_the_directory_of_its_task() {
+fn the_readme_says_where_the_grader_of_a_task_finds_the_directory_of_its_task() {
     assert!(readme().contains("`/var/lib/cladenc/task` holds the directory of the task, to read"));
 }
 
 #[test]
-fn the_readme_says_that_a_harness_procreates_only_once_it_has_been_scored_on_every_task() {
+fn the_readme_says_that_a_harness_procreates_only_once_it_has_been_benchmarked_in_full() {
     assert!(readme().contains(
-        "A harness procreates only once it has been scored on every task of every benchmark of \
-         the directed evolution."
+        "A harness procreates only once it has been benchmarked in full: it has attempted every \
+         task of every benchmark of the directed evolution"
     ));
 }
 
@@ -272,7 +272,7 @@ fn the_readme_says_that_a_budget_no_larger_than_the_number_of_tasks_starts_no_pr
 #[test]
 fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
     assert_eq!(
-        ["`/harness`", "`/work`", "`/task`", "`/assessments`"]
+        ["`/harness`", "`/work`", "`/task`", "`/attempts`"]
             .into_iter()
             .filter(|top| readme().contains(top))
             .collect::<Vec<&str>>(),

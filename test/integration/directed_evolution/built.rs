@@ -33,7 +33,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
         seed: 7,
     }
 }
@@ -67,7 +67,7 @@ fn resumed_after_its_primogenitor_did_not_build() -> Evolved {
     (directory, resumed)
 }
 
-fn resumed_after_an_assessment_stopped_it() -> Evolved {
+fn resumed_after_an_attempt_stopped_it() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), COUNT_THE_BUILDS);
     let run_directory = directory.path().join("run");
@@ -188,13 +188,13 @@ fn a_directed_evolution_whose_primogenitor_was_built_on_resuming_goes_on_to_its_
 
 #[test]
 fn a_resumed_directed_evolution_whose_primogenitor_was_built_does_not_build_it_again() {
-    let (directory, _resumed) = resumed_after_an_assessment_stopped_it();
+    let (directory, _resumed) = resumed_after_an_attempt_stopped_it();
     assert_eq!(builds_of(&directory, 0), "built\n");
 }
 
 #[test]
 fn a_resumed_directed_evolution_whose_primogenitor_was_built_goes_on_to_its_end() {
-    let (_directory, resumed) = resumed_after_an_assessment_stopped_it();
+    let (_directory, resumed) = resumed_after_an_attempt_stopped_it();
     assert_eq!(resumed.unwrap().best_harness, 1);
 }
 

@@ -5,7 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
+use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 
 pub use copy::{copy_tree, holds_only_harness_files};
 
@@ -26,12 +26,12 @@ impl Workspace {
         fs::create_dir(run_directory)
             .and_then(|()| fs::create_dir(run_directory.join("harnesses")))
             .and_then(|()| fs::create_dir(run_directory.join("procreations")))
-            .and_then(|()| fs::create_dir(run_directory.join("assessments")))
+            .and_then(|()| fs::create_dir(run_directory.join("attempts")))
             .and_then(|()| fs::create_dir(run_directory.join("running")))
             .and_then(|()| fs::create_dir(run_directory.join("benchmarks")))
             .and_then(|()| fs::canonicalize(primogenitor))
             .and_then(|resolved| copy_tree(&resolved, &workspace.harness(0)))
-            .and_then(|()| fs::create_dir(workspace.assessments(0)))
+            .and_then(|()| fs::create_dir(workspace.attempts(0)))
             .map(|()| workspace)
     }
 
@@ -75,14 +75,14 @@ impl Workspace {
             .join(child.to_string())
     }
 
-    pub fn assessments(&self, harness: HarnessId) -> PathBuf {
+    pub fn attempts(&self, harness: HarnessId) -> PathBuf {
         self.run_directory
-            .join("assessments")
+            .join("attempts")
             .join(harness.to_string())
     }
 
-    pub fn assessment(&self, harness: HarnessId, task: &str) -> PathBuf {
-        self.assessments(harness).join(task)
+    pub fn attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
+        self.attempts(harness).join(task)
     }
 
     pub fn build(&self, harness: HarnessId) -> PathBuf {
@@ -95,10 +95,10 @@ impl Workspace {
             .join(format!("procreation-{child}"))
     }
 
-    pub fn running_assessment(&self, harness: HarnessId, task: &str) -> PathBuf {
+    pub fn running_attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
         self.run_directory
             .join("running")
-            .join(format!("assessment-{harness}-{}", task.replace('/', "+")))
+            .join(format!("attempt-{harness}-{}", task.replace('/', "+")))
     }
 
     pub fn start_procreation(&self, child: HarnessId, progenitor: HarnessId) -> io::Result<()> {
@@ -113,7 +113,7 @@ impl Workspace {
         let running = self.running_procreation(child);
         fs::rename(running.join("child"), self.harness(child))
             .and_then(|()| match outcome {
-                ProcreationOutcome::Created => fs::create_dir(self.assessments(child)),
+                ProcreationOutcome::Created => fs::create_dir(self.attempts(child)),
                 ProcreationOutcome::Failed
                 | ProcreationOutcome::BuildFailed
                 | ProcreationOutcome::TimedOut => Ok(()),
@@ -129,28 +129,33 @@ impl Workspace {
             .map(|()| build)
     }
 
-    pub fn start_assessment(&self, harness: HarnessId, task: &str) -> io::Result<()> {
-        let running = self.running_assessment(harness, task);
+    pub fn start_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+        let running = self.running_attempt(harness, task);
         let given = self.task(task);
-        let kept = self.assessment(harness, task);
+        let kept = self.attempt(harness, task);
         fs::create_dir(&running)
-            .and_then(|()| fs::create_dir(running.join("check")))
+            .and_then(|()| fs::create_dir(running.join("grader")))
             .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
-            .and_then(|()| copy_tree(&given.join("files"), &running.join("work")))
-            .and_then(|()| fs::copy(given.join("statement"), running.join("statement")))
+            .and_then(|()| copy_tree(&given.join("workspace"), &running.join("work")))
+            .and_then(|()| fs::copy(given.join("specification"), running.join("specification")))
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
-    pub fn end_assessment(&self, harness: HarnessId, task: &str, score: Score) -> io::Result<()> {
-        let running = self.running_assessment(harness, task);
-        let word = match score {
-            Score::Success => "success\n",
-            Score::Failure => "failure\n",
-            Score::TimedOut => "timed_out\n",
+    pub fn end_attempt(
+        &self,
+        harness: HarnessId,
+        task: &str,
+        result: AttemptResult,
+    ) -> io::Result<()> {
+        let running = self.running_attempt(harness, task);
+        let word = match result {
+            AttemptResult::Completed => "completed\n",
+            AttemptResult::NotCompleted => "not_completed\n",
+            AttemptResult::TimedOut => "timed_out\n",
         };
         fs::remove_dir_all(running.join("harness"))
-            .and_then(|()| fs::write(running.join("score"), word))
-            .and_then(|()| fs::rename(&running, self.assessment(harness, task)))
+            .and_then(|()| fs::write(running.join("result"), word))
+            .and_then(|()| fs::rename(&running, self.attempt(harness, task)))
     }
 
     pub fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
@@ -158,17 +163,17 @@ impl Workspace {
             self.running_procreation(child),
             self.harness(child),
             self.procreation(child),
-            self.assessments(child),
+            self.attempts(child),
             self.build(child),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))
     }
 
-    pub fn discard_assessment(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+    pub fn discard_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         [
-            self.running_assessment(harness, task),
-            self.assessment(harness, task),
+            self.running_attempt(harness, task),
+            self.attempt(harness, task),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))

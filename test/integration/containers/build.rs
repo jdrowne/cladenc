@@ -181,9 +181,9 @@ fn a_child_that_did_not_build_is_kept_beside_the_harnesses() {
 }
 
 #[test]
-fn a_child_that_did_not_build_gets_no_directory_for_assessments() {
+fn a_child_that_did_not_build_gets_no_directory_for_attempts() {
     let (_directory, workspace, _result) = procreated("exit 0", "exit 1");
-    assert!(!workspace.assessments(1).exists());
+    assert!(!workspace.attempts(1).exists());
 }
 
 #[test]

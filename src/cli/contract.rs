@@ -92,18 +92,19 @@ key off every command line, out of the journal and out of what it prints.
 A procreation is carried out by the harness that procreates.
 /var/lib/cladenc/work holds a second copy of its source code, and the
 instruction asks the harness to improve that copy: what the harness leaves
-there is its child. /var/log/cladenc/assessments holds the finished
-assessments of the harness, to read: one directory for each benchmark, and
-in it one for each task, holding what the assessment of that task kept.
+there is its child. /var/log/cladenc/attempts holds the finished
+attempts of the harness, to read: one directory for each benchmark, and
+in it one for each task, holding what the attempt of that task kept.
 
-A harness procreates only once it has been scored on every task of every
-benchmark of the directed evolution, so that it finds every task in
-/var/log/cladenc/assessments. Where a procreation is due and no harness
-has been scored on every task yet, an assessment is started in its place:
-the primogenitor is tried on every task before the first procreation. Each
-harness that procreates therefore takes as many assessments from --budget
-as the directed evolution has tasks, and a directed evolution whose budget
-is no larger than the number of its tasks starts no procreation.
+A harness procreates only once it has been benchmarked in full: it has
+attempted every task of every benchmark of the directed evolution, so that
+it finds every task in /var/log/cladenc/attempts. Where a procreation is
+due and no harness has been benchmarked in full yet, an attempt is started
+in its place: the primogenitor attempts every task before the first
+procreation. Each harness that procreates therefore takes as many attempts
+from --budget as the directed evolution has tasks, and a directed
+evolution whose budget is no larger than the number of its tasks starts no
+procreation.
 
 How the harness ends decides what is recorded:
 
@@ -129,7 +130,7 @@ with /var/lib/cladenc/harness as the working directory, which holds the
 source code of the harness and is what CLADENC_HARNESS names. A build calls
 no model, and is given none of the three variables of the model. What the
 build makes stays there, and is part of every copy made of the harness. The
-primogenitor is built before any procreation or assessment, within the time
+primogenitor is built before any procreation or attempt, within the time
 limit of one procreation. A child is built as the last step of its
 procreation, within what is left of the time limit of that procreation.
 
@@ -155,23 +156,24 @@ A benchmark is a directory that holds one directory for each task. The name
 of a task's directory is the id of the task, made of letters, digits, dots,
 underscores and hyphens, and the directory holds
 
-  statement  a file of text that says what is to be done
-  files      a directory of the files the work starts from, which may hold
-             none
-  check      an executable file, the program that says by its exit status
-             whether the work passes
+  specification  a file of text, the task specification, which says what
+                 is to be done
+  workspace      a directory of the files the work starts from, which may
+                 hold none
+  grader         an executable file, the program that says by its exit
+                 status whether the task was completed
 
-and may hold more, such as tests that the check runs. A file that is in the
-benchmark and in no task is left alone. A benchmark that holds no task is
-refused, and so is one with a task that lacks one of the three.
+and may hold more, such as tests that the grader runs. A file that is in
+the benchmark and in no task is left alone. A benchmark that holds no task
+is refused, and so is one with a task that lacks one of the three.
 
 --benchmark is given once for each benchmark of the directed evolution. A
-directed evolution that is given several tries its harnesses on the tasks
-of all of them, and looks for the one harness that passes the largest share
-of those tasks. Every task counts the same, so a benchmark with more tasks
-weighs more. The name of a benchmark is the name of its directory, made of
-the characters the id of a task is made of, and a task of a directed
-evolution is known by the two together, as
+directed evolution that is given several has its harnesses attempt the
+tasks of all of them, and looks for the one harness that completes the
+largest share of those tasks. Every task counts the same, so a benchmark
+with more tasks weighs more. The name of a benchmark is the name of its
+directory, made of the characters the id of a task is made of, and a task
+of a directed evolution is known by the two together, as
 
     <BENCHMARK>/<TASK>
 
@@ -182,15 +184,15 @@ into a directory named after its benchmark, so the directed evolution keeps
 the tasks it started with, and `cladenc resume` does not read the
 directories that --benchmark named.
 
-An assessment is one harness tried on one task, and cladenc carries it out
-in two steps. First the harness is started, as it is for a procreation.
-/var/lib/cladenc/work holds a copy of the files of the task, and
-CLADENC_INSTRUCTION holds the statement of the task. The harness is given
-nothing else of the task, so it can neither read nor change the check. When
-the harness has ended, with whatever exit status, the check of the task is
-run in a second container of the same image, as
+An attempt is one harness working on one task, once, and cladenc carries it
+out in two steps. First the harness is started, as it is for a procreation.
+/var/lib/cladenc/work holds a copy of the workspace of the task, and
+CLADENC_INSTRUCTION holds the task specification. The harness is given
+nothing else of the task, so it can neither read nor change the grader.
+When the harness has ended, with whatever exit status, the grader of the
+task is run in a second container of the same image, as
 
-    sh -c <TIMER> /var/lib/cladenc/task/check <SECONDS>
+    sh -c <TIMER> /var/lib/cladenc/task/grader <SECONDS>
 
   /var/lib/cladenc/work  holds what the harness left, and is the working
                          directory
@@ -198,30 +200,30 @@ run in a second container of the same image, as
                          to change
   CLADENC_TASK           /var/lib/cladenc/task
 
-A check calls no model, and is given none of the three variables of the
-model. The two steps share the time limit of one assessment.
+A grader calls no model, and is given none of the three variables of the
+model. The two steps share the time limit of one attempt.
 
-How an assessment ends decides how the harness is scored:
+How an attempt ends decides its result:
 
-  the check exits with status 0    the harness is scored a success
-  the check exits with another     the harness is scored a failure
+  the grader exits with status 0   the harness completed the task
+  the grader exits with another    the harness did not complete the task
   exit status 125 of either step   Docker did not start the container: the
                                    directed evolution stops, and `cladenc
-                                   resume` carries out the assessment again
+                                   resume` carries out the attempt again
   the time limit                   the container is removed, and the
-                                   harness is scored a failure, which is
-                                   recorded as timed_out
+                                   harness did not complete the task,
+                                   which is recorded as timed_out
 
-assessments in the run directory keeps every assessment, in a directory
-named after the harness, in it one named after the benchmark, and in that
-one named after the task, which holds
+attempts in the run directory keeps every attempt, in a directory named
+after the harness, in it one named after the benchmark, and in that one
+named after the task, which holds
 
-  score      one word: success, failure or timed_out
-  statement  the statement of the task
-  work       the files of the task as the harness left them
-  stdout     the standard output of the harness
-  stderr     the standard error of the harness
-  check      the standard output and the standard error of the check";
+  result         one word: completed, not_completed or timed_out
+  specification  the task specification
+  work           the workspace of the task as the harness left it
+  stdout         the standard output of the harness
+  stderr         the standard error of the harness
+  grader         the standard output and the standard error of the grader";
 
 pub(super) const RESUMING: &str = "\
 A cladenc that is killed outright, as by `kill -9`, ends none of its

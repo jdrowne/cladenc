@@ -11,11 +11,11 @@ const HEADER: [&str; 9] = [
     "id",
     "progenitor",
     "state",
-    "successes",
-    "failures",
-    "clade successes",
-    "clade failures",
-    "clade success rate",
+    "completed",
+    "not completed",
+    "clade completed",
+    "clade not completed",
+    "clade score",
     "lower bound",
 ];
 
@@ -34,11 +34,11 @@ pub struct HarnessReport {
     pub id: HarnessId,
     pub progenitor: Option<HarnessId>,
     pub state: HarnessState,
-    pub successes: u64,
-    pub failures: u64,
-    pub clade_successes: u64,
-    pub clade_failures: u64,
-    pub clade_success_rate: Option<f64>,
+    pub completed: u64,
+    pub not_completed: u64,
+    pub clade_completed: u64,
+    pub clade_not_completed: u64,
+    pub clade_score: Option<f64>,
     pub lower_bound: Option<f64>,
 }
 
@@ -96,13 +96,13 @@ impl HarnessReport {
             id: harness.id(),
             progenitor: harness.progenitor(),
             state: harness.state(),
-            successes: harness.successes(),
-            failures: harness.failures(),
-            clade_successes: harness.clade_successes(),
-            clade_failures: harness.clade_failures(),
-            clade_success_rate: harness.clade_success_rate(),
+            completed: harness.completed(),
+            not_completed: harness.not_completed(),
+            clade_completed: harness.clade_completed(),
+            clade_not_completed: harness.clade_not_completed(),
+            clade_score: harness.clade_score(),
             lower_bound: created
-                .then(|| lower_bound(harness.successes(), harness.failures(), confidence)),
+                .then(|| lower_bound(harness.completed(), harness.not_completed(), confidence)),
         }
     }
 
@@ -116,11 +116,11 @@ impl HarnessReport {
             self.id.to_string(),
             shown(self.progenitor.map(|progenitor| progenitor.to_string())),
             state.to_owned(),
-            self.successes.to_string(),
-            self.failures.to_string(),
-            self.clade_successes.to_string(),
-            self.clade_failures.to_string(),
-            shown(self.clade_success_rate.map(|rate| format!("{rate:.3}"))),
+            self.completed.to_string(),
+            self.not_completed.to_string(),
+            self.clade_completed.to_string(),
+            self.clade_not_completed.to_string(),
+            shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
             shown(self.lower_bound.map(|bound| format!("{bound:.3}"))),
         ]
     }

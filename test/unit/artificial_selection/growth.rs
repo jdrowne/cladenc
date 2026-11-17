@@ -20,12 +20,12 @@ fn harnesses_at_the_end(growth: f64, budget: u64, harnesses: u64) -> u64 {
 }
 
 #[test]
-fn the_first_action_is_an_assessment() {
+fn the_first_action_is_an_attempt() {
     assert!(!procreation_is_due(1, 0, 0.6));
 }
 
 #[test]
-fn the_first_procreation_comes_when_one_assessment_has_started() {
+fn the_first_procreation_comes_when_one_attempt_has_started() {
     assert!(procreation_is_due(1, 1, 0.6));
 }
 
@@ -50,12 +50,12 @@ fn zero_to_the_power_of_zero_counts_as_1() {
 }
 
 #[test]
-fn at_a_growth_of_0_the_only_procreation_comes_before_any_assessment() {
+fn at_a_growth_of_0_the_only_procreation_comes_before_any_attempt() {
     assert_eq!(procreations(0.0, 100, 1), [0]);
 }
 
 #[test]
-fn at_a_growth_of_1_a_procreation_follows_each_assessment_but_the_last() {
+fn at_a_growth_of_1_a_procreation_follows_each_attempt_but_the_last() {
     assert_eq!(procreations(1.0, 10, 1), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 

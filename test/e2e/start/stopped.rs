@@ -8,7 +8,7 @@ use tempfile::TempDir;
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 
-fn start(directory: &Path, run_command: &str, assessment_timeout: &str) -> Command {
+fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command {
     let options = [
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
@@ -22,7 +22,7 @@ fn start(directory: &Path, run_command: &str, assessment_timeout: &str) -> Comma
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--assessment-timeout", assessment_timeout.into()),
+        ("--attempt-timeout", attempt_timeout.into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -33,15 +33,15 @@ fn start(directory: &Path, run_command: &str, assessment_timeout: &str) -> Comma
 fn id_file(directory: &TempDir) -> PathBuf {
     directory
         .path()
-        .join("run/running/assessment-0-benchmark+t1/work/id")
+        .join("run/running/attempt-0-benchmark+t1/work/id")
 }
 
-fn signalled_within(signal: Signal, assessment_timeout: &str) -> (TempDir, ExitStatus) {
+fn signalled_within(signal: Signal, attempt_timeout: &str) -> (TempDir, ExitStatus) {
     let directory = test_inputs::temporary_directory();
     let mut cladenc = start(
         directory.path(),
         SAY_THE_CONTAINER_AND_STAY,
-        assessment_timeout,
+        attempt_timeout,
     )
     .spawn()
     .unwrap();

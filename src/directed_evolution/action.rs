@@ -1,6 +1,6 @@
 use super::Shared;
 use crate::containers::{self, ContainerError};
-use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
+use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
 
 pub(super) enum Ended {
@@ -9,10 +9,10 @@ pub(super) enum Ended {
         progenitor: HarnessId,
         result: Result<ProcreationOutcome, ContainerError>,
     },
-    Assessment {
+    Attempt {
         harness: HarnessId,
         task: String,
-        result: Result<Score, ContainerError>,
+        result: Result<AttemptResult, ContainerError>,
     },
 }
 
@@ -41,23 +41,23 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                 result,
             }
         }
-        Started::Assessment { harness, task } => {
+        Started::Attempt { harness, task } => {
             let cleared = if again {
-                shared.workspace.discard_assessment(harness, &task)
+                shared.workspace.discard_attempt(harness, &task)
             } else {
                 Ok(())
             };
             let result = cleared.map_err(ContainerError::Io).and_then(|()| {
-                containers::run_assessment(
+                containers::run_attempt(
                     &shared.workspace,
                     &shared.launch,
                     harness,
                     &task,
-                    settings.assessment_timeout,
+                    settings.attempt_timeout,
                     &shared.halt,
                 )
             });
-            Ended::Assessment {
+            Ended::Attempt {
                 harness,
                 task,
                 result,

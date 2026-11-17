@@ -1,6 +1,6 @@
 mod build;
-mod check;
 mod container;
+mod grader;
 mod image;
 mod left;
 mod program;
@@ -12,7 +12,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
-use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
+use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::model::Model;
 use crate::workspace::{Workspace, holds_only_harness_files};
 
@@ -23,19 +23,19 @@ pub use left::remove_left_behind;
 use program::{Ending, deadline};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
-    copy of your own source code. Improve that source code, so that the harness it makes solves \
-    more coding tasks than you do. /var/log/cladenc/assessments holds one directory for each \
-    benchmark, and in it one directory for each task you have been tried on. In the directory of \
-    a task, the file named statement says what you were asked to do, the file named score reads \
-    success, failure or timed_out, the directory named work holds the files of the task as you \
-    left them, the files named stdout and stderr hold what you printed, and the directory named \
-    check holds what the check of the task printed. Use them to find what to improve. Change \
-    files in the current directory only: what it holds when you end becomes a new harness, which \
-    is tried on tasks in its turn.";
+    copy of your own source code. Improve that source code, so that the harness it makes \
+    completes more coding tasks than you do. /var/log/cladenc/attempts holds one directory for \
+    each benchmark, and in it one directory for each task you have attempted. In the directory \
+    of a task, the file named specification says what you were asked to do, the file named \
+    result reads completed, not_completed or timed_out, the directory named work holds the \
+    workspace of the task as you left it, the files named stdout and stderr hold what you \
+    printed, and the directory named grader holds what the grader of the task printed. Use them \
+    to find what to improve. Change files in the current directory only: what it holds when you \
+    end becomes a new harness, which attempts tasks in its turn.";
 
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";
-const ASSESSMENTS: &str = "/var/log/cladenc/assessments";
+const ATTEMPTS: &str = "/var/log/cladenc/attempts";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -94,7 +94,7 @@ pub fn run_procreation(
     let running = workspace.running_procreation(child);
     let source = running.join("progenitor");
     let made = running.join("child");
-    let assessments = workspace.assessments(progenitor);
+    let attempts = workspace.attempts(progenitor);
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
@@ -119,8 +119,8 @@ pub fn run_procreation(
                 read_only: false,
             },
             Mount {
-                from: &assessments,
-                to: ASSESSMENTS,
+                from: &attempts,
+                to: ATTEMPTS,
                 read_only: true,
             },
         ],
@@ -140,25 +140,25 @@ pub fn run_procreation(
         .map_err(ContainerError::Io)
 }
 
-pub fn run_assessment(
+pub fn run_attempt(
     workspace: &Workspace,
     launch: &Launch<'_>,
     harness: HarnessId,
     task: &str,
     time_limit: u64,
     stop: &AtomicBool,
-) -> Result<Score, ContainerError> {
-    let running = workspace.running_assessment(harness, task);
-    let statement = workspace
-        .start_assessment(harness, task)
-        .and_then(|()| fs::read_to_string(running.join("statement")))
+) -> Result<AttemptResult, ContainerError> {
+    let running = workspace.running_attempt(harness, task);
+    let specification = workspace
+        .start_attempt(harness, task)
+        .and_then(|()| fs::read_to_string(running.join("specification")))
         .map_err(ContainerError::Io)?;
     let source = running.join("harness");
     let work = running.join("work");
     let deadline = deadline(time_limit);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
-        ("CLADENC_INSTRUCTION", statement.as_str()),
+        ("CLADENC_INSTRUCTION", specification.as_str()),
     ]
     .into_iter()
     .chain(launch.model.environment())
@@ -182,12 +182,12 @@ pub fn run_assessment(
         working_directory: WORK,
         environment: &environment,
     };
-    let score = match container.run(&running, deadline, stop)? {
-        Ending::Exited(_) => check::run(workspace, launch.image, task, &running, deadline, stop)?,
-        Ending::TimedOut => Score::TimedOut,
+    let result = match container.run(&running, deadline, stop)? {
+        Ending::Exited(_) => grader::run(workspace, launch.image, task, &running, deadline, stop)?,
+        Ending::TimedOut => AttemptResult::TimedOut,
     };
     workspace
-        .end_assessment(harness, task, score)
-        .map(|()| score)
+        .end_attempt(harness, task, result)
+        .map(|()| result)
         .map_err(ContainerError::Io)
 }

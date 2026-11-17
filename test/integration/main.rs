@@ -1,5 +1,5 @@
 mod containers {
-    mod assessment;
+    mod attempt;
     mod build;
     mod image;
     mod left;
@@ -22,7 +22,7 @@ mod directed_evolution {
 }
 
 mod workspace {
-    mod assessment;
+    mod attempt;
     mod benchmark;
     mod build;
     mod copy;

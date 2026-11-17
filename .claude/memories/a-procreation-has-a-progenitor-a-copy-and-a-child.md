@@ -18,6 +18,6 @@ Three harnesses are part of a procreation, and whatever is written about one of 
 
 **Why:** The user finds a text convoluted when it says a harness, the harness or it, and leaves the reader to work out which of the three is meant. The three names are the user's, and progenitor is the user's word where parent could have stood.
 
-**How to apply:** Make one of the three names the subject of each sentence about a procreation: the progenitor is given a directory to read, the progenitor changes the copy, the copy becomes the child. Where a sentence is about any harness, say what would make it one of the three, as in a harness can be a progenitor only once it has been scored. The harness a directed evolution starts from is named too, per [[the-first-harness-is-the-primogenitor]].
+**How to apply:** Make one of the three names the subject of each sentence about a procreation: the progenitor is given a directory to read, the progenitor changes the copy, the copy becomes the child. Where a sentence is about any harness, say what would make it one of the three, as in a harness can be a progenitor only once it has been benchmarked in full. The harness a directed evolution starts from is named too, per [[the-first-harness-is-the-primogenitor]].
 
 Mine, not the user's: an issue about procreation defines the three names once, in a short list near its top, and the rule covers replies as well as issues. Related: [[an-explanation-says-what-happens]], [[the-paper-is-a-starting-point]].

@@ -24,18 +24,18 @@ fn the_primogenitor_has_no_progenitor() {
 }
 
 #[test]
-fn a_new_genealogy_has_started_no_assessment() {
+fn a_new_genealogy_has_started_no_attempt() {
     assert_eq!(Genealogy::new().started(), 0);
 }
 
 #[test]
-fn the_primogenitor_starts_with_no_successes() {
-    assert_eq!(Genealogy::new().harnesses()[0].successes(), 0);
+fn the_primogenitor_starts_with_nothing_completed() {
+    assert_eq!(Genealogy::new().harnesses()[0].completed(), 0);
 }
 
 #[test]
-fn the_primogenitor_starts_with_no_failures() {
-    assert_eq!(Genealogy::new().harnesses()[0].failures(), 0);
+fn the_primogenitor_starts_with_nothing_not_completed() {
+    assert_eq!(Genealogy::new().harnesses()[0].not_completed(), 0);
 }
 
 #[test]

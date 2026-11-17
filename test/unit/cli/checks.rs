@@ -26,7 +26,7 @@ fn options(directory: &Path) -> StartOptions {
         confidence: 99.0,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        assessment_timeout: 1800,
+        attempt_timeout: 1800,
     }
 }
 
@@ -59,8 +59,8 @@ fn option_refused(change: impl FnOnce(&TempDir, &mut StartOptions)) -> &'static 
     checked(change).unwrap_err().option
 }
 
-fn with_no_check_in_a_task() -> Refused {
-    checked(|_, options| fs::remove_file(options.benchmark[0].join("t2/check")).unwrap())
+fn with_no_grader_in_a_task() -> Refused {
+    checked(|_, options| fs::remove_file(options.benchmark[0].join("t2/grader")).unwrap())
         .unwrap_err()
 }
 
@@ -91,7 +91,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             confidence: 99.0,
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
-            assessment_timeout: 1800,
+            attempt_timeout: 1800,
             seed: settings.seed,
         }
     );
@@ -288,10 +288,10 @@ fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
 
 #[test]
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
-    assert!(with_no_check_in_a_task().to_string().starts_with(
+    assert!(with_no_grader_in_a_task().to_string().starts_with(
         "--benchmark takes the directory of a benchmark, in which every directory is a task that \
-         holds a file of text named statement, a directory named files and an executable file \
-         named check: /"
+         holds a file of text named specification, a directory named workspace and an executable \
+         file named grader: /"
     ));
 }
 

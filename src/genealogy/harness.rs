@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use serde::Serialize;
 
-use super::{HarnessId, Score};
+use super::{AttemptResult, HarnessId};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -19,10 +19,10 @@ pub struct Harness {
     state: HarnessState,
     given: BTreeSet<String>,
     running: BTreeSet<String>,
-    successes: u64,
-    failures: u64,
-    clade_successes: u64,
-    clade_failures: u64,
+    completed: u64,
+    not_completed: u64,
+    clade_completed: u64,
+    clade_not_completed: u64,
 }
 
 impl Harness {
@@ -33,10 +33,10 @@ impl Harness {
             state,
             given: BTreeSet::new(),
             running: BTreeSet::new(),
-            successes: 0,
-            failures: 0,
-            clade_successes: 0,
-            clade_failures: 0,
+            completed: 0,
+            not_completed: 0,
+            clade_completed: 0,
+            clade_not_completed: 0,
         }
     }
 
@@ -52,25 +52,25 @@ impl Harness {
         self.state
     }
 
-    pub fn successes(&self) -> u64 {
-        self.successes
+    pub fn completed(&self) -> u64 {
+        self.completed
     }
 
-    pub fn failures(&self) -> u64 {
-        self.failures
+    pub fn not_completed(&self) -> u64 {
+        self.not_completed
     }
 
-    pub fn clade_successes(&self) -> u64 {
-        self.clade_successes
+    pub fn clade_completed(&self) -> u64 {
+        self.clade_completed
     }
 
-    pub fn clade_failures(&self) -> u64 {
-        self.clade_failures
+    pub fn clade_not_completed(&self) -> u64 {
+        self.clade_not_completed
     }
 
-    pub fn clade_success_rate(&self) -> Option<f64> {
-        let finished = self.clade_successes + self.clade_failures;
-        (finished > 0).then(|| self.clade_successes as f64 / finished as f64)
+    pub fn clade_score(&self) -> Option<f64> {
+        let finished = self.clade_completed + self.clade_not_completed;
+        (finished > 0).then(|| self.clade_completed as f64 / finished as f64)
     }
 
     pub fn tasks_not_given<'a>(&self, tasks: &'a [String]) -> Vec<&'a str> {
@@ -81,7 +81,7 @@ impl Harness {
             .collect()
     }
 
-    pub fn has_been_scored_on_every(&self, tasks: &[String]) -> bool {
+    pub fn has_attempted_every(&self, tasks: &[String]) -> bool {
         tasks
             .iter()
             .all(|task| self.given.contains(task) && !self.running.contains(task))
@@ -95,21 +95,21 @@ impl Harness {
         self.given.insert(task.to_owned()) && self.running.insert(task.to_owned())
     }
 
-    pub(super) fn finish(&mut self, task: &str, score: Score) -> bool {
+    pub(super) fn finish(&mut self, task: &str, result: AttemptResult) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            match score {
-                Score::Success => self.successes += 1,
-                Score::Failure | Score::TimedOut => self.failures += 1,
+            match result {
+                AttemptResult::Completed => self.completed += 1,
+                AttemptResult::NotCompleted | AttemptResult::TimedOut => self.not_completed += 1,
             }
         }
         was_running
     }
 
-    pub(super) fn count_in_clade(&mut self, score: Score) {
-        match score {
-            Score::Success => self.clade_successes += 1,
-            Score::Failure | Score::TimedOut => self.clade_failures += 1,
+    pub(super) fn count_in_clade(&mut self, result: AttemptResult) {
+        match result {
+            AttemptResult::Completed => self.clade_completed += 1,
+            AttemptResult::NotCompleted | AttemptResult::TimedOut => self.clade_not_completed += 1,
         }
     }
 }

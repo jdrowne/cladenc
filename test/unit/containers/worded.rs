@@ -41,27 +41,27 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 }
 
 #[test]
-fn the_instruction_says_where_the_assessments_are() {
+fn the_instruction_says_where_the_attempts_are() {
     assert!(containers::INSTRUCTION.contains(
-        "than you do. /var/log/cladenc/assessments holds one directory for each benchmark, and in \
-         it one directory for each task you have been tried on. In the directory of a task, "
+        "than you do. /var/log/cladenc/attempts holds one directory for each benchmark, and in \
+         it one directory for each task you have attempted. In the directory of a task, "
     ));
 }
 
 #[test]
-fn the_instruction_says_what_each_assessment_keeps_of_the_task_and_of_the_harness() {
+fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
-        "the file named statement says what you were asked to do, the file named score reads \
-         success, failure or timed_out, the directory named work holds the files of the task as \
-         you left them"
+        "the file named specification says what you were asked to do, the file named result \
+         reads completed, not_completed or timed_out, the directory named work holds the \
+         workspace of the task as you left it"
     ));
 }
 
 #[test]
-fn the_instruction_says_where_what_the_check_printed_is() {
+fn the_instruction_says_where_what_the_grader_printed_is() {
     assert!(
         containers::INSTRUCTION
-            .contains("the directory named check holds what the check of the task printed")
+            .contains("the directory named grader holds what the grader of the task printed")
     );
 }
 

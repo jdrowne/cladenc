@@ -34,27 +34,28 @@ fn names_in(directory: PathBuf) -> Vec<String> {
 }
 
 #[test]
-fn the_copy_of_a_benchmark_holds_the_statement_of_each_task() {
+fn the_copy_of_a_benchmark_holds_the_specification_of_each_task() {
     let (_directory, run_directory, _) = copied(&["t1", "t2", "t3"]);
     assert_eq!(
-        fs::read_to_string(run_directory.join("benchmarks/benchmark/t2/statement")).unwrap(),
+        fs::read_to_string(run_directory.join("benchmarks/benchmark/t2/specification")).unwrap(),
         "Finish the work of t2.\n"
     );
 }
 
 #[test]
-fn the_copy_of_a_benchmark_holds_the_files_each_task_starts_from() {
+fn the_copy_of_a_benchmark_holds_the_workspace_of_each_task() {
     let (_directory, run_directory, _) = copied(&["t1", "t2", "t3"]);
     assert_eq!(
-        fs::read_to_string(run_directory.join("benchmarks/benchmark/t3/files/work.txt")).unwrap(),
+        fs::read_to_string(run_directory.join("benchmarks/benchmark/t3/workspace/work.txt"))
+            .unwrap(),
         "to do\n"
     );
 }
 
 #[test]
-fn the_check_of_a_task_stays_executable_in_the_copy() {
+fn the_grader_of_a_task_stays_executable_in_the_copy() {
     let (_directory, run_directory, _) = copied(&["t1", "t2", "t3"]);
-    let mode = fs::metadata(run_directory.join("benchmarks/benchmark/t1/check"))
+    let mode = fs::metadata(run_directory.join("benchmarks/benchmark/t1/grader"))
         .unwrap()
         .permissions()
         .mode();
@@ -129,13 +130,22 @@ fn each_benchmark_is_copied_into_a_directory_named_after_it() {
 fn a_task_of_the_same_id_in_two_benchmarks_is_copied_twice() {
     let (directory, run_directory, _) = copied(&["t1"]);
     let second = test_inputs::benchmark_named(directory.path(), "refactoring", &["t1"]);
-    fs::write(second.join("t1/statement"), "Refactor the work of t1.\n").unwrap();
+    fs::write(
+        second.join("t1/specification"),
+        "Refactor the work of t1.\n",
+    )
+    .unwrap();
     Workspace::at(&run_directory)
         .copy_benchmark(&benchmark_of(&second, &["t1"]))
         .unwrap();
     assert_eq!(
         ["benchmark/t1", "refactoring/t1"].map(|task| {
-            fs::read_to_string(Workspace::at(&run_directory).task(task).join("statement")).unwrap()
+            fs::read_to_string(
+                Workspace::at(&run_directory)
+                    .task(task)
+                    .join("specification"),
+            )
+            .unwrap()
         }),
         ["Finish the work of t1.\n", "Refactor the work of t1.\n"]
     );

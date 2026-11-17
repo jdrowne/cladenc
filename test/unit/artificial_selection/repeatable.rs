@@ -63,12 +63,12 @@ fn action_k_draws_from_stream_k_of_the_seeded_generator_for_the_harness_and_then
     let task = tasks()[generator.random_range(0..20)].clone();
     assert_eq!(
         artificial_selection(7).next_action(&Genealogy::new(), 3),
-        Some(Action::Assessment { harness: 0, task })
+        Some(Action::Attempt { harness: 0, task })
     );
 }
 
 #[test]
-fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_is_assessed() {
+fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_attempts_a_task() {
     let mut generator = generator(11, 5);
     let beta = Beta::new(1.0, 1.0).unwrap();
     let primogenitor: f64 = beta.sample(&mut generator);
@@ -76,7 +76,7 @@ fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_is_ass
     let task = tasks()[generator.random_range(0..20)].clone();
     assert_eq!(
         artificial_selection(11).next_action(&with_a_child(), 5),
-        Some(Action::Assessment {
+        Some(Action::Attempt {
             harness: u64::from(child > primogenitor),
             task
         })
@@ -84,7 +84,7 @@ fn the_harnesses_are_drawn_for_in_ascending_id_order_and_the_largest_draw_is_ass
 }
 
 #[test]
-fn an_assessment_in_the_place_of_a_procreation_is_drawn_as_one_where_no_procreation_is_due() {
+fn an_attempt_in_the_place_of_a_procreation_is_drawn_as_one_where_no_procreation_is_due() {
     let in_its_place = ArtificialSelection {
         growth: 0.0,
         ..artificial_selection(7)

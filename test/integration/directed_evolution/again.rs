@@ -27,7 +27,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        assessment_timeout: 60,
+        attempt_timeout: 60,
         seed: 7,
     }
 }
@@ -58,15 +58,12 @@ fn resumed_after_a_procreation_stopped() -> TempDir {
     resumed_after_a_stop_at(0, None, "procreation-1/child/leftover")
 }
 
-fn resumed_after_an_assessment_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, Some("t1"), "assessment-0-benchmark+t1/work/leftover")
+fn resumed_after_an_attempt_stopped() -> TempDir {
+    resumed_after_a_stop_at(99, Some("t1"), "attempt-0-benchmark+t1/work/leftover")
 }
 
-fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
-    let mut settings = settings(
-        directory,
-        "[ -d /var/log/cladenc/assessments ] || sleep 300",
-    );
+fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
+    let mut settings = settings(directory, "[ -d /var/log/cladenc/attempts ] || sleep 300");
     settings.max_concurrent_containers = 2;
     test_inputs::task(&settings.benchmarks[0].directory, "t2");
     settings.benchmarks[0].tasks.push("t2".to_owned());
@@ -83,7 +80,7 @@ fn with_one_assessment_left_running(directory: &Path) -> PathBuf {
         })
         .unwrap();
     journal
-        .append(&Record::AssessmentStarted {
+        .append(&Record::AttemptStarted {
             harness: 0,
             task: "benchmark/t1".to_owned(),
         })
@@ -111,34 +108,34 @@ fn a_procreation_that_runs_again_ends_with_its_child_in_place() {
 }
 
 #[test]
-fn what_an_assessment_left_under_running_is_gone_before_it_runs_again() {
-    let directory = resumed_after_an_assessment_stopped();
+fn what_an_attempt_left_under_running_is_gone_before_it_runs_again() {
+    let directory = resumed_after_an_attempt_stopped();
     assert!(
         !directory
             .path()
-            .join("run/assessments/0/benchmark/t1/work/leftover")
+            .join("run/attempts/0/benchmark/t1/work/leftover")
             .exists()
     );
 }
 
 #[test]
-fn an_assessment_that_runs_again_ends_with_its_directory_in_place() {
-    let directory = resumed_after_an_assessment_stopped();
+fn an_attempt_that_runs_again_ends_with_its_directory_in_place() {
+    let directory = resumed_after_an_attempt_stopped();
     assert!(
         directory
             .path()
-            .join("run/assessments/0/benchmark/t1/score")
+            .join("run/attempts/0/benchmark/t1/result")
             .is_file()
     );
 }
 
 #[test]
 fn an_action_that_runs_again_writes_no_second_started_record() {
-    let directory = resumed_after_an_assessment_stopped();
+    let directory = resumed_after_an_attempt_stopped();
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert_eq!(
         journal
-            .matches(r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#)
+            .matches(r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#)
             .count(),
         1
     );
@@ -147,7 +144,7 @@ fn an_action_that_runs_again_writes_no_second_started_record() {
 #[test]
 fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let directory = test_inputs::temporary_directory();
-    let run_directory = with_one_assessment_left_running(directory.path());
+    let run_directory = with_one_attempt_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
         scope.spawn(|| directed_evolution::resume(&run_directory, &stop, &mut io::sink()));

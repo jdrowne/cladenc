@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cladenc::artificial_selection::{Action, ArtificialSelection};
-use cladenc::genealogy::{Genealogy, HarnessId, ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
 
 fn tasks(count: usize) -> Vec<String> {
     (0..count).map(|number| format!("task-{number}")).collect()
@@ -22,10 +22,10 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: Procreati
     genealogy.end_procreation(child, outcome).unwrap();
 }
 
-fn assess(genealogy: &mut Genealogy, harness: HarnessId, count: usize, score: Score) {
+fn attempted(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result: AttemptResult) {
     for task in tasks(count) {
-        genealogy.start_assessment(harness, &task).unwrap();
-        genealogy.end_assessment(harness, &task, score).unwrap();
+        genealogy.start_attempt(harness, &task).unwrap();
+        genealogy.end_attempt(harness, &task, result).unwrap();
     }
 }
 
@@ -35,93 +35,93 @@ fn two_lines() -> Genealogy {
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
     child_of(&mut genealogy, 1, ProcreationOutcome::Created);
     child_of(&mut genealogy, 2, ProcreationOutcome::Created);
-    assess(&mut genealogy, 1, 4, Score::Failure);
-    assess(&mut genealogy, 3, 8, Score::Success);
-    assess(&mut genealogy, 2, 4, Score::Success);
-    assess(&mut genealogy, 4, 8, Score::Failure);
+    attempted(&mut genealogy, 1, 4, AttemptResult::NotCompleted);
+    attempted(&mut genealogy, 3, 8, AttemptResult::Completed);
+    attempted(&mut genealogy, 2, 4, AttemptResult::Completed);
+    attempted(&mut genealogy, 4, 8, AttemptResult::NotCompleted);
     genealogy
 }
 
-fn assessment(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<(HarnessId, String)> {
+fn attempt(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<(HarnessId, String)> {
     artificial_selection(seed, task_count)
         .next_action(genealogy, 0)
         .and_then(|action| match action {
-            Action::Assessment { harness, task } => Some((harness, task)),
+            Action::Attempt { harness, task } => Some((harness, task)),
             Action::Procreation { .. } => None,
         })
 }
 
-fn assessed(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<HarnessId> {
-    assessment(genealogy, seed, task_count).map(|(harness, _)| harness)
+fn attempting(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<HarnessId> {
+    attempt(genealogy, seed, task_count).map(|(harness, _)| harness)
 }
 
-fn times_assessed(genealogy: &Genealogy, harness: HarnessId, task_count: usize) -> usize {
+fn times_attempting(genealogy: &Genealogy, harness: HarnessId, task_count: usize) -> usize {
     (0..200)
-        .filter(|seed| assessed(genealogy, *seed, task_count) == Some(harness))
+        .filter(|seed| attempting(genealogy, *seed, task_count) == Some(harness))
         .count()
 }
 
 fn tasks_drawn(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String> {
     (0..200)
-        .filter_map(|seed| assessment(genealogy, seed, task_count))
+        .filter_map(|seed| attempt(genealogy, seed, task_count))
         .map(|(_, task)| task)
         .collect()
 }
 
 #[test]
-fn an_assessment_is_the_next_action_when_no_procreation_is_due() {
+fn an_attempt_is_the_next_action_when_no_procreation_is_due() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    assert_eq!(assessed(&genealogy, 0, 20), Some(0));
+    assert_eq!(attempting(&genealogy, 0, 20), Some(0));
 }
 
 #[test]
-fn a_procreation_is_not_an_assessment() {
+fn a_procreation_is_not_an_attempt() {
     let mut genealogy = Genealogy::new();
-    assess(&mut genealogy, 0, 2, Score::Success);
-    assert_eq!(assessed(&genealogy, 0, 2), None);
+    attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
+    assert_eq!(attempting(&genealogy, 0, 2), None);
 }
 
 #[test]
-fn an_assessment_takes_the_place_of_a_procreation_that_no_harness_has_been_scored_enough_for() {
-    assert_eq!(assessed(&Genealogy::new(), 0, 20), Some(0));
+fn an_attempt_takes_the_place_of_a_procreation_that_no_harness_has_attempted_enough_for() {
+    assert_eq!(attempting(&Genealogy::new(), 0, 20), Some(0));
 }
 
 #[test]
-fn a_harness_with_better_results_is_assessed_more_often_than_one_with_the_better_clade() {
+fn a_harness_with_better_results_attempts_a_task_more_often_than_one_with_the_better_clade() {
     let genealogy = two_lines();
-    assert!(times_assessed(&genealogy, 2, 20) > times_assessed(&genealogy, 1, 20));
+    assert!(times_attempting(&genealogy, 2, 20) > times_attempting(&genealogy, 1, 20));
 }
 
 #[test]
-fn a_harness_with_no_task_left_is_never_assessed() {
+fn a_harness_with_no_task_left_never_attempts_a_task() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Created);
-    assess(&mut genealogy, 0, 2, Score::Success);
-    assert_eq!(times_assessed(&genealogy, 1, 2), 200);
+    attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
+    assert_eq!(times_attempting(&genealogy, 1, 2), 200);
 }
 
 #[test]
-fn a_harness_that_is_being_created_is_never_assessed() {
+fn a_harness_that_is_being_created_never_attempts_a_task() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
-    assess(&mut genealogy, 0, 2, Score::Failure);
-    assert_eq!(times_assessed(&genealogy, 0, 20), 200);
+    attempted(&mut genealogy, 0, 2, AttemptResult::NotCompleted);
+    assert_eq!(times_attempting(&genealogy, 0, 20), 200);
 }
 
 #[test]
-fn a_failed_harness_is_never_assessed() {
+fn a_failed_harness_never_attempts_a_task() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    assess(&mut genealogy, 0, 2, Score::Failure);
-    assert_eq!(times_assessed(&genealogy, 0, 20), 200);
+    attempted(&mut genealogy, 0, 2, AttemptResult::NotCompleted);
+    assert_eq!(times_attempting(&genealogy, 0, 20), 200);
 }
 
 #[test]
 fn the_only_task_not_yet_given_is_the_one_drawn() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    assess(&mut genealogy, 0, 4, Score::Success);
+    attempted(&mut genealogy, 0, 4, AttemptResult::Completed);
     assert_eq!(
         tasks_drawn(&genealogy, 5),
         BTreeSet::from(["task-4".to_owned()])
@@ -132,7 +132,7 @@ fn the_only_task_not_yet_given_is_the_one_drawn() {
 fn every_task_not_yet_given_can_be_drawn() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    assess(&mut genealogy, 0, 2, Score::Success);
+    attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
     assert_eq!(
         tasks_drawn(&genealogy, 5),
         BTreeSet::from([
@@ -144,10 +144,10 @@ fn every_task_not_yet_given_can_be_drawn() {
 }
 
 #[test]
-fn a_task_whose_assessment_is_running_is_not_drawn_again() {
+fn a_task_whose_attempt_is_running_is_not_drawn_again() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
-    genealogy.start_assessment(0, "task-0").unwrap();
+    genealogy.start_attempt(0, "task-0").unwrap();
     assert_eq!(
         tasks_drawn(&genealogy, 2),
         BTreeSet::from(["task-1".to_owned()])
@@ -165,10 +165,10 @@ fn every_harness_is_given_every_task_exactly_once() {
             Action::Procreation { progenitor } => {
                 child_of(&mut genealogy, progenitor, ProcreationOutcome::Created)
             }
-            Action::Assessment { harness, task } => {
-                genealogy.start_assessment(harness, &task).unwrap();
+            Action::Attempt { harness, task } => {
+                genealogy.start_attempt(harness, &task).unwrap();
                 genealogy
-                    .end_assessment(harness, &task, Score::Success)
+                    .end_attempt(harness, &task, AttemptResult::Completed)
                     .unwrap();
                 given.push((harness, task));
             }

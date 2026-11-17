@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::containers::ContainerError;
-use crate::genealogy::{HarnessId, ProcreationOutcome, Score};
+use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
 use crate::workspace::Workspace;
 
@@ -50,7 +50,7 @@ pub enum Said<'a> {
     Started {
         action: &'a Started,
         again: bool,
-        assessments: u64,
+        attempts: u64,
         budget: u64,
     },
     Procreated {
@@ -59,10 +59,10 @@ pub enum Said<'a> {
         outcome: ProcreationOutcome,
         workspace: &'a Workspace,
     },
-    Scored {
+    Attempted {
         harness: HarnessId,
         task: &'a str,
-        score: Score,
+        result: AttemptResult,
         workspace: &'a Workspace,
     },
     Failed {
@@ -74,7 +74,7 @@ pub enum Said<'a> {
         running: u64,
     },
     Finished {
-        assessments: u64,
+        attempts: u64,
         harnesses: u64,
         best_harness: HarnessId,
         directory: &'a Path,
@@ -127,7 +127,7 @@ impl Display for Said<'_> {
             } => write!(
                 formatter,
                 "continuing the directed evolution in {}, which has started {started} of its \
-                 {budget} assessments and holds {}",
+                 {budget} attempts and holds {}",
                 run_directory.display(),
                 counted(*harnesses, "harness", "harnesses")
             ),
@@ -150,12 +150,12 @@ impl Display for Said<'_> {
             Self::Started {
                 action,
                 again,
-                assessments,
+                attempts,
                 budget,
             } => match (action, again) {
-                (Started::Assessment { .. }, false) => write!(
+                (Started::Attempt { .. }, false) => write!(
                     formatter,
-                    "started {action}, assessment {assessments} of {budget}"
+                    "started {action}, attempt {attempts} of {budget}"
                 ),
                 (_, false) => write!(formatter, "started {action}"),
                 (_, true) => write!(formatter, "started again {action}"),
@@ -191,22 +191,24 @@ impl Display for Said<'_> {
                     kept.display()
                 )
             }
-            Self::Scored {
+            Self::Attempted {
                 harness,
                 task,
-                score,
+                result,
                 workspace,
             } => {
-                let (how, why) = match score {
-                    Score::Success => ("a success", ""),
-                    Score::Failure => ("a failure", ""),
-                    Score::TimedOut => ("a failure", ", as the assessment ran past its time limit"),
+                let (how, why) = match result {
+                    AttemptResult::Completed => ("completed", ""),
+                    AttemptResult::NotCompleted => ("did not complete", ""),
+                    AttemptResult::TimedOut => (
+                        "did not complete",
+                        ", as the attempt ran past its time limit",
+                    ),
                 };
                 write!(
                     formatter,
-                    "harness {harness} was scored {how} on task {task}{why}: what the assessment \
-                     left is kept in {}",
-                    workspace.assessment(*harness, task).display()
+                    "harness {harness} {how} task {task}{why}: what the attempt left is kept in {}",
+                    workspace.attempt(*harness, task).display()
                 )
             }
             Self::Failed { action, error } => write!(formatter, "{action} {error}"),
@@ -223,7 +225,7 @@ impl Display for Said<'_> {
                 )
             }
             Self::Finished {
-                assessments,
+                attempts,
                 harnesses,
                 best_harness,
                 directory,
@@ -231,7 +233,7 @@ impl Display for Said<'_> {
                 formatter,
                 "the directed evolution finished with {} started and {}: its best harness is \
                  harness {best_harness}, kept in {}",
-                counted(*assessments, "assessment", "assessments"),
+                counted(*attempts, "attempt", "attempts"),
                 counted(*harnesses, "harness", "harnesses"),
                 directory.display()
             ),

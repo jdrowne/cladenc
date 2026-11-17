@@ -19,9 +19,9 @@ pub enum ProcreationOutcome {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum Score {
-    Success,
-    Failure,
+pub enum AttemptResult {
+    Completed,
+    NotCompleted,
     TimedOut,
 }
 
@@ -119,15 +119,11 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn start_assessment(
-        &mut self,
-        harness: HarnessId,
-        task: &str,
-    ) -> Result<(), GenealogyError> {
-        let assessed = self
+    pub fn start_attempt(&mut self, harness: HarnessId, task: &str) -> Result<(), GenealogyError> {
+        let attempting = self
             .harness_in_state(harness, HarnessState::Created)
             .ok_or(GenealogyError::HarnessNotCreated { harness })?;
-        if !assessed.give(task) {
+        if !attempting.give(task) {
             return Err(GenealogyError::TaskAlreadyGiven {
                 harness,
                 task: task.to_owned(),
@@ -137,24 +133,24 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn end_assessment(
+    pub fn end_attempt(
         &mut self,
         harness: HarnessId,
         task: &str,
-        score: Score,
+        result: AttemptResult,
     ) -> Result<(), GenealogyError> {
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|assessed| assessed.finish(task, score));
+            .is_some_and(|attempting| attempting.finish(task, result));
         if !finished {
-            return Err(GenealogyError::AssessmentNotRunning {
+            return Err(GenealogyError::AttemptNotRunning {
                 harness,
                 task: task.to_owned(),
             });
         }
         let mut member = Some(harness);
         while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
-            ancestor.count_in_clade(score);
+            ancestor.count_in_clade(result);
             member = ancestor.progenitor();
         }
         Ok(())

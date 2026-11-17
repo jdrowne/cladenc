@@ -29,7 +29,7 @@ fn ran() -> (TempDir, Output) {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -40,9 +40,9 @@ fn ran() -> (TempDir, Output) {
     (directory, output)
 }
 
-fn score_of(directory: &TempDir, assessment: &str) -> String {
-    let kept = directory.path().join("run/assessments").join(assessment);
-    fs::read_to_string(kept.join("score")).unwrap()
+fn result_of(directory: &TempDir, attempt: &str) -> String {
+    let kept = directory.path().join("run/attempts").join(attempt);
+    fs::read_to_string(kept.join("result")).unwrap()
 }
 
 fn names_in(directory: &Path) -> Vec<String> {
@@ -95,20 +95,20 @@ fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
     let (directory, _output) = ran();
     assert_eq!(
         ["benchmark", "refactoring"]
-            .map(|name| names_in(&directory.path().join("run/assessments/1").join(name))),
+            .map(|name| names_in(&directory.path().join("run/attempts/1").join(name))),
         [vec!["t1", "t2"], vec!["t1"]]
     );
 }
 
 #[test]
-fn two_tasks_of_the_same_id_in_two_benchmarks_are_scored_apart() {
+fn two_tasks_of_the_same_id_in_two_benchmarks_are_attempted_apart() {
     let (directory, _output) = ran();
     assert_eq!(
         (
-            score_of(&directory, "1/benchmark/t1"),
-            score_of(&directory, "1/refactoring/t1")
+            result_of(&directory, "1/benchmark/t1"),
+            result_of(&directory, "1/refactoring/t1")
         ),
-        ("success\n".to_owned(), "success\n".to_owned())
+        ("completed\n".to_owned(), "completed\n".to_owned())
     );
 }
 
@@ -117,6 +117,6 @@ fn the_journal_of_a_run_given_two_benchmarks_names_a_task_by_its_benchmark_and_i
     let (directory, _output) = ran();
     let journal = fs::read_to_string(directory.path().join("run/journal.jsonl")).unwrap();
     assert!(
-        journal.contains(r#"{"record":"assessment_started","harness":1,"task":"refactoring/t1"}"#)
+        journal.contains(r#"{"record":"attempt_started","harness":1,"task":"refactoring/t1"}"#)
     );
 }

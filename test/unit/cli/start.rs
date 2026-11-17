@@ -28,7 +28,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
     };
     change(directory.path(), &mut options);
     let mut output = Vec::new();

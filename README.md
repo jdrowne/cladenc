@@ -1,6 +1,6 @@
 # CladeNC
 
-CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation of the [Huxley-Gödel Machine](https://arxiv.org/abs/2510.21614) for agentic coding harnesses. It works by directed evolution. A directed evolution starts from one harness, the primogenitor. Harnesses procreate, each making a changed copy of its own source code, and are assessed on the tasks of benchmarks. Artificial selection chooses which harness procreates and which is assessed next, and at the end names the best harness.
+CladeNC (recursive acronym for Clade Next Clade) is a cleanroom implementation of the [Huxley-Gödel Machine](https://arxiv.org/abs/2510.21614) for agentic coding harnesses. It works by directed evolution. A directed evolution starts from one harness, the primogenitor. Harnesses procreate, each making a changed copy of its own source code, and are benchmarked: each attempts the tasks of the benchmarks a person brings. Artificial selection chooses which harness procreates and which harness attempts which task next, and at the end names the best harness.
 
 - [`cladenc`](#cladenc-1)
   - [`cladenc report`](#cladenc-report)
@@ -54,7 +54,7 @@ cladenc resume \
 | --- | --- | --- |
 | `--run-dir <DIR>` | Required | The run directory of the directed evolution to continue. |
 
-`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the directed evolution left any running, how far the directed evolution had got and each procreation and assessment it starts again, and from there what `cladenc start` says. Of a directed evolution that had finished it says that it had, and prints the directory of its best harness again. The shell sends standard error elsewhere, as it does for `cladenc start`: `2>/dev/null` after the command sends it nowhere.
+`cladenc resume` says on standard error what it is doing, on lines that begin `cladenc:`. It says how many containers it removed, where the directed evolution left any running, how far the directed evolution had got and each procreation and attempt it starts again, and from there what `cladenc start` says. Of a directed evolution that had finished it says that it had, and prints the directory of its best harness again. The shell sends standard error elsewhere, as it does for `cladenc start`: `2>/dev/null` after the command sends it nowhere.
 
 The directed evolution goes on until its budget is spent. To stop it sooner, press Ctrl-C, or send `cladenc` one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`, as `kill` does. `cladenc` then removes the containers it has running and exits with status 1, and a directed evolution that stopped again can be continued again.
 
@@ -68,7 +68,7 @@ A `cladenc resume` that is killed outright removes nothing either, and the next 
 
 ```text
 cladenc start \
-  --assessment-timeout <SECONDS> \
+  --attempt-timeout <SECONDS> \
   --benchmark <DIR> \
   --budget <COUNT> \
   --confidence <PERCENT> \
@@ -89,9 +89,9 @@ cladenc start \
 
 | Flag | Required | Description |
 | --- | --- | --- |
-| `--assessment-timeout <SECONDS>` | Required | The time limit of one assessment, which is one harness tried on one task. |
+| `--attempt-timeout <SECONDS>` | Required | The time limit of one attempt, which is one harness working on one task, once. |
 | `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the directed evolution. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the run directory. |
-| `--budget <COUNT>` | Required | The number of assessments to start. |
+| `--budget <COUNT>` | Required | The number of attempts to start. |
 | `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
 | `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
@@ -107,39 +107,39 @@ cladenc start \
 | `--procreation-timeout <SECONDS>` | Required | The time limit of one procreation, which is one harness making another. |
 | `--run-dir <DIR>` | Required | The run directory, which `start` creates. |
 
-A directed evolution chooses partly by chance which harness procreates and which harness is tried on which task. The seed, the number that those random draws are worked out from, is not given by a flag: `cladenc start` draws it and writes it in `journal.jsonl` in the run directory, and `cladenc resume` goes on with the seed it finds there.
+A directed evolution chooses partly by chance which harness procreates and which harness attempts which task. The seed, the number that those random draws are worked out from, is not given by a flag: `cladenc start` draws it and writes it in `journal.jsonl` in the run directory, and `cladenc resume` goes on with the seed it finds there.
 
-A benchmark is a set of tasks, and a task is one piece of coding work that a harness is tried on. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
+A benchmark is a set of tasks, and a task is one piece of coding work that a harness attempts. `--benchmark` names a whole benchmark: a directory that holds one directory for each task. A benchmark of three tasks, in a directory named `parsing`:
 
 ```text
 parsing/
   add-a-flag/
-    check
-    files/
-    statement
+    grader
+    specification
+    workspace/
   fix-the-parser/
-    check
-    files/
-    statement
+    grader
+    specification
+    workspace/
   rename-a-module/
-    check
-    files/
-    statement
+    grader
+    specification
+    workspace/
 ```
 
-The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `statement` is a file of text that says what is to be done, `files` is a directory of the files the work starts from, and `check` is an executable file: the program that says by its exit status whether the work passes. The directory of a task may hold more, such as tests that the check runs.
+The name of a task's directory is the id of the task, and is made of letters, digits, dots, underscores and hyphens. In it, `specification` is a file of text, the task specification, which says what is to be done; `workspace` is a directory of the files the work starts from; and `grader` is an executable file, the program that says by its exit status whether the task was completed. The directory of a task may hold more, such as tests that the grader runs.
 
-`cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its statement, its files or its check, and it says which benchmark and which task.
+`cladenc start` refuses a benchmark that holds no task, and one with a task that lacks its specification, its workspace or its grader, and it says which benchmark and which task.
 
-`--benchmark` is given once for each benchmark of the directed evolution. A directed evolution that is given `--benchmark parsing` and `--benchmark refactoring` tries its harnesses on the tasks of both, and returns one harness: the one it believes passes the largest share of all those tasks. Every task counts the same, so a benchmark with more tasks weighs more.
+`--benchmark` is given once for each benchmark of the directed evolution. A directed evolution that is given `--benchmark parsing` and `--benchmark refactoring` has its harnesses attempt the tasks of both, and returns one harness: the one it believes completes the largest share of all those tasks. Every task counts the same, so a benchmark with more tasks weighs more.
 
 The name of a benchmark is the name of its directory, made of letters, digits, dots, underscores and hyphens. A task of a directed evolution is known by the name of its benchmark and its id together, as `parsing/fix-the-parser`, so two benchmarks may each hold a task of the same id. `cladenc start` refuses a benchmark that is given twice, and two benchmarks whose directories have the same name.
 
 `cladenc start` copies the tasks into `benchmarks` in the run directory, each into a directory named after its benchmark, so a directed evolution keeps the tasks it started with, and `cladenc resume` does not read the directories that `--benchmark` named.
 
-An assessment is one harness tried on one task. `cladenc` starts the harness in a container, on a copy of the task's `files`, with the text of `statement` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the check. When the harness has ended, `cladenc` runs the task's `check` in a second container: there `/var/lib/cladenc/work`, the working directory, holds what the harness left, and `/var/lib/cladenc/task` holds the directory of the task, to read. The check scores the harness on the task: a check that exits with status 0 scores it a success, and one that exits with any other status scores it a failure. An assessment that runs past its time limit scores the harness a failure too. `assessments` in the run directory keeps what each assessment left, in a directory named after the harness, the benchmark and the task, as `assessments/3/parsing/fix-the-parser`, and the file `score` in it holds how the harness was scored: `success`, `failure`, or `timed_out` for a failure by the time limit.
+An attempt is one harness working on one task, once. `cladenc` starts the harness in a container, on a copy of the task's `workspace`, with the text of `specification` as what the harness is asked to do. The harness is given nothing else of the task, so it can neither read nor change the grader. When the harness has ended, `cladenc` runs the task's `grader` in a second container: there `/var/lib/cladenc/work`, the working directory, holds what the harness left, and `/var/lib/cladenc/task` holds the directory of the task, to read. The grader gives the result of the attempt: where it exits with status 0 the harness completed the task, and where it exits with any other status the harness did not. A harness whose attempt runs past its time limit did not complete the task either. `attempts` in the run directory keeps what each attempt left, in a directory named after the harness, the benchmark and the task, as `attempts/3/parsing/fix-the-parser`, and the file `result` in it holds the result: `completed`, `not_completed`, or `timed_out` for a task that was not completed because of the time limit. The score of a harness is the share of the tasks it has attempted that it completed. `cladenc report` shows the same share for a clade, which is a harness and all its descendants together, as `clade score`.
 
-A harness procreates only once it has been scored on every task of every benchmark of the directed evolution. In the container it procreates in, `/var/log/cladenc/assessments` holds what each of its assessments left, so it has every task to learn from when it improves the copy of its source code. Where a procreation is due and no harness has been scored on every task yet, `cladenc` starts an assessment in its place, so the primogenitor is tried on every task before the first procreation. `--budget` counts assessments, and each harness that procreates takes as many of them as the directed evolution has tasks: with 500 tasks, a harness is tried 500 times before it procreates. A directed evolution whose budget is no larger than the number of its tasks starts no procreation, and its whole budget goes to assessments of the primogenitor.
+A harness procreates only once it has been benchmarked in full: it has attempted every task of every benchmark of the directed evolution, and each of those attempts has finished. In the container it procreates in, `/var/log/cladenc/attempts` holds what each of its attempts left, so it has every task to learn from when it improves the copy of its source code. Where a procreation is due and no harness has been benchmarked in full yet, `cladenc` starts an attempt in its place, so the primogenitor attempts every task before the first procreation. `--budget` counts attempts, and each harness that procreates takes as many of them as the directed evolution has tasks: with 500 tasks, a harness makes 500 attempts before it procreates. A directed evolution whose budget is no larger than the number of its tasks starts no procreation, and its whole budget goes to attempts of the primogenitor.
 
 Every container of a directed evolution is started from one image. `--docker-image` names an image that Docker already holds. `--dockerfile` names a Dockerfile, the text file Docker builds an image from, and `cladenc` builds the image itself, once, when the directed evolution is started, within the time limit that `--docker-build-timeout` gives.
 
@@ -151,7 +151,7 @@ The Dockerfile is all that Docker is given. It can start from an image and run c
 
 The build of the image ends itself once its time limit has passed, as a container does, also when `cladenc` was killed outright and is not there to end it. `cladenc` starts `docker build` under `timeout`, with five seconds more than the time limit, so that `cladenc` comes first for as long as it is there. `timeout` is a program the machine has to hold, and on Debian and Ubuntu the package `coreutils` brings it. On a machine that does not hold it no image is built, and `cladenc start` stops with exit status 2.
 
-`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the primogenitor being built where it has to be, every procreation with how it ended, every assessment with how its harness was scored, each with where what it left is kept, and at the end the best harness. A procreation or an assessment that stops the directed evolution is said when it happens, and so is the directed evolution being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
+`cladenc start` says on standard error what it is doing, each thing as it starts and as it ends, on lines that begin `cladenc:`. It says the run directory being made, the image being built where a Dockerfile is given, the primogenitor being built where it has to be, every procreation with how it ended, every attempt with whether its harness completed the task, each with where what it left is kept, and at the end the best harness. A procreation or an attempt that stops the directed evolution is said when it happens, and so is the directed evolution being asked to stop. The shell sends standard error elsewhere: `2>/dev/null` after the command sends it nowhere, and `2>start.log` keeps it in the file `start.log`. The directory of the best harness is printed on standard output, which neither changes.
 
 A directed evolution goes on until its budget is spent, and it is stopped sooner in the same way as one that `cladenc resume` continues: by Ctrl-C, or by one of the signals `SIGINT`, `SIGTERM`, `SIGQUIT` and `SIGHUP`. `cladenc` then exits with status 1, and `cladenc resume` carries the directed evolution on from where it stopped.
 

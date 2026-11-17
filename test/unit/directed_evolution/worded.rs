@@ -108,17 +108,17 @@ fn a_directed_evolution_whose_primogenitor_took_too_long_to_build_says_so() {
 }
 
 #[test]
-fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task() {
+fn a_directed_evolution_an_attempt_stopped_names_the_harness_and_the_task() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
-            action: Started::Assessment {
+            action: Started::Attempt {
                 harness: 0,
                 task: "t1".to_owned()
             },
             error: ContainerError::Exit(2)
         }),
         "the directed evolution stopped before its end: \
-         the assessment of harness 0 on task t1 exited with status 2"
+         the attempt of harness 0 on task t1 exited with status 2"
     );
 }
 

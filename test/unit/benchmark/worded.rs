@@ -44,26 +44,26 @@ fn a_directory_that_is_not_named_as_a_task_is_said_with_its_name() {
 }
 
 #[test]
-fn a_task_with_no_statement_is_said_with_its_id() {
+fn a_task_with_no_specification_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::NoStatement { task: task() }.to_string(),
-        "task fix-the-parser holds no file of text named statement"
+        BenchmarkError::NoSpecification { task: task() }.to_string(),
+        "task fix-the-parser holds no file of text named specification"
     );
 }
 
 #[test]
-fn a_task_with_no_files_is_said_with_its_id() {
+fn a_task_with_no_workspace_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::NoFiles { task: task() }.to_string(),
+        BenchmarkError::NoWorkspace { task: task() }.to_string(),
         "task fix-the-parser holds no directory named files"
     );
 }
 
 #[test]
-fn a_task_with_no_check_is_said_with_its_id() {
+fn a_task_with_no_grader_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::NoCheck { task: task() }.to_string(),
-        "task fix-the-parser holds no executable file named check"
+        BenchmarkError::NoGrader { task: task() }.to_string(),
+        "task fix-the-parser holds no executable file named grader"
     );
 }
 

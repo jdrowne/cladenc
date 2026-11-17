@@ -10,10 +10,10 @@ const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $r
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
                                              echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
                                              ${CLADENC_MODEL_KEY-none}\" > model";
-const SAY_WHAT_THE_CHECK_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> \
+const SAY_WHAT_THE_GRADER_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> \
                                            where-checked; echo \"${CLADENC_MODEL-none} \
                                            ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
-                                           > model-of-the-check";
+                                           > model-of-the-grader";
 
 fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     let options = [
@@ -32,12 +32,12 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))
     .map(|(option, value)| format!("{option}={}", value.display()));
-    test_inputs::check(directory, "t1", SAY_WHAT_THE_CHECK_IS_GIVEN);
+    test_inputs::grader(directory, "t1", SAY_WHAT_THE_GRADER_IS_GIVEN);
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
     start.arg("start").args(options);
     start
@@ -83,8 +83,8 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("run/harnesses/1").join(file)).unwrap()
 }
 
-fn left_by_the_assessment(directory: &TempDir, file: &str) -> String {
-    let work = fs::read_dir(directory.path().join("run/assessments"))
+fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
+    let work = fs::read_dir(directory.path().join("run/attempts"))
         .unwrap()
         .map(|harness| harness.unwrap().path().join("benchmark/t1/work"))
         .find(|work| work.is_dir())
@@ -111,37 +111,37 @@ fn a_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_harness_of_an_assessment_is_started_on_the_files_of_the_task() {
+fn the_harness_of_an_attempt_is_started_on_the_workspace_of_the_task() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_assessment(&directory, "where"),
+        left_by_the_attempt(&directory, "where"),
         "/var/lib/cladenc/harness\n/var/lib/cladenc/work\n"
     );
 }
 
 #[test]
-fn the_harness_of_an_assessment_is_told_the_model_the_address_it_is_served_at_and_its_key() {
+fn the_harness_of_an_attempt_is_told_the_model_the_address_it_is_served_at_and_its_key() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_assessment(&directory, "model"),
+        left_by_the_attempt(&directory, "model"),
         format!("{TOLD} a-made-up-key\n")
     );
 }
 
 #[test]
-fn the_check_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_is() {
+fn the_grader_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_is() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_assessment(&directory, "where-checked"),
+        left_by_the_attempt(&directory, "where-checked"),
         "/var/lib/cladenc/task\n/var/lib/cladenc/work\n"
     );
 }
 
 #[test]
-fn the_check_of_a_task_is_told_nothing_of_the_model() {
+fn the_grader_of_a_task_is_told_nothing_of_the_model() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_assessment(&directory, "model-of-the-check"),
+        left_by_the_attempt(&directory, "model-of-the-grader"),
         "none none none\n"
     );
 }
@@ -175,10 +175,10 @@ fn a_harness_is_given_no_key_that_no_file_holds_though_the_environment_of_claden
 }
 
 #[test]
-fn the_harness_of_an_assessment_is_given_no_key_that_no_file_holds_either() {
+fn the_harness_of_an_attempt_is_given_no_key_that_no_file_holds_either() {
     let directory = ran_with_no_file_of_a_key_and_a_key_in_the_environment();
     assert_eq!(
-        left_by_the_assessment(&directory, "model"),
+        left_by_the_attempt(&directory, "model"),
         format!("{TOLD} none\n")
     );
 }
@@ -228,9 +228,9 @@ fn the_timer_of_a_harness_is_given_its_command_and_five_seconds_more_than_the_ti
 }
 
 #[test]
-fn the_timer_of_a_check_is_given_the_check_of_the_task() {
+fn the_timer_of_a_grader_is_given_the_grader_of_the_task() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("{TIMER}\n/var/lib/cladenc/task/check\n")));
+    assert!(arguments.contains(&format!("{TIMER}\n/var/lib/cladenc/task/grader\n")));
 }
 
 #[test]

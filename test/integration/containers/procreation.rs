@@ -7,7 +7,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::model::Model;
 use cladenc::workspace::Workspace;
 use nix::unistd::Uid;
@@ -184,34 +184,34 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 }
 
 #[test]
-fn a_harness_can_read_the_ended_assessments_of_its_progenitor_and_none_still_running() {
+fn a_harness_can_read_the_ended_attempts_of_its_progenitor_and_none_still_running() {
     let (directory, workspace) = made_at("run");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     workspace
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
-    workspace.start_assessment(0, "benchmark/t1").unwrap();
+    workspace.start_attempt(0, "benchmark/t1").unwrap();
     workspace
-        .end_assessment(0, "benchmark/t1", Score::Failure)
+        .end_attempt(0, "benchmark/t1", AttemptResult::NotCompleted)
         .unwrap();
-    workspace.start_assessment(0, "benchmark/t2").unwrap();
+    workspace.start_attempt(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /var/log/cladenc/assessments /var/log/cladenc/assessments/benchmark > evidence",
+        "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence",
         &workspace,
         0,
         30,
     );
     assert_eq!(
         fs::read_to_string(workspace.harness(1).join("evidence")).unwrap(),
-        "/var/log/cladenc/assessments:\nbenchmark\n\n/var/log/cladenc/assessments/benchmark:\nt1\n"
+        "/var/log/cladenc/attempts:\nbenchmark\n\n/var/log/cladenc/attempts/benchmark:\nt1\n"
     );
 }
 
 #[test]
-fn a_harness_cannot_write_into_the_assessments_of_its_progenitor() {
-    let (_directory, workspace, _result) = procreated("touch /var/log/cladenc/assessments/written");
-    assert!(!workspace.assessments(0).join("written").exists());
+fn a_harness_cannot_write_into_the_attempts_of_its_progenitor() {
+    let (_directory, workspace, _result) = procreated("touch /var/log/cladenc/attempts/written");
+    assert!(!workspace.attempts(0).join("written").exists());
 }
 
 #[test]
@@ -258,9 +258,9 @@ fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_a_directory_for_the_assessments_of_the_child() {
+fn a_procreation_that_created_its_child_leaves_a_directory_for_the_attempts_of_the_child() {
     let (_directory, workspace, _result) = procreated("exit 0");
-    assert!(workspace.assessments(1).is_dir());
+    assert!(workspace.attempts(1).is_dir());
 }
 
 #[test]

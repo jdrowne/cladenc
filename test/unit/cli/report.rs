@@ -57,7 +57,7 @@ fn reported(json: bool) -> (Ran, String) {
                 confidence: 99.0,
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
-                assessment_timeout: 60,
+                attempt_timeout: 60,
                 seed: 7,
             }),
         },
@@ -124,9 +124,9 @@ fn a_report_prints_the_table_on_standard_output() {
         "model a-model at http://models.example/v1\n\
          started 0 of 800, best harness 0\n\
          \n\
-         id  progenitor  state          successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
-         0   -           created        0          0         0                0               -                   0.010\n\
-         1   0           being created  0          0         0                0               -                   -\n"
+         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
+         0   -           created        0          0              0                0                    -            0.010\n\
+         1   0           being created  0          0              0                0                    -            -\n"
     );
 }
 

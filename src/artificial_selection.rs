@@ -11,7 +11,7 @@ pub use best::lower_bound;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Action {
     Procreation { progenitor: HarnessId },
-    Assessment { harness: HarnessId, task: String },
+    Attempt { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -44,12 +44,12 @@ impl ArtificialSelection {
         if procreation_is_due(genealogy.harness_count(), started, self.growth) {
             let clades = created
                 .iter()
-                .filter(|harness| harness.has_been_scored_on_every(&self.tasks))
+                .filter(|harness| harness.has_attempted_every(&self.tasks))
                 .map(|harness| {
                     (
                         *harness,
-                        harness.clade_successes(),
-                        harness.clade_failures(),
+                        harness.clade_completed(),
+                        harness.clade_not_completed(),
                     )
                 });
             if let Some(progenitor) = largest_draw(&mut generator, focus, clades) {
@@ -61,12 +61,12 @@ impl ArtificialSelection {
         let with_a_task_left = created
             .iter()
             .filter(|harness| !harness.tasks_not_given(&self.tasks).is_empty())
-            .map(|harness| (*harness, harness.successes(), harness.failures()));
-        let assessed = largest_draw(&mut generator, focus, with_a_task_left)?;
-        let left = assessed.tasks_not_given(&self.tasks);
+            .map(|harness| (*harness, harness.completed(), harness.not_completed()));
+        let attempting = largest_draw(&mut generator, focus, with_a_task_left)?;
+        let left = attempting.tasks_not_given(&self.tasks);
         let task = left[generator.random_range(0..left.len())].to_owned();
-        Some(Action::Assessment {
-            harness: assessed.id(),
+        Some(Action::Attempt {
+            harness: attempting.id(),
             task,
         })
     }
@@ -78,10 +78,10 @@ fn largest_draw<'a>(
     candidates: impl Iterator<Item = (&'a Harness, u64, u64)>,
 ) -> Option<&'a Harness> {
     let mut largest: Option<(&Harness, f64)> = None;
-    for (harness, successes, failures) in candidates {
+    for (harness, completed, not_completed) in candidates {
         let draw = Beta::new(
-            focus * (1 + successes) as f64,
-            focus * (1 + failures) as f64,
+            focus * (1 + completed) as f64,
+            focus * (1 + not_completed) as f64,
         )
         .expect("both parameters of the Beta distribution are at least 1")
         .sample(generator);

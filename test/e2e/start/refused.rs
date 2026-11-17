@@ -16,7 +16,7 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))
@@ -53,31 +53,33 @@ fn with_a_dockerfile(directory: &Path, dockerfile: &Path, image_too: bool) -> Ve
         .collect()
 }
 
-fn with_a_task_that_lacks_its_check(directory: &Path) -> Vec<String> {
+fn with_a_task_that_lacks_its_grader(directory: &Path) -> Vec<String> {
     let options = options(directory, &directory.join("run"));
-    fs::remove_file(directory.join("benchmark/t1/check")).unwrap();
+    fs::remove_file(directory.join("benchmark/t1/grader")).unwrap();
     options
 }
 
 #[test]
-fn a_benchmark_with_a_task_that_lacks_its_check_exits_with_2() {
+fn a_benchmark_with_a_task_that_lacks_its_grader_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_a_task_that_lacks_its_check(directory.path());
+    let options = with_a_task_that_lacks_its_grader(directory.path());
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_benchmark_with_a_task_that_lacks_its_check_is_refused_by_its_directory_and_the_id_of_the_task()
-{
+fn a_benchmark_with_a_task_that_lacks_its_grader_is_refused_by_its_directory_and_the_id_of_the_task()
+ {
     let directory = test_inputs::temporary_directory();
-    let options = with_a_task_that_lacks_its_check(directory.path());
-    assert!(said(&options).ends_with("/benchmark: task t1 holds no executable file named check\n"));
+    let options = with_a_task_that_lacks_its_grader(directory.path());
+    assert!(
+        said(&options).ends_with("/benchmark: task t1 holds no executable file named grader\n")
+    );
 }
 
 #[test]
 fn a_benchmark_that_is_refused_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
-    let options = with_a_task_that_lacks_its_check(directory.path());
+    let options = with_a_task_that_lacks_its_grader(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

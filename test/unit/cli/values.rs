@@ -17,7 +17,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--assessment-timeout", "3600"),
+    ("--attempt-timeout", "3600"),
 ];
 
 fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
@@ -284,9 +284,9 @@ fn a_procreation_timeout_of_0_is_an_error() {
 }
 
 #[test]
-fn an_assessment_timeout_of_0_is_an_error() {
+fn an_attempt_timeout_of_0_is_an_error() {
     assert_eq!(
-        refusal("--assessment-timeout", "0"),
+        refusal("--attempt-timeout", "0"),
         ErrorKind::ValueValidation
     );
 }

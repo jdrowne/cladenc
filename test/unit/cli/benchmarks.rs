@@ -7,8 +7,8 @@ use cladenc::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named statement, a directory named files and an executable \
-                     file named check";
+                     a file of text named specification, a directory named workspace and an \
+                     executable file named grader";
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
@@ -28,7 +28,7 @@ fn options(directory: &Path) -> StartOptions {
         confidence: 99.0,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        assessment_timeout: 1800,
+        attempt_timeout: 1800,
     }
 }
 
@@ -134,12 +134,12 @@ fn a_benchmark_that_is_one_task_is_said_to_be_one_task() {
 #[test]
 fn a_benchmark_that_is_refused_for_a_task_names_the_benchmark_the_task_and_what_it_lacks() {
     let (directory, reason) = reason_of(|_, benchmarks| {
-        fs::remove_file(benchmarks[0].join("t2/check")).unwrap();
+        fs::remove_file(benchmarks[0].join("t2/grader")).unwrap();
     });
     assert_eq!(
         reason,
         format!(
-            "{}: task t2 holds no executable file named check",
+            "{}: task t2 holds no executable file named grader",
             directory.path().join("benchmark").display()
         )
     );

@@ -31,7 +31,7 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
         seed: 7,
     }
 }

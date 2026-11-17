@@ -13,7 +13,7 @@ pub enum Started {
         child: HarnessId,
         progenitor: HarnessId,
     },
-    Assessment {
+    Attempt {
         harness: HarnessId,
         task: String,
     },
@@ -26,10 +26,9 @@ impl Display for Started {
                 formatter,
                 "the procreation of harness {child} by harness {progenitor}"
             ),
-            Self::Assessment { harness, task } => write!(
-                formatter,
-                "the assessment of harness {harness} on task {task}"
-            ),
+            Self::Attempt { harness, task } => {
+                write!(formatter, "the attempt of harness {harness} on task {task}")
+            }
         }
     }
 }
@@ -108,21 +107,21 @@ impl State {
                 self.unfinished
                     .retain(|action| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
             }
-            Record::AssessmentStarted { harness, task } => {
+            Record::AttemptStarted { harness, task } => {
                 self.genealogy
-                    .start_assessment(harness, &task)
+                    .start_attempt(harness, &task)
                     .map_err(refused)?;
-                self.start(Started::Assessment { harness, task });
+                self.start(Started::Attempt { harness, task });
             }
-            Record::AssessmentFinished {
+            Record::AttemptFinished {
                 harness,
                 task,
-                score,
+                result,
             } => {
                 self.genealogy
-                    .end_assessment(harness, &task, score)
+                    .end_attempt(harness, &task, result)
                     .map_err(refused)?;
-                let finished = Started::Assessment { harness, task };
+                let finished = Started::Attempt { harness, task };
                 self.unfinished.retain(|action| *action != finished);
             }
             Record::DirectedEvolutionFinished { best_harness } => {

@@ -39,7 +39,7 @@ fn settings(directory: &Path) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
         seed: 7,
     }
 }
@@ -84,18 +84,18 @@ fn journal_of(directed_evolutions: &DirectedEvolutions, directed_evolution: &str
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_an_assessment_stops_it_before_its_end() {
+fn a_container_that_ends_with_status_125_at_an_attempt_stops_it_before_its_end() {
     assert!(matches!(
         stopped_at(99, Some("t3"), 0).stopped,
         Err(DirectedEvolutionError::Action {
-            action: Started::Assessment { .. },
+            action: Started::Attempt { .. },
             error: ContainerError::Docker(_),
         })
     ));
 }
 
 #[test]
-fn a_directed_evolution_an_assessment_stopped_continues_to_the_journal_an_unbroken_one_writes() {
+fn a_directed_evolution_an_attempt_stopped_continues_to_the_journal_an_unbroken_one_writes() {
     let directed_evolutions = stopped_at(99, Some("t3"), 0);
     assert_eq!(
         journal_of(&directed_evolutions, "stopped"),
@@ -128,7 +128,7 @@ fn a_directed_evolution_resumed_while_docker_still_does_not_start_the_container_
     assert!(matches!(
         stopped_at(99, Some("t3"), 1).stopped,
         Err(DirectedEvolutionError::Action {
-            action: Started::Assessment { .. },
+            action: Started::Attempt { .. },
             error: ContainerError::Docker(_),
         })
     ));
@@ -189,7 +189,7 @@ fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<Stri
 fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
     let (_directory, stopped, _resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(stopped.iter().any(|line| {
-        line.starts_with("cladenc: the assessment of harness ")
+        line.starts_with("cladenc: the attempt of harness ")
             && line.contains(
                 " on task benchmark/t3 could not be carried out: Docker did not start its \
                  container, and ",
@@ -219,7 +219,7 @@ fn a_resumed_directed_evolution_says_first_how_far_the_directed_evolution_had_go
 fn a_resumed_directed_evolution_says_that_it_starts_again_the_action_that_was_running() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(resumed[1..2].iter().any(|line| {
-        line.starts_with("cladenc: started again the assessment of harness ")
+        line.starts_with("cladenc: started again the attempt of harness ")
             && line.ends_with(" on task benchmark/t3")
     }));
 }
@@ -228,9 +228,10 @@ fn a_resumed_directed_evolution_says_that_it_starts_again_the_action_that_was_ru
 fn a_resumed_directed_evolution_says_last_that_it_finished() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
     assert!(
-        resumed.last().unwrap().starts_with(
-            "cladenc: the directed evolution finished with 12 assessments started and "
-        )
+        resumed
+            .last()
+            .unwrap()
+            .starts_with("cladenc: the directed evolution finished with 12 attempts started and ")
     );
 }
 

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use cladenc::containers::ContainerError;
 use cladenc::directed_evolution::Said;
-use cladenc::genealogy::{ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::journal::Started;
 use cladenc::workspace::Workspace;
 
@@ -17,8 +17,8 @@ fn procreation() -> Started {
     }
 }
 
-fn assessment() -> Started {
-    Started::Assessment {
+fn attempt() -> Started {
+    Started::Attempt {
         harness: 3,
         task: "fix-the-parser".to_owned(),
     }
@@ -28,7 +28,7 @@ fn started(action: &Started, again: bool) -> String {
     Said::Started {
         action,
         again,
-        assessments: 5,
+        attempts: 5,
         budget: 800,
     }
     .to_string()
@@ -44,11 +44,11 @@ fn procreated(outcome: ProcreationOutcome) -> String {
     .to_string()
 }
 
-fn scored(score: Score) -> String {
-    Said::Scored {
+fn attempted(result: AttemptResult) -> String {
+    Said::Attempted {
         harness: 3,
         task: "fix-the-parser",
-        score,
+        result,
         workspace: &workspace(),
     }
     .to_string()
@@ -126,7 +126,7 @@ fn one_container_is_not_said_to_be_several() {
 fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
     assert_eq!(
         continuing(2),
-        "continuing the directed evolution in /run, which has started 5 of its 800 assessments \
+        "continuing the directed evolution in /run, which has started 5 of its 800 attempts \
          and holds 2 harnesses"
     );
 }
@@ -135,7 +135,7 @@ fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
 fn one_harness_is_not_said_to_be_several() {
     assert_eq!(
         continuing(1),
-        "continuing the directed evolution in /run, which has started 5 of its 800 assessments \
+        "continuing the directed evolution in /run, which has started 5 of its 800 attempts \
          and holds 1 harness"
     );
 }
@@ -229,18 +229,18 @@ fn a_procreation_that_is_run_again_is_said_to_have_started_again() {
 }
 
 #[test]
-fn an_assessment_is_said_to_have_started_with_its_number_and_the_budget() {
+fn an_attempt_is_said_to_have_started_with_its_number_and_the_budget() {
     assert_eq!(
-        started(&assessment(), false),
-        "started the assessment of harness 3 on task fix-the-parser, assessment 5 of 800"
+        started(&attempt(), false),
+        "started the attempt of harness 3 on task fix-the-parser, attempt 5 of 800"
     );
 }
 
 #[test]
-fn an_assessment_that_is_run_again_is_said_to_have_started_again_with_no_number() {
+fn an_attempt_that_is_run_again_is_said_to_have_started_again_with_no_number() {
     assert_eq!(
-        started(&assessment(), true),
-        "started again the assessment of harness 3 on task fix-the-parser"
+        started(&attempt(), true),
+        "started again the attempt of harness 3 on task fix-the-parser"
     );
 }
 
@@ -280,29 +280,29 @@ fn a_procreation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn a_harness_scored_a_success_is_said_with_where_what_the_assessment_left_is_kept() {
+fn a_harness_that_completed_a_task_is_said_with_where_what_the_attempt_left_is_kept() {
     assert_eq!(
-        scored(Score::Success),
-        "harness 3 was scored a success on task fix-the-parser: what the assessment left is kept \
-         in /run/assessments/3/fix-the-parser"
+        attempted(AttemptResult::Completed),
+        "harness 3 completed task fix-the-parser: what the attempt left is kept \
+         in /run/attempts/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_scored_a_failure_is_said_to_have_been_scored_a_failure() {
+fn a_harness_that_did_not_complete_a_task_is_said_not_to_have_completed_it() {
     assert_eq!(
-        scored(Score::Failure),
-        "harness 3 was scored a failure on task fix-the-parser: what the assessment left is kept \
-         in /run/assessments/3/fix-the-parser"
+        attempted(AttemptResult::NotCompleted),
+        "harness 3 did not complete task fix-the-parser: what the attempt left is kept \
+         in /run/attempts/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_assessment_timed_out_is_said_to_have_been_scored_a_failure_for_it() {
+fn a_harness_whose_attempt_timed_out_is_said_not_to_have_completed_the_task_for_it() {
     assert_eq!(
-        scored(Score::TimedOut),
-        "harness 3 was scored a failure on task fix-the-parser, as the assessment ran past its \
-         time limit: what the assessment left is kept in /run/assessments/3/fix-the-parser"
+        attempted(AttemptResult::TimedOut),
+        "harness 3 did not complete task fix-the-parser, as the attempt ran past its \
+         time limit: what the attempt left is kept in /run/attempts/3/fix-the-parser"
     );
 }
 
@@ -310,11 +310,11 @@ fn a_harness_whose_assessment_timed_out_is_said_to_have_been_scored_a_failure_fo
 fn an_action_that_stops_the_directed_evolution_is_said_with_what_became_of_it() {
     assert_eq!(
         Said::Failed {
-            action: &assessment(),
+            action: &attempt(),
             error: &ContainerError::Exit(2),
         }
         .to_string(),
-        "the assessment of harness 3 on task fix-the-parser exited with status 2"
+        "the attempt of harness 3 on task fix-the-parser exited with status 2"
     );
 }
 
@@ -346,13 +346,13 @@ fn a_directed_evolution_that_stops_over_a_failure_is_said_to_be_stopping() {
 fn the_end_of_a_directed_evolution_is_said_with_its_best_harness_and_where_it_is_kept() {
     assert_eq!(
         Said::Finished {
-            assessments: 800,
+            attempts: 800,
             harnesses: 31,
             best_harness: 12,
             directory: Path::new("/run/harnesses/12"),
         }
         .to_string(),
-        "the directed evolution finished with 800 assessments started and 31 harnesses: its best \
+        "the directed evolution finished with 800 attempts started and 31 harnesses: its best \
          harness is harness 12, kept in /run/harnesses/12"
     );
 }

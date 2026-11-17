@@ -29,7 +29,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "600".into()),
-        ("--assessment-timeout", "600".into()),
+        ("--attempt-timeout", "600".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -46,16 +46,16 @@ fn resume(run_directory: &Path) -> Command {
 fn killed_outright() -> Left {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
-    fs::write(directory.path().join("benchmark/t1/files/hold"), "").unwrap();
+    fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
     let mut cladenc = start.spawn().unwrap();
     let run = directory.path().join("run");
-    let written = run.join("running/assessment-0-benchmark+t1/work/id");
+    let written = run.join("running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&written));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     cladenc.wait().unwrap();
     let id_file = directory.path().join("id-of-the-container-left");
     fs::copy(&written, &id_file).unwrap();
-    fs::remove_file(run.join("benchmarks/benchmark/t1/files/hold")).unwrap();
+    fs::remove_file(run.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
     Left { directory, id_file }
 }
 

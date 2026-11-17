@@ -53,7 +53,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));

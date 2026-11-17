@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::workspace::Workspace;
 use tempfile::TempDir;
 
@@ -27,13 +27,13 @@ fn with_a_procreation_discarded_after_it_ended() -> (TempDir, Workspace) {
     (directory, workspace)
 }
 
-fn with_an_assessment_discarded_after_it_ended() -> (TempDir, Workspace) {
+fn with_an_attempt_discarded_after_it_ended() -> (TempDir, Workspace) {
     let (directory, workspace) = made();
-    workspace.start_assessment(0, "benchmark/t1").unwrap();
+    workspace.start_attempt(0, "benchmark/t1").unwrap();
     workspace
-        .end_assessment(0, "benchmark/t1", Score::Success)
+        .end_attempt(0, "benchmark/t1", AttemptResult::Completed)
         .unwrap();
-    workspace.discard_assessment(0, "benchmark/t1").unwrap();
+    workspace.discard_attempt(0, "benchmark/t1").unwrap();
     (directory, workspace)
 }
 
@@ -70,9 +70,9 @@ fn discarding_a_procreation_that_ended_leaves_no_directory_of_the_procreation() 
 }
 
 #[test]
-fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_assessments_of_its_child() {
+fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_attempts_of_its_child() {
     let (_directory, workspace) = with_a_procreation_discarded_after_it_ended();
-    assert!(!workspace.assessments(1).exists());
+    assert!(!workspace.attempts(1).exists());
 }
 
 #[test]
@@ -100,35 +100,35 @@ fn discarding_a_procreation_leaves_the_progenitor_as_it_was() {
 }
 
 #[test]
-fn discarding_an_assessment_that_is_running_leaves_nothing_running() {
+fn discarding_an_attempt_that_is_running_leaves_nothing_running() {
     let (_directory, workspace) = made();
-    workspace.start_assessment(0, "benchmark/t1").unwrap();
-    workspace.discard_assessment(0, "benchmark/t1").unwrap();
-    assert!(!workspace.running_assessment(0, "benchmark/t1").exists());
+    workspace.start_attempt(0, "benchmark/t1").unwrap();
+    workspace.discard_attempt(0, "benchmark/t1").unwrap();
+    assert!(!workspace.running_attempt(0, "benchmark/t1").exists());
 }
 
 #[test]
-fn discarding_an_assessment_that_ended_leaves_no_directory_of_the_assessment() {
-    let (_directory, workspace) = with_an_assessment_discarded_after_it_ended();
-    assert!(!workspace.assessment(0, "benchmark/t1").exists());
+fn discarding_an_attempt_that_ended_leaves_no_directory_of_the_attempt() {
+    let (_directory, workspace) = with_an_attempt_discarded_after_it_ended();
+    assert!(!workspace.attempt(0, "benchmark/t1").exists());
 }
 
 #[test]
-fn discarding_an_assessment_keeps_the_directory_for_the_assessments_of_its_harness() {
-    let (_directory, workspace) = with_an_assessment_discarded_after_it_ended();
-    assert!(workspace.assessments(0).is_dir());
+fn discarding_an_attempt_keeps_the_directory_for_the_attempts_of_its_harness() {
+    let (_directory, workspace) = with_an_attempt_discarded_after_it_ended();
+    assert!(workspace.attempts(0).is_dir());
 }
 
 #[test]
-fn discarding_an_assessment_that_ended_leaves_no_assessment_in_the_directory_of_its_benchmark() {
-    let (_directory, workspace) = with_an_assessment_discarded_after_it_ended();
-    assert_eq!(entries(workspace.assessments(0).join("benchmark")), 0);
+fn discarding_an_attempt_that_ended_leaves_no_attempt_in_the_directory_of_its_benchmark() {
+    let (_directory, workspace) = with_an_attempt_discarded_after_it_ended();
+    assert_eq!(entries(workspace.attempts(0).join("benchmark")), 0);
 }
 
 #[test]
-fn a_discarded_assessment_can_be_started_again() {
-    let (_directory, workspace) = with_an_assessment_discarded_after_it_ended();
-    assert!(workspace.start_assessment(0, "benchmark/t1").is_ok());
+fn a_discarded_attempt_can_be_started_again() {
+    let (_directory, workspace) = with_an_attempt_discarded_after_it_ended();
+    assert!(workspace.start_attempt(0, "benchmark/t1").is_ok());
 }
 
 #[test]

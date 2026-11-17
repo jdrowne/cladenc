@@ -1,5 +1,5 @@
 mod artificial_selection {
-    mod assessment;
+    mod attempt;
     mod best;
     mod focus;
     mod growth;
@@ -41,13 +41,13 @@ mod directed_evolution {
 }
 
 mod genealogy {
-    mod assessment;
+    mod attempt;
     mod build;
     mod clade;
     mod created;
     mod primogenitor;
     mod procreation;
-    mod refused_assessment;
+    mod refused_attempt;
     mod refused_procreation;
     mod tasks;
     mod worded;

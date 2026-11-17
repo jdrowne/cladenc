@@ -19,7 +19,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))

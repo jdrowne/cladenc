@@ -54,7 +54,7 @@ fn removed_from(left: &Left, run: &str) -> io::Result<u64> {
     containers::remove_left_behind(&Workspace::at(&left.directory.path().join(run)))
 }
 
-fn the_container_of_an_assessment_is_listed_under_the_label_of_its_directed_evolution() -> bool {
+fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution() -> bool {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let run_directory = directory.path().join("run");
@@ -73,9 +73,7 @@ fn the_container_of_an_assessment_is_listed_under_the_label_of_its_directed_evol
             key: None,
         },
     };
-    let id_file = workspace
-        .running_assessment(0, "benchmark/t1")
-        .join("work/id");
+    let id_file = workspace.running_attempt(0, "benchmark/t1").join("work/id");
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
         let listed = scope.spawn(|| {
@@ -88,7 +86,7 @@ fn the_container_of_an_assessment_is_listed_under_the_label_of_its_directed_evol
             stop.store(true, Ordering::SeqCst);
             String::from_utf8(listed.stdout).unwrap()
         });
-        let _ = containers::run_assessment(&workspace, &launch, 0, "benchmark/t1", 60, &stop);
+        let _ = containers::run_attempt(&workspace, &launch, 0, "benchmark/t1", 60, &stop);
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })
@@ -145,6 +143,6 @@ fn a_directed_evolution_reached_through_a_symbolic_link_is_the_same_directed_evo
 }
 
 #[test]
-fn the_container_of_an_assessment_carries_the_label_of_its_directed_evolution() {
-    assert!(the_container_of_an_assessment_is_listed_under_the_label_of_its_directed_evolution());
+fn the_container_of_an_attempt_carries_the_label_of_its_directed_evolution() {
+    assert!(the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution());
 }

@@ -192,9 +192,9 @@ fn the_long_help_of_start_says_that_a_build_is_not_told_the_model() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_check_is_not_told_the_model() {
+fn the_long_help_of_start_says_that_a_grader_is_not_told_the_model() {
     assert!(help_of_start(true).contains(
-        "A check calls no model, and is given none of the three variables of the\nmodel."
+        "A grader calls no model, and is given none of the three variables of the\nmodel."
     ));
 }
 
@@ -365,27 +365,28 @@ fn the_short_help_of_start_names_the_option_that_builds_a_harness() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_the_harness_of_an_assessment_is_given_of_its_task() {
+fn the_long_help_of_start_says_what_the_harness_of_an_attempt_is_given_of_its_task() {
     assert!(help_of_start(true).contains(
-        "/var/lib/cladenc/work holds a copy of the files of the task, \
-         and\nCLADENC_INSTRUCTION holds the statement of the task."
+        "/var/lib/cladenc/work holds a copy of the workspace of the task, \
+         and\nCLADENC_INSTRUCTION holds the task specification."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_check() {
-    assert!(help_of_start(true).contains("so it can neither read nor change the check."));
+fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_grader() {
+    assert!(help_of_start(true).contains("so it can neither read nor change the grader."));
 }
 
 #[test]
-fn the_long_help_of_start_shows_how_the_check_of_a_task_is_called() {
+fn the_long_help_of_start_shows_how_the_grader_of_a_task_is_called() {
     assert!(
-        help_of_start(true).contains("\n    sh -c <TIMER> /var/lib/cladenc/task/check <SECONDS>\n")
+        help_of_start(true)
+            .contains("\n    sh -c <TIMER> /var/lib/cladenc/task/grader <SECONDS>\n")
     );
 }
 
 #[test]
-fn the_long_help_of_start_names_what_a_check_is_given() {
+fn the_long_help_of_start_names_what_a_grader_is_given() {
     let help = help_of_start(true);
     let given = [
         "  /var/lib/cladenc/work  holds what the harness left, and is the working\n",
@@ -396,19 +397,16 @@ fn the_long_help_of_start_names_what_a_check_is_given() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_how_an_assessment_ends_decides_the_score() {
-    assert!(
-        help_of_start(true)
-            .contains("\nHow an assessment ends decides how the harness is scored:\n")
-    );
+fn the_long_help_of_start_says_that_how_an_attempt_ends_decides_the_result() {
+    assert!(help_of_start(true).contains("\nHow an attempt ends decides its result:\n"));
 }
 
 #[test]
-fn the_long_help_of_start_says_how_each_way_an_assessment_ends_scores_the_harness() {
+fn the_long_help_of_start_says_what_each_way_an_attempt_ends_gives() {
     let help = help_of_start(true);
     let endings = [
-        "  the check exits with status 0    the harness is scored a success\n",
-        "  the check exits with another     the harness is scored a failure\n",
+        "  the grader exits with status 0   the harness completed the task\n",
+        "  the grader exits with another    the harness did not complete the task\n",
         "  exit status 125 of either step   Docker did not start the container",
         "  the time limit                   the container is removed",
     ];
@@ -416,23 +414,23 @@ fn the_long_help_of_start_says_how_each_way_an_assessment_ends_scores_the_harnes
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_time_limit_scores_a_failure_recorded_as_timed_out() {
+fn the_long_help_of_start_says_that_the_time_limit_gives_not_completed_recorded_as_timed_out() {
     assert!(help_of_start(true).contains(
-        "harness is scored a failure, which is\n                                   recorded as \
-         timed_out\n"
+        "harness did not complete the task,\n                                   which is \
+         recorded as timed_out\n"
     ));
 }
 
 #[test]
-fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_assessment() {
+fn the_long_help_of_start_names_what_the_run_directory_keeps_of_an_attempt() {
     let help = help_of_start(true);
     let kept = [
-        "  score      one word: success, failure or timed_out\n",
-        "  statement  the statement of the task\n",
-        "  work       the files of the task as the harness left them\n",
-        "  stdout     the standard output of the harness\n",
-        "  stderr     the standard error of the harness\n",
-        "  check      the standard output and the standard error of the check",
+        "  result         one word: completed, not_completed or timed_out\n",
+        "  specification  the task specification\n",
+        "  work           the workspace of the task as the harness left it\n",
+        "  stdout         the standard output of the harness\n",
+        "  stderr         the standard error of the harness\n",
+        "  grader         the standard output and the standard error of the grader",
     ];
     assert!(kept.iter().all(|line| help.contains(line)));
 }
@@ -454,9 +452,9 @@ fn the_long_help_of_start_says_that_a_benchmark_holds_a_directory_for_each_task(
 fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
     let help = help_of_start(true);
     let held = [
-        "  statement  a file of text that says what is to be done\n",
-        "  files      a directory of the files the work starts from",
-        "  check      an executable file, the program that says by its exit status\n",
+        "  specification  a file of text, the task specification, which says what\n",
+        "  workspace      a directory of the files the work starts from",
+        "  grader         an executable file, the program that says by its exit\n",
     ];
     assert!(held.iter().all(|line| help.contains(line)));
 }
@@ -485,8 +483,9 @@ fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_b
 #[test]
 fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
     assert!(help_of_start(true).contains(
-        "A\ndirected evolution that is given several tries its harnesses on the tasks\nof all of \
-         them, and looks for the one harness that passes the largest share\nof those tasks."
+        "A\ndirected evolution that is given several has its harnesses attempt the\ntasks of \
+         all of them, and looks for the one harness that completes the\nlargest share of those \
+         tasks."
     ));
 }
 
@@ -494,14 +493,14 @@ fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmark
 fn the_long_help_of_start_says_that_every_task_counts_the_same() {
     assert!(
         help_of_start(true)
-            .contains("Every task counts the same, so a benchmark with more tasks\nweighs more.")
+            .contains("Every task counts the same, so a benchmark\nwith more tasks weighs more.")
     );
 }
 
 #[test]
 fn the_long_help_of_start_says_how_a_task_of_a_directed_evolution_is_known() {
     assert!(help_of_start(true).contains(
-        "a task of a directed\nevolution is known by the two together, as\n\n    \
+        "a task\nof a directed evolution is known by the two together, as\n\n    \
          <BENCHMARK>/<TASK>\n\nso two benchmarks may each hold a task of the same id."
     ));
 }
@@ -515,51 +514,52 @@ fn the_long_help_of_start_says_that_two_benchmarks_of_the_same_name_are_refused(
 }
 
 #[test]
-fn the_long_help_of_start_says_where_the_directory_of_an_assessment_is() {
+fn the_long_help_of_start_says_where_the_directory_of_an_attempt_is() {
     assert!(help_of_start(true).contains(
-        "in a directory\nnamed after the harness, in it one named after the benchmark, and in \
-         that\none named after the task, which holds"
+        "in a directory named\nafter the harness, in it one named after the benchmark, and in \
+         that one\nnamed after the task, which holds"
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_procreation_finds_its_assessments_by_benchmark() {
+fn the_long_help_of_start_says_that_a_procreation_finds_its_attempts_by_benchmark() {
     assert!(help_of_start(true).contains(
         "one directory for each benchmark, and\nin it one for each task, holding what the \
-         assessment of that task kept."
+         attempt of that task kept."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_where_a_procreation_finds_its_assessments() {
+fn the_long_help_of_start_says_where_a_procreation_finds_its_attempts() {
     assert!(help_of_start(true).contains(
-        "/var/log/cladenc/assessments holds the finished\nassessments of the harness, to read:"
+        "/var/log/cladenc/attempts holds the finished\nattempts of the harness, to read:"
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_harness_procreates_only_once_scored_on_every_task() {
+fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_in_full() {
     assert!(help_of_start(true).contains(
-        "A harness procreates only once it has been scored on every task of every\nbenchmark of \
-         the directed evolution, so that it finds every task in\n/var/log/cladenc/assessments."
+        "A harness procreates only once it has been benchmarked in full: it has\nattempted \
+         every task of every benchmark of the directed evolution, so that\nit finds every task \
+         in /var/log/cladenc/attempts."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_an_assessment_takes_the_place_of_a_procreation() {
+fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation() {
     assert!(help_of_start(true).contains(
-        "Where a procreation is due and no harness\nhas been scored on every task yet, an \
-         assessment is started in its place:\nthe primogenitor is tried on every task before the \
-         first procreation."
+        "Where a procreation is\ndue and no harness has been benchmarked in full yet, an \
+         attempt is started\nin its place: the primogenitor attempts every task before the \
+         first\nprocreation."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_what_a_harness_that_procreates_takes_from_the_budget() {
     assert!(help_of_start(true).contains(
-        "Each\nharness that procreates therefore takes as many assessments from \
-         --budget\nas the directed evolution has tasks, and a directed evolution whose \
-         budget\nis no larger than the number of its tasks starts no procreation."
+        "Each harness that procreates therefore takes as many attempts\nfrom --budget as the \
+         directed evolution has tasks, and a directed\nevolution whose budget is no larger than \
+         the number of its tasks starts no\nprocreation."
     ));
 }
 
@@ -577,7 +577,7 @@ fn the_long_help_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_c
         help_of_start(true)
             .split_whitespace()
             .filter(|word| {
-                ["/harness", "/work", "/task", "/assessments"]
+                ["/harness", "/work", "/task", "/attempts"]
                     .iter()
                     .any(|top| word.starts_with(top))
             })

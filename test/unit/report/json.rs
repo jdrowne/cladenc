@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
 use cladenc::journal::Settings;
 use cladenc::report::Report;
 
@@ -25,7 +25,7 @@ fn settings() -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        assessment_timeout: 60,
+        attempt_timeout: 60,
         seed: 7,
     }
 }
@@ -33,19 +33,21 @@ fn settings() -> Settings {
 #[test]
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_assessment(0, "t1").unwrap();
-    genealogy.end_assessment(0, "t1", Score::Success).unwrap();
+    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy
+        .end_attempt(0, "t1", AttemptResult::Completed)
+        .unwrap();
     genealogy.start_procreation(0).unwrap();
     assert_eq!(
         Report::of(&settings(), &genealogy).json(),
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""started":1,"budget":800,"best_harness":0,"harnesses":["#,
-            r#"{"id":0,"progenitor":null,"state":"created","successes":1,"failures":0,"#,
-            r#""clade_successes":1,"clade_failures":0,"clade_success_rate":1.0,"#,
+            r#"{"id":0,"progenitor":null,"state":"created","completed":1,"not_completed":0,"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
             r#""lower_bound":0.09999999999999981},"#,
-            r#"{"id":1,"progenitor":0,"state":"being_created","successes":0,"failures":0,"#,
-            r#""clade_successes":0,"clade_failures":0,"clade_success_rate":null,"#,
+            r#"{"id":1,"progenitor":0,"state":"being_created","completed":0,"not_completed":0,"#,
+            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
             r#""lower_bound":null}]}"#
         )
     );

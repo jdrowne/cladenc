@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{Genealogy, ProcreationOutcome, Score};
+use cladenc::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
 use cladenc::journal::{self, Journal, Record, Settings, Started, State};
 use tempfile::TempDir;
 
@@ -27,7 +27,7 @@ fn settings() -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        assessment_timeout: 3600,
+        attempt_timeout: 3600,
         seed: 7,
     }
 }
@@ -40,18 +40,18 @@ fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
     Record::ProcreationFinished { child, outcome }
 }
 
-fn assessment_started(harness: u64, task: &str) -> Record {
-    Record::AssessmentStarted {
+fn attempt_started(harness: u64, task: &str) -> Record {
+    Record::AttemptStarted {
         harness,
         task: task.to_owned(),
     }
 }
 
-fn assessment_finished(harness: u64, task: &str, score: Score) -> Record {
-    Record::AssessmentFinished {
+fn attempt_finished(harness: u64, task: &str, result: AttemptResult) -> Record {
+    Record::AttemptFinished {
         harness,
         task: task.to_owned(),
-        score,
+        result,
     }
 }
 
@@ -100,11 +100,11 @@ fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
 fn four_actions_of_which_two_finished() -> [Record; 6] {
     [
         procreation_started(1, 0),
-        assessment_started(0, "t1"),
+        attempt_started(0, "t1"),
         procreation_started(2, 0),
-        assessment_started(0, "t2"),
+        attempt_started(0, "t2"),
         procreation_finished(1, ProcreationOutcome::Created),
-        assessment_finished(0, "t1", Score::Success),
+        attempt_finished(0, "t1", AttemptResult::Completed),
     ]
 }
 
@@ -150,22 +150,26 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     genealogy
         .end_procreation(1, ProcreationOutcome::Created)
         .unwrap();
-    genealogy.start_assessment(1, "t2").unwrap();
-    genealogy.end_assessment(1, "t2", Score::Success).unwrap();
+    genealogy.start_attempt(1, "t2").unwrap();
+    genealogy
+        .end_attempt(1, "t2", AttemptResult::Completed)
+        .unwrap();
     genealogy.start_procreation(1).unwrap();
-    genealogy.start_assessment(0, "t1").unwrap();
-    genealogy.end_assessment(0, "t1", Score::TimedOut).unwrap();
+    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy
+        .end_attempt(0, "t1", AttemptResult::TimedOut)
+        .unwrap();
     genealogy
         .end_procreation(2, ProcreationOutcome::Failed)
         .unwrap();
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
-        assessment_started(1, "t2"),
-        assessment_finished(1, "t2", Score::Success),
+        attempt_started(1, "t2"),
+        attempt_finished(1, "t2", AttemptResult::Completed),
         procreation_started(2, 1),
-        assessment_started(0, "t1"),
-        assessment_finished(0, "t1", Score::TimedOut),
+        attempt_started(0, "t1"),
+        attempt_finished(0, "t1", AttemptResult::TimedOut),
         procreation_finished(2, ProcreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
@@ -180,7 +184,7 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
                 child: 2,
                 progenitor: 0
             },
-            Started::Assessment {
+            Started::Attempt {
                 harness: 0,
                 task: "t2".to_owned()
             },
@@ -193,8 +197,8 @@ fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
     let state = rebuilt(&[
         procreation_started(1, 0),
         procreation_finished(1, ProcreationOutcome::Created),
-        assessment_started(1, "t1"),
-        assessment_finished(1, "t1", Score::Failure),
+        attempt_started(1, "t1"),
+        attempt_finished(1, "t1", AttemptResult::NotCompleted),
     ]);
     assert_eq!(state.unfinished, []);
 }

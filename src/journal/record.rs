@@ -6,7 +6,7 @@ use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
-use crate::genealogy::{Genealogy, HarnessId, ProcreationOutcome, Score};
+use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
 use crate::model::{self, Model};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -26,7 +26,7 @@ pub struct Settings {
     pub confidence: f64,
     pub max_concurrent_containers: u64,
     pub procreation_timeout: u64,
-    pub assessment_timeout: u64,
+    pub attempt_timeout: u64,
     pub seed: u64,
 }
 
@@ -97,14 +97,14 @@ pub enum Record {
         child: HarnessId,
         outcome: ProcreationOutcome,
     },
-    AssessmentStarted {
+    AttemptStarted {
         harness: HarnessId,
         task: String,
     },
-    AssessmentFinished {
+    AttemptFinished {
         harness: HarnessId,
         task: String,
-        score: Score,
+        result: AttemptResult,
     },
     DirectedEvolutionFinished {
         best_harness: HarnessId,

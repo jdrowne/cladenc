@@ -1,7 +1,7 @@
 use std::fs;
 use std::os::unix::fs::symlink;
 
-use cladenc::benchmark::{self, CHECK, FILES, STATEMENT};
+use cladenc::benchmark::{self, GRADER, SPECIFICATION, WORKSPACE};
 
 #[test]
 fn the_tasks_of_a_benchmark_are_the_names_of_its_directories_in_order() {
@@ -58,7 +58,7 @@ fn a_directory_given_through_a_symbolic_link_is_a_task() {
 }
 
 #[test]
-fn a_task_may_hold_more_than_its_statement_its_files_and_its_check() {
+fn a_task_may_hold_more_than_its_specification_its_workspace_and_its_grader() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     fs::create_dir(benchmark.join("t1/hidden-tests")).unwrap();
@@ -72,7 +72,7 @@ fn a_task_may_hold_more_than_its_statement_its_files_and_its_check() {
 fn a_task_that_starts_from_no_file_is_a_task() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_file(benchmark.join("t2/files/work.txt")).unwrap();
+    fs::remove_file(benchmark.join("t2/workspace/work.txt")).unwrap();
     assert_eq!(
         benchmark::tasks(&benchmark),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
@@ -80,6 +80,9 @@ fn a_task_that_starts_from_no_file_is_a_task() {
 }
 
 #[test]
-fn the_three_things_a_task_holds_are_named_statement_files_and_check() {
-    assert_eq!([STATEMENT, FILES, CHECK], ["statement", "files", "check"]);
+fn the_three_things_a_task_holds_are_named_specification_workspace_and_grader() {
+    assert_eq!(
+        [SPECIFICATION, WORKSPACE, GRADER],
+        ["specification", "workspace", "grader"]
+    );
 }

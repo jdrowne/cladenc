@@ -34,13 +34,13 @@ fn settings(directory: &Path) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
         seed: 7,
     }
 }
 
-const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/assessments ]; then ls \
-                                    /var/log/cladenc/assessments/benchmark > tasks-found; fi";
+const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
+                                    /var/log/cladenc/attempts/benchmark > tasks-found; fi";
 
 fn over_one_task(settings: &mut Settings) {
     settings.benchmarks[0].tasks = vec!["t1".to_owned()];
@@ -98,7 +98,7 @@ fn starts(directory: &TempDir) -> Vec<String> {
     journal_of(directory)
         .lines()
         .filter_map(|line| match serde_json::from_str::<Record>(line).unwrap() {
-            Record::AssessmentStarted { harness, .. } => Some(format!("assessment of {harness}")),
+            Record::AttemptStarted { harness, .. } => Some(format!("attempt of {harness}")),
             Record::ProcreationStarted { progenitor, .. } => {
                 Some(format!("procreation by {progenitor}"))
             }
@@ -107,8 +107,8 @@ fn starts(directory: &TempDir) -> Vec<String> {
         .collect()
 }
 
-fn assessments_of_the_primogenitor_and_then(tasks: usize, then: &[&str]) -> Vec<String> {
-    iter::repeat_n("assessment of 0", tasks)
+fn attempts_of_the_primogenitor_and_then(tasks: usize, then: &[&str]) -> Vec<String> {
+    iter::repeat_n("attempt of 0", tasks)
         .chain(then.iter().copied())
         .map(str::to_owned)
         .collect()
@@ -159,7 +159,7 @@ fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_run_di
         fs::read_to_string(
             directory
                 .path()
-                .join("run/benchmarks/benchmark/t1/statement")
+                .join("run/benchmarks/benchmark/t1/specification")
         )
         .unwrap(),
         "Finish the work of t1.\n"
@@ -185,46 +185,46 @@ fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_r
 }
 
 #[test]
-fn with_a_growth_above_0_a_directed_evolution_starts_with_an_assessment_of_the_primogenitor() {
+fn with_a_growth_above_0_a_directed_evolution_starts_with_an_attempt_of_the_primogenitor() {
     let (directory, _found) = evolved(|settings| settings.budget = 2);
     assert!(
         journal_of(&directory)
             .lines()
             .nth(1)
             .unwrap()
-            .starts_with(r#"{"record":"assessment_started","harness":0,"#)
+            .starts_with(r#"{"record":"attempt_started","harness":0,"#)
     );
 }
 
 #[test]
-fn with_a_growth_above_0_the_primogenitor_procreates_once_it_has_been_scored_on_every_task() {
+fn with_a_growth_above_0_the_primogenitor_procreates_once_it_has_attempted_every_task() {
     let (directory, _found) = evolved(|_| {});
     assert_eq!(
         starts(&directory)[..7],
-        assessments_of_the_primogenitor_and_then(5, &["procreation by 0", "procreation by 0"])
+        attempts_of_the_primogenitor_and_then(5, &["procreation by 0", "procreation by 0"])
     );
 }
 
 #[test]
-fn with_a_growth_of_0_the_primogenitor_is_assessed_on_every_task_and_then_procreates_once() {
+fn with_a_growth_of_0_the_primogenitor_attempts_every_task_and_then_procreates_once() {
     let (directory, _found) = evolved(|settings| settings.genealogy_growth = 0.0);
     assert_eq!(
         starts(&directory),
-        assessments_of_the_primogenitor_and_then(5, &["procreation by 0", "assessment of 1"])
+        attempts_of_the_primogenitor_and_then(5, &["procreation by 0", "attempt of 1"])
     );
 }
 
 #[test]
-fn given_two_benchmarks_the_primogenitor_procreates_once_scored_on_every_task_of_both() {
+fn given_two_benchmarks_the_primogenitor_procreates_once_benchmarked_on_both() {
     let (directory, _found) = evolved(over_two_benchmarks);
     assert_eq!(
         starts(&directory),
-        assessments_of_the_primogenitor_and_then(7, &["procreation by 0", "assessment of 1"])
+        attempts_of_the_primogenitor_and_then(7, &["procreation by 0", "attempt of 1"])
     );
 }
 
 #[test]
-fn a_progenitor_finds_every_task_of_its_benchmark_in_the_directory_of_its_assessments() {
+fn a_progenitor_finds_every_task_of_its_benchmark_in_the_directory_of_its_attempts() {
     let (directory, _found) =
         evolved(|settings| settings.harness_run_command = KEEP_THE_TASKS_FOUND.to_owned());
     assert_eq!(
@@ -240,15 +240,15 @@ fn a_budget_no_larger_than_the_number_of_tasks_starts_no_procreation() {
 }
 
 #[test]
-fn a_directed_evolution_that_spends_its_budget_starts_exactly_as_many_assessments() {
+fn a_directed_evolution_that_spends_its_budget_starts_exactly_as_many_attempts() {
     let (directory, _found) = evolved(|_| {});
-    assert_eq!(started(&journal_of(&directory), "assessment"), 6);
+    assert_eq!(started(&journal_of(&directory), "attempt"), 6);
 }
 
 #[test]
 fn a_directed_evolution_over_one_task_ends_once_every_created_harness_has_been_given_it() {
     let (directory, _found) = evolved(over_one_task);
-    assert_eq!(started(&journal_of(&directory), "assessment"), 2);
+    assert_eq!(started(&journal_of(&directory), "attempt"), 2);
 }
 
 #[test]
@@ -322,11 +322,11 @@ fn a_directed_evolution_says_as_many_starts_as_its_journal_records() {
 }
 
 #[test]
-fn a_directed_evolution_says_the_number_of_each_assessment_it_starts_and_its_budget() {
+fn a_directed_evolution_says_the_number_of_each_attempt_it_starts_and_its_budget() {
     let (_directory, said) = said_over_one_task();
     assert!(said.iter().any(|line| {
-        line.starts_with("cladenc: started the assessment of harness ")
-            && line.ends_with(" on task benchmark/t1, assessment 2 of 10")
+        line.starts_with("cladenc: started the attempt of harness ")
+            && line.ends_with(" on task benchmark/t1, attempt 2 of 10")
     }));
 }
 
@@ -340,12 +340,13 @@ fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept
 }
 
 #[test]
-fn a_directed_evolution_says_how_a_harness_was_scored_and_where_what_the_assessment_left_is_kept() {
+fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what_the_attempt_left_is_kept()
+ {
     let (directory, said) = said_over_one_task();
     assert!(said.contains(&format!(
-        "cladenc: harness 1 was scored a success on task benchmark/t1: what the assessment left \
+        "cladenc: harness 1 completed task benchmark/t1: what the attempt left \
          is kept in {}",
-        directory.path().join("run/assessments/1/benchmark/t1").display()
+        directory.path().join("run/attempts/1/benchmark/t1").display()
     )));
 }
 
@@ -355,7 +356,7 @@ fn a_directed_evolution_says_last_that_it_finished_and_which_harness_is_its_best
     assert_eq!(
         said.last().unwrap(),
         &format!(
-            "cladenc: the directed evolution finished with 2 assessments started and 2 \
+            "cladenc: the directed evolution finished with 2 attempts started and 2 \
              harnesses: its best harness is harness 1, kept in {}",
             directory.path().join("run/harnesses/1").display()
         )

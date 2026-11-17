@@ -30,7 +30,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         confidence: 99.0,
         max_concurrent_containers: 3,
         procreation_timeout: 30,
-        assessment_timeout: 30,
+        attempt_timeout: 30,
         seed: 7,
     };
     change(&mut settings);
@@ -54,11 +54,11 @@ fn most_running_at_once(records: &[Record]) -> usize {
     let mut most = 0;
     for record in records {
         match record {
-            Record::ProcreationStarted { .. } | Record::AssessmentStarted { .. } => {
+            Record::ProcreationStarted { .. } | Record::AttemptStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
-            Record::ProcreationFinished { .. } | Record::AssessmentFinished { .. } => running -= 1,
+            Record::ProcreationFinished { .. } | Record::AttemptFinished { .. } => running -= 1,
             Record::Run { .. }
             | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}
@@ -71,7 +71,7 @@ fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
     records.iter().filter(|record| counted(record)).count()
 }
 
-fn fewest_tasks_a_progenitor_had_been_scored_on(records: &[Record]) -> Option<usize> {
+fn fewest_tasks_a_progenitor_had_attempted(records: &[Record]) -> Option<usize> {
     records
         .iter()
         .enumerate()
@@ -80,7 +80,7 @@ fn fewest_tasks_a_progenitor_had_been_scored_on(records: &[Record]) -> Option<us
                 Some(count(&records[..place], |earlier| {
                     matches!(
                         earlier,
-                        Record::AssessmentFinished { harness, .. } if harness == progenitor
+                        Record::AttemptFinished { harness, .. } if harness == progenitor
                     )
                 }))
             }
@@ -95,12 +95,12 @@ fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finishe
 }
 
 #[test]
-fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_assessments_as_the_budget() {
+fn with_a_limit_of_three_the_journal_still_holds_exactly_as_many_attempts_as_the_budget() {
     let records = records(|_| {});
     assert_eq!(
         count(&records, |record| matches!(
             record,
-            Record::AssessmentStarted { .. }
+            Record::AttemptStarted { .. }
         )),
         12
     );
@@ -119,10 +119,7 @@ fn with_a_growth_of_0_and_a_limit_of_three_exactly_one_procreation_starts() {
 }
 
 #[test]
-fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_scored_on_every_task() {
+fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_benchmarked_in_full() {
     let records = records(|settings| settings.max_concurrent_containers = 2);
-    assert_eq!(
-        fewest_tasks_a_progenitor_had_been_scored_on(&records),
-        Some(5)
-    );
+    assert_eq!(fewest_tasks_a_progenitor_had_attempted(&records), Some(5));
 }

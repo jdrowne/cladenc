@@ -31,10 +31,10 @@ fn a_child_that_is_not_being_created_is_worded() {
 }
 
 #[test]
-fn an_assessed_harness_that_is_not_created_is_worded() {
+fn a_harness_that_attempts_a_task_but_is_not_created_is_worded() {
     assert_eq!(
         worded(GenealogyError::HarnessNotCreated { harness: 3 }),
-        "harness 3 cannot be assessed because it is not a created harness"
+        "harness 3 cannot attempt a task because it is not a created harness"
     );
 }
 
@@ -50,12 +50,12 @@ fn a_task_given_twice_is_worded() {
 }
 
 #[test]
-fn an_assessment_that_is_not_running_is_worded() {
+fn an_attempt_that_is_not_running_is_worded() {
     assert_eq!(
-        worded(GenealogyError::AssessmentNotRunning {
+        worded(GenealogyError::AttemptNotRunning {
             harness: 3,
             task: "t1".to_owned()
         }),
-        "no assessment of harness 3 on task t1 is running"
+        "no attempt of harness 3 on task t1 is running"
     );
 }

@@ -16,7 +16,7 @@ pub const MODEL_URL: &str = "http://models.example/v1";
 
 pub const MODEL_KEY: &str = "a-made-up-key";
 
-pub const SOLVE_ONE_MORE: &str = r#"if [ -d /var/log/cladenc/assessments ]
+pub const SOLVE_ONE_MORE: &str = r#"if [ -d /var/log/cladenc/attempts ]
 then
   touch solved
   echo "t$(($(wc -l < solved) + 1))" >> solved
@@ -25,7 +25,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/assessments ]
+pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/attempts ]
 then
   touch solved
   solved=$(($(wc -l < solved)))
@@ -37,7 +37,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /var/log/cladenc/assessments ]
+pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /var/log/cladenc/attempts ]
 then
   cp /solved-by-the-image solved
 else
@@ -115,18 +115,18 @@ pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf 
 
 pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     let task = benchmark.join(id);
-    let check = task.join("check");
-    fs::create_dir_all(task.join("files")).expect("the task can be made");
+    let grader = task.join("grader");
+    fs::create_dir_all(task.join("workspace")).expect("the task can be made");
     fs::write(
-        task.join("statement"),
+        task.join("specification"),
         format!("Finish the work of {id}.\n"),
     )
-    .expect("the statement can be written");
-    fs::write(task.join("files/work.txt"), "to do\n").expect("the file can be written");
-    fs::write(&check, format!("#!/bin/sh\ngrep -q -x -e {id} solved\n"))
-        .expect("the check can be written");
-    fs::set_permissions(&check, fs::Permissions::from_mode(0o750))
-        .expect("the check can be given its permission bits");
+    .expect("the specification can be written");
+    fs::write(task.join("workspace/work.txt"), "to do\n").expect("the file can be written");
+    fs::write(&grader, format!("#!/bin/sh\ngrep -q -x -e {id} solved\n"))
+        .expect("the grader can be written");
+    fs::set_permissions(&grader, fs::Permissions::from_mode(0o750))
+        .expect("the grader can be given its permission bits");
     task
 }
 
@@ -190,7 +190,7 @@ pub fn end_with_125_on(directory: &Path, task: &str) {
     let marker = directory
         .join("benchmark")
         .join(task)
-        .join("files/end-with-125");
+        .join("workspace/end-with-125");
     fs::write(marker, "").expect("the marker can be written");
 }
 
@@ -198,17 +198,17 @@ pub fn end_with_125_on_no_more(run_directory: &Path, task: &str) {
     let marker = run_directory
         .join("benchmarks/benchmark")
         .join(task)
-        .join("files/end-with-125");
+        .join("workspace/end-with-125");
     fs::remove_file(marker).expect("the marker can be removed");
 }
 
-pub fn check(directory: &Path, task: &str, command: &str) {
-    let check = directory.join("benchmark").join(task).join("check");
-    fs::write(check, format!("#!/bin/sh\n{command}\n")).expect("the check can be written");
+pub fn grader(directory: &Path, task: &str, command: &str) {
+    let grader = directory.join("benchmark").join(task).join("grader");
+    fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
 }
 
-pub fn kept_check(run_directory: &Path, task: &str, command: &str) {
-    check(&run_directory.join("benchmarks"), task, command);
+pub fn kept_grader(run_directory: &Path, task: &str, command: &str) {
+    grader(&run_directory.join("benchmarks"), task, command);
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

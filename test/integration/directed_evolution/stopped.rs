@@ -27,15 +27,14 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        assessment_timeout: 60,
+        attempt_timeout: 60,
         seed: 7,
     }
 }
 
-const END_A_PROCREATION_WITH_125: &str =
-    "if [ -d /var/log/cladenc/assessments ]; then exit 125; fi";
+const END_A_PROCREATION_WITH_125: &str = "if [ -d /var/log/cladenc/attempts ]; then exit 125; fi";
 
-fn stopped_at_its_first_assessment() -> (TempDir, Result<Found, DirectedEvolutionError>) {
+fn stopped_at_its_first_attempt() -> (TempDir, Result<Found, DirectedEvolutionError>) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
     let run_directory = directory.path().join("run");
@@ -52,7 +51,7 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, DirectedEvolutionError>, Str
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "hostname > id; sleep 300");
     let run_directory = directory.path().join("run");
-    let id_file = run_directory.join("running/assessment-0-benchmark+t1/work/id");
+    let id_file = run_directory.join("running/attempt-0-benchmark+t1/work/id");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
@@ -70,8 +69,8 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_an_assessment_stops_the_directed_evolution() {
-    let (_directory, found) = stopped_at_its_first_assessment();
+fn a_container_that_ends_with_status_125_at_an_attempt_stops_the_directed_evolution() {
+    let (_directory, found) = stopped_at_its_first_attempt();
     assert!(matches!(
         found,
         Err(DirectedEvolutionError::Action {
@@ -110,12 +109,12 @@ fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_dire
 }
 
 #[test]
-fn a_directed_evolution_an_assessment_stopped_names_the_harness_and_the_task_of_that_assessment() {
-    let (_directory, found) = stopped_at_its_first_assessment();
+fn a_directed_evolution_an_attempt_stopped_names_the_harness_and_the_task_of_that_attempt() {
+    let (_directory, found) = stopped_at_its_first_attempt();
     assert!(matches!(
         found,
         Err(DirectedEvolutionError::Action {
-            action: Started::Assessment { harness: 0, task },
+            action: Started::Attempt { harness: 0, task },
             ..
         }) if task == "benchmark/t1"
     ));
@@ -138,16 +137,16 @@ fn a_directed_evolution_a_container_stopped_names_the_progenitor_and_the_child_o
 
 #[test]
 fn a_stopped_directed_evolution_leaves_a_started_and_no_finished_record_for_the_action_that_ran() {
-    let (directory, _found) = stopped_at_its_first_assessment();
+    let (directory, _found) = stopped_at_its_first_attempt();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#
+        r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 
 #[test]
 fn a_stopped_directed_evolution_leaves_no_directed_evolution_finished_record() {
-    let (directory, _found) = stopped_at_its_first_assessment();
+    let (directory, _found) = stopped_at_its_first_attempt();
     assert!(!journal_of(&directory).contains("directed_evolution_finished"));
 }
 
@@ -163,7 +162,7 @@ fn a_directed_evolution_stopped_by_its_flag_leaves_no_container_behind() {
     assert!(test_inputs::container_is_gone(
         &directory
             .path()
-            .join("run/running/assessment-0-benchmark+t1/work/id")
+            .join("run/running/attempt-0-benchmark+t1/work/id")
     ));
 }
 
@@ -172,7 +171,7 @@ fn a_directed_evolution_stopped_by_its_flag_writes_no_record_for_the_action_that
     let (directory, _found, _said) = stopped_by_its_flag();
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
-        r#"{"record":"assessment_started","harness":0,"task":"benchmark/t1"}"#
+        r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#
     );
 }
 

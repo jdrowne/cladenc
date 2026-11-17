@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 3c2b70de-42b2-4496-8bfc-c8f6aecc6bad
-  modified: 2026-11-15T15:40:19.165Z
+  modified: 2026-11-17T03:37:02.223Z
 ---
 
 # One indivisible problem per issue
@@ -16,4 +16,4 @@ An issue documents one indivisible problem. An issue that documents more is spli
 
 **How to apply:** The issue's number stays with the problem its title leads with, and each other problem moves to a new issue written to stand alone, per [[issues-are-sized-to-one-context]]. A split divides problems, not file lists: two symptoms of one defect stay together. Order the splits with `blocked_by` edges only where [[a-blocked-by-edge-states-a-real-block]] allows.
 
-My own readings, not things the user said: a title that needs an and is a sign of two problems, and so is an issue the user cannot follow in one go. A decision the user makes while an issue is being discussed is a problem of its own where it adds one, and gets an issue of its own, not a place in the body of the issue under discussion.
+My own readings, not things the user said: a title that needs an and is a sign of two problems, and so is an issue the user cannot follow in one go.

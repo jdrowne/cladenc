@@ -64,9 +64,9 @@ fn a_primogenitor_that_awaits_its_build_cannot_procreate() {
 }
 
 #[test]
-fn a_primogenitor_that_awaits_its_build_cannot_be_assessed() {
+fn a_primogenitor_that_awaits_its_build_cannot_attempt_a_task() {
     assert_eq!(
-        Genealogy::unbuilt().start_assessment(0, "t1"),
+        Genealogy::unbuilt().start_attempt(0, "t1"),
         Err(GenealogyError::HarnessNotCreated { harness: 0 })
     );
 }

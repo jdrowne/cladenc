@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{Genealogy, Score};
+use cladenc::genealogy::{AttemptResult, Genealogy};
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::report::{self, Report};
 use tempfile::TempDir;
@@ -29,7 +29,7 @@ fn settings() -> Settings {
         confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        assessment_timeout: 60,
+        attempt_timeout: 60,
         seed: 7,
     }
 }
@@ -41,14 +41,14 @@ fn run_directory(last_line: &str) -> TempDir {
             format: journal::FORMAT,
             settings: Box::new(settings()),
         },
-        Record::AssessmentStarted {
+        Record::AttemptStarted {
             harness: 0,
             task: "t1".to_owned(),
         },
-        Record::AssessmentFinished {
+        Record::AttemptFinished {
             harness: 0,
             task: "t1".to_owned(),
-            score: Score::Success,
+            result: AttemptResult::Completed,
         },
         Record::ProcreationStarted {
             child: 1,
@@ -65,8 +65,10 @@ fn run_directory(last_line: &str) -> TempDir {
 
 fn of_the_records() -> Report {
     let mut genealogy = Genealogy::new();
-    genealogy.start_assessment(0, "t1").unwrap();
-    genealogy.end_assessment(0, "t1", Score::Success).unwrap();
+    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy
+        .end_attempt(0, "t1", AttemptResult::Completed)
+        .unwrap();
     genealogy.start_procreation(0).unwrap();
     Report::of(&settings(), &genealogy)
 }

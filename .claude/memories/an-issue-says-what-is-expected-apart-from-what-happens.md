@@ -12,7 +12,7 @@ metadata:
 
 Where an issue states a problem, it tells what is expected apart from what happens. What is expected is written as expected. A plain present tense is kept for what is really so.
 
-The directory a progenitor is given to read is expected to store the tasks the progenitor has been scored on. Where the problem is that it stores none, a sentence saying that the directory stores them states the opposite of the problem.
+The directory a progenitor is given to read is expected to store the tasks the progenitor has attempted. Where the problem is that it stores none, a sentence saying that the directory stores them states the opposite of the problem.
 
 **Why:** It is the user's rule. A reader takes a plain present tense for a fact about the code. Where that fact is the very thing that fails, the sentence hides the problem it was written to state, and the issue misleads its reader.
 

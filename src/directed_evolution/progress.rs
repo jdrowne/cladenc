@@ -119,7 +119,7 @@ impl<'a> Progress<'a> {
                 &Said::Started {
                     action: &action,
                     again,
-                    assessments: self.genealogy.started(),
+                    attempts: self.genealogy.started(),
                     budget: self.artificial_selection.budget,
                 },
             );
@@ -149,31 +149,31 @@ impl<'a> Progress<'a> {
                     workspace,
                 });
             }
-            Ended::Assessment {
+            Ended::Attempt {
                 harness,
                 task,
-                result: Ok(score),
+                result: Ok(result),
             } => {
                 self.genealogy
-                    .end_assessment(harness, &task, score)
-                    .expect("an assessment that ended was started");
-                self.say(&Said::Scored {
+                    .end_attempt(harness, &task, result)
+                    .expect("an attempt that ended was started");
+                self.say(&Said::Attempted {
                     harness,
                     task: &task,
-                    score,
+                    result,
                     workspace,
                 });
-                self.record(&Record::AssessmentFinished {
+                self.record(&Record::AttemptFinished {
                     harness,
                     task,
-                    score,
+                    result,
                 });
             }
             Ended::Procreation {
                 result: Err(ContainerError::Stopped),
                 ..
             }
-            | Ended::Assessment {
+            | Ended::Attempt {
                 result: Err(ContainerError::Stopped),
                 ..
             } => {}
@@ -182,11 +182,11 @@ impl<'a> Progress<'a> {
                 progenitor,
                 result: Err(error),
             } => self.failed(Started::Procreation { child, progenitor }, error),
-            Ended::Assessment {
+            Ended::Attempt {
                 harness,
                 task,
                 result: Err(error),
-            } => self.failed(Started::Assessment { harness, task }, error),
+            } => self.failed(Started::Attempt { harness, task }, error),
         }
     }
 
@@ -216,7 +216,7 @@ impl<'a> Progress<'a> {
             say(
                 self.writer,
                 &Said::Finished {
-                    assessments: self.genealogy.started(),
+                    attempts: self.genealogy.started(),
                     harnesses: self.genealogy.harness_count(),
                     best_harness,
                     directory: &found.directory,
@@ -236,15 +236,15 @@ impl<'a> Progress<'a> {
                 self.record(&Record::ProcreationStarted { child, progenitor });
                 Started::Procreation { child, progenitor }
             }
-            Action::Assessment { harness, task } => {
-                self.genealogy
-                    .start_assessment(harness, &task)
-                    .expect("an assessed harness is created and has not been given the task");
-                self.record(&Record::AssessmentStarted {
+            Action::Attempt { harness, task } => {
+                self.genealogy.start_attempt(harness, &task).expect(
+                    "a harness that attempts a task is created and has not been given the task",
+                );
+                self.record(&Record::AttemptStarted {
                     harness,
                     task: task.clone(),
                 });
-                Started::Assessment { harness, task }
+                Started::Attempt { harness, task }
             }
         };
         self.next_action += 1;

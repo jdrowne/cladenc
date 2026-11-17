@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::workspace::holds_only_harness_files;
 
-pub const STATEMENT: &str = "statement";
-pub const FILES: &str = "files";
-pub const CHECK: &str = "check";
+pub const SPECIFICATION: &str = "specification";
+pub const WORKSPACE: &str = "workspace";
+pub const GRADER: &str = "grader";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Benchmark {
@@ -76,9 +76,9 @@ pub enum BenchmarkError {
     GivenTwice { directory: PathBuf },
     SameName { name: String },
     NotAnId { directory: String },
-    NoStatement { task: String },
-    NoFiles { task: String },
-    NoCheck { task: String },
+    NoSpecification { task: String },
+    NoWorkspace { task: String },
+    NoGrader { task: String },
     OtherFiles { task: String },
 }
 
@@ -118,16 +118,19 @@ impl Display for BenchmarkError {
                 "the directory `{directory}` in it is not named with letters, digits, dots, \
                  underscores and hyphens alone, as a task is"
             ),
-            Self::NoStatement { task } => write!(
+            Self::NoSpecification { task } => write!(
                 formatter,
-                "task {task} holds no file of text named {STATEMENT}"
+                "task {task} holds no file of text named {SPECIFICATION}"
             ),
-            Self::NoFiles { task } => {
-                write!(formatter, "task {task} holds no directory named {FILES}")
+            Self::NoWorkspace { task } => {
+                write!(
+                    formatter,
+                    "task {task} holds no directory named {WORKSPACE}"
+                )
             }
-            Self::NoCheck { task } => write!(
+            Self::NoGrader { task } => write!(
                 formatter,
-                "task {task} holds no executable file named {CHECK}"
+                "task {task} holds no executable file named {GRADER}"
             ),
             Self::OtherFiles { task } => write!(
                 formatter,
@@ -150,9 +153,9 @@ pub fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
         .map_err(|_| BenchmarkError::NotADirectory)?;
     directories.retain(|entry| entry.is_dir());
     directories.sort();
-    if is_statement(&benchmark.join(STATEMENT))
-        && is_files(&benchmark.join(FILES))
-        && is_program(&benchmark.join(CHECK))
+    if is_specification(&benchmark.join(SPECIFICATION))
+        && is_workspace(&benchmark.join(WORKSPACE))
+        && is_program(&benchmark.join(GRADER))
     {
         return Err(BenchmarkError::OneTask);
     }
@@ -177,14 +180,14 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if !is_name(&task) {
         return Err(BenchmarkError::NotAnId { directory: task });
     }
-    if !is_statement(&directory.join(STATEMENT)) {
-        return Err(BenchmarkError::NoStatement { task });
+    if !is_specification(&directory.join(SPECIFICATION)) {
+        return Err(BenchmarkError::NoSpecification { task });
     }
-    if !is_files(&directory.join(FILES)) {
-        return Err(BenchmarkError::NoFiles { task });
+    if !is_workspace(&directory.join(WORKSPACE)) {
+        return Err(BenchmarkError::NoWorkspace { task });
     }
-    if !is_program(&directory.join(CHECK)) {
-        return Err(BenchmarkError::NoCheck { task });
+    if !is_program(&directory.join(GRADER)) {
+        return Err(BenchmarkError::NoGrader { task });
     }
     if !can_be_copied(directory) {
         return Err(BenchmarkError::OtherFiles { task });
@@ -199,19 +202,19 @@ fn is_name(name: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
 }
 
-fn is_statement(file: &Path) -> bool {
-    fs::symlink_metadata(file).is_ok_and(|statement| statement.is_file())
+fn is_specification(file: &Path) -> bool {
+    fs::symlink_metadata(file).is_ok_and(|specification| specification.is_file())
         && fs::read_to_string(file)
             .is_ok_and(|text| !text.trim().is_empty() && !text.contains('\0'))
 }
 
-fn is_files(directory: &Path) -> bool {
+fn is_workspace(directory: &Path) -> bool {
     fs::symlink_metadata(directory).is_ok_and(|files| files.is_dir())
 }
 
 fn is_program(file: &Path) -> bool {
     fs::symlink_metadata(file)
-        .is_ok_and(|check| check.is_file() && check.permissions().mode() & 0o111 != 0)
+        .is_ok_and(|grader| grader.is_file() && grader.permissions().mode() & 0o111 != 0)
 }
 
 fn can_be_copied(task: &Path) -> bool {

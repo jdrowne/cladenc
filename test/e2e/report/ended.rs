@@ -26,7 +26,7 @@ fn ended() -> TempDir {
         ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--assessment-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -58,9 +58,9 @@ fn report_prints_the_table() {
         "model a-model at http://models.example/v1\n\
          started 2 of 10, best harness 1\n\
          \n\
-         id  progenitor  state    successes  failures  clade successes  clade failures  clade success rate  lower bound\n\
-         0   -           created  0          1         1                1               0.500               0.005\n\
-         1   0           created  1          0         1                0               1.000               0.100\n"
+         id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
+         0   -           created  0          1              1                1                    0.500        0.005\n\
+         1   0           created  1          0              1                0                    1.000        0.100\n"
     );
 }
 
@@ -73,11 +73,11 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
             concat!(
                 r#"{{"model":"a-model","model_url":"http://models.example/v1","#,
                 r#""started":2,"budget":10,"best_harness":1,"harnesses":["#,
-                r#"{{"id":0,"progenitor":null,"state":"created","successes":0,"failures":1,"#,
-                r#""clade_successes":1,"clade_failures":1,"clade_success_rate":0.5,"#,
+                r#"{{"id":0,"progenitor":null,"state":"created","completed":0,"not_completed":1,"#,
+                r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5,"#,
                 r#""lower_bound":{}}},"#,
-                r#"{{"id":1,"progenitor":0,"state":"created","successes":1,"failures":0,"#,
-                r#""clade_successes":1,"clade_failures":0,"clade_success_rate":1.0,"#,
+                r#"{{"id":1,"progenitor":0,"state":"created","completed":1,"not_completed":0,"#,
+                r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
                 r#""lower_bound":{}}}]}}"#,
                 "\n"
             ),
