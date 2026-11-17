@@ -35,7 +35,6 @@
 - [The first harness is the primogenitor](the-first-harness-is-the-primogenitor.md) — and a progenitor is the harness that procreates; the two are told apart, and parent is used for neither
 - [A procreation has a progenitor, a copy and a child](a-procreation-has-a-progenitor-a-copy-and-a-child.md) — whatever is written about a procreation says which of the three harnesses it means
 - [An issue says what is expected apart from what happens](an-issue-says-what-is-expected-apart-from-what-happens.md) — what is expected is written as expected, never as though it were so; the plain present is for what really happens
-- [A directory stores](a-directory-stores.md) — a directory stores what is in it and is never said to hold it
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and primogenitor for the one a directed evolution starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
 - [An explanation says what happens](an-explanation-says-what-happens.md) — for the user, say who does what in everyday words: which harness procreates, a harness has been scored; not the noun phrases of the issues and the code
