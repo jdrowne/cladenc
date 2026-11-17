@@ -193,6 +193,22 @@ jobs:
         run: pip install assert-one-assert-per-test
       - name: assert-one-assert-per-test
         run: assert-one-assert-per-test --verbose src test lib
+  assert-one-directory-per-module:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Assert that each module of src is a directory
+        run: |
+          files=(':(glob)src/*.rs' ':!src/lib.rs' ':!src/main.rs')
+          found="$(git ls-files -- "${files[@]}")"
+          if [ -n "$found" ]; then
+            for file in $found; do
+              said="$file is a module in a file: move it to"
+              echo "::error file=$file::$said ${file%.rs}/mod.rs"
+            done
+            exit 1
+          fi
   build-coverage:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -282,6 +298,7 @@ jobs:
           cargo clippy --workspace --all-targets --locked --
           -D warnings
           -D clippy::cognitive_complexity
+          -D clippy::self_named_module_files
           -D clippy::too_many_lines
   e2e-test-coverage:
     needs: build-coverage
@@ -408,6 +425,7 @@ jobs:
       - assert-no-oversized-functions
       - assert-no-oversized-source-files
       - assert-one-assert-per-test
+      - assert-one-directory-per-module
       - clippy
       - e2e-test-debug
       - integration-test-debug

@@ -1,6 +1,6 @@
 ---
 name: the-checks-the-code-faces
-description: "The code is written to pass the checks of release.yml: no comments, one assertion per test, no directive that silences a tool, no linter configuration file but etc/clippy/clippy.toml, no Rust file over 1000 lines, no function over 50 statements, no test file without a test, every line covered, rustfmt clean, and clippy clean with limits on each function's cognitive complexity, nesting, parameters and lines; the release waits for every one of them"
+description: "The code is written to pass the checks of release.yml: no comments, one assertion per test, no directive that silences a tool, no linter configuration file but etc/clippy/clippy.toml, no Rust file over 1000 lines, no function over 50 statements, no test file without a test, each module of src a directory and no file beside a directory of its name, every line covered, rustfmt clean, and clippy clean with limits on each function's cognitive complexity, nesting, parameters and lines; the release waits for every one of them"
 metadata:
   node_type: memory
   type: project
@@ -19,8 +19,10 @@ metadata:
 - `assert-no-oversized-source-files`: no Rust file of more than 1000 lines.
 - `assert-no-oversized-functions`: no function of more than 50 statements. A statement is anything that stands directly in a block: a `let`, an expression with or without its `;`, the last expression of the block, an item. Every block inside the function is counted, a closure's among them. A function written inside another is counted by itself, and what is inside the parentheses of a macro call is not counted.
 - `assert-no-empty-test-files`: every test file holds a test.
+- `assert-one-directory-per-module`: no Rust file directly in `src/` but `lib.rs` and `main.rs`, so a module of `src/` is a directory, per [[each-module-of-src-is-a-directory]].
 - `assert-coverage`: the tests reach every line, region and function.
 - `clippy`, with every warning an error, and `rustfmt`.
+- `clippy::self_named_module_files`, which `clippy` is given as an error: no Rust file beside a directory of its name, in `src`, `test` and `lib` alike. A module that has files of its own under it is a directory, and its own code is in the `mod.rs` of that directory.
 - The limits `clippy` holds each function to, in `src`, `test` and `lib` alike. `etc/clippy/clippy.toml` sets the numbers:
   - a cognitive complexity of 15 at most, as `clippy::cognitive_complexity` counts it: one, and one more for each `if`, `match` of more than one arm, match guard, `while`, `for` and `?`, less the returns;
   - a nesting of 4 at most, as `clippy::excessive_nesting` counts it: one level for an `impl`, a `trait` or an inline `mod`, and one for each pair of braces of a block, the function's own among them, so a method has two levels left inside its body and a free function three;
