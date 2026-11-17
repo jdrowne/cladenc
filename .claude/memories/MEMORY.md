@@ -35,7 +35,7 @@
 - [A failed run is fixed before other work](a-failed-run-is-fixed-before-other-work.md) — when a run of the session's own push is found to have failed, the fix is the next commit pushed
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
 - [The first harness is the primogenitor](the-first-harness-is-the-primogenitor.md) — and a progenitor is the harness that procreates; the two are told apart, and parent is used for neither
-- [A procreation has a progenitor, a copy and a child](a-procreation-has-a-progenitor-a-copy-and-a-child.md) — whatever is written about a procreation says which of the three harnesses it means
+- [A procreation has a progenitor, a copy and a child](a-procreation-has-a-progenitor-a-copy-and-a-child.md) — whatever is written about a procreation says which of the three harnesses it means; the copy is said as the progenitor's copy or the primogenitor's copy, never alone
 - [An issue says what is expected apart from what happens](an-issue-says-what-is-expected-apart-from-what-happens.md) — what is expected is written as expected, never as though it were so; the plain present is for what really happens
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and primogenitor for the one a directed evolution starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
