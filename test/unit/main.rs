@@ -4,7 +4,6 @@ mod artificial_selection {
     mod due;
     mod focus;
     mod growth;
-    mod lower_bound;
     mod no_action;
     mod procreation;
     mod repeatable;

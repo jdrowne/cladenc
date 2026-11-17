@@ -23,7 +23,6 @@ pub struct Settings {
     pub benchmarks: Vec<Benchmark>,
     pub max_procreations: u64,
     pub genealogy_growth: f64,
-    pub confidence: f64,
     pub max_concurrent_containers: u64,
     pub procreation_timeout: u64,
     pub attempt_timeout: u64,
@@ -75,7 +74,6 @@ impl Settings {
         ArtificialSelection {
             max_procreations: self.max_procreations,
             growth: self.genealogy_growth,
-            confidence: self.confidence,
             tasks: self.tasks(),
             seed: self.seed,
         }

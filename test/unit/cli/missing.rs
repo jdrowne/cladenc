@@ -12,7 +12,6 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--run-dir", "/run"),
     ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
-    ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
@@ -107,14 +106,6 @@ fn leaving_out_the_most_procreations_is_an_error() {
 fn leaving_out_the_genealogy_growth_is_an_error() {
     assert_eq!(
         refusal_without("--genealogy-growth"),
-        ErrorKind::MissingRequiredArgument
-    );
-}
-
-#[test]
-fn leaving_out_the_confidence_is_an_error() {
-    assert_eq!(
-        refusal_without("--confidence"),
         ErrorKind::MissingRequiredArgument
     );
 }

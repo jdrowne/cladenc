@@ -54,7 +54,6 @@ fn reported(json: bool) -> (Ran, String) {
                 harness_run_command: "run a harness".to_owned(),
                 max_procreations: 800,
                 genealogy_growth: 0.6,
-                confidence: 99.0,
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
                 attempt_timeout: 60,
@@ -124,9 +123,9 @@ fn a_report_prints_the_table_on_standard_output() {
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
-         0   -           created        0          0              0                0                    -            0.010\n\
-         1   0           being created  0          0              0                0                    -            -\n"
+         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score\n\
+         0   -           created        0          0              0                0                    -\n\
+         1   0           being created  0          0              0                0                    -\n"
     );
 }
 

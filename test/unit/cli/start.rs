@@ -25,7 +25,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         run_dir: directory.path().join("run"),
         max_procreations: 1,
         genealogy_growth: 0.0,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

@@ -9,7 +9,6 @@ fn artificial_selection(growth: f64) -> ArtificialSelection {
     ArtificialSelection {
         max_procreations: 3,
         growth,
-        confidence: 99.0,
         tasks: tasks(),
         seed: 3,
     }

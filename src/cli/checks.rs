@@ -48,7 +48,6 @@ impl StartOptions {
             benchmarks,
             max_procreations: self.max_procreations,
             genealogy_growth: self.genealogy_growth,
-            confidence: self.confidence,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             attempt_timeout: self.attempt_timeout,
@@ -63,14 +62,6 @@ pub(super) fn genealogy_growth(given: &str) -> Result<f64, String> {
         .ok()
         .filter(|growth| (0.0..=1.0).contains(growth))
         .ok_or_else(|| "a number from 0 to 1 is expected".to_owned())
-}
-
-pub(super) fn confidence(given: &str) -> Result<f64, String> {
-    given
-        .parse()
-        .ok()
-        .filter(|confidence| *confidence > 0.0 && *confidence < 100.0)
-        .ok_or_else(|| "a number above 0 and below 100 is expected".to_owned())
 }
 
 fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {

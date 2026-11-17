@@ -22,7 +22,6 @@ fn settings() -> Settings {
         harness_run_command: "run a harness".to_owned(),
         max_procreations: 800,
         genealogy_growth: 0.6,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
@@ -52,14 +51,14 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
-         0   -           created        1          0              1                0                    1.000        0.100\n\
-         1   0           being created  0          0              0                0                    -            -\n"
+         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score\n\
+         0   -           created        1          0              1                0                    1.000\n\
+         1   0           being created  0          0              0                0                    -\n"
     );
 }
 
 #[test]
-fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
+fn a_failed_harness_is_shown_as_failed() {
     let table = table(|genealogy| {
         let child = genealogy.start_procreation(0).unwrap();
         genealogy
@@ -71,9 +70,9 @@ fn a_failed_harness_is_shown_as_failed_with_no_lower_bound() {
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score  lower bound\n\
-         0   -           created  0          0              0                0                    -            0.010\n\
-         1   0           failed   0          0              0                0                    -            -\n"
+         id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score\n\
+         0   -           created  0          0              0                0                    -\n\
+         1   0           failed   0          0              0                0                    -\n"
     );
 }
 
@@ -84,7 +83,7 @@ fn a_rate_is_printed_to_three_decimal_places() {
         attempted(genealogy, "t2", AttemptResult::NotCompleted);
         attempted(genealogy, "t3", AttemptResult::NotCompleted);
     });
-    assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
+    assert!(table.lines().nth(4).unwrap().ends_with("  0.333"));
 }
 
 #[test]
@@ -98,4 +97,9 @@ fn the_most_procreations_being_1_is_not_shown_as_several() {
         table.lines().nth(1),
         Some("started 0 of 1 procreation, best harness 0")
     );
+}
+
+#[test]
+fn the_table_has_no_column_of_lower_bounds() {
+    assert!(!table(|_| {}).contains("lower bound"));
 }

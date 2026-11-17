@@ -22,7 +22,6 @@ fn settings() -> Settings {
         harness_run_command: "run a harness".to_owned(),
         max_procreations: 800,
         genealogy_growth: 0.6,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
@@ -44,11 +43,9 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""procreations_started":1,"max_procreations":800,"best_harness":0,"harnesses":["#,
             r#"{"id":0,"progenitor":null,"state":"created","completed":1,"not_completed":0,"#,
-            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
-            r#""lower_bound":0.09999999999999981},"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0},"#,
             r#"{"id":1,"progenitor":0,"state":"being_created","completed":0,"not_completed":0,"#,
-            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
-            r#""lower_bound":null}]}"#
+            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null}]}"#
         )
     );
 }
@@ -64,5 +61,14 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
         Report::of(&settings(), &genealogy)
             .json()
             .contains(r#""id":1,"progenitor":0,"state":"failed""#)
+    );
+}
+
+#[test]
+fn the_object_gives_no_lower_bound() {
+    assert!(
+        !Report::of(&settings(), &Genealogy::new())
+            .json()
+            .contains("lower_bound")
     );
 }

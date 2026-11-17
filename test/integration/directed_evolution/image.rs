@@ -33,7 +33,6 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         harness_run_command: test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.to_owned(),
         max_procreations: 1,
         genealogy_growth: 0.0,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

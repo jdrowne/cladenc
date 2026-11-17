@@ -68,7 +68,6 @@ cladenc resume \
 cladenc start \
   --attempt-timeout <SECONDS> \
   --benchmark <DIR> \
-  --confidence <PERCENT> \
   --docker-build-timeout <SECONDS> \
   --docker-image <IMAGE> \
   --dockerfile <FILE> \
@@ -89,7 +88,6 @@ cladenc start \
 | --- | --- | --- |
 | `--attempt-timeout <SECONDS>` | Required | The time limit of one attempt, which is one harness working on one task, once. |
 | `--benchmark <DIR>` | Required | The directory of a benchmark, which holds a directory for each task. The flag is given once for each benchmark of the directed evolution. `cladenc` fetches no benchmark: the tasks are read from the directory and copied into the run directory. |
-| `--confidence <PERCENT>` | Required | The probability behind the lower bound that picks the best harness. |
 | `--docker-build-timeout <SECONDS>` | Not Required | The time limit of the build of the image. It is given with `--dockerfile`, and not without it. |
 | `--docker-image <IMAGE>` | Not Required | The Docker image every container is started from. Either this flag or `--dockerfile` is given, and not both. |
 | `--dockerfile <FILE>` | Not Required | The Dockerfile that `cladenc` builds the image of every container from, in place of `--docker-image`. |

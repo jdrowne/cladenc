@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use cladenc::artificial_selection::lower_bound;
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{AttemptResult, Genealogy, HarnessState, ProcreationOutcome};
 use cladenc::journal::Settings;
@@ -14,7 +13,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            tasks: vec!["t1".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -23,7 +22,6 @@ fn settings() -> Settings {
         harness_run_command: "run a harness".to_owned(),
         max_procreations: 800,
         genealogy_growth: 0.6,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
@@ -37,13 +35,13 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     genealogy
         .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
-    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy.start_attempt(0, "benchmark/t1").unwrap();
     genealogy
-        .end_attempt(0, "t1", AttemptResult::NotCompleted)
+        .end_attempt(0, "benchmark/t1", AttemptResult::NotCompleted)
         .unwrap();
-    genealogy.start_attempt(child, "t1").unwrap();
+    genealogy.start_attempt(child, "benchmark/t1").unwrap();
     genealogy
-        .end_attempt(child, "t1", AttemptResult::Completed)
+        .end_attempt(child, "benchmark/t1", AttemptResult::Completed)
         .unwrap();
     genealogy
 }
@@ -55,33 +53,12 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
         .end_procreation(failed, ProcreationOutcome::Failed)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
-    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy.start_attempt(0, "benchmark/t1").unwrap();
     genealogy
 }
 
 fn report(genealogy: &Genealogy) -> Report {
     Report::of(&settings(), genealogy)
-}
-
-#[test]
-fn a_created_harness_has_the_lower_bound_of_its_own_results_at_the_confidence_of_the_run() {
-    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(
-        report.harnesses[1].lower_bound,
-        Some(lower_bound(1, 0, 99.0))
-    );
-}
-
-#[test]
-fn a_failed_harness_has_no_lower_bound() {
-    let report = report(&a_child_that_is_being_created_and_one_that_failed());
-    assert_eq!(report.harnesses[1].lower_bound, None);
-}
-
-#[test]
-fn a_harness_that_is_being_created_has_no_lower_bound() {
-    let report = report(&a_child_that_is_being_created_and_one_that_failed());
-    assert_eq!(report.harnesses[2].lower_bound, None);
 }
 
 #[test]
@@ -130,7 +107,7 @@ fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
 }
 
 #[test]
-fn the_best_harness_reported_is_the_created_harness_with_the_largest_lower_bound() {
+fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.best_harness, 1);
 }

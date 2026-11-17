@@ -6,8 +6,6 @@ use rand_distr::{Beta, Distribution};
 
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 
-pub use best::lower_bound;
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Action {
     Procreation { progenitor: HarnessId },
@@ -18,7 +16,6 @@ pub enum Action {
 pub struct ArtificialSelection {
     pub max_procreations: u64,
     pub growth: f64,
-    pub confidence: f64,
     pub tasks: Vec<String>,
     pub seed: u64,
 }

@@ -4,6 +4,18 @@ use cladenc::genealogy::GenealogyError;
 use cladenc::journal::{self, JournalError};
 
 const RUN: &str = concat!(
+    r#"{"record":"run","format":18,"primogenitor":"/abs/harness","model":"a-model","#,
+    r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
+    r#""dockerfile":null,"docker_build_timeout":null,"#,
+    r#""harness_build_command":null,"harness_run_command":"run a harness","#,
+    r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
+    r#""max_procreations":800,"#,
+    r#""genealogy_growth":0.6,"#,
+    r#""max_concurrent_containers":8,"#,
+    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+);
+
+const RUN_OF_FORMAT_17: &str = concat!(
     r#"{"record":"run","format":17,"primogenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
@@ -116,10 +128,21 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_17_cannot_be_read() {
+fn a_journal_whose_format_is_not_18_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":17"#, r#""format":18"#)]),
-        JournalError::UnknownFormat { format: 18 }
+        error_of(&[&RUN.replace(r#""format":18"#, r#""format":19"#)]),
+        JournalError::UnknownFormat { format: 19 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_17_is_refused_for_its_format_since_it_names_a_confidence() {
+    assert!(matches!(
+        error_of(&[
+            RUN_OF_FORMAT_17,
+            r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#
+        ]),
+        JournalError::UnknownFormat { format: 17 }
     ));
 }
 
@@ -314,7 +337,7 @@ fn a_journal_of_format_3_is_refused_for_its_format_since_it_names_no_model() {
 #[test]
 fn a_journal_of_format_2_is_refused_for_its_format_though_this_cladenc_could_read_its_records() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":17"#, r#""format":2"#)]),
+        error_of(&[&RUN.replace(r#""format":18"#, r#""format":2"#)]),
         JournalError::UnknownFormat { format: 2 }
     ));
 }
@@ -335,7 +358,7 @@ fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_other
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":17,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":18,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }

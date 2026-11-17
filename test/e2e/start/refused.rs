@@ -13,7 +13,6 @@ fn options(directory: &Path, run_directory: &Path) -> Vec<String> {
         ("--run-dir", run_directory.to_owned()),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
-        ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
@@ -285,6 +284,34 @@ fn a_budget_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expe
 fn a_budget_which_is_no_flag_of_start_leaves_no_run_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_budget_in_the_place_of_the_most_procreations(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("run").exists());
+}
+
+fn with_a_confidence(directory: &Path) -> Vec<String> {
+    let mut options = options(directory, &directory.join("run"));
+    options.push("--confidence=99".to_owned());
+    options
+}
+
+#[test]
+fn a_confidence_which_is_no_flag_of_start_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_confidence(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_confidence_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_confidence(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--confidence' found\n"));
+}
+
+#[test]
+fn a_confidence_which_is_no_flag_of_start_leaves_no_run_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_confidence(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("run").exists());
 }

@@ -36,7 +36,6 @@ fn settings(directory: &Path) -> Settings {
         harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         max_procreations: 2,
         genealogy_growth: 0.6,
-        confidence: 99.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

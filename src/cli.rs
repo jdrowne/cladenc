@@ -61,13 +61,6 @@ pub struct StartOptions {
     pub benchmark: Vec<PathBuf>,
     #[arg(
         long,
-        value_name = "PERCENT",
-        value_parser = checks::confidence,
-        help = "The probability behind the lower bound that picks the best harness"
-    )]
-    pub confidence: f64,
-    #[arg(
-        long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
         requires = "dockerfile",

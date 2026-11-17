@@ -13,7 +13,6 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--run-dir", "/run"),
     ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
-    ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),

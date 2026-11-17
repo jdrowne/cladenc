@@ -3,11 +3,10 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::artificial_selection::lower_bound;
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 use crate::journal::{self, JournalError, Settings};
 
-const HEADER: [&str; 9] = [
+const HEADER: [&str; 8] = [
     "id",
     "progenitor",
     "state",
@@ -16,7 +15,6 @@ const HEADER: [&str; 9] = [
     "clade completed",
     "clade not completed",
     "clade score",
-    "lower bound",
 ];
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -39,7 +37,6 @@ pub struct HarnessReport {
     pub clade_completed: u64,
     pub clade_not_completed: u64,
     pub clade_score: Option<f64>,
-    pub lower_bound: Option<f64>,
 }
 
 pub fn read(run_directory: &Path) -> Result<Report, JournalError> {
@@ -57,7 +54,7 @@ impl Report {
             harnesses: genealogy
                 .harnesses()
                 .iter()
-                .map(|harness| HarnessReport::of(harness, settings.confidence))
+                .map(HarnessReport::of)
                 .collect(),
         }
     }
@@ -69,7 +66,7 @@ impl Report {
     pub fn table(&self) -> String {
         let mut rows = vec![HEADER.map(str::to_owned)];
         rows.extend(self.harnesses.iter().map(HarnessReport::cells));
-        let widths: [usize; 9] =
+        let widths: [usize; 8] =
             array::from_fn(|column| rows.iter().map(|row| row[column].len()).fold(0, usize::max));
         let lines: String = rows
             .iter()
@@ -99,8 +96,7 @@ impl Report {
 }
 
 impl HarnessReport {
-    fn of(harness: &Harness, confidence: f64) -> Self {
-        let created = harness.state() == HarnessState::Created;
+    fn of(harness: &Harness) -> Self {
         Self {
             id: harness.id(),
             progenitor: harness.progenitor(),
@@ -110,12 +106,10 @@ impl HarnessReport {
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
-            lower_bound: created
-                .then(|| lower_bound(harness.completed(), harness.not_completed(), confidence)),
         }
     }
 
-    fn cells(&self) -> [String; 9] {
+    fn cells(&self) -> [String; 8] {
         let state = match self.state {
             HarnessState::BeingCreated => "being created",
             HarnessState::Created => "created",
@@ -130,7 +124,6 @@ impl HarnessReport {
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
-            shown(self.lower_bound.map(|bound| format!("{bound:.3}"))),
         ]
     }
 }

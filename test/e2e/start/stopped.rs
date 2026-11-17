@@ -19,7 +19,6 @@ fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command 
         ("--run-dir", directory.join("run")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0.6".into()),
-        ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--attempt-timeout", attempt_timeout.into()),

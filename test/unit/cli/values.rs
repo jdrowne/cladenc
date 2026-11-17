@@ -14,7 +14,6 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--run-dir", "/run"),
     ("--max-procreations", "800"),
     ("--genealogy-growth", "0.6"),
-    ("--confidence", "99"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
@@ -249,23 +248,11 @@ fn a_genealogy_growth_of_1_is_accepted() {
 }
 
 #[test]
-fn a_confidence_of_0_is_an_error() {
-    assert_eq!(refusal("--confidence", "0"), ErrorKind::ValueValidation);
-}
-
-#[test]
-fn a_confidence_of_100_is_an_error() {
-    assert_eq!(refusal("--confidence", "100"), ErrorKind::ValueValidation);
-}
-
-#[test]
-fn a_confidence_that_is_not_a_number_is_an_error() {
-    assert_eq!(refusal("--confidence", "sure"), ErrorKind::ValueValidation);
-}
-
-#[test]
-fn a_confidence_between_0_and_100_is_accepted() {
-    assert!(with("--confidence", "99.9").is_ok());
+fn a_confidence_is_an_argument_that_is_not_expected() {
+    assert_eq!(
+        and(Some("--confidence=99".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
 }
 
 #[test]

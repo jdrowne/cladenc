@@ -22,7 +22,6 @@ fn ended() -> (TempDir, Output) {
         ("--run-dir", directory.path().join("run")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
-        ("--confidence", "99".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
