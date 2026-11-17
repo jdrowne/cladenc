@@ -165,17 +165,6 @@ jobs:
           path: coverage.tar
           retention-days: 1
   build-debug:
-    needs:
-      - assert-coverage
-      - assert-no-comments
-      - assert-no-empty-test-files
-      - assert-no-inline-directives
-      - assert-no-linter-config-files
-      - assert-no-oversized-source-files
-      - assert-one-assert-per-test
-      - clippy
-      - rustfmt
-      - yamllint
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
@@ -200,10 +189,6 @@ jobs:
           path: debug.tar
           retention-days: 1
   build-release:
-    needs:
-      - e2e-test-debug
-      - integration-test-debug
-      - unit-test-debug
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
@@ -348,8 +333,12 @@ jobs:
   release:
     if: github.ref_name == 'main'
     needs:
+      - assert-coverage
+      - e2e-test-debug
+      - integration-test-debug
       - package
       - test-package
+      - unit-test-debug
     permissions:
       contents: write
     runs-on: ubuntu-latest
