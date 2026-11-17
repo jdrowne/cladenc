@@ -55,7 +55,7 @@ fn a_task_with_no_specification_is_said_with_its_id() {
 fn a_task_with_no_workspace_is_said_with_its_id() {
     assert_eq!(
         BenchmarkError::NoWorkspace { task: task() }.to_string(),
-        "task fix-the-parser holds no directory named files"
+        "task fix-the-parser holds no directory named workspace"
     );
 }
 
