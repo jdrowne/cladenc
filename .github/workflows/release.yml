@@ -106,6 +106,66 @@ jobs:
           --linters clippy,markdownlint,rustc,rustdoc,rustfmt,yamllint
           --verbose
           ${{ github.workspace }}
+  assert-no-oversized-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install tree-sitter==0.26.1 tree-sitter-rust==0.24.2
+      - name: Assert that no function has more than 50 statements
+        run: |
+          python - <<'PYTHON'
+          import subprocess
+          import sys
+          import tree_sitter_rust
+          from tree_sitter import Language, Parser
+          LIMIT = 50
+          APART = {"attribute_item", "block_comment", "label", "line_comment"}
+          def within(root, whole):
+              nodes = [root]
+              while nodes:
+                  node = nodes.pop()
+                  yield node
+                  for child in reversed(node.named_children):
+                      if whole or child.type != "function_item":
+                          nodes.append(child)
+          def statements(function):
+              return sum(
+                  child.type not in APART
+                  for node in within(function, False)
+                  if node.type == "block"
+                  for child in node.named_children
+              )
+          parser = Parser(Language(tree_sitter_rust.language()))
+          listed = subprocess.run(
+              ["git", "ls-files", "-z", "*.rs"],
+              capture_output=True, check=True, text=True,
+          ).stdout.split("\0")
+          over = False
+          for path in filter(None, listed):
+              with open(path, "rb") as source:
+                  tree = parser.parse(source.read())
+              if tree.root_node.has_error:
+                  print(f"::error file={path}::{path} could not be parsed")
+                  over = True
+              for node in within(tree.root_node, True):
+                  if node.type != "function_item":
+                      continue
+                  count = statements(node)
+                  if count > LIMIT:
+                      name = node.child_by_field_name("name").text.decode()
+                      line = node.start_point[0] + 1
+                      said = f"{name} has {count} statements, and the limit is"
+                      where = f"file={path},line={line}"
+                      print(f"::error {where}::{said} {LIMIT}")
+                      over = True
+          sys.exit(over)
+          PYTHON
   assert-no-oversized-source-files:
     runs-on: ubuntu-latest
     steps:
@@ -341,11 +401,21 @@ jobs:
     if: github.ref_name == 'main'
     needs:
       - assert-coverage
+      - assert-no-comments
+      - assert-no-empty-test-files
+      - assert-no-inline-directives
+      - assert-no-linter-config-files
+      - assert-no-oversized-functions
+      - assert-no-oversized-source-files
+      - assert-one-assert-per-test
+      - clippy
       - e2e-test-debug
       - integration-test-debug
       - package
+      - rustfmt
       - test-package
       - unit-test-debug
+      - yamllint
     permissions:
       contents: write
     runs-on: ubuntu-latest
