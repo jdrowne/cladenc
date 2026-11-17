@@ -117,6 +117,43 @@ fn commands_whose_section(lacks: impl Fn(&Command, &str) -> bool) -> Vec<String>
         .collect()
 }
 
+fn said_after_the_table_of(section: &str) -> Vec<String> {
+    section
+        .split_once(HEAD_OF_FLAGS)
+        .map(|(_, rows)| {
+            rows.lines()
+                .skip_while(|line| line.starts_with('|'))
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .unwrap_or_default()
+        .trim()
+        .split("\n\n")
+        .map(str::to_owned)
+        .collect()
+}
+
+fn is_a_list_of_steps(block: &str) -> bool {
+    block
+        .lines()
+        .zip(1..)
+        .all(|(line, number)| line.starts_with(&format!("{number}. ")))
+}
+
+fn sub_commands_whose_section(lacks: impl Fn(&Command, &[String]) -> bool) -> Vec<String> {
+    let readme = readme();
+    sub_commands()
+        .iter()
+        .filter(|sub_command| {
+            lacks(
+                sub_command,
+                &said_after_the_table_of(&section_of(&readme, sub_command)),
+            )
+        })
+        .map(called)
+        .collect()
+}
+
 fn flags_of_cladenc() -> BTreeSet<String> {
     commands()
         .iter()
@@ -232,65 +269,61 @@ fn the_table_of_a_command_lists_its_flags_in_alphabetical_order() {
 }
 
 #[test]
-fn the_sections_of_resume_and_start_show_how_the_shell_sends_standard_error_nowhere() {
+fn after_the_table_of_its_flags_the_section_of_a_sub_command_says_what_the_sub_command_does() {
     assert_eq!(
-        commands_whose_section(|command, section| {
-            matches!(command.get_name(), "resume" | "start") && !section.contains("`2>/dev/null`")
+        sub_commands_whose_section(|sub_command, said| {
+            !said
+                .iter()
+                .take(1)
+                .any(|paragraph| paragraph.starts_with(&format!("`{}` ", called(sub_command))))
         }),
         Vec::<String>::new()
     );
 }
 
 #[test]
-fn the_readme_says_where_the_grader_of_a_task_finds_what_the_harness_left() {
-    assert!(readme().contains(
-        "there `/var/lib/cladenc/work`, the working directory, holds what the harness left"
-    ));
-}
-
-#[test]
-fn the_readme_says_where_the_grader_of_a_task_finds_the_directory_of_its_task() {
-    assert!(readme().contains("`/var/lib/cladenc/task` holds the directory of the task, to read"));
-}
-
-#[test]
-fn the_readme_says_that_a_harness_procreates_only_once_it_has_been_benchmarked_in_full() {
-    assert!(readme().contains(
-        "A harness procreates only once it has been benchmarked in full: it has attempted every \
-         task of every benchmark of the directed evolution"
-    ));
-}
-
-#[test]
-fn the_readme_says_that_every_harness_is_benchmarked_in_full() {
-    assert!(
-        readme().contains("Every harness is benchmarked in full, whether it procreates or not")
+fn what_a_sub_command_does_is_said_in_one_paragraph_of_one_line() {
+    assert_eq!(
+        sub_commands_whose_section(|_, said| {
+            said.iter()
+                .take(1)
+                .any(|paragraph| paragraph.contains('\n'))
+        }),
+        Vec::<String>::new()
     );
 }
 
 #[test]
-fn the_readme_says_what_the_most_procreations_counts() {
-    assert!(
-        readme().contains(
-            "A procreation counts once it is started, whether or not it creates its child"
-        )
+fn nothing_follows_what_a_sub_command_does_but_one_numbered_list_of_its_steps() {
+    assert_eq!(
+        sub_commands_whose_section(|_, said| {
+            said.len() > 2 || said.iter().skip(1).any(|block| !is_a_list_of_steps(block))
+        }),
+        Vec::<String>::new()
     );
 }
 
 #[test]
-fn the_readme_says_when_a_directed_evolution_ends() {
-    assert!(readme().contains(
-        "A directed evolution ends once that many procreations have been started, each of them \
-         has ended, and every created harness has been benchmarked in full"
-    ));
+fn the_section_of_every_sub_command_says_what_it_prints_on_standard_output() {
+    assert_eq!(
+        sub_commands_whose_section(|_, said| {
+            !said
+                .iter()
+                .take(1)
+                .any(|paragraph| paragraph.contains(" on standard output"))
+        }),
+        Vec::<String>::new()
+    );
 }
 
 #[test]
-fn the_readme_says_that_no_harness_is_chosen_to_attempt_next() {
-    assert!(readme().contains(
-        "It does not choose which harness attempts next: the created harness with the lowest id \
-         that has a task left attempts it"
-    ));
+fn the_section_of_cladenc_start_gives_its_steps_as_a_numbered_list() {
+    assert_eq!(
+        sub_commands_whose_section(|sub_command, said| {
+            sub_command.get_name() == "start" && said.len() != 2
+        }),
+        Vec::<String>::new()
+    );
 }
 
 #[test]

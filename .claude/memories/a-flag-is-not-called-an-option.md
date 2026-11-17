@@ -1,6 +1,6 @@
 ---
 name: a-flag-is-not-called-an-option
-description: "A `--name` argument of cladenc is called a flag, not an option; the README documents `cladenc` itself and each sub-command as a command block followed by a table of its flags in alphabetical order, and what applies to some sub-commands is written under them"
+description: "A `--name` argument of cladenc is called a flag, not an option; the README documents `cladenc` itself and each sub-command as a command block followed by a table of its flags in alphabetical order, and under the table of a sub-command comes nothing but what that sub-command does"
 metadata:
   node_type: memory
   type: feedback
@@ -21,6 +21,6 @@ Help is asked for with the flag `--help` alone. `cladenc` has no `help` sub-comm
 - `cladenc` itself has a section in the same layout as a sub-command's, ahead of the sub-commands.
 - A section shows a plain-text command with every flag on a line of its own, and a table headed Flag, Required and Description.
 - A flag is marked Required or Not Required, and the flags are in alphabetical order.
-- Text that is about some sub-commands, such as how long a directed evolution goes on and how it is stopped, goes in the section of each of them, not in the general part.
+- Under its table, the section of a sub-command holds nothing but what that sub-command does. How a benchmark is laid out, how an attempt is graded, how an image is built and the like get in the way there: the long help of the sub-command, in `src/cli/contract.rs`, is where they are said.
 
-Mine, not the user's: such text is written out in each section, after the table, in words fitted to it; the section of `cladenc` says what it does with nothing after it; the command block sits right under the heading, ahead of the table, with a backslash ending each line but the last; the flags of `--help` are in the same alphabetical order, which a test in `test/unit/cli/help.rs` holds; and the word flag is used in replies, issues and commits as well as in the README. Left as they are: the names in the code, such as `StartOptions`, and the heading `Options:` that clap prints in `--help`. Related: [[a-directed-evolution-is-started-with-cladenc-start]].
+Mine, not the user's: what a sub-command does is one paragraph that begins with the sub-command and says what it prints on standard output, followed, where the sub-command does several things in turn, by one numbered list of its steps; the section of `cladenc` says what it does with nothing after it; the command block sits right under the heading, ahead of the table, with a backslash ending each line but the last; the flags of `--help` are in the same alphabetical order, which a test in `test/unit/cli/help.rs` holds; and the word flag is used in replies, issues and commits as well as in the README. Left as they are: the names in the code, such as `StartOptions`, and the heading `Options:` that clap prints in `--help`. Related: [[a-directed-evolution-is-started-with-cladenc-start]].
