@@ -45,3 +45,4 @@
 - [A key is given in a file](a-key-is-given-in-a-file.md) — a secret such as a model's key reaches cladenc in a file that a flag names, never as a flag's value or in an environment variable
 - [Paths follow the Linux filesystem convention](paths-follow-the-linux-filesystem-convention.md) — nothing at the top of the filesystem, in a container or on the machine; what a container works with under /var/lib/cladenc, records under /var/log/cladenc
 - [cladenc does not run jobs](cladenc-does-not-run-jobs.md) — say it brings up a container, for a procreation or for an assessment; job in an older issue means one of those, and the code says action; it has no workers either, say the containers running at the same time
+- [A harness procreates only once scored on every task](a-harness-procreates-only-once-scored-on-every-task.md) — the user's rule: a progenitor has been scored on every task of every benchmark; no smaller number of tasks and no flag for it is proposed
