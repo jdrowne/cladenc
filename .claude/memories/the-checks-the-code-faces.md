@@ -23,4 +23,4 @@ metadata:
 
 **Why:** The build that the tests and the release hang on waits for each of these, so code that breaks one costs a whole run and releases nothing. No issue has to say these rules, per [[issues-have-no-fixed-form]], so a session that writes code finds them here.
 
-**How to apply:** The workflow is the list: where it and this memory disagree, the workflow is right, and this memory is corrected. Write to the checks and leave the running of them to CI, per [[what-ci-can-do-is-done-in-ci]]. Code under `lib/` is held to the same checks, per [[lib-holds-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].
+**How to apply:** The workflow is the list: where it and this memory disagree, the workflow is right, and this memory is corrected. Write to the checks and leave the running of them to CI, per [[what-ci-can-do-is-done-in-ci]]. Code under `lib/` is held to the same checks, per [[lib-stores-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].

@@ -4,7 +4,7 @@
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
 - [A memory says what holds now](a-memory-says-what-holds-now.md) — a memory states the rule, its reason and how to apply it, and tells nothing of how the rule came about or what was done when
 - [Room to be creative](room-to-be-creative.md) — the user wants creative work, not a narrow reading of the ask; no rule limits the work to only what was asked
-- [lib/ holds shared code](lib-holds-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
+- [lib/ stores shared code](lib-stores-shared-code.md) — code more than one consumer uses goes under lib/, as in the user's other repositories; here, code shared by the test tiers
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words (directed evolution, artificial selection, assessment), and let cladenc leave the paper where a change improves it
 - [Assessing is not scoring](assessing-is-not-scoring.md) — a harness is assessed on a task or a benchmark and scored a success or a failure; an assessment never succeeds, fails or has an outcome, and what a harness is given is its score
 - [cladenc takes a primogenitor and a model](cladenc-takes-a-primogenitor-and-a-model.md) — the user's design: a person brings the primogenitor's source code, a model and one or more benchmarks, and cladenc does the self-improvement itself, in Docker, calling no model itself
@@ -34,6 +34,8 @@
 - [A push can leave its issues open](a-push-can-leave-its-issues-open.md) — after a push, read back each issue the commit closes and close by hand any still open
 - [The first harness is the primogenitor](the-first-harness-is-the-primogenitor.md) — and a progenitor is the harness that procreates; the two are told apart, and parent is used for neither
 - [A procreation has a progenitor, a copy and a child](a-procreation-has-a-progenitor-a-copy-and-a-child.md) — whatever is written about a procreation says which of the three harnesses it means
+- [An issue says what is expected apart from what happens](an-issue-says-what-is-expected-apart-from-what-happens.md) — what is expected is written as expected, never as though it were so; the plain present is for what really happens
+- [A directory stores](a-directory-stores.md) — a directory stores what is in it and is never said to hold it
 - [A harness is not called a coding agent](a-harness-is-not-called-a-coding-agent.md) — say coding harness or agentic coding harness, and primogenitor for the one a directed evolution starts from
 - [The simplest design is offered first](the-simplest-design-is-offered-first.md) — lead a decision with the plainest option, such as a command-line option, explained in short concrete steps with every word defined
 - [An explanation says what happens](an-explanation-says-what-happens.md) — for the user, say who does what in everyday words: which harness procreates, a harness has been scored; not the noun phrases of the issues and the code
