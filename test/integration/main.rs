@@ -22,6 +22,7 @@ mod directed_evolution {
     mod keyed;
     mod resumed;
     mod stopped;
+    mod unchanged;
     mod unusable;
 }
 

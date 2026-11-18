@@ -915,6 +915,69 @@ fn the_description_of_the_package_is_the_line_the_help_of_cladenc_opens_with() {
 }
 
 #[test]
+fn the_long_help_of_start_says_that_the_best_of_harnesses_that_are_alike_is_ahead_by_luck() {
+    assert!(help_of_start(true).contains(
+        "The best harness is named among many, each benchmarked once, and a model\ndoes not \
+         answer the same way twice. So the best of many harnesses that are\nall alike has \
+         still completed more holdout tasks than the primogenitor, by\nluck."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_a_directed_evolution_in_which_no_harness_changes_is_carried_out()
+{
+    assert!(help_of_start(true).contains(
+        "How many more is measured by a directed evolution in which no\nharness changes: one \
+         carried out with the values of the directed evolution\nit is set beside, and with a \
+         run command that ends at once with exit\nstatus 0 where the harness is started for a \
+         procreation, as"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_gives_a_run_command_that_changes_nothing_in_a_procreation() {
+    assert!(help_of_start(true).contains(
+        "\n    --harness-run-command \\\n        '[ -d /var/log/cladenc/attempts ] && exit 0; \
+         <COMMAND>'\n\nwhere <COMMAND> is the run command of the other."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_why_that_run_command_changes_nothing() {
+    assert!(help_of_start(true).contains(
+        "/var/log/cladenc/attempts\nis there for a procreation and not for an attempt, so \
+         every procreation\ncreates a child that is the source code of the primogenitor, \
+         unchanged,\nand calls no model."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_directed_evolution_in_which_no_harness_changes_holds() {
+    assert!(help_of_start(true).contains(
+        "Such a directed evolution holds as many children as\n--max-procreations gives, each \
+         of them benchmarked in full."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_the_report_of_such_a_directed_evolution_is_read() {
+    assert!(help_of_start(true).contains(
+        "In\n`cladenc report` of it, how far apart the counts of the harnesses lie is\nwhat \
+         luck does to the count of one harness, and how many more holdout\ntasks the best \
+         harness completed than the primogenitor is what luck and\nthe choosing give \
+         together, with nothing changed."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_far_a_best_harness_is_ahead_by_a_change() {
+    assert!(help_of_start(true).contains(
+        "The best harness of the\nother directed evolution is ahead of its primogenitor by a \
+         change only as\nfar as it is ahead by more than that."
+    ));
+}
+
+#[test]
 fn the_long_help_of_start_says_that_a_completed_task_means_the_work_only_as_far_as_three_things() {
     assert!(help_of_start(true).contains(
         "A task that is recorded as completed means that the harness did the work\nonly as far \

@@ -267,6 +267,29 @@ tasks that are not held out are what a harness reads to find what to
 change, and a harness that completes more of those alone is not chosen
 for it.
 
+The best harness is named among many, each benchmarked once, and a model
+does not answer the same way twice. So the best of many harnesses that are
+all alike has still completed more holdout tasks than the primogenitor, by
+luck. How many more is measured by a directed evolution in which no
+harness changes: one carried out with the values of the directed evolution
+it is set beside, and with a run command that ends at once with exit
+status 0 where the harness is started for a procreation, as
+
+    --harness-run-command \\
+        '[ -d /var/log/cladenc/attempts ] && exit 0; <COMMAND>'
+
+where <COMMAND> is the run command of the other. /var/log/cladenc/attempts
+is there for a procreation and not for an attempt, so every procreation
+creates a child that is the source code of the primogenitor, unchanged,
+and calls no model. Such a directed evolution holds as many children as
+--max-procreations gives, each of them benchmarked in full. In
+`cladenc report` of it, how far apart the counts of the harnesses lie is
+what luck does to the count of one harness, and how many more holdout
+tasks the best harness completed than the primogenitor is what luck and
+the choosing give together, with nothing changed. The best harness of the
+other directed evolution is ahead of its primogenitor by a change only as
+far as it is ahead by more than that.
+
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.
 /var/lib/cladenc/work holds a copy of the workspace of the task, and
