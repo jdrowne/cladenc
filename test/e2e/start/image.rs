@@ -40,7 +40,10 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory, &["t1", "t2"]),
+        ),
         ("--dockerfile", test_inputs::dockerfile(directory, steps)),
         ("--docker-build-timeout", build_timeout.into()),
         (
@@ -53,6 +56,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));

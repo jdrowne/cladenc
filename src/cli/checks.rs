@@ -4,6 +4,7 @@ use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
 use crate::benchmark::{self, Benchmark, BenchmarkError};
+use crate::holdout;
 use crate::journal::Settings;
 use crate::model;
 use crate::outputs_directory::holds_only_harness_files;
@@ -31,6 +32,8 @@ impl Display for Refused {
 impl StartOptions {
     pub fn settings(&self) -> Result<Settings, Refused> {
         let benchmarks = benchmarks(&self.benchmark)?;
+        let seed = rand::random();
+        let holdout_tasks = holdout_tasks(&benchmarks, self.holdout_percentage, seed)?;
         Ok(Settings {
             primogenitor: primogenitor(&self.primogenitor)?,
             model: self.model.clone(),
@@ -46,12 +49,14 @@ impl StartOptions {
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             benchmarks,
+            holdout_percentage: self.holdout_percentage,
+            holdout_tasks,
             max_procreations: self.max_procreations,
             genealogy_growth: self.genealogy_growth,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             attempt_timeout: self.attempt_timeout,
-            seed: rand::random(),
+            seed,
         })
     }
 }
@@ -62,6 +67,27 @@ pub(super) fn genealogy_growth(given: &str) -> Result<f64, String> {
         .ok()
         .filter(|growth| (0.0..=1.0).contains(growth))
         .ok_or_else(|| "a number from 0 to 1 is expected".to_owned())
+}
+
+pub(super) fn holdout_percentage(given: &str) -> Result<f64, String> {
+    given
+        .parse()
+        .ok()
+        .filter(|percentage| 0.0 < *percentage && *percentage < 100.0)
+        .ok_or_else(|| "a number above 0 and below 100 is expected".to_owned())
+}
+
+fn holdout_tasks(
+    benchmarks: &[Benchmark],
+    percentage: f64,
+    seed: u64,
+) -> Result<Vec<String>, Refused> {
+    holdout::draw(benchmarks, percentage, seed).map_err(|error| Refused {
+        option: "--holdout-percentage",
+        accepted: "a number above 0 and below 100 that holds out at least one task of every \
+                   benchmark and leaves at least one",
+        reason: Some(error.to_string()),
+    })
 }
 
 fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {

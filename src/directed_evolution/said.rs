@@ -16,6 +16,11 @@ pub enum Said<'a> {
         benchmark: &'a Path,
         tasks: u64,
     },
+    HoldingOut {
+        benchmark: &'a Path,
+        held_out: u64,
+        tasks: u64,
+    },
     BuildingImage {
         image: &'a str,
         dockerfile: &'a Path,
@@ -95,6 +100,16 @@ impl Display for Said<'_> {
             Self::CopyingTasks { benchmark, tasks } => write!(
                 formatter,
                 "copying the {} of the benchmark {} into the outputs directory",
+                counted(*tasks, "task", "tasks"),
+                benchmark.display()
+            ),
+            Self::HoldingOut {
+                benchmark,
+                held_out,
+                tasks,
+            } => write!(
+                formatter,
+                "holding out {held_out} of the {} of the benchmark {} from every progenitor",
                 counted(*tasks, "task", "tasks"),
                 benchmark.display()
             ),

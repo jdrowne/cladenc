@@ -21,6 +21,8 @@ pub struct Settings {
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
     pub benchmarks: Vec<Benchmark>,
+    pub holdout_percentage: f64,
+    pub holdout_tasks: Vec<String>,
     pub max_procreations: u64,
     pub genealogy_growth: f64,
     pub max_concurrent_containers: u64,
@@ -68,6 +70,14 @@ impl Settings {
             .iter()
             .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
             .collect()
+    }
+
+    pub fn held_out_of(&self, benchmark: &Benchmark) -> u64 {
+        benchmark
+            .tasks
+            .iter()
+            .filter(|id| self.holdout_tasks.contains(&benchmark.task(id)))
+            .count() as u64
     }
 
     pub fn artificial_selection(&self) -> ArtificialSelection {

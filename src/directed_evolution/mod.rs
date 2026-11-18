@@ -61,9 +61,10 @@ pub fn start(
                     say(writer, &copying);
                     outputs_directory.copy_benchmark(benchmark)
                 })
-                .map(|()| outputs_directory)
+                .map(|()| outputs_directory.holding_out(&settings.holdout_tasks))
         })
         .map_err(DirectedEvolutionError::Io)
+        .inspect(|_| say_the_holdout(settings, writer))
         .and_then(|outputs_directory| {
             build_image(settings, &outputs_directory, stop, writer).map(|()| outputs_directory)
         })
@@ -78,6 +79,17 @@ pub fn start(
         settings: Box::new(settings.clone()),
     });
     carry_on(settings, key.as_deref(), outputs_directory, progress, stop)
+}
+
+fn say_the_holdout(settings: &Settings, writer: &mut dyn Write) {
+    for benchmark in &settings.benchmarks {
+        let holding_out = Said::HoldingOut {
+            benchmark: &benchmark.directory,
+            held_out: settings.held_out_of(benchmark),
+            tasks: benchmark.tasks.len() as u64,
+        };
+        say(writer, &holding_out);
+    }
 }
 
 fn build_image(
@@ -134,7 +146,7 @@ pub fn resume(
         next_action,
         best_harness,
     } = state;
-    let outputs_directory = OutputsDirectory::at(path);
+    let outputs_directory = OutputsDirectory::at(path).holding_out(&settings.holdout_tasks);
     match best_harness {
         Some(best_harness) => {
             let directory = outputs_directory.harness(best_harness);

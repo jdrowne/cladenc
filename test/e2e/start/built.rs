@@ -14,7 +14,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1"]),
+            test_inputs::benchmark(directory.path(), &["t1", "t2"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
@@ -25,6 +25,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))

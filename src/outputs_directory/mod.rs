@@ -1,5 +1,6 @@
 mod copy;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -12,12 +13,21 @@ pub use copy::{copy_tree, holds_only_harness_files};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputsDirectory {
     path: PathBuf,
+    holdout_tasks: BTreeSet<String>,
 }
 
 impl OutputsDirectory {
     pub fn at(path: &Path) -> Self {
         Self {
             path: path.to_owned(),
+            holdout_tasks: BTreeSet::new(),
+        }
+    }
+
+    pub fn holding_out(self, tasks: &[String]) -> Self {
+        Self {
+            holdout_tasks: tasks.iter().cloned().collect(),
+            ..self
         }
     }
 
@@ -27,6 +37,7 @@ impl OutputsDirectory {
             .and_then(|()| fs::create_dir(path.join("harnesses")))
             .and_then(|()| fs::create_dir(path.join("procreations")))
             .and_then(|()| fs::create_dir(path.join("attempts")))
+            .and_then(|()| fs::create_dir(path.join("holdout")))
             .and_then(|()| fs::create_dir(path.join("running")))
             .and_then(|()| fs::create_dir(path.join("benchmarks")))
             .and_then(|()| fs::canonicalize(primogenitor))
@@ -77,8 +88,16 @@ impl OutputsDirectory {
         self.path.join("attempts").join(harness.to_string())
     }
 
+    pub fn holdout(&self, harness: HarnessId) -> PathBuf {
+        self.path.join("holdout").join(harness.to_string())
+    }
+
     pub fn attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
-        self.attempts(harness).join(task)
+        if self.holdout_tasks.contains(task) {
+            self.holdout(harness).join(task)
+        } else {
+            self.attempts(harness).join(task)
+        }
     }
 
     pub fn build(&self, harness: HarnessId) -> PathBuf {

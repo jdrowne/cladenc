@@ -93,16 +93,17 @@ key off every command line, out of the journal and out of what it prints.
 A procreation is carried out by the harness that procreates.
 /var/lib/cladenc/work holds a second copy of its source code, and the
 instruction asks the harness to improve that copy: what the harness leaves
-there is its child. /var/log/cladenc/attempts holds the finished
-attempts of the harness, to read: one directory for each benchmark, and
-in it one for each task, holding what the attempt of that task kept.
+there is its child. /var/log/cladenc/attempts holds the finished attempts
+of the harness at the tasks that are not held out, to read: one directory
+for each benchmark, and in it one for each task, holding what the attempt
+of that task kept.
 
 A harness procreates only once it has been benchmarked in full: it has
 attempted every task of every benchmark of the directed evolution, so that
-it finds every task in /var/log/cladenc/attempts. Where a procreation is
-due and no harness has been benchmarked in full yet, an attempt is started
-in its place: the primogenitor is benchmarked in full before the first
-procreation.
+it finds every task that is not held out in /var/log/cladenc/attempts.
+Where a procreation is due and no harness has been benchmarked in full
+yet, an attempt is started in its place: the primogenitor is benchmarked
+in full before the first procreation.
 
 Every harness is benchmarked in full once it is created, whether it
 procreates or not. cladenc chooses which harness procreates, partly by
@@ -200,6 +201,24 @@ each into a directory named after its benchmark, so the directed evolution
 keeps the tasks it started with, and `cladenc resume` does not read the
 directories that --benchmark named.
 
+--holdout-percentage gives the part of the tasks of each benchmark that is
+held out, as so many in a hundred: a number above 0 and below 100, such as
+60 or 12.5. The holdout tasks are the tasks that no progenitor reads
+about. cladenc draws them at random when a directed evolution is started,
+out of each benchmark by itself: the number of its tasks times the
+percentage, divided by 100 and rounded to the nearest whole number, a half
+rounded up. At 60, a benchmark of 500 tasks has 300 holdout tasks. A value
+that leaves a benchmark no holdout task, or no task that is not held out,
+is refused, and so is a benchmark of one task, which cannot be divided.
+The draw is made once for a directed evolution and written in its journal,
+and `cladenc resume` reads it there and draws nothing.
+
+Every harness is benchmarked on the holdout tasks as on the others, and
+nothing a harness is given in an attempt says whether the task is held
+out. A harness that procreates is given its attempts at the tasks that are
+not held out, and nothing of the holdout tasks: no task specification, no
+workspace, no result, and no count of them.
+
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.
 /var/lib/cladenc/work holds a copy of the workspace of the task, and
@@ -230,16 +249,20 @@ How an attempt ends decides its result:
                                    harness did not complete the task,
                                    which is recorded as timed_out
 
-attempts in the outputs directory keeps every attempt, in a directory named
-after the harness, in it one named after the benchmark, and in that one
-named after the task, which holds
+attempts in the outputs directory keeps every attempt at a task that is not
+held out, in a directory named after the harness, in it one named after the
+benchmark, and in that one named after the task, which holds
 
   result         one word: completed, not_completed or timed_out
   specification  the task specification
   work           the workspace of the task as the harness left it
   stdout         the standard output of the harness
   stderr         the standard error of the harness
-  grader         the standard output and the standard error of the grader";
+  grader         the standard output and the standard error of the grader
+
+holdout in the outputs directory keeps the attempts at the holdout tasks in
+the same way, apart from the others, so that the directory a harness that
+procreates is given holds none of them.";
 
 pub(super) const RESUMING: &str = "\
 A cladenc that is killed outright, as by `kill -9`, ends none of its

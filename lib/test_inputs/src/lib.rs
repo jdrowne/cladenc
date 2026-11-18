@@ -130,6 +130,19 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     task
 }
 
+pub fn kept_attempt(outputs_directory: &Path, harness: u64, task: &str) -> PathBuf {
+    ["attempts", "holdout"]
+        .iter()
+        .map(|kept| {
+            outputs_directory
+                .join(kept)
+                .join(harness.to_string())
+                .join(task)
+        })
+        .find(|attempt| attempt.is_dir())
+        .expect("the attempt is kept in the outputs directory")
+}
+
 pub fn sample(tier: &str, name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../test")

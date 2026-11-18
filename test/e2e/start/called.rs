@@ -20,7 +20,10 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory, &["t1", "t2"]),
+        ),
         ("--docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
@@ -32,6 +35,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))
@@ -83,12 +87,8 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
 }
 
 fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
-    let work = fs::read_dir(directory.path().join("outputs/attempts"))
-        .unwrap()
-        .map(|harness| harness.unwrap().path().join("benchmark/t1/work"))
-        .find(|work| work.is_dir())
-        .unwrap();
-    fs::read_to_string(work.join(file)).unwrap()
+    let kept = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t1");
+    fs::read_to_string(kept.join("work").join(file)).unwrap()
 }
 
 #[test]

@@ -10,7 +10,10 @@ fn options(directory: &Path) -> Vec<String> {
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory, &["t1", "t2"]),
+        ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
         ("--outputs-dir", directory.join("outputs")),
@@ -19,6 +22,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))

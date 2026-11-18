@@ -34,6 +34,8 @@ fn settings(directory: &Path) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
+        holdout_percentage: 50.0,
+        holdout_tasks: Vec::new(),
         seed: 7,
     }
 }
@@ -371,7 +373,7 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 fn a_directed_evolution_says_each_action_as_it_starts() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
-        said[4],
+        said[5],
         "cladenc: started the procreation of harness 1 by harness 0, procreation 1 of 1"
     );
 }
@@ -391,7 +393,7 @@ fn a_directed_evolution_says_as_many_starts_as_its_journal_records() {
 fn a_directed_evolution_says_an_attempt_it_starts_with_no_number() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
-        said[2],
+        said[3],
         "cladenc: started the attempt of harness 0 on task benchmark/t1"
     );
 }

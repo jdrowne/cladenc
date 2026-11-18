@@ -514,25 +514,118 @@ fn the_long_help_of_start_says_that_two_benchmarks_of_the_same_name_are_refused(
 }
 
 #[test]
+fn the_short_help_of_start_names_the_flag_that_gives_the_holdout_percentage() {
+    assert!(help_of_start(false).contains("--holdout-percentage <NUMBER>"));
+}
+
+#[test]
+fn the_short_help_of_start_says_which_numbers_the_holdout_percentage_takes() {
+    assert!(help_of_start(false).contains("above 0 and below 100"));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_holdout_percentage_gives() {
+    assert!(help_of_start(true).contains(
+        "--holdout-percentage gives the part of the tasks of each benchmark that is\nheld out, \
+         as so many in a hundred: a number above 0 and below 100, such as\n60 or 12.5."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_holdout_tasks_are() {
+    assert!(
+        help_of_start(true)
+            .contains("The holdout tasks are the tasks that no progenitor reads\nabout.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_holdout_tasks_are_drawn_out_of_each_benchmark_by_itself() {
+    assert!(help_of_start(true).contains(
+        "cladenc draws them at random when a directed evolution is started,\nout of each \
+         benchmark by itself:"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_many_tasks_of_a_benchmark_are_held_out() {
+    assert!(help_of_start(true).contains(
+        "the number of its tasks times the\npercentage, divided by 100 and rounded to the \
+         nearest whole number, a half\nrounded up. At 60, a benchmark of 500 tasks has 300 \
+         holdout tasks."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_holdout_percentage_is_refused() {
+    assert!(help_of_start(true).contains(
+        "A value\nthat leaves a benchmark no holdout task, or no task that is not held \
+         out,\nis refused, and so is a benchmark of one task, which cannot be divided."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_holdout_tasks_are_drawn_once_and_kept_in_the_journal() {
+    assert!(help_of_start(true).contains(
+        "The draw is made once for a directed evolution and written in its journal,\nand \
+         `cladenc resume` reads it there and draws nothing."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_too() {
+    assert!(help_of_start(true).contains(
+        "Every harness is benchmarked on the holdout tasks as on the others, and\nnothing a \
+         harness is given in an attempt says whether the task is held\nout."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
+    assert!(help_of_start(true).contains(
+        "A harness that procreates is given its attempts at the tasks that are\nnot held out, \
+         and nothing of the holdout tasks: no task specification, no\nworkspace, no result, \
+         and no count of them."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_attempts_the_directory_named_attempts_keeps() {
+    assert!(help_of_start(true).contains(
+        "attempts in the outputs directory keeps every attempt at a task that is not\nheld out,"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_attempts_at_the_holdout_tasks_are_kept() {
+    assert!(help_of_start(true).contains(
+        "holdout in the outputs directory keeps the attempts at the holdout tasks in\nthe same \
+         way, apart from the others, so that the directory a harness that\nprocreates is given \
+         holds none of them."
+    ));
+}
+
+#[test]
 fn the_long_help_of_start_says_where_the_directory_of_an_attempt_is() {
     assert!(help_of_start(true).contains(
-        "in a directory named\nafter the harness, in it one named after the benchmark, and in \
-         that one\nnamed after the task, which holds"
+        "in a directory named after the harness, in it one named after the\nbenchmark, and in \
+         that one named after the task, which holds"
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_procreation_finds_its_attempts_by_benchmark() {
     assert!(help_of_start(true).contains(
-        "one directory for each benchmark, and\nin it one for each task, holding what the \
-         attempt of that task kept."
+        "one directory\nfor each benchmark, and in it one for each task, holding what the \
+         attempt\nof that task kept."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_where_a_procreation_finds_its_attempts() {
     assert!(help_of_start(true).contains(
-        "/var/log/cladenc/attempts holds the finished\nattempts of the harness, to read:"
+        "/var/log/cladenc/attempts holds the finished attempts\nof the harness at the tasks \
+         that are not held out, to read:"
     ));
 }
 
@@ -541,16 +634,16 @@ fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_i
     assert!(help_of_start(true).contains(
         "A harness procreates only once it has been benchmarked in full: it has\nattempted \
          every task of every benchmark of the directed evolution, so that\nit finds every task \
-         in /var/log/cladenc/attempts."
+         that is not held out in /var/log/cladenc/attempts."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation() {
     assert!(help_of_start(true).contains(
-        "Where a procreation is\ndue and no harness has been benchmarked in full yet, an \
-         attempt is started\nin its place: the primogenitor is benchmarked in full before the \
-         first\nprocreation."
+        "Where a procreation is due and no harness has been benchmarked in full\nyet, an \
+         attempt is started in its place: the primogenitor is benchmarked\nin full before the \
+         first procreation."
     ));
 }
 

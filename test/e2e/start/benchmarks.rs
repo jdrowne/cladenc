@@ -15,7 +15,7 @@ fn ran() -> (TempDir, Output) {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark_named(directory.path(), "refactoring", &["t1"]),
+            test_inputs::benchmark_named(directory.path(), "refactoring", &["t1", "t2"]),
         ),
         (
             "--benchmark",
@@ -29,6 +29,7 @@ fn ran() -> (TempDir, Output) {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -39,9 +40,27 @@ fn ran() -> (TempDir, Output) {
     (directory, output)
 }
 
-fn result_of(directory: &TempDir, attempt: &str) -> String {
-    let kept = directory.path().join("outputs/attempts").join(attempt);
+fn result_of(directory: &TempDir, task: &str) -> String {
+    let kept = test_inputs::kept_attempt(&directory.path().join("outputs"), 1, task);
     fs::read_to_string(kept.join("result")).unwrap()
+}
+
+fn tasks_attempted_of(directory: &TempDir, benchmark: &str) -> Vec<String> {
+    let mut tasks: Vec<String> = ["attempts", "holdout"]
+        .iter()
+        .flat_map(|kept| {
+            names_in(
+                &directory
+                    .path()
+                    .join("outputs")
+                    .join(kept)
+                    .join("1")
+                    .join(benchmark),
+            )
+        })
+        .collect();
+    tasks.sort();
+    tasks
 }
 
 fn names_in(directory: &Path) -> Vec<String> {
@@ -65,7 +84,7 @@ fn a_run_given_two_benchmarks_keeps_the_tasks_of_each_under_its_name() {
     assert_eq!(
         ["benchmark", "refactoring"]
             .map(|name| { names_in(&directory.path().join("outputs/benchmarks").join(name)) }),
-        [vec!["t1", "t2"], vec!["t1"]]
+        [vec!["t1", "t2"], vec!["t1", "t2"]]
     );
 }
 
@@ -82,7 +101,7 @@ fn a_run_given_two_benchmarks_says_that_it_copies_the_tasks_of_each_in_the_order
                 given_in.join("benchmark").display()
             ),
             format!(
-                "cladenc: copying the 1 task of the benchmark {} into the outputs directory",
+                "cladenc: copying the 2 tasks of the benchmark {} into the outputs directory",
                 given_in.join("refactoring").display()
             )
         ]
@@ -93,9 +112,8 @@ fn a_run_given_two_benchmarks_says_that_it_copies_the_tasks_of_each_in_the_order
 fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
     let (directory, _output) = ran();
     assert_eq!(
-        ["benchmark", "refactoring"]
-            .map(|name| names_in(&directory.path().join("outputs/attempts/1").join(name))),
-        [vec!["t1", "t2"], vec!["t1"]]
+        ["benchmark", "refactoring"].map(|name| tasks_attempted_of(&directory, name)),
+        [vec!["t1", "t2"], vec!["t1", "t2"]]
     );
 }
 
@@ -104,8 +122,8 @@ fn two_tasks_of_the_same_id_in_two_benchmarks_are_attempted_apart() {
     let (directory, _output) = ran();
     assert_eq!(
         (
-            result_of(&directory, "1/benchmark/t1"),
-            result_of(&directory, "1/refactoring/t1")
+            result_of(&directory, "benchmark/t1"),
+            result_of(&directory, "refactoring/t1")
         ),
         ("completed\n".to_owned(), "completed\n".to_owned())
     );

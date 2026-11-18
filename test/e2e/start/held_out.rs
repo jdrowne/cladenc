@@ -1,0 +1,147 @@
+use std::fs;
+use std::process::{Command, Output};
+
+use serde_json::Value;
+use tempfile::TempDir;
+
+fn ran() -> (TempDir, Output) {
+    let directory = test_inputs::temporary_directory();
+    let options = [
+        (
+            "--primogenitor",
+            test_inputs::primogenitor(directory.path()),
+        ),
+        ("--model", test_inputs::MODEL.into()),
+        ("--model-url", test_inputs::MODEL_URL.into()),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4"]),
+        ),
+        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
+        ("--outputs-dir", directory.path().join("outputs")),
+        ("--max-procreations", "1".into()),
+        ("--genealogy-growth", "0".into()),
+        ("--max-concurrent-containers", "1".into()),
+        ("--procreation-timeout", "30".into()),
+        ("--attempt-timeout", "30".into()),
+        ("--holdout-percentage", "50".into()),
+    ]
+    .map(|(option, value)| format!("{option}={}", value.display()));
+    let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("start")
+        .args(options)
+        .output()
+        .unwrap();
+    (directory, output)
+}
+
+fn journal_of(directory: &TempDir) -> String {
+    fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap()
+}
+
+fn run_record_of(directory: &TempDir) -> Value {
+    serde_json::from_str(journal_of(directory).lines().next().unwrap()).unwrap()
+}
+
+fn holdout_tasks_of(directory: &TempDir) -> Vec<String> {
+    run_record_of(directory)["holdout_tasks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|task| task.as_str().unwrap().to_owned())
+        .collect()
+}
+
+fn tasks_kept_under(directory: &TempDir, kept: &str, harness: &str) -> Vec<String> {
+    let benchmark = directory
+        .path()
+        .join("outputs")
+        .join(kept)
+        .join(harness)
+        .join("benchmark");
+    let mut tasks: Vec<String> = fs::read_dir(benchmark)
+        .unwrap()
+        .map(|entry| format!("benchmark/{}", entry.unwrap().file_name().to_string_lossy()))
+        .collect();
+    tasks.sort();
+    tasks
+}
+
+fn tasks_not_held_out_of(directory: &TempDir) -> Vec<String> {
+    let held_out = holdout_tasks_of(directory);
+    ["t1", "t2", "t3", "t4"]
+        .map(|id| format!("benchmark/{id}"))
+        .into_iter()
+        .filter(|task| !held_out.contains(task))
+        .collect()
+}
+
+#[test]
+fn a_run_that_holds_tasks_out_exits_with_0() {
+    let (_directory, output) = ran();
+    assert_eq!(output.status.code(), Some(0));
+}
+
+#[test]
+fn the_run_record_of_the_journal_holds_the_holdout_percentage_that_was_given() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        run_record_of(&directory)["holdout_percentage"].as_f64(),
+        Some(50.0)
+    );
+}
+
+#[test]
+fn a_half_of_a_benchmark_of_four_tasks_is_two_holdout_tasks() {
+    let (directory, _output) = ran();
+    assert_eq!(holdout_tasks_of(&directory).len(), 2);
+}
+
+#[test]
+fn a_run_says_how_many_tasks_of_its_benchmark_it_holds_out() {
+    let (directory, output) = ran();
+    let given_in = fs::canonicalize(directory.path()).unwrap();
+    assert!(String::from_utf8(output.stderr).unwrap().contains(&format!(
+        "cladenc: holding out 2 of the 4 tasks of the benchmark {} from every progenitor\n",
+        given_in.join("benchmark").display()
+    )));
+}
+
+#[test]
+fn the_attempts_of_the_primogenitor_at_the_holdout_tasks_are_kept_under_holdout() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        tasks_kept_under(&directory, "holdout", "0"),
+        holdout_tasks_of(&directory)
+    );
+}
+
+#[test]
+fn the_attempts_of_a_child_at_the_holdout_tasks_are_kept_under_holdout() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        tasks_kept_under(&directory, "holdout", "1"),
+        holdout_tasks_of(&directory)
+    );
+}
+
+#[test]
+fn the_directory_a_progenitor_is_given_holds_its_attempts_at_the_tasks_that_are_not_held_out() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        tasks_kept_under(&directory, "attempts", "0"),
+        tasks_not_held_out_of(&directory)
+    );
+}
+
+#[test]
+fn every_harness_is_benchmarked_on_the_holdout_tasks_and_on_the_others() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        journal_of(&directory)
+            .matches(r#""record":"attempt_finished""#)
+            .count(),
+        8
+    );
+}

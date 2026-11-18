@@ -101,6 +101,35 @@ fn one_task_is_not_said_to_be_several() {
     );
 }
 
+#[test]
+fn the_tasks_held_out_of_a_benchmark_are_said_with_how_many_of_its_tasks_they_are() {
+    assert_eq!(
+        Said::HoldingOut {
+            benchmark: Path::new("/parsing"),
+            held_out: 3,
+            tasks: 5,
+        }
+        .to_string(),
+        "holding out 3 of the 5 tasks of the benchmark /parsing from every progenitor"
+    );
+}
+
+#[test]
+fn an_attempt_at_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps_it() {
+    assert_eq!(
+        Said::Attempted {
+            harness: 3,
+            task: "parsing/fix-the-parser",
+            result: AttemptResult::Completed,
+            outputs_directory: &outputs_directory()
+                .holding_out(&["parsing/fix-the-parser".to_owned()]),
+        }
+        .to_string(),
+        "harness 3 completed task parsing/fix-the-parser: what the attempt left is kept in \
+         /outputs/holdout/3/parsing/fix-the-parser"
+    );
+}
+
 fn removed(containers: u64) -> String {
     Said::Removed { containers }.to_string()
 }

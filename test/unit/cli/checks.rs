@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use cladenc::benchmark::Benchmark;
 use cladenc::cli::{Refused, StartOptions};
+use cladenc::holdout;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
@@ -26,6 +27,7 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,
+        holdout_percentage: 50.0,
     }
 }
 
@@ -90,6 +92,8 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
             attempt_timeout: 1800,
+            holdout_percentage: 50.0,
+            holdout_tasks: settings.holdout_tasks.clone(),
             seed: settings.seed,
         }
     );
@@ -361,5 +365,106 @@ fn a_file_of_the_key_with_no_path_is_refused() {
     assert_eq!(
         option_refused(|_, options| options.model_key_file = Some(PathBuf::new())),
         "--model-key-file"
+    );
+}
+
+#[test]
+fn the_holdout_percentage_is_a_setting_as_it_was_given() {
+    let settings = checked(|_, options| options.holdout_percentage = 37.5).unwrap();
+    assert_eq!(settings.holdout_percentage, 37.5);
+}
+
+#[test]
+fn a_half_of_a_benchmark_of_two_tasks_holds_out_one_of_the_two() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert!(
+        [
+            vec!["benchmark/t1".to_owned()],
+            vec!["benchmark/t2".to_owned()]
+        ]
+        .contains(&settings.holdout_tasks)
+    );
+}
+
+#[test]
+fn the_holdout_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_draws() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert_eq!(
+        settings.holdout_tasks,
+        holdout::draw(&settings.benchmarks, 50.0, settings.seed).unwrap()
+    );
+}
+
+#[test]
+fn the_percentage_is_taken_of_the_tasks_of_each_benchmark_given() {
+    let settings = checked(|directory, options| {
+        options.benchmark.push(test_inputs::benchmark_named(
+            directory.path(),
+            "refactoring",
+            &["t1", "t2", "t3", "t4"],
+        ));
+    })
+    .unwrap();
+    assert_eq!(
+        ["benchmark/", "refactoring/"].map(|name| {
+            settings
+                .holdout_tasks
+                .iter()
+                .filter(|task| task.starts_with(name))
+                .count()
+        }),
+        [1, 2]
+    );
+}
+
+#[test]
+fn a_holdout_percentage_that_holds_out_no_task_of_a_benchmark_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.holdout_percentage = 10.0),
+        "--holdout-percentage"
+    );
+}
+
+#[test]
+fn a_holdout_percentage_that_holds_out_every_task_of_a_benchmark_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.holdout_percentage = 90.0),
+        "--holdout-percentage"
+    );
+}
+
+#[test]
+fn a_benchmark_of_one_task_is_refused_by_the_flag_of_the_holdout_percentage() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.benchmark = vec![test_inputs::benchmark_named(
+                directory.path(),
+                "single",
+                &["t1"],
+            )];
+        }),
+        "--holdout-percentage"
+    );
+}
+
+#[test]
+fn a_refused_holdout_percentage_is_said_with_what_the_flag_takes_and_the_benchmark_at_fault() {
+    let refused = checked(|_, options| options.holdout_percentage = 10.0).unwrap_err();
+    assert_eq!(
+        refused.to_string(),
+        "--holdout-percentage takes a number above 0 and below 100 that holds out at least one \
+         task of every benchmark and leaves at least one: the benchmark `benchmark` holds 2 \
+         tasks, and none of them would be held out"
+    );
+}
+
+#[test]
+fn a_benchmark_that_is_refused_is_refused_ahead_of_the_holdout_percentage() {
+    assert_eq!(
+        option_refused(|directory, options| {
+            options.benchmark = vec![directory.path().join("missing")];
+            options.holdout_percentage = 10.0;
+        }),
+        "--benchmark"
     );
 }

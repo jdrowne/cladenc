@@ -54,6 +54,13 @@ mod genealogy {
     mod worded;
 }
 
+mod holdout {
+    mod count;
+    mod draw;
+    mod refused;
+    mod worded;
+}
+
 mod journal {
     mod existing;
     mod lock;

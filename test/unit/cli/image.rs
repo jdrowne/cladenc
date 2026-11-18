@@ -4,7 +4,7 @@ use cladenc::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 11] = [
+const OPTIONS: [(&str, &str); 12] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -16,6 +16,7 @@ const OPTIONS: [(&str, &str); 11] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
+    ("--holdout-percentage", "60"),
 ];
 
 const IMAGE: &str = "--docker-image=image";

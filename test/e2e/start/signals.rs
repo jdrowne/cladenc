@@ -14,7 +14,10 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
-        ("--benchmark", test_inputs::benchmark(directory, &["t1"])),
+        (
+            "--benchmark",
+            test_inputs::benchmark(directory, &["t1", "t2"]),
+        ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
@@ -23,6 +26,7 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--attempt-timeout", "60".into()),
+        ("--holdout-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     [env!("CARGO_BIN_EXE_cladenc").to_owned(), "start".to_owned()]

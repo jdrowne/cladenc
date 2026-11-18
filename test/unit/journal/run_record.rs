@@ -30,6 +30,8 @@ fn settings() -> Settings {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 3600,
+        holdout_percentage: 50.0,
+        holdout_tasks: vec!["benchmark/t2".to_owned()],
         seed: 7,
     }
 }
@@ -76,8 +78,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_18() {
-    assert_eq!(journal::FORMAT, 18);
+fn the_format_of_the_journal_is_19() {
+    assert_eq!(journal::FORMAT, 19);
 }
 
 #[test]
@@ -85,11 +87,12 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":18,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":19,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
+            r#""holdout_percentage":50.0,"holdout_tasks":["benchmark/t2"],"#,
             r#""max_procreations":800,"#,
             r#""genealogy_growth":0.6,"max_concurrent_containers":8,"#,
             r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
@@ -102,6 +105,39 @@ fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_set
     assert!(run(settings()).line().unwrap().contains(
         r#""genealogy_growth":0.6,"max_concurrent_containers":8,"procreation_timeout":3600,"#
     ));
+}
+
+#[test]
+fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_by() {
+    assert!(run(settings()).line().unwrap().contains(concat!(
+        r#""tasks":["t1","t2"]}],"holdout_percentage":50.0,"#,
+        r#""holdout_tasks":["benchmark/t2"],"max_procreations":800,"#
+    )));
+}
+
+#[test]
+fn a_holdout_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
+    let held_out = run(Settings {
+        holdout_percentage: 12.5,
+        ..settings()
+    });
+    assert_eq!(read_back(&held_out), held_out);
+}
+
+#[test]
+fn the_settings_give_how_many_tasks_of_a_benchmark_are_held_out() {
+    let settings = settings();
+    assert_eq!(settings.held_out_of(&settings.benchmarks[0]), 1);
+}
+
+#[test]
+fn the_settings_count_no_holdout_task_of_another_benchmark_as_one_of_a_benchmark() {
+    let settings = settings();
+    let another = Benchmark {
+        directory: PathBuf::from("/abs/refactoring"),
+        tasks: vec!["t1".to_owned(), "t2".to_owned()],
+    };
+    assert_eq!(settings.held_out_of(&another), 0);
 }
 
 #[test]

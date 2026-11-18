@@ -106,6 +106,13 @@ pub struct StartOptions {
     pub harness_run_command: String,
     #[arg(
         long,
+        value_name = "NUMBER",
+        value_parser = checks::holdout_percentage,
+        help = "The percentage of each benchmark's tasks that is held out, above 0 and below 100"
+    )]
+    pub holdout_percentage: f64,
+    #[arg(
+        long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The most containers running at once"

@@ -43,9 +43,14 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 #[test]
 fn the_instruction_says_where_the_attempts_are() {
     assert!(containers::INSTRUCTION.contains(
-        "than you do. /var/log/cladenc/attempts holds one directory for each benchmark, and in \
-         it one directory for each task you have attempted. In the directory of a task, "
+        "than you do. /var/log/cladenc/attempts holds the attempts you are shown: one directory \
+         for each benchmark, and in it one directory for each task. In the directory of a task, "
     ));
+}
+
+#[test]
+fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there() {
+    assert!(!containers::INSTRUCTION.contains("each task you have attempted"));
 }
 
 #[test]

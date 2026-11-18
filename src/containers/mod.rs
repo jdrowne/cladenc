@@ -24,11 +24,11 @@ use program::{Ending, Limits};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes \
-    completes more coding tasks than you do. /var/log/cladenc/attempts holds one directory for \
-    each benchmark, and in it one directory for each task you have attempted. In the directory \
-    of a task, the file named specification says what you were asked to do, the file named \
-    result reads completed, not_completed or timed_out, the directory named work holds the \
-    workspace of the task as you left it, the files named stdout and stderr hold what you \
+    completes more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are \
+    shown: one directory for each benchmark, and in it one directory for each task. In the \
+    directory of a task, the file named specification says what you were asked to do, the file \
+    named result reads completed, not_completed or timed_out, the directory named work holds \
+    the workspace of the task as you left it, the files named stdout and stderr hold what you \
     printed, and the directory named grader holds what the grader of the task printed. Use them \
     to find what to improve. Change files in the current directory only: what it holds when you \
     end becomes a new harness, which attempts tasks in its turn.";

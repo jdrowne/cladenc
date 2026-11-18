@@ -28,6 +28,7 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,
+        holdout_percentage: 50.0,
     }
 }
 
@@ -215,7 +216,7 @@ fn the_benchmarks_of_a_directed_evolution_are_in_the_order_of_their_names_and_no
     let settings = settings_of(|directory, benchmarks| {
         benchmarks.insert(
             0,
-            test_inputs::benchmark_named(directory, "refactoring", &["t3"]),
+            test_inputs::benchmark_named(directory, "refactoring", &["t3", "t4"]),
         );
     });
     assert_eq!(

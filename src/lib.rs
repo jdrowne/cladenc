@@ -4,6 +4,7 @@ pub mod cli;
 pub mod containers;
 pub mod directed_evolution;
 pub mod genealogy;
+pub mod holdout;
 pub mod journal;
 pub mod model;
 pub mod outputs_directory;

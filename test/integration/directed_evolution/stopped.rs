@@ -27,6 +27,8 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
+        holdout_percentage: 50.0,
+        holdout_tasks: Vec::new(),
         seed: 7,
     }
 }
