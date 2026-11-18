@@ -48,6 +48,7 @@ mod genealogy {
     mod attempt;
     mod build;
     mod clade;
+    mod completed;
     mod created;
     mod holdout;
     mod primogenitor;

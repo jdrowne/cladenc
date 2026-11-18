@@ -65,6 +65,7 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
+         completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3\n\
          \n\
          id  progenitor  state          holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
          0   -           created        1                  0                      0                1                    1                0                    1.000        4.5              -\n\
@@ -85,6 +86,7 @@ fn a_failed_harness_is_shown_as_failed() {
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
+         completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3\n\
          \n\
          id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
          0   -           created  0                  0                      0                0                    0                0                    -            0.0              -\n\
@@ -99,7 +101,7 @@ fn a_rate_is_printed_to_three_decimal_places() {
         attempted(genealogy, "t2", AttemptResult::NotCompleted);
         attempted(genealogy, "t3", AttemptResult::NotCompleted);
     });
-    assert!(table.lines().nth(4).unwrap().contains("  0.333  "));
+    assert!(table.lines().nth(5).unwrap().contains("  0.333  "));
 }
 
 #[test]
@@ -126,13 +128,13 @@ fn the_seconds_of_a_procreation_are_printed_to_one_decimal_place() {
     let table = table_with(&seconds, |genealogy| {
         genealogy.start_procreation(0).unwrap();
     });
-    assert!(table.lines().nth(5).unwrap().ends_with("  30.3"));
+    assert!(table.lines().nth(6).unwrap().ends_with("  30.3"));
 }
 
 #[test]
 fn the_seconds_of_the_attempts_of_a_harness_are_printed_to_one_decimal_place() {
     let table = table_with(&[took(12.345, None)], |_| {});
-    assert!(table.lines().nth(4).unwrap().contains("  12.3  "));
+    assert!(table.lines().nth(5).unwrap().contains("  12.3  "));
 }
 
 #[test]
@@ -141,8 +143,21 @@ fn a_harness_for_which_no_seconds_are_given_is_shown_with_none_spent() {
     assert!(
         table
             .lines()
-            .nth(4)
+            .nth(5)
             .unwrap()
             .ends_with(&format!("  0.0{}-", " ".repeat(14)))
     );
+}
+
+#[test]
+fn the_line_above_the_table_says_how_many_tasks_at_least_one_harness_completed() {
+    assert_eq!(
+        table(|_| {}).lines().nth(2),
+        Some("completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3")
+    );
+}
+
+#[test]
+fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_table() {
+    assert_eq!(table(|_| {}).lines().nth(3), Some(""));
 }

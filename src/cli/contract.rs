@@ -288,7 +288,12 @@ what luck does to the count of one harness, and how many more holdout
 tasks the best harness completed than the primogenitor is what luck and
 the choosing give together, with nothing changed. The best harness of the
 other directed evolution is ahead of its primogenitor by a change only as
-far as it is ahead by more than that.
+far as it is ahead by more than that. `cladenc report` also says how many
+tasks at least one harness completed, of the holdout tasks and of the
+others. Where no harness changes, that is what one more attempt at each
+task for each child gives the primogenitor, and it is set beside the
+count of the best harness of the other directed evolution, which had one
+attempt at each task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.

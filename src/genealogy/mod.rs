@@ -91,6 +91,12 @@ impl Genealogy {
         self.harness_count() - 1
     }
 
+    pub fn completed_by_any(&self, task: &str) -> bool {
+        self.harnesses
+            .iter()
+            .any(|harness| harness.has_completed(task))
+    }
+
     pub fn created_harnesses(&self) -> Vec<&Harness> {
         self.harnesses
             .iter()

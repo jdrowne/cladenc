@@ -7,6 +7,7 @@ use cladenc::benchmark::Benchmark;
 use cladenc::cli::Cli;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Settings};
+use cladenc::report;
 use clap::CommandFactory;
 use tempfile::TempDir;
 
@@ -143,5 +144,20 @@ fn with_the_run_command_the_help_gives_a_harness_is_started_as_ever_for_an_attem
         )
         .unwrap(),
         "attempted\n"
+    );
+}
+
+#[test]
+fn the_report_of_such_a_directed_evolution_counts_the_tasks_one_harness_at_least_completed() {
+    let directory = evolved();
+    let report = report::read(&directory.path().join("outputs")).unwrap();
+    assert_eq!(
+        (
+            report.holdout_tasks_completed_by_any,
+            report.holdout_tasks,
+            report.other_tasks_completed_by_any,
+            report.other_tasks
+        ),
+        (0, 1, 0, 2)
     );
 }

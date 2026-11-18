@@ -19,6 +19,7 @@ pub struct Harness {
     state: HarnessState,
     given: BTreeSet<String>,
     running: BTreeSet<String>,
+    completed: BTreeSet<String>,
     holdout_completed: u64,
     holdout_not_completed: u64,
     other_completed: u64,
@@ -35,6 +36,7 @@ impl Harness {
             state,
             given: BTreeSet::new(),
             running: BTreeSet::new(),
+            completed: BTreeSet::new(),
             holdout_completed: 0,
             holdout_not_completed: 0,
             other_completed: 0,
@@ -93,6 +95,10 @@ impl Harness {
             .collect()
     }
 
+    pub fn has_completed(&self, task: &str) -> bool {
+        self.completed.contains(task)
+    }
+
     pub fn has_attempted_every(&self, tasks: &[String]) -> bool {
         tasks
             .iter()
@@ -110,6 +116,9 @@ impl Harness {
     pub(super) fn finish(&mut self, task: &str, result: AttemptResult, held_out: bool) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
+            if result == AttemptResult::Completed {
+                self.completed.insert(task.to_owned());
+            }
             let count = match (held_out, result) {
                 (true, AttemptResult::Completed) => &mut self.holdout_completed,
                 (true, AttemptResult::NotCompleted | AttemptResult::TimedOut) => {

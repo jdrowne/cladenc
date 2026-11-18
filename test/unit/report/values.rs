@@ -279,3 +279,49 @@ fn a_harness_for_which_no_seconds_are_given_is_reported_with_none_spent() {
         (0.0, None)
     );
 }
+
+#[test]
+fn the_holdout_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (report.holdout_tasks_completed_by_any, report.holdout_tasks),
+        (1, 1)
+    );
+}
+
+#[test]
+fn the_other_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (report.other_tasks_completed_by_any, report.other_tasks),
+        (1, 1)
+    );
+}
+
+#[test]
+fn a_task_that_no_harness_completed_is_not_counted_as_completed_by_one_at_least() {
+    let report = report(&a_child_that_is_being_created_and_one_that_failed());
+    assert_eq!(
+        (
+            report.holdout_tasks_completed_by_any,
+            report.other_tasks_completed_by_any
+        ),
+        (0, 0)
+    );
+}
+
+#[test]
+fn a_task_that_two_harnesses_completed_is_counted_once() {
+    let mut genealogy = a_child_that_succeeds_where_its_progenitor_fails();
+    let another = genealogy.start_procreation(0).unwrap();
+    genealogy
+        .end_procreation(another, ProcreationOutcome::Created)
+        .unwrap();
+    attempted(
+        &mut genealogy,
+        another,
+        "benchmark/t1",
+        AttemptResult::Completed,
+    );
+    assert_eq!(report(&genealogy).holdout_tasks_completed_by_any, 1);
+}

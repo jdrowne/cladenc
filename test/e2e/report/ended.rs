@@ -63,7 +63,7 @@ fn object_of(directory: &Path) -> Value {
 fn up_to_the_seconds(table: &str) -> String {
     let seconds = table
         .lines()
-        .nth(3)
+        .nth(4)
         .and_then(|header| header.find("attempt seconds"))
         .unwrap();
     table
@@ -88,6 +88,7 @@ fn report_prints_the_table() {
         up_to_the_seconds(&table_of(directory.path())),
         "model a-model at http://models.example/v1\n\
          started 1 of 1 procreation, best harness 1\n\
+         completed by at least one harness: holdout tasks 1 of 1, other tasks 1 of 1\n\
          \n\
          id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
          0   -           created  0                  1                      0                1                    1                1                    0.500\n\
@@ -100,7 +101,9 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
     let directory = ended();
     let values: Value = serde_json::from_str(concat!(
         r#"{"model":"a-model","model_url":"http://models.example/v1","#,
-        r#""procreations_started":1,"max_procreations":1,"best_harness":1,"harnesses":["#,
+        r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
+        r#""holdout_tasks_completed_by_any":1,"holdout_tasks":1,"#,
+        r#""other_tasks_completed_by_any":1,"other_tasks":1,"harnesses":["#,
         r#"{"id":0,"progenitor":null,"state":"created","#,
         r#""holdout_completed":0,"holdout_not_completed":1,"#,
         r#""other_completed":0,"other_not_completed":1,"#,
@@ -120,7 +123,7 @@ fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procre
     assert!(
         table_of(directory.path())
             .lines()
-            .nth(3)
+            .nth(4)
             .unwrap()
             .ends_with("  attempt seconds  procreation seconds")
     );

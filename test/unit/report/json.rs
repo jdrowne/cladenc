@@ -51,7 +51,9 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         Report::of(&settings(), &genealogy, &seconds).json(),
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
-            r#""procreations_started":1,"max_procreations":800,"best_harness":0,"harnesses":["#,
+            r#""procreations_started":1,"max_procreations":800,"best_harness":0,"#,
+            r#""holdout_tasks_completed_by_any":0,"holdout_tasks":0,"#,
+            r#""other_tasks_completed_by_any":0,"other_tasks":1,"harnesses":["#,
             r#"{"id":0,"progenitor":null,"state":"created","#,
             r#""holdout_completed":1,"holdout_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":1,"#,

@@ -28,6 +28,10 @@ pub struct Report {
     pub procreations_started: u64,
     pub max_procreations: u64,
     pub best_harness: HarnessId,
+    pub holdout_tasks_completed_by_any: u64,
+    pub holdout_tasks: u64,
+    pub other_tasks_completed_by_any: u64,
+    pub other_tasks: u64,
     pub harnesses: Vec<HarnessReport>,
 }
 
@@ -54,12 +58,26 @@ pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
 
 impl Report {
     pub fn of(settings: &Settings, genealogy: &Genealogy, seconds: &[Seconds]) -> Self {
+        let (held_out, others): (Vec<String>, Vec<String>) = settings
+            .tasks()
+            .into_iter()
+            .partition(|task| settings.holdout_tasks.contains(task));
+        let completed_by_any = |tasks: &[String]| {
+            tasks
+                .iter()
+                .filter(|task| genealogy.completed_by_any(task))
+                .count() as u64
+        };
         Self {
             model: settings.model.clone(),
             model_url: settings.model_url.clone(),
             procreations_started: genealogy.procreations_started(),
             max_procreations: settings.max_procreations,
             best_harness: settings.artificial_selection().best_harness(genealogy),
+            holdout_tasks_completed_by_any: completed_by_any(&held_out),
+            holdout_tasks: held_out.len() as u64,
+            other_tasks_completed_by_any: completed_by_any(&others),
+            other_tasks: others.len() as u64,
             harnesses: genealogy
                 .harnesses()
                 .iter()
@@ -97,12 +115,17 @@ impl Report {
             "procreations"
         };
         format!(
-            "model {} at {}\nstarted {} of {} {procreations}, best harness {}\n\n{lines}",
+            "model {} at {}\nstarted {} of {} {procreations}, best harness {}\ncompleted by at \
+             least one harness: holdout tasks {} of {}, other tasks {} of {}\n\n{lines}",
             self.model,
             self.model_url,
             self.procreations_started,
             self.max_procreations,
-            self.best_harness
+            self.best_harness,
+            self.holdout_tasks_completed_by_any,
+            self.holdout_tasks,
+            self.other_tasks_completed_by_any,
+            self.other_tasks
         )
     }
 }
