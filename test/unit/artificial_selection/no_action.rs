@@ -15,7 +15,7 @@ fn artificial_selection(max_procreations: u64, growth: f64) -> ArtificialSelecti
 }
 
 fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = Genealogy::new().holding_out(&tasks());
     for task in tasks() {
         genealogy.start_attempt(0, &task).unwrap();
         genealogy
@@ -27,7 +27,7 @@ fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
 
 #[test]
 fn there_is_no_next_action_while_the_only_harness_that_could_procreate_still_attempts_a_task() {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = Genealogy::new().holding_out(&tasks());
     genealogy.start_attempt(0, "task-0").unwrap();
     genealogy.start_attempt(0, "task-1").unwrap();
     assert_eq!(

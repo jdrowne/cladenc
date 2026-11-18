@@ -25,6 +25,14 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
+pub const SOLVE_EVERY_TASK: &str = r#"if [ -d /var/log/cladenc/attempts ]
+then
+  for task in t1 t2 t3 t4 t5; do echo "$task"; done > solved
+else
+  touch "$CLADENC_HARNESS/solved"
+  cp "$CLADENC_HARNESS/solved" solved
+fi"#;
+
 pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/attempts ]
 then
   touch solved

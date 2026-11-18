@@ -34,7 +34,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         procreation_timeout: 30,
         attempt_timeout: 30,
         holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_tasks: vec!["benchmark/t1".to_owned()],
         seed: 7,
     }
 }

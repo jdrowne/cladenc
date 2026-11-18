@@ -59,10 +59,11 @@ impl Settings {
     }
 
     pub fn genealogy(&self) -> Genealogy {
-        match self.harness_build_command {
+        let genealogy = match self.harness_build_command {
             Some(_) => Genealogy::unbuilt(),
             None => Genealogy::new(),
-        }
+        };
+        genealogy.holding_out(&self.holdout_tasks)
     }
 
     pub fn tasks(&self) -> Vec<String> {

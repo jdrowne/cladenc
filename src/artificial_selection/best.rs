@@ -8,7 +8,7 @@ impl ArtificialSelection {
             .into_iter()
             .filter(|harness| harness.has_attempted_every(&self.tasks))
             .rev()
-            .max_by_key(|harness| harness.completed())
+            .max_by_key(|harness| harness.holdout_completed())
             .map_or(0, Harness::id)
     }
 }

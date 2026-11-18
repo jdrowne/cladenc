@@ -1,7 +1,7 @@
 use cladenc::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
 
 fn family() -> Genealogy {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = Genealogy::new().holding_out(&["a".to_owned()]);
     for progenitor in [0, 1, 0] {
         let child = genealogy.start_procreation(progenitor).unwrap();
         genealogy

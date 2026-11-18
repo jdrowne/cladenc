@@ -49,6 +49,14 @@ fn the_instruction_says_where_the_attempts_are() {
 }
 
 #[test]
+fn the_instruction_says_that_the_child_is_judged_by_tasks_the_progenitor_is_not_shown() {
+    assert!(
+        containers::INSTRUCTION
+            .ends_with(" The new harness is judged by tasks that you are not shown.")
+    );
+}
+
+#[test]
 fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there() {
     assert!(!containers::INSTRUCTION.contains("each task you have attempted"));
 }

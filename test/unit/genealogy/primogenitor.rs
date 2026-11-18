@@ -30,12 +30,12 @@ fn a_new_genealogy_has_started_no_attempt() {
 
 #[test]
 fn the_primogenitor_starts_with_nothing_completed() {
-    assert_eq!(Genealogy::new().harnesses()[0].completed(), 0);
+    assert_eq!(Genealogy::new().harnesses()[0].holdout_completed(), 0);
 }
 
 #[test]
 fn the_primogenitor_starts_with_nothing_not_completed() {
-    assert_eq!(Genealogy::new().harnesses()[0].not_completed(), 0);
+    assert_eq!(Genealogy::new().harnesses()[0].holdout_not_completed(), 0);
 }
 
 #[test]

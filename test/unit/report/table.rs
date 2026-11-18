@@ -37,7 +37,8 @@ fn attempted(genealogy: &mut Genealogy, task: &str, result: AttemptResult) {
 }
 
 fn table(build: impl FnOnce(&mut Genealogy)) -> String {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy =
+        Genealogy::new().holding_out(&["t1".to_owned(), "t2".to_owned(), "t3".to_owned()]);
     build(&mut genealogy);
     Report::of(&settings(), &genealogy).table()
 }
@@ -46,6 +47,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table(|genealogy| {
         attempted(genealogy, "t1", AttemptResult::Completed);
+        attempted(genealogy, "t4", AttemptResult::NotCompleted);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
@@ -53,9 +55,9 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state          completed  not completed  clade completed  clade not completed  clade score\n\
-         0   -           created        1          0              1                0                    1.000\n\
-         1   0           being created  0          0              0                0                    -\n"
+         id  progenitor  state          holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
+         0   -           created        1                  0                      0                1                    1                0                    1.000\n\
+         1   0           being created  0                  0                      0                0                    0                0                    -\n"
     );
 }
 
@@ -72,9 +74,9 @@ fn a_failed_harness_is_shown_as_failed() {
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score\n\
-         0   -           created  0          0              0                0                    -\n\
-         1   0           failed   0          0              0                0                    -\n"
+         id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
+         0   -           created  0                  0                      0                0                    0                0                    -\n\
+         1   0           failed   0                  0                      0                0                    0                0                    -\n"
     );
 }
 

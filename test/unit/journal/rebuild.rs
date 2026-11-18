@@ -177,6 +177,29 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
 }
 
 #[test]
+fn rebuilding_counts_the_attempts_at_the_holdout_tasks_of_the_run_record_apart() {
+    let settings = Settings {
+        holdout_tasks: vec!["benchmark/t2".to_owned()],
+        ..settings()
+    };
+    let records = [
+        attempt_started(0, "benchmark/t1"),
+        attempt_finished(0, "benchmark/t1", AttemptResult::NotCompleted),
+        attempt_started(0, "benchmark/t2"),
+        attempt_finished(0, "benchmark/t2", AttemptResult::Completed),
+    ];
+    let state = journal::read(journal_with(settings, &records).path()).unwrap();
+    let primogenitor = &state.genealogy.harnesses()[0];
+    assert_eq!(
+        (
+            primogenitor.holdout_completed(),
+            primogenitor.other_not_completed()
+        ),
+        (1, 1)
+    );
+}
+
+#[test]
 fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
     assert_eq!(
         rebuilt(&four_actions_of_which_two_finished()).unfinished,

@@ -186,9 +186,9 @@ is refused, and so is one with a task that lacks one of the three.
 
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on
-all of them, and looks for the one harness that completes the largest
-share of their tasks. Every task counts the same, so a benchmark
-with more tasks weighs more. The name of a benchmark is the name of its
+all of them, and looks for the one harness that completes the most of
+their holdout tasks. Every holdout task counts the same, so a benchmark
+with more of them weighs more. The name of a benchmark is the name of its
 directory, made of the characters the id of a task is made of, and a task
 of a directed evolution is known by the two together, as
 
@@ -218,6 +218,15 @@ nothing a harness is given in an attempt says whether the task is held
 out. A harness that procreates is given its attempts at the tasks that are
 not held out, and nothing of the holdout tasks: no task specification, no
 workspace, no result, and no count of them.
+
+cladenc counts the holdout tasks and no others. It chooses which harness
+procreates by the holdout tasks that the harness and its descendants
+completed and did not complete, and it names as the best harness the
+created harness, benchmarked in full, that completed the most holdout
+tasks: of several that completed as many, the one created first. The
+tasks that are not held out are what a harness reads to find what to
+change, and a harness that completes more of those alone is not chosen
+for it.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.

@@ -53,6 +53,19 @@ fn holdout_tasks_of(directory: &TempDir) -> Vec<String> {
         .collect()
 }
 
+fn the_one_task_the_child_completes_is_held_out(directory: &TempDir) -> bool {
+    holdout_tasks_of(directory).contains(&"benchmark/t1".to_owned())
+}
+
+fn report_of(directory: &TempDir) -> Value {
+    let report = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .args(["report", "--json", "--outputs-dir"])
+        .arg(directory.path().join("outputs"))
+        .output()
+        .unwrap();
+    serde_json::from_slice(&report.stdout).unwrap()
+}
+
 fn tasks_kept_under(directory: &TempDir, kept: &str, harness: &str) -> Vec<String> {
     let benchmark = directory
         .path()
@@ -143,5 +156,61 @@ fn every_harness_is_benchmarked_on_the_holdout_tasks_and_on_the_others() {
             .matches(r#""record":"attempt_finished""#)
             .count(),
         8
+    );
+}
+
+#[test]
+fn the_child_is_named_the_best_harness_only_where_the_one_task_it_completes_is_held_out() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        report_of(&directory)["best_harness"].as_u64(),
+        Some(u64::from(the_one_task_the_child_completes_is_held_out(
+            &directory
+        )))
+    );
+}
+
+#[test]
+fn the_report_counts_a_task_a_harness_completed_as_a_holdout_task_only_where_it_is_held_out() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        report_of(&directory)["harnesses"][1]["holdout_completed"].as_u64(),
+        Some(u64::from(the_one_task_the_child_completes_is_held_out(
+            &directory
+        )))
+    );
+}
+
+#[test]
+fn the_report_counts_a_task_a_harness_completed_as_another_task_where_it_is_not_held_out() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        report_of(&directory)["harnesses"][1]["other_completed"].as_u64(),
+        Some(u64::from(!the_one_task_the_child_completes_is_held_out(
+            &directory
+        )))
+    );
+}
+
+#[test]
+fn the_report_counts_two_holdout_tasks_and_two_others_for_each_harness() {
+    let (directory, _output) = ran();
+    let report = report_of(&directory);
+    assert_eq!(
+        [0, 1]
+            .map(|harness: usize| {
+                [
+                    "holdout_completed",
+                    "holdout_not_completed",
+                    "other_completed",
+                    "other_not_completed",
+                ]
+                .map(|count| report["harnesses"][harness][count].as_u64().unwrap())
+            })
+            .map(|[held_out, held_out_not, other, other_not]| (
+                held_out + held_out_not,
+                other + other_not
+            )),
+        [(2, 2), (2, 2)]
     );
 }

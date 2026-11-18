@@ -13,7 +13,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned()],
+            tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -26,25 +26,41 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_tasks: vec!["benchmark/t1".to_owned()],
         seed: 7,
     }
 }
 
+fn attempted(genealogy: &mut Genealogy, harness: u64, task: &str, result: AttemptResult) {
+    genealogy.start_attempt(harness, task).unwrap();
+    genealogy.end_attempt(harness, task, result).unwrap();
+}
+
 fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = settings().genealogy();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
         .end_procreation(child, ProcreationOutcome::Created)
         .unwrap();
-    genealogy.start_attempt(0, "benchmark/t1").unwrap();
-    genealogy
-        .end_attempt(0, "benchmark/t1", AttemptResult::NotCompleted)
-        .unwrap();
-    genealogy.start_attempt(child, "benchmark/t1").unwrap();
-    genealogy
-        .end_attempt(child, "benchmark/t1", AttemptResult::Completed)
-        .unwrap();
+    attempted(
+        &mut genealogy,
+        0,
+        "benchmark/t1",
+        AttemptResult::NotCompleted,
+    );
+    attempted(&mut genealogy, 0, "benchmark/t2", AttemptResult::Completed);
+    attempted(
+        &mut genealogy,
+        child,
+        "benchmark/t1",
+        AttemptResult::Completed,
+    );
+    attempted(
+        &mut genealogy,
+        child,
+        "benchmark/t2",
+        AttemptResult::NotCompleted,
+    );
     genealogy
 }
 
@@ -88,14 +104,38 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
 }
 
 #[test]
-fn the_counts_of_a_harness_are_those_of_its_own_attempts() {
+fn the_holdout_counts_of_a_harness_are_those_of_its_own_attempts_at_the_holdout_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].completed,
-            report.harnesses[0].not_completed
+            report.harnesses[0].holdout_completed,
+            report.harnesses[0].holdout_not_completed
         ),
         (0, 1)
+    );
+}
+
+#[test]
+fn the_other_counts_of_a_harness_are_those_of_its_own_attempts_at_the_other_tasks() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (
+            report.harnesses[0].other_completed,
+            report.harnesses[0].other_not_completed
+        ),
+        (1, 0)
+    );
+}
+
+#[test]
+fn the_clade_counts_of_a_harness_leave_out_the_tasks_that_are_not_held_out() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (
+            report.harnesses[1].clade_completed,
+            report.harnesses[1].clade_not_completed
+        ),
+        (1, 0)
     );
 }
 
@@ -109,7 +149,8 @@ fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
 }
 
 #[test]
-fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_tasks() {
+fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_holdout_tasks()
+{
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.best_harness, 1);
 }

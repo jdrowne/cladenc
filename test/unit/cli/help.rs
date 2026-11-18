@@ -485,16 +485,45 @@ fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_b
 fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
     assert!(help_of_start(true).contains(
         "A\ndirected evolution that is given several has each harness benchmarked on\nall of \
-         them, and looks for the one harness that completes the largest\nshare of their tasks."
+         them, and looks for the one harness that completes the most of\ntheir holdout tasks."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_every_task_counts_the_same() {
-    assert!(
-        help_of_start(true)
-            .contains("Every task counts the same, so a benchmark\nwith more tasks weighs more.")
-    );
+fn the_long_help_of_start_says_that_every_holdout_task_counts_the_same() {
+    assert!(help_of_start(true).contains(
+        "Every holdout task counts the same, so a benchmark\nwith more of them weighs more."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_holdout_tasks_are_counted_and_no_others() {
+    assert!(help_of_start(true).contains("cladenc counts the holdout tasks and no others."));
+}
+
+#[test]
+fn the_long_help_of_start_says_by_which_tasks_the_harness_that_procreates_is_chosen() {
+    assert!(help_of_start(true).contains(
+        "It chooses which harness\nprocreates by the holdout tasks that the harness and its \
+         descendants\ncompleted and did not complete,"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_harness_is_named_the_best() {
+    assert!(help_of_start(true).contains(
+        "it names as the best harness the\ncreated harness, benchmarked in full, that \
+         completed the most holdout\ntasks: of several that completed as many, the one created \
+         first."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_tasks_that_are_not_held_out_are_for() {
+    assert!(help_of_start(true).contains(
+        "The\ntasks that are not held out are what a harness reads to find what to\nchange, \
+         and a harness that completes more of those alone is not chosen\nfor it."
+    ));
 }
 
 #[test]

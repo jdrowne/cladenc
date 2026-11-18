@@ -293,12 +293,23 @@ fn settings_with_no_build_command_give_a_launch_that_builds_nothing() {
 
 #[test]
 fn settings_with_a_build_command_give_a_genealogy_whose_primogenitor_awaits_its_build() {
-    assert_eq!(built_with("make harness").genealogy(), Genealogy::unbuilt());
+    assert_eq!(
+        built_with("make harness").genealogy(),
+        Genealogy::unbuilt().holding_out(&["benchmark/t2".to_owned()])
+    );
 }
 
 #[test]
 fn settings_with_no_build_command_give_a_genealogy_whose_primogenitor_is_created() {
-    assert_eq!(settings().genealogy(), Genealogy::new());
+    assert_eq!(
+        settings().genealogy(),
+        Genealogy::new().holding_out(&["benchmark/t2".to_owned()])
+    );
+}
+
+#[test]
+fn the_settings_give_a_genealogy_that_holds_out_the_holdout_tasks_of_the_directed_evolution() {
+    assert_ne!(settings().genealogy(), Genealogy::new());
 }
 
 #[test]

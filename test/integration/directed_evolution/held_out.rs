@@ -11,6 +11,10 @@ use tempfile::TempDir;
 const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
                                     /var/log/cladenc/attempts/benchmark > tasks-found; fi";
 
+const SOLVE_A_HOLDOUT_TASK: &str = "if [ -d /var/log/cladenc/attempts ]; then echo t2 > solved; \
+                                    else touch \"$CLADENC_HARNESS/solved\"; cp \
+                                    \"$CLADENC_HARNESS/solved\" solved; fi";
+
 fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
         primogenitor: test_inputs::primogenitor(directory),
@@ -49,6 +53,16 @@ fn evolved() -> (TempDir, Vec<String>) {
     directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
+}
+
+fn best_harness_of_a_directed_evolution_whose_child_is_made_by(run_command: &str) -> u64 {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path(), run_command);
+    let outputs_directory = directory.path().join("outputs");
+    let stop = AtomicBool::new(false);
+    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
+        .unwrap()
+        .best_harness
 }
 
 fn stopped_at_a_holdout_task_and_resumed() -> TempDir {
@@ -165,5 +179,21 @@ fn a_resumed_directed_evolution_keeps_no_holdout_task_where_a_progenitor_reads()
     assert_eq!(
         tasks_kept_under(&directory, "attempts"),
         [vec!["t1", "t3", "t5"], vec!["t1", "t3", "t5"]]
+    );
+}
+
+#[test]
+fn a_child_that_completes_a_holdout_task_its_progenitor_did_not_is_named_the_best_harness() {
+    assert_eq!(
+        best_harness_of_a_directed_evolution_whose_child_is_made_by(SOLVE_A_HOLDOUT_TASK),
+        1
+    );
+}
+
+#[test]
+fn a_child_that_completes_only_one_more_task_that_is_not_held_out_is_not_named_the_best_harness() {
+    assert_eq!(
+        best_harness_of_a_directed_evolution_whose_child_is_made_by(test_inputs::SOLVE_ONE_MORE),
+        0
     );
 }

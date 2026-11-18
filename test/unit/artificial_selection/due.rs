@@ -24,7 +24,7 @@ fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
 }
 
 fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = Genealogy::new().holding_out(&tasks());
     benchmark_in_full(&mut genealogy, 0);
     genealogy
 }

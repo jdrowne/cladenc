@@ -34,8 +34,8 @@ fn settings(directory: &Path) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
-        holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_percentage: 20.0,
+        holdout_tasks: vec!["benchmark/t1".to_owned()],
         seed: 7,
     }
 }
@@ -266,12 +266,12 @@ fn given_two_benchmarks_the_primogenitor_procreates_once_benchmarked_on_both() {
 }
 
 #[test]
-fn a_progenitor_finds_every_task_of_its_benchmark_in_the_directory_of_its_attempts() {
+fn a_progenitor_finds_every_task_that_is_not_held_out_in_the_directory_of_its_attempts() {
     let (directory, _found) =
         evolved(|settings| settings.harness_run_command = KEEP_THE_TASKS_FOUND.to_owned());
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/tasks-found")).unwrap(),
-        "t1\nt2\nt3\nt4\nt5\n"
+        "t2\nt3\nt4\nt5\n"
     );
 }
 
@@ -414,7 +414,7 @@ fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what
     assert!(said.contains(&format!(
         "cladenc: harness 1 completed task benchmark/t1: what the attempt left \
          is kept in {}",
-        directory.path().join("outputs/attempts/1/benchmark/t1").display()
+        directory.path().join("outputs/holdout/1/benchmark/t1").display()
     )));
 }
 

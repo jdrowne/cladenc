@@ -1,6 +1,8 @@
 mod error;
 mod harness;
 
+use std::collections::BTreeSet;
+
 use serde::{Deserialize, Serialize};
 
 pub use error::GenealogyError;
@@ -29,6 +31,7 @@ pub enum AttemptResult {
 pub struct Genealogy {
     harnesses: Vec<Harness>,
     started: u64,
+    holdout_tasks: BTreeSet<String>,
 }
 
 impl Default for Genealogy {
@@ -50,6 +53,14 @@ impl Genealogy {
         Self {
             harnesses: vec![Harness::new(0, None, state)],
             started: 0,
+            holdout_tasks: BTreeSet::new(),
+        }
+    }
+
+    pub fn holding_out(self, tasks: &[String]) -> Self {
+        Self {
+            holdout_tasks: tasks.iter().cloned().collect(),
+            ..self
         }
     }
 
@@ -143,16 +154,17 @@ impl Genealogy {
         task: &str,
         result: AttemptResult,
     ) -> Result<(), GenealogyError> {
+        let held_out = self.holdout_tasks.contains(task);
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|attempting| attempting.finish(task, result));
+            .is_some_and(|attempting| attempting.finish(task, result, held_out));
         if !finished {
             return Err(GenealogyError::AttemptNotRunning {
                 harness,
                 task: task.to_owned(),
             });
         }
-        let mut member = Some(harness);
+        let mut member = held_out.then_some(harness);
         while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
             ancestor.count_in_clade(result);
             member = ancestor.progenitor();

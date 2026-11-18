@@ -31,7 +31,8 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     the workspace of the task as you left it, the files named stdout and stderr hold what you \
     printed, and the directory named grader holds what the grader of the task printed. Use them \
     to find what to improve. Change files in the current directory only: what it holds when you \
-    end becomes a new harness, which attempts tasks in its turn.";
+    end becomes a new harness, which attempts tasks in its turn. The new harness is judged by \
+    tasks that you are not shown.";
 
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";

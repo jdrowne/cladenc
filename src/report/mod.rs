@@ -6,12 +6,14 @@ use serde::Serialize;
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 use crate::journal::{self, JournalError, Settings};
 
-const HEADER: [&str; 8] = [
+const HEADER: [&str; 10] = [
     "id",
     "progenitor",
     "state",
-    "completed",
-    "not completed",
+    "holdout completed",
+    "holdout not completed",
+    "other completed",
+    "other not completed",
     "clade completed",
     "clade not completed",
     "clade score",
@@ -32,8 +34,10 @@ pub struct HarnessReport {
     pub id: HarnessId,
     pub progenitor: Option<HarnessId>,
     pub state: HarnessState,
-    pub completed: u64,
-    pub not_completed: u64,
+    pub holdout_completed: u64,
+    pub holdout_not_completed: u64,
+    pub other_completed: u64,
+    pub other_not_completed: u64,
     pub clade_completed: u64,
     pub clade_not_completed: u64,
     pub clade_score: Option<f64>,
@@ -66,7 +70,7 @@ impl Report {
     pub fn table(&self) -> String {
         let mut rows = vec![HEADER.map(str::to_owned)];
         rows.extend(self.harnesses.iter().map(HarnessReport::cells));
-        let widths: [usize; 8] =
+        let widths: [usize; 10] =
             array::from_fn(|column| rows.iter().map(|row| row[column].len()).fold(0, usize::max));
         let lines: String = rows
             .iter()
@@ -101,15 +105,17 @@ impl HarnessReport {
             id: harness.id(),
             progenitor: harness.progenitor(),
             state: harness.state(),
-            completed: harness.completed(),
-            not_completed: harness.not_completed(),
+            holdout_completed: harness.holdout_completed(),
+            holdout_not_completed: harness.holdout_not_completed(),
+            other_completed: harness.other_completed(),
+            other_not_completed: harness.other_not_completed(),
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
         }
     }
 
-    fn cells(&self) -> [String; 8] {
+    fn cells(&self) -> [String; 10] {
         let state = match self.state {
             HarnessState::BeingCreated => "being created",
             HarnessState::Created => "created",
@@ -119,8 +125,10 @@ impl HarnessReport {
             self.id.to_string(),
             shown(self.progenitor.map(|progenitor| progenitor.to_string())),
             state.to_owned(),
-            self.completed.to_string(),
-            self.not_completed.to_string(),
+            self.holdout_completed.to_string(),
+            self.holdout_not_completed.to_string(),
+            self.other_completed.to_string(),
+            self.other_not_completed.to_string(),
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),

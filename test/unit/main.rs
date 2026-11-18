@@ -4,6 +4,7 @@ mod artificial_selection {
     mod due;
     mod focus;
     mod growth;
+    mod holdout;
     mod no_action;
     mod procreation;
     mod repeatable;
@@ -46,6 +47,7 @@ mod genealogy {
     mod build;
     mod clade;
     mod created;
+    mod holdout;
     mod primogenitor;
     mod procreation;
     mod refused_attempt;

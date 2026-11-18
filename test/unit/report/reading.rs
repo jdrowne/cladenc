@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AttemptResult, Genealogy};
+use cladenc::genealogy::AttemptResult;
 use cladenc::journal::{self, Journal, JournalError, Record, Settings};
 use cladenc::report::{self, Report};
 use tempfile::TempDir;
@@ -30,7 +30,7 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_tasks: vec!["t1".to_owned()],
         seed: 7,
     }
 }
@@ -65,7 +65,7 @@ fn outputs_directory(last_line: &str) -> TempDir {
 }
 
 fn of_the_records() -> Report {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = settings().genealogy();
     genealogy.start_attempt(0, "t1").unwrap();
     genealogy
         .end_attempt(0, "t1", AttemptResult::Completed)
@@ -80,6 +80,12 @@ fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
         report::read(outputs_directory("").path()).unwrap(),
         of_the_records()
     );
+}
+
+#[test]
+fn a_report_read_from_a_journal_counts_the_holdout_tasks_its_run_record_names() {
+    let report = report::read(outputs_directory("").path()).unwrap();
+    assert_eq!(report.harnesses[0].holdout_completed, 1);
 }
 
 #[test]

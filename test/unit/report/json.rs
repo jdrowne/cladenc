@@ -33,10 +33,14 @@ fn settings() -> Settings {
 
 #[test]
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
-    let mut genealogy = Genealogy::new();
+    let mut genealogy = Genealogy::new().holding_out(&["t1".to_owned()]);
     genealogy.start_attempt(0, "t1").unwrap();
     genealogy
         .end_attempt(0, "t1", AttemptResult::Completed)
+        .unwrap();
+    genealogy.start_attempt(0, "t2").unwrap();
+    genealogy
+        .end_attempt(0, "t2", AttemptResult::NotCompleted)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
     assert_eq!(
@@ -44,9 +48,13 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""procreations_started":1,"max_procreations":800,"best_harness":0,"harnesses":["#,
-            r#"{"id":0,"progenitor":null,"state":"created","completed":1,"not_completed":0,"#,
+            r#"{"id":0,"progenitor":null,"state":"created","#,
+            r#""holdout_completed":1,"holdout_not_completed":0,"#,
+            r#""other_completed":0,"other_not_completed":1,"#,
             r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0},"#,
-            r#"{"id":1,"progenitor":0,"state":"being_created","completed":0,"not_completed":0,"#,
+            r#"{"id":1,"progenitor":0,"state":"being_created","#,
+            r#""holdout_completed":0,"holdout_not_completed":0,"#,
+            r#""other_completed":0,"other_not_completed":0,"#,
             r#""clade_completed":0,"clade_not_completed":0,"clade_score":null}]}"#
         )
     );

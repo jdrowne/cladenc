@@ -15,7 +15,10 @@ fn options(directory: &Path) -> Vec<String> {
             test_inputs::benchmark(directory, &["t1", "t2"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
-        ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
+        (
+            "--harness-run-command",
+            test_inputs::SOLVE_EVERY_TASK.into(),
+        ),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),

@@ -18,7 +18,10 @@ fn ended() -> TempDir {
             test_inputs::benchmark(directory.path(), &["t1", "t2"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
-        ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
+        (
+            "--harness-run-command",
+            test_inputs::SOLVE_EVERY_TASK.into(),
+        ),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
@@ -56,9 +59,9 @@ fn report_prints_the_table() {
         "model a-model at http://models.example/v1\n\
          started 1 of 1 procreation, best harness 1\n\
          \n\
-         id  progenitor  state    completed  not completed  clade completed  clade not completed  clade score\n\
-         0   -           created  0          2              1                3                    0.250\n\
-         1   0           created  1          1              1                1                    0.500\n"
+         id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
+         0   -           created  0                  1                      0                1                    1                1                    0.500\n\
+         1   0           created  1                  0                      1                0                    1                0                    1.000\n"
     );
 }
 
@@ -70,10 +73,14 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""procreations_started":1,"max_procreations":1,"best_harness":1,"harnesses":["#,
-            r#"{"id":0,"progenitor":null,"state":"created","completed":0,"not_completed":2,"#,
-            r#""clade_completed":1,"clade_not_completed":3,"clade_score":0.25},"#,
-            r#"{"id":1,"progenitor":0,"state":"created","completed":1,"not_completed":1,"#,
-            r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5}]}"#,
+            r#"{"id":0,"progenitor":null,"state":"created","#,
+            r#""holdout_completed":0,"holdout_not_completed":1,"#,
+            r#""other_completed":0,"other_not_completed":1,"#,
+            r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5},"#,
+            r#"{"id":1,"progenitor":0,"state":"created","#,
+            r#""holdout_completed":1,"holdout_not_completed":0,"#,
+            r#""other_completed":1,"other_not_completed":0,"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0}]}"#,
             "\n"
         )
     );

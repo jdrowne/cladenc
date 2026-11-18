@@ -19,8 +19,10 @@ pub struct Harness {
     state: HarnessState,
     given: BTreeSet<String>,
     running: BTreeSet<String>,
-    completed: u64,
-    not_completed: u64,
+    holdout_completed: u64,
+    holdout_not_completed: u64,
+    other_completed: u64,
+    other_not_completed: u64,
     clade_completed: u64,
     clade_not_completed: u64,
 }
@@ -33,8 +35,10 @@ impl Harness {
             state,
             given: BTreeSet::new(),
             running: BTreeSet::new(),
-            completed: 0,
-            not_completed: 0,
+            holdout_completed: 0,
+            holdout_not_completed: 0,
+            other_completed: 0,
+            other_not_completed: 0,
             clade_completed: 0,
             clade_not_completed: 0,
         }
@@ -52,12 +56,20 @@ impl Harness {
         self.state
     }
 
-    pub fn completed(&self) -> u64 {
-        self.completed
+    pub fn holdout_completed(&self) -> u64 {
+        self.holdout_completed
     }
 
-    pub fn not_completed(&self) -> u64 {
-        self.not_completed
+    pub fn holdout_not_completed(&self) -> u64 {
+        self.holdout_not_completed
+    }
+
+    pub fn other_completed(&self) -> u64 {
+        self.other_completed
+    }
+
+    pub fn other_not_completed(&self) -> u64 {
+        self.other_not_completed
     }
 
     pub fn clade_completed(&self) -> u64 {
@@ -95,13 +107,20 @@ impl Harness {
         self.given.insert(task.to_owned()) && self.running.insert(task.to_owned())
     }
 
-    pub(super) fn finish(&mut self, task: &str, result: AttemptResult) -> bool {
+    pub(super) fn finish(&mut self, task: &str, result: AttemptResult, held_out: bool) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            match result {
-                AttemptResult::Completed => self.completed += 1,
-                AttemptResult::NotCompleted | AttemptResult::TimedOut => self.not_completed += 1,
-            }
+            let count = match (held_out, result) {
+                (true, AttemptResult::Completed) => &mut self.holdout_completed,
+                (true, AttemptResult::NotCompleted | AttemptResult::TimedOut) => {
+                    &mut self.holdout_not_completed
+                }
+                (false, AttemptResult::Completed) => &mut self.other_completed,
+                (false, AttemptResult::NotCompleted | AttemptResult::TimedOut) => {
+                    &mut self.other_not_completed
+                }
+            };
+            *count += 1;
         }
         was_running
     }
