@@ -39,6 +39,29 @@ jobs:
             --fail-under-functions 100 \
             --fail-under-lines 100 \
             --fail-under-regions 100
+  assert-coverage-of-test-inputs:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - name: Fetch the image the tests start containers from
+        run: docker pull busybox:1.37.0
+      - name: Assert that its own tests reach every line, region and function
+        run: |
+          cargo llvm-cov --locked --show-missing-lines \
+            --package test_inputs --test test_inputs \
+            --ignore-filename-regex '(^|/)test/' \
+            --fail-under-functions 100 \
+            --fail-under-lines 100 \
+            --fail-under-regions 100
   assert-no-comments:
     runs-on: ubuntu-latest
     steps:
@@ -419,6 +442,7 @@ jobs:
     if: github.ref_name == 'main'
     needs:
       - assert-coverage
+      - assert-coverage-of-test-inputs
       - assert-no-comments
       - assert-no-empty-test-files
       - assert-no-inline-directives
