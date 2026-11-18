@@ -101,3 +101,6 @@ fn largest_draw<'a>(
     }
     largest.map(|(harness, _)| harness)
 }
+
+#[cfg(test)]
+mod tests;

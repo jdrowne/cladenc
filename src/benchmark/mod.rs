@@ -222,3 +222,6 @@ fn can_be_copied(task: &Path) -> bool {
         .and_then(|resolved| holds_only_harness_files(&resolved))
         .unwrap_or(false)
 }
+
+#[cfg(test)]
+mod tests;

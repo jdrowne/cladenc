@@ -189,3 +189,6 @@ impl Genealogy {
             .filter(|harness| harness.state() == state)
     }
 }
+
+#[cfg(test)]
+mod tests;

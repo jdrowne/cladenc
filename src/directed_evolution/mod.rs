@@ -243,3 +243,6 @@ fn carry_on(
     });
     progress.finish(&shared.outputs_directory, stop)
 }
+
+#[cfg(test)]
+mod tests;

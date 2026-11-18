@@ -85,3 +85,6 @@ fn divided(benchmark: &Benchmark, percentage: f64) -> Result<usize, HoldoutError
         Ok(held_out)
     }
 }
+
+#[cfg(test)]
+mod tests;

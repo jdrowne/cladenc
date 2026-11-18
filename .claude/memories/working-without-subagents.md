@@ -10,7 +10,7 @@ metadata:
 
 # Working without subagents
 
-The session does every part of the work itself: reading the paper, the code and the issues, searching `src/`, `test/` and `lib/`, reading CI logs, filing and rewriting issues, reviewing a diff, and writing code and tests. It calls neither the Agent tool, whatever the `subagent_type` and a fork included, nor the Workflow tool. That holds for a read-only search, for keeping a long listing out of its own context, for running steps side by side, and when ultracode is on. A shell command run in the background, such as a long build per [[long-running-commands-in-the-background]], is not a subagent and stays allowed.
+The session does every part of the work itself: reading the paper, the code and the issues, searching `src/`, `tests/` and `crates/`, reading CI logs, filing and rewriting issues, reviewing a diff, and writing code and tests. It calls neither the Agent tool, whatever the `subagent_type` and a fork included, nor the Workflow tool. That holds for a read-only search, for keeping a long listing out of its own context, for running steps side by side, and when ultracode is on. A shell command run in the background, such as a long build per [[long-running-commands-in-the-background]], is not a subagent and stays allowed.
 
 **Why:** It is the user's rule, held in their other repositories too. Subagents spend tokens far faster than a session working alone, and several at once spend them in a burst; once the account's usage limit is reached every session stops, so an agent that saves a few minutes can cost hours. The reminders the autopilot skill schedules also fire into the main session only, so a subagent works through its whole brief without them.
 

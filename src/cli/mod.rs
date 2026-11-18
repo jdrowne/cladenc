@@ -277,3 +277,6 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
     };
     (status, error.to_string())
 }
+
+#[cfg(test)]
+mod tests;

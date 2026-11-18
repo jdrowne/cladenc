@@ -177,3 +177,6 @@ impl HarnessReport {
 fn shown(value: Option<String>) -> String {
     value.unwrap_or_else(|| "-".to_owned())
 }
+
+#[cfg(test)]
+mod tests;

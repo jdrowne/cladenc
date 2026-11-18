@@ -234,3 +234,6 @@ pub fn run_attempt(
         .map(|()| Attempted { result, seconds })
         .map_err(ContainerError::Io)
 }
+
+#[cfg(test)]
+mod tests;

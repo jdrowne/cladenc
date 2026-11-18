@@ -66,3 +66,6 @@ fn whole_lines(contents: &[u8]) -> &[u8] {
         .map_or(0, |last| last + 1);
     &contents[..end]
 }
+
+#[cfg(test)]
+mod tests;

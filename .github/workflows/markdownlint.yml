@@ -16,7 +16,7 @@ jobs:
         run: npm install -g markdownlint-cli
       - name: markdownlint
         run: >-
-          markdownlint --dot --disable MD013 --ignore 'test/*/samples/**'
+          markdownlint --dot --disable MD013 --ignore 'tests/**/samples/**'
           -- '**/*.md'
   yamllint:
     runs-on: ubuntu-latest

@@ -28,3 +28,6 @@ pub fn read_key(file: &Path) -> Option<String> {
         .filter(|key| !key.is_empty() && !key.contains('\0') && lines.next().is_none())
         .map(str::to_owned)
 }
+
+#[cfg(test)]
+mod tests;

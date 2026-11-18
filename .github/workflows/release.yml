@@ -22,23 +22,46 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-llvm-cov
+          tool: cargo-llvm-cov@0.9.1
       - name: Take the instrumented build and the profiles of each tier
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
           pattern: coverage-*
-      - name: Assert that the tests reach every line, region and function
+      - name: Assert that the tests reach every line and function
         run: |
           for packed in coverage.tar profiles-*.tar; do
             tar -xPf "$packed"
           done
           source coverage.env
           cargo llvm-cov report --show-missing-lines \
-            --ignore-filename-regex '(^|/)test/' \
+            --ignore-filename-regex '(^|/)tests/' \
             --fail-under-functions 100 \
-            --fail-under-lines 100 \
-            --fail-under-regions 100
+            --fail-uncovered-lines 0
+      - name: Assert that the tests reach every region
+        run: |
+          source coverage.env
+          cargo llvm-cov report --json \
+            --ignore-filename-regex '(^|/)tests/' > coverage.json
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import sys
+          with open("coverage.json") as report:
+              files = json.load(report)["data"][0]["files"]
+          missed = not files
+          if missed:
+              print("::error::the report lists no file")
+          for file in files:
+              for segment in file["segments"]:
+                  line, column, count, counted, entered, gap = segment
+                  if counted and entered and not gap and not count:
+                      name = os.path.relpath(file["filename"])
+                      where = f"file={name},line={line},col={column}"
+                      print(f"::error {where}::no test reaches this region")
+                      missed = True
+          sys.exit(missed)
+          PYTHON
   assert-coverage-of-test-inputs:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -51,14 +74,14 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-llvm-cov
+          tool: cargo-llvm-cov@0.9.1
       - name: Fetch the image the tests start containers from
         run: docker pull busybox:1.37.0
       - name: Assert that its own tests reach every line, region and function
         run: |
           cargo llvm-cov --locked --show-missing-lines \
-            --package test_inputs --test test_inputs \
-            --ignore-filename-regex '(^|/)test/' \
+            --package test_inputs --test '*' \
+            --ignore-filename-regex '(^|/)tests/' \
             --fail-under-functions 100 \
             --fail-under-lines 100 \
             --fail-under-regions 100
@@ -86,7 +109,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Assert that every test file holds a test
         run: |
-          tests=('test/*.rs' ':!*/main.rs')
+          tests=('tests/*.rs' 'src/*/tests/*.rs' 'crates/*/tests/*.rs')
+          tests+=(':!*/main.rs' ':!*/mod.rs')
           found="$(git grep -LF '#[test]' -- "${tests[@]}" || true)"
           if [ -n "$found" ]; then
             for file in $found; do
@@ -216,7 +240,7 @@ jobs:
       - name: Install dependencies
         run: pip install assert-one-assert-per-test
       - name: assert-one-assert-per-test
-        run: assert-one-assert-per-test --verbose src test lib
+        run: assert-one-assert-per-test --verbose src tests crates
   assert-one-directory-per-module:
     runs-on: ubuntu-latest
     steps:
@@ -245,20 +269,23 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-llvm-cov
+          tool: cargo-llvm-cov@0.9.1
       - name: Build the program and the tests with coverage instrumentation
         run: |
           cargo llvm-cov show-env --sh > coverage.env
           source coverage.env
           cargo test --locked --no-run \
             --message-format=json-render-diagnostics \
-            --test unit --test integration --test e2e > build.json
-          for tier in unit integration e2e; do
+            --lib --test integration --test e2e > build.json
+          built='select(.profile.test and .target.kind == ["lib"])'
+          jq -r "$built.executable" build.json > target/test-unit
+          for tier in integration e2e; do
             built="select(.profile.test and .target.name == \"$tier\")"
             jq -r "$built.executable" build.json > "target/test-$tier"
           done
+          unit="$(cat target/test-unit)"
           tar -cPf coverage.tar coverage.env target/debug/cladenc \
-            target/test-* $(cat target/test-*)
+            target/test-* $(cat target/test-*) "${unit%/out/*}/fingerprint"
       - name: Hand on what was built
         uses: actions/upload-artifact@v4
         with:
@@ -276,8 +303,10 @@ jobs:
         run: |
           cargo test --locked --no-run \
             --message-format=json-render-diagnostics \
-            --test unit --test integration --test e2e > build.json
-          for tier in unit integration e2e; do
+            --lib --test integration --test e2e > build.json
+          built='select(.profile.test and .target.kind == ["lib"])'
+          cp "$(jq -r "$built.executable" build.json)" target/debug/test-unit
+          for tier in integration e2e; do
             built="select(.profile.test and .target.name == \"$tier\")"
             cp "$(jq -r "$built.executable" build.json)" \
               "target/debug/test-$tier"
@@ -584,7 +613,7 @@ on:
       - ".github/workflows/release.yml"
       - "Cargo.lock"
       - "Cargo.toml"
+      - "crates/**"
       - "etc/**"
-      - "lib/**"
       - "src/**"
-      - "test/**"
+      - "tests/**"
