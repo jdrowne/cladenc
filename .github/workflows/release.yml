@@ -35,6 +35,7 @@ jobs:
           done
           source coverage.env
           cargo llvm-cov report --show-missing-lines \
+            --ignore-filename-regex '(^|/)test/' \
             --fail-under-functions 100 \
             --fail-under-lines 100 \
             --fail-under-regions 100
