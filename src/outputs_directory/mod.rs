@@ -3,6 +3,7 @@ mod copy;
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
+use std::iter;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
@@ -124,8 +125,19 @@ impl OutputsDirectory {
             .and_then(|()| copy_tree(&harness, &running.join("child")))
     }
 
-    pub fn end_procreation(&self, child: HarnessId, outcome: ProcreationOutcome) -> io::Result<()> {
+    pub fn end_procreation(
+        &self,
+        child: HarnessId,
+        progenitor: HarnessId,
+        outcome: ProcreationOutcome,
+    ) -> io::Result<()> {
         let running = self.running_procreation(child);
+        let word = match outcome {
+            ProcreationOutcome::Created => "created\n",
+            ProcreationOutcome::Failed => "failed\n",
+            ProcreationOutcome::BuildFailed => "build_failed\n",
+            ProcreationOutcome::TimedOut => "timed_out\n",
+        };
         fs::rename(running.join("child"), self.harness(child))
             .and_then(|()| match outcome {
                 ProcreationOutcome::Created => fs::create_dir(self.attempts(child)),
@@ -134,7 +146,35 @@ impl OutputsDirectory {
                 | ProcreationOutcome::TimedOut => Ok(()),
             })
             .and_then(|()| fs::remove_dir_all(running.join("progenitor")))
+            .and_then(|()| fs::write(running.join("progenitor"), format!("{progenitor}\n")))
+            .and_then(|()| fs::write(running.join("outcome"), word))
             .and_then(|()| fs::rename(&running, self.procreation(child)))
+    }
+
+    pub fn progenitor_of(&self, harness: HarnessId) -> Option<HarnessId> {
+        fs::read_to_string(self.procreation(harness).join("progenitor"))
+            .ok()
+            .and_then(|id| id.trim().parse().ok())
+    }
+
+    pub fn line_of(&self, harness: HarnessId) -> Vec<HarnessId> {
+        iter::successors(self.progenitor_of(harness), |ancestor| {
+            self.progenitor_of(*ancestor)
+                .filter(|earlier| earlier < ancestor)
+        })
+        .collect()
+    }
+
+    pub fn children_of(&self, progenitor: HarnessId) -> Vec<HarnessId> {
+        let mut children: Vec<HarnessId> = fs::read_dir(self.path.join("procreations"))
+            .into_iter()
+            .flatten()
+            .filter_map(Result::ok)
+            .filter_map(|made| made.file_name().to_string_lossy().parse().ok())
+            .filter(|child| self.progenitor_of(*child) == Some(progenitor))
+            .collect();
+        children.sort_unstable();
+        children
     }
 
     pub fn start_build(&self, harness: HarnessId) -> io::Result<PathBuf> {

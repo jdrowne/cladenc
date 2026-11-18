@@ -659,6 +659,59 @@ fn the_long_help_of_start_says_where_a_procreation_finds_its_attempts() {
 }
 
 #[test]
+fn the_long_help_of_start_says_of_which_harnesses_a_harness_that_procreates_is_given_more() {
+    assert!(help_of_start(true).contains(
+        "A harness that procreates is given more to read, and nothing more to\nchange: what \
+         was kept of each harness it descends from, back to the\nprimogenitor, and of each \
+         harness it made in an earlier procreation that\nhas ended, whether that one was \
+         created or not. It is given nothing of\nany other harness."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_where_the_line_and_the_children_of_a_harness_are() {
+    let help = help_of_start(true);
+    let given = [
+        "  /var/log/cladenc/line/<ID>      a harness it descends from\n",
+        "  /var/log/cladenc/children/<ID>  a harness it made before\n",
+    ];
+    assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_names_what_is_given_of_a_harness_of_the_line_or_a_child() {
+    let help = help_of_start(true);
+    let given = [
+        "  harness      the source code of that harness\n",
+        "  attempts     its attempts at the tasks that are not held out, laid out\n",
+        "  procreation  what the harness that made it printed, in stdout and\n",
+        "               progenitor and one word in the file named outcome:\n",
+        "               created, failed, build_failed or timed_out\n",
+        "  build        what its build printed, in stdout and stderr\n",
+    ];
+    assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_directory_of_such_a_harness_is_not_there() {
+    assert!(help_of_start(true).contains(
+        "A directory that would hold nothing is not there: the primogenitor has no\nprocreation, \
+         a harness that was not created has no attempts, and a harness\nthat was not built has \
+         no build. Nothing of a holdout task is in any of\nthem."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_outputs_directory_keeps_of_a_procreation() {
+    assert!(help_of_start(true).contains(
+        "procreations in the\noutputs directory keeps, in a directory named after the child, \
+         the\nstandard output and standard error of the harness that made it, the id of\nthat \
+         harness in the file named progenitor, and how the procreation ended\nin the file \
+         named outcome."
+    ));
+}
+
+#[test]
 fn the_long_help_of_start_says_what_kind_of_change_the_instruction_asks_for() {
     assert!(help_of_start(true).contains(
         "The instruction asks the harness that procreates for a change to how its\nchild works \

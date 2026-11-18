@@ -22,7 +22,7 @@ fn with_a_procreation_discarded_after_it_ended() -> (TempDir, OutputsDirectory) 
     let (directory, outputs_directory) = made();
     outputs_directory.start_procreation(1, 0).unwrap();
     outputs_directory
-        .end_procreation(1, ProcreationOutcome::Created)
+        .end_procreation(1, 0, ProcreationOutcome::Created)
         .unwrap();
     outputs_directory.discard_procreation(1).unwrap();
     (directory, outputs_directory)

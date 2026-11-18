@@ -57,6 +57,56 @@ fn the_instruction_says_that_the_child_is_judged_by_tasks_the_progenitor_is_not_
 }
 
 #[test]
+fn the_instruction_says_where_the_line_of_the_harness_and_the_children_it_made_before_are() {
+    assert!(containers::INSTRUCTION.contains(
+        " /var/log/cladenc/line holds one directory for each harness you descend from, named by \
+         its id, and /var/log/cladenc/children one for each harness you made before, created or \
+         not. "
+    ));
+}
+
+#[test]
+fn the_instruction_says_where_the_source_code_and_the_attempts_of_such_a_harness_are() {
+    assert!(containers::INSTRUCTION.contains(
+        " In the directory of such a harness, the directory named harness holds its source \
+         code, the directory named attempts holds its attempts, laid out as yours are, "
+    ));
+}
+
+#[test]
+fn the_instruction_says_where_the_record_of_the_procreation_of_such_a_harness_is() {
+    assert!(containers::INSTRUCTION.contains(
+        "the directory named procreation holds what the harness that made it printed, in the \
+         files named stdout and stderr, with the id of that harness in the file named \
+         progenitor and one word in the file named outcome, created, failed, build_failed or \
+         timed_out, "
+    ));
+}
+
+#[test]
+fn the_instruction_says_where_what_the_build_of_such_a_harness_printed_is() {
+    assert!(
+        containers::INSTRUCTION
+            .contains("and the directory named build holds what its build printed. ")
+    );
+}
+
+#[test]
+fn the_instruction_says_that_a_directory_that_would_hold_nothing_is_not_there() {
+    assert!(
+        containers::INSTRUCTION.contains(" A directory that would hold nothing is not there. ")
+    );
+}
+
+#[test]
+fn the_instruction_says_what_the_line_and_the_children_are_to_be_read_for() {
+    assert!(containers::INSTRUCTION.contains(
+        " Use all of them to find what to improve, and to see what was changed before and what \
+         came of it. "
+    ));
+}
+
+#[test]
 fn the_instruction_asks_for_a_change_that_answers_several_attempts_and_not_one() {
     assert!(containers::INSTRUCTION.contains(
         " Make a change to how the harness works on any task: one that answers something you \

@@ -4,6 +4,7 @@ mod grader;
 mod image;
 mod left;
 mod program;
+mod shown;
 
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -29,8 +30,17 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     directory of a task, the file named specification says what you were asked to do, the file \
     named result reads completed, not_completed or timed_out, the directory named work holds \
     the workspace of the task as you left it, the files named stdout and stderr hold what you \
-    printed, and the directory named grader holds what the grader of the task printed. Use them \
-    to find what to improve. Make a change to how the harness works on any task: one that \
+    printed, and the directory named grader holds what the grader of the task printed. \
+    /var/log/cladenc/line holds one directory for each harness you descend from, named by its \
+    id, and /var/log/cladenc/children one for each harness you made before, created or not. In \
+    the directory of such a harness, the directory named harness holds its source code, the \
+    directory named attempts holds its attempts, laid out as yours are, the directory named \
+    procreation holds what the harness that made it printed, in the files named stdout and \
+    stderr, with the id of that harness in the file named progenitor and one word in the file \
+    named outcome, created, failed, build_failed or timed_out, and the directory named build \
+    holds what its build printed. A directory that would hold nothing is not there. Use all of \
+    them to find what to improve, and to see what was changed before and what came of it. Make \
+    a change to how the harness works on any task: one that \
     answers something you saw in several of your attempts, not in one. Leave nothing in the \
     source code that names a task, a file of a task or the answer to one. Taking out what does \
     not help is an improvement as well. Change files in the current directory only: what it \
@@ -101,6 +111,31 @@ pub fn run_procreation(
     let source = running.join("progenitor");
     let made = running.join("child");
     let attempts = outputs_directory.attempts(progenitor);
+    let shown = shown::to(outputs_directory, progenitor);
+    let mounts: Vec<Mount<'_>> = [
+        Mount {
+            from: &source,
+            to: HARNESS,
+            read_only: false,
+        },
+        Mount {
+            from: &made,
+            to: WORK,
+            read_only: false,
+        },
+        Mount {
+            from: &attempts,
+            to: ATTEMPTS,
+            read_only: true,
+        },
+    ]
+    .into_iter()
+    .chain(shown.iter().map(|(kept, to)| Mount {
+        from: kept,
+        to,
+        read_only: true,
+    }))
+    .collect();
     let limits = Limits::starting_now(launch.procreation_timeout, stop);
     let environment: Vec<(&str, &str)> = [
         ("CLADENC_HARNESS", HARNESS),
@@ -113,23 +148,7 @@ pub fn run_procreation(
         outputs_directory,
         image: launch.image,
         command: launch.run_command,
-        mounts: &[
-            Mount {
-                from: &source,
-                to: HARNESS,
-                read_only: false,
-            },
-            Mount {
-                from: &made,
-                to: WORK,
-                read_only: false,
-            },
-            Mount {
-                from: &attempts,
-                to: ATTEMPTS,
-                read_only: true,
-            },
-        ],
+        mounts: &mounts,
         working_directory: WORK,
         environment: &environment,
     };
@@ -141,7 +160,7 @@ pub fn run_procreation(
         Ending::TimedOut => ProcreationOutcome::TimedOut,
     };
     outputs_directory
-        .end_procreation(child, outcome)
+        .end_procreation(child, progenitor, outcome)
         .map(|()| outcome)
         .map_err(ContainerError::Io)
 }

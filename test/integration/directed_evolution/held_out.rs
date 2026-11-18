@@ -11,6 +11,9 @@ use tempfile::TempDir;
 const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
                                     /var/log/cladenc/attempts/benchmark > tasks-found; fi";
 
+const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
+                                          /var/log/cladenc > given; fi";
+
 const SOLVE_A_HOLDOUT_TASK: &str = "if [ -d /var/log/cladenc/attempts ]; then echo t2 > solved; \
                                     else touch \"$CLADENC_HARNESS/solved\"; cp \
                                     \"$CLADENC_HARNESS/solved\" solved; fi";
@@ -63,6 +66,24 @@ fn best_harness_of_a_directed_evolution_whose_child_is_made_by(run_command: &str
     directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
         .unwrap()
         .best_harness
+}
+
+fn given_to_the_makers_of_two_children() -> [String; 2] {
+    let directory = test_inputs::temporary_directory();
+    let mut settings = settings(directory.path(), KEEP_WHAT_IS_GIVEN_TO_READ);
+    settings.max_procreations = 2;
+    let outputs_directory = directory.path().join("outputs");
+    let stop = AtomicBool::new(false);
+    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
+    ["1", "2"].map(|child| {
+        fs::read_to_string(
+            outputs_directory
+                .join("harnesses")
+                .join(child)
+                .join("given"),
+        )
+        .unwrap()
+    })
 }
 
 fn stopped_at_a_holdout_task_and_resumed() -> TempDir {
@@ -195,5 +216,18 @@ fn a_child_that_completes_only_one_more_task_that_is_not_held_out_is_not_named_t
     assert_eq!(
         best_harness_of_a_directed_evolution_whose_child_is_made_by(test_inputs::SOLVE_ONE_MORE),
         0
+    );
+}
+
+#[test]
+fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_attempts_and_nothing_else() {
+    assert_eq!(given_to_the_makers_of_two_children()[0], "attempts\n");
+}
+
+#[test]
+fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
+    assert!(
+        ["attempts\nchildren\n", "attempts\nline\n"]
+            .contains(&given_to_the_makers_of_two_children()[1].as_str())
     );
 }

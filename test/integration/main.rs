@@ -5,6 +5,7 @@ mod containers {
     mod image;
     mod left;
     mod limits;
+    mod lineage;
     mod primogenitor;
     mod procreation;
 }
@@ -32,5 +33,6 @@ mod outputs_directory {
     mod discard;
     mod holdout;
     mod image;
+    mod line;
     mod procreation;
 }

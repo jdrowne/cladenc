@@ -98,6 +98,31 @@ of the harness at the tasks that are not held out, to read: one directory
 for each benchmark, and in it one for each task, holding what the attempt
 of that task kept.
 
+A harness that procreates is given more to read, and nothing more to
+change: what was kept of each harness it descends from, back to the
+primogenitor, and of each harness it made in an earlier procreation that
+has ended, whether that one was created or not. It is given nothing of
+any other harness.
+
+  /var/log/cladenc/line/<ID>      a harness it descends from
+  /var/log/cladenc/children/<ID>  a harness it made before
+
+Each of these directories is named by the id of its harness, and holds
+
+  harness      the source code of that harness
+  attempts     its attempts at the tasks that are not held out, laid out
+               as /var/log/cladenc/attempts is
+  procreation  what the harness that made it printed, in stdout and
+               stderr, with the id of that harness in the file named
+               progenitor and one word in the file named outcome:
+               created, failed, build_failed or timed_out
+  build        what its build printed, in stdout and stderr
+
+A directory that would hold nothing is not there: the primogenitor has no
+procreation, a harness that was not created has no attempts, and a harness
+that was not built has no build. Nothing of a holdout task is in any of
+them.
+
 The instruction asks the harness that procreates for a change to how its
 child works on any task: one that answers something it saw in several of
 its attempts, not in one, and that leaves in the source code nothing that
@@ -145,7 +170,11 @@ How the harness ends decides what is recorded:
 
 A child that holds anything but regular files, directories and symbolic
 links is a failed procreation. The source code of every child is kept under
-harnesses in the outputs directory, created or not.
+harnesses in the outputs directory, created or not. procreations in the
+outputs directory keeps, in a directory named after the child, the
+standard output and standard error of the harness that made it, the id of
+that harness in the file named progenitor, and how the procreation ended
+in the file named outcome.
 
 Where --harness-build-command is given, a harness is built before it is
 run for the first time, in a container of the same image, as

@@ -21,6 +21,7 @@ mod start {
     mod finished;
     mod held_out;
     mod image;
+    mod lineage;
     mod reasons;
     mod refused;
     mod signals;

@@ -24,12 +24,26 @@ fn ended(outcome: ProcreationOutcome) -> (TempDir, OutputsDirectory) {
         "new",
     )
     .unwrap();
-    outputs_directory.end_procreation(1, outcome).unwrap();
+    outputs_directory.end_procreation(1, 0, outcome).unwrap();
     (directory, outputs_directory)
 }
 
 fn entries(directory: PathBuf) -> usize {
     fs::read_dir(directory).unwrap().count()
+}
+
+fn names_in(directory: PathBuf) -> Vec<String> {
+    let mut names: Vec<String> = fs::read_dir(directory)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    names
+}
+
+fn recorded(outcome: ProcreationOutcome, file: &str) -> String {
+    let (_directory, outputs_directory) = ended(outcome);
+    fs::read_to_string(outputs_directory.procreation(1).join(file)).unwrap()
 }
 
 fn harness_script(harness: PathBuf) -> String {
@@ -109,9 +123,46 @@ fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_attemp
 }
 
 #[test]
-fn a_procreation_that_created_its_child_keeps_neither_copy_in_its_directory() {
+fn a_procreation_that_created_its_child_keeps_its_record_and_neither_copy_in_its_directory() {
     let (_directory, outputs_directory) = ended(ProcreationOutcome::Created);
-    assert_eq!(entries(outputs_directory.procreation(1)), 0);
+    assert_eq!(
+        names_in(outputs_directory.procreation(1)),
+        ["outcome", "progenitor"]
+    );
+}
+
+#[test]
+fn a_procreation_that_ended_records_the_id_of_the_progenitor_on_a_line() {
+    assert_eq!(recorded(ProcreationOutcome::Created, "progenitor"), "0\n");
+}
+
+#[test]
+fn a_procreation_that_created_its_child_records_the_word_created() {
+    assert_eq!(
+        recorded(ProcreationOutcome::Created, "outcome"),
+        "created\n"
+    );
+}
+
+#[test]
+fn a_procreation_that_failed_records_the_word_failed() {
+    assert_eq!(recorded(ProcreationOutcome::Failed, "outcome"), "failed\n");
+}
+
+#[test]
+fn a_procreation_whose_child_did_not_build_records_the_word_build_failed() {
+    assert_eq!(
+        recorded(ProcreationOutcome::BuildFailed, "outcome"),
+        "build_failed\n"
+    );
+}
+
+#[test]
+fn a_procreation_that_timed_out_records_the_word_timed_out() {
+    assert_eq!(
+        recorded(ProcreationOutcome::TimedOut, "outcome"),
+        "timed_out\n"
+    );
 }
 
 #[test]
@@ -136,9 +187,12 @@ fn a_procreation_that_failed_leaves_no_directory_for_the_attempts_of_its_child()
 }
 
 #[test]
-fn a_procreation_that_failed_keeps_neither_copy_in_its_directory() {
+fn a_procreation_that_failed_keeps_its_record_and_neither_copy_in_its_directory() {
     let (_directory, outputs_directory) = ended(ProcreationOutcome::Failed);
-    assert_eq!(entries(outputs_directory.procreation(1)), 0);
+    assert_eq!(
+        names_in(outputs_directory.procreation(1)),
+        ["outcome", "progenitor"]
+    );
 }
 
 #[test]
