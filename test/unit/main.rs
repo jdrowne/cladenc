@@ -23,6 +23,8 @@ mod cli {
     mod benchmarks;
     mod checks;
     mod help;
+    mod help_of_procreations;
+    mod help_of_tasks;
     mod image;
     mod missing;
     mod readme;
