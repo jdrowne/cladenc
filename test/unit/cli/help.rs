@@ -659,6 +659,46 @@ fn the_long_help_of_start_says_where_a_procreation_finds_its_attempts() {
 }
 
 #[test]
+fn the_long_help_of_start_says_what_kind_of_change_the_instruction_asks_for() {
+    assert!(help_of_start(true).contains(
+        "The instruction asks the harness that procreates for a change to how its\nchild works \
+         on any task: one that answers something it saw in several of\nits attempts, not in \
+         one, and that leaves in the source code nothing that\nnames a task, a file of a task \
+         or the answer to one."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_instruction_counts_taking_out_as_an_improvement() {
+    assert!(
+        help_of_start(true)
+            .contains("It says that taking\nout what does not help is an improvement as well,")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_instruction_tells_of_the_child_procreating_in_its_turn() {
+    assert!(help_of_start(true).contains(
+        "that the child may be\nasked in its turn to improve a copy of its own source code, so \
+         that making\nthe child better at that counts,"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_instruction_tells_how_the_child_is_judged() {
+    assert!(help_of_start(true).contains(
+        "and that the child is judged by tasks\nthe harness that procreates is not shown."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_instruction_is_a_request_cladenc_does_not_enforce() {
+    assert!(
+        help_of_start(true).contains("An instruction is a request:\ncladenc enforces none of it.")
+    );
+}
+
+#[test]
 fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_in_full() {
     assert!(help_of_start(true).contains(
         "A harness procreates only once it has been benchmarked in full: it has\nattempted \

@@ -57,6 +57,39 @@ fn the_instruction_says_that_the_child_is_judged_by_tasks_the_progenitor_is_not_
 }
 
 #[test]
+fn the_instruction_asks_for_a_change_that_answers_several_attempts_and_not_one() {
+    assert!(containers::INSTRUCTION.contains(
+        " Make a change to how the harness works on any task: one that answers something you \
+         saw in several of your attempts, not in one. "
+    ));
+}
+
+#[test]
+fn the_instruction_asks_for_source_code_that_names_no_task_and_holds_no_answer() {
+    assert!(containers::INSTRUCTION.contains(
+        " Leave nothing in the source code that names a task, a file of a task or the answer \
+         to one. "
+    ));
+}
+
+#[test]
+fn the_instruction_says_that_taking_out_what_does_not_help_is_an_improvement() {
+    assert!(
+        containers::INSTRUCTION
+            .contains(" Taking out what does not help is an improvement as well. ")
+    );
+}
+
+#[test]
+fn the_instruction_says_that_the_child_may_be_asked_to_improve_its_own_source_code_in_its_turn() {
+    assert!(containers::INSTRUCTION.contains(
+        "becomes a new harness, which attempts tasks in its turn. It may then be asked, as you \
+         are now, to improve a copy of its own source code, so a change that makes it better \
+         at that counts as well. "
+    ));
+}
+
+#[test]
 fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there() {
     assert!(!containers::INSTRUCTION.contains("each task you have attempted"));
 }

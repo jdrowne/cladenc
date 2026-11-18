@@ -30,9 +30,13 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     named result reads completed, not_completed or timed_out, the directory named work holds \
     the workspace of the task as you left it, the files named stdout and stderr hold what you \
     printed, and the directory named grader holds what the grader of the task printed. Use them \
-    to find what to improve. Change files in the current directory only: what it holds when you \
-    end becomes a new harness, which attempts tasks in its turn. The new harness is judged by \
-    tasks that you are not shown.";
+    to find what to improve. Make a change to how the harness works on any task: one that \
+    answers something you saw in several of your attempts, not in one. Leave nothing in the \
+    source code that names a task, a file of a task or the answer to one. Taking out what does \
+    not help is an improvement as well. Change files in the current directory only: what it \
+    holds when you end becomes a new harness, which attempts tasks in its turn. It may then be \
+    asked, as you are now, to improve a copy of its own source code, so a change that makes it \
+    better at that counts as well. The new harness is judged by tasks that you are not shown.";
 
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";

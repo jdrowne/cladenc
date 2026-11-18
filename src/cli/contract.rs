@@ -98,6 +98,16 @@ of the harness at the tasks that are not held out, to read: one directory
 for each benchmark, and in it one for each task, holding what the attempt
 of that task kept.
 
+The instruction asks the harness that procreates for a change to how its
+child works on any task: one that answers something it saw in several of
+its attempts, not in one, and that leaves in the source code nothing that
+names a task, a file of a task or the answer to one. It says that taking
+out what does not help is an improvement as well, that the child may be
+asked in its turn to improve a copy of its own source code, so that making
+the child better at that counts, and that the child is judged by tasks
+the harness that procreates is not shown. An instruction is a request:
+cladenc enforces none of it.
+
 A harness procreates only once it has been benchmarked in full: it has
 attempted every task of every benchmark of the directed evolution, so that
 it finds every task that is not held out in /var/log/cladenc/attempts.
