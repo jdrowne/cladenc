@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{AttemptResult, Genealogy, HarnessState, ProcreationOutcome};
-use cladenc::journal::Settings;
+use cladenc::journal::{Seconds, Settings};
 use cladenc::report::Report;
 
 fn settings() -> Settings {
@@ -75,8 +75,21 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
     genealogy
 }
 
+fn seconds() -> [Seconds; 2] {
+    [
+        Seconds {
+            attempts: 0.1 + 0.2,
+            procreation: None,
+        },
+        Seconds {
+            attempts: 7.5,
+            procreation: Some(30.25),
+        },
+    ]
+}
+
 fn report(genealogy: &Genealogy) -> Report {
-    Report::of(&settings(), genealogy)
+    Report::of(&settings(), genealogy, &seconds())
 }
 
 #[test]
@@ -234,5 +247,35 @@ fn the_state_of_each_harness_is_reported() {
             HarnessState::Failed,
             HarnessState::BeingCreated
         ]
+    );
+}
+
+#[test]
+fn the_seconds_of_the_attempts_of_a_harness_are_reported_to_the_millisecond() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(report.harnesses[0].attempt_seconds, 0.3);
+}
+
+#[test]
+fn the_seconds_of_the_procreation_that_made_a_harness_are_reported() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(report.harnesses[1].procreation_seconds, Some(30.25));
+}
+
+#[test]
+fn the_primogenitor_was_made_by_no_procreation_and_has_no_seconds_of_one() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(report.harnesses[0].procreation_seconds, None);
+}
+
+#[test]
+fn a_harness_for_which_no_seconds_are_given_is_reported_with_none_spent() {
+    let report = report(&a_child_that_is_being_created_and_one_that_failed());
+    assert_eq!(
+        (
+            report.harnesses[2].attempt_seconds,
+            report.harnesses[2].procreation_seconds
+        ),
+        (0.0, None)
     );
 }

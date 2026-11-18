@@ -1,18 +1,18 @@
 use super::Shared;
-use crate::containers::{self, ContainerError};
-use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
+use crate::containers::{self, Attempted, ContainerError, Procreated};
+use crate::genealogy::HarnessId;
 use crate::journal::Started;
 
 pub(super) enum Ended {
     Procreation {
         child: HarnessId,
         progenitor: HarnessId,
-        result: Result<ProcreationOutcome, ContainerError>,
+        result: Result<Procreated, ContainerError>,
     },
     Attempt {
         harness: HarnessId,
         task: String,
-        result: Result<AttemptResult, ContainerError>,
+        result: Result<Attempted, ContainerError>,
     },
 }
 

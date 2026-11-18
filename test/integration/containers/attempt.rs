@@ -15,7 +15,7 @@ const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | t
 struct Attempted {
     _directory: TempDir,
     outputs_directory: OutputsDirectory,
-    result: Result<AttemptResult, ContainerError>,
+    result: Result<containers::Attempted, ContainerError>,
 }
 
 struct Attempt<'a> {
@@ -248,7 +248,10 @@ fn a_harness_that_changes_its_copy_of_the_workspace_leaves_the_task_unchanged() 
 fn a_grader_that_exits_with_0_on_what_the_harness_left_gives_completed() {
     assert!(matches!(
         attempted(FINISH, FINISHED).result,
-        Ok(AttemptResult::Completed)
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
     ));
 }
 
@@ -256,7 +259,10 @@ fn a_grader_that_exits_with_0_on_what_the_harness_left_gives_completed() {
 fn a_grader_that_exits_with_1_gives_not_completed() {
     assert!(matches!(
         attempted("true", FINISHED).result,
-        Ok(AttemptResult::NotCompleted)
+        Ok(containers::Attempted {
+            result: AttemptResult::NotCompleted,
+            ..
+        })
     ));
 }
 
@@ -264,7 +270,10 @@ fn a_grader_that_exits_with_1_gives_not_completed() {
 fn a_grader_that_exits_with_another_status_gives_not_completed() {
     assert!(matches!(
         attempted(FINISH, "exit 2").result,
-        Ok(AttemptResult::NotCompleted)
+        Ok(containers::Attempted {
+            result: AttemptResult::NotCompleted,
+            ..
+        })
     ));
 }
 
@@ -272,7 +281,10 @@ fn a_grader_that_exits_with_another_status_gives_not_completed() {
 fn a_harness_that_exits_with_another_status_than_0_is_still_checked() {
     assert!(matches!(
         attempted("echo done > work.txt; exit 3", FINISHED).result,
-        Ok(AttemptResult::Completed)
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
     ));
 }
 
@@ -382,7 +394,10 @@ fn an_attempt_that_ended_keeps_no_copy_of_the_harness() {
 fn a_harness_that_runs_past_the_time_limit_times_out() {
     assert!(matches!(
         within(1, "sleep 300", FINISHED).result,
-        Ok(AttemptResult::TimedOut)
+        Ok(containers::Attempted {
+            result: AttemptResult::TimedOut,
+            ..
+        })
     ));
 }
 
@@ -402,7 +417,10 @@ fn a_harness_that_timed_out_is_not_checked() {
 fn a_grader_that_runs_past_what_is_left_of_the_time_limit_times_out() {
     assert!(matches!(
         within(20, FINISH, "sleep 300").result,
-        Ok(AttemptResult::TimedOut)
+        Ok(containers::Attempted {
+            result: AttemptResult::TimedOut,
+            ..
+        })
     ));
 }
 

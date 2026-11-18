@@ -147,7 +147,7 @@ fn a_child_that_does_not_build_is_recorded_as_build_failed() {
     let (directory, _found) = evolved(BUILD_ONLY_WHAT_SOLVES_NOTHING);
     assert!(
         journal_of(&directory)
-            .contains(r#"{"record":"procreation_finished","child":1,"outcome":"build_failed"}"#)
+            .contains(r#"{"record":"procreation_finished","child":1,"outcome":"build_failed","#)
     );
 }
 

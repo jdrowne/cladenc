@@ -82,7 +82,7 @@ fn journal_of(directed_evolutions: &DirectedEvolutions, directed_evolution: &str
         .path()
         .join(directed_evolution)
         .join("outputs");
-    fs::read_to_string(journal::path(&outputs_directory)).unwrap()
+    test_inputs::without_seconds(&fs::read_to_string(journal::path(&outputs_directory)).unwrap())
 }
 
 #[test]
@@ -251,7 +251,10 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
     let cut: String = whole.split_inclusive('\n').take(kept).collect();
     fs::write(&journal, cut).unwrap();
     directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
-    assert_eq!(fs::read_to_string(&journal).unwrap(), whole);
+    assert_eq!(
+        test_inputs::without_seconds(&fs::read_to_string(&journal).unwrap()),
+        test_inputs::without_seconds(&whole)
+    );
 }
 
 #[test]

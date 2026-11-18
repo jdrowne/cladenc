@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
-use cladenc::journal::{self, Journal, Record, Settings, Started, State};
+use cladenc::journal::{self, Journal, Record, Seconds, Settings, Started, State};
 use tempfile::TempDir;
 
 fn settings() -> Settings {
@@ -38,7 +38,11 @@ fn procreation_started(child: u64, progenitor: u64) -> Record {
 }
 
 fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
-    Record::ProcreationFinished { child, outcome }
+    Record::ProcreationFinished {
+        child,
+        outcome,
+        seconds: 30.25,
+    }
 }
 
 fn attempt_started(harness: u64, task: &str) -> Record {
@@ -53,6 +57,7 @@ fn attempt_finished(harness: u64, task: &str, result: AttemptResult) -> Record {
         harness,
         task: task.to_owned(),
         result,
+        seconds: 1.5,
     }
 }
 
@@ -197,6 +202,46 @@ fn rebuilding_counts_the_attempts_at_the_holdout_tasks_of_the_run_record_apart()
         ),
         (1, 1)
     );
+}
+
+#[test]
+fn a_journal_that_holds_no_action_gives_the_primogenitor_no_seconds_spent() {
+    assert_eq!(rebuilt(&[]).seconds, [Seconds::default()]);
+}
+
+#[test]
+fn rebuilding_adds_up_the_seconds_of_the_attempts_of_each_harness() {
+    let state = rebuilt(&[
+        attempt_started(0, "t1"),
+        attempt_finished(0, "t1", AttemptResult::Completed),
+        attempt_started(0, "t2"),
+        attempt_finished(0, "t2", AttemptResult::NotCompleted),
+    ]);
+    assert_eq!(state.seconds[0].attempts, 3.0);
+}
+
+#[test]
+fn rebuilding_gives_a_child_the_seconds_of_the_procreation_that_made_it() {
+    let state = rebuilt(&[
+        procreation_started(1, 0),
+        procreation_finished(1, ProcreationOutcome::Created),
+    ]);
+    assert_eq!(state.seconds[1].procreation, Some(30.25));
+}
+
+#[test]
+fn rebuilding_gives_a_child_whose_procreation_has_not_ended_no_seconds_of_it() {
+    let state = rebuilt(&[procreation_started(1, 0)]);
+    assert_eq!(state.seconds[1], Seconds::default());
+}
+
+#[test]
+fn rebuilding_gives_the_seconds_of_a_procreation_to_the_child_and_not_to_its_progenitor() {
+    let state = rebuilt(&[
+        procreation_started(1, 0),
+        procreation_finished(1, ProcreationOutcome::Failed),
+    ]);
+    assert_eq!(state.seconds[0].procreation, None);
 }
 
 #[test]

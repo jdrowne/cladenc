@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 
 pub use error::JournalError;
 pub use record::{Record, Settings};
-pub use state::{Started, State, read};
+pub use state::{Seconds, Started, State, read};
 
-pub const FORMAT: u32 = 19;
+pub const FORMAT: u32 = 20;
 
 #[derive(Debug)]
 pub struct Journal {

@@ -4,7 +4,6 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -20,12 +19,12 @@ const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 type Attempted = (
     TempDir,
     OutputsDirectory,
-    Result<AttemptResult, ContainerError>,
+    Result<containers::Attempted, ContainerError>,
 );
 type Procreated = (
     TempDir,
     OutputsDirectory,
-    Result<ProcreationOutcome, ContainerError>,
+    Result<containers::Procreated, ContainerError>,
 );
 
 fn made() -> (TempDir, OutputsDirectory) {

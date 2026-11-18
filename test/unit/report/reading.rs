@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::AttemptResult;
-use cladenc::journal::{self, Journal, JournalError, Record, Settings};
+use cladenc::journal::{self, Journal, JournalError, Record, Seconds, Settings};
 use cladenc::report::{self, Report};
 use tempfile::TempDir;
 
@@ -50,6 +50,7 @@ fn outputs_directory(last_line: &str) -> TempDir {
             harness: 0,
             task: "t1".to_owned(),
             result: AttemptResult::Completed,
+            seconds: 1.5,
         },
         Record::ProcreationStarted {
             child: 1,
@@ -71,7 +72,14 @@ fn of_the_records() -> Report {
         .end_attempt(0, "t1", AttemptResult::Completed)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
-    Report::of(&settings(), &genealogy)
+    let seconds = [
+        Seconds {
+            attempts: 1.5,
+            procreation: None,
+        },
+        Seconds::default(),
+    ];
+    Report::of(&settings(), &genealogy, &seconds)
 }
 
 #[test]
@@ -86,6 +94,12 @@ fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
 fn a_report_read_from_a_journal_counts_the_holdout_tasks_its_run_record_names() {
     let report = report::read(outputs_directory("").path()).unwrap();
     assert_eq!(report.harnesses[0].holdout_completed, 1);
+}
+
+#[test]
+fn a_report_read_from_a_journal_holds_the_seconds_its_records_hold() {
+    let report = report::read(outputs_directory("").path()).unwrap();
+    assert_eq!(report.harnesses[0].attempt_seconds, 1.5);
 }
 
 #[test]

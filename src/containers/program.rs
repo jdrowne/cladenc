@@ -15,6 +15,10 @@ const LOOK: Duration = Duration::from_millis(20);
 
 pub(super) const LEEWAY: u64 = 5;
 
+pub(super) fn seconds_since(started: Instant) -> f64 {
+    (started.elapsed().as_secs_f64() * 1000.0).round() / 1000.0
+}
+
 pub(super) enum Ending {
     Exited(i32),
     TimedOut,

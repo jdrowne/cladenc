@@ -43,7 +43,7 @@ cladenc report \
 | `--json` | Not Required | Print one JSON object in place of the table. |
 | `--outputs-dir <DIR>` | Required | The outputs directory of the directed evolution to report on. |
 
-`cladenc report` reads the journal in the outputs directory and prints the state of the directed evolution on standard output, without changing it: the model, how many procreations have been started, the best harness so far, and for each harness its progenitor, whether it was created, how many of the holdout tasks it completed and did not complete, how many of the other tasks it completed and did not complete, and the counts of the holdout tasks for its clade, which is the harness and all its descendants together.
+`cladenc report` reads the journal in the outputs directory and prints the state of the directed evolution on standard output, without changing it: the model, how many procreations have been started, the best harness so far, and for each harness its progenitor, whether it was created, how many of the holdout tasks it completed and did not complete, how many of the other tasks it completed and did not complete, the counts of the holdout tasks for its clade, which is the harness and all its descendants together, and how many seconds the harness ran in all its attempts together and how many its progenitor ran in the procreation that made it.
 
 ### `cladenc resume`
 

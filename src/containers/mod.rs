@@ -12,6 +12,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
+use std::time::Instant;
 
 use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::model::Model;
@@ -21,7 +22,7 @@ pub use build::build_primogenitor;
 use container::{Container, Mount};
 pub use image::build_image;
 pub use left::remove_left_behind;
-use program::{Ending, Limits};
+use program::{Ending, Limits, seconds_since};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes \
@@ -60,6 +61,18 @@ pub struct Launch<'a> {
     pub model: Model<'a>,
     pub procreation_timeout: u64,
     pub attempt_timeout: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Procreated {
+    pub outcome: ProcreationOutcome,
+    pub seconds: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Attempted {
+    pub result: AttemptResult,
+    pub seconds: f64,
 }
 
 #[derive(Debug)]
@@ -103,7 +116,7 @@ pub fn run_procreation(
     child: HarnessId,
     progenitor: HarnessId,
     stop: &AtomicBool,
-) -> Result<ProcreationOutcome, ContainerError> {
+) -> Result<Procreated, ContainerError> {
     outputs_directory
         .start_procreation(child, progenitor)
         .map_err(ContainerError::Io)?;
@@ -152,7 +165,10 @@ pub fn run_procreation(
         working_directory: WORK,
         environment: &environment,
     };
-    let outcome = match container.run(&running, limits)? {
+    let started = Instant::now();
+    let ending = container.run(&running, limits)?;
+    let seconds = seconds_since(started);
+    let outcome = match ending {
         Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
             build::build_child(outputs_directory, launch, child, &made, limits)?
         }
@@ -161,7 +177,7 @@ pub fn run_procreation(
     };
     outputs_directory
         .end_procreation(child, progenitor, outcome)
-        .map(|()| outcome)
+        .map(|()| Procreated { outcome, seconds })
         .map_err(ContainerError::Io)
 }
 
@@ -171,7 +187,7 @@ pub fn run_attempt(
     harness: HarnessId,
     task: &str,
     stop: &AtomicBool,
-) -> Result<AttemptResult, ContainerError> {
+) -> Result<Attempted, ContainerError> {
     let running = outputs_directory.running_attempt(harness, task);
     let specification = outputs_directory
         .start_attempt(harness, task)
@@ -206,12 +222,15 @@ pub fn run_attempt(
         working_directory: WORK,
         environment: &environment,
     };
-    let result = match container.run(&running, limits)? {
+    let started = Instant::now();
+    let ending = container.run(&running, limits)?;
+    let seconds = seconds_since(started);
+    let result = match ending {
         Ending::Exited(_) => grader::run(outputs_directory, launch.image, task, &running, limits)?,
         Ending::TimedOut => AttemptResult::TimedOut,
     };
     outputs_directory
         .end_attempt(harness, task, result)
-        .map(|()| result)
+        .map(|()| Attempted { result, seconds })
         .map_err(ContainerError::Io)
 }

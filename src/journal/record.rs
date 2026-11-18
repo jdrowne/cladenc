@@ -107,6 +107,7 @@ pub enum Record {
     ProcreationFinished {
         child: HarnessId,
         outcome: ProcreationOutcome,
+        seconds: f64,
     },
     AttemptStarted {
         harness: HarnessId,
@@ -116,6 +117,7 @@ pub enum Record {
         harness: HarnessId,
         task: String,
         result: AttemptResult,
+        seconds: f64,
     },
     DirectedEvolutionFinished {
         best_harness: HarnessId,

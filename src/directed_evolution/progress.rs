@@ -7,7 +7,7 @@ use super::action::{Ended, carry_out};
 use super::said::say;
 use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::containers::ContainerError;
+use crate::containers::{Attempted, ContainerError, Procreated};
 use crate::genealogy::Genealogy;
 use crate::journal::{Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
@@ -132,12 +132,16 @@ impl<'a> Progress<'a> {
             Ended::Procreation {
                 child,
                 progenitor,
-                result: Ok(outcome),
+                result: Ok(Procreated { outcome, seconds }),
             } => {
                 self.genealogy
                     .end_procreation(child, outcome)
                     .expect("a procreation that ended was started");
-                self.record(&Record::ProcreationFinished { child, outcome });
+                self.record(&Record::ProcreationFinished {
+                    child,
+                    outcome,
+                    seconds,
+                });
                 self.say(&Said::Procreated {
                     child,
                     progenitor,
@@ -148,7 +152,7 @@ impl<'a> Progress<'a> {
             Ended::Attempt {
                 harness,
                 task,
-                result: Ok(result),
+                result: Ok(Attempted { result, seconds }),
             } => {
                 self.genealogy
                     .end_attempt(harness, &task, result)
@@ -163,6 +167,7 @@ impl<'a> Progress<'a> {
                     harness,
                     task,
                     result,
+                    seconds,
                 });
             }
             Ended::Procreation {

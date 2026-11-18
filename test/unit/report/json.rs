@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
-use cladenc::journal::Settings;
+use cladenc::journal::{Seconds, Settings};
 use cladenc::report::Report;
 
 fn settings() -> Settings {
@@ -43,19 +43,25 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         .end_attempt(0, "t2", AttemptResult::NotCompleted)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
+    let seconds = [Seconds {
+        attempts: 4.5,
+        procreation: None,
+    }];
     assert_eq!(
-        Report::of(&settings(), &genealogy).json(),
+        Report::of(&settings(), &genealogy, &seconds).json(),
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""procreations_started":1,"max_procreations":800,"best_harness":0,"harnesses":["#,
             r#"{"id":0,"progenitor":null,"state":"created","#,
             r#""holdout_completed":1,"holdout_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":1,"#,
-            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0},"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
+            r#""attempt_seconds":4.5,"procreation_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"state":"being_created","#,
             r#""holdout_completed":0,"holdout_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":0,"#,
-            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null}]}"#
+            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
+            r#""attempt_seconds":0.0,"procreation_seconds":null}]}"#
         )
     );
 }
@@ -68,7 +74,7 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
         .end_procreation(child, ProcreationOutcome::Failed)
         .unwrap();
     assert!(
-        Report::of(&settings(), &genealogy)
+        Report::of(&settings(), &genealogy, &[])
             .json()
             .contains(r#""id":1,"progenitor":0,"state":"failed""#)
     );
@@ -77,7 +83,7 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
 #[test]
 fn the_object_gives_no_lower_bound() {
     assert!(
-        !Report::of(&settings(), &Genealogy::new())
+        !Report::of(&settings(), &Genealogy::new(), &[])
             .json()
             .contains("lower_bound")
     );

@@ -18,7 +18,7 @@ const MODEL: Model<'static> = Model {
 type Procreated = (
     TempDir,
     OutputsDirectory,
-    Result<ProcreationOutcome, ContainerError>,
+    Result<containers::Procreated, ContainerError>,
 );
 
 fn made() -> (TempDir, OutputsDirectory) {
@@ -173,13 +173,25 @@ fn the_standard_output_of_a_harness_is_kept_apart_from_that_of_the_build_of_its_
 #[test]
 fn a_child_whose_build_exits_with_0_is_created() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 0");
-    assert!(matches!(result, Ok(ProcreationOutcome::Created)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::Created,
+            ..
+        })
+    ));
 }
 
 #[test]
 fn a_child_whose_build_exits_with_another_status_did_not_build() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 1");
-    assert!(matches!(result, Ok(ProcreationOutcome::BuildFailed)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::BuildFailed,
+            ..
+        })
+    ));
 }
 
 #[test]
@@ -197,7 +209,13 @@ fn a_child_that_did_not_build_gets_no_directory_for_attempts() {
 #[test]
 fn a_child_whose_build_leaves_a_named_pipe_did_not_build() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "mkfifo pipe");
-    assert!(matches!(result, Ok(ProcreationOutcome::BuildFailed)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::BuildFailed,
+            ..
+        })
+    ));
 }
 
 #[test]
@@ -209,20 +227,38 @@ fn the_child_of_a_harness_that_failed_is_not_built() {
 #[test]
 fn a_harness_that_failed_fails_its_child_whatever_the_build_would_have_done() {
     let (_directory, _outputs_directory, result) = procreated("exit 1", "exit 0");
-    assert!(matches!(result, Ok(ProcreationOutcome::Failed)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::Failed,
+            ..
+        })
+    ));
 }
 
 #[test]
 fn a_build_that_runs_past_the_time_limit_of_its_procreation_times_the_procreation_out() {
     let (_directory, _outputs_directory, result) =
         procreated_within("exit 0", "touch started; sleep 300", 8);
-    assert!(matches!(result, Ok(ProcreationOutcome::TimedOut)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::TimedOut,
+            ..
+        })
+    ));
 }
 
 #[test]
 fn the_time_limit_of_a_procreation_covers_its_harness_and_the_build_of_its_child_together() {
     let (_directory, _outputs_directory, result) = procreated_within("sleep 4", "sleep 4", 6);
-    assert!(matches!(result, Ok(ProcreationOutcome::TimedOut)));
+    assert!(matches!(
+        result,
+        Ok(containers::Procreated {
+            outcome: ProcreationOutcome::TimedOut,
+            ..
+        })
+    ));
 }
 
 #[test]

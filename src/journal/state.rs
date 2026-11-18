@@ -39,6 +39,12 @@ enum First {
     Run { format: u32 },
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Seconds {
+    pub attempts: f64,
+    pub procreation: Option<f64>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct State {
     pub settings: Settings,
@@ -46,6 +52,7 @@ pub struct State {
     pub unfinished: Vec<Started>,
     pub next_action: u64,
     pub best_harness: Option<HarnessId>,
+    pub seconds: Vec<Seconds>,
 }
 
 pub fn read(outputs_directory: &Path) -> Result<State, JournalError> {
@@ -74,6 +81,7 @@ pub fn read(outputs_directory: &Path) -> Result<State, JournalError> {
         unfinished: Vec::new(),
         next_action: 0,
         best_harness: None,
+        seconds: vec![Seconds::default()],
     };
     for record in records {
         let (line, record) = record?;
@@ -98,12 +106,18 @@ impl State {
                 self.genealogy
                     .start_procreation(progenitor)
                     .map_err(refused)?;
+                self.seconds.push(Seconds::default());
                 self.start(Started::Procreation { child, progenitor });
             }
-            Record::ProcreationFinished { child, outcome } => {
+            Record::ProcreationFinished {
+                child,
+                outcome,
+                seconds,
+            } => {
                 self.genealogy
                     .end_procreation(child, outcome)
                     .map_err(refused)?;
+                self.seconds[child as usize].procreation = Some(seconds);
                 self.unfinished
                     .retain(|action| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
             }
@@ -117,10 +131,12 @@ impl State {
                 harness,
                 task,
                 result,
+                seconds,
             } => {
                 self.genealogy
                     .end_attempt(harness, &task, result)
                     .map_err(refused)?;
+                self.seconds[harness as usize].attempts += seconds;
                 let finished = Started::Attempt { harness, task };
                 self.unfinished.retain(|action| *action != finished);
             }

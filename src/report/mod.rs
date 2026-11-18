@@ -4,9 +4,9 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
-use crate::journal::{self, JournalError, Settings};
+use crate::journal::{self, JournalError, Seconds, Settings};
 
-const HEADER: [&str; 10] = [
+const HEADER: [&str; 12] = [
     "id",
     "progenitor",
     "state",
@@ -17,6 +17,8 @@ const HEADER: [&str; 10] = [
     "clade completed",
     "clade not completed",
     "clade score",
+    "attempt seconds",
+    "procreation seconds",
 ];
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -41,14 +43,17 @@ pub struct HarnessReport {
     pub clade_completed: u64,
     pub clade_not_completed: u64,
     pub clade_score: Option<f64>,
+    pub attempt_seconds: f64,
+    pub procreation_seconds: Option<f64>,
 }
 
 pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
-    journal::read(outputs_directory).map(|state| Report::of(&state.settings, &state.genealogy))
+    journal::read(outputs_directory)
+        .map(|state| Report::of(&state.settings, &state.genealogy, &state.seconds))
 }
 
 impl Report {
-    pub fn of(settings: &Settings, genealogy: &Genealogy) -> Self {
+    pub fn of(settings: &Settings, genealogy: &Genealogy, seconds: &[Seconds]) -> Self {
         Self {
             model: settings.model.clone(),
             model_url: settings.model_url.clone(),
@@ -58,7 +63,10 @@ impl Report {
             harnesses: genealogy
                 .harnesses()
                 .iter()
-                .map(HarnessReport::of)
+                .enumerate()
+                .map(|(place, harness)| {
+                    HarnessReport::of(harness, seconds.get(place).copied().unwrap_or_default())
+                })
                 .collect(),
         }
     }
@@ -70,7 +78,7 @@ impl Report {
     pub fn table(&self) -> String {
         let mut rows = vec![HEADER.map(str::to_owned)];
         rows.extend(self.harnesses.iter().map(HarnessReport::cells));
-        let widths: [usize; 10] =
+        let widths: [usize; 12] =
             array::from_fn(|column| rows.iter().map(|row| row[column].len()).fold(0, usize::max));
         let lines: String = rows
             .iter()
@@ -100,7 +108,7 @@ impl Report {
 }
 
 impl HarnessReport {
-    fn of(harness: &Harness) -> Self {
+    fn of(harness: &Harness, seconds: Seconds) -> Self {
         Self {
             id: harness.id(),
             progenitor: harness.progenitor(),
@@ -112,10 +120,12 @@ impl HarnessReport {
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
+            attempt_seconds: (seconds.attempts * 1000.0).round() / 1000.0,
+            procreation_seconds: seconds.procreation,
         }
     }
 
-    fn cells(&self) -> [String; 10] {
+    fn cells(&self) -> [String; 12] {
         let state = match self.state {
             HarnessState::BeingCreated => "being created",
             HarnessState::Created => "created",
@@ -132,6 +142,11 @@ impl HarnessReport {
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
+            format!("{:.1}", self.attempt_seconds),
+            shown(
+                self.procreation_seconds
+                    .map(|seconds| format!("{seconds:.1}")),
+            ),
         ]
     }
 }

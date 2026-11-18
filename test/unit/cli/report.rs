@@ -127,9 +127,9 @@ fn a_report_prints_the_table_on_standard_output() {
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          \n\
-         id  progenitor  state          holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
-         0   -           created        0                  0                      0                0                    0                0                    -\n\
-         1   0           being created  0                  0                      0                0                    0                0                    -\n"
+         id  progenitor  state          holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           created        0                  0                      0                0                    0                0                    -            0.0              -\n\
+         1   0           being created  0                  0                      0                0                    0                0                    -            0.0              -\n"
     );
 }
 

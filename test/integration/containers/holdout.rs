@@ -53,7 +53,7 @@ fn attempted(
 ) -> (
     TempDir,
     OutputsDirectory,
-    Result<AttemptResult, ContainerError>,
+    Result<containers::Attempted, ContainerError>,
 ) {
     let (directory, outputs_directory) = made();
     let result = containers::run_attempt(
@@ -116,7 +116,13 @@ fn the_harness_of_an_attempt_at_a_holdout_task_is_given_what_that_of_any_attempt
 #[test]
 fn the_grader_of_a_holdout_task_says_whether_the_harness_completed_it() {
     let (_directory, _outputs_directory, result) = attempted("echo t2 > solved", HELD_OUT);
-    assert!(matches!(result, Ok(AttemptResult::Completed)));
+    assert!(matches!(
+        result,
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
+    ));
 }
 
 #[test]

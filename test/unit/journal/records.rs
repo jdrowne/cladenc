@@ -10,7 +10,11 @@ fn read_back(record: &Record) -> Record {
 }
 
 fn procreation_finished(outcome: ProcreationOutcome) -> Record {
-    Record::ProcreationFinished { child: 1, outcome }
+    Record::ProcreationFinished {
+        child: 1,
+        outcome,
+        seconds: 12.5,
+    }
 }
 
 fn attempt_finished(result: AttemptResult) -> Record {
@@ -18,6 +22,7 @@ fn attempt_finished(result: AttemptResult) -> Record {
         harness: 1,
         task: "t2".to_owned(),
         result,
+        seconds: 3.25,
     }
 }
 
@@ -36,7 +41,7 @@ fn the_start_of_a_procreation_is_written_with_its_child_and_progenitor() {
 fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
     assert_eq!(
         line(&procreation_finished(ProcreationOutcome::Created)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"created"}"#
+        r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":12.5}"#
     );
 }
 
@@ -44,7 +49,7 @@ fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
 fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
     assert_eq!(
         line(&procreation_finished(ProcreationOutcome::Failed)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"failed"}"#
+        r#"{"record":"procreation_finished","child":1,"outcome":"failed","seconds":12.5}"#
     );
 }
 
@@ -52,7 +57,7 @@ fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
 fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
     assert_eq!(
         line(&procreation_finished(ProcreationOutcome::TimedOut)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"timed_out"}"#
+        r#"{"record":"procreation_finished","child":1,"outcome":"timed_out","seconds":12.5}"#
     );
 }
 
@@ -60,7 +65,7 @@ fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
 fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed() {
     assert_eq!(
         line(&procreation_finished(ProcreationOutcome::BuildFailed)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"build_failed"}"#
+        r#"{"record":"procreation_finished","child":1,"outcome":"build_failed","seconds":12.5}"#
     );
 }
 
@@ -95,7 +100,7 @@ fn the_start_of_an_attempt_is_written_with_its_harness_and_task() {
 fn the_end_of_an_attempt_is_written_with_a_result_of_completed() {
     assert_eq!(
         line(&attempt_finished(AttemptResult::Completed)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"completed"}"#
+        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"completed","seconds":3.25}"#
     );
 }
 
@@ -103,7 +108,7 @@ fn the_end_of_an_attempt_is_written_with_a_result_of_completed() {
 fn the_end_of_an_attempt_is_written_with_a_result_of_not_completed() {
     assert_eq!(
         line(&attempt_finished(AttemptResult::NotCompleted)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"not_completed"}"#
+        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"not_completed","seconds":3.25}"#
     );
 }
 
@@ -111,7 +116,7 @@ fn the_end_of_an_attempt_is_written_with_a_result_of_not_completed() {
 fn the_end_of_an_attempt_is_written_with_a_result_of_timed_out() {
     assert_eq!(
         line(&attempt_finished(AttemptResult::TimedOut)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"timed_out"}"#
+        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"timed_out","seconds":3.25}"#
     );
 }
 

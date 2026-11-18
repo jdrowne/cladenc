@@ -145,6 +145,7 @@ pub fn resume(
         unfinished,
         next_action,
         best_harness,
+        ..
     } = state;
     let outputs_directory = OutputsDirectory::at(path).holding_out(&settings.holdout_tasks);
     match best_harness {

@@ -151,6 +151,16 @@ pub fn kept_attempt(outputs_directory: &Path, harness: u64, task: &str) -> PathB
         .expect("the attempt is kept in the outputs directory")
 }
 
+pub fn without_seconds(journal: &str) -> String {
+    journal
+        .lines()
+        .map(|line| match line.split_once(",\"seconds\":") {
+            Some((record, _)) => format!("{record}}}\n"),
+            None => format!("{line}\n"),
+        })
+        .collect()
+}
+
 pub fn sample(tier: &str, name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../test")

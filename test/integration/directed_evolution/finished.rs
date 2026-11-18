@@ -153,8 +153,8 @@ fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_th
     directed_evolution::start(&settings, &second, &AtomicBool::new(false), &mut io::sink())
         .unwrap();
     assert_eq!(
-        fs::read(journal::path(&first)).unwrap(),
-        fs::read(journal::path(&second)).unwrap()
+        test_inputs::without_seconds(&fs::read_to_string(journal::path(&first)).unwrap()),
+        test_inputs::without_seconds(&fs::read_to_string(journal::path(&second)).unwrap())
     );
 }
 
@@ -325,6 +325,23 @@ fn a_directed_evolution_ends_its_journal_with_its_finished_record() {
     assert_eq!(
         journal_of(&directory).lines().last().unwrap(),
         r#"{"record":"directed_evolution_finished","best_harness":1}"#
+    );
+}
+
+#[test]
+fn the_end_of_each_attempt_and_of_each_procreation_is_recorded_with_the_seconds_it_took() {
+    let (directory, _found) = evolved(over_one_task);
+    let seconds: Vec<f64> = journal_of(&directory)
+        .lines()
+        .filter_map(|line| match serde_json::from_str::<Record>(line).unwrap() {
+            Record::AttemptFinished { seconds, .. }
+            | Record::ProcreationFinished { seconds, .. } => Some(seconds),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        (seconds.len(), seconds.iter().all(|took| *took > 0.0)),
+        (3, true)
     );
 }
 
