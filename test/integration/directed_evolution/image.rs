@@ -134,7 +134,7 @@ fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
             .lines()
             .position(|line| line.starts_with(start))
     });
-    assert_eq!(places, [Some(1), Some(2), Some(4)]);
+    assert_eq!(places, [Some(1), Some(3), Some(5)]);
 }
 
 #[test]
