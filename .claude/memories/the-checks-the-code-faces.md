@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 16a1d745-ea25-4971-9454-4ef3ef668142
-  modified: 2026-11-17T04:31:45.724Z
+  modified: 2026-11-18T03:22:09.655Z
 ---
 
 # The checks the code faces
@@ -20,7 +20,7 @@ metadata:
 - `assert-no-oversized-functions`: no function of more than 50 statements. A statement is anything that stands directly in a block: a `let`, an expression with or without its `;`, the last expression of the block, an item. Every block inside the function is counted, a closure's among them. A function written inside another is counted by itself, and what is inside the parentheses of a macro call is not counted.
 - `assert-no-empty-test-files`: every test file holds a test.
 - `assert-one-directory-per-module`: no Rust file directly in `src/` but `lib.rs` and `main.rs`, so a module of `src/` is a directory, per [[each-module-of-src-is-a-directory]].
-- `assert-coverage`: the tests reach every line, region and function. The test code under `test/` is not measured: the workflow gives `cargo llvm-cov report` `--ignore-filename-regex '(^|/)test/'`, as the user's other repositories measure their source and never their tests. The flag is needed because the tool by itself leaves out only directories named `tests`, `examples` and `benches`.
+- `assert-coverage`: the tests reach every line, region and function of the code under `src/`. Neither the test code under `test/` nor `lib/test_inputs` is measured. The report reads the `cladenc` program alone: `build-coverage` hands on each test program by itself, without the `fingerprint` directory that `cargo llvm-cov report` looks for beside a program's `out` directory, so the tool passes over all three. While that is so, the `--ignore-filename-regex '(^|/)test/'` that the workflow gives changes nothing. Among the user's other repositories none measures its test files; two give each package under `lib/`, one that only tests use among them, tests of its own and a full coverage gate, and three leave the test helpers under `lib/` unmeasured.
 - `clippy`, with every warning an error, and `rustfmt`.
 - `clippy::self_named_module_files`, which `clippy` is given as an error: no Rust file beside a directory of its name, in `src`, `test` and `lib` alike. A module that has files of its own under it is a directory, and its own code is in the `mod.rs` of that directory.
 - The limits `clippy` holds each function to, in `src`, `test` and `lib` alike. `etc/clippy/clippy.toml` sets the numbers:
