@@ -7,7 +7,7 @@ use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
-pub enum Said<'a> {
+pub(super) enum Said<'a> {
     Making {
         outputs_directory: &'a Path,
         primogenitor: &'a Path,

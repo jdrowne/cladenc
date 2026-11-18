@@ -26,8 +26,8 @@ pub(super) enum Ending {
 
 #[derive(Clone, Copy)]
 pub(super) struct Limits<'a> {
-    pub deadline: Instant,
-    pub stop: &'a AtomicBool,
+    pub(super) deadline: Instant,
+    stop: &'a AtomicBool,
 }
 
 impl<'a> Limits<'a> {

@@ -30,4 +30,4 @@ Three things are kept apart from Rust's conventions, each a rule of the user's:
 - The three tiers are run as `cargo test --lib` for the unit tier, `--test integration` and `--test e2e`. No test target is named `unit`.
 - With the unit tests inside it, Cargo builds the library twice, and the coverage tool counts a function by the better of its two builds unless it is told otherwise. The job `assert-coverage` adds the two builds up, per [[the-checks-the-code-faces]].
 - An older issue that names `test/unit/<module>/`, `test/integration/`, `test/e2e/`, `test/lib/test_inputs/` or `lib/test_inputs` means `src/<module>/tests/`, `tests/integration/`, `tests/e2e/`, `crates/test_inputs/tests/` and `crates/test_inputs`.
-- Mine, not the user's: what only the unit tests of a module call can stop being `pub`, since those tests are inside the library. Narrowing it is a change of its own, made where an issue asks for it and not in passing.
+- Nothing is `pub` for the unit tests, since they are inside the library, per [[an-item-is-as-private-as-its-uses-allow]].

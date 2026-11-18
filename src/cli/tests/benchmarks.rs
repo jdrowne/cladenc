@@ -2,7 +2,8 @@ use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
-use crate::cli::{Refused, StartOptions};
+use crate::cli::StartOptions;
+use crate::cli::checks::Refused;
 use crate::journal::Settings;
 use tempfile::TempDir;
 

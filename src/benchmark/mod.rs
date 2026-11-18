@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
 
-pub const SPECIFICATION: &str = "specification";
-pub const WORKSPACE: &str = "workspace";
-pub const GRADER: &str = "grader";
+const SPECIFICATION: &str = "specification";
+const WORKSPACE: &str = "workspace";
+const GRADER: &str = "grader";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Benchmark {
@@ -34,16 +34,16 @@ impl Benchmark {
         }
     }
 
-    pub fn name(&self) -> String {
+    pub(crate) fn name(&self) -> String {
         name_of(&self.directory)
     }
 
-    pub fn task(&self, id: &str) -> String {
+    pub(crate) fn task(&self, id: &str) -> String {
         format!("{}/{id}", self.name())
     }
 }
 
-pub fn told_apart(benchmarks: &[Benchmark]) -> Result<(), BenchmarkError> {
+pub(crate) fn told_apart(benchmarks: &[Benchmark]) -> Result<(), BenchmarkError> {
     benchmarks
         .iter()
         .enumerate()
@@ -143,7 +143,7 @@ impl Display for BenchmarkError {
 
 impl Error for BenchmarkError {}
 
-pub fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
+fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
     let mut directories = fs::read_dir(benchmark)
         .and_then(|entries| {
             entries

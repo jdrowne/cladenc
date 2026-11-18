@@ -2,7 +2,7 @@ use super::ArtificialSelection;
 use crate::genealogy::{Genealogy, Harness, HarnessId};
 
 impl ArtificialSelection {
-    pub fn best_harness(&self, genealogy: &Genealogy) -> HarnessId {
+    pub(crate) fn best_harness(&self, genealogy: &Genealogy) -> HarnessId {
         genealogy
             .created_harnesses()
             .into_iter()

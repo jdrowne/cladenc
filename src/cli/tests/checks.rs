@@ -4,7 +4,8 @@ use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
-use crate::cli::{Refused, StartOptions};
+use crate::cli::StartOptions;
+use crate::cli::checks::Refused;
 use crate::holdout;
 use crate::journal::Settings;
 use tempfile::TempDir;

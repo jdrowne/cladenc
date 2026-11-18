@@ -10,8 +10,6 @@ use clap::{ArgGroup, Args, Parser, Subcommand};
 
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 
-pub use checks::Refused;
-
 #[derive(Clone, Debug, Parser)]
 #[command(
     name = "cladenc",
@@ -50,7 +48,7 @@ pub struct StartOptions {
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The time limit of one attempt"
     )]
-    pub attempt_timeout: u64,
+    attempt_timeout: u64,
     #[arg(
         long,
         value_name = "DIR",
@@ -58,7 +56,7 @@ pub struct StartOptions {
         help = "The directory of a benchmark, which holds a directory for each task, given once \
                 for each benchmark"
     )]
-    pub benchmark: Vec<PathBuf>,
+    benchmark: Vec<PathBuf>,
     #[arg(
         long,
         value_name = "SECONDS",
@@ -67,14 +65,14 @@ pub struct StartOptions {
         conflicts_with = "docker_image",
         help = "The time limit of the build of the image, given with --dockerfile"
     )]
-    pub docker_build_timeout: Option<u64>,
+    docker_build_timeout: Option<u64>,
     #[arg(
         long,
         value_name = "IMAGE",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The Docker image every container is started from, where --dockerfile is not given"
     )]
-    pub docker_image: Option<String>,
+    docker_image: Option<String>,
     #[arg(
         long,
         value_name = "FILE",
@@ -82,88 +80,88 @@ pub struct StartOptions {
         help = "The Dockerfile cladenc builds the image of every container from, in place of \
                 --docker-image"
     )]
-    pub dockerfile: Option<PathBuf>,
+    dockerfile: Option<PathBuf>,
     #[arg(
         long,
         value_name = "NUMBER",
         value_parser = checks::genealogy_growth,
         help = "How fast the genealogy may grow, from 0 to 1"
     )]
-    pub genealogy_growth: f64,
+    genealogy_growth: f64,
     #[arg(
         long,
         value_name = "COMMAND",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The shell command that builds a harness in a container, where one has to be built"
     )]
-    pub harness_build_command: Option<String>,
+    harness_build_command: Option<String>,
     #[arg(
         long,
         value_name = "COMMAND",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The shell command that runs a harness in a container"
     )]
-    pub harness_run_command: String,
+    harness_run_command: String,
     #[arg(
         long,
         value_name = "NUMBER",
         value_parser = checks::holdout_percentage,
         help = "The percentage of each benchmark's tasks that is held out, above 0 and below 100"
     )]
-    pub holdout_percentage: f64,
+    holdout_percentage: f64,
     #[arg(
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The most containers running at once"
     )]
-    pub max_concurrent_containers: u64,
+    max_concurrent_containers: u64,
     #[arg(
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The most procreations to start"
     )]
-    pub max_procreations: u64,
+    max_procreations: u64,
     #[arg(
         long,
         value_name = "NAME",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The name of the model the harnesses call, as its server knows it"
     )]
-    pub model: String,
+    model: String,
     #[arg(
         long,
         value_name = "FILE",
         help = "The file that holds the key the model is called with, where its server asks for one"
     )]
-    pub model_key_file: Option<PathBuf>,
+    model_key_file: Option<PathBuf>,
     #[arg(
         long,
         value_name = "URL",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The address the model is served at"
     )]
-    pub model_url: String,
+    model_url: String,
     #[arg(
         long,
         value_name = "DIR",
         help = "The outputs directory, which start creates"
     )]
-    pub outputs_dir: PathBuf,
+    outputs_dir: PathBuf,
     #[arg(
         long,
         value_name = "DIR",
         help = "The directory of source code copied to make the primogenitor"
     )]
-    pub primogenitor: PathBuf,
+    primogenitor: PathBuf,
     #[arg(
         long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The time limit of one procreation"
     )]
-    pub procreation_timeout: u64,
+    procreation_timeout: u64,
 }
 
 #[derive(Clone, Debug, Args)]
@@ -173,19 +171,19 @@ pub struct ResumeOptions {
         value_name = "DIR",
         help = "The outputs directory of the directed evolution to continue"
     )]
-    pub outputs_dir: PathBuf,
+    outputs_dir: PathBuf,
 }
 
 #[derive(Clone, Debug, Args)]
 pub struct ReportOptions {
     #[arg(long, help = "Print one JSON object in place of the table")]
-    pub json: bool,
+    json: bool,
     #[arg(
         long,
         value_name = "DIR",
         help = "The outputs directory of the directed evolution to report on"
     )]
-    pub outputs_dir: PathBuf,
+    outputs_dir: PathBuf,
 }
 
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {

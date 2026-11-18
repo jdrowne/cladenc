@@ -6,9 +6,9 @@ use std::collections::BTreeSet;
 use serde::{Deserialize, Serialize};
 
 pub use error::GenealogyError;
-pub use harness::{Harness, HarnessState};
+pub(crate) use harness::{Harness, HarnessState};
 
-pub type HarnessId = u64;
+pub(crate) type HarnessId = u64;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -28,7 +28,7 @@ pub enum AttemptResult {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Genealogy {
+pub(crate) struct Genealogy {
     harnesses: Vec<Harness>,
     started: u64,
     holdout_tasks: BTreeSet<String>,
@@ -41,11 +41,11 @@ impl Default for Genealogy {
 }
 
 impl Genealogy {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::of_a_primogenitor(HarnessState::Created)
     }
 
-    pub fn unbuilt() -> Self {
+    pub(crate) fn unbuilt() -> Self {
         Self::of_a_primogenitor(HarnessState::BeingCreated)
     }
 
@@ -57,54 +57,54 @@ impl Genealogy {
         }
     }
 
-    pub fn holding_out(self, tasks: &[String]) -> Self {
+    pub(crate) fn holding_out(self, tasks: &[String]) -> Self {
         Self {
             holdout_tasks: tasks.iter().cloned().collect(),
             ..self
         }
     }
 
-    pub fn awaits_build(&self) -> bool {
+    pub(crate) fn awaits_build(&self) -> bool {
         self.harnesses[0].state() == HarnessState::BeingCreated
     }
 
-    pub fn build_primogenitor(&mut self) -> Result<(), GenealogyError> {
+    pub(crate) fn build_primogenitor(&mut self) -> Result<(), GenealogyError> {
         self.harness_in_state(0, HarnessState::BeingCreated)
             .ok_or(GenealogyError::PrimogenitorNotAwaitingBuild)?
             .set_state(HarnessState::Created);
         Ok(())
     }
 
-    pub fn harnesses(&self) -> &[Harness] {
+    pub(crate) fn harnesses(&self) -> &[Harness] {
         &self.harnesses
     }
 
-    pub fn harness_count(&self) -> u64 {
+    pub(crate) fn harness_count(&self) -> u64 {
         self.harnesses.len() as u64
     }
 
-    pub fn started(&self) -> u64 {
+    pub(crate) fn started(&self) -> u64 {
         self.started
     }
 
-    pub fn procreations_started(&self) -> u64 {
+    pub(crate) fn procreations_started(&self) -> u64 {
         self.harness_count() - 1
     }
 
-    pub fn completed_by_any(&self, task: &str) -> bool {
+    pub(crate) fn completed_by_any(&self, task: &str) -> bool {
         self.harnesses
             .iter()
             .any(|harness| harness.has_completed(task))
     }
 
-    pub fn created_harnesses(&self) -> Vec<&Harness> {
+    pub(crate) fn created_harnesses(&self) -> Vec<&Harness> {
         self.harnesses
             .iter()
             .filter(|harness| harness.state() == HarnessState::Created)
             .collect()
     }
 
-    pub fn start_procreation(
+    pub(crate) fn start_procreation(
         &mut self,
         progenitor: HarnessId,
     ) -> Result<HarnessId, GenealogyError> {
@@ -123,7 +123,7 @@ impl Genealogy {
         Ok(child)
     }
 
-    pub fn end_procreation(
+    pub(crate) fn end_procreation(
         &mut self,
         child: HarnessId,
         outcome: ProcreationOutcome,
@@ -140,7 +140,11 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn start_attempt(&mut self, harness: HarnessId, task: &str) -> Result<(), GenealogyError> {
+    pub(crate) fn start_attempt(
+        &mut self,
+        harness: HarnessId,
+        task: &str,
+    ) -> Result<(), GenealogyError> {
         let attempting = self
             .harness_in_state(harness, HarnessState::Created)
             .ok_or(GenealogyError::HarnessNotCreated { harness })?;
@@ -154,7 +158,7 @@ impl Genealogy {
         Ok(())
     }
 
-    pub fn end_attempt(
+    pub(crate) fn end_attempt(
         &mut self,
         harness: HarnessId,
         task: &str,

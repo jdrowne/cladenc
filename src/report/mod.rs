@@ -23,32 +23,32 @@ const HEADER: [&str; 12] = [
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Report {
-    pub model: String,
-    pub model_url: String,
-    pub procreations_started: u64,
-    pub max_procreations: u64,
-    pub best_harness: HarnessId,
+    model: String,
+    model_url: String,
+    procreations_started: u64,
+    max_procreations: u64,
+    best_harness: HarnessId,
     pub holdout_tasks_completed_by_any: u64,
     pub holdout_tasks: u64,
     pub other_tasks_completed_by_any: u64,
     pub other_tasks: u64,
-    pub harnesses: Vec<HarnessReport>,
+    harnesses: Vec<HarnessReport>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct HarnessReport {
-    pub id: HarnessId,
-    pub progenitor: Option<HarnessId>,
-    pub state: HarnessState,
-    pub holdout_completed: u64,
-    pub holdout_not_completed: u64,
-    pub other_completed: u64,
-    pub other_not_completed: u64,
-    pub clade_completed: u64,
-    pub clade_not_completed: u64,
-    pub clade_score: Option<f64>,
-    pub attempt_seconds: f64,
-    pub procreation_seconds: Option<f64>,
+struct HarnessReport {
+    id: HarnessId,
+    progenitor: Option<HarnessId>,
+    state: HarnessState,
+    holdout_completed: u64,
+    holdout_not_completed: u64,
+    other_completed: u64,
+    other_not_completed: u64,
+    clade_completed: u64,
+    clade_not_completed: u64,
+    clade_score: Option<f64>,
+    attempt_seconds: f64,
+    procreation_seconds: Option<f64>,
 }
 
 pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
@@ -57,7 +57,7 @@ pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
 }
 
 impl Report {
-    pub fn of(settings: &Settings, genealogy: &Genealogy, seconds: &[Seconds]) -> Self {
+    fn of(settings: &Settings, genealogy: &Genealogy, seconds: &[Seconds]) -> Self {
         let (held_out, others): (Vec<String>, Vec<String>) = settings
             .tasks()
             .into_iter()
@@ -89,11 +89,11 @@ impl Report {
         }
     }
 
-    pub fn json(&self) -> String {
+    pub(crate) fn json(&self) -> String {
         serde_json::to_string(self).expect("a report can be written as JSON")
     }
 
-    pub fn table(&self) -> String {
+    pub(crate) fn table(&self) -> String {
         let mut rows = vec![HEADER.map(str::to_owned)];
         rows.extend(self.harnesses.iter().map(HarnessReport::cells));
         let widths: [usize; 12] =

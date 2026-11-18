@@ -39,11 +39,11 @@ impl Display for HoldoutError {
 
 impl Error for HoldoutError {}
 
-pub fn count(tasks: usize, percentage: f64) -> usize {
+fn count(tasks: usize, percentage: f64) -> usize {
     (tasks as f64 * percentage / 100.0).round() as usize
 }
 
-pub fn draw(
+pub(crate) fn draw(
     benchmarks: &[Benchmark],
     percentage: f64,
     seed: u64,

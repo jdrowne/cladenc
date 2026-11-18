@@ -6,14 +6,14 @@ use super::{AttemptResult, HarnessId};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum HarnessState {
+pub(crate) enum HarnessState {
     BeingCreated,
     Created,
     Failed,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Harness {
+pub(crate) struct Harness {
     id: HarnessId,
     progenitor: Option<HarnessId>,
     state: HarnessState,
@@ -46,48 +46,48 @@ impl Harness {
         }
     }
 
-    pub fn id(&self) -> HarnessId {
+    pub(crate) fn id(&self) -> HarnessId {
         self.id
     }
 
-    pub fn progenitor(&self) -> Option<HarnessId> {
+    pub(crate) fn progenitor(&self) -> Option<HarnessId> {
         self.progenitor
     }
 
-    pub fn state(&self) -> HarnessState {
+    pub(crate) fn state(&self) -> HarnessState {
         self.state
     }
 
-    pub fn holdout_completed(&self) -> u64 {
+    pub(crate) fn holdout_completed(&self) -> u64 {
         self.holdout_completed
     }
 
-    pub fn holdout_not_completed(&self) -> u64 {
+    pub(crate) fn holdout_not_completed(&self) -> u64 {
         self.holdout_not_completed
     }
 
-    pub fn other_completed(&self) -> u64 {
+    pub(crate) fn other_completed(&self) -> u64 {
         self.other_completed
     }
 
-    pub fn other_not_completed(&self) -> u64 {
+    pub(crate) fn other_not_completed(&self) -> u64 {
         self.other_not_completed
     }
 
-    pub fn clade_completed(&self) -> u64 {
+    pub(crate) fn clade_completed(&self) -> u64 {
         self.clade_completed
     }
 
-    pub fn clade_not_completed(&self) -> u64 {
+    pub(crate) fn clade_not_completed(&self) -> u64 {
         self.clade_not_completed
     }
 
-    pub fn clade_score(&self) -> Option<f64> {
+    pub(crate) fn clade_score(&self) -> Option<f64> {
         let finished = self.clade_completed + self.clade_not_completed;
         (finished > 0).then(|| self.clade_completed as f64 / finished as f64)
     }
 
-    pub fn tasks_not_given<'a>(&self, tasks: &'a [String]) -> Vec<&'a str> {
+    pub(crate) fn tasks_not_given<'a>(&self, tasks: &'a [String]) -> Vec<&'a str> {
         tasks
             .iter()
             .map(String::as_str)
@@ -95,11 +95,11 @@ impl Harness {
             .collect()
     }
 
-    pub fn has_completed(&self, task: &str) -> bool {
+    pub(super) fn has_completed(&self, task: &str) -> bool {
         self.completed.contains(task)
     }
 
-    pub fn has_attempted_every(&self, tasks: &[String]) -> bool {
+    pub(crate) fn has_attempted_every(&self, tasks: &[String]) -> bool {
         tasks
             .iter()
             .all(|task| self.given.contains(task) && !self.running.contains(task))

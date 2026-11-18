@@ -40,22 +40,22 @@ enum First {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Seconds {
-    pub attempts: f64,
-    pub procreation: Option<f64>,
+pub(crate) struct Seconds {
+    pub(crate) attempts: f64,
+    pub(crate) procreation: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct State {
-    pub settings: Settings,
-    pub genealogy: Genealogy,
-    pub unfinished: Vec<Started>,
-    pub next_action: u64,
-    pub best_harness: Option<HarnessId>,
-    pub seconds: Vec<Seconds>,
+pub(crate) struct State {
+    pub(crate) settings: Settings,
+    pub(crate) genealogy: Genealogy,
+    pub(crate) unfinished: Vec<Started>,
+    pub(crate) next_action: u64,
+    pub(crate) best_harness: Option<HarnessId>,
+    pub(crate) seconds: Vec<Seconds>,
 }
 
-pub fn read(outputs_directory: &Path) -> Result<State, JournalError> {
+pub(crate) fn read(outputs_directory: &Path) -> Result<State, JournalError> {
     let contents = fs::read(path(outputs_directory)).map_err(JournalError::Io)?;
     let lines = || whole_lines(&contents).split_inclusive(|byte| *byte == b'\n');
     if let Some(First::Run { format }) = lines()

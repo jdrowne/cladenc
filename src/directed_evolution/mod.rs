@@ -18,8 +18,7 @@ use crate::outputs_directory::OutputsDirectory;
 use action::Ended;
 pub use error::DirectedEvolutionError;
 use progress::Progress;
-pub use said::Said;
-use said::say;
+use said::{Said, say};
 
 const WAIT: Duration = Duration::from_millis(100);
 

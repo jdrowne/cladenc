@@ -15,18 +15,18 @@ const MACHINE: &str = "host.docker.internal:host-gateway";
 const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
 
 pub(super) struct Mount<'a> {
-    pub from: &'a Path,
-    pub to: &'a str,
-    pub read_only: bool,
+    pub(super) from: &'a Path,
+    pub(super) to: &'a str,
+    pub(super) read_only: bool,
 }
 
 pub(super) struct Container<'a> {
-    pub outputs_directory: &'a OutputsDirectory,
-    pub image: &'a str,
-    pub command: &'a str,
-    pub mounts: &'a [Mount<'a>],
-    pub working_directory: &'a str,
-    pub environment: &'a [(&'a str, &'a str)],
+    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) image: &'a str,
+    pub(super) command: &'a str,
+    pub(super) mounts: &'a [Mount<'a>],
+    pub(super) working_directory: &'a str,
+    pub(super) environment: &'a [(&'a str, &'a str)],
 }
 
 impl Container<'_> {

@@ -7,29 +7,29 @@ use rand_distr::{Beta, Distribution};
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Action {
+pub(crate) enum Action {
     Procreation { progenitor: HarnessId },
     Attempt { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ArtificialSelection {
-    pub max_procreations: u64,
-    pub growth: f64,
-    pub tasks: Vec<String>,
-    pub seed: u64,
+pub(crate) struct ArtificialSelection {
+    pub(crate) max_procreations: u64,
+    pub(crate) growth: f64,
+    pub(crate) tasks: Vec<String>,
+    pub(crate) seed: u64,
 }
 
-pub fn focus(max_procreations: u64, started: u64) -> f64 {
+fn focus(max_procreations: u64, started: u64) -> f64 {
     max_procreations as f64 / (max_procreations as f64 - started as f64)
 }
 
-pub fn procreation_is_due(harness_count: u64, started: u64, growth: f64) -> bool {
+fn procreation_is_due(harness_count: u64, started: u64, growth: f64) -> bool {
     harness_count as f64 <= (started as f64).powf(growth)
 }
 
 impl ArtificialSelection {
-    pub fn next_action(&self, genealogy: &Genealogy, action: u64) -> Option<Action> {
+    pub(crate) fn next_action(&self, genealogy: &Genealogy, action: u64) -> Option<Action> {
         self.progenitor(genealogy, action)
             .map(|progenitor| Action::Procreation { progenitor })
             .or_else(|| self.attempt(genealogy))

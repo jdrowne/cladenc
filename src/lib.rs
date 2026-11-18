@@ -1,4 +1,4 @@
-pub mod artificial_selection;
+mod artificial_selection;
 pub mod benchmark;
 pub mod cli;
 pub mod containers;

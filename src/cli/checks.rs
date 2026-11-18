@@ -10,10 +10,10 @@ use crate::model;
 use crate::outputs_directory::holds_only_harness_files;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Refused {
-    pub option: &'static str,
-    pub accepted: &'static str,
-    pub reason: Option<String>,
+pub(super) struct Refused {
+    pub(super) option: &'static str,
+    pub(super) accepted: &'static str,
+    pub(super) reason: Option<String>,
 }
 
 impl Display for Refused {
@@ -30,7 +30,7 @@ impl Display for Refused {
 }
 
 impl StartOptions {
-    pub fn settings(&self) -> Result<Settings, Refused> {
+    pub(super) fn settings(&self) -> Result<Settings, Refused> {
         let benchmarks = benchmarks(&self.benchmark)?;
         let seed = rand::random();
         let holdout_tasks = holdout_tasks(&benchmarks, self.holdout_percentage, seed)?;

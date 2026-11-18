@@ -32,14 +32,14 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn model_key(&self) -> Result<Option<String>, PathBuf> {
+    pub(crate) fn model_key(&self) -> Result<Option<String>, PathBuf> {
         self.model_key_file
             .as_ref()
             .map(|file| model::read_key(file).ok_or_else(|| file.clone()))
             .transpose()
     }
 
-    pub fn model<'a>(&'a self, key: Option<&'a str>) -> Model<'a> {
+    pub(super) fn model<'a>(&'a self, key: Option<&'a str>) -> Model<'a> {
         Model {
             name: &self.model,
             url: &self.model_url,
@@ -47,7 +47,7 @@ impl Settings {
         }
     }
 
-    pub fn launch<'a>(&'a self, key: Option<&'a str>) -> Launch<'a> {
+    pub(crate) fn launch<'a>(&'a self, key: Option<&'a str>) -> Launch<'a> {
         Launch {
             image: &self.docker_image,
             run_command: &self.harness_run_command,
@@ -58,7 +58,7 @@ impl Settings {
         }
     }
 
-    pub fn genealogy(&self) -> Genealogy {
+    pub(crate) fn genealogy(&self) -> Genealogy {
         let genealogy = match self.harness_build_command {
             Some(_) => Genealogy::unbuilt(),
             None => Genealogy::new(),
@@ -66,14 +66,14 @@ impl Settings {
         genealogy.holding_out(&self.holdout_tasks)
     }
 
-    pub fn tasks(&self) -> Vec<String> {
+    pub(crate) fn tasks(&self) -> Vec<String> {
         self.benchmarks
             .iter()
             .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
             .collect()
     }
 
-    pub fn held_out_of(&self, benchmark: &Benchmark) -> u64 {
+    pub(crate) fn held_out_of(&self, benchmark: &Benchmark) -> u64 {
         benchmark
             .tasks
             .iter()
@@ -81,7 +81,7 @@ impl Settings {
             .count() as u64
     }
 
-    pub fn artificial_selection(&self) -> ArtificialSelection {
+    pub(crate) fn artificial_selection(&self) -> ArtificialSelection {
         ArtificialSelection {
             max_procreations: self.max_procreations,
             growth: self.genealogy_growth,
@@ -125,7 +125,7 @@ pub enum Record {
 }
 
 impl Record {
-    pub fn line(&self) -> Result<String, JournalError> {
+    pub(crate) fn line(&self) -> Result<String, JournalError> {
         serde_json::to_string(self).map_err(|error| JournalError::Io(error.into()))
     }
 }

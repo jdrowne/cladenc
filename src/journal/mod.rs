@@ -8,7 +8,8 @@ use std::path::{Path, PathBuf};
 
 pub use error::JournalError;
 pub use record::{Record, Settings};
-pub use state::{Seconds, Started, State, read};
+pub use state::Started;
+pub(crate) use state::{Seconds, State, read};
 
 pub const FORMAT: u32 = 20;
 
@@ -26,7 +27,7 @@ impl Journal {
         Self::locked(OpenOptions::new().create(true), outputs_directory)
     }
 
-    pub fn open_existing(outputs_directory: &Path) -> Result<Self, JournalError> {
+    pub(crate) fn open_existing(outputs_directory: &Path) -> Result<Self, JournalError> {
         Self::locked(&mut OpenOptions::new(), outputs_directory)
     }
 
