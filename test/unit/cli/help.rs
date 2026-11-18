@@ -1,6 +1,30 @@
+use std::fs;
+use std::path::Path;
+
 use cladenc::cli::Cli;
 use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
+
+const WHAT_CLADENC_DOES: &str = "Carries out a directed evolution of an agentic coding harness, in \
+                                 which harnesses procreate, each changing a copy of its own \
+                                 source code, and are benchmarked";
+
+fn help_of_cladenc() -> String {
+    Cli::command().render_help().to_string()
+}
+
+fn description_of_the_package() -> String {
+    let package = Path::new(env!("CARGO_MANIFEST_DIR")).join("etc/nfpm/nfpm.yaml");
+    fs::read_to_string(package)
+        .unwrap()
+        .lines()
+        .skip_while(|line| *line != "description: >-")
+        .skip(1)
+        .take_while(|line| line.starts_with("  "))
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join(" ")
+}
 
 fn help_of_start(long: bool) -> String {
     let mut cladenc = Cli::command();
@@ -865,6 +889,99 @@ fn the_help_of_every_sub_command_lists_its_flags_in_alphabetical_order() {
     let mut sorted = listed.clone();
     sorted.iter_mut().for_each(|flags| flags.sort());
     assert_eq!(listed, sorted);
+}
+
+#[test]
+fn the_help_of_cladenc_opens_with_what_cladenc_does() {
+    assert!(help_of_cladenc().starts_with(&format!("{WHAT_CLADENC_DOES}\n")));
+}
+
+#[test]
+fn the_help_of_cladenc_does_not_say_that_the_harness_a_directed_evolution_makes_is_better() {
+    assert!(!help_of_cladenc().contains("better"));
+}
+
+#[test]
+fn the_help_of_cladenc_does_not_say_that_a_harness_modifies_itself() {
+    assert!(!help_of_cladenc().contains("modify themselves"));
+}
+
+#[test]
+fn the_description_of_the_package_is_the_line_the_help_of_cladenc_opens_with() {
+    assert_eq!(
+        description_of_the_package(),
+        format!("{WHAT_CLADENC_DOES}.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_completed_task_means_the_work_only_as_far_as_three_things() {
+    assert!(help_of_start(true).contains(
+        "A task that is recorded as completed means that the harness did the work\nonly as far \
+         as three things hold, and cladenc sees to none of them."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_harness_reaches_the_network() {
+    assert!(help_of_start(true).contains(
+        "A harness reaches the network. Every container is started on the usual\nnetwork of \
+         Docker, and reaches the machine cladenc runs on and whatever\nthat machine reaches."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_harness_that_reaches_the_network_can_do() {
+    assert!(help_of_start(true).contains(
+        "Where a task was made from something public, its\nanswer may be one fetch away, and a \
+         harness can leave something outside\nits container for a later harness to find, which \
+         holding tasks out does\nnot guard against."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_a_harness_is_kept_from_reaching_further_than_the_model() {
+    assert!(help_of_start(true).contains(
+        "To keep every harness from reaching further than the\nmodel, carry out the directed \
+         evolution on a machine that has no other\nconnection, with the model served on that \
+         machine."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_grader_may_trust_what_the_harness_left() {
+    assert!(help_of_start(true).contains(
+        "A grader may trust what the harness left. The grader is started in the\nworkspace as \
+         the harness left it, and everything there was the harness's\nto change: tests, build \
+         files, any program the grader starts from there."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_grader_a_harness_that_changed_the_tests_passes() {
+    assert!(help_of_start(true).contains(
+        "A grader that runs the tests it finds in the workspace is passed by a\nharness that \
+         changed those tests, on a holdout task as on any other."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_grader_cannot_be_passed_that_way() {
+    assert!(help_of_start(true).contains(
+        "The\ndirectory of the task is never given to a harness: a grader that keeps\nwhat it \
+         relies on there, its tests among them, and takes nothing from the\nworkspace on \
+         trust, cannot be passed that way."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_model_may_know_the_task() {
+    assert!(help_of_start(true).contains(
+        "The model may know the task. A task taken from a public source may have\nbeen among \
+         what the model was trained on. A harness then completes it from\nwhat the model \
+         remembers, and a child that completes more of such tasks\nmay only be better at \
+         drawing that out."
+    ));
 }
 
 #[test]

@@ -297,6 +297,32 @@ How an attempt ends decides its result:
                                    harness did not complete the task,
                                    which is recorded as timed_out
 
+A task that is recorded as completed means that the harness did the work
+only as far as three things hold, and cladenc sees to none of them.
+
+A harness reaches the network. Every container is started on the usual
+network of Docker, and reaches the machine cladenc runs on and whatever
+that machine reaches. Where a task was made from something public, its
+answer may be one fetch away, and a harness can leave something outside
+its container for a later harness to find, which holding tasks out does
+not guard against. To keep every harness from reaching further than the
+model, carry out the directed evolution on a machine that has no other
+connection, with the model served on that machine.
+
+A grader may trust what the harness left. The grader is started in the
+workspace as the harness left it, and everything there was the harness's
+to change: tests, build files, any program the grader starts from there.
+A grader that runs the tests it finds in the workspace is passed by a
+harness that changed those tests, on a holdout task as on any other. The
+directory of the task is never given to a harness: a grader that keeps
+what it relies on there, its tests among them, and takes nothing from the
+workspace on trust, cannot be passed that way.
+
+The model may know the task. A task taken from a public source may have
+been among what the model was trained on. A harness then completes it from
+what the model remembers, and a child that completes more of such tasks
+may only be better at drawing that out.
+
 attempts in the outputs directory keeps every attempt at a task that is not
 held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
