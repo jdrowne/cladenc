@@ -64,7 +64,7 @@ fn object_of(directory: &Path) -> Value {
 fn up_to_the_seconds(table: &str) -> String {
     let seconds = table
         .lines()
-        .nth(4)
+        .nth(5)
         .and_then(|header| header.find("attempt seconds"))
         .unwrap();
     table
@@ -90,6 +90,7 @@ fn report_prints_the_table() {
         "model a-model at http://models.example/v1\n\
          started 1 of 1 procreation, best harness 1\n\
          completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, other tasks 1 of 1\n\
+         on the corroboration tasks: only the best harness completed 1, only the primogenitor completed 0, and luck alone gives a lead at least as large with likelihood 0.500\n\
          \n\
          id  progenitor  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
          0   -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
@@ -105,7 +106,9 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
         r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
         r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
-        r#""other_tasks_completed_by_any":1,"other_tasks":1,"harnesses":["#,
+        r#""other_tasks_completed_by_any":1,"other_tasks":1,"#,
+        r#""corroboration_lead":{"only_best_harness_completed":1,"#,
+        r#""only_primogenitor_completed":0,"likelihood_by_luck":0.5},"harnesses":["#,
         r#"{"id":0,"progenitor":null,"state":"created","#,
         r#""selection_completed":0,"selection_not_completed":1,"#,
         r#""corroboration_completed":0,"corroboration_not_completed":1,"#,
@@ -127,7 +130,7 @@ fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procre
     assert!(
         table_of(directory.path())
             .lines()
-            .nth(4)
+            .nth(5)
             .unwrap()
             .ends_with("  attempt seconds  procreation seconds")
     );

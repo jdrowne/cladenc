@@ -1,3 +1,5 @@
+mod lead;
+
 use std::array;
 use std::path::Path;
 
@@ -7,7 +9,12 @@ use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 use crate::holdout::TaskSet;
 use crate::journal::{self, JournalError, Seconds, Settings};
 
+use lead::Lead;
+
 const COLUMNS: usize = 14;
+
+const NO_LEAD: &str = "on the corroboration tasks: the best harness is the primogenitor, so \
+                       there are no two harnesses to compare";
 
 const HEADER: [&str; COLUMNS] = [
     "id",
@@ -39,6 +46,7 @@ pub struct Report {
     pub corroboration_tasks: u64,
     pub other_tasks_completed_by_any: u64,
     pub other_tasks: u64,
+    corroboration_lead: Option<Lead>,
     harnesses: Vec<HarnessReport>,
 }
 
@@ -79,20 +87,33 @@ impl Report {
         let (corroboration_tasks_completed_by_any, corroboration_tasks) =
             counted(TaskSet::Corroboration);
         let (other_tasks_completed_by_any, other_tasks) = counted(TaskSet::NonHoldout);
+        let best_harness = settings.artificial_selection().best_harness(genealogy);
+        let harnesses = genealogy.harnesses();
+        let corroboration_lead = harnesses
+            .iter()
+            .find(|harness| harness.id() == best_harness)
+            .filter(|_| best_harness != 0)
+            .map(|best| {
+                Lead::of(
+                    best,
+                    &harnesses[0],
+                    &settings.tasks_of(TaskSet::Corroboration),
+                )
+            });
         Self {
             model: settings.model.clone(),
             model_url: settings.model_url.clone(),
             procreations_started: genealogy.procreations_started(),
             max_procreations: settings.max_procreations,
-            best_harness: settings.artificial_selection().best_harness(genealogy),
+            best_harness,
             selection_tasks_completed_by_any,
             selection_tasks,
             corroboration_tasks_completed_by_any,
             corroboration_tasks,
             other_tasks_completed_by_any,
             other_tasks,
-            harnesses: genealogy
-                .harnesses()
+            corroboration_lead,
+            harnesses: harnesses
                 .iter()
                 .enumerate()
                 .map(|(place, harness)| {
@@ -127,10 +148,14 @@ impl Report {
         } else {
             "procreations"
         };
+        let lead = self
+            .corroboration_lead
+            .as_ref()
+            .map_or_else(|| NO_LEAD.to_owned(), ToString::to_string);
         format!(
             "model {} at {}\nstarted {} of {} {procreations}, best harness {}\ncompleted by at \
              least one harness: selection tasks {} of {}, corroboration tasks {} of {}, other \
-             tasks {} of {}\n\n{lines}",
+             tasks {} of {}\n{lead}\n\n{lines}",
             self.model,
             self.model_url,
             self.procreations_started,

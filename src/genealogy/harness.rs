@@ -108,7 +108,7 @@ impl Harness {
             .collect()
     }
 
-    pub(super) fn has_completed(&self, task: &str) -> bool {
+    pub(crate) fn has_completed(&self, task: &str) -> bool {
         self.completed.contains(task)
     }
 

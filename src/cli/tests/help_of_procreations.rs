@@ -285,3 +285,62 @@ fn the_long_help_of_start_says_that_a_harness_is_still_ahead_on_the_corroboratio
          of them, and the fewer\nthe corroboration tasks, the more a few of them weigh."
     ));
 }
+
+#[test]
+fn the_long_help_of_start_says_which_three_things_report_says_of_the_best_harness() {
+    assert!(long_help_of_start().contains(
+        "`cladenc report` says three things of the best harness and the\nprimogenitor, counted on \
+         the corroboration tasks: how many of them only the\nbest harness completed, how many only \
+         the primogenitor completed, and how\nlikely luck alone gives a lead at least as large."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_corroboration_tasks_are_left_out_of_the_lead() {
+    assert!(long_help_of_start().contains(
+        "A corroboration task that\nboth harnesses completed, or that neither completed, says \
+         nothing about\nwhich of the two is ahead, and is left out."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_task_only_one_harness_completed_is_like_the_toss_of_a_coin() {
+    assert!(long_help_of_start().contains(
+        "Where two harnesses are equally\ngood, a task that only one of them completed is as \
+         likely the one's as the\nother's, like the toss of a fair coin."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_the_likelihood_of_a_lead_is_counted() {
+    assert!(long_help_of_start().contains(
+        "So the likelihood is that of as many\nheads or more in as many tosses as there are tasks \
+         that tell the two apart:\nwith 14 tasks that only the best harness completed and 6 that \
+         only the\nprimogenitor completed, 14 heads or more in 20 tosses, which is 0.058,\nabout 6 \
+         times in a hundred."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_report_says_where_no_lead_is_counted() {
+    assert!(long_help_of_start().contains(
+        "Where no task tells the two apart the\nlikelihood is 1, and where the best harness is the \
+         primogenitor there are\nno two harnesses to compare."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_cladenc_draws_no_line_through_the_likelihood() {
+    assert!(long_help_of_start().contains(
+        "cladenc draws no line through the likelihood:\nwhat counts as more than luck is for the \
+         person who reads it to say."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_why_the_likelihood_is_shown_for_the_best_harness_alone() {
+    assert!(long_help_of_start().contains(
+        "The\nlikelihood is shown for the best harness alone, since among many harnesses\none or \
+         two show a low likelihood by luck."
+    ));
+}

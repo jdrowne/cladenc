@@ -129,6 +129,7 @@ fn a_report_prints_the_table_on_standard_output() {
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
          completed by at least one harness: selection tasks 0 of 0, corroboration tasks 0 of 0, other tasks 0 of 1\n\
+         on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
          \n\
          id  progenitor  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
          0   -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\

@@ -299,6 +299,24 @@ which is not to say that it is proven. One of two harnesses that are alike
 is still ahead on the corroboration tasks by a few of them, and the fewer
 the corroboration tasks, the more a few of them weigh.
 
+`cladenc report` says three things of the best harness and the
+primogenitor, counted on the corroboration tasks: how many of them only the
+best harness completed, how many only the primogenitor completed, and how
+likely luck alone gives a lead at least as large. A corroboration task that
+both harnesses completed, or that neither completed, says nothing about
+which of the two is ahead, and is left out. Where two harnesses are equally
+good, a task that only one of them completed is as likely the one's as the
+other's, like the toss of a fair coin. So the likelihood is that of as many
+heads or more in as many tosses as there are tasks that tell the two apart:
+with 14 tasks that only the best harness completed and 6 that only the
+primogenitor completed, 14 heads or more in 20 tosses, which is 0.058,
+about 6 times in a hundred. Where no task tells the two apart the
+likelihood is 1, and where the best harness is the primogenitor there are
+no two harnesses to compare. cladenc draws no line through the likelihood:
+what counts as more than luck is for the person who reads it to say. The
+likelihood is shown for the best harness alone, since among many harnesses
+one or two show a low likelihood by luck.
+
 How many more selection tasks the best of many harnesses that are all alike
 completes is measured by a directed evolution in which no harness changes:
 one carried out with the values of the directed evolution it is set beside,
