@@ -15,11 +15,11 @@ fn ran() -> (TempDir, Output) {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark_named(directory.path(), "refactoring", &["t1", "t2"]),
+            test_inputs::benchmark_named(directory.path(), "refactoring", &["t1", "t2", "t3"]),
         ),
         (
             "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1", "t2"]),
+            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", test_inputs::SOLVE_ONE_MORE.into()),
@@ -30,6 +30,7 @@ fn ran() -> (TempDir, Output) {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -84,7 +85,7 @@ fn a_run_given_two_benchmarks_keeps_the_tasks_of_each_under_its_name() {
     assert_eq!(
         ["benchmark", "refactoring"]
             .map(|name| { names_in(&directory.path().join("outputs/benchmarks").join(name)) }),
-        [vec!["t1", "t2"], vec!["t1", "t2"]]
+        [vec!["t1", "t2", "t3"], vec!["t1", "t2", "t3"]]
     );
 }
 
@@ -97,11 +98,11 @@ fn a_run_given_two_benchmarks_says_that_it_copies_the_tasks_of_each_in_the_order
         said.lines().skip(1).take(2).collect::<Vec<_>>(),
         [
             format!(
-                "cladenc: copying the 2 tasks of the benchmark {} into the outputs directory",
+                "cladenc: copying the 3 tasks of the benchmark {} into the outputs directory",
                 given_in.join("benchmark").display()
             ),
             format!(
-                "cladenc: copying the 2 tasks of the benchmark {} into the outputs directory",
+                "cladenc: copying the 3 tasks of the benchmark {} into the outputs directory",
                 given_in.join("refactoring").display()
             )
         ]
@@ -113,7 +114,7 @@ fn a_run_given_two_benchmarks_tries_a_harness_on_the_tasks_of_both() {
     let (directory, _output) = ran();
     assert_eq!(
         ["benchmark", "refactoring"].map(|name| tasks_attempted_of(&directory, name)),
-        [vec!["t1", "t2"], vec!["t1", "t2"]]
+        [vec!["t1", "t2", "t3"], vec!["t1", "t2", "t3"]]
     );
 }
 

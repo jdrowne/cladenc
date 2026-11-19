@@ -176,9 +176,9 @@ fn the_long_help_of_start_says_that_the_growth_never_keeps_a_procreation_from_st
 #[test]
 fn the_long_help_of_start_says_that_the_best_of_harnesses_that_are_alike_is_ahead_by_luck() {
     assert!(long_help_of_start().contains(
-        "The best harness is named among many, each benchmarked once, and a model\ndoes not \
-         answer the same way twice. So the best of many harnesses that are\nall alike has \
-         still completed more holdout tasks than the primogenitor, by\nluck."
+        "The best harness is named among many, each benchmarked once, and a model\ndoes not answer \
+         the same way twice. So the best of many harnesses that are\nall alike has still completed \
+         more selection tasks than the primogenitor,\nby luck."
     ));
 }
 
@@ -186,10 +186,10 @@ fn the_long_help_of_start_says_that_the_best_of_harnesses_that_are_alike_is_ahea
 fn the_long_help_of_start_says_how_a_directed_evolution_in_which_no_harness_changes_is_carried_out()
 {
     assert!(long_help_of_start().contains(
-        "How many more is measured by a directed evolution in which no\nharness changes: one \
-         carried out with the values of the directed evolution\nit is set beside, and with a \
-         run command that ends at once with exit\nstatus 0 where the harness is started for a \
-         procreation, as"
+        "How many more selection tasks the best of many harnesses that are all alike\ncompletes is \
+         measured by a directed evolution in which no harness changes:\none carried out with the \
+         values of the directed evolution it is set beside,\nand with a run command that ends at \
+         once with exit status 0 where the\nharness is started for a procreation, as"
     ));
 }
 
@@ -204,9 +204,9 @@ fn the_long_help_of_start_gives_a_run_command_that_changes_nothing_in_a_procreat
 #[test]
 fn the_long_help_of_start_says_why_that_run_command_changes_nothing() {
     assert!(long_help_of_start().contains(
-        "/var/log/cladenc/attempts\nis there for a procreation and not for an attempt, so \
-         every procreation\ncreates a child that is the source code of the primogenitor, \
-         unchanged,\nand calls no model."
+        "/var/log/cladenc/attempts\nis there for a procreation and not for an attempt, so every \
+         procreation\ncreates a child that is the source code of the primogenitor, unchanged, \
+         and\ncalls no model."
     ));
 }
 
@@ -221,34 +221,67 @@ fn the_long_help_of_start_says_what_a_directed_evolution_in_which_no_harness_cha
 #[test]
 fn the_long_help_of_start_says_how_the_report_of_such_a_directed_evolution_is_read() {
     assert!(long_help_of_start().contains(
-        "In\n`cladenc report` of it, how far apart the counts of the harnesses lie is\nwhat \
-         luck does to the count of one harness, and how many more holdout\ntasks the best \
-         harness completed than the primogenitor is what luck and\nthe choosing give \
-         together, with nothing changed."
+        "In\n`cladenc report` of it, how far apart the counts of the harnesses lie is\nwhat luck \
+         does to the count of one harness, and how many more selection\ntasks the best harness \
+         completed than the primogenitor is what luck and the\nchoosing give together, with \
+         nothing changed."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_far_a_best_harness_is_ahead_by_a_change() {
     assert!(long_help_of_start().contains(
-        "The best harness of the\nother directed evolution is ahead of its primogenitor by a \
-         change only as\nfar as it is ahead by more than that."
+        "The best harness of the other\ndirected evolution is ahead of its primogenitor on the \
+         selection tasks by a\nchange only as far as it is ahead by more than that."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_report_counts_the_tasks_one_harness_at_least_completed() {
     assert!(long_help_of_start().contains(
-        "`cladenc report` also says how many\ntasks at least one harness completed, of the \
-         holdout tasks and of the\nothers."
+        "`cladenc report` also\nsays how many tasks at least one harness completed, of the \
+         selection tasks,\nof the corroboration tasks and of the others."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_that_count_is_read_where_no_harness_changes() {
     assert!(long_help_of_start().contains(
-        "Where no harness changes, that is what one more attempt at each\ntask for each child \
-         gives the primogenitor, and it is set beside the\ncount of the best harness of the \
-         other directed evolution, which had one\nattempt at each task."
+        "Where no harness changes,\nthat is what one more attempt at each task for each child \
+         gives the\nprimogenitor, and it is set beside the count of the best harness of the\nother \
+         directed evolution, which had one attempt at each task."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_luck_in_the_choosing_does_not_reach_the_corroboration_tasks() {
+    assert!(long_help_of_start().contains(
+        "That luck does not reach the corroboration tasks: a harness that\nwas lucky on the \
+         selection tasks is no luckier on other tasks, and a change\nthat makes a harness complete \
+         more tasks shows on both sets."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_lead_of_the_best_harness_is_read() {
+    assert!(long_help_of_start().contains(
+        "So how far the\nbest harness is ahead of the primogenitor is read in the columns of \
+         the\ncorroboration tasks of `cladenc report`."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_lead_that_is_corroborated_is_not_proven() {
+    assert!(long_help_of_start().contains(
+        "A lead there corroborates the lead\non the selection tasks: it came through a test that \
+         could have refuted it,\nwhich is not to say that it is proven."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_harness_is_still_ahead_on_the_corroboration_tasks_by_luck() {
+    assert!(long_help_of_start().contains(
+        "One of two harnesses that are alike\nis still ahead on the corroboration tasks by a few \
+         of them, and the fewer\nthe corroboration tasks, the more a few of them weigh."
     ));
 }

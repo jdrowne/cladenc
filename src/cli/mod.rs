@@ -105,7 +105,15 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "NUMBER",
-        value_parser = checks::holdout_percentage,
+        value_parser = checks::percentage,
+        help = "The percentage of each benchmark's holdout tasks that are corroboration tasks, \
+                above 0 and below 100"
+    )]
+    holdout_corroboration_percentage: f64,
+    #[arg(
+        long,
+        value_name = "NUMBER",
+        value_parser = checks::percentage,
         help = "The percentage of each benchmark's tasks that is held out, above 0 and below 100"
     )]
     holdout_percentage: f64,

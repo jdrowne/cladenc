@@ -12,7 +12,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2"]),
+            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         (
@@ -26,6 +26,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))

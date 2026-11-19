@@ -225,9 +225,9 @@ is refused, and so is one with a task that lacks one of the three.
 
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on
-all of them, and looks for the one harness that completes the most of
-their holdout tasks. Every holdout task counts the same, so a benchmark
-with more of them weighs more. The name of a benchmark is the name of its
+all of them, and looks for the one harness that completes the most of their
+selection tasks. Every selection task counts the same, so a benchmark with
+more of them weighs more. The name of a benchmark is the name of its
 directory, made of the characters the id of a task is made of, and a task
 of a directed evolution is known by the two together, as
 
@@ -252,48 +252,78 @@ is refused, and so is a benchmark of one task, which cannot be divided.
 The draw is made once for a directed evolution and written in its journal,
 and `cladenc resume` reads it there and draws nothing.
 
-Every harness is benchmarked on the holdout tasks as on the others, and
-nothing a harness is given in an attempt says whether the task is held
-out. A harness that procreates is given its attempts at the tasks that are
-not held out, and nothing of the holdout tasks: no task specification, no
-workspace, no result, and no count of them.
+--holdout-corroboration-percentage divides the holdout tasks of each
+benchmark in two. It gives the part of the holdout tasks that are
+corroboration tasks, as so many in a hundred: a number above 0 and below
+100. cladenc draws the corroboration tasks at random, once the holdout
+tasks are drawn, out of the holdout tasks of each benchmark by itself: the
+number of the holdout tasks of the benchmark times the percentage, divided
+by 100 and rounded in the same way. The holdout tasks that are left are the
+selection tasks. At 60 and 25, a benchmark of 500 tasks has 300 holdout
+tasks: 75 corroboration tasks and 225 selection tasks. A value that leaves
+a benchmark no corroboration task, or no selection task, is refused, so a
+benchmark holds three tasks at the least. The second draw is written in the
+journal beside the first.
 
-cladenc counts the holdout tasks and no others. It chooses which harness
-procreates by the holdout tasks that the harness and its descendants
-completed and did not complete, and it names as the best harness the
-created harness, benchmarked in full, that completed the most holdout
-tasks: of several that completed as many, the one created first. The
-tasks that are not held out are what a harness reads to find what to
-change, and a harness that completes more of those alone is not chosen
-for it.
+Every harness is benchmarked on the holdout tasks as on the others,
+selection tasks and corroboration tasks alike, and nothing a harness is
+given in an attempt says which of the sets its task is in. A harness that
+procreates is given its attempts at the tasks that are not held out, and
+nothing of the holdout tasks: no task specification, no workspace, no
+result, and no count of them.
+
+Artificial selection goes by the selection tasks and by no others. cladenc
+chooses which harness procreates by the selection tasks that the harness
+and its descendants completed and did not complete, and it names as the
+best harness the created harness, benchmarked in full, that completed the
+most selection tasks: of several that completed as many, the one created
+first. The tasks that are not held out are what a harness reads to find
+what to change, and a harness that completes more of those alone is not
+chosen for it.
+
+cladenc counts for every harness the corroboration tasks it completed, and
+chooses nothing by them: not the harness that procreates, and never the
+best harness. A set of tasks gives a fair count only while nothing is
+chosen by it.
 
 The best harness is named among many, each benchmarked once, and a model
 does not answer the same way twice. So the best of many harnesses that are
-all alike has still completed more holdout tasks than the primogenitor, by
-luck. How many more is measured by a directed evolution in which no
-harness changes: one carried out with the values of the directed evolution
-it is set beside, and with a run command that ends at once with exit
-status 0 where the harness is started for a procreation, as
+all alike has still completed more selection tasks than the primogenitor,
+by luck. That luck does not reach the corroboration tasks: a harness that
+was lucky on the selection tasks is no luckier on other tasks, and a change
+that makes a harness complete more tasks shows on both sets. So how far the
+best harness is ahead of the primogenitor is read in the columns of the
+corroboration tasks of `cladenc report`. A lead there corroborates the lead
+on the selection tasks: it came through a test that could have refuted it,
+which is not to say that it is proven. One of two harnesses that are alike
+is still ahead on the corroboration tasks by a few of them, and the fewer
+the corroboration tasks, the more a few of them weigh.
+
+How many more selection tasks the best of many harnesses that are all alike
+completes is measured by a directed evolution in which no harness changes:
+one carried out with the values of the directed evolution it is set beside,
+and with a run command that ends at once with exit status 0 where the
+harness is started for a procreation, as
 
     --harness-run-command \\
         '[ -d /var/log/cladenc/attempts ] && exit 0; <COMMAND>'
 
 where <COMMAND> is the run command of the other. /var/log/cladenc/attempts
 is there for a procreation and not for an attempt, so every procreation
-creates a child that is the source code of the primogenitor, unchanged,
-and calls no model. Such a directed evolution holds as many children as
+creates a child that is the source code of the primogenitor, unchanged, and
+calls no model. Such a directed evolution holds as many children as
 --max-procreations gives, each of them benchmarked in full. In
 `cladenc report` of it, how far apart the counts of the harnesses lie is
-what luck does to the count of one harness, and how many more holdout
-tasks the best harness completed than the primogenitor is what luck and
-the choosing give together, with nothing changed. The best harness of the
-other directed evolution is ahead of its primogenitor by a change only as
-far as it is ahead by more than that. `cladenc report` also says how many
-tasks at least one harness completed, of the holdout tasks and of the
-others. Where no harness changes, that is what one more attempt at each
-task for each child gives the primogenitor, and it is set beside the
-count of the best harness of the other directed evolution, which had one
-attempt at each task.
+what luck does to the count of one harness, and how many more selection
+tasks the best harness completed than the primogenitor is what luck and the
+choosing give together, with nothing changed. The best harness of the other
+directed evolution is ahead of its primogenitor on the selection tasks by a
+change only as far as it is ahead by more than that. `cladenc report` also
+says how many tasks at least one harness completed, of the selection tasks,
+of the corroboration tasks and of the others. Where no harness changes,
+that is what one more attempt at each task for each child gives the
+primogenitor, and it is set beside the count of the best harness of the
+other directed evolution, which had one attempt at each task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.
@@ -362,9 +392,10 @@ benchmark, and in that one named after the task, which holds
   stderr         the standard error of the harness
   grader         the standard output and the standard error of the grader
 
-holdout in the outputs directory keeps the attempts at the holdout tasks in
-the same way, apart from the others, so that the directory a harness that
-procreates is given holds none of them.";
+holdout in the outputs directory keeps the attempts at the holdout tasks,
+selection tasks and corroboration tasks together, in the same way, apart
+from the others, so that the directory a harness that procreates is given
+holds none of them.";
 
 pub(super) const RESUMING: &str = "\
 A cladenc that is killed outright, as by `kill -9`, ends none of its

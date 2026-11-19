@@ -18,7 +18,7 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
 }
 
 fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
         .end_procreation(child, ProcreationOutcome::Created)
@@ -111,8 +111,8 @@ fn the_draws_are_sharpened_by_the_most_procreations_over_those_not_yet_started()
 
 #[test]
 fn an_attempt_is_the_same_whatever_the_seed() {
-    let first = artificial_selection(0).next_action(&Genealogy::new().holding_out(&tasks()), 0);
+    let first = artificial_selection(0).next_action(&Genealogy::new().selecting_by(&tasks()), 0);
     assert!((1..50).all(|seed| {
-        artificial_selection(seed).next_action(&Genealogy::new().holding_out(&tasks()), 0) == first
+        artificial_selection(seed).next_action(&Genealogy::new().selecting_by(&tasks()), 0) == first
     }));
 }

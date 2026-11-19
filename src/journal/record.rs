@@ -7,6 +7,7 @@ use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
 use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::holdout::TaskSet;
 use crate::model::{self, Model};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -23,6 +24,8 @@ pub struct Settings {
     pub benchmarks: Vec<Benchmark>,
     pub holdout_percentage: f64,
     pub holdout_tasks: Vec<String>,
+    pub holdout_corroboration_percentage: f64,
+    pub corroboration_tasks: Vec<String>,
     pub max_procreations: u64,
     pub genealogy_growth: f64,
     pub max_concurrent_containers: u64,
@@ -63,7 +66,9 @@ impl Settings {
             Some(_) => Genealogy::unbuilt(),
             None => Genealogy::new(),
         };
-        genealogy.holding_out(&self.holdout_tasks)
+        genealogy
+            .selecting_by(&self.tasks_of(TaskSet::Selection))
+            .corroborating_with(&self.tasks_of(TaskSet::Corroboration))
     }
 
     pub(crate) fn tasks(&self) -> Vec<String> {
@@ -73,12 +78,30 @@ impl Settings {
             .collect()
     }
 
-    pub(crate) fn held_out_of(&self, benchmark: &Benchmark) -> u64 {
+    pub(crate) fn tasks_of(&self, set: TaskSet) -> Vec<String> {
+        self.tasks()
+            .into_iter()
+            .filter(|task| self.set_of(task) == set)
+            .collect()
+    }
+
+    pub(crate) fn count_of(&self, benchmark: &Benchmark, set: TaskSet) -> u64 {
         benchmark
             .tasks
             .iter()
-            .filter(|id| self.holdout_tasks.contains(&benchmark.task(id)))
+            .filter(|id| self.set_of(&benchmark.task(id)) == set)
             .count() as u64
+    }
+
+    fn set_of(&self, task: &str) -> TaskSet {
+        let named_in = |tasks: &[String]| tasks.iter().any(|named| named == task);
+        if !named_in(&self.holdout_tasks) {
+            TaskSet::NonHoldout
+        } else if named_in(&self.corroboration_tasks) {
+            TaskSet::Corroboration
+        } else {
+            TaskSet::Selection
+        }
     }
 
     pub(crate) fn artificial_selection(&self) -> ArtificialSelection {

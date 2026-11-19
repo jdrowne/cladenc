@@ -13,7 +13,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned()],
+            tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -26,22 +26,24 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t3".to_owned()],
         seed: 7,
     }
 }
 
 #[test]
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
-    let mut genealogy = Genealogy::new().holding_out(&["t1".to_owned()]);
-    genealogy.start_attempt(0, "t1").unwrap();
-    genealogy
-        .end_attempt(0, "t1", AttemptResult::Completed)
-        .unwrap();
-    genealogy.start_attempt(0, "t2").unwrap();
-    genealogy
-        .end_attempt(0, "t2", AttemptResult::NotCompleted)
-        .unwrap();
+    let mut genealogy = settings().genealogy();
+    for (task, result) in [
+        ("benchmark/t1", AttemptResult::Completed),
+        ("benchmark/t2", AttemptResult::NotCompleted),
+        ("benchmark/t3", AttemptResult::Completed),
+    ] {
+        genealogy.start_attempt(0, task).unwrap();
+        genealogy.end_attempt(0, task, result).unwrap();
+    }
     genealogy.start_procreation(0).unwrap();
     let seconds = [Seconds {
         attempts: 4.5,
@@ -52,15 +54,18 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
         concat!(
             r#"{"model":"a-model","model_url":"http://models.example/v1","#,
             r#""procreations_started":1,"max_procreations":800,"best_harness":0,"#,
-            r#""holdout_tasks_completed_by_any":0,"holdout_tasks":0,"#,
+            r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
+            r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
             r#""other_tasks_completed_by_any":0,"other_tasks":1,"harnesses":["#,
             r#"{"id":0,"progenitor":null,"state":"created","#,
-            r#""holdout_completed":1,"holdout_not_completed":0,"#,
+            r#""selection_completed":1,"selection_not_completed":0,"#,
+            r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":1,"#,
             r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
             r#""attempt_seconds":4.5,"procreation_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"state":"being_created","#,
-            r#""holdout_completed":0,"holdout_not_completed":0,"#,
+            r#""selection_completed":0,"selection_not_completed":0,"#,
+            r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":0,"#,
             r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
             r#""attempt_seconds":0.0,"procreation_seconds":null}]}"#

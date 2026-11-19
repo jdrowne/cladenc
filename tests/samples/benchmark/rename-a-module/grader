@@ -1,0 +1,2 @@
+#!/bin/sh
+[ ! -e old.sh ] && [ "$(sh new.sh)" = module ]

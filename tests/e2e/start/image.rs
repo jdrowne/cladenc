@@ -12,8 +12,8 @@ use nix::unistd::Pid;
 use tempfile::TempDir;
 use test_inputs::Image;
 
-const SOLVES_BOTH_TASKS: &str =
-    "RUN echo t1 > /solved-by-the-image && echo t2 >> /solved-by-the-image\n";
+const SOLVES_EVERY_TASK: &str =
+    "RUN for task in t1 t2 t3; do echo \"$task\"; done > /solved-by-the-image\n";
 const FAILS: &str = "RUN exit 3\n";
 const WAITS_FOURTEEN_SECONDS: &str = "RUN sleep 14\n";
 const UNTIL_THE_STEP_WOULD_HAVE_ENDED: Duration = Duration::from_secs(20);
@@ -43,7 +43,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2"]),
+            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
         ("--dockerfile", test_inputs::dockerfile(directory, steps)),
         ("--docker-build-timeout", build_timeout.into()),
@@ -58,6 +58,7 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
@@ -80,7 +81,7 @@ fn ran(steps: &str) -> Ran {
 
 fn ran_on_a_machine_that_does_not_hold_timeout() -> Ran {
     let only_docker = test_inputs::sample("e2e", "fake");
-    ran_on_a_machine_whose_programs_are_in(SOLVES_BOTH_TASKS, &only_docker.display().to_string())
+    ran_on_a_machine_whose_programs_are_in(SOLVES_EVERY_TASK, &only_docker.display().to_string())
 }
 
 fn ran_on_a_machine_whose_programs_are_in(steps: &str, path: &str) -> Ran {
@@ -142,7 +143,7 @@ fn arguments_of_a_docker_that_records_them() -> (TempDir, Vec<String>) {
         test_inputs::sample("e2e", "fake").display(),
         env::var("PATH").unwrap()
     );
-    start(directory.path(), SOLVES_BOTH_TASKS)
+    start(directory.path(), SOLVES_EVERY_TASK)
         .env("PATH", path)
         .env("CLADENC_TEST_ARGUMENTS_OF_DOCKER", &arguments)
         .output()
@@ -160,7 +161,7 @@ fn arguments_of_a_timeout_that_records_them() -> Vec<String> {
         test_inputs::sample("e2e", "fake").display(),
         env::var("PATH").unwrap()
     );
-    start(directory.path(), SOLVES_BOTH_TASKS)
+    start(directory.path(), SOLVES_EVERY_TASK)
         .env("PATH", path)
         .env("CLADENC_TEST_ARGUMENTS_OF_TIMEOUT", &arguments)
         .env(
@@ -244,12 +245,12 @@ fn a_machine_that_does_not_hold_timeout_is_told_that_the_build_could_not_be_carr
 
 #[test]
 fn a_directed_evolution_given_a_dockerfile_exits_with_0() {
-    assert_eq!(ran(SOLVES_BOTH_TASKS).status, Some(0));
+    assert_eq!(ran(SOLVES_EVERY_TASK).status, Some(0));
 }
 
 #[test]
 fn a_directed_evolution_given_a_dockerfile_prints_the_harness_made_in_the_image_it_built() {
-    let ran = ran(SOLVES_BOTH_TASKS);
+    let ran = ran(SOLVES_EVERY_TASK);
     assert_eq!(
         ran.output,
         format!(
@@ -262,19 +263,19 @@ fn a_directed_evolution_given_a_dockerfile_prints_the_harness_made_in_the_image_
 #[test]
 fn the_image_cladenc_builds_is_named_cladenc_and_sixteen_hexadecimal_digits() {
     assert!(is_named_by_cladenc(name_of_the_image(&ran(
-        SOLVES_BOTH_TASKS
+        SOLVES_EVERY_TASK
     ))));
 }
 
 #[test]
 fn the_image_stays_on_the_machine_when_the_directed_evolution_ends() {
-    assert!(docker_holds(name_of_the_image(&ran(SOLVES_BOTH_TASKS))));
+    assert!(docker_holds(name_of_the_image(&ran(SOLVES_EVERY_TASK))));
 }
 
 #[test]
 fn the_outputs_directory_keeps_the_dockerfile_and_what_docker_printed() {
     assert_eq!(
-        kept_of_the_image(&ran(SOLVES_BOTH_TASKS)),
+        kept_of_the_image(&ran(SOLVES_EVERY_TASK)),
         ["Dockerfile", "context", "stderr", "stdout"]
     );
 }

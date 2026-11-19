@@ -7,6 +7,7 @@ use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
 use crate::genealogy::Genealogy;
+use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, JournalError, Record, Settings};
 use crate::model::Model;
 
@@ -18,7 +19,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -31,7 +32,9 @@ fn settings() -> Settings {
         procreation_timeout: 3600,
         attempt_timeout: 3600,
         holdout_percentage: 50.0,
-        holdout_tasks: vec!["benchmark/t2".to_owned()],
+        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t3".to_owned()],
         seed: 7,
     }
 }
@@ -78,8 +81,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_20() {
-    assert_eq!(journal::FORMAT, 20);
+fn the_format_of_the_journal_is_21() {
+    assert_eq!(journal::FORMAT, 21);
 }
 
 #[test]
@@ -87,13 +90,14 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":20,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":21,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
-            r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2"]}],"#,
-            r#""holdout_percentage":50.0,"holdout_tasks":["benchmark/t2"],"#,
-            r#""max_procreations":800,"#,
+            r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2","t3"]}],"#,
+            r#""holdout_percentage":50.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
+            r#""holdout_corroboration_percentage":50.0,"#,
+            r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#,
             r#""genealogy_growth":0.6,"max_concurrent_containers":8,"#,
             r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
         )
@@ -110,9 +114,27 @@ fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_set
 #[test]
 fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
-        r#""tasks":["t1","t2"]}],"holdout_percentage":50.0,"#,
-        r#""holdout_tasks":["benchmark/t2"],"max_procreations":800,"#
+        r#""tasks":["t1","t2","t3"]}],"holdout_percentage":50.0,"#,
+        r#""holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
+        r#""holdout_corroboration_percentage":50.0,"#
     )));
+}
+
+#[test]
+fn the_run_record_holds_the_corroboration_tasks_after_the_percentage_they_were_drawn_by() {
+    assert!(run(settings()).line().unwrap().contains(concat!(
+        r#""holdout_corroboration_percentage":50.0,"#,
+        r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#
+    )));
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
+    let corroborated = run(Settings {
+        holdout_corroboration_percentage: 12.5,
+        ..settings()
+    });
+    assert_eq!(read_back(&corroborated), corroborated);
 }
 
 #[test]
@@ -125,9 +147,17 @@ fn a_holdout_percentage_with_a_decimal_point_survives_being_written_and_read_bac
 }
 
 #[test]
-fn the_settings_give_how_many_tasks_of_a_benchmark_are_held_out() {
+fn the_settings_give_how_many_tasks_of_a_benchmark_are_in_each_set() {
     let settings = settings();
-    assert_eq!(settings.held_out_of(&settings.benchmarks[0]), 1);
+    assert_eq!(
+        [
+            TaskSet::Selection,
+            TaskSet::Corroboration,
+            TaskSet::NonHoldout
+        ]
+        .map(|set| settings.count_of(&settings.benchmarks[0], set)),
+        [1, 1, 1]
+    );
 }
 
 #[test]
@@ -135,9 +165,44 @@ fn the_settings_count_no_holdout_task_of_another_benchmark_as_one_of_a_benchmark
     let settings = settings();
     let another = Benchmark {
         directory: PathBuf::from("/abs/refactoring"),
-        tasks: vec!["t1".to_owned(), "t2".to_owned()],
+        tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
     };
-    assert_eq!(settings.held_out_of(&another), 0);
+    assert_eq!(
+        [
+            TaskSet::Selection,
+            TaskSet::Corroboration,
+            TaskSet::NonHoldout
+        ]
+        .map(|set| settings.count_of(&another, set)),
+        [0, 0, 3]
+    );
+}
+
+#[test]
+fn the_selection_tasks_are_the_holdout_tasks_that_are_not_corroboration_tasks() {
+    assert_eq!(settings().tasks_of(TaskSet::Selection), ["benchmark/t2"]);
+}
+
+#[test]
+fn the_corroboration_tasks_are_the_ones_the_run_record_names() {
+    assert_eq!(
+        settings().tasks_of(TaskSet::Corroboration),
+        ["benchmark/t3"]
+    );
+}
+
+#[test]
+fn the_non_holdout_tasks_are_the_tasks_that_are_not_held_out() {
+    assert_eq!(settings().tasks_of(TaskSet::NonHoldout), ["benchmark/t1"]);
+}
+
+#[test]
+fn a_task_named_a_corroboration_task_that_is_not_held_out_is_a_non_holdout_task() {
+    let settings = Settings {
+        corroboration_tasks: vec!["benchmark/t1".to_owned()],
+        ..settings()
+    };
+    assert_eq!(settings.tasks_of(TaskSet::NonHoldout), ["benchmark/t1"]);
 }
 
 #[test]
@@ -295,7 +360,9 @@ fn settings_with_no_build_command_give_a_launch_that_builds_nothing() {
 fn settings_with_a_build_command_give_a_genealogy_whose_primogenitor_awaits_its_build() {
     assert_eq!(
         built_with("make harness").genealogy(),
-        Genealogy::unbuilt().holding_out(&["benchmark/t2".to_owned()])
+        Genealogy::unbuilt()
+            .selecting_by(&["benchmark/t2".to_owned()])
+            .corroborating_with(&["benchmark/t3".to_owned()])
     );
 }
 
@@ -303,13 +370,23 @@ fn settings_with_a_build_command_give_a_genealogy_whose_primogenitor_awaits_its_
 fn settings_with_no_build_command_give_a_genealogy_whose_primogenitor_is_created() {
     assert_eq!(
         settings().genealogy(),
-        Genealogy::new().holding_out(&["benchmark/t2".to_owned()])
+        Genealogy::new()
+            .selecting_by(&["benchmark/t2".to_owned()])
+            .corroborating_with(&["benchmark/t3".to_owned()])
     );
 }
 
 #[test]
-fn the_settings_give_a_genealogy_that_holds_out_the_holdout_tasks_of_the_directed_evolution() {
+fn the_settings_give_a_genealogy_that_is_told_of_the_holdout_tasks_of_the_directed_evolution() {
     assert_ne!(settings().genealogy(), Genealogy::new());
+}
+
+#[test]
+fn the_settings_give_a_genealogy_that_selects_by_no_corroboration_task() {
+    assert_ne!(
+        settings().genealogy(),
+        Genealogy::new().selecting_by(&["benchmark/t2".to_owned(), "benchmark/t3".to_owned()])
+    );
 }
 
 #[test]
@@ -333,7 +410,11 @@ fn the_settings_give_the_artificial_selection_made_from_five_of_them() {
         ArtificialSelection {
             max_procreations: 800,
             growth: 0.6,
-            tasks: vec!["benchmark/t1".to_owned(), "benchmark/t2".to_owned()],
+            tasks: vec![
+                "benchmark/t1".to_owned(),
+                "benchmark/t2".to_owned(),
+                "benchmark/t3".to_owned()
+            ],
             seed: 7,
         }
     );

@@ -17,7 +17,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned()],
+            tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -30,7 +30,9 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: vec!["t1".to_owned()],
+        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t2".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t2".to_owned()],
         seed: 7,
     }
 }
@@ -44,13 +46,23 @@ fn outputs_directory(last_line: &str) -> TempDir {
         },
         Record::AttemptStarted {
             harness: 0,
-            task: "t1".to_owned(),
+            task: "benchmark/t1".to_owned(),
         },
         Record::AttemptFinished {
             harness: 0,
-            task: "t1".to_owned(),
+            task: "benchmark/t1".to_owned(),
             result: AttemptResult::Completed,
             seconds: 1.5,
+        },
+        Record::AttemptStarted {
+            harness: 0,
+            task: "benchmark/t2".to_owned(),
+        },
+        Record::AttemptFinished {
+            harness: 0,
+            task: "benchmark/t2".to_owned(),
+            result: AttemptResult::NotCompleted,
+            seconds: 2.0,
         },
         Record::ProcreationStarted {
             child: 1,
@@ -67,14 +79,18 @@ fn outputs_directory(last_line: &str) -> TempDir {
 
 fn of_the_records() -> Report {
     let mut genealogy = settings().genealogy();
-    genealogy.start_attempt(0, "t1").unwrap();
+    genealogy.start_attempt(0, "benchmark/t1").unwrap();
     genealogy
-        .end_attempt(0, "t1", AttemptResult::Completed)
+        .end_attempt(0, "benchmark/t1", AttemptResult::Completed)
+        .unwrap();
+    genealogy.start_attempt(0, "benchmark/t2").unwrap();
+    genealogy
+        .end_attempt(0, "benchmark/t2", AttemptResult::NotCompleted)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
     let seconds = [
         Seconds {
-            attempts: 1.5,
+            attempts: 3.5,
             procreation: None,
         },
         Seconds::default(),
@@ -91,15 +107,21 @@ fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
 }
 
 #[test]
-fn a_report_read_from_a_journal_counts_the_holdout_tasks_its_run_record_names() {
+fn a_report_read_from_a_journal_counts_the_selection_tasks_its_run_record_leaves() {
     let report = report::read(outputs_directory("").path()).unwrap();
-    assert_eq!(report.harnesses[0].holdout_completed, 1);
+    assert_eq!(report.harnesses[0].selection_completed, 1);
+}
+
+#[test]
+fn a_report_read_from_a_journal_counts_the_corroboration_tasks_its_run_record_names() {
+    let report = report::read(outputs_directory("").path()).unwrap();
+    assert_eq!(report.harnesses[0].corroboration_not_completed, 1);
 }
 
 #[test]
 fn a_report_read_from_a_journal_holds_the_seconds_its_records_hold() {
     let report = report::read(outputs_directory("").path()).unwrap();
-    assert_eq!(report.harnesses[0].attempt_seconds, 1.5);
+    assert_eq!(report.harnesses[0].attempt_seconds, 3.5);
 }
 
 #[test]

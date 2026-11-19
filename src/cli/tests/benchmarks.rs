@@ -17,7 +17,7 @@ fn options(directory: &Path) -> StartOptions {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: vec![test_inputs::benchmark(directory, &["t2", "t1"])],
+        benchmark: vec![test_inputs::benchmark(directory, &["t3", "t2", "t1"])],
         docker_image: Some("image".to_owned()),
         dockerfile: None,
         docker_build_timeout: None,
@@ -29,7 +29,8 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,
-        holdout_percentage: 50.0,
+        holdout_percentage: 60.0,
+        holdout_corroboration_percentage: 50.0,
     }
 }
 
@@ -54,7 +55,7 @@ fn with_a_second(directory: &Path, benchmarks: &mut Vec<PathBuf>) {
     benchmarks.push(test_inputs::benchmark_named(
         directory,
         "refactoring",
-        &["t3", "t1"],
+        &["t3", "t1", "t4"],
     ));
 }
 
@@ -172,7 +173,11 @@ fn a_benchmark_given_from_the_working_directory_is_made_absolute() {
 fn a_task_of_a_directed_evolution_is_known_by_the_name_of_its_benchmark_and_its_id() {
     assert_eq!(
         settings_of(from_the_working_directory).tasks(),
-        ["benchmark/add-a-flag", "benchmark/fix-the-parser"]
+        [
+            "benchmark/add-a-flag",
+            "benchmark/fix-the-parser",
+            "benchmark/rename-a-module"
+        ]
     );
 }
 
@@ -200,8 +205,10 @@ fn a_directed_evolution_given_two_benchmarks_has_the_tasks_of_both() {
         [
             "benchmark/t1",
             "benchmark/t2",
+            "benchmark/t3",
             "refactoring/t1",
-            "refactoring/t3"
+            "refactoring/t3",
+            "refactoring/t4"
         ]
     );
 }
@@ -217,7 +224,7 @@ fn the_benchmarks_of_a_directed_evolution_are_in_the_order_of_their_names_and_no
     let settings = settings_of(|directory, benchmarks| {
         benchmarks.insert(
             0,
-            test_inputs::benchmark_named(directory, "refactoring", &["t3", "t4"]),
+            test_inputs::benchmark_named(directory, "refactoring", &["t3", "t4", "t5"]),
         );
     });
     assert_eq!(

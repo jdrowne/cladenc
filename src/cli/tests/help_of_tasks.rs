@@ -131,45 +131,47 @@ fn the_short_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_b
 #[test]
 fn the_long_help_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
     assert!(help_of_start(true).contains(
-        "A\ndirected evolution that is given several has each harness benchmarked on\nall of \
-         them, and looks for the one harness that completes the most of\ntheir holdout tasks."
+        "A\ndirected evolution that is given several has each harness benchmarked on\nall of them, \
+         and looks for the one harness that completes the most of their\nselection tasks."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_every_holdout_task_counts_the_same() {
+fn the_long_help_of_start_says_that_every_selection_task_counts_the_same() {
     assert!(help_of_start(true).contains(
-        "Every holdout task counts the same, so a benchmark\nwith more of them weighs more."
+        "Every selection task counts the same, so a benchmark with\nmore of them weighs more."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_holdout_tasks_are_counted_and_no_others() {
-    assert!(help_of_start(true).contains("cladenc counts the holdout tasks and no others."));
+fn the_long_help_of_start_says_that_artificial_selection_goes_by_the_selection_tasks_alone() {
+    assert!(
+        help_of_start(true)
+            .contains("Artificial selection goes by the selection tasks and by no others.")
+    );
 }
 
 #[test]
 fn the_long_help_of_start_says_by_which_tasks_the_harness_that_procreates_is_chosen() {
     assert!(help_of_start(true).contains(
-        "It chooses which harness\nprocreates by the holdout tasks that the harness and its \
-         descendants\ncompleted and did not complete,"
+        "cladenc\nchooses which harness procreates by the selection tasks that the harness\nand \
+         its descendants completed and did not complete,"
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_which_harness_is_named_the_best() {
     assert!(help_of_start(true).contains(
-        "it names as the best harness the\ncreated harness, benchmarked in full, that \
-         completed the most holdout\ntasks: of several that completed as many, the one created \
-         first."
+        "it names as the\nbest harness the created harness, benchmarked in full, that completed \
+         the\nmost selection tasks: of several that completed as many, the one created\nfirst."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_what_the_tasks_that_are_not_held_out_are_for() {
     assert!(help_of_start(true).contains(
-        "The\ntasks that are not held out are what a harness reads to find what to\nchange, \
-         and a harness that completes more of those alone is not chosen\nfor it."
+        "The tasks that are not held out are what a harness reads to find\nwhat to change, and a \
+         harness that completes more of those alone is not\nchosen for it."
     ));
 }
 
@@ -251,17 +253,18 @@ fn the_long_help_of_start_says_that_the_holdout_tasks_are_drawn_once_and_kept_in
 #[test]
 fn the_long_help_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_too() {
     assert!(help_of_start(true).contains(
-        "Every harness is benchmarked on the holdout tasks as on the others, and\nnothing a \
-         harness is given in an attempt says whether the task is held\nout."
+        "Every harness is benchmarked on the holdout tasks as on the others,\nselection tasks and \
+         corroboration tasks alike, and nothing a harness is\ngiven in an attempt says which of \
+         the sets its task is in."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
     assert!(help_of_start(true).contains(
-        "A harness that procreates is given its attempts at the tasks that are\nnot held out, \
-         and nothing of the holdout tasks: no task specification, no\nworkspace, no result, \
-         and no count of them."
+        "A harness that\nprocreates is given its attempts at the tasks that are not held out, \
+         and\nnothing of the holdout tasks: no task specification, no workspace, no\nresult, and \
+         no count of them."
     ));
 }
 
@@ -275,9 +278,9 @@ fn the_long_help_of_start_says_which_attempts_the_directory_named_attempts_keeps
 #[test]
 fn the_long_help_of_start_says_where_the_attempts_at_the_holdout_tasks_are_kept() {
     assert!(help_of_start(true).contains(
-        "holdout in the outputs directory keeps the attempts at the holdout tasks in\nthe same \
-         way, apart from the others, so that the directory a harness that\nprocreates is given \
-         holds none of them."
+        "holdout in the outputs directory keeps the attempts at the holdout tasks,\nselection \
+         tasks and corroboration tasks together, in the same way, apart\nfrom the others, so that \
+         the directory a harness that procreates is given\nholds none of them."
     ));
 }
 
@@ -357,4 +360,76 @@ fn the_long_help_of_start_says_that_the_model_may_know_the_task() {
          remembers, and a child that completes more of such tasks\nmay only be better at \
          drawing that out."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_holdout_corroboration_percentage_gives() {
+    assert!(help_of_start(true).contains(
+        "--holdout-corroboration-percentage divides the holdout tasks of each\nbenchmark in two. \
+         It gives the part of the holdout tasks that are\ncorroboration tasks, as so many in a \
+         hundred: a number above 0 and below\n100."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_corroboration_tasks_are_drawn_out_of_the_holdout_tasks() {
+    assert!(help_of_start(true).contains(
+        "cladenc draws the corroboration tasks at random, once the holdout\ntasks are drawn, out \
+         of the holdout tasks of each benchmark by itself: the\nnumber of the holdout tasks of the \
+         benchmark times the percentage, divided\nby 100 and rounded in the same way."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_holdout_tasks_that_are_left_are_the_selection_tasks() {
+    assert!(help_of_start(true).contains(
+        "The holdout tasks that are left are the\nselection tasks. At 60 and 25, a benchmark of \
+         500 tasks has 300 holdout\ntasks: 75 corroboration tasks and 225 selection tasks."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_holdout_corroboration_percentage_is_refused() {
+    assert!(help_of_start(true).contains(
+        "A value that leaves\na benchmark no corroboration task, or no selection task, is refused, \
+         so a\nbenchmark holds three tasks at the least."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_second_draw_is_written_in_the_journal_beside_the_first() {
+    assert!(
+        help_of_start(true)
+            .contains("The second draw is written in the\njournal beside the first.")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_nothing_is_chosen_by_the_corroboration_tasks() {
+    assert!(help_of_start(true).contains(
+        "cladenc counts for every harness the corroboration tasks it completed, and\nchooses \
+         nothing by them: not the harness that procreates, and never the\nbest harness."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_when_a_set_of_tasks_gives_a_fair_count() {
+    assert!(
+        help_of_start(true)
+            .contains("A set of tasks gives a fair count only while nothing is\nchosen by it.")
+    );
+}
+
+#[test]
+fn the_short_help_of_start_names_the_flag_that_divides_the_holdout_tasks() {
+    assert!(help_of_start(false).contains("--holdout-corroboration-percentage <NUMBER>"));
+}
+
+#[test]
+fn the_short_help_of_start_says_what_the_flag_that_divides_the_holdout_tasks_gives() {
+    assert!(
+        help_of_start(false).contains(
+            "The percentage of each benchmark's holdout tasks that are corroboration tasks"
+        )
+    );
 }

@@ -16,7 +16,7 @@ fn options(directory: &Path) -> StartOptions {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: vec![test_inputs::benchmark(directory, &["t2", "t1"])],
+        benchmark: vec![test_inputs::benchmark(directory, &["t3", "t2", "t1"])],
         docker_image: Some("image".to_owned()),
         dockerfile: None,
         docker_build_timeout: None,
@@ -28,7 +28,8 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,
-        holdout_percentage: 50.0,
+        holdout_percentage: 60.0,
+        holdout_corroboration_percentage: 50.0,
     }
 }
 
@@ -81,7 +82,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             model_key_file: None,
             benchmarks: vec![Benchmark {
                 directory: root.join("benchmark"),
-                tasks: vec!["t1".to_owned(), "t2".to_owned()],
+                tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
             }],
             docker_image: "image".to_owned(),
             dockerfile: None,
@@ -93,8 +94,10 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
             attempt_timeout: 1800,
-            holdout_percentage: 50.0,
+            holdout_percentage: 60.0,
             holdout_tasks: settings.holdout_tasks.clone(),
+            holdout_corroboration_percentage: 50.0,
+            corroboration_tasks: settings.corroboration_tasks.clone(),
             seed: settings.seed,
         }
     );
@@ -376,14 +379,16 @@ fn the_holdout_percentage_is_a_setting_as_it_was_given() {
 }
 
 #[test]
-fn a_half_of_a_benchmark_of_two_tasks_holds_out_one_of_the_two() {
+fn sixty_in_a_hundred_of_a_benchmark_of_three_tasks_holds_out_two_of_the_three() {
     let settings = checked(|_, _| {}).unwrap();
     assert!(
         [
-            vec!["benchmark/t1".to_owned()],
-            vec!["benchmark/t2".to_owned()]
+            ["benchmark/t1", "benchmark/t2"],
+            ["benchmark/t1", "benchmark/t3"],
+            ["benchmark/t2", "benchmark/t3"]
         ]
-        .contains(&settings.holdout_tasks)
+        .iter()
+        .any(|held_out| settings.holdout_tasks == held_out)
     );
 }
 
@@ -392,7 +397,7 @@ fn the_holdout_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_draws(
     let settings = checked(|_, _| {}).unwrap();
     assert_eq!(
         settings.holdout_tasks,
-        holdout::draw(&settings.benchmarks, 50.0, settings.seed).unwrap()
+        holdout::draw(&settings.benchmarks, 60.0, settings.seed).unwrap()
     );
 }
 
@@ -402,7 +407,7 @@ fn the_percentage_is_taken_of_the_tasks_of_each_benchmark_given() {
         options.benchmark.push(test_inputs::benchmark_named(
             directory.path(),
             "refactoring",
-            &["t1", "t2", "t3", "t4"],
+            &["t1", "t2", "t3", "t4", "t5"],
         ));
     })
     .unwrap();
@@ -414,7 +419,7 @@ fn the_percentage_is_taken_of_the_tasks_of_each_benchmark_given() {
                 .filter(|task| task.starts_with(name))
                 .count()
         }),
-        [1, 2]
+        [2, 3]
     );
 }
 
@@ -454,7 +459,7 @@ fn a_refused_holdout_percentage_is_said_with_what_the_flag_takes_and_the_benchma
     assert_eq!(
         refused.to_string(),
         "--holdout-percentage takes a number above 0 and below 100 that holds out at least one \
-         task of every benchmark and leaves at least one: the benchmark `benchmark` holds 2 \
+         task of every benchmark and leaves at least one: the benchmark `benchmark` holds 3 \
          tasks, and none of them would be held out"
     );
 }
@@ -467,5 +472,114 @@ fn a_benchmark_that_is_refused_is_refused_ahead_of_the_holdout_percentage() {
             options.holdout_percentage = 10.0;
         }),
         "--benchmark"
+    );
+}
+
+#[test]
+fn the_holdout_corroboration_percentage_is_a_setting_as_it_was_given() {
+    let settings = checked(|_, options| options.holdout_corroboration_percentage = 37.5).unwrap();
+    assert_eq!(settings.holdout_corroboration_percentage, 37.5);
+}
+
+#[test]
+fn a_half_of_two_holdout_tasks_is_one_corroboration_task() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert_eq!(settings.corroboration_tasks.len(), 1);
+}
+
+#[test]
+fn every_corroboration_task_is_one_of_the_holdout_tasks() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert!(
+        settings
+            .corroboration_tasks
+            .iter()
+            .all(|task| settings.holdout_tasks.contains(task))
+    );
+}
+
+#[test]
+fn the_corroboration_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_draws() {
+    let settings = checked(|_, _| {}).unwrap();
+    assert_eq!(
+        settings.corroboration_tasks,
+        holdout::draw_corroboration(
+            &settings.benchmarks,
+            &settings.holdout_tasks,
+            50.0,
+            settings.seed
+        )
+        .unwrap()
+    );
+}
+
+#[test]
+fn the_corroboration_percentage_is_taken_of_the_holdout_tasks_of_each_benchmark_given() {
+    let settings = checked(|directory, options| {
+        options.benchmark.push(test_inputs::benchmark_named(
+            directory.path(),
+            "refactoring",
+            &["t1", "t2", "t3", "t4", "t5"],
+        ));
+    })
+    .unwrap();
+    assert_eq!(
+        ["benchmark/", "refactoring/"].map(|name| {
+            settings
+                .corroboration_tasks
+                .iter()
+                .filter(|task| task.starts_with(name))
+                .count()
+        }),
+        [1, 2]
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_that_leaves_a_benchmark_no_corroboration_task_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.holdout_corroboration_percentage = 10.0),
+        "--holdout-corroboration-percentage"
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_that_leaves_a_benchmark_no_selection_task_is_refused() {
+    assert_eq!(
+        option_refused(|_, options| options.holdout_corroboration_percentage = 90.0),
+        "--holdout-corroboration-percentage"
+    );
+}
+
+#[test]
+fn a_benchmark_with_one_holdout_task_is_refused_by_the_flag_that_divides_the_holdout_tasks() {
+    assert_eq!(
+        option_refused(|_, options| options.holdout_percentage = 40.0),
+        "--holdout-corroboration-percentage"
+    );
+}
+
+#[test]
+fn a_refused_holdout_corroboration_percentage_is_said_with_what_the_flag_takes_and_the_benchmark() {
+    let refused =
+        checked(|_, options| options.holdout_corroboration_percentage = 10.0).unwrap_err();
+    assert_eq!(
+        refused.to_string(),
+        "--holdout-corroboration-percentage takes a number above 0 and below 100 that makes at \
+         least one holdout task of every benchmark a corroboration task and leaves at least one \
+         a selection task: the benchmark `benchmark` has 2 holdout tasks, and none of them would \
+         be a corroboration task"
+    );
+}
+
+#[test]
+fn a_holdout_percentage_that_is_refused_is_refused_ahead_of_the_one_that_divides_the_holdout_tasks()
+{
+    assert_eq!(
+        option_refused(|_, options| {
+            options.holdout_percentage = 10.0;
+            options.holdout_corroboration_percentage = 10.0;
+        }),
+        "--holdout-percentage"
     );
 }

@@ -34,6 +34,12 @@ impl StartOptions {
         let benchmarks = benchmarks(&self.benchmark)?;
         let seed = rand::random();
         let holdout_tasks = holdout_tasks(&benchmarks, self.holdout_percentage, seed)?;
+        let corroboration_tasks = corroboration_tasks(
+            &benchmarks,
+            &holdout_tasks,
+            self.holdout_corroboration_percentage,
+            seed,
+        )?;
         Ok(Settings {
             primogenitor: primogenitor(&self.primogenitor)?,
             model: self.model.clone(),
@@ -51,6 +57,8 @@ impl StartOptions {
             benchmarks,
             holdout_percentage: self.holdout_percentage,
             holdout_tasks,
+            holdout_corroboration_percentage: self.holdout_corroboration_percentage,
+            corroboration_tasks,
             max_procreations: self.max_procreations,
             genealogy_growth: self.genealogy_growth,
             max_concurrent_containers: self.max_concurrent_containers,
@@ -69,7 +77,7 @@ pub(super) fn genealogy_growth(given: &str) -> Result<f64, String> {
         .ok_or_else(|| "a number from 0 to 1 is expected".to_owned())
 }
 
-pub(super) fn holdout_percentage(given: &str) -> Result<f64, String> {
+pub(super) fn percentage(given: &str) -> Result<f64, String> {
     given
         .parse()
         .ok()
@@ -87,6 +95,23 @@ fn holdout_tasks(
         accepted: "a number above 0 and below 100 that holds out at least one task of every \
                    benchmark and leaves at least one",
         reason: Some(error.to_string()),
+    })
+}
+
+fn corroboration_tasks(
+    benchmarks: &[Benchmark],
+    holdout_tasks: &[String],
+    percentage: f64,
+    seed: u64,
+) -> Result<Vec<String>, Refused> {
+    holdout::draw_corroboration(benchmarks, holdout_tasks, percentage, seed).map_err(|error| {
+        Refused {
+            option: "--holdout-corroboration-percentage",
+            accepted: "a number above 0 and below 100 that makes at least one holdout task of \
+                       every benchmark a corroboration task and leaves at least one a selection \
+                       task",
+            reason: Some(error.to_string()),
+        }
     })
 }
 

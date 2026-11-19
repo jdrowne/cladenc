@@ -29,8 +29,33 @@ fn settings() -> Settings {
         attempt_timeout: 3600,
         holdout_percentage: 50.0,
         holdout_tasks: Vec::new(),
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: Vec::new(),
         seed: 7,
     }
+}
+
+fn dividing_its_tasks() -> Settings {
+    Settings {
+        benchmarks: vec![Benchmark {
+            directory: PathBuf::from("/abs/benchmark"),
+            tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
+        }],
+        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
+        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        ..settings()
+    }
+}
+
+fn an_attempt_at_each_task() -> [Record; 6] {
+    [
+        attempt_started(0, "benchmark/t1"),
+        attempt_finished(0, "benchmark/t1", AttemptResult::NotCompleted),
+        attempt_started(0, "benchmark/t2"),
+        attempt_finished(0, "benchmark/t2", AttemptResult::Completed),
+        attempt_started(0, "benchmark/t3"),
+        attempt_finished(0, "benchmark/t3", AttemptResult::TimedOut),
+    ]
 }
 
 fn procreation_started(child: u64, progenitor: u64) -> Record {
@@ -182,25 +207,47 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
 }
 
 #[test]
-fn rebuilding_counts_the_attempts_at_the_holdout_tasks_of_the_run_record_apart() {
-    let settings = Settings {
-        holdout_tasks: vec!["benchmark/t2".to_owned()],
-        ..settings()
-    };
-    let records = [
-        attempt_started(0, "benchmark/t1"),
-        attempt_finished(0, "benchmark/t1", AttemptResult::NotCompleted),
-        attempt_started(0, "benchmark/t2"),
-        attempt_finished(0, "benchmark/t2", AttemptResult::Completed),
-    ];
-    let state = journal::read(journal_with(settings, &records).path()).unwrap();
+fn rebuilding_counts_the_attempts_at_the_selection_tasks_of_the_run_record_apart() {
+    let state =
+        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
+            .unwrap();
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
-            primogenitor.holdout_completed(),
+            primogenitor.selection_completed(),
             primogenitor.other_not_completed()
         ),
         (1, 1)
+    );
+}
+
+#[test]
+fn rebuilding_counts_the_attempts_at_the_corroboration_tasks_of_the_run_record_apart() {
+    let state =
+        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
+            .unwrap();
+    let primogenitor = &state.genealogy.harnesses()[0];
+    assert_eq!(
+        (
+            primogenitor.corroboration_completed(),
+            primogenitor.corroboration_not_completed()
+        ),
+        (0, 1)
+    );
+}
+
+#[test]
+fn rebuilding_counts_no_attempt_at_a_corroboration_task_in_a_clade() {
+    let state =
+        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
+            .unwrap();
+    let primogenitor = &state.genealogy.harnesses()[0];
+    assert_eq!(
+        (
+            primogenitor.clade_completed(),
+            primogenitor.clade_not_completed()
+        ),
+        (1, 0)
     );
 }
 

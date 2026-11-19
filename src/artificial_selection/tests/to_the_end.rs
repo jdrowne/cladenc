@@ -20,7 +20,7 @@ fn actions_to_the_end(
     result: AttemptResult,
 ) -> Vec<Action> {
     let artificial_selection = artificial_selection(growth);
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     let mut actions = Vec::new();
     while let Some(action) = artificial_selection.next_action(&genealogy, actions.len() as u64) {
         match &action {

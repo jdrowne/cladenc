@@ -12,6 +12,7 @@ use std::time::Duration;
 
 use crate::containers::{self, ContainerError, Launch};
 use crate::genealogy::HarnessId;
+use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::outputs_directory::OutputsDirectory;
 
@@ -84,7 +85,8 @@ fn say_the_holdout(settings: &Settings, writer: &mut dyn Write) {
     for benchmark in &settings.benchmarks {
         let holding_out = Said::HoldingOut {
             benchmark: &benchmark.directory,
-            held_out: settings.held_out_of(benchmark),
+            selection: settings.count_of(benchmark, TaskSet::Selection),
+            corroboration: settings.count_of(benchmark, TaskSet::Corroboration),
             tasks: benchmark.tasks.len() as u64,
         };
         say(writer, &holding_out);

@@ -36,6 +36,8 @@ fn settings(directory: &Path) -> Settings {
         attempt_timeout: 30,
         holdout_percentage: 20.0,
         holdout_tasks: vec!["benchmark/t1".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: Vec::new(),
         seed: 7,
     }
 }

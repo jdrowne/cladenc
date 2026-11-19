@@ -4,7 +4,7 @@ use crate::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -18,6 +18,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
     ("--holdout-percentage", "60"),
+    ("--holdout-corroboration-percentage", "25"),
 ];
 
 fn with(changed: &str, given: &str) -> Result<Cli, clap::Error> {
@@ -418,6 +419,101 @@ fn a_holdout_percentage_just_below_100_is_accepted() {
 fn a_part_that_is_held_out_has_no_flag_under_another_name() {
     assert_eq!(
         and(Some("--holdout=60".to_owned())).unwrap_err().kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_of_0_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "0"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_of_100_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "100"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_below_0_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "-5"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_above_100_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "100.5"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_that_is_not_a_number_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "NaN"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_written_with_a_percent_sign_is_an_error() {
+    assert_eq!(
+        refusal("--holdout-corroboration-percentage", "25%"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_that_is_refused_is_said_to_take_a_number_above_0_and_below_100()
+ {
+    assert!(
+        with("--holdout-corroboration-percentage", "100")
+            .unwrap_err()
+            .to_string()
+            .contains("a number above 0 and below 100 is expected")
+    );
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_is_the_number_given() {
+    assert!(matches!(
+        with("--holdout-corroboration-percentage", "25").unwrap().command,
+        Command::Start(options) if options.holdout_corroboration_percentage == 25.0
+    ));
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_with_a_decimal_point_is_the_number_given() {
+    assert!(matches!(
+        with("--holdout-corroboration-percentage", "12.5").unwrap().command,
+        Command::Start(options) if options.holdout_corroboration_percentage == 12.5
+    ));
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_just_above_0_is_accepted() {
+    assert!(with("--holdout-corroboration-percentage", "0.1").is_ok());
+}
+
+#[test]
+fn a_holdout_corroboration_percentage_just_below_100_is_accepted() {
+    assert!(with("--holdout-corroboration-percentage", "99.9").is_ok());
+}
+
+#[test]
+fn the_part_of_the_holdout_tasks_that_is_only_scored_has_no_flag_under_another_name() {
+    assert_eq!(
+        and(Some("--corroboration-percentage=25".to_owned()))
+            .unwrap_err()
+            .kind(),
         ErrorKind::UnknownArgument
     );
 }

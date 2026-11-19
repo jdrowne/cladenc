@@ -106,11 +106,28 @@ fn the_tasks_held_out_of_a_benchmark_are_said_with_how_many_of_its_tasks_they_ar
     assert_eq!(
         Said::HoldingOut {
             benchmark: Path::new("/parsing"),
-            held_out: 3,
-            tasks: 5,
+            selection: 6,
+            corroboration: 2,
+            tasks: 10,
         }
         .to_string(),
-        "holding out 3 of the 5 tasks of the benchmark /parsing from every progenitor"
+        "holding out 8 of the 10 tasks of the benchmark /parsing from every progenitor: 6 \
+         selection tasks and 2 corroboration tasks"
+    );
+}
+
+#[test]
+fn one_selection_task_and_one_corroboration_task_are_not_said_as_several() {
+    assert_eq!(
+        Said::HoldingOut {
+            benchmark: Path::new("/parsing"),
+            selection: 1,
+            corroboration: 1,
+            tasks: 3,
+        }
+        .to_string(),
+        "holding out 2 of the 3 tasks of the benchmark /parsing from every progenitor: 1 \
+         selection task and 1 corroboration task"
     );
 }
 

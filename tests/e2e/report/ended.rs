@@ -16,7 +16,7 @@ fn ended() -> TempDir {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1", "t2"]),
+            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         (
@@ -30,6 +30,7 @@ fn ended() -> TempDir {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -88,11 +89,11 @@ fn report_prints_the_table() {
         up_to_the_seconds(&table_of(directory.path())),
         "model a-model at http://models.example/v1\n\
          started 1 of 1 procreation, best harness 1\n\
-         completed by at least one harness: holdout tasks 1 of 1, other tasks 1 of 1\n\
+         completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, other tasks 1 of 1\n\
          \n\
-         id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
-         0   -           created  0                  1                      0                1                    1                1                    0.500\n\
-         1   0           created  1                  0                      1                0                    1                0                    1.000\n"
+         id  progenitor  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
+         0   -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
+         1   0           created  1                    0                        1                        0                            1                0                    1                0                    1.000\n"
     );
 }
 
@@ -102,14 +103,17 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
     let values: Value = serde_json::from_str(concat!(
         r#"{"model":"a-model","model_url":"http://models.example/v1","#,
         r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
-        r#""holdout_tasks_completed_by_any":1,"holdout_tasks":1,"#,
+        r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
+        r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
         r#""other_tasks_completed_by_any":1,"other_tasks":1,"harnesses":["#,
         r#"{"id":0,"progenitor":null,"state":"created","#,
-        r#""holdout_completed":0,"holdout_not_completed":1,"#,
+        r#""selection_completed":0,"selection_not_completed":1,"#,
+        r#""corroboration_completed":0,"corroboration_not_completed":1,"#,
         r#""other_completed":0,"other_not_completed":1,"#,
         r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5},"#,
         r#"{"id":1,"progenitor":0,"state":"created","#,
-        r#""holdout_completed":1,"holdout_not_completed":0,"#,
+        r#""selection_completed":1,"selection_not_completed":0,"#,
+        r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
         r#""other_completed":1,"other_not_completed":0,"#,
         r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0}]}"#,
     ))

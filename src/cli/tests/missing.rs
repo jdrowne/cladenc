@@ -2,7 +2,7 @@ use crate::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -16,6 +16,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
     ("--holdout-percentage", "60"),
+    ("--holdout-corroboration-percentage", "25"),
 ];
 
 fn without(left_out: &str) -> Result<Cli, clap::Error> {
@@ -139,6 +140,14 @@ fn leaving_out_the_attempt_timeout_is_an_error() {
 fn leaving_out_the_holdout_percentage_is_an_error() {
     assert_eq!(
         refusal_without("--holdout-percentage"),
+        ErrorKind::MissingRequiredArgument
+    );
+}
+
+#[test]
+fn leaving_out_the_holdout_corroboration_percentage_is_an_error() {
+    assert_eq!(
+        refusal_without("--holdout-corroboration-percentage"),
         ErrorKind::MissingRequiredArgument
     );
 }

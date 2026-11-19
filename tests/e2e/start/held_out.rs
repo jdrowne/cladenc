@@ -26,6 +26,7 @@ fn ran() -> (TempDir, Output) {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -44,8 +45,8 @@ fn run_record_of(directory: &TempDir) -> Value {
     serde_json::from_str(journal_of(directory).lines().next().unwrap()).unwrap()
 }
 
-fn holdout_tasks_of(directory: &TempDir) -> Vec<String> {
-    run_record_of(directory)["holdout_tasks"]
+fn tasks_named_under(directory: &TempDir, key: &str) -> Vec<String> {
+    run_record_of(directory)[key]
         .as_array()
         .unwrap()
         .iter()
@@ -53,8 +54,25 @@ fn holdout_tasks_of(directory: &TempDir) -> Vec<String> {
         .collect()
 }
 
+fn holdout_tasks_of(directory: &TempDir) -> Vec<String> {
+    tasks_named_under(directory, "holdout_tasks")
+}
+
+fn corroboration_tasks_of(directory: &TempDir) -> Vec<String> {
+    tasks_named_under(directory, "corroboration_tasks")
+}
+
 fn the_one_task_the_child_completes_is_held_out(directory: &TempDir) -> bool {
     holdout_tasks_of(directory).contains(&"benchmark/t1".to_owned())
+}
+
+fn the_one_task_the_child_completes_is_a_corroboration_task(directory: &TempDir) -> bool {
+    corroboration_tasks_of(directory).contains(&"benchmark/t1".to_owned())
+}
+
+fn the_one_task_the_child_completes_is_a_selection_task(directory: &TempDir) -> bool {
+    the_one_task_the_child_completes_is_held_out(directory)
+        && !the_one_task_the_child_completes_is_a_corroboration_task(directory)
 }
 
 fn report_of(directory: &TempDir) -> Value {
@@ -112,11 +130,33 @@ fn a_half_of_a_benchmark_of_four_tasks_is_two_holdout_tasks() {
 }
 
 #[test]
+fn the_run_record_of_the_journal_holds_the_holdout_corroboration_percentage_that_was_given() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        run_record_of(&directory)["holdout_corroboration_percentage"].as_f64(),
+        Some(50.0)
+    );
+}
+
+#[test]
+fn a_half_of_two_holdout_tasks_is_one_corroboration_task() {
+    let (directory, _output) = ran();
+    assert_eq!(corroboration_tasks_of(&directory).len(), 1);
+}
+
+#[test]
+fn the_corroboration_task_is_one_of_the_holdout_tasks() {
+    let (directory, _output) = ran();
+    assert!(holdout_tasks_of(&directory).contains(&corroboration_tasks_of(&directory)[0]));
+}
+
+#[test]
 fn a_run_says_how_many_tasks_of_its_benchmark_it_holds_out() {
     let (directory, output) = ran();
     let given_in = fs::canonicalize(directory.path()).unwrap();
     assert!(String::from_utf8(output.stderr).unwrap().contains(&format!(
-        "cladenc: holding out 2 of the 4 tasks of the benchmark {} from every progenitor\n",
+        "cladenc: holding out 2 of the 4 tasks of the benchmark {} from every progenitor: 1 \
+         selection task and 1 corroboration task\n",
         given_in.join("benchmark").display()
     )));
 }
@@ -160,24 +200,35 @@ fn every_harness_is_benchmarked_on_the_holdout_tasks_and_on_the_others() {
 }
 
 #[test]
-fn the_child_is_named_the_best_harness_only_where_the_one_task_it_completes_is_held_out() {
+fn the_child_is_named_the_best_harness_only_where_the_one_task_it_completes_is_a_selection_task() {
     let (directory, _output) = ran();
     assert_eq!(
         report_of(&directory)["best_harness"].as_u64(),
-        Some(u64::from(the_one_task_the_child_completes_is_held_out(
-            &directory
-        )))
+        Some(u64::from(
+            the_one_task_the_child_completes_is_a_selection_task(&directory)
+        ))
     );
 }
 
 #[test]
-fn the_report_counts_a_task_a_harness_completed_as_a_holdout_task_only_where_it_is_held_out() {
+fn the_report_counts_a_task_a_harness_completed_as_a_selection_task_only_where_it_is_one() {
     let (directory, _output) = ran();
     assert_eq!(
-        report_of(&directory)["harnesses"][1]["holdout_completed"].as_u64(),
-        Some(u64::from(the_one_task_the_child_completes_is_held_out(
-            &directory
-        )))
+        report_of(&directory)["harnesses"][1]["selection_completed"].as_u64(),
+        Some(u64::from(
+            the_one_task_the_child_completes_is_a_selection_task(&directory)
+        ))
+    );
+}
+
+#[test]
+fn the_report_counts_a_task_a_harness_completed_as_a_corroboration_task_only_where_it_is_one() {
+    let (directory, _output) = ran();
+    assert_eq!(
+        report_of(&directory)["harnesses"][1]["corroboration_completed"].as_u64(),
+        Some(u64::from(
+            the_one_task_the_child_completes_is_a_corroboration_task(&directory)
+        ))
     );
 }
 
@@ -193,24 +244,33 @@ fn the_report_counts_a_task_a_harness_completed_as_another_task_where_it_is_not_
 }
 
 #[test]
-fn the_report_counts_two_holdout_tasks_and_two_others_for_each_harness() {
+fn the_report_counts_one_selection_task_one_corroboration_task_and_two_others_for_each_harness() {
     let (directory, _output) = ran();
     let report = report_of(&directory);
     assert_eq!(
-        [0, 1]
-            .map(|harness: usize| {
-                [
-                    "holdout_completed",
-                    "holdout_not_completed",
-                    "other_completed",
-                    "other_not_completed",
-                ]
-                .map(|count| report["harnesses"][harness][count].as_u64().unwrap())
+        [0, 1].map(|harness: usize| {
+            ["selection", "corroboration", "other"].map(|set| {
+                ["completed", "not_completed"]
+                    .map(|result| {
+                        report["harnesses"][harness][format!("{set}_{result}")]
+                            .as_u64()
+                            .unwrap()
+                    })
+                    .iter()
+                    .sum::<u64>()
             })
-            .map(|[held_out, held_out_not, other, other_not]| (
-                held_out + held_out_not,
-                other + other_not
-            )),
-        [(2, 2), (2, 2)]
+        }),
+        [[1, 1, 2], [1, 1, 2]]
+    );
+}
+
+#[test]
+fn the_report_counts_the_tasks_of_each_set_that_at_least_one_harness_completed() {
+    let (directory, _output) = ran();
+    let report = report_of(&directory);
+    assert_eq!(
+        ["selection_tasks", "corroboration_tasks", "other_tasks"]
+            .map(|set| report[set].as_u64().unwrap()),
+        [1, 1, 2]
     );
 }

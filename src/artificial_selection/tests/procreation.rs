@@ -27,7 +27,7 @@ fn attempt(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result: 
 }
 
 fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     attempt(&mut genealogy, 0, 20, AttemptResult::NotCompleted);
     genealogy
 }
@@ -117,7 +117,7 @@ fn a_failed_harness_is_never_the_progenitor() {
 
 #[test]
 fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     attempt(&mut genealogy, 0, 20, AttemptResult::Completed);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
@@ -135,7 +135,7 @@ fn a_harness_that_completed_no_task_can_be_the_progenitor() {
 
 #[test]
 fn a_harness_whose_attempts_ran_past_their_time_limit_can_be_the_progenitor() {
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     attempt(&mut genealogy, 0, 20, AttemptResult::TimedOut);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
@@ -145,7 +145,7 @@ fn a_harness_whose_attempts_ran_past_their_time_limit_can_be_the_progenitor() {
 
 #[test]
 fn an_attempt_takes_the_place_of_a_procreation_no_harness_has_attempted_enough_for() {
-    let mut genealogy = Genealogy::new().holding_out(&tasks());
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
     attempt(&mut genealogy, 0, 19, AttemptResult::Completed);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),

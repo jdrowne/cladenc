@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 pub use error::GenealogyError;
 pub(crate) use harness::{Harness, HarnessState};
 
+use crate::holdout::TaskSet;
+
 pub(crate) type HarnessId = u64;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -31,7 +33,8 @@ pub enum AttemptResult {
 pub(crate) struct Genealogy {
     harnesses: Vec<Harness>,
     started: u64,
-    holdout_tasks: BTreeSet<String>,
+    selection_tasks: BTreeSet<String>,
+    corroboration_tasks: BTreeSet<String>,
 }
 
 impl Default for Genealogy {
@@ -53,13 +56,21 @@ impl Genealogy {
         Self {
             harnesses: vec![Harness::new(0, None, state)],
             started: 0,
-            holdout_tasks: BTreeSet::new(),
+            selection_tasks: BTreeSet::new(),
+            corroboration_tasks: BTreeSet::new(),
         }
     }
 
-    pub(crate) fn holding_out(self, tasks: &[String]) -> Self {
+    pub(crate) fn selecting_by(self, tasks: &[String]) -> Self {
         Self {
-            holdout_tasks: tasks.iter().cloned().collect(),
+            selection_tasks: tasks.iter().cloned().collect(),
+            ..self
+        }
+    }
+
+    pub(crate) fn corroborating_with(self, tasks: &[String]) -> Self {
+        Self {
+            corroboration_tasks: tasks.iter().cloned().collect(),
             ..self
         }
     }
@@ -164,22 +175,32 @@ impl Genealogy {
         task: &str,
         result: AttemptResult,
     ) -> Result<(), GenealogyError> {
-        let held_out = self.holdout_tasks.contains(task);
+        let set = self.set_of(task);
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|attempting| attempting.finish(task, result, held_out));
+            .is_some_and(|attempting| attempting.finish(task, result, set));
         if !finished {
             return Err(GenealogyError::AttemptNotRunning {
                 harness,
                 task: task.to_owned(),
             });
         }
-        let mut member = held_out.then_some(harness);
+        let mut member = (set == TaskSet::Selection).then_some(harness);
         while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
             ancestor.count_in_clade(result);
             member = ancestor.progenitor();
         }
         Ok(())
+    }
+
+    fn set_of(&self, task: &str) -> TaskSet {
+        if self.selection_tasks.contains(task) {
+            TaskSet::Selection
+        } else if self.corroboration_tasks.contains(task) {
+            TaskSet::Corroboration
+        } else {
+            TaskSet::NonHoldout
+        }
     }
 
     fn harness_mut(&mut self, id: HarnessId) -> Option<&mut Harness> {

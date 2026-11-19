@@ -48,8 +48,10 @@ fn settings(directory: &Path) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
-        holdout_percentage: 33.0,
-        holdout_tasks: vec!["benchmark/t2".to_owned()],
+        holdout_percentage: 67.0,
+        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t3".to_owned()],
         seed: 7,
     }
 }
@@ -153,11 +155,13 @@ fn the_report_of_such_a_directed_evolution_counts_the_tasks_one_harness_at_least
     let report = report::read(&directory.path().join("outputs")).unwrap();
     assert_eq!(
         (
-            report.holdout_tasks_completed_by_any,
-            report.holdout_tasks,
+            report.selection_tasks_completed_by_any,
+            report.selection_tasks,
+            report.corroboration_tasks_completed_by_any,
+            report.corroboration_tasks,
             report.other_tasks_completed_by_any,
             report.other_tasks
         ),
-        (0, 1, 0, 2)
+        (0, 1, 0, 1, 0, 1)
     );
 }

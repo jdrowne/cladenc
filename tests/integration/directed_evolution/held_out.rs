@@ -14,9 +14,13 @@ const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/attempts ]; then ls
 const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
                                           /var/log/cladenc > given; fi";
 
-const SOLVE_A_HOLDOUT_TASK: &str = "if [ -d /var/log/cladenc/attempts ]; then echo t2 > solved; \
-                                    else touch \"$CLADENC_HARNESS/solved\"; cp \
-                                    \"$CLADENC_HARNESS/solved\" solved; fi";
+const SOLVE_A_SELECTION_TASK: &str = "if [ -d /var/log/cladenc/attempts ]; then echo t2 > \
+                                      solved; else touch \"$CLADENC_HARNESS/solved\"; cp \
+                                      \"$CLADENC_HARNESS/solved\" solved; fi";
+
+const SOLVE_A_CORROBORATION_TASK: &str = "if [ -d /var/log/cladenc/attempts ]; then echo t4 > \
+                                          solved; else touch \"$CLADENC_HARNESS/solved\"; cp \
+                                          \"$CLADENC_HARNESS/solved\" solved; fi";
 
 fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
@@ -43,6 +47,8 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         attempt_timeout: 30,
         holdout_percentage: 40.0,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t4".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t4".to_owned()],
         seed: 7,
     }
 }
@@ -166,7 +172,8 @@ fn a_directed_evolution_says_how_many_tasks_of_a_benchmark_it_holds_out() {
     assert_eq!(
         said[2],
         format!(
-            "cladenc: holding out 2 of the 5 tasks of the benchmark {} from every progenitor",
+            "cladenc: holding out 2 of the 5 tasks of the benchmark {} from every progenitor: 1 \
+             selection task and 1 corroboration task",
             directory.path().join("benchmark").display()
         )
     );
@@ -204,10 +211,18 @@ fn a_resumed_directed_evolution_keeps_no_holdout_task_where_a_progenitor_reads()
 }
 
 #[test]
-fn a_child_that_completes_a_holdout_task_its_progenitor_did_not_is_named_the_best_harness() {
+fn a_child_that_completes_a_selection_task_its_progenitor_did_not_is_named_the_best_harness() {
     assert_eq!(
-        best_harness_of_a_directed_evolution_whose_child_is_made_by(SOLVE_A_HOLDOUT_TASK),
+        best_harness_of_a_directed_evolution_whose_child_is_made_by(SOLVE_A_SELECTION_TASK),
         1
+    );
+}
+
+#[test]
+fn a_child_that_completes_only_a_corroboration_task_is_not_named_the_best_harness() {
+    assert_eq!(
+        best_harness_of_a_directed_evolution_whose_child_is_made_by(SOLVE_A_CORROBORATION_TASK),
+        0
     );
 }
 

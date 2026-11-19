@@ -18,7 +18,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2"]),
+            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
         ("--docker-image", image.into()),
         ("--harness-run-command", "exit 0".into()),
@@ -29,6 +29,7 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));

@@ -29,6 +29,8 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         attempt_timeout: 60,
         holdout_percentage: 50.0,
         holdout_tasks: Vec::new(),
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: Vec::new(),
         seed: 7,
     }
 }

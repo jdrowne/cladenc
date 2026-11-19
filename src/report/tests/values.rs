@@ -13,7 +13,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned(), "t2".to_owned()],
+            tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -26,7 +26,9 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: vec!["benchmark/t1".to_owned()],
+        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
+        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks: vec!["benchmark/t3".to_owned()],
         seed: 7,
     }
 }
@@ -49,6 +51,7 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
         AttemptResult::NotCompleted,
     );
     attempted(&mut genealogy, 0, "benchmark/t2", AttemptResult::Completed);
+    attempted(&mut genealogy, 0, "benchmark/t3", AttemptResult::Completed);
     attempted(
         &mut genealogy,
         child,
@@ -59,6 +62,12 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
         &mut genealogy,
         child,
         "benchmark/t2",
+        AttemptResult::NotCompleted,
+    );
+    attempted(
+        &mut genealogy,
+        child,
+        "benchmark/t3",
         AttemptResult::NotCompleted,
     );
     genealogy
@@ -117,12 +126,37 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
 }
 
 #[test]
-fn the_holdout_counts_of_a_harness_are_those_of_its_own_attempts_at_the_holdout_tasks() {
+fn the_selection_counts_of_a_harness_are_those_of_its_own_attempts_at_the_selection_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].holdout_completed,
-            report.harnesses[0].holdout_not_completed
+            report.harnesses[0].selection_completed,
+            report.harnesses[0].selection_not_completed
+        ),
+        (0, 1)
+    );
+}
+
+#[test]
+fn the_corroboration_counts_of_a_harness_are_those_of_its_own_attempts_at_the_corroboration_tasks()
+{
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (
+            report.harnesses[0].corroboration_completed,
+            report.harnesses[0].corroboration_not_completed
+        ),
+        (1, 0)
+    );
+}
+
+#[test]
+fn the_corroboration_counts_of_a_child_are_its_own_and_not_those_of_its_progenitor() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (
+            report.harnesses[1].corroboration_completed,
+            report.harnesses[1].corroboration_not_completed
         ),
         (0, 1)
     );
@@ -162,8 +196,8 @@ fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
 }
 
 #[test]
-fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_holdout_tasks()
-{
+fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_selection_tasks()
+ {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.best_harness, 1);
 }
@@ -281,11 +315,39 @@ fn a_harness_for_which_no_seconds_are_given_is_reported_with_none_spent() {
 }
 
 #[test]
-fn the_holdout_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
+fn the_selection_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
-        (report.holdout_tasks_completed_by_any, report.holdout_tasks),
+        (
+            report.selection_tasks_completed_by_any,
+            report.selection_tasks
+        ),
         (1, 1)
+    );
+}
+
+#[test]
+fn the_corroboration_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
+    let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
+    assert_eq!(
+        (
+            report.corroboration_tasks_completed_by_any,
+            report.corroboration_tasks
+        ),
+        (1, 1)
+    );
+}
+
+#[test]
+fn the_tasks_of_each_set_are_counted_where_no_harness_has_completed_one() {
+    let report = report(&a_child_that_is_being_created_and_one_that_failed());
+    assert_eq!(
+        (
+            report.selection_tasks,
+            report.corroboration_tasks,
+            report.other_tasks
+        ),
+        (1, 1, 1)
     );
 }
 
@@ -303,10 +365,11 @@ fn a_task_that_no_harness_completed_is_not_counted_as_completed_by_one_at_least(
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(
         (
-            report.holdout_tasks_completed_by_any,
+            report.selection_tasks_completed_by_any,
+            report.corroboration_tasks_completed_by_any,
             report.other_tasks_completed_by_any
         ),
-        (0, 0)
+        (0, 0, 0)
     );
 }
 
@@ -323,5 +386,5 @@ fn a_task_that_two_harnesses_completed_is_counted_once() {
         "benchmark/t1",
         AttemptResult::Completed,
     );
-    assert_eq!(report(&genealogy).holdout_tasks_completed_by_any, 1);
+    assert_eq!(report(&genealogy).selection_tasks_completed_by_any, 1);
 }

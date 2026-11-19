@@ -22,7 +22,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
             "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2"]),
+            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         (
@@ -36,6 +36,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
         ("--holdout-percentage", "50".into()),
+        ("--holdout-corroboration-percentage", "50".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))

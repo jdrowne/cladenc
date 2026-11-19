@@ -13,7 +13,7 @@ fn settings() -> Settings {
         model_key_file: None,
         benchmarks: vec![Benchmark {
             directory: PathBuf::from("/abs/benchmark"),
-            tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
+            tasks: ["t1", "t2", "t3", "t4", "t5"].map(str::to_owned).to_vec(),
         }],
         docker_image: "image".to_owned(),
         dockerfile: None,
@@ -26,7 +26,11 @@ fn settings() -> Settings {
         procreation_timeout: 60,
         attempt_timeout: 60,
         holdout_percentage: 50.0,
-        holdout_tasks: Vec::new(),
+        holdout_tasks: ["t1", "t2", "t3", "t4"]
+            .map(|id| format!("benchmark/{id}"))
+            .to_vec(),
+        holdout_corroboration_percentage: 25.0,
+        corroboration_tasks: vec!["benchmark/t4".to_owned()],
         seed: 7,
     }
 }
@@ -41,8 +45,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 }
 
 fn table_with(seconds: &[Seconds], build: impl FnOnce(&mut Genealogy)) -> String {
-    let mut genealogy =
-        Genealogy::new().holding_out(&["t1".to_owned(), "t2".to_owned(), "t3".to_owned()]);
+    let mut genealogy = settings().genealogy();
     build(&mut genealogy);
     Report::of(&settings(), &genealogy, seconds).table()
 }
@@ -57,19 +60,20 @@ fn took(attempts: f64, procreation: Option<f64>) -> Seconds {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table_with(&[took(4.5, None)], |genealogy| {
-        attempted(genealogy, "t1", AttemptResult::Completed);
-        attempted(genealogy, "t4", AttemptResult::NotCompleted);
+        attempted(genealogy, "benchmark/t1", AttemptResult::Completed);
+        attempted(genealogy, "benchmark/t4", AttemptResult::Completed);
+        attempted(genealogy, "benchmark/t5", AttemptResult::NotCompleted);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
-         completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3\n\
+         completed by at least one harness: selection tasks 1 of 3, corroboration tasks 1 of 1, other tasks 0 of 1\n\
          \n\
-         id  progenitor  state          holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           created        1                  0                      0                1                    1                0                    1.000        4.5              -\n\
-         1   0           being created  0                  0                      0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           created        1                    0                        1                        0                            0                1                    1                0                    1.000        4.5              -\n\
+         1   0           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
     );
 }
 
@@ -86,20 +90,20 @@ fn a_failed_harness_is_shown_as_failed() {
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
-         completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3\n\
+         completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 of 1, other tasks 0 of 1\n\
          \n\
-         id  progenitor  state    holdout completed  holdout not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           created  0                  0                      0                0                    0                0                    -            0.0              -\n\
-         1   0           failed   0                  0                      0                0                    0                0                    -            0.0              30.3\n"
+         id  progenitor  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
+         1   0           failed   0                    0                        0                        0                            0                0                    0                0                    -            0.0              30.3\n"
     );
 }
 
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        attempted(genealogy, "t1", AttemptResult::Completed);
-        attempted(genealogy, "t2", AttemptResult::NotCompleted);
-        attempted(genealogy, "t3", AttemptResult::NotCompleted);
+        attempted(genealogy, "benchmark/t1", AttemptResult::Completed);
+        attempted(genealogy, "benchmark/t2", AttemptResult::NotCompleted);
+        attempted(genealogy, "benchmark/t3", AttemptResult::NotCompleted);
     });
     assert!(table.lines().nth(5).unwrap().contains("  0.333  "));
 }
@@ -153,11 +157,36 @@ fn a_harness_for_which_no_seconds_are_given_is_shown_with_none_spent() {
 fn the_line_above_the_table_says_how_many_tasks_at_least_one_harness_completed() {
     assert_eq!(
         table(|_| {}).lines().nth(2),
-        Some("completed by at least one harness: holdout tasks 0 of 0, other tasks 0 of 3")
+        Some(
+            "completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 \
+             of 1, other tasks 0 of 1"
+        )
     );
 }
 
 #[test]
 fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_table() {
     assert_eq!(table(|_| {}).lines().nth(3), Some(""));
+}
+
+#[test]
+fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_score() {
+    let table = table(|genealogy| {
+        attempted(genealogy, "benchmark/t1", AttemptResult::NotCompleted);
+        attempted(genealogy, "benchmark/t4", AttemptResult::Completed);
+    });
+    assert!(table.lines().nth(5).unwrap().contains("  0.000  "));
+}
+
+#[test]
+fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_corroboration_tasks() {
+    assert!(table(|_| {}).lines().nth(4).unwrap().contains(
+        "  selection completed  selection not completed  corroboration completed  corroboration \
+         not completed  other completed  other not completed  "
+    ));
+}
+
+#[test]
+fn the_table_has_no_column_of_the_holdout_tasks_together() {
+    assert!(!table(|_| {}).contains("holdout"));
 }

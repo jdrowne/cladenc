@@ -18,7 +18,8 @@ pub(super) enum Said<'a> {
     },
     HoldingOut {
         benchmark: &'a Path,
-        held_out: u64,
+        selection: u64,
+        corroboration: u64,
         tasks: u64,
     },
     BuildingImage {
@@ -105,13 +106,17 @@ impl Display for Said<'_> {
             ),
             Self::HoldingOut {
                 benchmark,
-                held_out,
+                selection,
+                corroboration,
                 tasks,
             } => write!(
                 formatter,
-                "holding out {held_out} of the {} of the benchmark {} from every progenitor",
+                "holding out {} of the {} of the benchmark {} from every progenitor: {} and {}",
+                selection + corroboration,
                 counted(*tasks, "task", "tasks"),
-                benchmark.display()
+                benchmark.display(),
+                counted(*selection, "selection task", "selection tasks"),
+                counted(*corroboration, "corroboration task", "corroboration tasks")
             ),
             Self::BuildingImage { image, dockerfile } => write!(
                 formatter,
