@@ -374,8 +374,8 @@ fn a_file_of_the_key_with_no_path_is_refused() {
 
 #[test]
 fn the_holdout_percentage_is_a_setting_as_it_was_given() {
-    let settings = checked(|_, options| options.holdout_percentage = 37.5).unwrap();
-    assert_eq!(settings.holdout_percentage, 37.5);
+    let settings = checked(|_, options| options.holdout_percentage = 62.5).unwrap();
+    assert_eq!(settings.holdout_percentage, 62.5);
 }
 
 #[test]
