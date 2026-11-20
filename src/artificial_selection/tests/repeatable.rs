@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Beta, Distribution};
@@ -21,7 +21,7 @@ fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     for harness in [0, 1] {
         genealogy.start_attempt(harness, "task-0").unwrap();
@@ -41,7 +41,7 @@ fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
     for progenitor in [0, 0] {
         let child = genealogy.start_procreation(progenitor).unwrap();
         genealogy
-            .end_procreation(child, ProcreationOutcome::Created)
+            .end_procreation(child, CreationOutcome::Created)
             .unwrap();
     }
     for harness in [0, 1, 2] {
@@ -56,7 +56,7 @@ fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
     }
     let child = genealogy.start_procreation(1).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Failed)
+        .end_procreation(child, CreationOutcome::Failed)
         .unwrap();
     genealogy
 }

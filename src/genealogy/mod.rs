@@ -14,7 +14,7 @@ pub(crate) type HarnessId = u64;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum ProcreationOutcome {
+pub enum CreationOutcome {
     Created,
     Failed,
     BuildFailed,
@@ -29,10 +29,17 @@ pub enum AttemptResult {
     TimedOut,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct Experiment {
+    pub child: HarnessId,
+    pub progenitor: HarnessId,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Genealogy {
     harnesses: Vec<Harness>,
     started: u64,
+    started_by_singleton_control_group_harnesses: u64,
     selection_tasks: BTreeSet<String>,
     corroboration_tasks: BTreeSet<String>,
 }
@@ -56,6 +63,7 @@ impl Genealogy {
         Self {
             harnesses: vec![Harness::new(0, None, state)],
             started: 0,
+            started_by_singleton_control_group_harnesses: 0,
             selection_tasks: BTreeSet::new(),
             corroboration_tasks: BTreeSet::new(),
         }
@@ -98,14 +106,26 @@ impl Genealogy {
         self.started
     }
 
+    pub(crate) fn started_by_singleton_control_group_harnesses(&self) -> u64 {
+        self.started_by_singleton_control_group_harnesses
+    }
+
     pub(crate) fn procreations_started(&self) -> u64 {
-        self.harness_count() - 1
+        self.harnesses
+            .iter()
+            .filter(|harness| harness.progenitor().is_some())
+            .count() as u64
+    }
+
+    pub(crate) fn actions_started(&self) -> u64 {
+        self.procreations_started() + self.started
+            - self.started_by_singleton_control_group_harnesses
     }
 
     pub(crate) fn completed_by_any(&self, task: &str) -> bool {
-        self.harnesses
-            .iter()
-            .any(|harness| harness.has_completed(task))
+        self.harnesses.iter().any(|harness| {
+            !harness.is_a_singleton_control_group_harness() && harness.has_completed(task)
+        })
     }
 
     pub(crate) fn created_harnesses(&self) -> Vec<&Harness> {
@@ -137,17 +157,50 @@ impl Genealogy {
     pub(crate) fn end_procreation(
         &mut self,
         child: HarnessId,
-        outcome: ProcreationOutcome,
+        outcome: CreationOutcome,
     ) -> Result<(), GenealogyError> {
-        let created = self
-            .harness_in_state(child, HarnessState::BeingCreated)
-            .ok_or(GenealogyError::ChildNotBeingCreated { child })?;
-        created.set_state(match outcome {
-            ProcreationOutcome::Created => HarnessState::Created,
-            ProcreationOutcome::Failed
-            | ProcreationOutcome::BuildFailed
-            | ProcreationOutcome::TimedOut => HarnessState::Failed,
-        });
+        self.being_created(child, false)
+            .ok_or(GenealogyError::ChildNotBeingCreated { child })?
+            .set_state(state_after(outcome));
+        Ok(())
+    }
+
+    pub(crate) fn experiment_awaiting_its_baseline(&self) -> Option<Experiment> {
+        self.harnesses.last().and_then(|child| {
+            child
+                .progenitor()
+                .filter(|progenitor| *progenitor != 0)
+                .map(|progenitor| Experiment {
+                    child: child.id(),
+                    progenitor,
+                })
+        })
+    }
+
+    pub(crate) fn start_baseline(
+        &mut self,
+        experiment: Experiment,
+    ) -> Result<HarnessId, GenealogyError> {
+        if self.experiment_awaiting_its_baseline() != Some(experiment) {
+            return Err(GenealogyError::ExperimentNotAwaitingBaseline {
+                child: experiment.child,
+                progenitor: experiment.progenitor,
+            });
+        }
+        let harness = self.harness_count();
+        self.harnesses
+            .push(Harness::singleton_control_group(harness, experiment));
+        Ok(harness)
+    }
+
+    pub(crate) fn end_baseline(
+        &mut self,
+        harness: HarnessId,
+        outcome: CreationOutcome,
+    ) -> Result<(), GenealogyError> {
+        self.being_created(harness, true)
+            .ok_or(GenealogyError::SingletonControlGroupHarnessNotBeingCreated { harness })?
+            .set_state(state_after(outcome));
         Ok(())
     }
 
@@ -165,7 +218,9 @@ impl Genealogy {
                 task: task.to_owned(),
             });
         }
+        let in_an_experiment = attempting.is_a_singleton_control_group_harness();
         self.started += 1;
+        self.started_by_singleton_control_group_harnesses += u64::from(in_an_experiment);
         Ok(())
     }
 
@@ -186,7 +241,10 @@ impl Genealogy {
             });
         }
         let mut member = (set == TaskSet::Selection).then_some(harness);
-        while let Some(ancestor) = member.and_then(|id| self.harness_mut(id)) {
+        while let Some(ancestor) = member
+            .and_then(|id| self.harness_mut(id))
+            .filter(|ancestor| !ancestor.is_a_singleton_control_group_harness())
+        {
             ancestor.count_in_clade(result);
             member = ancestor.progenitor();
         }
@@ -212,6 +270,20 @@ impl Genealogy {
     fn harness_in_state(&mut self, id: HarnessId, state: HarnessState) -> Option<&mut Harness> {
         self.harness_mut(id)
             .filter(|harness| harness.state() == state)
+    }
+
+    fn being_created(&mut self, id: HarnessId, in_an_experiment: bool) -> Option<&mut Harness> {
+        self.harness_in_state(id, HarnessState::BeingCreated)
+            .filter(|harness| harness.is_a_singleton_control_group_harness() == in_an_experiment)
+    }
+}
+
+fn state_after(outcome: CreationOutcome) -> HarnessState {
+    match outcome {
+        CreationOutcome::Created => HarnessState::Created,
+        CreationOutcome::Failed | CreationOutcome::BuildFailed | CreationOutcome::TimedOut => {
+            HarnessState::Failed
+        }
     }
 }
 

@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use super::container::{Container, Mount};
 use super::program::{Ending, Limits};
 use super::{ContainerError, HARNESS, Launch};
-use crate::genealogy::{HarnessId, ProcreationOutcome};
+use crate::genealogy::{CreationOutcome, HarnessId};
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files};
 
 struct Build<'a> {
@@ -44,9 +44,9 @@ pub(super) fn build_child(
     child: HarnessId,
     source: &Path,
     limits: Limits<'_>,
-) -> Result<ProcreationOutcome, ContainerError> {
+) -> Result<CreationOutcome, ContainerError> {
     let Some(command) = launch.build_command else {
-        return Ok(ProcreationOutcome::Created);
+        return Ok(CreationOutcome::Created);
     };
     let build = Build {
         image: launch.image,
@@ -56,10 +56,10 @@ pub(super) fn build_child(
     };
     Ok(match build.run(outputs_directory, limits)? {
         Ending::Exited(0) if holds_only_harness_files(source).unwrap_or(false) => {
-            ProcreationOutcome::Created
+            CreationOutcome::Created
         }
-        Ending::Exited(_) => ProcreationOutcome::BuildFailed,
-        Ending::TimedOut => ProcreationOutcome::TimedOut,
+        Ending::Exited(_) => CreationOutcome::BuildFailed,
+        Ending::TimedOut => CreationOutcome::TimedOut,
     })
 }
 

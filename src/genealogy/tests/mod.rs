@@ -3,6 +3,7 @@ mod build;
 mod clade;
 mod completed;
 mod created;
+mod experiment;
 mod holdout;
 mod primogenitor;
 mod procreation;

@@ -5,11 +5,16 @@ use std::path::Path;
 use serde::Deserialize;
 
 use super::{FORMAT, JournalError, Record, Settings, path, whole_lines};
-use crate::genealogy::{Genealogy, HarnessId};
+use crate::genealogy::{Experiment, Genealogy, HarnessId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Started {
     Procreation {
+        child: HarnessId,
+        progenitor: HarnessId,
+    },
+    Baseline {
+        harness: HarnessId,
         child: HarnessId,
         progenitor: HarnessId,
     },
@@ -25,6 +30,15 @@ impl Display for Started {
             Self::Procreation { child, progenitor } => write!(
                 formatter,
                 "the procreation of harness {child} by harness {progenitor}"
+            ),
+            Self::Baseline {
+                harness,
+                progenitor,
+                ..
+            } => write!(
+                formatter,
+                "the creation of harness {harness}, the singleton control group harness, by the \
+                 primogenitor from the source code of harness {progenitor}"
             ),
             Self::Attempt { harness, task } => {
                 write!(formatter, "the attempt of harness {harness} on task {task}")
@@ -121,6 +135,36 @@ impl State {
                 self.unfinished
                     .retain(|action| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
             }
+            Record::BaselineStarted {
+                harness,
+                child,
+                progenitor,
+            } => {
+                if harness != self.genealogy.harness_count() {
+                    return Err(JournalError::WrongChild {
+                        line,
+                        child: harness,
+                    });
+                }
+                self.genealogy
+                    .start_baseline(Experiment { child, progenitor })
+                    .map_err(refused)?;
+                self.seconds.push(Seconds::default());
+                self.start(Started::Baseline {
+                    harness,
+                    child,
+                    progenitor,
+                });
+            }
+            Record::BaselineFinished {
+                harness, outcome, ..
+            } => {
+                self.genealogy
+                    .end_baseline(harness, outcome)
+                    .map_err(refused)?;
+                self.unfinished
+                    .retain(|action| !matches!(action, Started::Baseline { harness: running, .. } if *running == harness));
+            }
             Record::AttemptStarted { harness, task } => {
                 self.genealogy
                     .start_attempt(harness, &task)
@@ -149,6 +193,6 @@ impl State {
 
     fn start(&mut self, action: Started) {
         self.unfinished.push(action);
-        self.next_action += 1;
+        self.next_action = self.genealogy.actions_started();
     }
 }

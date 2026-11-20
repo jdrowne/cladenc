@@ -82,7 +82,14 @@ fn names_in_harness(directory: &TempDir, harness: &str) -> Vec<String> {
 fn a_run_with_the_run_command_the_help_gives_creates_as_many_children_as_the_most_procreations() {
     let directory = ran();
     let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
-    assert_eq!(journal.matches(r#""outcome":"created""#).count(), 2);
+    assert_eq!(
+        journal
+            .lines()
+            .filter(|line| line.contains(r#""record":"procreation_finished""#))
+            .filter(|line| line.contains(r#""outcome":"created""#))
+            .count(),
+        2
+    );
 }
 
 #[test]

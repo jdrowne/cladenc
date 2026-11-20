@@ -1,5 +1,6 @@
 mod containers {
     mod attempt;
+    mod baseline;
     mod build;
     mod holdout;
     mod image;
@@ -16,6 +17,7 @@ mod directed_evolution {
     mod built;
     mod concurrent;
     mod ended;
+    mod experiment;
     mod finished;
     mod held_out;
     mod image;
@@ -28,6 +30,7 @@ mod directed_evolution {
 
 mod outputs_directory {
     mod attempt;
+    mod baseline;
     mod benchmark;
     mod build;
     mod copy;

@@ -26,7 +26,26 @@ fn a_primogenitor_that_does_not_await_its_build_is_worded() {
 fn a_child_that_is_not_being_created_is_worded() {
     assert_eq!(
         worded(GenealogyError::ChildNotBeingCreated { child: 3 }),
-        "harness 3 is not being created"
+        "harness 3 is not a child that is being created"
+    );
+}
+
+#[test]
+fn an_experiment_that_does_not_await_its_baseline_is_worded() {
+    assert_eq!(
+        worded(GenealogyError::ExperimentNotAwaitingBaseline {
+            child: 3,
+            progenitor: 1
+        }),
+        "no experiment at the procreation of harness 3 by harness 1 is waiting for its baseline"
+    );
+}
+
+#[test]
+fn a_singleton_control_group_harness_that_is_not_being_created_is_worded() {
+    assert_eq!(
+        worded(GenealogyError::SingletonControlGroupHarnessNotBeingCreated { harness: 3 }),
+        "harness 3 is not a singleton control group harness that is being created"
     );
 }
 

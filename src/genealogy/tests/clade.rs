@@ -1,11 +1,11 @@
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 fn family() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&["a".to_owned()]);
     for progenitor in [0, 1, 0] {
         let child = genealogy.start_procreation(progenitor).unwrap();
         genealogy
-            .end_procreation(child, ProcreationOutcome::Created)
+            .end_procreation(child, CreationOutcome::Created)
             .unwrap();
     }
     genealogy
@@ -108,7 +108,7 @@ fn an_attempt_not_completed_stays_out_of_the_clade_not_completed_of_a_child() {
     assert_eq!(genealogy.harnesses()[2].clade_not_completed(), 0);
 }
 
-fn family_after_a_procreation_that_created_no_child(outcome: ProcreationOutcome) -> Genealogy {
+fn family_after_a_procreation_that_created_no_child(outcome: CreationOutcome) -> Genealogy {
     let mut genealogy = family_after(1, AttemptResult::NotCompleted);
     let child = genealogy.start_procreation(1).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
@@ -117,27 +117,26 @@ fn family_after_a_procreation_that_created_no_child(outcome: ProcreationOutcome)
 
 #[test]
 fn a_procreation_that_failed_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(ProcreationOutcome::Failed);
+    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Failed);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
 fn a_procreation_whose_child_did_not_build_adds_nothing_to_the_clade_not_completed_of_its_progenitor()
  {
-    let genealogy =
-        family_after_a_procreation_that_created_no_child(ProcreationOutcome::BuildFailed);
+    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::BuildFailed);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
 fn a_procreation_that_timed_out_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(ProcreationOutcome::TimedOut);
+    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::TimedOut);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
 fn a_procreation_that_failed_adds_nothing_to_the_clade_not_completed_of_the_primogenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(ProcreationOutcome::Failed);
+    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Failed);
     assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);
 }
 

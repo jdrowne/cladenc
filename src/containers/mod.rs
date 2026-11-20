@@ -10,11 +10,11 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
-use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files};
 
@@ -64,8 +64,8 @@ pub struct Launch<'a> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Procreated {
-    pub outcome: ProcreationOutcome,
+pub struct Creation {
+    pub outcome: CreationOutcome,
     pub seconds: f64,
 }
 
@@ -116,7 +116,7 @@ pub fn run_procreation(
     child: HarnessId,
     progenitor: HarnessId,
     stop: &AtomicBool,
-) -> Result<Procreated, ContainerError> {
+) -> Result<Creation, ContainerError> {
     outputs_directory
         .start_procreation(child, progenitor)
         .map_err(ContainerError::Io)?;
@@ -124,61 +124,124 @@ pub fn run_procreation(
     let source = running.join("progenitor");
     let made = running.join("child");
     let attempts = outputs_directory.attempts(progenitor);
-    let shown = shown::to(outputs_directory, progenitor);
-    let mounts: Vec<Mount<'_>> = [
-        Mount {
-            from: &source,
-            to: HARNESS,
-            read_only: false,
-        },
-        Mount {
-            from: &made,
-            to: WORK,
-            read_only: false,
-        },
-        Mount {
-            from: &attempts,
-            to: ATTEMPTS,
-            read_only: true,
-        },
-    ]
-    .into_iter()
-    .chain(shown.iter().map(|(kept, to)| Mount {
-        from: kept,
-        to,
-        read_only: true,
-    }))
-    .collect();
-    let limits = Limits::starting_now(launch.procreation_timeout, stop);
-    let environment: Vec<(&str, &str)> = [
-        ("CLADENC_HARNESS", HARNESS),
-        ("CLADENC_INSTRUCTION", INSTRUCTION),
-    ]
-    .into_iter()
-    .chain(launch.model.environment())
-    .collect();
-    let container = Container {
-        outputs_directory,
-        image: launch.image,
-        command: launch.run_command,
-        mounts: &mounts,
-        working_directory: WORK,
-        environment: &environment,
+    let shown = shown::to(outputs_directory, progenitor, None);
+    let changing = Changing {
+        harness: child,
+        running: &running,
+        source: &source,
+        made: &made,
+        attempts: &attempts,
+        shown: &shown,
     };
-    let started = Instant::now();
-    let ending = container.run(&running, limits)?;
-    let seconds = seconds_since(started);
-    let outcome = match ending {
-        Ending::Exited(0) if holds_only_harness_files(&made).unwrap_or(false) => {
-            build::build_child(outputs_directory, launch, child, &made, limits)?
-        }
-        Ending::Exited(_) => ProcreationOutcome::Failed,
-        Ending::TimedOut => ProcreationOutcome::TimedOut,
-    };
+    let creation = changing.run(outputs_directory, launch, stop)?;
     outputs_directory
-        .end_procreation(child, progenitor, outcome)
-        .map(|()| Procreated { outcome, seconds })
+        .end_procreation(child, progenitor, creation.outcome)
+        .map(|()| creation)
         .map_err(ContainerError::Io)
+}
+
+pub fn run_baseline(
+    outputs_directory: &OutputsDirectory,
+    launch: &Launch<'_>,
+    harness: HarnessId,
+    experiment: Experiment,
+    stop: &AtomicBool,
+) -> Result<Creation, ContainerError> {
+    outputs_directory
+        .start_baseline(harness, experiment.progenitor)
+        .map_err(ContainerError::Io)?;
+    let running = outputs_directory.running_baseline(harness);
+    let source = running.join("primogenitor");
+    let made = running.join("singleton-control-group-harness");
+    let attempts = outputs_directory.attempts(experiment.progenitor);
+    let shown = shown::to(
+        outputs_directory,
+        experiment.progenitor,
+        Some(experiment.child),
+    );
+    let changing = Changing {
+        harness,
+        running: &running,
+        source: &source,
+        made: &made,
+        attempts: &attempts,
+        shown: &shown,
+    };
+    let creation = changing.run(outputs_directory, launch, stop)?;
+    outputs_directory
+        .end_baseline(harness, experiment, creation.outcome)
+        .map(|()| creation)
+        .map_err(ContainerError::Io)
+}
+
+struct Changing<'a> {
+    harness: HarnessId,
+    running: &'a Path,
+    source: &'a Path,
+    made: &'a Path,
+    attempts: &'a Path,
+    shown: &'a [(PathBuf, String)],
+}
+
+impl Changing<'_> {
+    fn run(
+        &self,
+        outputs_directory: &OutputsDirectory,
+        launch: &Launch<'_>,
+        stop: &AtomicBool,
+    ) -> Result<Creation, ContainerError> {
+        let mounts: Vec<Mount<'_>> = [
+            Mount {
+                from: self.source,
+                to: HARNESS,
+                read_only: false,
+            },
+            Mount {
+                from: self.made,
+                to: WORK,
+                read_only: false,
+            },
+            Mount {
+                from: self.attempts,
+                to: ATTEMPTS,
+                read_only: true,
+            },
+        ]
+        .into_iter()
+        .chain(self.shown.iter().map(|(kept, to)| Mount {
+            from: kept,
+            to,
+            read_only: true,
+        }))
+        .collect();
+        let limits = Limits::starting_now(launch.procreation_timeout, stop);
+        let environment: Vec<(&str, &str)> = [
+            ("CLADENC_HARNESS", HARNESS),
+            ("CLADENC_INSTRUCTION", INSTRUCTION),
+        ]
+        .into_iter()
+        .chain(launch.model.environment())
+        .collect();
+        let container = Container {
+            outputs_directory,
+            image: launch.image,
+            command: launch.run_command,
+            mounts: &mounts,
+            working_directory: WORK,
+            environment: &environment,
+        };
+        let started = Instant::now();
+        let ending = container.run(self.running, limits)?;
+        let seconds = seconds_since(started);
+        let outcome = match ending {
+            Ending::Exited(0) if holds_only_harness_files(self.made).unwrap_or(false) => {
+                build::build_child(outputs_directory, launch, self.harness, self.made, limits)?
+            }
+            Ending::Exited(_) => CreationOutcome::Failed,
+            Ending::TimedOut => CreationOutcome::TimedOut,
+        };
+        Ok(Creation { outcome, seconds })
+    }
 }
 
 pub fn run_attempt(

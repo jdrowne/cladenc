@@ -1,10 +1,10 @@
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 fn with_a_child() -> Genealogy {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     genealogy
 }

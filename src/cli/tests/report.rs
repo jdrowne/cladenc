@@ -130,10 +130,12 @@ fn a_report_prints_the_table_on_standard_output() {
          started 1 of 800 procreations, best harness 0\n\
          completed by at least one harness: selection tasks 0 of 0, corroboration tasks 0 of 0, other tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
+         experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
+         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
          \n\
-         id  progenitor  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
-         1   0           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
     );
 }
 

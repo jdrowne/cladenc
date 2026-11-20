@@ -6,7 +6,7 @@ use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 use crate::holdout::TaskSet;
 use crate::model::{self, Model};
 
@@ -129,7 +129,17 @@ pub enum Record {
     },
     ProcreationFinished {
         child: HarnessId,
-        outcome: ProcreationOutcome,
+        outcome: CreationOutcome,
+        seconds: f64,
+    },
+    BaselineStarted {
+        harness: HarnessId,
+        child: HarnessId,
+        progenitor: HarnessId,
+    },
+    BaselineFinished {
+        harness: HarnessId,
+        outcome: CreationOutcome,
         seconds: f64,
     },
     AttemptStarted {

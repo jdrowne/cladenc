@@ -57,6 +57,7 @@ impl ArtificialSelection {
         let (waiting, not_waiting): (Vec<&Harness>, Vec<&Harness>) = genealogy
             .created_harnesses()
             .into_iter()
+            .filter(|harness| !harness.is_a_singleton_control_group_harness())
             .filter(|harness| harness.has_attempted_every(&self.tasks))
             .partition(|harness| waits.has_one_for(harness));
         if not_waiting.is_empty() && self.no_other_work_is_left(genealogy) {
@@ -67,7 +68,9 @@ impl ArtificialSelection {
     }
 
     fn a_procreation_is_due(&self, genealogy: &Genealogy) -> bool {
-        procreation_is_due(genealogy.harness_count(), genealogy.started(), self.growth)
+        let started =
+            genealogy.started() - genealogy.started_by_singleton_control_group_harnesses();
+        procreation_is_due(genealogy.procreations_started() + 1, started, self.growth)
             || self.no_other_work_is_left(genealogy)
     }
 
@@ -75,6 +78,7 @@ impl ArtificialSelection {
         genealogy
             .harnesses()
             .iter()
+            .filter(|harness| !harness.is_a_singleton_control_group_harness())
             .all(|harness| match harness.state() {
                 HarnessState::BeingCreated => false,
                 HarnessState::Created => harness.has_attempted_every(&self.tasks),

@@ -1,64 +1,107 @@
+use std::io;
+
 use super::Shared;
-use crate::containers::{self, Attempted, ContainerError, Procreated};
-use crate::genealogy::HarnessId;
+use crate::containers::{self, Attempted, ContainerError, Creation};
+use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
+use crate::outputs_directory::OutputsDirectory;
 
 pub(super) enum Ended {
-    Procreation {
+    Procreated {
         child: HarnessId,
         progenitor: HarnessId,
-        result: Result<Procreated, ContainerError>,
+        creation: Creation,
     },
-    Attempt {
+    Established {
+        harness: HarnessId,
+        experiment: Experiment,
+        creation: Creation,
+    },
+    Attempted {
         harness: HarnessId,
         task: String,
-        result: Result<Attempted, ContainerError>,
+        attempted: Attempted,
+    },
+    Stopped,
+    Failed {
+        action: Started,
+        error: ContainerError,
     },
 }
 
 pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> Ended {
-    match action {
-        Started::Procreation { child, progenitor } => {
-            let cleared = if again {
-                shared.outputs_directory.discard_procreation(child)
-            } else {
-                Ok(())
-            };
-            let result = cleared.map_err(ContainerError::Io).and_then(|()| {
+    let outputs_directory = &shared.outputs_directory;
+    let cleared = if again {
+        discard(outputs_directory, &action)
+    } else {
+        Ok(())
+    };
+    let cleared = cleared.map_err(ContainerError::Io);
+    let result = match action.clone() {
+        Started::Procreation { child, progenitor } => cleared
+            .and_then(|()| {
                 containers::run_procreation(
-                    &shared.outputs_directory,
+                    outputs_directory,
                     &shared.launch,
                     child,
                     progenitor,
                     &shared.halt,
                 )
-            });
-            Ended::Procreation {
+            })
+            .map(|creation| Ended::Procreated {
                 child,
                 progenitor,
-                result,
-            }
+                creation,
+            }),
+        Started::Baseline {
+            harness,
+            child,
+            progenitor,
+        } => {
+            let experiment = Experiment { child, progenitor };
+            cleared
+                .and_then(|()| {
+                    containers::run_baseline(
+                        outputs_directory,
+                        &shared.launch,
+                        harness,
+                        experiment,
+                        &shared.halt,
+                    )
+                })
+                .map(|creation| Ended::Established {
+                    harness,
+                    experiment,
+                    creation,
+                })
         }
-        Started::Attempt { harness, task } => {
-            let cleared = if again {
-                shared.outputs_directory.discard_attempt(harness, &task)
-            } else {
-                Ok(())
-            };
-            let result = cleared.map_err(ContainerError::Io).and_then(|()| {
+        Started::Attempt { harness, task } => cleared
+            .and_then(|()| {
                 containers::run_attempt(
-                    &shared.outputs_directory,
+                    outputs_directory,
                     &shared.launch,
                     harness,
                     &task,
                     &shared.halt,
                 )
-            });
-            Ended::Attempt {
+            })
+            .map(|attempted| Ended::Attempted {
                 harness,
                 task,
-                result,
-            }
-        }
+                attempted,
+            }),
+    };
+    match result {
+        Ok(ended) => ended,
+        Err(ContainerError::Stopped) => Ended::Stopped,
+        Err(error) => Ended::Failed { action, error },
+    }
+}
+
+fn discard(outputs_directory: &OutputsDirectory, action: &Started) -> io::Result<()> {
+    match action {
+        Started::Procreation { child, .. } => outputs_directory.discard_procreation(*child),
+        Started::Baseline { harness, .. } => outputs_directory.discard_baseline(*harness),
+        Started::Attempt { harness, task } => outputs_directory.discard_attempt(*harness, task),
     }
 }

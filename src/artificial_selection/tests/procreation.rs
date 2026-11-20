@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -14,7 +14,7 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
     let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
@@ -34,21 +34,21 @@ fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
 
 fn with_a_child_that_attempted(count: usize) -> Genealogy {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
     attempt(&mut genealogy, 1, count, AttemptResult::Completed);
     genealogy
 }
 
 fn two_lines() -> Genealogy {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
     attempt(&mut genealogy, 1, 20, AttemptResult::NotCompleted);
     attempt(&mut genealogy, 2, 20, AttemptResult::Completed);
-    child_of(&mut genealogy, 1, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 1, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 2, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 2, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 1, CreationOutcome::Created);
+    child_of(&mut genealogy, 1, CreationOutcome::Created);
+    child_of(&mut genealogy, 2, CreationOutcome::Created);
+    child_of(&mut genealogy, 2, CreationOutcome::Created);
     attempt(&mut genealogy, 3, 19, AttemptResult::Completed);
     attempt(&mut genealogy, 4, 19, AttemptResult::Completed);
     attempt(&mut genealogy, 5, 19, AttemptResult::NotCompleted);
@@ -111,7 +111,7 @@ fn a_harness_that_is_being_created_is_never_the_progenitor() {
 #[test]
 fn a_failed_harness_is_never_the_progenitor() {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
+    child_of(&mut genealogy, 0, CreationOutcome::Failed);
     assert_eq!(times_progenitor(&genealogy, 0), 200);
 }
 

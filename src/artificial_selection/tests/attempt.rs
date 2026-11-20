@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 fn tasks(count: usize) -> Vec<String> {
     (0..count).map(|number| format!("task-{number}")).collect()
@@ -16,7 +16,7 @@ fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
     let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
@@ -31,8 +31,8 @@ fn attempted(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result
 fn with_two_children() -> Genealogy {
     let mut genealogy = Genealogy::new();
     attempted(&mut genealogy, 0, 5, AttemptResult::NotCompleted);
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
     genealogy
 }
 
@@ -65,7 +65,7 @@ fn tasks_attempted(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String>
 #[test]
 fn an_attempt_is_the_next_action_when_no_procreation_is_due() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
+    child_of(&mut genealogy, 0, CreationOutcome::Failed);
     assert_eq!(attempting(&genealogy, 0, 20), Some(0));
 }
 
@@ -99,7 +99,7 @@ fn a_harness_with_better_results_does_not_attempt_ahead_of_one_with_a_lower_id()
 #[test]
 fn a_harness_with_no_task_left_never_attempts_a_task() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
     attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
     assert_eq!(times_attempting(&genealogy, 1, 2), 200);
 }
@@ -115,7 +115,7 @@ fn a_harness_that_is_being_created_never_attempts_a_task() {
 #[test]
 fn a_failed_harness_never_attempts_a_task() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
+    child_of(&mut genealogy, 0, CreationOutcome::Failed);
     attempted(&mut genealogy, 0, 2, AttemptResult::NotCompleted);
     assert_eq!(times_attempting(&genealogy, 0, 20), 200);
 }
@@ -123,7 +123,7 @@ fn a_failed_harness_never_attempts_a_task() {
 #[test]
 fn the_first_task_not_yet_given_is_the_one_attempted_whatever_the_seed() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
+    child_of(&mut genealogy, 0, CreationOutcome::Failed);
     attempted(&mut genealogy, 0, 2, AttemptResult::Completed);
     assert_eq!(
         tasks_attempted(&genealogy, 5),
@@ -149,7 +149,7 @@ fn the_tasks_are_given_in_the_order_they_are_listed_in() {
 #[test]
 fn a_task_whose_attempt_is_running_is_not_given_again() {
     let mut genealogy = Genealogy::new();
-    child_of(&mut genealogy, 0, ProcreationOutcome::Failed);
+    child_of(&mut genealogy, 0, CreationOutcome::Failed);
     genealogy.start_attempt(0, "task-0").unwrap();
     assert_eq!(
         tasks_attempted(&genealogy, 2),

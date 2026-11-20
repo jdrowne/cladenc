@@ -1,9 +1,9 @@
 use std::fmt::{self, Display, Formatter};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::containers::ContainerError;
-use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -56,12 +56,19 @@ pub(super) enum Said<'a> {
     Started {
         action: &'a Started,
         again: bool,
+        procreations: u64,
         max_procreations: u64,
     },
     Procreated {
         child: HarnessId,
         progenitor: HarnessId,
-        outcome: ProcreationOutcome,
+        outcome: CreationOutcome,
+        outputs_directory: &'a OutputsDirectory,
+    },
+    Established {
+        harness: HarnessId,
+        experiment: Experiment,
+        outcome: CreationOutcome,
         outputs_directory: &'a OutputsDirectory,
     },
     Attempted {
@@ -179,11 +186,12 @@ impl Display for Said<'_> {
             Self::Started {
                 action,
                 again,
+                procreations,
                 max_procreations,
             } => match (action, again) {
-                (Started::Procreation { child, .. }, false) => write!(
+                (Started::Procreation { .. }, false) => write!(
                     formatter,
-                    "started {action}, procreation {child} of {max_procreations}"
+                    "started {action}, procreation {procreations} of {max_procreations}"
                 ),
                 (_, false) => write!(formatter, "started {action}"),
                 (_, true) => write!(formatter, "started again {action}"),
@@ -194,30 +202,36 @@ impl Display for Said<'_> {
                 outcome,
                 outputs_directory,
             } => {
-                let (how, kept) = match outcome {
-                    ProcreationOutcome::Created => (
-                        format!("created harness {child}, kept in"),
-                        outputs_directory.harness(*child),
-                    ),
-                    ProcreationOutcome::Failed => (
-                        "failed: what the harness printed is kept in".to_owned(),
-                        outputs_directory.procreation(*child),
-                    ),
-                    ProcreationOutcome::BuildFailed => (
-                        "made a harness that did not build: what its build printed is kept in"
-                            .to_owned(),
-                        outputs_directory.build(*child),
-                    ),
-                    ProcreationOutcome::TimedOut => (
-                        "ran past its time limit: what the harness printed is kept in".to_owned(),
-                        outputs_directory.procreation(*child),
-                    ),
+                let kept = Kept {
+                    harness: *child,
+                    printer: "the harness",
+                    printed: outputs_directory.procreation(*child),
+                    outputs_directory: *outputs_directory,
                 };
                 write!(
                     formatter,
-                    "the procreation of harness {child} by harness {progenitor} {how} {}",
-                    kept.display()
+                    "the procreation of harness {child} by harness {progenitor} {}",
+                    kept.after(*outcome)
                 )
+            }
+            Self::Established {
+                harness,
+                experiment,
+                outcome,
+                outputs_directory,
+            } => {
+                let baseline = Started::Baseline {
+                    harness: *harness,
+                    child: experiment.child,
+                    progenitor: experiment.progenitor,
+                };
+                let kept = Kept {
+                    harness: *harness,
+                    printer: "the primogenitor",
+                    printed: outputs_directory.baseline(*harness),
+                    outputs_directory: *outputs_directory,
+                };
+                write!(formatter, "{baseline} {}", kept.after(*outcome))
             }
             Self::Attempted {
                 harness,
@@ -266,6 +280,40 @@ impl Display for Said<'_> {
                 directory.display()
             ),
         }
+    }
+}
+
+struct Kept<'a> {
+    harness: HarnessId,
+    printer: &'a str,
+    printed: PathBuf,
+    outputs_directory: &'a OutputsDirectory,
+}
+
+impl Kept<'_> {
+    fn after(self, outcome: CreationOutcome) -> String {
+        let (how, kept) = match outcome {
+            CreationOutcome::Created => (
+                format!("created harness {}, kept in", self.harness),
+                self.outputs_directory.harness(self.harness),
+            ),
+            CreationOutcome::Failed => (
+                format!("failed: what {} printed is kept in", self.printer),
+                self.printed,
+            ),
+            CreationOutcome::BuildFailed => (
+                "made a harness that did not build: what its build printed is kept in".to_owned(),
+                self.outputs_directory.build(self.harness),
+            ),
+            CreationOutcome::TimedOut => (
+                format!(
+                    "ran past its time limit: what {} printed is kept in",
+                    self.printer
+                ),
+                self.printed,
+            ),
+        };
+        format!("{how} {}", kept.display())
     }
 }
 

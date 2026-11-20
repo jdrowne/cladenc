@@ -7,7 +7,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 
 pub use copy::{copy_tree, holds_only_harness_files};
 
@@ -37,6 +37,7 @@ impl OutputsDirectory {
         fs::create_dir(path)
             .and_then(|()| fs::create_dir(path.join("harnesses")))
             .and_then(|()| fs::create_dir(path.join("procreations")))
+            .and_then(|()| fs::create_dir(path.join("baselines")))
             .and_then(|()| fs::create_dir(path.join("attempts")))
             .and_then(|()| fs::create_dir(path.join("holdout")))
             .and_then(|()| fs::create_dir(path.join("running")))
@@ -85,6 +86,10 @@ impl OutputsDirectory {
         self.path.join("procreations").join(child.to_string())
     }
 
+    pub fn baseline(&self, harness: HarnessId) -> PathBuf {
+        self.path.join("baselines").join(harness.to_string())
+    }
+
     pub fn attempts(&self, harness: HarnessId) -> PathBuf {
         self.path.join("attempts").join(harness.to_string())
     }
@@ -111,6 +116,12 @@ impl OutputsDirectory {
             .join(format!("procreation-{child}"))
     }
 
+    pub fn running_baseline(&self, harness: HarnessId) -> PathBuf {
+        self.path
+            .join("running")
+            .join(format!("baseline-{harness}"))
+    }
+
     pub fn running_attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
         self.path
             .join("running")
@@ -129,26 +140,60 @@ impl OutputsDirectory {
         &self,
         child: HarnessId,
         progenitor: HarnessId,
-        outcome: ProcreationOutcome,
+        outcome: CreationOutcome,
     ) -> io::Result<()> {
         let running = self.running_procreation(child);
-        let word = match outcome {
-            ProcreationOutcome::Created => "created\n",
-            ProcreationOutcome::Failed => "failed\n",
-            ProcreationOutcome::BuildFailed => "build_failed\n",
-            ProcreationOutcome::TimedOut => "timed_out\n",
-        };
-        fs::rename(running.join("child"), self.harness(child))
-            .and_then(|()| match outcome {
-                ProcreationOutcome::Created => fs::create_dir(self.attempts(child)),
-                ProcreationOutcome::Failed
-                | ProcreationOutcome::BuildFailed
-                | ProcreationOutcome::TimedOut => Ok(()),
-            })
+        self.keep_made(&running.join("child"), child, outcome)
             .and_then(|()| fs::remove_dir_all(running.join("progenitor")))
             .and_then(|()| fs::write(running.join("progenitor"), format!("{progenitor}\n")))
-            .and_then(|()| fs::write(running.join("outcome"), word))
+            .and_then(|()| fs::write(running.join("outcome"), word_of(outcome)))
             .and_then(|()| fs::rename(&running, self.procreation(child)))
+    }
+
+    pub fn start_baseline(&self, harness: HarnessId, progenitor: HarnessId) -> io::Result<()> {
+        let running = self.running_baseline(harness);
+        fs::create_dir(&running)
+            .and_then(|()| copy_tree(&self.harness(0), &running.join("primogenitor")))
+            .and_then(|()| {
+                copy_tree(
+                    &self.harness(progenitor),
+                    &running.join("singleton-control-group-harness"),
+                )
+            })
+    }
+
+    pub fn end_baseline(
+        &self,
+        harness: HarnessId,
+        experiment: Experiment,
+        outcome: CreationOutcome,
+    ) -> io::Result<()> {
+        let running = self.running_baseline(harness);
+        let Experiment { child, progenitor } = experiment;
+        self.keep_made(
+            &running.join("singleton-control-group-harness"),
+            harness,
+            outcome,
+        )
+        .and_then(|()| fs::remove_dir_all(running.join("primogenitor")))
+        .and_then(|()| fs::write(running.join("progenitor"), format!("{progenitor}\n")))
+        .and_then(|()| fs::write(running.join("child"), format!("{child}\n")))
+        .and_then(|()| fs::write(running.join("outcome"), word_of(outcome)))
+        .and_then(|()| fs::rename(&running, self.baseline(harness)))
+    }
+
+    fn keep_made(
+        &self,
+        made: &Path,
+        harness: HarnessId,
+        outcome: CreationOutcome,
+    ) -> io::Result<()> {
+        fs::rename(made, self.harness(harness)).and_then(|()| match outcome {
+            CreationOutcome::Created => fs::create_dir(self.attempts(harness)),
+            CreationOutcome::Failed | CreationOutcome::BuildFailed | CreationOutcome::TimedOut => {
+                Ok(())
+            }
+        })
     }
 
     pub fn progenitor_of(&self, harness: HarnessId) -> Option<HarnessId> {
@@ -225,6 +270,18 @@ impl OutputsDirectory {
         .try_for_each(|left| remove_if_there(left))
     }
 
+    pub fn discard_baseline(&self, harness: HarnessId) -> io::Result<()> {
+        [
+            self.running_baseline(harness),
+            self.harness(harness),
+            self.baseline(harness),
+            self.attempts(harness),
+            self.build(harness),
+        ]
+        .iter()
+        .try_for_each(|left| remove_if_there(left))
+    }
+
     pub fn discard_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         [
             self.running_attempt(harness, task),
@@ -232,6 +289,15 @@ impl OutputsDirectory {
         ]
         .iter()
         .try_for_each(|left| remove_if_there(left))
+    }
+}
+
+fn word_of(outcome: CreationOutcome) -> &'static str {
+    match outcome {
+        CreationOutcome::Created => "created\n",
+        CreationOutcome::Failed => "failed\n",
+        CreationOutcome::BuildFailed => "build_failed\n",
+        CreationOutcome::TimedOut => "timed_out\n",
     }
 }
 

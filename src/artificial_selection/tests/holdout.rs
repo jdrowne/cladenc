@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 fn tasks() -> Vec<String> {
     (0..15).map(|number| format!("task-{number}")).collect()
@@ -34,7 +34,7 @@ fn two_children_selected_by_the_first_five_tasks(first: &[usize], second: &[usiz
     for completed in [first, second] {
         let child = genealogy.start_procreation(0).unwrap();
         genealogy
-            .end_procreation(child, ProcreationOutcome::Created)
+            .end_procreation(child, CreationOutcome::Created)
             .unwrap();
         benchmarked(&mut genealogy, child, completed);
     }

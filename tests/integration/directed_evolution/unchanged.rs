@@ -106,7 +106,9 @@ fn with_the_run_command_the_help_gives_every_procreation_creates_its_child() {
     let directory = evolved();
     assert_eq!(
         journal_of(&directory)
-            .matches(r#""outcome":"created""#)
+            .lines()
+            .filter(|line| line.contains(r#""record":"procreation_finished""#))
+            .filter(|line| line.contains(r#""outcome":"created""#))
             .count(),
         2
     );
@@ -127,11 +129,16 @@ fn with_the_run_command_the_help_gives_the_source_code_of_each_child_is_that_of_
 #[test]
 fn with_the_run_command_the_help_gives_every_harness_is_benchmarked_in_full() {
     let directory = evolved();
+    let journal = journal_of(&directory);
     assert_eq!(
-        journal_of(&directory)
-            .matches(r#""record":"attempt_finished""#)
-            .count(),
-        9
+        [0, 1, 2].map(|harness| {
+            journal
+                .matches(&format!(
+                    r#""record":"attempt_finished","harness":{harness},"#
+                ))
+                .count()
+        }),
+        [3, 3, 3]
     );
 }
 

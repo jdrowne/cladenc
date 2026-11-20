@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, Genealogy, GenealogyError, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, GenealogyError};
 
 fn with_a_child_being_created() -> Genealogy {
     let mut genealogy = Genealogy::new();
@@ -9,7 +9,7 @@ fn with_a_child_being_created() -> Genealogy {
 fn with_a_failed_child() -> Genealogy {
     let mut genealogy = with_a_child_being_created();
     genealogy
-        .end_procreation(1, ProcreationOutcome::Failed)
+        .end_procreation(1, CreationOutcome::Failed)
         .unwrap();
     genealogy
 }

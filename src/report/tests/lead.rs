@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::Settings;
 use crate::report::Report;
 use crate::report::lead::{self, Lead};
@@ -59,7 +59,7 @@ fn evolved(primogenitor: &[&str], child: &[&str]) -> Genealogy {
     let mut genealogy = settings().genealogy();
     let made = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(made, ProcreationOutcome::Created)
+        .end_procreation(made, CreationOutcome::Created)
         .unwrap();
     benchmarked(&mut genealogy, 0, primogenitor);
     benchmarked(&mut genealogy, made, child);
@@ -162,7 +162,7 @@ fn the_lead_is_that_of_the_best_harness_and_not_of_a_harness_that_completed_more
     let mut genealogy = evolved(&[], &[SELECTION]);
     let another = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(another, ProcreationOutcome::Created)
+        .end_procreation(another, CreationOutcome::Created)
         .unwrap();
     benchmarked(
         &mut genealogy,

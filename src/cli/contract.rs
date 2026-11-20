@@ -176,6 +176,45 @@ standard output and standard error of the harness that made it, the id of
 that harness in the file named progenitor, and how the procreation ended
 in the file named outcome.
 
+At each procreation of a harness other than the primogenitor, cladenc
+conducts an experiment to test whether a progenitor is better at
+procreating better harnesses than the primogenitor. To conduct the
+experiment, cladenc establishes a baseline: it has the primogenitor create
+a harness from the same source code that the progenitor uses to procreate
+the progenitor's child. The harness the primogenitor creates from the
+source code of the progenitor is the singleton control group harness.
+cladenc brings up one container more for it, in which
+
+  /var/lib/cladenc/harness  holds a copy of the source code of the
+                            primogenitor, which is what runs
+  /var/lib/cladenc/work     holds a second copy of the source code of the
+                            progenitor, which is what is changed
+
+The primogenitor is given the instruction the progenitor is given, and what
+the progenitor is given to read: under /var/log/cladenc/attempts the
+attempts of the progenitor at the tasks that are not held out, under
+/var/log/cladenc/line the harnesses the progenitor descends from, and
+under /var/log/cladenc/children the children the progenitor procreated
+before the progenitor's child of the experiment. What the primogenitor
+leaves in /var/lib/cladenc/work is the singleton control group harness.
+
+The singleton control group harness is built and benchmarked in full, as
+the progenitor's child is, and it takes no other part in the directed
+evolution: it is never chosen to procreate, it is counted in no clade, it
+is not named the best harness, and the container it is created in does not
+count toward --max-procreations. It is nobody's child, so no harness that
+procreates is given anything of it. Where the primogenitor procreates, no
+experiment is conducted: the progenitor's child and the singleton control
+group harness would be created in the same way.
+
+The source code of every singleton control group harness is kept under
+harnesses in the outputs directory, created or not. baselines in the
+outputs directory keeps, in a directory named after the singleton control
+group harness, the standard output and standard error of the primogenitor,
+the id of the progenitor in the file named progenitor, the id of the
+progenitor's child in the file named child, and how the creation ended in
+the file named outcome.
+
 Where --harness-build-command is given, a harness is built before it is
 run for the first time, in a container of the same image, as
 
@@ -316,6 +355,20 @@ no two harnesses to compare. cladenc draws no line through the likelihood:
 what counts as more than luck is for the person who reads it to say. The
 likelihood is shown for the best harness alone, since among many harnesses
 one or two show a low likelihood by luck.
+
+`cladenc report` says of the experiments how many were conducted, in how
+many the progenitor's child was created, in how many the singleton control
+group harness was created, and in how many both were. Over the experiments
+where both were created, it counts the corroboration tasks that only the
+progenitor's child completed and those that only the singleton control
+group harness completed, and says how likely luck alone gives a lead at
+least as large where the two are created equally well, counted as it is
+for the best harness and the primogenitor. A corroboration task that one
+of the two has not attempted yet is left out. In the table, the row of a
+singleton control group harness names no progenitor, and names under
+experiment the progenitor's child of its experiment. The singleton control
+group harnesses are left out of the count of the tasks that at least one
+harness completed.
 
 How many more selection tasks the best of many harnesses that are all alike
 completes is measured by a directed evolution in which no harness changes:

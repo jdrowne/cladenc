@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 
 fn selecting_by_both_tasks() -> Genealogy {
     Genealogy::new().selecting_by(&["a".to_owned(), "b".to_owned()])
@@ -28,7 +28,7 @@ fn started_counts_the_attempts_of_every_harness() {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     genealogy.start_attempt(0, "a").unwrap();
     genealogy.start_attempt(0, "b").unwrap();

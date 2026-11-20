@@ -2,6 +2,7 @@ mod attempt;
 mod best;
 mod due;
 mod every_harness_waits;
+mod experiment;
 mod focus;
 mod growth;
 mod holdout;

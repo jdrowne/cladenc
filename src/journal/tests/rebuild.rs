@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::{self, Journal, Record, Seconds, Settings, Started, State};
 use tempfile::TempDir;
 
@@ -62,7 +62,7 @@ fn procreation_started(child: u64, progenitor: u64) -> Record {
     Record::ProcreationStarted { child, progenitor }
 }
 
-fn procreation_finished(child: u64, outcome: ProcreationOutcome) -> Record {
+fn procreation_finished(child: u64, outcome: CreationOutcome) -> Record {
     Record::ProcreationFinished {
         child,
         outcome,
@@ -134,7 +134,7 @@ fn four_actions_of_which_two_finished() -> [Record; 6] {
         attempt_started(0, "t1"),
         procreation_started(2, 0),
         attempt_started(0, "t2"),
-        procreation_finished(1, ProcreationOutcome::Created),
+        procreation_finished(1, CreationOutcome::Created),
         attempt_finished(0, "t1", AttemptResult::Completed),
     ]
 }
@@ -179,7 +179,7 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(1, ProcreationOutcome::Created)
+        .end_procreation(1, CreationOutcome::Created)
         .unwrap();
     genealogy.start_attempt(1, "t2").unwrap();
     genealogy
@@ -191,17 +191,17 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
         .end_attempt(0, "t1", AttemptResult::TimedOut)
         .unwrap();
     genealogy
-        .end_procreation(2, ProcreationOutcome::Failed)
+        .end_procreation(2, CreationOutcome::Failed)
         .unwrap();
     let state = rebuilt(&[
         procreation_started(1, 0),
-        procreation_finished(1, ProcreationOutcome::Created),
+        procreation_finished(1, CreationOutcome::Created),
         attempt_started(1, "t2"),
         attempt_finished(1, "t2", AttemptResult::Completed),
         procreation_started(2, 1),
         attempt_started(0, "t1"),
         attempt_finished(0, "t1", AttemptResult::TimedOut),
-        procreation_finished(2, ProcreationOutcome::Failed),
+        procreation_finished(2, CreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
 }
@@ -271,7 +271,7 @@ fn rebuilding_adds_up_the_seconds_of_the_attempts_of_each_harness() {
 fn rebuilding_gives_a_child_the_seconds_of_the_procreation_that_made_it() {
     let state = rebuilt(&[
         procreation_started(1, 0),
-        procreation_finished(1, ProcreationOutcome::Created),
+        procreation_finished(1, CreationOutcome::Created),
     ]);
     assert_eq!(state.seconds[1].procreation, Some(30.25));
 }
@@ -286,7 +286,7 @@ fn rebuilding_gives_a_child_whose_procreation_has_not_ended_no_seconds_of_it() {
 fn rebuilding_gives_the_seconds_of_a_procreation_to_the_child_and_not_to_its_progenitor() {
     let state = rebuilt(&[
         procreation_started(1, 0),
-        procreation_finished(1, ProcreationOutcome::Failed),
+        procreation_finished(1, CreationOutcome::Failed),
     ]);
     assert_eq!(state.seconds[0].procreation, None);
 }
@@ -312,7 +312,7 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
 fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
     let state = rebuilt(&[
         procreation_started(1, 0),
-        procreation_finished(1, ProcreationOutcome::Created),
+        procreation_finished(1, CreationOutcome::Created),
         attempt_started(1, "t1"),
         attempt_finished(1, "t1", AttemptResult::NotCompleted),
     ]);
@@ -336,7 +336,7 @@ fn the_first_action_of_a_journal_that_holds_no_action_takes_number_0() {
 fn a_journal_that_holds_the_end_of_its_directed_evolution_names_the_best_harness() {
     let state = rebuilt(&[
         procreation_started(1, 0),
-        procreation_finished(1, ProcreationOutcome::Created),
+        procreation_finished(1, CreationOutcome::Created),
         Record::DirectedEvolutionFinished { best_harness: 1 },
     ]);
     assert_eq!(state.best_harness, Some(1));
@@ -370,4 +370,97 @@ fn reading_a_journal_takes_no_lock() {
     let outputs_directory = journal_of(&[]);
     let _writer = Journal::open(outputs_directory.path()).unwrap();
     assert!(journal::read(outputs_directory.path()).is_ok());
+}
+
+fn an_experiment_whose_baseline_started() -> Vec<Record> {
+    vec![
+        procreation_started(1, 0),
+        procreation_finished(1, CreationOutcome::Created),
+        procreation_started(2, 1),
+        procreation_finished(2, CreationOutcome::Created),
+        Record::BaselineStarted {
+            harness: 3,
+            child: 2,
+            progenitor: 1,
+        },
+    ]
+}
+
+fn an_experiment_whose_baseline_ended_and_then(records: &[Record]) -> Vec<Record> {
+    let mut experiment = an_experiment_whose_baseline_started();
+    experiment.push(Record::BaselineFinished {
+        harness: 3,
+        outcome: CreationOutcome::Created,
+        seconds: 12.5,
+    });
+    experiment.extend_from_slice(records);
+    experiment
+}
+
+#[test]
+fn a_baseline_that_has_not_ended_comes_back_as_an_action_that_did_not_finish() {
+    assert_eq!(
+        rebuilt(&an_experiment_whose_baseline_started()).unfinished,
+        [Started::Baseline {
+            harness: 3,
+            child: 2,
+            progenitor: 1
+        }]
+    );
+}
+
+#[test]
+fn a_baseline_that_ended_is_no_action_that_did_not_finish() {
+    assert_eq!(
+        rebuilt(&an_experiment_whose_baseline_ended_and_then(&[])).unfinished,
+        []
+    );
+}
+
+#[test]
+fn the_start_of_a_baseline_takes_no_number_of_an_action() {
+    assert_eq!(
+        rebuilt(&an_experiment_whose_baseline_started()).next_action,
+        2
+    );
+}
+
+#[test]
+fn an_attempt_of_a_singleton_control_group_harness_takes_no_number_of_an_action() {
+    let records =
+        an_experiment_whose_baseline_ended_and_then(&[attempt_started(3, "benchmark/t1")]);
+    assert_eq!(rebuilt(&records).next_action, 2);
+}
+
+#[test]
+fn rebuilding_gives_a_singleton_control_group_harness_no_seconds_of_a_procreation() {
+    let state = rebuilt(&an_experiment_whose_baseline_ended_and_then(&[]));
+    assert_eq!(state.seconds[3].procreation, None);
+}
+
+#[test]
+fn rebuilding_gives_a_singleton_control_group_harness_the_seconds_of_its_attempts() {
+    let state = rebuilt(&an_experiment_whose_baseline_ended_and_then(&[
+        attempt_started(3, "benchmark/t1"),
+        attempt_finished(3, "benchmark/t1", AttemptResult::Completed),
+    ]));
+    assert_eq!(state.seconds[3].attempts, 1.5);
+}
+
+#[test]
+fn the_end_of_a_baseline_leaves_the_other_actions_that_did_not_finish() {
+    let mut records = an_experiment_whose_baseline_started();
+    records.push(attempt_started(2, "benchmark/t1"));
+    records.push(Record::BaselineFinished {
+        harness: 3,
+        outcome: CreationOutcome::Failed,
+        seconds: 12.5,
+    });
+    assert_eq!(
+        rebuilt(&records).unfinished,
+        [Started::Attempt {
+            harness: 2,
+            task: "benchmark/t1".to_owned()
+        }]
+    );
 }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, Genealogy, HarnessState, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessState};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -42,7 +42,7 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     let mut genealogy = settings().genealogy();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     attempted(
         &mut genealogy,
@@ -77,7 +77,7 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
     let mut genealogy = Genealogy::new();
     let failed = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(failed, ProcreationOutcome::Failed)
+        .end_procreation(failed, CreationOutcome::Failed)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
     genealogy.start_attempt(0, "benchmark/t1").unwrap();
@@ -378,7 +378,7 @@ fn a_task_that_two_harnesses_completed_is_counted_once() {
     let mut genealogy = a_child_that_succeeds_where_its_progenitor_fails();
     let another = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(another, ProcreationOutcome::Created)
+        .end_procreation(another, CreationOutcome::Created)
         .unwrap();
     attempted(
         &mut genealogy,

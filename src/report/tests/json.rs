@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -57,14 +57,19 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
             r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
             r#""other_tasks_completed_by_any":0,"other_tasks":1,"#,
-            r#""corroboration_lead":null,"harnesses":["#,
-            r#"{"id":0,"progenitor":null,"state":"created","#,
+            r#""corroboration_lead":null,"#,
+            r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
+            r#""singleton_control_group_harness_created":0,"both_created":0,"#,
+            r#""only_progenitors_child_completed":0,"#,
+            r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":1.0},"#,
+            r#""harnesses":["#,
+            r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
             r#""selection_completed":1,"selection_not_completed":0,"#,
             r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":1,"#,
             r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
             r#""attempt_seconds":4.5,"procreation_seconds":null},"#,
-            r#"{"id":1,"progenitor":0,"state":"being_created","#,
+            r#"{"id":1,"progenitor":0,"experiment":null,"state":"being_created","#,
             r#""selection_completed":0,"selection_not_completed":0,"#,
             r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
             r#""other_completed":0,"other_not_completed":0,"#,
@@ -79,12 +84,12 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Failed)
+        .end_procreation(child, CreationOutcome::Failed)
         .unwrap();
     assert!(
         Report::of(&settings(), &genealogy, &[])
             .json()
-            .contains(r#""id":1,"progenitor":0,"state":"failed""#)
+            .contains(r#""id":1,"progenitor":0,"experiment":null,"state":"failed""#)
     );
 }
 

@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, Launch};
-use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
+use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -40,7 +40,7 @@ fn procreated(
     outputs_directory: &OutputsDirectory,
     child: u64,
     progenitor: u64,
-    outcome: ProcreationOutcome,
+    outcome: CreationOutcome,
 ) {
     outputs_directory
         .start_procreation(child, progenitor)
@@ -67,12 +67,12 @@ fn family() -> (TempDir, OutputsDirectory) {
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
     attempted(&outputs_directory, 0);
-    procreated(&outputs_directory, 1, 0, ProcreationOutcome::Created);
+    procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
     let build = outputs_directory.start_build(1).unwrap();
     fs::write(build.join("stdout"), "building\n").unwrap();
     attempted(&outputs_directory, 1);
-    procreated(&outputs_directory, 2, 0, ProcreationOutcome::Failed);
-    procreated(&outputs_directory, 3, 1, ProcreationOutcome::Created);
+    procreated(&outputs_directory, 2, 0, CreationOutcome::Failed);
+    procreated(&outputs_directory, 3, 1, CreationOutcome::Created);
     attempted(&outputs_directory, 3);
     (directory, outputs_directory)
 }

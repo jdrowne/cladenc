@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -71,10 +71,12 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
          started 1 of 800 procreations, best harness 0\n\
          completed by at least one harness: selection tasks 1 of 3, corroboration tasks 1 of 1, other tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
+         experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
+         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
          \n\
-         id  progenitor  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           created        1                    0                        1                        0                            0                1                    1                0                    1.000        4.5              -\n\
-         1   0           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created        1                    0                        1                        0                            0                1                    1                0                    1.000        4.5              -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
     );
 }
 
@@ -84,7 +86,7 @@ fn a_failed_harness_is_shown_as_failed() {
     let table = table_with(&seconds, |genealogy| {
         let child = genealogy.start_procreation(0).unwrap();
         genealogy
-            .end_procreation(child, ProcreationOutcome::Failed)
+            .end_procreation(child, CreationOutcome::Failed)
             .unwrap();
     });
     assert_eq!(
@@ -93,10 +95,12 @@ fn a_failed_harness_is_shown_as_failed() {
          started 1 of 800 procreations, best harness 0\n\
          completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 of 1, other tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
+         experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
+         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
          \n\
-         id  progenitor  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
-         1   0           failed   0                    0                        0                        0                            0                0                    0                0                    -            0.0              30.3\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                0                    0                0                    -            0.0              30.3\n"
     );
 }
 
@@ -107,7 +111,7 @@ fn a_rate_is_printed_to_three_decimal_places() {
         attempted(genealogy, "benchmark/t2", AttemptResult::NotCompleted);
         attempted(genealogy, "benchmark/t3", AttemptResult::NotCompleted);
     });
-    assert!(table.lines().nth(6).unwrap().contains("  0.333  "));
+    assert!(table.lines().nth(8).unwrap().contains("  0.333  "));
 }
 
 #[test]
@@ -134,13 +138,13 @@ fn the_seconds_of_a_procreation_are_printed_to_one_decimal_place() {
     let table = table_with(&seconds, |genealogy| {
         genealogy.start_procreation(0).unwrap();
     });
-    assert!(table.lines().nth(7).unwrap().ends_with("  30.3"));
+    assert!(table.lines().nth(9).unwrap().ends_with("  30.3"));
 }
 
 #[test]
 fn the_seconds_of_the_attempts_of_a_harness_are_printed_to_one_decimal_place() {
     let table = table_with(&[took(12.345, None)], |_| {});
-    assert!(table.lines().nth(6).unwrap().contains("  12.3  "));
+    assert!(table.lines().nth(8).unwrap().contains("  12.3  "));
 }
 
 #[test]
@@ -149,7 +153,7 @@ fn a_harness_for_which_no_seconds_are_given_is_shown_with_none_spent() {
     assert!(
         table
             .lines()
-            .nth(6)
+            .nth(8)
             .unwrap()
             .ends_with(&format!("  0.0{}-", " ".repeat(14)))
     );
@@ -168,7 +172,7 @@ fn the_line_above_the_table_says_how_many_tasks_at_least_one_harness_completed()
 
 #[test]
 fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_table() {
-    assert_eq!(table(|_| {}).lines().nth(4), Some(""));
+    assert_eq!(table(|_| {}).lines().nth(6), Some(""));
 }
 
 #[test]
@@ -177,12 +181,12 @@ fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_score() {
         attempted(genealogy, "benchmark/t1", AttemptResult::NotCompleted);
         attempted(genealogy, "benchmark/t4", AttemptResult::Completed);
     });
-    assert!(table.lines().nth(6).unwrap().contains("  0.000  "));
+    assert!(table.lines().nth(8).unwrap().contains("  0.000  "));
 }
 
 #[test]
 fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_corroboration_tasks() {
-    assert!(table(|_| {}).lines().nth(5).unwrap().contains(
+    assert!(table(|_| {}).lines().nth(7).unwrap().contains(
         "  selection completed  selection not completed  corroboration completed  corroboration \
          not completed  other completed  other not completed  "
     ));

@@ -2,10 +2,10 @@ use std::collections::BTreeSet;
 
 use crate::artificial_selection::wait::Waits;
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
-const CREATED: ProcreationOutcome = ProcreationOutcome::Created;
-const FAILED: ProcreationOutcome = ProcreationOutcome::Failed;
+const CREATED: CreationOutcome = CreationOutcome::Created;
+const FAILED: CreationOutcome = CreationOutcome::Failed;
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -20,7 +20,7 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
     let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
@@ -42,7 +42,7 @@ fn two_harnesses_benchmarked_in_full() -> Genealogy {
     genealogy
 }
 
-fn after(procreations: &[(HarnessId, ProcreationOutcome)]) -> Genealogy {
+fn after(procreations: &[(HarnessId, CreationOutcome)]) -> Genealogy {
     let mut genealogy = two_harnesses_benchmarked_in_full();
     for (progenitor, outcome) in procreations {
         child_of(&mut genealogy, *progenitor, *outcome);
@@ -91,17 +91,14 @@ fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_failed() {
 #[test]
 fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_whose_child_did_not_build() {
     assert_eq!(
-        progenitors(&after(&[(1, ProcreationOutcome::BuildFailed)])),
+        progenitors(&after(&[(1, CreationOutcome::BuildFailed)])),
         [0]
     );
 }
 
 #[test]
 fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_ran_past_its_time_limit() {
-    assert_eq!(
-        progenitors(&after(&[(1, ProcreationOutcome::TimedOut)])),
-        [0]
-    );
+    assert_eq!(progenitors(&after(&[(1, CreationOutcome::TimedOut)])), [0]);
 }
 
 #[test]

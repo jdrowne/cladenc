@@ -24,7 +24,7 @@ type Attempted = (
 type Procreated = (
     TempDir,
     OutputsDirectory,
-    Result<containers::Procreated, ContainerError>,
+    Result<containers::Creation, ContainerError>,
 );
 
 fn made() -> (TempDir, OutputsDirectory) {

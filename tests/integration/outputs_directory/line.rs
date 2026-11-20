@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use cladenc::genealogy::ProcreationOutcome;
+use cladenc::genealogy::CreationOutcome;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
@@ -17,7 +17,7 @@ fn procreated(
     outputs_directory: &OutputsDirectory,
     child: u64,
     progenitor: u64,
-    outcome: ProcreationOutcome,
+    outcome: CreationOutcome,
 ) {
     outputs_directory
         .start_procreation(child, progenitor)
@@ -29,10 +29,10 @@ fn procreated(
 
 fn family() -> (TempDir, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    procreated(&outputs_directory, 1, 0, ProcreationOutcome::Created);
-    procreated(&outputs_directory, 2, 1, ProcreationOutcome::Created);
-    procreated(&outputs_directory, 3, 0, ProcreationOutcome::Failed);
-    procreated(&outputs_directory, 4, 2, ProcreationOutcome::Created);
+    procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
+    procreated(&outputs_directory, 2, 1, CreationOutcome::Created);
+    procreated(&outputs_directory, 3, 0, CreationOutcome::Failed);
+    procreated(&outputs_directory, 4, 2, CreationOutcome::Created);
     outputs_directory.start_procreation(5, 1).unwrap();
     (directory, outputs_directory)
 }
@@ -40,7 +40,7 @@ fn family() -> (TempDir, OutputsDirectory) {
 fn with_eleven_children_of_the_primogenitor() -> (TempDir, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     for child in 1..=11 {
-        procreated(&outputs_directory, child, 0, ProcreationOutcome::Created);
+        procreated(&outputs_directory, child, 0, CreationOutcome::Created);
     }
     (directory, outputs_directory)
 }

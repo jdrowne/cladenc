@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, Genealogy, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 
 fn tasks(ids: &[&str]) -> Vec<String> {
     ids.iter().map(|id| (*id).to_owned()).collect()
@@ -58,7 +58,7 @@ fn a_task_given_to_one_harness_is_not_given_to_another() {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     genealogy.start_attempt(0, "a").unwrap();
     assert_eq!(genealogy.harnesses()[1].tasks_not_given(&list), ["a", "b"]);
@@ -115,7 +115,7 @@ fn a_task_another_harness_attempted_does_not_count_for_a_harness() {
     let mut genealogy = Genealogy::new();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     attempted(&mut genealogy, "a", AttemptResult::Completed);
     assert!(!genealogy.harnesses()[1].has_attempted_every(&list));

@@ -244,7 +244,7 @@ fn with_a_growth_of_0_each_child_is_benchmarked_in_full_before_the_next_procreat
         settings.benchmarks[0].tasks.truncate(2);
     });
     assert_eq!(
-        kinds_of_starts(&directory),
+        kinds_of_starts(&directory)[..8],
         [
             "attempt of 0",
             "attempt of 0",

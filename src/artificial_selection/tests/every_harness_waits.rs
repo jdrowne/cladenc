@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
-const CREATED: ProcreationOutcome = ProcreationOutcome::Created;
-const FAILED: ProcreationOutcome = ProcreationOutcome::Failed;
+const CREATED: CreationOutcome = CreationOutcome::Created;
+const FAILED: CreationOutcome = CreationOutcome::Failed;
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -19,7 +19,7 @@ fn artificial_selection(max_procreations: u64, seed: u64) -> ArtificialSelection
     }
 }
 
-fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: ProcreationOutcome) {
+fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
     let child = genealogy.start_procreation(progenitor).unwrap();
     genealogy.end_procreation(child, outcome).unwrap();
 }
@@ -40,7 +40,7 @@ fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
 }
 
 fn two_harnesses_benchmarked_in_full_after(
-    procreations: &[(HarnessId, ProcreationOutcome)],
+    procreations: &[(HarnessId, CreationOutcome)],
 ) -> Genealogy {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     child_of(&mut genealogy, 0, CREATED);

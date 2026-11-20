@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome};
 use crate::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -9,7 +9,7 @@ fn read_back(record: &Record) -> Record {
     serde_json::from_str(&line(record)).unwrap()
 }
 
-fn procreation_finished(outcome: ProcreationOutcome) -> Record {
+fn procreation_finished(outcome: CreationOutcome) -> Record {
     Record::ProcreationFinished {
         child: 1,
         outcome,
@@ -40,7 +40,7 @@ fn the_start_of_a_procreation_is_written_with_its_child_and_progenitor() {
 #[test]
 fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
     assert_eq!(
-        line(&procreation_finished(ProcreationOutcome::Created)),
+        line(&procreation_finished(CreationOutcome::Created)),
         r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":12.5}"#
     );
 }
@@ -48,7 +48,7 @@ fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
 #[test]
 fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
     assert_eq!(
-        line(&procreation_finished(ProcreationOutcome::Failed)),
+        line(&procreation_finished(CreationOutcome::Failed)),
         r#"{"record":"procreation_finished","child":1,"outcome":"failed","seconds":12.5}"#
     );
 }
@@ -56,7 +56,7 @@ fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
 #[test]
 fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
     assert_eq!(
-        line(&procreation_finished(ProcreationOutcome::TimedOut)),
+        line(&procreation_finished(CreationOutcome::TimedOut)),
         r#"{"record":"procreation_finished","child":1,"outcome":"timed_out","seconds":12.5}"#
     );
 }
@@ -64,7 +64,7 @@ fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
 #[test]
 fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed() {
     assert_eq!(
-        line(&procreation_finished(ProcreationOutcome::BuildFailed)),
+        line(&procreation_finished(CreationOutcome::BuildFailed)),
         r#"{"record":"procreation_finished","child":1,"outcome":"build_failed","seconds":12.5}"#
     );
 }
@@ -139,7 +139,7 @@ fn the_start_of_a_procreation_survives_being_written_and_read_back() {
 
 #[test]
 fn the_end_of_a_procreation_survives_being_written_and_read_back() {
-    let record = procreation_finished(ProcreationOutcome::TimedOut);
+    let record = procreation_finished(CreationOutcome::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 
@@ -161,5 +161,49 @@ fn the_end_of_an_attempt_survives_being_written_and_read_back() {
 #[test]
 fn the_end_of_a_directed_evolution_survives_being_written_and_read_back() {
     let record = Record::DirectedEvolutionFinished { best_harness: 1 };
+    assert_eq!(read_back(&record), record);
+}
+
+fn baseline_started() -> Record {
+    Record::BaselineStarted {
+        harness: 3,
+        child: 2,
+        progenitor: 1,
+    }
+}
+
+fn baseline_finished(outcome: CreationOutcome) -> Record {
+    Record::BaselineFinished {
+        harness: 3,
+        outcome,
+        seconds: 12.5,
+    }
+}
+
+#[test]
+fn the_start_of_a_baseline_is_written_with_its_harness_and_the_child_and_progenitor_of_its_experiment()
+ {
+    assert_eq!(
+        line(&baseline_started()),
+        r#"{"record":"baseline_started","harness":3,"child":2,"progenitor":1}"#
+    );
+}
+
+#[test]
+fn the_end_of_a_baseline_is_written_with_its_harness_its_outcome_and_its_seconds() {
+    assert_eq!(
+        line(&baseline_finished(CreationOutcome::BuildFailed)),
+        r#"{"record":"baseline_finished","harness":3,"outcome":"build_failed","seconds":12.5}"#
+    );
+}
+
+#[test]
+fn the_start_of_a_baseline_survives_being_written_and_read_back() {
+    assert_eq!(read_back(&baseline_started()), baseline_started());
+}
+
+#[test]
+fn the_end_of_a_baseline_survives_being_written_and_read_back() {
+    let record = baseline_finished(CreationOutcome::Created);
     assert_eq!(read_back(&record), record);
 }

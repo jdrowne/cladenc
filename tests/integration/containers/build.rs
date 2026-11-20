@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::ProcreationOutcome;
+use cladenc::genealogy::CreationOutcome;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
@@ -18,7 +18,7 @@ const MODEL: Model<'static> = Model {
 type Procreated = (
     TempDir,
     OutputsDirectory,
-    Result<containers::Procreated, ContainerError>,
+    Result<containers::Creation, ContainerError>,
 );
 
 fn made() -> (TempDir, OutputsDirectory) {
@@ -175,8 +175,8 @@ fn a_child_whose_build_exits_with_0_is_created() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 0");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Created,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Created,
             ..
         })
     ));
@@ -187,8 +187,8 @@ fn a_child_whose_build_exits_with_another_status_did_not_build() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 1");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::BuildFailed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::BuildFailed,
             ..
         })
     ));
@@ -211,8 +211,8 @@ fn a_child_whose_build_leaves_a_named_pipe_did_not_build() {
     let (_directory, _outputs_directory, result) = procreated("exit 0", "mkfifo pipe");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::BuildFailed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::BuildFailed,
             ..
         })
     ));
@@ -229,8 +229,8 @@ fn a_harness_that_failed_fails_its_child_whatever_the_build_would_have_done() {
     let (_directory, _outputs_directory, result) = procreated("exit 1", "exit 0");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Failed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Failed,
             ..
         })
     ));
@@ -242,8 +242,8 @@ fn a_build_that_runs_past_the_time_limit_of_its_procreation_times_the_procreatio
         procreated_within("exit 0", "touch started; sleep 300", 8);
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::TimedOut,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::TimedOut,
             ..
         })
     ));
@@ -254,8 +254,8 @@ fn the_time_limit_of_a_procreation_covers_its_harness_and_the_build_of_its_child
     let (_directory, _outputs_directory, result) = procreated_within("sleep 4", "sleep 4", 6);
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::TimedOut,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::TimedOut,
             ..
         })
     ));

@@ -136,3 +136,20 @@ fn a_directed_evolution_a_procreation_stopped_names_the_progenitor_and_the_child
          the procreation of harness 3 by harness 0 was ended by signal 9"
     );
 }
+
+#[test]
+fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_harness() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Action {
+            action: Started::Baseline {
+                harness: 4,
+                child: 3,
+                progenitor: 1
+            },
+            error: ContainerError::Exit(2)
+        }),
+        "the directed evolution stopped before its end: the creation of harness 4, the \
+         singleton control group harness, by the primogenitor from the source code of harness 1 \
+         exited with status 2"
+    );
+}

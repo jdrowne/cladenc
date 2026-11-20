@@ -7,8 +7,8 @@ use super::action::{Ended, carry_out};
 use super::said::say;
 use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::containers::{Attempted, ContainerError, Procreated};
-use crate::genealogy::Genealogy;
+use crate::containers::{Attempted, ContainerError, Creation};
+use crate::genealogy::{Experiment, Genealogy};
 use crate::journal::{Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 
@@ -96,6 +96,11 @@ impl<'a> Progress<'a> {
             .pop_front()
             .map(|action| (action, true))
             .or_else(|| {
+                self.genealogy
+                    .experiment_awaiting_its_baseline()
+                    .map(|experiment| (self.start_baseline(experiment), false))
+            })
+            .or_else(|| {
                 self.artificial_selection
                     .next_action(&self.genealogy, self.next_action)
                     .map(|action| (self.start(action), false))
@@ -116,6 +121,7 @@ impl<'a> Progress<'a> {
                 &Said::Started {
                     action: &action,
                     again,
+                    procreations: self.genealogy.procreations_started(),
                     max_procreations: self.artificial_selection.max_procreations,
                 },
             );
@@ -129,10 +135,10 @@ impl<'a> Progress<'a> {
     pub(super) fn end(&mut self, ended: Ended, outputs_directory: &OutputsDirectory) {
         self.running -= 1;
         match ended {
-            Ended::Procreation {
+            Ended::Procreated {
                 child,
                 progenitor,
-                result: Ok(Procreated { outcome, seconds }),
+                creation: Creation { outcome, seconds },
             } => {
                 self.genealogy
                     .end_procreation(child, outcome)
@@ -149,10 +155,30 @@ impl<'a> Progress<'a> {
                     outputs_directory,
                 });
             }
-            Ended::Attempt {
+            Ended::Established {
+                harness,
+                experiment,
+                creation: Creation { outcome, seconds },
+            } => {
+                self.genealogy
+                    .end_baseline(harness, outcome)
+                    .expect("a baseline that ended was started");
+                self.record(&Record::BaselineFinished {
+                    harness,
+                    outcome,
+                    seconds,
+                });
+                self.say(&Said::Established {
+                    harness,
+                    experiment,
+                    outcome,
+                    outputs_directory,
+                });
+            }
+            Ended::Attempted {
                 harness,
                 task,
-                result: Ok(Attempted { result, seconds }),
+                attempted: Attempted { result, seconds },
             } => {
                 self.genealogy
                     .end_attempt(harness, &task, result)
@@ -170,24 +196,8 @@ impl<'a> Progress<'a> {
                     seconds,
                 });
             }
-            Ended::Procreation {
-                result: Err(ContainerError::Stopped),
-                ..
-            }
-            | Ended::Attempt {
-                result: Err(ContainerError::Stopped),
-                ..
-            } => {}
-            Ended::Procreation {
-                child,
-                progenitor,
-                result: Err(error),
-            } => self.failed(Started::Procreation { child, progenitor }, error),
-            Ended::Attempt {
-                harness,
-                task,
-                result: Err(error),
-            } => self.failed(Started::Attempt { harness, task }, error),
+            Ended::Stopped => {}
+            Ended::Failed { action, error } => self.failed(action, error),
         }
     }
 
@@ -248,8 +258,26 @@ impl<'a> Progress<'a> {
                 Started::Attempt { harness, task }
             }
         };
-        self.next_action += 1;
+        self.next_action = self.genealogy.actions_started();
         started
+    }
+
+    fn start_baseline(&mut self, experiment: Experiment) -> Started {
+        let Experiment { child, progenitor } = experiment;
+        let harness = self
+            .genealogy
+            .start_baseline(experiment)
+            .expect("the experiment of a baseline awaits it");
+        self.record(&Record::BaselineStarted {
+            harness,
+            child,
+            progenitor,
+        });
+        Started::Baseline {
+            harness,
+            child,
+            progenitor,
+        }
     }
 
     fn fail(&mut self, error: DirectedEvolutionError) {

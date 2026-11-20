@@ -4,7 +4,7 @@ use crate::genealogy::GenealogyError;
 use crate::journal::{self, JournalError};
 
 const RUN: &str = concat!(
-    r#"{"record":"run","format":21,"primogenitor":"/abs/harness","model":"a-model","#,
+    r#"{"record":"run","format":22,"primogenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
     r#""harness_build_command":null,"harness_run_command":"run a harness","#,
@@ -155,10 +155,21 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_21_cannot_be_read() {
+fn a_journal_whose_format_is_not_22_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":21"#, r#""format":22"#)]),
-        JournalError::UnknownFormat { format: 22 }
+        error_of(&[&RUN.replace(r#""format":22"#, r#""format":23"#)]),
+        JournalError::UnknownFormat { format: 23 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_21_is_refused_for_its_format_since_it_records_no_baseline() {
+    assert!(matches!(
+        error_of(&[
+            &RUN.replace(r#""format":22"#, r#""format":21"#),
+            r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+        ]),
+        JournalError::UnknownFormat { format: 21 }
     ));
 }
 
@@ -177,7 +188,7 @@ fn a_journal_of_format_20_is_refused_for_its_format_since_it_names_no_corroborat
 fn a_journal_of_format_19_is_refused_for_its_format_since_its_records_hold_no_seconds() {
     assert!(matches!(
         error_of(&[
-            &RUN.replace(r#""format":21"#, r#""format":19"#),
+            &RUN.replace(r#""format":22"#, r#""format":19"#),
             r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#,
             r#"{"record":"attempt_finished","harness":0,"task":"benchmark/t1","result":"completed"}"#
         ]),
@@ -422,7 +433,7 @@ fn a_journal_of_format_3_is_refused_for_its_format_since_it_names_no_model() {
 #[test]
 fn a_journal_of_format_2_is_refused_for_its_format_though_this_cladenc_could_read_its_records() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":21"#, r#""format":2"#)]),
+        error_of(&[&RUN.replace(r#""format":22"#, r#""format":2"#)]),
         JournalError::UnknownFormat { format: 2 }
     ));
 }
@@ -443,7 +454,7 @@ fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_other
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":21,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":22,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -781,5 +792,100 @@ fn a_journal_with_a_record_after_the_end_of_its_directed_evolution_cannot_be_rea
             r#"{"record":"procreation_started","child":1,"progenitor":0}"#
         ]),
         JournalError::AfterDirectedEvolutionFinished { line: 3 }
+    ));
+}
+
+const A_CHILD_OF_A_CHILD: [&str; 5] = [
+    RUN,
+    r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
+    r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":1.5}"#,
+    r#"{"record":"procreation_started","child":2,"progenitor":1}"#,
+    r#"{"record":"baseline_started","harness":3,"child":2,"progenitor":1}"#,
+];
+
+fn error_after_a_baseline_started(line: &str) -> JournalError {
+    let lines: Vec<&str> = A_CHILD_OF_A_CHILD.iter().copied().chain([line]).collect();
+    error_of(&lines)
+}
+
+#[test]
+fn a_journal_with_a_baseline_where_the_primogenitor_procreated_cannot_be_read() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
+            r#"{"record":"baseline_started","harness":2,"child":1,"progenitor":0}"#
+        ]),
+        JournalError::Refused {
+            line: 3,
+            error: GenealogyError::ExperimentNotAwaitingBaseline {
+                child: 1,
+                progenitor: 0
+            }
+        }
+    ));
+}
+
+#[test]
+fn a_journal_with_a_second_baseline_of_one_experiment_cannot_be_read() {
+    assert!(matches!(
+        error_after_a_baseline_started(
+            r#"{"record":"baseline_started","harness":4,"child":2,"progenitor":1}"#
+        ),
+        JournalError::Refused {
+            line: 6,
+            error: GenealogyError::ExperimentNotAwaitingBaseline {
+                child: 2,
+                progenitor: 1
+            }
+        }
+    ));
+}
+
+#[test]
+fn a_journal_whose_baseline_names_a_harness_other_than_the_next_id_cannot_be_read() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"baseline_started","harness":7,"child":2,"progenitor":1}"#
+        ]),
+        JournalError::WrongChild { line: 2, child: 7 }
+    ));
+}
+
+#[test]
+fn a_journal_with_the_end_of_a_baseline_that_never_started_cannot_be_read() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"baseline_finished","harness":1,"outcome":"created","seconds":1.5}"#
+        ]),
+        JournalError::Refused {
+            line: 2,
+            error: GenealogyError::SingletonControlGroupHarnessNotBeingCreated { harness: 1 }
+        }
+    ));
+}
+
+#[test]
+fn a_journal_that_ends_a_baseline_as_though_it_were_a_procreation_cannot_be_read() {
+    assert!(matches!(
+        error_after_a_baseline_started(
+            r#"{"record":"procreation_finished","child":3,"outcome":"created","seconds":1.5}"#
+        ),
+        JournalError::Refused {
+            line: 6,
+            error: GenealogyError::ChildNotBeingCreated { child: 3 }
+        }
+    ));
+}
+
+#[test]
+fn the_end_of_a_baseline_of_this_format_that_holds_no_seconds_is_not_a_record() {
+    assert!(matches!(
+        error_after_a_baseline_started(
+            r#"{"record":"baseline_finished","harness":3,"outcome":"created"}"#
+        ),
+        JournalError::NotARecord { line: 6 }
     ));
 }

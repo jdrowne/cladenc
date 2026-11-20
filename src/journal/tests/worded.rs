@@ -60,7 +60,8 @@ fn a_record_the_genealogy_refuses_is_worded_with_the_genealogy_s_reason() {
             line: 3,
             error: GenealogyError::ChildNotBeingCreated { child: 5 }
         }),
-        "line 3 of its journal records what cannot have happened: harness 5 is not being created"
+        "line 3 of its journal records what cannot have happened: harness 5 is not a child that is \
+         being created"
     );
 }
 
@@ -101,5 +102,19 @@ fn an_attempt_is_named_by_its_harness_and_its_task() {
         }
         .to_string(),
         "the attempt of harness 0 on task t1"
+    );
+}
+
+#[test]
+fn a_baseline_is_named_by_its_harness_and_the_progenitor_whose_source_code_is_changed() {
+    assert_eq!(
+        Started::Baseline {
+            harness: 4,
+            child: 3,
+            progenitor: 1
+        }
+        .to_string(),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1"
     );
 }

@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, Genealogy, HarnessId, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 
 const SELECTION: &str = "selection";
 const CORROBORATION: &str = "corroboration";
@@ -14,7 +14,7 @@ fn with_a_child() -> Genealogy {
     let mut genealogy = told_of_its_tasks();
     let child = genealogy.start_procreation(0).unwrap();
     genealogy
-        .end_procreation(child, ProcreationOutcome::Created)
+        .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     genealogy
 }

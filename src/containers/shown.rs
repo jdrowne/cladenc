@@ -9,6 +9,7 @@ const CHILDREN: &str = "/var/log/cladenc/children";
 pub(super) fn to(
     outputs_directory: &OutputsDirectory,
     progenitor: HarnessId,
+    before: Option<HarnessId>,
 ) -> Vec<(PathBuf, String)> {
     let line = outputs_directory
         .line_of(progenitor)
@@ -17,6 +18,7 @@ pub(super) fn to(
     let children = outputs_directory
         .children_of(progenitor)
         .into_iter()
+        .filter(|child| before.is_none_or(|later| *child < later))
         .map(|harness| (CHILDREN, harness));
     line.chain(children)
         .flat_map(|(relation, harness)| {

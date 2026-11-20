@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::containers::ContainerError;
 use crate::directed_evolution::Said;
-use crate::genealogy::{AttemptResult, ProcreationOutcome};
+use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -24,16 +24,38 @@ fn attempt() -> Started {
     }
 }
 
+fn baseline() -> Started {
+    Started::Baseline {
+        harness: 4,
+        child: 3,
+        progenitor: 1,
+    }
+}
+
 fn started(action: &Started, again: bool) -> String {
     Said::Started {
         action,
         again,
+        procreations: 2,
         max_procreations: 800,
     }
     .to_string()
 }
 
-fn procreated(outcome: ProcreationOutcome) -> String {
+fn established(outcome: CreationOutcome) -> String {
+    Said::Established {
+        harness: 4,
+        experiment: Experiment {
+            child: 3,
+            progenitor: 1,
+        },
+        outcome,
+        outputs_directory: &outputs_directory(),
+    }
+    .to_string()
+}
+
+fn procreated(outcome: CreationOutcome) -> String {
     Said::Procreated {
         child: 3,
         progenitor: 1,
@@ -270,7 +292,69 @@ fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is
 fn a_procreation_is_said_to_have_started_with_its_number_and_the_most_there_may_be() {
     assert_eq!(
         started(&procreation(), false),
-        "started the procreation of harness 3 by harness 1, procreation 3 of 800"
+        "started the procreation of harness 3 by harness 1, procreation 2 of 800"
+    );
+}
+
+#[test]
+fn the_number_of_a_procreation_is_how_many_were_started_and_not_the_id_of_its_child() {
+    assert!(started(&procreation(), false).ends_with(", procreation 2 of 800"));
+}
+
+#[test]
+fn a_baseline_is_said_to_have_started_with_no_number() {
+    assert_eq!(
+        started(&baseline(), false),
+        "started the creation of harness 4, the singleton control group harness, by the \
+         primogenitor from the source code of harness 1"
+    );
+}
+
+#[test]
+fn a_baseline_that_is_established_again_is_said_to_have_started_again() {
+    assert_eq!(
+        started(&baseline(), true),
+        "started again the creation of harness 4, the singleton control group harness, by the \
+         primogenitor from the source code of harness 1"
+    );
+}
+
+#[test]
+fn a_baseline_that_created_its_harness_is_said_with_where_the_harness_is_kept() {
+    assert_eq!(
+        established(CreationOutcome::Created),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1 created harness 4, kept in /outputs/harnesses/4"
+    );
+}
+
+#[test]
+fn a_baseline_that_failed_is_said_with_where_what_the_primogenitor_printed_is_kept() {
+    assert_eq!(
+        established(CreationOutcome::Failed),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1 failed: what the primogenitor printed is kept in \
+         /outputs/baselines/4"
+    );
+}
+
+#[test]
+fn a_singleton_control_group_harness_that_did_not_build_is_said_with_where_its_build_is_kept() {
+    assert_eq!(
+        established(CreationOutcome::BuildFailed),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1 made a harness that did not build: what its build \
+         printed is kept in /outputs/builds/4"
+    );
+}
+
+#[test]
+fn a_baseline_that_timed_out_is_said_to_have_run_past_its_time_limit() {
+    assert_eq!(
+        established(CreationOutcome::TimedOut),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1 ran past its time limit: what the primogenitor \
+         printed is kept in /outputs/baselines/4"
     );
 }
 
@@ -301,7 +385,7 @@ fn an_attempt_that_is_run_again_is_said_to_have_started_again_with_no_number() {
 #[test]
 fn a_procreation_that_created_its_child_is_said_with_where_the_child_is_kept() {
     assert_eq!(
-        procreated(ProcreationOutcome::Created),
+        procreated(CreationOutcome::Created),
         "the procreation of harness 3 by harness 1 created harness 3, kept in /outputs/harnesses/3"
     );
 }
@@ -309,7 +393,7 @@ fn a_procreation_that_created_its_child_is_said_with_where_the_child_is_kept() {
 #[test]
 fn a_procreation_that_failed_is_said_with_where_what_the_harness_printed_is_kept() {
     assert_eq!(
-        procreated(ProcreationOutcome::Failed),
+        procreated(CreationOutcome::Failed),
         "the procreation of harness 3 by harness 1 failed: what the harness printed is kept in \
          /outputs/procreations/3"
     );
@@ -318,7 +402,7 @@ fn a_procreation_that_failed_is_said_with_where_what_the_harness_printed_is_kept
 #[test]
 fn a_child_that_did_not_build_is_said_with_where_what_its_build_printed_is_kept() {
     assert_eq!(
-        procreated(ProcreationOutcome::BuildFailed),
+        procreated(CreationOutcome::BuildFailed),
         "the procreation of harness 3 by harness 1 made a harness that did not build: what its \
          build printed is kept in /outputs/builds/3"
     );
@@ -327,7 +411,7 @@ fn a_child_that_did_not_build_is_said_with_where_what_its_build_printed_is_kept(
 #[test]
 fn a_procreation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
     assert_eq!(
-        procreated(ProcreationOutcome::TimedOut),
+        procreated(CreationOutcome::TimedOut),
         "the procreation of harness 3 by harness 1 ran past its time limit: what the harness \
          printed is kept in /outputs/procreations/3"
     );

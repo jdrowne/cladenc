@@ -6,11 +6,30 @@ use super::HarnessId;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GenealogyError {
     PrimogenitorNotAwaitingBuild,
-    ProgenitorNotCreated { progenitor: HarnessId },
-    ChildNotBeingCreated { child: HarnessId },
-    HarnessNotCreated { harness: HarnessId },
-    TaskAlreadyGiven { harness: HarnessId, task: String },
-    AttemptNotRunning { harness: HarnessId, task: String },
+    ProgenitorNotCreated {
+        progenitor: HarnessId,
+    },
+    ChildNotBeingCreated {
+        child: HarnessId,
+    },
+    ExperimentNotAwaitingBaseline {
+        child: HarnessId,
+        progenitor: HarnessId,
+    },
+    SingletonControlGroupHarnessNotBeingCreated {
+        harness: HarnessId,
+    },
+    HarnessNotCreated {
+        harness: HarnessId,
+    },
+    TaskAlreadyGiven {
+        harness: HarnessId,
+        task: String,
+    },
+    AttemptNotRunning {
+        harness: HarnessId,
+        task: String,
+    },
 }
 
 impl Display for GenealogyError {
@@ -24,8 +43,20 @@ impl Display for GenealogyError {
                 "harness {progenitor} cannot procreate because it is not a created harness"
             ),
             Self::ChildNotBeingCreated { child } => {
-                write!(formatter, "harness {child} is not being created")
+                write!(
+                    formatter,
+                    "harness {child} is not a child that is being created"
+                )
             }
+            Self::ExperimentNotAwaitingBaseline { child, progenitor } => write!(
+                formatter,
+                "no experiment at the procreation of harness {child} by harness {progenitor} is \
+                 waiting for its baseline"
+            ),
+            Self::SingletonControlGroupHarnessNotBeingCreated { harness } => write!(
+                formatter,
+                "harness {harness} is not a singleton control group harness that is being created"
+            ),
             Self::HarnessNotCreated { harness } => write!(
                 formatter,
                 "harness {harness} cannot attempt a task because it is not a created harness"

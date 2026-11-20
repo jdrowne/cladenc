@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, Launch};
-use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
+use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -47,7 +47,7 @@ fn attempted(run_command: &str, grader: &str, time_limit: u64) -> containers::At
     .unwrap()
 }
 
-fn procreated(run_command: &str, build_command: Option<&str>) -> containers::Procreated {
+fn procreated(run_command: &str, build_command: Option<&str>) -> containers::Creation {
     let (_directory, outputs_directory) = made("exit 0");
     containers::run_procreation(
         &outputs_directory,
@@ -100,8 +100,5 @@ fn the_seconds_of_a_procreation_leave_out_those_the_build_of_the_child_ran() {
 
 #[test]
 fn a_procreation_comes_back_with_its_outcome_beside_its_seconds() {
-    assert_eq!(
-        procreated("exit 0", None).outcome,
-        ProcreationOutcome::Created
-    );
+    assert_eq!(procreated("exit 0", None).outcome, CreationOutcome::Created);
 }

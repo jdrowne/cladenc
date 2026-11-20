@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use serde::Serialize;
 
-use super::{AttemptResult, HarnessId};
+use super::{AttemptResult, Experiment, HarnessId};
 use crate::holdout::TaskSet;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -17,6 +17,7 @@ pub(crate) enum HarnessState {
 pub(crate) struct Harness {
     id: HarnessId,
     progenitor: Option<HarnessId>,
+    experiment: Option<Experiment>,
     state: HarnessState,
     given: BTreeSet<String>,
     running: BTreeSet<String>,
@@ -36,6 +37,7 @@ impl Harness {
         Self {
             id,
             progenitor,
+            experiment: None,
             state,
             given: BTreeSet::new(),
             running: BTreeSet::new(),
@@ -51,12 +53,27 @@ impl Harness {
         }
     }
 
+    pub(super) fn singleton_control_group(id: HarnessId, experiment: Experiment) -> Self {
+        Self {
+            experiment: Some(experiment),
+            ..Self::new(id, None, HarnessState::BeingCreated)
+        }
+    }
+
     pub(crate) fn id(&self) -> HarnessId {
         self.id
     }
 
     pub(crate) fn progenitor(&self) -> Option<HarnessId> {
         self.progenitor
+    }
+
+    pub(crate) fn experiment(&self) -> Option<Experiment> {
+        self.experiment
+    }
+
+    pub(crate) fn is_a_singleton_control_group_harness(&self) -> bool {
+        self.experiment.is_some()
     }
 
     pub(crate) fn state(&self) -> HarnessState {
@@ -112,10 +129,12 @@ impl Harness {
         self.completed.contains(task)
     }
 
+    pub(crate) fn has_attempted(&self, task: &str) -> bool {
+        self.given.contains(task) && !self.running.contains(task)
+    }
+
     pub(crate) fn has_attempted_every(&self, tasks: &[String]) -> bool {
-        tasks
-            .iter()
-            .all(|task| self.given.contains(task) && !self.running.contains(task))
+        tasks.iter().all(|task| self.has_attempted(task))
     }
 
     pub(super) fn set_state(&mut self, state: HarnessState) {

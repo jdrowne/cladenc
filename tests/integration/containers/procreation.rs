@@ -7,7 +7,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Launch};
-use cladenc::genealogy::{AttemptResult, ProcreationOutcome};
+use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
@@ -22,7 +22,7 @@ const MODEL: Model<'static> = Model {
 type Procreated = (
     TempDir,
     OutputsDirectory,
-    Result<containers::Procreated, ContainerError>,
+    Result<containers::Creation, ContainerError>,
 );
 
 fn made_at(name: &str) -> (TempDir, OutputsDirectory) {
@@ -39,7 +39,7 @@ fn started_from(
     outputs_directory: &OutputsDirectory,
     progenitor: u64,
     time_limit: u64,
-) -> Result<containers::Procreated, ContainerError> {
+) -> Result<containers::Creation, ContainerError> {
     let launch = Launch {
         image,
         run_command,
@@ -254,8 +254,8 @@ fn a_harness_that_exits_with_0_creates_its_child() {
     let (_directory, _outputs_directory, result) = procreated("exit 0");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Created,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Created,
             ..
         })
     ));
@@ -278,8 +278,8 @@ fn a_harness_that_exits_with_1_fails_its_child() {
     let (_directory, _outputs_directory, result) = procreated("exit 1");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Failed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Failed,
             ..
         })
     ));
@@ -290,8 +290,8 @@ fn a_harness_that_exits_with_another_status_fails_its_child_too() {
     let (_directory, _outputs_directory, result) = procreated("exit 2");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Failed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Failed,
             ..
         })
     ));
@@ -302,8 +302,8 @@ fn a_harness_that_a_signal_ends_fails_its_child() {
     let (_directory, _outputs_directory, result) = procreated("sh -c 'kill -TERM $$'; exit $?");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Failed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Failed,
             ..
         })
     ));
@@ -320,8 +320,8 @@ fn a_harness_that_runs_past_the_time_limit_times_out() {
     let (_directory, _outputs_directory, result) = procreated_by("sleep 300", 0, 1);
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::TimedOut,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::TimedOut,
             ..
         })
     ));
@@ -384,8 +384,8 @@ fn a_child_that_holds_a_named_pipe_is_failed() {
     let (_directory, _outputs_directory, result) = procreated("mkfifo pipe");
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Failed,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Failed,
             ..
         })
     ));
@@ -405,8 +405,8 @@ fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_moun
     let result = started_from(test_inputs::IMAGE, "touch made", &outputs_directory, 0, 30);
     assert!(matches!(
         result,
-        Ok(containers::Procreated {
-            outcome: ProcreationOutcome::Created,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Created,
             ..
         })
     ));

@@ -1,3 +1,4 @@
+mod experiments;
 mod lead;
 
 use std::array;
@@ -5,13 +6,14 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
+use crate::genealogy::{Experiment, Genealogy, Harness, HarnessId, HarnessState};
 use crate::holdout::TaskSet;
 use crate::journal::{self, JournalError, Seconds, Settings};
 
+use experiments::Experiments;
 use lead::Lead;
 
-const COLUMNS: usize = 14;
+const COLUMNS: usize = 15;
 
 const NO_LEAD: &str = "on the corroboration tasks: the best harness is the primogenitor, so \
                        there are no two harnesses to compare";
@@ -19,6 +21,7 @@ const NO_LEAD: &str = "on the corroboration tasks: the best harness is the primo
 const HEADER: [&str; COLUMNS] = [
     "id",
     "progenitor",
+    "experiment",
     "state",
     "selection completed",
     "selection not completed",
@@ -47,6 +50,7 @@ pub struct Report {
     pub other_tasks_completed_by_any: u64,
     pub other_tasks: u64,
     corroboration_lead: Option<Lead>,
+    experiments: Experiments,
     harnesses: Vec<HarnessReport>,
 }
 
@@ -54,6 +58,7 @@ pub struct Report {
 struct HarnessReport {
     id: HarnessId,
     progenitor: Option<HarnessId>,
+    experiment: Option<Experiment>,
     state: HarnessState,
     selection_completed: u64,
     selection_not_completed: u64,
@@ -113,6 +118,7 @@ impl Report {
             other_tasks_completed_by_any,
             other_tasks,
             corroboration_lead,
+            experiments: Experiments::of(genealogy, &settings.tasks_of(TaskSet::Corroboration)),
             harnesses: harnesses
                 .iter()
                 .enumerate()
@@ -155,7 +161,7 @@ impl Report {
         format!(
             "model {} at {}\nstarted {} of {} {procreations}, best harness {}\ncompleted by at \
              least one harness: selection tasks {} of {}, corroboration tasks {} of {}, other \
-             tasks {} of {}\n{lead}\n\n{lines}",
+             tasks {} of {}\n{lead}\n{}\n\n{lines}",
             self.model,
             self.model_url,
             self.procreations_started,
@@ -166,7 +172,8 @@ impl Report {
             self.corroboration_tasks_completed_by_any,
             self.corroboration_tasks,
             self.other_tasks_completed_by_any,
-            self.other_tasks
+            self.other_tasks,
+            self.experiments
         )
     }
 }
@@ -176,6 +183,7 @@ impl HarnessReport {
         Self {
             id: harness.id(),
             progenitor: harness.progenitor(),
+            experiment: harness.experiment(),
             state: harness.state(),
             selection_completed: harness.selection_completed(),
             selection_not_completed: harness.selection_not_completed(),
@@ -200,6 +208,10 @@ impl HarnessReport {
         [
             self.id.to_string(),
             shown(self.progenitor.map(|progenitor| progenitor.to_string())),
+            shown(
+                self.experiment
+                    .map(|experiment| experiment.child.to_string()),
+            ),
             state.to_owned(),
             self.selection_completed.to_string(),
             self.selection_not_completed.to_string(),

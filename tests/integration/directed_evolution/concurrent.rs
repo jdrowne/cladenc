@@ -57,11 +57,15 @@ fn most_running_at_once(records: &[Record]) -> usize {
     let mut most = 0;
     for record in records {
         match record {
-            Record::ProcreationStarted { .. } | Record::AttemptStarted { .. } => {
+            Record::ProcreationStarted { .. }
+            | Record::BaselineStarted { .. }
+            | Record::AttemptStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
-            Record::ProcreationFinished { .. } | Record::AttemptFinished { .. } => running -= 1,
+            Record::ProcreationFinished { .. }
+            | Record::BaselineFinished { .. }
+            | Record::AttemptFinished { .. } => running -= 1,
             Record::Run { .. }
             | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}
@@ -79,8 +83,10 @@ fn most_running_as_a_procreation_starts(records: &[Record]) -> Option<usize> {
                 most = most.max(Some(running));
                 running += 1;
             }
-            Record::AttemptStarted { .. } => running += 1,
-            Record::ProcreationFinished { .. } | Record::AttemptFinished { .. } => running -= 1,
+            Record::BaselineStarted { .. } | Record::AttemptStarted { .. } => running += 1,
+            Record::ProcreationFinished { .. }
+            | Record::BaselineFinished { .. }
+            | Record::AttemptFinished { .. } => running -= 1,
             Record::Run { .. }
             | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}

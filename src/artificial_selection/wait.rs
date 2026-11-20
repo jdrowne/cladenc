@@ -5,17 +5,17 @@ use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
 #[derive(Clone, Copy, Default)]
 struct CreatedNoChild {
     in_a_row: u32,
-    last: HarnessId,
+    last: u64,
 }
 
 impl CreatedNoChild {
-    fn followed_by(self, child: &Harness) -> Self {
+    fn followed_by(self, child: &Harness, procreation: u64) -> Self {
         match child.state() {
             HarnessState::BeingCreated => self,
             HarnessState::Created => Self::default(),
             HarnessState::Failed => Self {
                 in_a_row: self.in_a_row + 1,
-                last: child.id(),
+                last: procreation,
             },
         }
     }
@@ -36,14 +36,16 @@ pub(super) struct Waits {
 impl Waits {
     pub(super) fn of(genealogy: &Genealogy) -> Self {
         let mut created_no_child: BTreeMap<HarnessId, CreatedNoChild> = BTreeMap::new();
-        for child in genealogy.harnesses() {
-            if let Some(progenitor) = child.progenitor() {
-                let so_far = created_no_child.entry(progenitor).or_default();
-                *so_far = so_far.followed_by(child);
-            }
+        let procreations = genealogy
+            .harnesses()
+            .iter()
+            .filter_map(|child| child.progenitor().map(|progenitor| (progenitor, child)));
+        for (procreation, (progenitor, child)) in (1..).zip(procreations) {
+            let so_far = created_no_child.entry(progenitor).or_default();
+            *so_far = so_far.followed_by(child, procreation);
         }
         Self {
-            next_procreation: genealogy.harness_count(),
+            next_procreation: genealogy.procreations_started() + 1,
             last_procreation_waited_out: created_no_child
                 .into_iter()
                 .map(|(progenitor, count)| (progenitor, count.last_procreation_waited_out()))

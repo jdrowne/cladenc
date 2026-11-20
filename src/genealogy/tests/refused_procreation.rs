@@ -1,4 +1,4 @@
-use crate::genealogy::{Genealogy, GenealogyError, ProcreationOutcome};
+use crate::genealogy::{CreationOutcome, Genealogy, GenealogyError};
 
 fn with_a_child_being_created() -> Genealogy {
     let mut genealogy = Genealogy::new();
@@ -9,7 +9,7 @@ fn with_a_child_being_created() -> Genealogy {
 fn with_a_failed_child() -> Genealogy {
     let mut genealogy = with_a_child_being_created();
     genealogy
-        .end_procreation(1, ProcreationOutcome::Failed)
+        .end_procreation(1, CreationOutcome::Failed)
         .unwrap();
     genealogy
 }
@@ -62,7 +62,7 @@ fn a_refused_procreation_of_a_failed_harness_changes_nothing() {
 #[test]
 fn the_end_of_a_procreation_whose_child_is_not_in_the_genealogy_is_refused() {
     assert_eq!(
-        Genealogy::new().end_procreation(7, ProcreationOutcome::Created),
+        Genealogy::new().end_procreation(7, CreationOutcome::Created),
         Err(GenealogyError::ChildNotBeingCreated { child: 7 })
     );
 }
@@ -70,14 +70,14 @@ fn the_end_of_a_procreation_whose_child_is_not_in_the_genealogy_is_refused() {
 #[test]
 fn a_refused_end_of_a_procreation_of_a_missing_child_changes_nothing() {
     let mut genealogy = Genealogy::new();
-    let _ = genealogy.end_procreation(7, ProcreationOutcome::Created);
+    let _ = genealogy.end_procreation(7, CreationOutcome::Created);
     assert_eq!(genealogy, Genealogy::new());
 }
 
 #[test]
 fn the_end_of_a_procreation_of_the_primogenitor_is_refused() {
     assert_eq!(
-        Genealogy::new().end_procreation(0, ProcreationOutcome::Failed),
+        Genealogy::new().end_procreation(0, CreationOutcome::Failed),
         Err(GenealogyError::ChildNotBeingCreated { child: 0 })
     );
 }
@@ -85,14 +85,14 @@ fn the_end_of_a_procreation_of_the_primogenitor_is_refused() {
 #[test]
 fn a_refused_end_of_a_procreation_of_the_primogenitor_changes_nothing() {
     let mut genealogy = Genealogy::new();
-    let _ = genealogy.end_procreation(0, ProcreationOutcome::Failed);
+    let _ = genealogy.end_procreation(0, CreationOutcome::Failed);
     assert_eq!(genealogy, Genealogy::new());
 }
 
 #[test]
 fn a_second_end_of_a_procreation_is_refused() {
     assert_eq!(
-        with_a_failed_child().end_procreation(1, ProcreationOutcome::Created),
+        with_a_failed_child().end_procreation(1, CreationOutcome::Created),
         Err(GenealogyError::ChildNotBeingCreated { child: 1 })
     );
 }
@@ -100,6 +100,6 @@ fn a_second_end_of_a_procreation_is_refused() {
 #[test]
 fn a_refused_second_end_of_a_procreation_changes_nothing() {
     let mut genealogy = with_a_failed_child();
-    let _ = genealogy.end_procreation(1, ProcreationOutcome::Created);
+    let _ = genealogy.end_procreation(1, CreationOutcome::Created);
     assert_eq!(genealogy, with_a_failed_child());
 }

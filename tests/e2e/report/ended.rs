@@ -64,13 +64,20 @@ fn object_of(directory: &Path) -> Value {
 fn up_to_the_seconds(table: &str) -> String {
     let seconds = table
         .lines()
-        .nth(5)
+        .nth(7)
         .and_then(|header| header.find("attempt seconds"))
         .unwrap();
-    table
+    let above: String = table
         .lines()
+        .take(7)
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let rows: String = table
+        .lines()
+        .skip(7)
         .map(|line| format!("{}\n", line.get(..seconds).unwrap_or(line).trim_end()))
-        .collect()
+        .collect();
+    above + &rows
 }
 
 fn without_the_seconds(mut object: Value) -> Value {
@@ -91,10 +98,12 @@ fn report_prints_the_table() {
          started 1 of 1 procreation, best harness 1\n\
          completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, other tasks 1 of 1\n\
          on the corroboration tasks: only the best harness completed 1, only the primogenitor completed 0, and luck alone gives a lead at least as large with likelihood 0.500\n\
+         experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
+         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
          \n\
-         id  progenitor  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
-         0   -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
-         1   0           created  1                    0                        1                        0                            1                0                    1                0                    1.000\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
+         0   -           -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
+         1   0           -           created  1                    0                        1                        0                            1                0                    1                0                    1.000\n"
     );
 }
 
@@ -108,13 +117,18 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
         r#""other_tasks_completed_by_any":1,"other_tasks":1,"#,
         r#""corroboration_lead":{"only_best_harness_completed":1,"#,
-        r#""only_primogenitor_completed":0,"likelihood_by_luck":0.5},"harnesses":["#,
-        r#"{"id":0,"progenitor":null,"state":"created","#,
+        r#""only_primogenitor_completed":0,"likelihood_by_luck":0.5},"#,
+        r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
+        r#""singleton_control_group_harness_created":0,"both_created":0,"#,
+        r#""only_progenitors_child_completed":0,"#,
+        r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":1.0},"#,
+        r#""harnesses":["#,
+        r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
         r#""selection_completed":0,"selection_not_completed":1,"#,
         r#""corroboration_completed":0,"corroboration_not_completed":1,"#,
         r#""other_completed":0,"other_not_completed":1,"#,
         r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5},"#,
-        r#"{"id":1,"progenitor":0,"state":"created","#,
+        r#"{"id":1,"progenitor":0,"experiment":null,"state":"created","#,
         r#""selection_completed":1,"selection_not_completed":0,"#,
         r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
         r#""other_completed":1,"other_not_completed":0,"#,
@@ -130,7 +144,7 @@ fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procre
     assert!(
         table_of(directory.path())
             .lines()
-            .nth(5)
+            .nth(7)
             .unwrap()
             .ends_with("  attempt seconds  procreation seconds")
     );
