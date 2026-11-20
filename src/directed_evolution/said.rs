@@ -206,7 +206,7 @@ impl Display for Said<'_> {
                     harness: *child,
                     printer: "the harness",
                     printed: outputs_directory.procreation(*child),
-                    outputs_directory: *outputs_directory,
+                    outputs_directory,
                 };
                 write!(
                     formatter,
@@ -229,7 +229,7 @@ impl Display for Said<'_> {
                     harness: *harness,
                     printer: "the primogenitor",
                     printed: outputs_directory.baseline(*harness),
-                    outputs_directory: *outputs_directory,
+                    outputs_directory,
                 };
                 write!(formatter, "{baseline} {}", kept.after(*outcome))
             }
