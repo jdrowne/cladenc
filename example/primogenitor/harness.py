@@ -1,11 +1,3 @@
-"""A small agentic coding harness.
-
-It is given an instruction in CLADENC_INSTRUCTION and a directory to change,
-the current directory. It asks the model at CLADENC_MODEL_URL what to do, one
-tool call at a time, until the model answers without calling a tool or the
-turns run out.
-"""
-
 import json
 import os
 import subprocess
