@@ -1,10 +1,12 @@
 mod best;
+mod wait;
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Beta, Distribution};
 
 use crate::genealogy::{Genealogy, Harness, HarnessId, HarnessState};
+use wait::Waits;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum Action {
@@ -42,28 +44,42 @@ impl ArtificialSelection {
         }
         let mut generator = ChaCha8Rng::seed_from_u64(self.seed);
         generator.set_stream(action);
-        let benchmarked_in_full = genealogy
-            .created_harnesses()
-            .into_iter()
-            .filter(|harness| harness.has_attempted_every(&self.tasks));
         largest_draw(
             &mut generator,
             focus(self.max_procreations, procreations),
-            benchmarked_in_full,
+            self.harnesses_to_choose_among(genealogy).into_iter(),
         )
         .map(Harness::id)
     }
 
+    fn harnesses_to_choose_among<'a>(&self, genealogy: &'a Genealogy) -> Vec<&'a Harness> {
+        let waits = Waits::of(genealogy);
+        let (waiting, not_waiting): (Vec<&Harness>, Vec<&Harness>) = genealogy
+            .created_harnesses()
+            .into_iter()
+            .filter(|harness| harness.has_attempted_every(&self.tasks))
+            .partition(|harness| waits.has_one_for(harness));
+        if not_waiting.is_empty() && self.no_other_work_is_left(genealogy) {
+            waits.ending_first(&waiting)
+        } else {
+            not_waiting
+        }
+    }
+
     fn a_procreation_is_due(&self, genealogy: &Genealogy) -> bool {
         procreation_is_due(genealogy.harness_count(), genealogy.started(), self.growth)
-            || genealogy
-                .harnesses()
-                .iter()
-                .all(|harness| match harness.state() {
-                    HarnessState::BeingCreated => false,
-                    HarnessState::Created => harness.has_attempted_every(&self.tasks),
-                    HarnessState::Failed => true,
-                })
+            || self.no_other_work_is_left(genealogy)
+    }
+
+    fn no_other_work_is_left(&self, genealogy: &Genealogy) -> bool {
+        genealogy
+            .harnesses()
+            .iter()
+            .all(|harness| match harness.state() {
+                HarnessState::BeingCreated => false,
+                HarnessState::Created => harness.has_attempted_every(&self.tasks),
+                HarnessState::Failed => true,
+            })
     }
 
     fn attempt(&self, genealogy: &Genealogy) -> Option<Action> {

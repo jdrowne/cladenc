@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: ef2131eb-746a-4fc0-939f-1dbeaa241ced
-  modified: 2026-11-19T04:04:34.266Z
+  modified: 2026-11-20T00:12:06.515Z
 ---
 
 # An explanation says what happens
@@ -17,6 +17,7 @@ An explanation written for the user says who does what, with a plain verb and ev
 - Name what the sentence is really about. A harness that improves itself with nothing to read makes a change that is a guess; the sentence is about its change, not about its child.
 - Name each thing again, every time. No this, that, these or those points back at something said before, alone or before a noun: the score of the best harness on the holdout tasks, not that score; the holdout tasks, not those tasks or them. The grader of task A says whether the primogenitor completed task A, not each task's grader says whether it completed that task.
 - Call a thing what it is, in the words the project has: the non-holdout tasks and the holdout tasks, not group A and group B. No letter and no made-up label stands for a thing.
+- Say the literal thing. No figure of speech stands for what happens: the counts of the clade of the progenitor do not change and `cladenc` chooses the progenitor as often as before, not the progenitor escapes; `cladenc` adds tasks not completed to the clade, not `cladenc` closes the gap. A word used outside its plain meaning is not understood. That one such word was not understood is the user's; holding every figure of speech to it is mine.
 - Say what `cladenc` does in the place of the shorthand of the issues, or define the shorthand first. A progenitor reads about a task: `cladenc` gives the harness that procreates files about the work on that task. `cladenc` chooses by a task: `cladenc` looks at how the harnesses did on that task when it decides which harness procreates and which is the best. The non-holdout tasks: the tasks that are not held out.
 
 Two of these are the user's rules. Demonstrative pronouns are left out: an explanation with many of them cannot be followed. And a thing is called what it is: a label such as group A is an abstraction the user does not follow. Mine, not the user's: holding it, its and them to the rule on pronouns, and the bullet on shorthand.

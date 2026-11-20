@@ -1,6 +1,7 @@
 mod attempt;
 mod best;
 mod due;
+mod every_harness_waits;
 mod focus;
 mod growth;
 mod holdout;
@@ -8,3 +9,4 @@ mod no_action;
 mod procreation;
 mod repeatable;
 mod to_the_end;
+mod wait;

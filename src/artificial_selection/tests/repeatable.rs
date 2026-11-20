@@ -36,6 +36,31 @@ fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
     genealogy
 }
 
+fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
+    for progenitor in [0, 0] {
+        let child = genealogy.start_procreation(progenitor).unwrap();
+        genealogy
+            .end_procreation(child, ProcreationOutcome::Created)
+            .unwrap();
+    }
+    for harness in [0, 1, 2] {
+        genealogy.start_attempt(harness, "task-0").unwrap();
+        genealogy
+            .end_attempt(harness, "task-0", AttemptResult::Completed)
+            .unwrap();
+        genealogy.start_attempt(harness, "task-1").unwrap();
+        genealogy
+            .end_attempt(harness, "task-1", AttemptResult::NotCompleted)
+            .unwrap();
+    }
+    let child = genealogy.start_procreation(1).unwrap();
+    genealogy
+        .end_procreation(child, ProcreationOutcome::Failed)
+        .unwrap();
+    genealogy
+}
+
 fn generator(seed: u64, action: u64) -> ChaCha8Rng {
     let mut generator = ChaCha8Rng::seed_from_u64(seed);
     generator.set_stream(action);
@@ -52,6 +77,18 @@ fn progenitor_drawn(seed: u64, action: u64) -> HarnessId {
         .unwrap()
         .sample(&mut generator);
     u64::from(child > primogenitor)
+}
+
+fn progenitor_drawn_with_the_second_harness_waiting(seed: u64, action: u64) -> HarnessId {
+    let mut generator = generator(seed, action);
+    let focus = 4.0;
+    let primogenitor: f64 = Beta::new(focus * 4.0, focus * 4.0)
+        .unwrap()
+        .sample(&mut generator);
+    let third: f64 = Beta::new(focus * 2.0, focus * 2.0)
+        .unwrap()
+        .sample(&mut generator);
+    2 * u64::from(third > primogenitor)
 }
 
 #[test]
@@ -103,6 +140,22 @@ fn the_draws_are_sharpened_by_the_most_procreations_over_those_not_yet_started()
         .map(|seed| {
             Some(Action::Procreation {
                 progenitor: progenitor_drawn(seed, 5),
+            })
+        })
+        .collect();
+    assert_eq!(drawn, expected);
+}
+
+#[test]
+fn a_harness_that_waits_takes_no_draw() {
+    let genealogy = with_the_second_of_three_harnesses_waiting();
+    let drawn: Vec<Option<Action>> = (0..20)
+        .map(|action| artificial_selection(7).next_action(&genealogy, action))
+        .collect();
+    let expected: Vec<Option<Action>> = (0..20)
+        .map(|action| {
+            Some(Action::Procreation {
+                progenitor: progenitor_drawn_with_the_second_harness_waiting(7, action),
             })
         })
         .collect();
