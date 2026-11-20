@@ -15,8 +15,8 @@ use test_inputs::Image;
 const SOLVES_EVERY_TASK: &str =
     "RUN for task in t1 t2 t3; do echo \"$task\"; done > /solved-by-the-image\n";
 const FAILS: &str = "RUN exit 3\n";
-const WAITS_FOURTEEN_SECONDS: &str = "RUN sleep 14\n";
-const UNTIL_THE_STEP_WOULD_HAVE_ENDED: Duration = Duration::from_secs(20);
+const WAITS_THIRTY_SECONDS: &str = "RUN sleep 30\n";
+const UNTIL_THE_STEP_WOULD_HAVE_ENDED: Duration = Duration::from_secs(36);
 
 struct Killed {
     _directory: TempDir,
@@ -176,7 +176,7 @@ fn arguments_of_a_timeout_that_records_them() -> Vec<String> {
 
 fn killed_outright_while_it_builds() -> Killed {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = start_within(directory.path(), WAITS_FOURTEEN_SECONDS, "3")
+    let mut cladenc = start_within(directory.path(), WAITS_THIRTY_SECONDS, "12")
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
