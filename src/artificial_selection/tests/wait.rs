@@ -14,7 +14,6 @@ fn tasks() -> Vec<String> {
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
         max_procreations: 1000,
-        growth: 1.0,
         tasks: tasks(),
         seed,
     }
@@ -60,6 +59,10 @@ fn progenitors(genealogy: &Genealogy) -> Vec<HarnessId> {
         )
         .collect();
     chosen.into_iter().collect()
+}
+
+fn is_left_out(genealogy: &Genealogy) -> bool {
+    Waits::of(genealogy).has_one_for(&genealogy.harnesses()[1])
 }
 
 fn procreations_of_a_harness_that_never_creates_a_child() -> Vec<u64> {
@@ -108,113 +111,100 @@ fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_left_its_c
 
 #[test]
 fn a_harness_can_be_the_progenitor_again_one_procreation_after_its_first_that_created_no_child() {
-    assert_eq!(progenitors(&after(&[(1, FAILED), (0, CREATED)])), [0, 1]);
+    assert!(!is_left_out(&after(&[(1, FAILED), (0, CREATED)])));
 }
 
 #[test]
 fn a_harness_is_left_out_of_the_first_procreation_after_its_second_in_a_row_that_created_no_child()
 {
-    assert_eq!(
-        progenitors(&after(&[(1, FAILED), (0, CREATED), (1, FAILED)])),
-        [0]
-    );
+    assert!(is_left_out(&after(&[
+        (1, FAILED),
+        (0, CREATED),
+        (1, FAILED)
+    ])));
 }
 
 #[test]
 fn a_harness_is_left_out_of_the_second_procreation_after_its_second_in_a_row_that_created_no_child()
 {
-    assert_eq!(
-        progenitors(&after(&[
-            (1, FAILED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED)
-        ])),
-        [0]
-    );
+    assert!(is_left_out(&after(&[
+        (1, FAILED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED)
+    ])));
 }
 
 #[test]
 fn a_harness_can_be_the_progenitor_again_two_procreations_after_its_second_in_a_row_that_created_no_child()
  {
-    assert_eq!(
-        progenitors(&after(&[
-            (1, FAILED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED),
-            (0, CREATED)
-        ])),
-        [0, 1]
-    );
+    assert!(!is_left_out(&after(&[
+        (1, FAILED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED),
+        (0, CREATED)
+    ])));
 }
 
 #[test]
 fn a_harness_is_left_out_of_the_fourth_procreation_after_its_third_in_a_row_that_created_no_child()
 {
-    assert_eq!(
-        progenitors(&after(&[
-            (1, FAILED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED),
-            (0, CREATED),
-            (0, CREATED)
-        ])),
-        [0]
-    );
+    assert!(is_left_out(&after(&[
+        (1, FAILED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED),
+        (0, CREATED),
+        (0, CREATED)
+    ])));
 }
 
 #[test]
 fn a_harness_can_be_the_progenitor_again_four_procreations_after_its_third_in_a_row_that_created_no_child()
  {
-    assert_eq!(
-        progenitors(&after(&[
-            (1, FAILED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED),
-            (0, CREATED),
-            (1, FAILED),
-            (0, CREATED),
-            (0, CREATED),
-            (0, CREATED),
-            (0, CREATED)
-        ])),
-        [0, 1]
-    );
+    assert!(!is_left_out(&after(&[
+        (1, FAILED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED),
+        (0, CREATED),
+        (1, FAILED),
+        (0, CREATED),
+        (0, CREATED),
+        (0, CREATED),
+        (0, CREATED)
+    ])));
 }
 
 #[test]
 fn a_procreation_that_created_a_child_ends_the_wait_of_its_progenitor() {
-    assert_eq!(
-        progenitors(&after(&[(1, FAILED), (1, FAILED), (1, CREATED)])),
-        [0, 1]
-    );
+    assert!(!is_left_out(&after(&[
+        (1, FAILED),
+        (1, FAILED),
+        (1, CREATED)
+    ])));
 }
 
 #[test]
 fn a_procreation_that_creates_no_child_after_one_that_created_a_child_is_counted_as_the_first() {
-    assert_eq!(
-        progenitors(&after(&[
-            (1, FAILED),
-            (1, FAILED),
-            (1, CREATED),
-            (1, FAILED),
-            (0, CREATED)
-        ])),
-        [0, 1]
-    );
+    assert!(!is_left_out(&after(&[
+        (1, FAILED),
+        (1, FAILED),
+        (1, CREATED),
+        (1, FAILED),
+        (0, CREATED)
+    ])));
 }
 
 #[test]
 fn a_procreation_that_is_still_running_does_not_lengthen_the_wait_of_its_progenitor() {
     let mut genealogy = after(&[(1, FAILED), (0, CREATED)]);
     genealogy.start_procreation(1).unwrap();
-    assert_eq!(progenitors(&genealogy), [0, 1]);
+    assert!(!is_left_out(&genealogy));
 }
 
 #[test]
@@ -223,7 +213,14 @@ fn a_procreation_that_is_still_running_does_not_end_the_wait_of_its_progenitor()
     genealogy.start_procreation(1).unwrap();
     child_of(&mut genealogy, 1, FAILED);
     child_of(&mut genealogy, 0, CREATED);
-    assert_eq!(progenitors(&genealogy), [0]);
+    assert!(is_left_out(&genealogy));
+}
+
+#[test]
+fn a_harness_that_waits_can_be_the_progenitor_again_once_its_wait_is_over_and_no_attempt_is_left() {
+    let mut genealogy = after(&[(1, FAILED), (0, CREATED)]);
+    benchmark_in_full(&mut genealogy, 3);
+    assert!(progenitors(&genealogy).contains(&1));
 }
 
 #[test]

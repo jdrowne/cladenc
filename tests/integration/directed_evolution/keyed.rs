@@ -27,7 +27,6 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: "printf %s \"$CLADENC_MODEL_KEY\" > key-given".to_owned(),
         max_procreations: 1,
-        genealogy_growth: 0.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

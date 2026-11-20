@@ -25,7 +25,6 @@ fn options(directory: &Path) -> StartOptions {
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.join("outputs"),
         max_procreations: 800,
-        genealogy_growth: 0.6,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,

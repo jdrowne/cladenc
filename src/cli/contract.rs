@@ -135,10 +135,8 @@ cladenc enforces none of it.
 
 A harness procreates only once it has been benchmarked in full: it has
 attempted every task of every benchmark of the directed evolution, so that
-it finds every task that is not held out in /var/log/cladenc/attempts.
-Where a procreation is due and no harness has been benchmarked in full
-yet, an attempt is started in its place: the primogenitor is benchmarked
-in full before the first procreation.
+it finds every task that is not held out in /var/log/cladenc/attempts. The
+primogenitor is benchmarked in full before the first procreation.
 
 Every harness is benchmarked in full once it is created, whether it
 procreates or not. cladenc chooses which harness procreates, partly by
@@ -153,10 +151,15 @@ full. With one benchmark of 5 tasks and --max-procreations 1, the
 primogenitor is benchmarked on the 5 tasks and procreates, and its child is
 benchmarked on the 5 tasks where the procreation created it.
 
---genealogy-growth says how soon a procreation is due, and never how many
-are started: where it lets none start and nothing else is left to start,
-a procreation is started all the same. At 0, each child is benchmarked in
-full before the next procreation starts.
+A procreation starts only once no attempt is left to start, no attempt is
+running and no other procreation is under way: every harness created so far
+has been benchmarked in full, the child of the procreation before among
+them. So cladenc chooses each harness that procreates with what every
+created harness completed in hand. A singleton control group harness is not
+waited for, since it never procreates: its creation and its attempts go on
+beside a procreation. While a procreation runs, no container of another
+child is started, so fewer containers run than --max-concurrent-containers
+allows.
 
 How the harness ends decides what is recorded:
 

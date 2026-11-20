@@ -126,12 +126,11 @@ fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_i
 }
 
 #[test]
-fn the_long_help_of_start_says_that_an_attempt_takes_the_place_of_a_procreation() {
-    assert!(long_help_of_start().contains(
-        "Where a procreation is due and no harness has been benchmarked in full\nyet, an \
-         attempt is started in its place: the primogenitor is benchmarked\nin full before the \
-         first procreation."
-    ));
+fn the_long_help_of_start_says_that_the_primogenitor_is_benchmarked_before_the_first_procreation() {
+    assert!(
+        long_help_of_start()
+            .contains("The\nprimogenitor is benchmarked in full before the first procreation.")
+    );
 }
 
 #[test]
@@ -166,11 +165,41 @@ fn the_long_help_of_start_says_when_a_directed_evolution_ends() {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_growth_never_keeps_a_procreation_from_starting() {
+fn the_long_help_of_start_says_when_a_procreation_starts() {
     assert!(long_help_of_start().contains(
-        "where it lets none start and nothing else is left to start,\na procreation is started \
-         all the same."
+        "A procreation starts only once no attempt is left to start, no attempt is\nrunning and \
+         no other procreation is under way: every harness created so far\nhas been benchmarked \
+         in full, the child of the procreation before among\nthem."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_each_harness_that_procreates_is_chosen_with() {
+    assert!(long_help_of_start().contains(
+        "So cladenc chooses each harness that procreates with what every\ncreated harness \
+         completed in hand."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_singleton_control_group_harness_is_not_waited_for() {
+    assert!(long_help_of_start().contains(
+        "A singleton control group harness is not\nwaited for, since it never procreates: its \
+         creation and its attempts go on\nbeside a procreation."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_fewer_containers_run_while_a_procreation_runs() {
+    assert!(long_help_of_start().contains(
+        "While a procreation runs, no container of another\nchild is started, so fewer \
+         containers run than --max-concurrent-containers\nallows."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_no_growth() {
+    assert!(!long_help_of_start().contains("growth"));
 }
 
 #[test]

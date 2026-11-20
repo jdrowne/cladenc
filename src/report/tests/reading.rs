@@ -26,7 +26,6 @@ fn settings() -> Settings {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         max_procreations: 800,
-        genealogy_growth: 0.6,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,

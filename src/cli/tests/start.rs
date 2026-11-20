@@ -27,7 +27,6 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.path().join("outputs"),
         max_procreations: 1,
-        genealogy_growth: 0.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

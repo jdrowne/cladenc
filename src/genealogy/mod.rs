@@ -107,10 +107,6 @@ impl Genealogy {
         self.started
     }
 
-    pub(crate) fn started_by_singleton_control_group_harnesses(&self) -> u64 {
-        self.started_by_singleton_control_group_harnesses
-    }
-
     pub(crate) fn procreations_started(&self) -> u64 {
         self.harnesses
             .iter()

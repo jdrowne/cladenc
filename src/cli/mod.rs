@@ -97,13 +97,6 @@ pub struct StartOptions {
     dockerfile: Option<PathBuf>,
     #[arg(
         long,
-        value_name = "NUMBER",
-        value_parser = checks::genealogy_growth,
-        help = "How fast the genealogy may grow, from 0 to 1"
-    )]
-    genealogy_growth: f64,
-    #[arg(
-        long,
         value_name = "COMMAND",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The shell command that builds a harness in a container, where one has to be built"

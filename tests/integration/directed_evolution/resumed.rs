@@ -35,7 +35,6 @@ fn settings(directory: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.to_owned(),
         max_procreations: 2,
-        genealogy_growth: 0.6,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
@@ -178,7 +177,10 @@ fn lines_of(written: Vec<u8>) -> Vec<String> {
 
 fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<String>) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path());
+    let settings = Settings {
+        max_procreations: 1,
+        ..settings(directory.path())
+    };
     let stop = AtomicBool::new(false);
     let outputs_directory = directory.path().join("outputs");
     let mut stopped = Vec::new();
@@ -236,7 +238,7 @@ fn a_resumed_directed_evolution_says_last_that_it_finished() {
         resumed
             .last()
             .unwrap()
-            .starts_with("cladenc: the directed evolution finished with 15 attempts started and ")
+            .starts_with("cladenc: the directed evolution finished with 10 attempts started and ")
     );
 }
 

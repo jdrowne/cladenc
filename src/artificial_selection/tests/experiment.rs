@@ -9,10 +9,9 @@ fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
 }
 
-fn artificial_selection(max_procreations: u64, growth: f64) -> ArtificialSelection {
+fn artificial_selection(max_procreations: u64) -> ArtificialSelection {
     ArtificialSelection {
         max_procreations,
-        growth,
         tasks: tasks(),
         seed: 7,
     }
@@ -93,7 +92,7 @@ fn a_singleton_control_group_harness_with_a_task_left_is_given_it_as_a_child_is(
         benchmark_in_full(&mut genealogy, harness, AttemptResult::NotCompleted);
     }
     assert_eq!(
-        artificial_selection(2, 1.0).next_action(&genealogy, 0),
+        artificial_selection(2).next_action(&genealogy, 0),
         Some(Action::Attempt {
             harness: 3,
             task: "task-0".to_owned()
@@ -115,7 +114,7 @@ fn a_singleton_control_group_harness_is_not_chosen_to_procreate_though_it_alone_
     }
     benchmark_in_full(&mut genealogy, 3, AttemptResult::Completed);
     assert_eq!(
-        artificial_selection(1000, 1.0).next_action(&genealogy, 0),
+        artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Attempt {
             harness: 0,
             task: "task-1".to_owned()
@@ -127,7 +126,7 @@ fn a_singleton_control_group_harness_is_not_chosen_to_procreate_though_it_alone_
 fn a_singleton_control_group_harness_is_not_named_the_best_harness_though_it_completed_the_most() {
     let genealogy =
         with_every_harness_benchmarked_in_full_and_the_singleton_control_group_harness_ahead();
-    assert_eq!(artificial_selection(1000, 1.0).best_harness(&genealogy), 0);
+    assert_eq!(artificial_selection(1000).best_harness(&genealogy), 0);
 }
 
 #[test]
@@ -136,7 +135,7 @@ fn the_attempts_of_a_singleton_control_group_harness_make_no_procreation_due() {
     benchmark_in_full(&mut genealogy, 0, AttemptResult::NotCompleted);
     benchmark_in_full(&mut genealogy, 3, AttemptResult::NotCompleted);
     assert_eq!(
-        artificial_selection(1000, 1.0).next_action(&genealogy, 0),
+        artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Attempt {
             harness: 1,
             task: "task-0".to_owned()
@@ -147,12 +146,14 @@ fn the_attempts_of_a_singleton_control_group_harness_make_no_procreation_due() {
 #[test]
 fn a_singleton_control_group_harness_is_not_one_of_the_harnesses_a_procreation_waits_for() {
     let mut genealogy = after_an_experiment();
-    benchmark_in_full(&mut genealogy, 0, AttemptResult::NotCompleted);
-    attempt(&mut genealogy, 1, "task-0", AttemptResult::NotCompleted);
-    assert_eq!(
-        artificial_selection(1000, 1.0).next_action(&genealogy, 0),
-        Some(Action::Procreation { progenitor: 0 })
-    );
+    for harness in [0, 1, 2] {
+        benchmark_in_full(&mut genealogy, harness, AttemptResult::NotCompleted);
+    }
+    attempt(&mut genealogy, 3, "task-0", AttemptResult::NotCompleted);
+    assert!(matches!(
+        artificial_selection(1000).next_action(&genealogy, 0),
+        Some(Action::Procreation { .. })
+    ));
 }
 
 #[test]
@@ -170,7 +171,7 @@ fn a_procreation_is_due_while_a_singleton_control_group_harness_is_still_being_c
         benchmark_in_full(&mut genealogy, harness, AttemptResult::NotCompleted);
     }
     assert!(matches!(
-        artificial_selection(1000, 0.0).next_action(&genealogy, 0),
+        artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Procreation { .. })
     ));
 }

@@ -24,7 +24,6 @@ fn start(directory: &Path, image: &str) -> Command {
         ("--harness-run-command", "exit 0".into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
-        ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),

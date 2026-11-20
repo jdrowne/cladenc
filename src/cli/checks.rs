@@ -60,21 +60,12 @@ impl StartOptions {
             holdout_corroboration_percentage: self.holdout_corroboration_percentage,
             corroboration_tasks,
             max_procreations: self.max_procreations,
-            genealogy_growth: self.genealogy_growth,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             attempt_timeout: self.attempt_timeout,
             seed,
         })
     }
-}
-
-pub(super) fn genealogy_growth(given: &str) -> Result<f64, String> {
-    given
-        .parse()
-        .ok()
-        .filter(|growth| (0.0..=1.0).contains(growth))
-        .ok_or_else(|| "a number from 0 to 1 is expected".to_owned())
 }
 
 pub(super) fn percentage(given: &str) -> Result<f64, String> {

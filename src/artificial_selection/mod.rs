@@ -14,20 +14,15 @@ pub(crate) enum Action {
     Attempt { harness: HarnessId, task: String },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ArtificialSelection {
     pub(crate) max_procreations: u64,
-    pub(crate) growth: f64,
     pub(crate) tasks: Vec<String>,
     pub(crate) seed: u64,
 }
 
 fn focus(max_procreations: u64, started: u64) -> f64 {
     max_procreations as f64 / (max_procreations as f64 - started as f64)
-}
-
-fn procreation_is_due(harness_count: u64, started: u64, growth: f64) -> bool {
-    harness_count as f64 <= (started as f64).powf(growth)
 }
 
 impl ArtificialSelection {
@@ -39,7 +34,7 @@ impl ArtificialSelection {
 
     fn progenitor(&self, genealogy: &Genealogy, action: u64) -> Option<HarnessId> {
         let procreations = genealogy.procreations_started();
-        if procreations >= self.max_procreations || !self.a_procreation_is_due(genealogy) {
+        if procreations >= self.max_procreations || !self.no_other_work_is_left(genealogy) {
             return None;
         }
         let mut generator = ChaCha8Rng::seed_from_u64(self.seed);
@@ -47,31 +42,9 @@ impl ArtificialSelection {
         largest_draw(
             &mut generator,
             focus(self.max_procreations, procreations),
-            self.harnesses_to_choose_among(genealogy).into_iter(),
+            harnesses_to_choose_among(genealogy).into_iter(),
         )
         .map(Harness::id)
-    }
-
-    fn harnesses_to_choose_among<'a>(&self, genealogy: &'a Genealogy) -> Vec<&'a Harness> {
-        let waits = Waits::of(genealogy);
-        let (waiting, not_waiting): (Vec<&Harness>, Vec<&Harness>) = genealogy
-            .created_harnesses()
-            .into_iter()
-            .filter(|harness| !harness.is_a_singleton_control_group_harness())
-            .filter(|harness| harness.has_attempted_every(&self.tasks))
-            .partition(|harness| waits.has_one_for(harness));
-        if not_waiting.is_empty() && self.no_other_work_is_left(genealogy) {
-            waits.ending_first(&waiting)
-        } else {
-            not_waiting
-        }
-    }
-
-    fn a_procreation_is_due(&self, genealogy: &Genealogy) -> bool {
-        let started =
-            genealogy.started() - genealogy.started_by_singleton_control_group_harnesses();
-        procreation_is_due(genealogy.procreations_started() + 1, started, self.growth)
-            || self.no_other_work_is_left(genealogy)
     }
 
     fn no_other_work_is_left(&self, genealogy: &Genealogy) -> bool {
@@ -99,6 +72,20 @@ impl ArtificialSelection {
                         task: (*task).to_owned(),
                     })
             })
+    }
+}
+
+fn harnesses_to_choose_among(genealogy: &Genealogy) -> Vec<&Harness> {
+    let waits = Waits::of(genealogy);
+    let (waiting, not_waiting): (Vec<&Harness>, Vec<&Harness>) = genealogy
+        .created_harnesses()
+        .into_iter()
+        .filter(|harness| !harness.is_a_singleton_control_group_harness())
+        .partition(|harness| waits.has_one_for(harness));
+    if not_waiting.is_empty() {
+        waits.ending_first(&waiting)
+    } else {
+        not_waiting
     }
 }
 

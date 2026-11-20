@@ -8,7 +8,6 @@ fn tasks() -> Vec<String> {
 fn best(genealogy: &Genealogy) -> HarnessId {
     let artificial_selection = ArtificialSelection {
         max_procreations: 100,
-        growth: 0.6,
         tasks: tasks(),
         seed: 0,
     };

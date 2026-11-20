@@ -30,7 +30,6 @@ fn settings(directory: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         max_procreations: 1,
-        genealogy_growth: 0.6,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
@@ -49,7 +48,6 @@ const FAIL_TO_PROCREATE: &str = "[ ! -d /var/log/cladenc/attempts ]";
 
 fn over_one_task(settings: &mut Settings) {
     settings.benchmarks[0].tasks = vec!["t1".to_owned()];
-    settings.genealogy_growth = 0.0;
 }
 
 fn over_two_benchmarks(settings: &mut Settings) {
@@ -58,7 +56,6 @@ fn over_two_benchmarks(settings: &mut Settings) {
     settings
         .benchmarks
         .push(Benchmark::read(&refactoring).unwrap());
-    settings.genealogy_growth = 0.0;
 }
 
 fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, DirectedEvolutionError>) {
@@ -216,7 +213,7 @@ fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_o
 }
 
 #[test]
-fn with_a_growth_above_0_a_directed_evolution_starts_with_an_attempt_of_the_primogenitor() {
+fn a_directed_evolution_starts_with_an_attempt_of_the_primogenitor() {
     let (directory, _found) = evolved(|settings| settings.benchmarks[0].tasks.truncate(1));
     assert!(
         journal_of(&directory)
@@ -228,18 +225,34 @@ fn with_a_growth_above_0_a_directed_evolution_starts_with_an_attempt_of_the_prim
 }
 
 #[test]
-fn with_a_growth_above_0_the_primogenitor_procreates_once_it_has_attempted_every_task() {
-    let (directory, _found) = evolved(|settings| settings.max_procreations = 2);
+fn the_primogenitor_procreates_once_it_has_attempted_every_task() {
+    let (directory, _found) = evolved(|_| {});
     assert_eq!(
-        starts(&directory)[..7],
-        attempts_of_the_primogenitor_and_then(5, &["procreation by 0", "procreation by 0"])
+        starts(&directory)[..6],
+        attempts_of_the_primogenitor_and_then(5, &["procreation by 0"])
     );
 }
 
 #[test]
-fn with_a_growth_of_0_each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
+fn the_first_child_is_benchmarked_in_full_before_the_second_procreation_starts() {
+    let (directory, _found) = evolved(|settings| settings.max_procreations = 2);
+    assert_eq!(
+        kinds_of_starts(&directory)[5..12],
+        [
+            "procreation",
+            "attempt of 1",
+            "attempt of 1",
+            "attempt of 1",
+            "attempt of 1",
+            "attempt of 1",
+            "procreation",
+        ]
+    );
+}
+
+#[test]
+fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
     let (directory, _found) = evolved(|settings| {
-        settings.genealogy_growth = 0.0;
         settings.max_procreations = 2;
         settings.benchmarks[0].tasks.truncate(2);
     });

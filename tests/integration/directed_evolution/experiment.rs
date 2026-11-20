@@ -44,7 +44,6 @@ fn settings(directory: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: A_PROGENITOR_THAT_PROCREATES_BETTER_THAN_THE_PRIMOGENITOR.to_owned(),
         max_procreations: 2,
-        genealogy_growth: 0.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

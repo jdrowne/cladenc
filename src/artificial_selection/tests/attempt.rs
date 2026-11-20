@@ -10,7 +10,6 @@ fn tasks(count: usize) -> Vec<String> {
 fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
     ArtificialSelection {
         max_procreations: 1000,
-        growth: 0.0,
         tasks: tasks(task_count),
         seed,
     }

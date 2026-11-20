@@ -36,7 +36,6 @@ fn ran() -> TempDir {
         ),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "2".into()),
-        ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),

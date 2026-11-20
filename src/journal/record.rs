@@ -27,7 +27,6 @@ pub struct Settings {
     pub holdout_corroboration_percentage: f64,
     pub corroboration_tasks: Vec<String>,
     pub max_procreations: u64,
-    pub genealogy_growth: f64,
     pub max_concurrent_containers: u64,
     pub procreation_timeout: u64,
     pub attempt_timeout: u64,
@@ -107,7 +106,6 @@ impl Settings {
     pub(crate) fn artificial_selection(&self) -> ArtificialSelection {
         ArtificialSelection {
             max_procreations: self.max_procreations,
-            growth: self.genealogy_growth,
             tasks: self.tasks(),
             seed: self.seed,
         }

@@ -242,11 +242,10 @@ fn an_attempt_of_the_singleton_control_group_harness_counts_as_started() {
 }
 
 #[test]
-fn the_attempts_the_singleton_control_group_harnesses_started_are_counted_apart() {
-    let mut genealogy =
+fn an_attempt_of_the_singleton_control_group_harness_is_no_action_that_is_counted_as_started() {
+    let genealogy =
         after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
-    genealogy.start_attempt(0, "a").unwrap();
-    assert_eq!(genealogy.started_by_singleton_control_group_harnesses(), 1);
+    assert_eq!(genealogy.actions_started(), 2);
 }
 
 #[test]

@@ -26,7 +26,6 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         harness_build_command: None,
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         max_procreations: 1,
-        genealogy_growth: 0.6,
         max_concurrent_containers: 3,
         procreation_timeout: 30,
         attempt_timeout: 30,
@@ -95,8 +94,7 @@ fn most_running_as_a_procreation_starts(records: &[Record]) -> Option<usize> {
     most
 }
 
-fn one_child_at_a_time(settings: &mut Settings) {
-    settings.genealogy_growth = 0.0;
+fn two_procreations(settings: &mut Settings) {
     settings.max_procreations = 2;
 }
 
@@ -140,8 +138,8 @@ fn with_a_limit_of_three_the_journal_still_holds_one_attempt_of_every_task_by_ea
 }
 
 #[test]
-fn with_a_growth_of_0_and_a_limit_of_three_every_procreation_still_starts() {
-    let records = records(one_child_at_a_time);
+fn with_a_limit_of_three_every_procreation_still_starts() {
+    let records = records(two_procreations);
     assert_eq!(
         count(&records, |record| matches!(
             record,
@@ -152,8 +150,8 @@ fn with_a_growth_of_0_and_a_limit_of_three_every_procreation_still_starts() {
 }
 
 #[test]
-fn with_a_growth_of_0_and_a_limit_of_three_a_procreation_starts_only_when_nothing_else_runs() {
-    let records = records(one_child_at_a_time);
+fn with_a_limit_of_three_a_procreation_starts_only_when_nothing_else_runs() {
+    let records = records(two_procreations);
     assert_eq!(most_running_as_a_procreation_starts(&records), Some(0));
 }
 

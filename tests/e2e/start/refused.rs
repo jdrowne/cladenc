@@ -15,7 +15,6 @@ fn options(directory: &Path, outputs_directory: &Path) -> Vec<String> {
         ("--harness-run-command", "exit 0".into()),
         ("--outputs-dir", outputs_directory.to_owned()),
         ("--max-procreations", "1".into()),
-        ("--genealogy-growth", "0.6".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
@@ -166,6 +165,35 @@ fn a_seed_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_expect
 fn a_seed_which_is_no_flag_of_start_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
     let options = with_a_seed(directory.path());
+    let _ = status(&options);
+    assert!(!directory.path().join("outputs").exists());
+}
+
+fn with_a_genealogy_growth(directory: &Path) -> Vec<String> {
+    options(directory, &directory.join("outputs"))
+        .into_iter()
+        .chain(["--genealogy-growth=0.5".to_owned()])
+        .collect()
+}
+
+#[test]
+fn a_genealogy_growth_which_is_no_flag_of_start_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_genealogy_growth(directory.path());
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_genealogy_growth_which_is_no_flag_of_start_is_refused_as_an_argument_not_expected() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_genealogy_growth(directory.path());
+    assert!(said(&options).starts_with("error: unexpected argument '--genealogy-growth' found\n"));
+}
+
+#[test]
+fn a_genealogy_growth_which_is_no_flag_of_start_leaves_no_outputs_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_genealogy_growth(directory.path());
     let _ = status(&options);
     assert!(!directory.path().join("outputs").exists());
 }

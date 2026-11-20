@@ -504,3 +504,17 @@ fn the_section_of_cladenc_report_says_what_it_prints_where_no_experiment_created
          no likelihood for the experiments."
     ));
 }
+
+#[test]
+fn the_steps_of_cladenc_start_say_that_a_procreation_starts_once_every_harness_is_benchmarked() {
+    assert!(what_is_said_of("start").contains(
+        "It starts as many procreations as `--max-procreations` gives, each only once every \
+         harness created so far has been benchmarked in full, so that it chooses each harness \
+         that procreates with what every created harness completed in hand."
+    ));
+}
+
+#[test]
+fn the_readme_names_no_growth() {
+    assert!(!readme().contains("growth"));
+}

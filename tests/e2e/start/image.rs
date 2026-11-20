@@ -53,7 +53,6 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
-        ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),

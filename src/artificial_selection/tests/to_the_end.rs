@@ -5,17 +5,16 @@ fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
 }
 
-fn artificial_selection(growth: f64) -> ArtificialSelection {
+fn artificial_selection() -> ArtificialSelection {
     ArtificialSelection {
         max_procreations: 3,
-        growth,
         tasks: tasks(),
         seed: 3,
     }
 }
 
-fn actions_to_the_end(growth: f64, outcome: CreationOutcome, result: AttemptResult) -> Vec<Action> {
-    let artificial_selection = artificial_selection(growth);
+fn actions_to_the_end(outcome: CreationOutcome, result: AttemptResult) -> Vec<Action> {
+    let artificial_selection = artificial_selection();
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     let mut actions = Vec::new();
     while let Some(action) = artificial_selection.next_action(&genealogy, actions.len() as u64) {
@@ -72,37 +71,37 @@ fn shape(actions: &[Action]) -> Vec<String> {
 
 #[test]
 fn exactly_as_many_procreations_start_as_the_most_there_may_be() {
-    let actions = actions_to_the_end(1.0, CreationOutcome::Created, AttemptResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Created, AttemptResult::Completed);
     assert_eq!(procreations(&actions), 3);
 }
 
 #[test]
 fn a_procreation_that_fails_is_one_of_the_most_there_may_be() {
-    let actions = actions_to_the_end(1.0, CreationOutcome::Failed, AttemptResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Failed, AttemptResult::Completed);
     assert_eq!(procreations(&actions), 3);
 }
 
 #[test]
 fn at_the_end_every_created_harness_has_attempted_every_task_exactly_once() {
-    let actions = actions_to_the_end(1.0, CreationOutcome::Created, AttemptResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Created, AttemptResult::Completed);
     assert_eq!(attempts(&actions), every_task_for_each_of(&[0, 1, 2, 3]));
 }
 
 #[test]
 fn a_harness_that_completes_none_of_its_tasks_still_attempts_every_task() {
-    let actions = actions_to_the_end(1.0, CreationOutcome::Created, AttemptResult::NotCompleted);
+    let actions = actions_to_the_end(CreationOutcome::Created, AttemptResult::NotCompleted);
     assert_eq!(attempts(&actions), every_task_for_each_of(&[0, 1, 2, 3]));
 }
 
 #[test]
 fn a_harness_that_was_not_created_attempts_nothing() {
-    let actions = actions_to_the_end(1.0, CreationOutcome::Failed, AttemptResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Failed, AttemptResult::Completed);
     assert_eq!(attempts(&actions), every_task_for_each_of(&[0]));
 }
 
 #[test]
-fn with_a_growth_of_0_each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
-    let actions = actions_to_the_end(0.0, CreationOutcome::Created, AttemptResult::Completed);
+fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
+    let actions = actions_to_the_end(CreationOutcome::Created, AttemptResult::Completed);
     assert_eq!(
         shape(&actions),
         [
@@ -122,8 +121,8 @@ fn with_a_growth_of_0_each_child_is_benchmarked_in_full_before_the_next_procreat
 }
 
 #[test]
-fn with_a_growth_of_0_every_procreation_still_starts_when_each_one_fails() {
-    let actions = actions_to_the_end(0.0, CreationOutcome::Failed, AttemptResult::Completed);
+fn every_procreation_still_starts_when_each_one_fails() {
+    let actions = actions_to_the_end(CreationOutcome::Failed, AttemptResult::Completed);
     assert_eq!(
         shape(&actions),
         [

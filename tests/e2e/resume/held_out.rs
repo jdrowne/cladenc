@@ -21,7 +21,6 @@ fn start(directory: &Path) -> Command {
         ),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),
-        ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),

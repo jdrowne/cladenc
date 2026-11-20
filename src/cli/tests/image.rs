@@ -4,7 +4,7 @@ use crate::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 12] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -12,7 +12,6 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
-    ("--genealogy-growth", "0.6"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),

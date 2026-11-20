@@ -23,7 +23,6 @@ fn ran(run_command: &str, max_procreations: &str) -> TempDir {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", max_procreations.into()),
-        ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),

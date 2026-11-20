@@ -39,7 +39,6 @@ fn settings(directory: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: run_command_the_help_gives("echo attempted > attempted"),
         max_procreations: 2,
-        genealogy_growth: 0.0,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,

@@ -4,7 +4,7 @@ use crate::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 14] = [
+const OPTIONS: [(&str, &str); 13] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -13,7 +13,6 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
-    ("--genealogy-growth", "0.6"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
@@ -216,37 +215,13 @@ fn a_budget_is_an_argument_that_is_not_expected() {
 }
 
 #[test]
-fn a_genealogy_growth_below_0_is_an_error() {
+fn a_genealogy_growth_is_an_argument_that_is_not_expected() {
     assert_eq!(
-        refusal("--genealogy-growth", "-0.1"),
-        ErrorKind::ValueValidation
+        and(Some("--genealogy-growth=0.6".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
     );
-}
-
-#[test]
-fn a_genealogy_growth_above_1_is_an_error() {
-    assert_eq!(
-        refusal("--genealogy-growth", "1.1"),
-        ErrorKind::ValueValidation
-    );
-}
-
-#[test]
-fn a_genealogy_growth_that_is_not_a_number_is_an_error() {
-    assert_eq!(
-        refusal("--genealogy-growth", "NaN"),
-        ErrorKind::ValueValidation
-    );
-}
-
-#[test]
-fn a_genealogy_growth_of_0_is_accepted() {
-    assert!(with("--genealogy-growth", "0").is_ok());
-}
-
-#[test]
-fn a_genealogy_growth_of_1_is_accepted() {
-    assert!(with("--genealogy-growth", "1").is_ok());
 }
 
 #[test]

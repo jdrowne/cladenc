@@ -4,7 +4,6 @@ mod due;
 mod every_harness_waits;
 mod experiment;
 mod focus;
-mod growth;
 mod holdout;
 mod no_action;
 mod procreation;

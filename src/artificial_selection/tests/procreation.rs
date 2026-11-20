@@ -8,7 +8,6 @@ fn tasks() -> Vec<String> {
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
         max_procreations: 1000,
-        growth: 1.0,
         tasks: tasks(),
         seed,
     }
@@ -39,21 +38,44 @@ fn with_a_child_that_attempted(count: usize) -> Genealogy {
     genealogy
 }
 
+fn benchmark(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
+    for (number, task) in tasks().iter().enumerate() {
+        let result = if number < completed {
+            AttemptResult::Completed
+        } else {
+            AttemptResult::NotCompleted
+        };
+        genealogy.start_attempt(harness, task).unwrap();
+        genealogy.end_attempt(harness, task, result).unwrap();
+    }
+}
+
 fn two_lines() -> Genealogy {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    attempt(&mut genealogy, 1, 20, AttemptResult::NotCompleted);
-    attempt(&mut genealogy, 2, 20, AttemptResult::Completed);
+    benchmark(&mut genealogy, 1, 10);
+    benchmark(&mut genealogy, 2, 12);
     child_of(&mut genealogy, 1, CreationOutcome::Created);
     child_of(&mut genealogy, 1, CreationOutcome::Created);
     child_of(&mut genealogy, 2, CreationOutcome::Created);
     child_of(&mut genealogy, 2, CreationOutcome::Created);
-    attempt(&mut genealogy, 3, 19, AttemptResult::Completed);
-    attempt(&mut genealogy, 4, 19, AttemptResult::Completed);
-    attempt(&mut genealogy, 5, 19, AttemptResult::NotCompleted);
-    attempt(&mut genealogy, 6, 19, AttemptResult::NotCompleted);
+    benchmark(&mut genealogy, 3, 12);
+    benchmark(&mut genealogy, 4, 12);
+    benchmark(&mut genealogy, 5, 0);
+    benchmark(&mut genealogy, 6, 0);
     genealogy
+}
+
+fn times_a_procreation_is_next(genealogy: &Genealogy) -> usize {
+    (0..200)
+        .filter(|seed| {
+            matches!(
+                artificial_selection(*seed).next_action(genealogy, 0),
+                Some(Action::Procreation { .. })
+            )
+        })
+        .count()
 }
 
 fn times_progenitor(genealogy: &Genealogy, progenitor: HarnessId) -> usize {
@@ -66,10 +88,13 @@ fn times_progenitor(genealogy: &Genealogy, progenitor: HarnessId) -> usize {
 }
 
 #[test]
-fn a_procreation_is_the_next_action_when_the_harness_count_is_within_started_to_the_growth() {
+fn an_attempt_is_the_next_action_while_a_child_has_a_task_not_yet_given() {
     assert_eq!(
         artificial_selection(0).next_action(&with_a_child_that_attempted(0), 0),
-        Some(Action::Procreation { progenitor: 0 })
+        Some(Action::Attempt {
+            harness: 1,
+            task: "task-0".to_owned()
+        })
     );
 }
 
@@ -80,20 +105,26 @@ fn a_harness_with_the_better_clade_is_the_progenitor_more_often_than_one_with_be
 }
 
 #[test]
-fn a_child_that_was_just_created_is_never_the_progenitor() {
-    assert_eq!(times_progenitor(&with_a_child_that_attempted(0), 0), 200);
+fn no_procreation_starts_while_a_child_that_was_just_created_has_attempted_nothing() {
+    assert_eq!(
+        times_a_procreation_is_next(&with_a_child_that_attempted(0)),
+        0
+    );
 }
 
 #[test]
-fn a_harness_that_attempted_every_task_but_one_is_never_the_progenitor() {
-    assert_eq!(times_progenitor(&with_a_child_that_attempted(19), 0), 200);
+fn no_procreation_starts_while_a_child_has_attempted_every_task_but_one() {
+    assert_eq!(
+        times_a_procreation_is_next(&with_a_child_that_attempted(19)),
+        0
+    );
 }
 
 #[test]
-fn a_harness_given_every_task_is_never_the_progenitor_while_an_attempt_of_it_is_running() {
+fn no_procreation_starts_while_an_attempt_of_a_child_given_every_task_is_running() {
     let mut genealogy = with_a_child_that_attempted(19);
     genealogy.start_attempt(1, "task-19").unwrap();
-    assert_eq!(times_progenitor(&genealogy, 0), 200);
+    assert_eq!(times_a_procreation_is_next(&genealogy), 0);
 }
 
 #[test]
@@ -102,10 +133,10 @@ fn a_child_can_be_the_progenitor_once_it_has_attempted_every_task() {
 }
 
 #[test]
-fn a_harness_that_is_being_created_is_never_the_progenitor() {
+fn no_procreation_starts_while_a_child_is_being_created() {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     genealogy.start_procreation(0).unwrap();
-    assert_eq!(times_progenitor(&genealogy, 0), 200);
+    assert_eq!(times_a_procreation_is_next(&genealogy), 0);
 }
 
 #[test]
@@ -116,7 +147,7 @@ fn a_failed_harness_is_never_the_progenitor() {
 }
 
 #[test]
-fn a_procreation_is_the_next_action_even_when_no_task_is_left_to_give() {
+fn a_procreation_is_the_next_action_once_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     attempt(&mut genealogy, 0, 20, AttemptResult::Completed);
     assert_eq!(
