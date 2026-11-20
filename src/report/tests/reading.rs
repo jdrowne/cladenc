@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use crate::benchmark::Benchmark;
 use crate::genealogy::AttemptResult;
 use crate::journal::{self, Journal, JournalError, Record, Seconds, Settings};
+use crate::report::leader::Leader;
 use crate::report::{self, Report};
 use tempfile::TempDir;
 
@@ -77,6 +78,13 @@ fn outputs_directory(last_line: &str) -> TempDir {
     outputs_directory
 }
 
+fn finished_with(best_harness: u64) -> String {
+    Record::DirectedEvolutionFinished { best_harness }
+        .line()
+        .unwrap()
+        + "\n"
+}
+
 fn of_the_records() -> Report {
     let mut genealogy = settings().genealogy();
     genealogy.start_attempt(0, "benchmark/t1").unwrap();
@@ -95,7 +103,7 @@ fn of_the_records() -> Report {
         },
         Seconds::default(),
     ];
-    Report::of(&settings(), &genealogy, &seconds)
+    Report::of(&settings(), &genealogy, &seconds, None)
 }
 
 #[test]
@@ -122,6 +130,36 @@ fn a_report_read_from_a_journal_counts_the_corroboration_tasks_its_run_record_na
 fn a_report_read_from_a_journal_holds_the_seconds_its_records_hold() {
     let report = report::read(outputs_directory("").path()).unwrap();
     assert_eq!(report.harnesses[0].attempt_seconds, 3.5);
+}
+
+#[test]
+fn a_journal_that_does_not_say_that_the_directed_evolution_finished_is_of_one_that_has_not_ended() {
+    assert!(
+        !report::read(outputs_directory("").path())
+            .unwrap()
+            .has_ended()
+    );
+}
+
+#[test]
+fn a_journal_that_says_that_the_directed_evolution_finished_is_of_one_that_has_ended() {
+    assert!(
+        report::read(outputs_directory(&finished_with(0)).path())
+            .unwrap()
+            .has_ended()
+    );
+}
+
+#[test]
+fn the_best_harness_of_a_report_read_from_a_journal_is_the_one_its_last_record_names() {
+    let report = report::read(outputs_directory(&finished_with(1)).path()).unwrap();
+    assert_eq!(report.leader, Leader::BestHarness(1));
+}
+
+#[test]
+fn the_harness_ahead_so_far_of_a_journal_that_has_not_ended_is_counted_from_its_records() {
+    let report = report::read(outputs_directory("").path()).unwrap();
+    assert_eq!(report.leader, Leader::HarnessAheadSoFar(0));
 }
 
 #[test]

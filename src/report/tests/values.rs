@@ -4,6 +4,7 @@ use crate::benchmark::Benchmark;
 use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessState};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
+use crate::report::leader::Leader;
 
 fn settings() -> Settings {
     Settings {
@@ -98,7 +99,7 @@ fn seconds() -> [Seconds; 2] {
 }
 
 fn report(genealogy: &Genealogy) -> Report {
-    Report::of(&settings(), genealogy, &seconds())
+    Report::of(&settings(), genealogy, &seconds(), None)
 }
 
 #[test]
@@ -187,19 +188,37 @@ fn the_clade_counts_of_a_harness_leave_out_the_tasks_that_are_not_held_out() {
 }
 
 #[test]
-fn the_best_harness_reported_is_the_one_the_artificial_selection_chooses() {
+fn the_harness_that_is_ahead_so_far_is_the_one_the_artificial_selection_would_name_the_best() {
     let genealogy = a_child_that_succeeds_where_its_progenitor_fails();
     assert_eq!(
-        report(&genealogy).best_harness,
-        settings().artificial_selection().best_harness(&genealogy)
+        report(&genealogy).leader,
+        Leader::HarnessAheadSoFar(settings().artificial_selection().best_harness(&genealogy))
     );
 }
 
 #[test]
-fn the_best_harness_reported_is_the_one_benchmarked_in_full_that_completed_the_most_selection_tasks()
- {
+fn the_harness_that_is_ahead_so_far_is_benchmarked_in_full_and_completed_the_most_selection_tasks()
+{
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(report.best_harness, 1);
+    assert_eq!(report.leader, Leader::HarnessAheadSoFar(1));
+}
+
+#[test]
+fn the_best_harness_of_a_directed_evolution_that_has_ended_is_the_one_its_journal_names() {
+    let genealogy = a_child_that_succeeds_where_its_progenitor_fails();
+    let report = Report::of(&settings(), &genealogy, &seconds(), Some(0));
+    assert_eq!(report.leader, Leader::BestHarness(0));
+}
+
+#[test]
+fn a_report_made_with_a_best_harness_is_of_a_directed_evolution_that_has_ended() {
+    let report = Report::of(&settings(), &Genealogy::new(), &seconds(), Some(0));
+    assert!(report.has_ended());
+}
+
+#[test]
+fn a_report_made_with_no_best_harness_is_of_a_directed_evolution_that_has_not_ended() {
+    assert!(!report(&Genealogy::new()).has_ended());
 }
 
 #[test]
@@ -263,8 +282,11 @@ fn a_primogenitor_that_awaits_its_build_is_reported_as_being_created() {
 }
 
 #[test]
-fn a_directed_evolution_whose_primogenitor_awaits_its_build_reports_harness_0_as_its_best() {
-    assert_eq!(report(&Genealogy::unbuilt()).best_harness, 0);
+fn a_directed_evolution_whose_primogenitor_awaits_its_build_has_harness_0_ahead_so_far() {
+    assert_eq!(
+        report(&Genealogy::unbuilt()).leader,
+        Leader::HarnessAheadSoFar(0)
+    );
 }
 
 #[test]

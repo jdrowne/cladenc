@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::{Command, Output, Stdio};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -30,7 +30,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
     start
 }
 
-fn report(directory: &Path) -> Option<i32> {
+fn report(directory: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("report")
         .arg(format!(
@@ -39,19 +39,41 @@ fn report(directory: &Path) -> Option<i32> {
         ))
         .output()
         .unwrap()
-        .status
-        .code()
 }
 
-#[test]
-fn report_exits_with_0_on_a_run_that_stopped_before_its_end() {
+fn report_of_one_that_stopped_before_its_end() -> Output {
     let directory = test_inputs::temporary_directory();
     start(directory.path(), "exit 125").status().unwrap();
-    assert_eq!(report(directory.path()), Some(0));
+    report(directory.path())
 }
 
 #[test]
-fn report_exits_with_0_on_a_run_that_is_still_going() {
+fn report_exits_with_2_on_a_directed_evolution_that_stopped_before_its_end() {
+    assert_eq!(
+        report_of_one_that_stopped_before_its_end().status.code(),
+        Some(2)
+    );
+}
+
+#[test]
+fn report_says_of_a_directed_evolution_that_stopped_before_its_end_to_call_status() {
+    assert_eq!(
+        String::from_utf8(report_of_one_that_stopped_before_its_end().stderr).unwrap(),
+        "cladenc: the directed evolution has not ended: call `cladenc status` to read its state \
+         so far\n"
+    );
+}
+
+#[test]
+fn report_prints_nothing_on_standard_output_of_a_directed_evolution_that_stopped_before_its_end() {
+    assert_eq!(
+        report_of_one_that_stopped_before_its_end().stdout,
+        Vec::<u8>::new()
+    );
+}
+
+#[test]
+fn report_exits_with_2_on_a_directed_evolution_that_is_still_going() {
     let directory = test_inputs::temporary_directory();
     let mut going = start(directory.path(), "hostname > id; sleep 300")
         .spawn()
@@ -60,8 +82,8 @@ fn report_exits_with_0_on_a_run_that_is_still_going() {
         .path()
         .join("outputs/running/attempt-0-benchmark+t1/work/id");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
-    let status = report(directory.path());
+    let status = report(directory.path()).status.code();
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();
     going.wait().unwrap();
-    assert_eq!(status, Some(0));
+    assert_eq!(status, Some(2));
 }

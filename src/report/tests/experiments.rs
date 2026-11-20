@@ -107,7 +107,7 @@ fn after_an_experiment_that_created(outcomes: (CreationOutcome, CreationOutcome)
 }
 
 fn report_of(genealogy: &Genealogy) -> Report {
-    Report::of(&settings(), genealogy, &[])
+    Report::of(&settings(), genealogy, &[], Some(0))
 }
 
 fn told_apart(genealogy: &Genealogy) -> (u64, u64) {

@@ -4,7 +4,7 @@ use crate::benchmark::Benchmark;
 use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::Settings;
 use crate::report::Report;
-use crate::report::lead::{self, Lead};
+use crate::report::lead::{self, Lead, OnlyLeaderCompleted};
 use serde_json::Value;
 
 const SELECTION: &str = "benchmark/s1";
@@ -66,20 +66,26 @@ fn evolved(primogenitor: &[&str], child: &[&str]) -> Genealogy {
     genealogy
 }
 
+fn ended(genealogy: &Genealogy) -> Report {
+    let best_harness = settings().artificial_selection().best_harness(genealogy);
+    Report::of(&settings(), genealogy, &[], Some(best_harness))
+}
+
 fn report_of(primogenitor: &[&str], child: &[&str]) -> Report {
-    Report::of(&settings(), &evolved(primogenitor, child), &[])
+    ended(&evolved(primogenitor, child))
 }
 
 fn lead_of(primogenitor: &[&str], child: &[&str]) -> Lead {
     report_of(primogenitor, child).corroboration_lead.unwrap()
 }
 
-fn counts_of(primogenitor: &[&str], child: &[&str]) -> (u64, u64) {
+fn counts_of(primogenitor: &[&str], child: &[&str]) -> (OnlyLeaderCompleted, u64) {
     let lead = lead_of(primogenitor, child);
-    (
-        lead.only_best_harness_completed,
-        lead.only_primogenitor_completed,
-    )
+    (lead.only_leader_completed, lead.only_primogenitor_completed)
+}
+
+fn only_the_best_harness_completed(tasks: u64) -> OnlyLeaderCompleted {
+    OnlyLeaderCompleted::OnlyBestHarnessCompleted(tasks)
 }
 
 fn object_of(primogenitor: &[&str], child: &[&str]) -> Value {
@@ -102,7 +108,7 @@ fn the_corroboration_tasks_that_only_the_best_harness_completed_are_counted() {
             &["benchmark/c1"],
             &[SELECTION, "benchmark/c1", "benchmark/c2", "benchmark/c3"]
         ),
-        (2, 0)
+        (only_the_best_harness_completed(2), 0)
     );
 }
 
@@ -113,7 +119,7 @@ fn the_corroboration_tasks_that_only_the_primogenitor_completed_are_counted() {
             &["benchmark/c1", "benchmark/c4", "benchmark/c5"],
             &[SELECTION, "benchmark/c1", "benchmark/c2"]
         ),
-        (1, 2)
+        (only_the_best_harness_completed(1), 2)
     );
 }
 
@@ -121,23 +127,32 @@ fn the_corroboration_tasks_that_only_the_primogenitor_completed_are_counted() {
 fn a_corroboration_task_that_both_harnesses_completed_is_left_out() {
     assert_eq!(
         counts_of(&["benchmark/c1"], &[SELECTION, "benchmark/c1"]),
-        (0, 0)
+        (only_the_best_harness_completed(0), 0)
     );
 }
 
 #[test]
 fn a_corroboration_task_that_neither_harness_completed_is_left_out() {
-    assert_eq!(counts_of(&[], &[SELECTION]), (0, 0));
+    assert_eq!(
+        counts_of(&[], &[SELECTION]),
+        (only_the_best_harness_completed(0), 0)
+    );
 }
 
 #[test]
 fn a_task_that_is_not_held_out_is_no_part_of_the_lead() {
-    assert_eq!(counts_of(&[], &[SELECTION, "benchmark/o1"]), (0, 0));
+    assert_eq!(
+        counts_of(&[], &[SELECTION, "benchmark/o1"]),
+        (only_the_best_harness_completed(0), 0)
+    );
 }
 
 #[test]
 fn the_selection_task_that_made_the_harness_the_best_is_no_part_of_the_lead() {
-    assert_eq!(counts_of(&[], &[SELECTION, "benchmark/c1"]), (1, 0));
+    assert_eq!(
+        counts_of(&[], &[SELECTION, "benchmark/c1"]),
+        (only_the_best_harness_completed(1), 0)
+    );
 }
 
 #[test]
@@ -150,10 +165,7 @@ fn where_the_best_harness_is_the_primogenitor_the_report_holds_no_lead() {
 
 #[test]
 fn where_the_primogenitor_is_alone_the_report_holds_no_lead() {
-    assert_eq!(
-        Report::of(&settings(), &settings().genealogy(), &[]).corroboration_lead,
-        None
-    );
+    assert_eq!(ended(&settings().genealogy()).corroboration_lead, None);
 }
 
 #[test]
@@ -169,10 +181,11 @@ fn the_lead_is_that_of_the_best_harness_and_not_of_a_harness_that_completed_more
         another,
         &["benchmark/c1", "benchmark/c2", "benchmark/c3"],
     );
-    let lead = Report::of(&settings(), &genealogy, &[])
-        .corroboration_lead
-        .unwrap();
-    assert_eq!(lead.only_best_harness_completed, 0);
+    let lead = ended(&genealogy).corroboration_lead.unwrap();
+    assert_eq!(
+        lead.only_leader_completed,
+        only_the_best_harness_completed(0)
+    );
 }
 
 #[test]

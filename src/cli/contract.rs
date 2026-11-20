@@ -338,6 +338,20 @@ which is not to say that it is proven. One of two harnesses that are alike
 is still ahead on the corroboration tasks by a few of them, and the fewer
 the corroboration tasks, the more a few of them weigh.
 
+`cladenc report` is for a directed evolution that has ended, and
+`cladenc status` is for one that has not ended. Each refuses the other
+kind, and says which of the two to call. When a directed evolution ends,
+`cladenc start` prints on standard error what `cladenc report` prints,
+after the line that says that the directed evolution finished, and prints
+on standard output the directory of the best harness and nothing else.
+
+A directed evolution that has not ended has no best harness. In its place
+`cladenc status` names the harness that is ahead so far: the harness that
+would be named the best harness if the directed evolution ended now. What
+`cladenc status` prints is the state so far, which can change until the
+directed evolution ends: another harness can be ahead later, and the lead
+of the harness that is ahead so far can grow or shrink.
+
 `cladenc report` says three things of the best harness and the
 primogenitor, counted on the corroboration tasks: how many of them only the
 best harness completed, how many only the primogenitor completed, and how
@@ -356,19 +370,25 @@ what counts as more than luck is for the person who reads it to say. The
 likelihood is shown for the best harness alone, since among many harnesses
 one or two show a low likelihood by luck.
 
-`cladenc report` says of the experiments how many were conducted, in how
-many the progenitor's child was created, in how many the singleton control
-group harness was created, and in how many both were. Over the experiments
-where both were created, it counts the corroboration tasks that only the
-progenitor's child completed and those that only the singleton control
-group harness completed, and says how likely luck alone gives a lead at
-least as large where the two are created equally well, counted as it is
-for the best harness and the primogenitor. A corroboration task that one
-of the two has not attempted yet is left out. In the table, the row of a
-singleton control group harness names no progenitor, and names under
-experiment the progenitor's child of its experiment. The singleton control
-group harnesses are left out of the count of the tasks that at least one
-harness completed.
+`cladenc status` says the same three things of the harness that is ahead so
+far and the primogenitor. A person who calls `cladenc status` many times
+reads many likelihoods, and one of many likelihoods is low by luck more
+often than one that is read once. Each of them is the state so far, and not
+the result of the directed evolution.
+
+`cladenc report` and `cladenc status` say of the experiments how many were
+conducted, in how many the progenitor's child was created, in how many the
+singleton control group harness was created, and in how many both were.
+Over the experiments where both were created, each counts the corroboration
+tasks that only the progenitor's child completed and those that only the
+singleton control group harness completed, and says how likely luck alone
+gives a lead at least as large where the two are created equally well,
+counted as it is for the best harness and the primogenitor. A corroboration
+task that one of the two has not attempted yet is left out. In the table,
+the row of a singleton control group harness names no progenitor, and names
+under experiment the progenitor's child of its experiment. The singleton
+control group harnesses are left out of the count of the tasks that at
+least one harness completed.
 
 How many more selection tasks the best of many harnesses that are all alike
 completes is measured by a directed evolution in which no harness changes:
@@ -391,10 +411,11 @@ choosing give together, with nothing changed. The best harness of the other
 directed evolution is ahead of its primogenitor on the selection tasks by a
 change only as far as it is ahead by more than that. `cladenc report` also
 says how many tasks at least one harness completed, of the selection tasks,
-of the corroboration tasks and of the others. Where no harness changes,
-that is what one more attempt at each task for each child gives the
-primogenitor, and it is set beside the count of the best harness of the
-other directed evolution, which had one attempt at each task.
+of the corroboration tasks and of the others, and `cladenc status` says how
+many so far. Where no harness changes, that is what one more attempt at
+each task for each child gives the primogenitor, and it is set beside the
+count of the best harness of the other directed evolution, which had one
+attempt at each task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.
@@ -491,4 +512,11 @@ hand.
     docker ps --filter label=cladenc.directed-evolution=<DIR>
 
 lists them, their names begin cladenc-, and `docker kill` with a name ends
-that container. Docker removes a container of cladenc once it has ended.";
+that container. Docker removes a container of cladenc once it has ended.
+
+When the directed evolution that it continued ends, `cladenc resume` prints
+on standard error what `cladenc report` prints, after the line that says
+that the directed evolution finished, and prints on standard output the
+directory of the best harness and nothing else. Of a directed evolution
+that had ended already, it prints the same after a line that says that the
+directed evolution had finished.";

@@ -45,6 +45,18 @@ fn resume(directory: &Path) -> Output {
         .unwrap()
 }
 
+fn report_of(directory: &Path) -> String {
+    let report = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("report")
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
+        .output()
+        .unwrap();
+    String::from_utf8(report.stdout).unwrap()
+}
+
 fn interrupted() -> TempDir {
     stopped_by(Signal::SIGINT)
 }
@@ -91,6 +103,18 @@ fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolutio
 }
 
 #[test]
+fn after_an_interrupt_stops_a_run_resume_prints_what_report_prints_after_the_line_of_the_end() {
+    let directory = interrupted();
+    let said = String::from_utf8(resume(directory.path()).stderr).unwrap();
+    assert_eq!(
+        said.split_once("cladenc: the directed evolution finished ")
+            .and_then(|(_, rest)| rest.split_once('\n'))
+            .map(|(_, report)| report.to_owned()),
+        Some(report_of(directory.path()))
+    );
+}
+
+#[test]
 fn after_a_hangup_stops_a_run_resume_finishes_it_and_exits_with_0() {
     let directory = stopped_by(Signal::SIGHUP);
     assert_eq!(resume(directory.path()).status.code(), Some(0));
@@ -107,4 +131,19 @@ fn a_directed_evolution_that_stops_again_under_resume_exits_with_1() {
     let directory = test_inputs::temporary_directory();
     start(directory.path(), "exit 125").status().unwrap();
     assert_eq!(resume(directory.path()).status.code(), Some(1));
+}
+
+#[test]
+fn a_directed_evolution_that_stops_again_under_resume_prints_no_report() {
+    let directory = test_inputs::temporary_directory();
+    start(directory.path(), "exit 125").status().unwrap();
+    assert!(
+        String::from_utf8(resume(directory.path()).stderr)
+            .unwrap()
+            .lines()
+            .last()
+            .is_some_and(|line| {
+                line.starts_with("cladenc: the directed evolution stopped before its end: ")
+            })
+    );
 }

@@ -97,20 +97,20 @@ fn the_long_help_of_start_says_what_the_outputs_directory_keeps_of_a_baseline() 
 }
 
 #[test]
-fn the_long_help_of_start_says_what_cladenc_report_says_of_the_experiments() {
+fn the_long_help_of_start_says_what_report_and_status_say_of_the_experiments() {
     assert!(long_help_of_start().contains(
-        "`cladenc report` says of the experiments how many were conducted, in how\nmany the \
-         progenitor's child was created, in how many the singleton control\ngroup harness was \
-         created, and in how many both were."
+        "`cladenc report` and `cladenc status` say of the experiments how many were\nconducted, \
+         in how many the progenitor's child was created, in how many the\nsingleton control \
+         group harness was created, and in how many both were."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_the_harnesses_of_the_experiments_are_told_apart() {
     assert!(long_help_of_start().contains(
-        "Over the experiments\nwhere both were created, it counts the corroboration tasks that \
-         only the\nprogenitor's child completed and those that only the singleton \
-         control\ngroup harness completed, and says how likely luck alone gives a lead \
-         at\nleast as large where the two are created equally well"
+        "Over the experiments where both were created, each counts the \
+         corroboration\ntasks that only the progenitor's child completed and those that only \
+         the\nsingleton control group harness completed, and says how likely luck \
+         alone\ngives a lead at least as large where the two are created equally well"
     ));
 }

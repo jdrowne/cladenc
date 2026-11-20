@@ -240,16 +240,17 @@ fn the_long_help_of_start_says_how_far_a_best_harness_is_ahead_by_a_change() {
 fn the_long_help_of_start_says_that_report_counts_the_tasks_one_harness_at_least_completed() {
     assert!(long_help_of_start().contains(
         "`cladenc report` also\nsays how many tasks at least one harness completed, of the \
-         selection tasks,\nof the corroboration tasks and of the others."
+         selection tasks,\nof the corroboration tasks and of the others, and `cladenc status` \
+         says how\nmany so far."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_that_count_is_read_where_no_harness_changes() {
     assert!(long_help_of_start().contains(
-        "Where no harness changes,\nthat is what one more attempt at each task for each child \
-         gives the\nprimogenitor, and it is set beside the count of the best harness of the\nother \
-         directed evolution, which had one attempt at each task."
+        "Where no harness changes, that is what one more attempt at\neach task for each \
+         child gives the primogenitor, and it is set beside the\ncount of the best harness of \
+         the other directed evolution, which had one\nattempt at each task."
     ));
 }
 

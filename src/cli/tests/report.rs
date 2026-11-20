@@ -4,10 +4,12 @@ use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::cli::{self, Cli, Command, ReportOptions};
+use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
 use crate::report;
 use clap::Parser;
 use clap::error::ErrorKind;
+use tempfile::TempDir;
 
 struct Ran {
     status: u8,
@@ -33,9 +35,8 @@ fn ran(outputs_dir: PathBuf, json: bool) -> Ran {
     }
 }
 
-fn reported(json: bool) -> (Ran, String) {
-    let outputs_directory = test_inputs::temporary_directory();
-    let records = [
+fn started() -> Vec<Record> {
+    vec![
         Record::Run {
             format: journal::FORMAT,
             settings: Box::new(Settings {
@@ -68,14 +69,39 @@ fn reported(json: bool) -> (Ran, String) {
             child: 1,
             progenitor: 0,
         },
-    ];
+    ]
+}
+
+fn ended() -> Vec<Record> {
+    let mut records = started();
+    records.push(Record::ProcreationFinished {
+        child: 1,
+        outcome: CreationOutcome::Failed,
+        seconds: 30.26,
+    });
+    records.push(Record::DirectedEvolutionFinished { best_harness: 0 });
+    records
+}
+
+fn outputs_directory_of(records: &[Record]) -> TempDir {
+    let outputs_directory = test_inputs::temporary_directory();
     let lines: String = records
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
     fs::write(journal::path(outputs_directory.path()), lines).unwrap();
+    outputs_directory
+}
+
+fn reported(json: bool) -> (Ran, String) {
+    let outputs_directory = outputs_directory_of(&ended());
     let object = report::read(outputs_directory.path()).unwrap().json();
     (ran(outputs_directory.path().to_owned(), json), object)
+}
+
+fn reported_before_the_end() -> Ran {
+    let outputs_directory = outputs_directory_of(&started());
+    ran(outputs_directory.path().to_owned(), false)
 }
 
 fn missing() -> PathBuf {
@@ -133,9 +159,9 @@ fn a_report_prints_the_table_on_standard_output() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
-         1   0           -           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                0                    0                0                    -            0.0              30.3\n"
     );
 }
 
@@ -143,6 +169,12 @@ fn a_report_prints_the_table_on_standard_output() {
 fn with_json_a_report_prints_the_object_on_one_line() {
     let (ran, object) = reported(true);
     assert_eq!(ran.output, format!("{object}\n"));
+}
+
+#[test]
+fn with_json_a_report_says_first_that_the_directed_evolution_has_ended() {
+    let (ran, _object) = reported(true);
+    assert!(ran.output.starts_with(r#"{"ended":true,"#));
 }
 
 #[test]
@@ -155,6 +187,25 @@ fn a_report_gives_exit_status_0() {
 fn a_report_prints_nothing_on_standard_error() {
     let (ran, _object) = reported(false);
     assert_eq!(ran.errors, "");
+}
+
+#[test]
+fn a_directed_evolution_that_has_not_ended_gives_exit_status_2() {
+    assert_eq!(reported_before_the_end().status, 2);
+}
+
+#[test]
+fn a_directed_evolution_that_has_not_ended_is_refused_with_the_sub_command_to_call() {
+    assert_eq!(
+        reported_before_the_end().errors,
+        "cladenc: the directed evolution has not ended: call `cladenc status` to read its state \
+         so far\n"
+    );
+}
+
+#[test]
+fn a_directed_evolution_that_has_not_ended_prints_nothing_on_standard_output() {
+    assert_eq!(reported_before_the_end().output, "");
 }
 
 #[test]

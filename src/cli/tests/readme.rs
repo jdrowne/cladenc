@@ -351,3 +351,122 @@ fn the_readme_names_no_flag_that_cladenc_does_not_have() {
         Vec::<&String>::new()
     );
 }
+
+fn what_is_said_of(name: &str) -> String {
+    let readme = readme();
+    sub_commands()
+        .iter()
+        .find(|sub_command| sub_command.get_name() == name)
+        .map(|sub_command| said_after_the_table_of(&section_of(&readme, sub_command)).join("\n"))
+        .unwrap_or_default()
+}
+
+#[test]
+fn the_table_of_sub_commands_says_that_report_is_for_a_directed_evolution_that_has_ended() {
+    assert!(readme().contains(
+        "\n| `cladenc report` | Prints the report of a directed evolution that has ended, "
+    ));
+}
+
+#[test]
+fn the_table_of_sub_commands_says_that_status_is_for_a_directed_evolution_that_has_not_ended() {
+    assert!(readme().contains(
+        "\n| `cladenc status` | Prints the state so far of a directed evolution that has not \
+         ended, "
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_report_says_that_it_is_for_a_directed_evolution_that_has_ended() {
+    assert!(
+        what_is_said_of("report")
+            .starts_with("`cladenc report` is for a directed evolution that has ended. ")
+    );
+}
+
+#[test]
+fn the_section_of_cladenc_report_says_what_it_does_with_a_directed_evolution_that_has_not_ended() {
+    assert!(what_is_said_of("report").ends_with(
+        "Given a directed evolution that has not ended, `cladenc report` prints nothing on \
+         standard output: it says on standard error that the directed evolution has not ended \
+         and that `cladenc status` is the sub-command to call, and exits with status 2."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_status_says_that_it_is_for_a_directed_evolution_that_has_not_ended() {
+    assert!(
+        what_is_said_of("status")
+            .starts_with("`cladenc status` is for a directed evolution that has not ended, ")
+    );
+}
+
+#[test]
+fn the_section_of_cladenc_status_says_what_it_does_with_a_directed_evolution_that_has_ended() {
+    assert!(what_is_said_of("status").ends_with(
+        "Given a directed evolution that has ended, `cladenc status` prints nothing on standard \
+         output: it says on standard error that the directed evolution has ended and that \
+         `cladenc report` is the sub-command to call, and exits with status 2."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_status_says_that_what_it_prints_can_change() {
+    assert!(what_is_said_of("status").contains(
+        "What `cladenc status` prints is the state so far, which can change until the directed \
+         evolution ends"
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_status_names_the_harness_that_is_ahead_so_far() {
+    assert!(what_is_said_of("status").contains(
+        "The harness that is ahead so far is the harness that would be named the best harness \
+         if the directed evolution ended now"
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_it_prints_the_report_when_the_directed_evolution_ends() {
+    assert!(
+        what_is_said_of("start").contains(
+            "when the directed evolution ends it prints there what `cladenc report` prints"
+        )
+    );
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_standard_output_holds_only_the_directory() {
+    assert!(what_is_said_of("start").contains(
+        "prints the directory of the best harness on standard output, and nothing else there."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_a_directed_evolution_stopped_sooner_prints_no_report() {
+    assert!(what_is_said_of("start").contains("prints no report and exits with status 1"));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_end_with_what_it_prints() {
+    assert!(what_is_said_of("start").ends_with(
+        "\n9. It prints on standard error what `cladenc report` prints, and on standard output \
+         the directory of the best harness."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_resume_says_that_it_prints_the_report_when_the_directed_evolution_ends() {
+    assert!(what_is_said_of("resume").contains(
+        "when the directed evolution ends it prints there what `cladenc report` prints, as \
+         `cladenc start` does."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_resume_says_what_it_prints_of_a_directed_evolution_that_had_ended() {
+    assert!(what_is_said_of("resume").contains(
+        "Of a directed evolution that had ended already, it prints the directory of the best \
+         harness and the report again and does nothing else."
+    ));
+}

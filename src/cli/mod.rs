@@ -9,6 +9,13 @@ use clap::builder::NonEmptyStringValueParser;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
+use crate::report::{self, Report};
+
+const HAS_NOT_ENDED: &str = "the directed evolution has not ended: call `cladenc status` to read \
+                             its state so far";
+
+const HAS_ENDED: &str =
+    "the directed evolution has ended: call `cladenc report` to read its report";
 
 #[derive(Clone, Debug, Parser)]
 #[command(
@@ -35,8 +42,15 @@ pub enum Command {
         after_long_help = contract::RESUMING
     )]
     Resume(ResumeOptions),
-    #[command(about = "Print the state of a directed evolution without changing it")]
+    #[command(
+        about = "Print the report of a directed evolution that has ended, without changing it"
+    )]
     Report(ReportOptions),
+    #[command(
+        about = "Print the state so far of a directed evolution that has not ended, without \
+                 changing it"
+    )]
+    Status(StatusOptions),
 }
 
 #[derive(Clone, Debug, Args)]
@@ -194,11 +208,28 @@ pub struct ReportOptions {
     outputs_dir: PathBuf,
 }
 
+#[derive(Clone, Debug, Args)]
+pub struct StatusOptions {
+    #[arg(long, help = "Print one JSON object in place of the table")]
+    json: bool,
+    #[arg(
+        long,
+        value_name = "DIR",
+        help = "The outputs directory of the directed evolution to print the state of"
+    )]
+    outputs_dir: PathBuf,
+}
+
 pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
     let printed = match &cli.command {
-        Command::Start(options) => start(options, stop, errors).map(directory),
-        Command::Resume(options) => resume(options, stop, errors).map(directory),
-        Command::Report(options) => report(options),
+        Command::Start(options) => start(options, stop, errors),
+        Command::Resume(options) => resume(options, stop, errors),
+        Command::Report(options) => read(&options.outputs_dir)
+            .and_then(ended)
+            .map(|report| shown(&report, options.json)),
+        Command::Status(options) => read(&options.outputs_dir)
+            .and_then(not_ended)
+            .map(|report| shown(&report, options.json)),
     };
     match printed {
         Ok(text) => {
@@ -216,38 +247,67 @@ fn start(
     options: &StartOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<Found, (u8, String)> {
+) -> Result<String, (u8, String)> {
     let settings = options
         .settings()
         .map_err(|refused| (2, refused.to_string()))?;
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::start(&settings, &outputs_directory, stop, writer).map_err(stopped)
+    directed_evolution::start(&settings, &outputs_directory, stop, writer)
+        .map_err(stopped)
+        .and_then(|found| finished(&outputs_directory, &found, writer))
 }
 
 fn resume(
     options: &ResumeOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<Found, (u8, String)> {
+) -> Result<String, (u8, String)> {
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::resume(&outputs_directory, stop, writer).map_err(stopped)
+    directed_evolution::resume(&outputs_directory, stop, writer)
+        .map_err(stopped)
+        .and_then(|found| finished(&outputs_directory, &found, writer))
 }
 
-fn report(options: &ReportOptions) -> Result<String, (u8, String)> {
-    let outputs_directory = absolute(&options.outputs_dir)?;
-    crate::report::read(&outputs_directory)
-        .map(|report| {
-            if options.json {
-                report.json() + "\n"
-            } else {
-                report.table()
-            }
-        })
-        .map_err(|error| stopped(DirectedEvolutionError::Unusable(error)))
+fn finished(
+    outputs_directory: &Path,
+    found: &Found,
+    writer: &mut dyn Write,
+) -> Result<String, (u8, String)> {
+    read(outputs_directory).and_then(ended).map(|report| {
+        let _ = write!(writer, "{}", report.table());
+        format!("{}\n", found.directory.display())
+    })
 }
 
-fn directory(found: Found) -> String {
-    format!("{}\n", found.directory.display())
+fn read(outputs_dir: &Path) -> Result<Report, (u8, String)> {
+    absolute(outputs_dir).and_then(|outputs_directory| {
+        report::read(&outputs_directory)
+            .map_err(|error| stopped(DirectedEvolutionError::Unusable(error)))
+    })
+}
+
+fn ended(report: Report) -> Result<Report, (u8, String)> {
+    if report.has_ended() {
+        Ok(report)
+    } else {
+        Err((2, HAS_NOT_ENDED.to_owned()))
+    }
+}
+
+fn not_ended(report: Report) -> Result<Report, (u8, String)> {
+    if report.has_ended() {
+        Err((2, HAS_ENDED.to_owned()))
+    } else {
+        Ok(report)
+    }
+}
+
+fn shown(report: &Report, json: bool) -> String {
+    if json {
+        report.json() + "\n"
+    } else {
+        report.table()
+    }
 }
 
 fn absolute(outputs_dir: &Path) -> Result<PathBuf, (u8, String)> {

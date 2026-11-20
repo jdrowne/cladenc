@@ -47,7 +47,7 @@ fn table(build: impl FnOnce(&mut Genealogy)) -> String {
 fn table_with(seconds: &[Seconds], build: impl FnOnce(&mut Genealogy)) -> String {
     let mut genealogy = settings().genealogy();
     build(&mut genealogy);
-    Report::of(&settings(), &genealogy, seconds).table()
+    Report::of(&settings(), &genealogy, seconds, Some(0)).table()
 }
 
 fn took(attempts: f64, procreation: Option<f64>) -> Seconds {
@@ -120,7 +120,7 @@ fn the_most_procreations_being_1_is_not_shown_as_several() {
         max_procreations: 1,
         ..settings()
     };
-    let table = Report::of(&settings, &Genealogy::new(), &[]).table();
+    let table = Report::of(&settings, &Genealogy::new(), &[], Some(0)).table();
     assert_eq!(
         table.lines().nth(1),
         Some("started 0 of 1 procreation, best harness 0")

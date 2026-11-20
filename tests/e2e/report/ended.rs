@@ -111,7 +111,7 @@ fn report_prints_the_table() {
 fn with_json_report_prints_an_object_holding_the_same_values() {
     let directory = ended();
     let values: Value = serde_json::from_str(concat!(
-        r#"{"model":"a-model","model_url":"http://models.example/v1","#,
+        r#"{"ended":true,"model":"a-model","model_url":"http://models.example/v1","#,
         r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
         r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
         r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,

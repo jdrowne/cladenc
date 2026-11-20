@@ -41,6 +41,18 @@ fn resume(directory: &Path) -> Output {
     resume_with(directory, None)
 }
 
+fn report_of(directory: &Path) -> String {
+    let report = Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("report")
+        .arg(format!(
+            "--outputs-dir={}",
+            directory.join("outputs").display()
+        ))
+        .output()
+        .unwrap();
+    String::from_utf8(report.stdout).unwrap()
+}
+
 fn resume_with(directory: &Path, another: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("resume")
@@ -83,6 +95,16 @@ fn resume_on_a_run_that_ended_says_on_standard_error_that_the_directed_evolution
             .starts_with(
                 "cladenc: the directed evolution had finished: its best harness is harness "
             )
+    );
+}
+
+#[test]
+fn resume_on_a_run_that_ended_prints_on_standard_error_what_report_prints() {
+    let (directory, _run) = ended();
+    let said = String::from_utf8(resume(directory.path()).stderr).unwrap();
+    assert_eq!(
+        said.split_once('\n').map(|(_, report)| report.to_owned()),
+        Some(report_of(directory.path()))
     );
 }
 
