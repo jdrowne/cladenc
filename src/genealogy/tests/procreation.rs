@@ -78,6 +78,12 @@ fn a_procreation_that_timed_out_leaves_a_failed_harness() {
 }
 
 #[test]
+fn a_procreation_that_left_the_progenitor_s_copy_unchanged_leaves_an_unchanged_harness() {
+    let genealogy = procreated(CreationOutcome::Unchanged);
+    assert_eq!(genealogy.harnesses()[1].state(), HarnessState::Unchanged);
+}
+
+#[test]
 fn harness_count_counts_a_child_that_is_being_created() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();
@@ -95,6 +101,11 @@ fn harness_count_counts_a_child_that_failed() {
 }
 
 #[test]
+fn harness_count_counts_a_child_whose_procreation_left_the_progenitor_s_copy_unchanged() {
+    assert_eq!(procreated(CreationOutcome::Unchanged).harness_count(), 2);
+}
+
+#[test]
 fn a_new_genealogy_has_started_no_procreation() {
     assert_eq!(Genealogy::new().procreations_started(), 0);
 }
@@ -109,5 +120,11 @@ fn a_procreation_counts_as_started_while_it_runs() {
 #[test]
 fn a_procreation_that_failed_still_counts_as_started() {
     let genealogy = procreated(CreationOutcome::Failed);
+    assert_eq!(genealogy.procreations_started(), 1);
+}
+
+#[test]
+fn a_procreation_that_left_the_progenitor_s_copy_unchanged_still_counts_as_started() {
+    let genealogy = procreated(CreationOutcome::Unchanged);
     assert_eq!(genealogy.procreations_started(), 1);
 }

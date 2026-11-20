@@ -104,6 +104,13 @@ fn the_primogenitor_alone_is_the_progenitor_of_every_procreation_though_each_cre
 }
 
 #[test]
+fn a_child_whose_procreation_left_the_progenitor_s_copy_unchanged_is_no_work_left_to_do() {
+    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    child_of(&mut genealogy, 0, CreationOutcome::Unchanged);
+    assert_eq!(progenitors(&genealogy), [0]);
+}
+
+#[test]
 fn a_harness_that_waits_stays_left_out_while_another_harness_has_a_task_not_yet_given() {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     child_of(&mut genealogy, 0, CREATED);

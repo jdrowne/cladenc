@@ -1,27 +1,8 @@
-use std::fs;
-use std::process::Command;
+use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-fn run_command_the_help_gives(command: &str) -> String {
-    let help = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .args(["start", "--help"])
-        .output()
-        .unwrap();
-    String::from_utf8(help.stdout)
-        .unwrap()
-        .lines()
-        .find(|line| {
-            line.trim_start()
-                .starts_with("'[ -d /var/log/cladenc/attempts ]")
-        })
-        .unwrap()
-        .trim()
-        .trim_matches('\'')
-        .replace("<COMMAND>", command)
-}
-
-fn ran() -> TempDir {
+fn ran() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let options = [
         (
@@ -35,12 +16,9 @@ fn ran() -> TempDir {
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
-        (
-            "--harness-run-command",
-            run_command_the_help_gives("echo attempted > attempted").into(),
-        ),
+        ("--harness-run-command", "exit 0".into()),
         ("--outputs-dir", directory.path().join("outputs")),
-        ("--max-procreations", "2".into()),
+        ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
@@ -49,66 +27,56 @@ fn ran() -> TempDir {
         ("--holdout-corroboration-percentage", "50".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    Command::new(env!("CARGO_BIN_EXE_cladenc"))
+    let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
         .args(options)
         .output()
         .unwrap();
-    directory
+    (directory, output)
 }
 
-fn script_of(directory: &TempDir, harness: &str) -> String {
-    fs::read_to_string(
-        directory
-            .path()
-            .join("outputs/harnesses")
-            .join(harness)
-            .join("harness.sh"),
-    )
-    .unwrap()
+#[test]
+fn a_run_whose_procreation_changed_nothing_exits_with_0() {
+    let (_directory, output) = ran();
+    assert_eq!(output.status.code(), Some(0));
 }
 
-fn names_in_harness(directory: &TempDir, harness: &str) -> Vec<String> {
-    let mut names: Vec<String> =
-        fs::read_dir(directory.path().join("outputs/harnesses").join(harness))
+#[test]
+fn a_run_whose_procreation_changed_nothing_prints_the_directory_of_the_primogenitor() {
+    let (directory, output) = ran();
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        format!(
+            "{}\n",
+            directory.path().join("outputs/harnesses/0").display()
+        )
+    );
+}
+
+#[test]
+fn a_run_says_that_a_procreation_left_the_copy_unchanged_and_created_no_harness() {
+    let (directory, output) = ran();
+    assert!(String::from_utf8(output.stderr).unwrap().contains(&format!(
+        "cladenc: the procreation of harness 1 by harness 0 left the copy of the source code of \
+         harness 0 unchanged, and created no harness: what the harness printed is kept in {}\n",
+        directory.path().join("outputs/procreations/1").display()
+    )));
+}
+
+#[test]
+fn the_report_of_a_run_shows_a_child_that_would_be_the_copy_as_it_was_as_unchanged() {
+    let (_directory, output) = ran();
+    assert!(
+        String::from_utf8(output.stderr)
             .unwrap()
-            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-            .collect();
-    names.sort();
-    names
-}
-
-#[test]
-fn a_run_with_the_run_command_the_help_gives_creates_as_many_children_as_the_most_procreations() {
-    let directory = ran();
-    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
-    assert_eq!(
-        journal
             .lines()
-            .filter(|line| line.contains(r#""record":"procreation_finished""#))
-            .filter(|line| line.contains(r#""outcome":"created""#))
-            .count(),
-        2
+            .last()
+            .is_some_and(|row| row.starts_with("1   0           -           unchanged  "))
     );
 }
 
 #[test]
-fn a_run_with_the_run_command_the_help_gives_leaves_each_child_the_files_of_the_primogenitor() {
-    let directory = ran();
-    assert_eq!(
-        ["1", "2"].map(|child| names_in_harness(&directory, child)),
-        [
-            names_in_harness(&directory, "0"),
-            names_in_harness(&directory, "0")
-        ]
-    );
-}
-
-#[test]
-fn a_run_with_the_run_command_the_help_gives_leaves_the_script_of_each_child_unchanged() {
-    let directory = ran();
-    assert_eq!(
-        ["1", "2"].map(|child| script_of(&directory, child)),
-        [script_of(&directory, "0"), script_of(&directory, "0")]
-    );
+fn a_run_benchmarks_no_child_that_would_be_the_copy_as_it_was() {
+    let (directory, _output) = ran();
+    assert!(!directory.path().join("outputs/attempts/1").exists());
 }

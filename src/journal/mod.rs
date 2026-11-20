@@ -11,7 +11,7 @@ pub use record::{Record, Settings};
 pub use state::Started;
 pub(crate) use state::{Seconds, State, read};
 
-pub const FORMAT: u32 = 22;
+pub const FORMAT: u32 = 23;
 
 #[derive(Debug)]
 pub struct Journal {

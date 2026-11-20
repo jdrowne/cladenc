@@ -117,6 +117,14 @@ fn a_baseline_that_failed_leaves_a_failed_harness() {
 }
 
 #[test]
+fn a_baseline_that_left_the_source_code_of_the_progenitor_unchanged_leaves_an_unchanged_harness() {
+    assert_eq!(
+        with_a_baseline_ended(CreationOutcome::Unchanged).harnesses()[3].state(),
+        HarnessState::Unchanged
+    );
+}
+
+#[test]
 fn a_baseline_is_refused_where_the_primogenitor_procreated() {
     let mut genealogy = Genealogy::new();
     genealogy.start_procreation(0).unwrap();

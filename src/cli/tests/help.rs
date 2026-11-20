@@ -351,7 +351,8 @@ fn the_short_help_of_start_names_the_two_flags_of_a_dockerfile() {
 fn the_long_help_of_start_says_what_each_way_a_harness_ends_means() {
     let help = help_of_start(true);
     let endings = [
-        "  exit status 0     the procreation created a harness\n",
+        "  exit status 0     the procreation created a harness, or is recorded \
+         as\n                    unchanged where the harness changed nothing\n",
         "  exit status 125   Docker did not start the container: the \
          directed\n                    evolution stops",
         "  any other status  the procreation failed\n",

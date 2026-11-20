@@ -14,6 +14,7 @@ mod containers {
 
 mod directed_evolution {
     mod again;
+    mod alike;
     mod built;
     mod concurrent;
     mod ended;

@@ -78,8 +78,8 @@ fn the_instruction_says_where_the_record_of_the_procreation_of_such_a_harness_is
     assert!(containers::INSTRUCTION.contains(
         "the directory named procreation holds what the harness that made it printed, in the \
          files named stdout and stderr, with the id of that harness in the file named \
-         progenitor and one word in the file named outcome, created, failed, build_failed or \
-         timed_out, "
+         progenitor and one word in the file named outcome, created, unchanged, failed, \
+         build_failed or timed_out, "
     ));
 }
 
@@ -136,6 +136,14 @@ fn the_instruction_says_that_the_child_may_be_asked_to_improve_its_own_source_co
         "becomes a new harness, which attempts tasks in its turn. It may then be asked, as you \
          are now, to improve a copy of its own source code, so a change that makes it better \
          at that counts as well. "
+    ));
+}
+
+#[test]
+fn the_instruction_says_that_a_current_directory_left_as_it_was_makes_no_new_harness() {
+    assert!(containers::INSTRUCTION.contains(
+        " counts as well. Where you leave the current directory as it was, no new harness is \
+         made: a change that you only print in your answer changes no file. The new harness "
     ));
 }
 

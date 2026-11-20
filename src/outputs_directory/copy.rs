@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+use std::ffi::OsString;
 use std::fs;
 use std::io::{self, ErrorKind};
 use std::os::unix::fs::symlink;
@@ -41,4 +43,45 @@ pub fn holds_only_harness_files(tree: &Path) -> io::Result<bool> {
     } else {
         Ok(kind.is_file() || kind.is_symlink())
     }
+}
+
+pub fn same_tree(one: &Path, other: &Path) -> io::Result<bool> {
+    let found = fs::symlink_metadata(one)?;
+    let other_found = fs::symlink_metadata(other)?;
+    let kind = found.file_type();
+    if kind != other_found.file_type() {
+        Ok(false)
+    } else if kind.is_dir() {
+        same_entries(one, other)
+    } else if !kind.is_file() {
+        Ok(fs::read_link(one).ok() == fs::read_link(other).ok())
+    } else if found.permissions() != other_found.permissions() || found.len() != other_found.len() {
+        Ok(false)
+    } else {
+        fs::read(one).and_then(|contents| fs::read(other).map(|others| contents == others))
+    }
+}
+
+fn same_entries(one: &Path, other: &Path) -> io::Result<bool> {
+    names_in(one)
+        .and_then(|names| names_in(other).map(|other_names| (names, other_names)))
+        .and_then(|(names, other_names)| {
+            if names == other_names {
+                names
+                    .iter()
+                    .map(|name| same_tree(&one.join(name), &other.join(name)))
+                    .find(|same| !matches!(same, Ok(true)))
+                    .unwrap_or(Ok(true))
+            } else {
+                Ok(false)
+            }
+        })
+}
+
+fn names_in(directory: &Path) -> io::Result<BTreeSet<OsString>> {
+    fs::read_dir(directory).and_then(|entries| {
+        entries
+            .map(|entry| entry.map(|found| found.file_name()))
+            .collect()
+    })
 }

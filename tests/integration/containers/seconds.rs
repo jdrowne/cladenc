@@ -95,10 +95,13 @@ fn the_seconds_of_a_procreation_are_those_its_progenitor_ran() {
 
 #[test]
 fn the_seconds_of_a_procreation_leave_out_those_the_build_of_the_child_ran() {
-    assert!(procreated("exit 0", Some("sleep 15")).seconds < 15.0);
+    assert!(procreated("touch changed", Some("sleep 15")).seconds < 15.0);
 }
 
 #[test]
 fn a_procreation_comes_back_with_its_outcome_beside_its_seconds() {
-    assert_eq!(procreated("exit 0", None).outcome, CreationOutcome::Created);
+    assert_eq!(
+        procreated("touch changed", None).outcome,
+        CreationOutcome::Created
+    );
 }

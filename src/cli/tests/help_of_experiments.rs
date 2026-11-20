@@ -114,3 +114,11 @@ fn the_long_help_of_start_says_how_the_harnesses_of_the_experiments_are_told_apa
          alone\ngives a lead at least as large where the two are created equally well"
     ));
 }
+
+#[test]
+fn the_long_help_of_start_says_that_a_baseline_that_changes_nothing_creates_no_harness() {
+    assert!(long_help_of_start().contains(
+        "Where the primogenitor leaves /var/lib/cladenc/work as it was, no singleton\ncontrol \
+         group harness is created, and the creation is recorded as unchanged."
+    ));
+}

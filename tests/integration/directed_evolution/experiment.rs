@@ -20,7 +20,7 @@ then
   else
     [ -e "$CLADENC_HARNESS/improved" ] && echo t3 >> solved
   fi
-  touch improved
+  echo improved >> improved
 else
   touch "$CLADENC_HARNESS/solved"
   cp "$CLADENC_HARNESS/solved" solved

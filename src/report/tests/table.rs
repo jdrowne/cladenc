@@ -81,6 +81,22 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
 }
 
 #[test]
+fn a_harness_whose_procreation_left_the_progenitor_s_copy_unchanged_is_shown_as_unchanged() {
+    let table = table(|genealogy| {
+        let child = genealogy.start_procreation(0).unwrap();
+        genealogy
+            .end_procreation(child, CreationOutcome::Unchanged)
+            .unwrap();
+    });
+    assert!(
+        table
+            .lines()
+            .last()
+            .is_some_and(|row| row.starts_with("1   0           -           unchanged  0 "))
+    );
+}
+
+#[test]
 fn a_failed_harness_is_shown_as_failed() {
     let seconds = [took(0.0, None), took(0.0, Some(30.26))];
     let table = table_with(&seconds, |genealogy| {

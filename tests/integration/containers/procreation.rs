@@ -121,6 +121,11 @@ fn heard_from_a_harness_that_says(said: &str) -> String {
     hearing.join().unwrap()
 }
 
+fn outcome_of(run_command: &str) -> CreationOutcome {
+    let (_directory, _outputs_directory, result) = procreated(run_command);
+    result.unwrap().outcome
+}
+
 fn harness_script(harness: &Path) -> String {
     fs::read_to_string(harness.join("harness.sh")).unwrap()
 }
@@ -250,8 +255,8 @@ fn the_standard_error_of_a_harness_is_kept_with_its_procreation() {
 }
 
 #[test]
-fn a_harness_that_exits_with_0_creates_its_child() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0");
+fn a_harness_that_changes_its_copy_and_exits_with_0_creates_its_child() {
+    let (_directory, _outputs_directory, result) = procreated("touch changed");
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -263,13 +268,13 @@ fn a_harness_that_exits_with_0_creates_its_child() {
 
 #[test]
 fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
-    let (_directory, outputs_directory, _result) = procreated("exit 0");
+    let (_directory, outputs_directory, _result) = procreated("touch changed");
     assert!(!outputs_directory.build(1).exists());
 }
 
 #[test]
 fn a_procreation_that_created_its_child_leaves_a_directory_for_the_attempts_of_the_child() {
-    let (_directory, outputs_directory, _result) = procreated("exit 0");
+    let (_directory, outputs_directory, _result) = procreated("touch changed");
     assert!(outputs_directory.attempts(1).is_dir());
 }
 
@@ -410,4 +415,67 @@ fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_moun
             ..
         })
     ));
+}
+
+#[test]
+fn a_harness_that_exits_with_0_and_leaves_its_copy_as_it_was_creates_no_child() {
+    assert_eq!(outcome_of("exit 0"), CreationOutcome::Unchanged);
+}
+
+#[test]
+fn a_procreation_that_left_the_copy_as_it_was_is_recorded_with_the_word_unchanged() {
+    assert_eq!(kept_of_the_procreation("exit 0", "outcome"), "unchanged\n");
+}
+
+#[test]
+fn a_procreation_that_left_the_copy_as_it_was_leaves_no_directory_for_attempts() {
+    let (_directory, outputs_directory, _result) = procreated("exit 0");
+    assert!(!outputs_directory.attempts(1).exists());
+}
+
+#[test]
+fn a_harness_that_writes_a_file_again_with_the_contents_it_had_creates_no_child() {
+    assert_eq!(
+        outcome_of("cat harness.sh > kept; cat kept > harness.sh; rm kept"),
+        CreationOutcome::Unchanged
+    );
+}
+
+#[test]
+fn a_harness_that_only_writes_into_the_source_code_it_runs_from_creates_no_child() {
+    assert_eq!(
+        outcome_of("echo changed > \"$CLADENC_HARNESS/harness.sh\""),
+        CreationOutcome::Unchanged
+    );
+}
+
+#[test]
+fn a_harness_that_changes_the_contents_of_a_file_of_its_copy_creates_its_child() {
+    assert_eq!(
+        outcome_of("echo changed >> harness.sh"),
+        CreationOutcome::Created
+    );
+}
+
+#[test]
+fn a_harness_that_changes_only_the_permission_bits_of_a_file_of_its_copy_creates_its_child() {
+    assert_eq!(outcome_of("chmod 700 harness.sh"), CreationOutcome::Created);
+}
+
+#[test]
+fn a_harness_that_only_removes_a_file_of_its_copy_creates_its_child() {
+    assert_eq!(outcome_of("rm prompt.txt"), CreationOutcome::Created);
+}
+
+#[test]
+fn a_harness_that_only_points_a_symbolic_link_of_its_copy_elsewhere_creates_its_child() {
+    assert_eq!(
+        outcome_of("ln -sf harness.sh prompt.txt"),
+        CreationOutcome::Created
+    );
+}
+
+#[test]
+fn a_harness_that_exits_with_1_and_leaves_its_copy_as_it_was_fails_its_child() {
+    assert_eq!(outcome_of("exit 1"), CreationOutcome::Failed);
 }

@@ -9,6 +9,8 @@ use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
 use tempfile::TempDir;
 
+const CHANGE_THE_COPY: &str = "touch changed";
+
 const MODEL: Model<'static> = Model {
     name: test_inputs::MODEL,
     url: test_inputs::MODEL_URL,
@@ -52,7 +54,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
     let (directory, outputs_directory) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: "exit 0",
+        run_command: CHANGE_THE_COPY,
         build_command: Some("hostname > id; sleep 300"),
         model: MODEL,
         procreation_timeout: 60,
@@ -74,7 +76,7 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
     let (_directory, outputs_directory) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: "exit 0",
+        run_command: CHANGE_THE_COPY,
         build_command: Some(build_command),
         model: Model {
             key: Some(test_inputs::MODEL_KEY),
@@ -88,12 +90,12 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
 }
 
 fn left_in_the_child(build_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated("exit 0", build_command);
+    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, build_command);
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
 fn kept_of_the_build(build_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated("exit 0", build_command);
+    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, build_command);
     fs::read_to_string(outputs_directory.build(1).join(file)).unwrap()
 }
 
@@ -163,7 +165,8 @@ fn the_standard_error_of_the_build_of_a_child_is_kept_under_builds() {
 
 #[test]
 fn the_standard_output_of_a_harness_is_kept_apart_from_that_of_the_build_of_its_child() {
-    let (_directory, outputs_directory, _result) = procreated("echo ran", "echo built");
+    let (_directory, outputs_directory, _result) =
+        procreated("echo ran; touch changed", "echo built");
     assert_eq!(
         fs::read_to_string(outputs_directory.procreation(1).join("stdout")).unwrap(),
         "ran\n"
@@ -172,7 +175,7 @@ fn the_standard_output_of_a_harness_is_kept_apart_from_that_of_the_build_of_its_
 
 #[test]
 fn a_child_whose_build_exits_with_0_is_created() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 0");
+    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 0");
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -184,7 +187,7 @@ fn a_child_whose_build_exits_with_0_is_created() {
 
 #[test]
 fn a_child_whose_build_exits_with_another_status_did_not_build() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 1");
+    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 1");
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -202,13 +205,13 @@ fn a_child_that_did_not_build_is_kept_beside_the_harnesses() {
 
 #[test]
 fn a_child_that_did_not_build_gets_no_directory_for_attempts() {
-    let (_directory, outputs_directory, _result) = procreated("exit 0", "exit 1");
+    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, "exit 1");
     assert!(!outputs_directory.attempts(1).exists());
 }
 
 #[test]
 fn a_child_whose_build_leaves_a_named_pipe_did_not_build() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0", "mkfifo pipe");
+    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "mkfifo pipe");
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -239,7 +242,7 @@ fn a_harness_that_failed_fails_its_child_whatever_the_build_would_have_done() {
 #[test]
 fn a_build_that_runs_past_the_time_limit_of_its_procreation_times_the_procreation_out() {
     let (_directory, _outputs_directory, result) =
-        procreated_within("exit 0", "touch started; sleep 300", 8);
+        procreated_within(CHANGE_THE_COPY, "touch started; sleep 300", 8);
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -251,7 +254,8 @@ fn a_build_that_runs_past_the_time_limit_of_its_procreation_times_the_procreatio
 
 #[test]
 fn the_time_limit_of_a_procreation_covers_its_harness_and_the_build_of_its_child_together() {
-    let (_directory, _outputs_directory, result) = procreated_within("sleep 4", "sleep 4", 6);
+    let (_directory, _outputs_directory, result) =
+        procreated_within("sleep 4; touch changed", "sleep 4", 6);
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -264,7 +268,7 @@ fn the_time_limit_of_a_procreation_covers_its_harness_and_the_build_of_its_child
 #[test]
 fn the_time_limit_removes_the_container_of_a_build() {
     let (_directory, outputs_directory, _result) =
-        procreated_within("exit 0", "hostname > id; sleep 300", 8);
+        procreated_within(CHANGE_THE_COPY, "hostname > id; sleep 300", 8);
     assert!(test_inputs::container_is_gone(
         &outputs_directory.harness(1).join("id")
     ));
@@ -272,13 +276,13 @@ fn the_time_limit_removes_the_container_of_a_build() {
 
 #[test]
 fn a_build_whose_container_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 125");
+    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 125");
     assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
 fn the_error_of_a_build_names_the_file_under_builds_that_holds_what_docker_said() {
-    let (_directory, outputs_directory, result) = procreated("exit 0", "exit 125");
+    let (_directory, outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 125");
     assert!(matches!(
         result,
         Err(ContainerError::Docker(said)) if said == outputs_directory.build(1).join("stderr")
@@ -291,7 +295,7 @@ fn a_build_whose_output_cannot_be_kept_is_an_error() {
     fs::write(directory.path().join("outputs/builds"), "").unwrap();
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: "exit 0",
+        run_command: CHANGE_THE_COPY,
         build_command: Some("exit 0"),
         model: MODEL,
         procreation_timeout: 30,
@@ -315,5 +319,23 @@ fn a_procreation_stopped_while_its_child_is_built_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_child_is_built();
     assert!(test_inputs::container_is_gone(
         &outputs_directory.running_procreation(1).join("child/id")
+    ));
+}
+
+#[test]
+fn a_child_that_would_be_the_copy_as_it_was_is_not_built() {
+    let (_directory, outputs_directory, _result) = procreated("exit 0", "echo built > built");
+    assert!(!outputs_directory.build(1).exists());
+}
+
+#[test]
+fn a_harness_that_leaves_its_copy_as_it_was_creates_no_child_whatever_the_build_would_have_done() {
+    let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 1");
+    assert!(matches!(
+        result,
+        Ok(containers::Creation {
+            outcome: CreationOutcome::Unchanged,
+            ..
+        })
     ));
 }

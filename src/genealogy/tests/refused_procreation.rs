@@ -14,6 +14,14 @@ fn with_a_failed_child() -> Genealogy {
     genealogy
 }
 
+fn with_an_unchanged_child() -> Genealogy {
+    let mut genealogy = with_a_child_being_created();
+    genealogy
+        .end_procreation(1, CreationOutcome::Unchanged)
+        .unwrap();
+    genealogy
+}
+
 #[test]
 fn a_procreation_of_a_harness_that_is_not_in_the_genealogy_is_refused() {
     assert_eq!(
@@ -57,6 +65,14 @@ fn a_refused_procreation_of_a_failed_harness_changes_nothing() {
     let mut genealogy = with_a_failed_child();
     let _ = genealogy.start_procreation(1);
     assert_eq!(genealogy, with_a_failed_child());
+}
+
+#[test]
+fn a_procreation_of_an_unchanged_harness_is_refused() {
+    assert_eq!(
+        with_an_unchanged_child().start_procreation(1),
+        Err(GenealogyError::ProgenitorNotCreated { progenitor: 1 })
+    );
 }
 
 #[test]

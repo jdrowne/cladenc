@@ -135,6 +135,13 @@ fn a_procreation_that_timed_out_adds_nothing_to_the_clade_not_completed_of_its_p
 }
 
 #[test]
+fn a_procreation_that_left_the_progenitor_s_copy_unchanged_adds_nothing_to_the_clade_of_its_progenitor()
+ {
+    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Unchanged);
+    assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
+}
+
+#[test]
 fn a_procreation_that_failed_adds_nothing_to_the_clade_not_completed_of_the_primogenitor() {
     let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Failed);
     assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);

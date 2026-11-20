@@ -15,6 +15,7 @@ mod resume {
 }
 
 mod start {
+    mod alike;
     mod benchmarks;
     mod built;
     mod called;

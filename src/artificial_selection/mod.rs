@@ -82,7 +82,7 @@ impl ArtificialSelection {
             .all(|harness| match harness.state() {
                 HarnessState::BeingCreated => false,
                 HarnessState::Created => harness.has_attempted_every(&self.tasks),
-                HarnessState::Failed => true,
+                HarnessState::Unchanged | HarnessState::Failed => true,
             })
     }
 

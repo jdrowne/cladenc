@@ -204,6 +204,7 @@ impl Display for Said<'_> {
             } => {
                 let kept = Kept {
                     harness: *child,
+                    copied_from: *progenitor,
                     printer: "the harness",
                     printed: outputs_directory.procreation(*child),
                     outputs_directory,
@@ -227,6 +228,7 @@ impl Display for Said<'_> {
                 };
                 let kept = Kept {
                     harness: *harness,
+                    copied_from: experiment.progenitor,
                     printer: "the primogenitor",
                     printed: outputs_directory.baseline(*harness),
                     outputs_directory,
@@ -285,6 +287,7 @@ impl Display for Said<'_> {
 
 struct Kept<'a> {
     harness: HarnessId,
+    copied_from: HarnessId,
     printer: &'a str,
     printed: PathBuf,
     outputs_directory: &'a OutputsDirectory,
@@ -296,6 +299,14 @@ impl Kept<'_> {
             CreationOutcome::Created => (
                 format!("created harness {}, kept in", self.harness),
                 self.outputs_directory.harness(self.harness),
+            ),
+            CreationOutcome::Unchanged => (
+                format!(
+                    "left the copy of the source code of harness {} unchanged, and created no \
+                     harness: what {} printed is kept in",
+                    self.copied_from, self.printer
+                ),
+                self.printed,
             ),
             CreationOutcome::Failed => (
                 format!("failed: what {} printed is kept in", self.printer),

@@ -65,10 +65,20 @@ fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_de
 
 #[test]
 fn the_outputs_directory_records_which_harness_made_a_child_and_how_the_procreation_ended() {
-    let directory = ran("exit 0", "1");
+    let directory = ran("touch changed", "1");
     let kept = directory.path().join("outputs/procreations/1");
     assert_eq!(
         ["progenitor", "outcome"].map(|file| fs::read_to_string(kept.join(file)).unwrap()),
         ["0\n", "created\n"]
+    );
+}
+
+#[test]
+fn the_outputs_directory_records_a_procreation_that_changed_nothing_as_unchanged() {
+    let directory = ran("exit 0", "1");
+    let kept = directory.path().join("outputs/procreations/1");
+    assert_eq!(
+        ["progenitor", "outcome"].map(|file| fs::read_to_string(kept.join(file)).unwrap()),
+        ["0\n", "unchanged\n"]
     );
 }

@@ -47,6 +47,14 @@ fn a_harness_whose_procreation_timed_out_is_not_among_the_created_harnesses() {
 }
 
 #[test]
+fn a_harness_whose_procreation_left_the_progenitor_s_copy_unchanged_is_not_among_the_created_harnesses()
+ {
+    let mut genealogy = Genealogy::new();
+    procreate(&mut genealogy, 0, CreationOutcome::Unchanged);
+    assert_eq!(created_ids(&genealogy), [0]);
+}
+
+#[test]
 fn the_created_harnesses_come_in_ascending_id_order() {
     let mut genealogy = Genealogy::new();
     procreate(&mut genealogy, 0, CreationOutcome::Failed);

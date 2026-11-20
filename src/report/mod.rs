@@ -233,6 +233,7 @@ impl HarnessReport {
         let state = match self.state {
             HarnessState::BeingCreated => "being created",
             HarnessState::Created => "created",
+            HarnessState::Unchanged => "unchanged",
             HarnessState::Failed => "failed",
         };
         [

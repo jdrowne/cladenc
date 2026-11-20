@@ -102,6 +102,11 @@ fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_ran_past_i
 }
 
 #[test]
+fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_left_its_copy_unchanged() {
+    assert_eq!(progenitors(&after(&[(1, CreationOutcome::Unchanged)])), [0]);
+}
+
+#[test]
 fn a_harness_can_be_the_progenitor_again_one_procreation_after_its_first_that_created_no_child() {
     assert_eq!(progenitors(&after(&[(1, FAILED), (0, CREATED)])), [0, 1]);
 }

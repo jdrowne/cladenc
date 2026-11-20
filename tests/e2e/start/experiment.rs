@@ -5,8 +5,9 @@ use std::process::{Command, Output};
 use serde_json::Value;
 use tempfile::TempDir;
 
-const CREATE_ONLY_WHERE_NO_CHILD_IS_GIVEN_TO_READ: &str =
-    "if [ -d /var/log/cladenc/attempts ]; then [ ! -d /var/log/cladenc/children ]; fi";
+const CREATE_ONLY_WHERE_NO_CHILD_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/attempts ]; \
+                                                           then [ ! -d /var/log/cladenc/children ] \
+                                                           && echo procreated >> procreated; fi";
 
 fn ran() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();

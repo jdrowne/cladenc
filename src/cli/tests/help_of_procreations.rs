@@ -51,7 +51,7 @@ fn the_long_help_of_start_names_what_is_given_of_a_harness_of_the_line_or_a_chil
         "  attempts     its attempts at the tasks that are not held out, laid out\n",
         "  procreation  what the harness that made it printed, in stdout and\n",
         "               progenitor and one word in the file named outcome:\n",
-        "               created, failed, build_failed or timed_out\n",
+        "               created, unchanged, failed, build_failed or timed_out\n",
         "  build        what its build printed, in stdout and stderr\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
@@ -183,37 +183,46 @@ fn the_long_help_of_start_says_that_the_best_of_harnesses_that_are_alike_is_ahea
 }
 
 #[test]
-fn the_long_help_of_start_says_how_a_directed_evolution_in_which_no_harness_changes_is_carried_out()
-{
+fn the_long_help_of_start_says_how_a_directed_evolution_of_harnesses_that_work_alike_is_carried_out()
+ {
     assert!(long_help_of_start().contains(
         "How many more selection tasks the best of many harnesses that are all alike\ncompletes is \
-         measured by a directed evolution in which no harness changes:\none carried out with the \
-         values of the directed evolution it is set beside,\nand with a run command that ends at \
-         once with exit status 0 where the\nharness is started for a procreation, as"
+         measured by a directed evolution in which every harness works\nas the primogenitor \
+         does: one carried out with the values of the directed\nevolution it is set beside, and \
+         with a run command that, where the harness\nis started for a procreation, calls no \
+         model and adds one line to a file\nthat no harness reads, as"
     ));
 }
 
 #[test]
-fn the_long_help_of_start_gives_a_run_command_that_changes_nothing_in_a_procreation() {
+fn the_long_help_of_start_gives_a_run_command_that_adds_one_line_in_a_procreation() {
     assert!(long_help_of_start().contains(
-        "\n    --harness-run-command \\\n        '[ -d /var/log/cladenc/attempts ] && exit 0; \
-         <COMMAND>'\n\nwhere <COMMAND> is the run command of the other."
+        "\n    --harness-run-command 'if [ -d /var/log/cladenc/attempts ]\n        then echo >> \
+         procreated; else <COMMAND>; fi'\n\nwhere <COMMAND> is the run command of the other, \
+         and procreated is a name\nthat no file of the primogenitor has."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_why_that_run_command_changes_nothing() {
+fn the_long_help_of_start_says_what_a_child_made_with_that_run_command_is() {
     assert!(long_help_of_start().contains(
-        "/var/log/cladenc/attempts\nis there for a procreation and not for an attempt, so every \
-         procreation\ncreates a child that is the source code of the primogenitor, unchanged, \
-         and\ncalls no model."
+        "/var/log/cladenc/attempts is there for\na procreation and not for an attempt, so every \
+         procreation calls no model,\nand creates a child that is the source code of its \
+         progenitor with one line\nmore in the file named procreated."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_what_a_directed_evolution_in_which_no_harness_changes_holds() {
+fn the_long_help_of_start_says_why_that_run_command_adds_a_line() {
     assert!(long_help_of_start().contains(
-        "Such a directed evolution holds as many children as\n--max-procreations gives, each \
+        "The line is added because a procreation\nthat changes nothing creates no child."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_directed_evolution_of_harnesses_that_work_alike_holds() {
+    assert!(long_help_of_start().contains(
+        "Such a directed evolution holds as\nmany children as --max-procreations gives, each \
          of them benchmarked in full."
     ));
 }
@@ -221,36 +230,65 @@ fn the_long_help_of_start_says_what_a_directed_evolution_in_which_no_harness_cha
 #[test]
 fn the_long_help_of_start_says_how_the_report_of_such_a_directed_evolution_is_read() {
     assert!(long_help_of_start().contains(
-        "In\n`cladenc report` of it, how far apart the counts of the harnesses lie is\nwhat luck \
+        "In `cladenc report` of it, how far apart the counts of the harnesses lie is\nwhat luck \
          does to the count of one harness, and how many more selection\ntasks the best harness \
          completed than the primogenitor is what luck and the\nchoosing give together, with \
-         nothing changed."
+         nothing changed in how a harness works."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_far_a_best_harness_is_ahead_by_a_change() {
     assert!(long_help_of_start().contains(
-        "The best harness of the other\ndirected evolution is ahead of its primogenitor on the \
-         selection tasks by a\nchange only as far as it is ahead by more than that."
+        "The\nbest harness of the other directed evolution is ahead of its primogenitor \
+         on\nthe selection tasks by a change only as far as it is ahead by more than\nthat."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_report_counts_the_tasks_one_harness_at_least_completed() {
     assert!(long_help_of_start().contains(
-        "`cladenc report` also\nsays how many tasks at least one harness completed, of the \
-         selection tasks,\nof the corroboration tasks and of the others, and `cladenc status` \
-         says how\nmany so far."
+        "`cladenc report` also says how many tasks at least one harness\ncompleted, of the \
+         selection tasks, of the corroboration tasks and of the\nothers, and `cladenc status` \
+         says how many so far."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_how_that_count_is_read_where_no_harness_changes() {
+fn the_long_help_of_start_says_how_that_count_is_read_where_every_harness_works_alike() {
     assert!(long_help_of_start().contains(
-        "Where no harness changes, that is what one more attempt at\neach task for each \
-         child gives the primogenitor, and it is set beside the\ncount of the best harness of \
-         the other directed evolution, which had one\nattempt at each task."
+        "Where every harness works\nas the primogenitor does, that is what one more attempt at \
+         each task for\neach child gives the primogenitor, and it is set beside the count of \
+         the\nbest harness of the other directed evolution, which had one attempt at \
+         each\ntask."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_procreation_that_changes_nothing_creates_no_child() {
+    assert!(long_help_of_start().contains(
+        "A procreation whose harness leaves /var/lib/cladenc/work as it was creates\nno child, \
+         and is recorded as unchanged."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_is_compared_to_find_a_procreation_unchanged() {
+    assert!(long_help_of_start().contains(
+        "cladenc compares what the harness\nleft with the source code of that harness, as it \
+         is kept under harnesses in\nthe outputs directory. The two are the same where they \
+         hold the same files,\ndirectories and symbolic links, each file with the same \
+         contents and the\nsame permission bits, and each symbolic link with the same target."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_why_an_unchanged_child_is_not_benchmarked() {
+    assert!(long_help_of_start().contains(
+        "Such a\nchild would be its progenitor over again, and a model does not answer \
+         the\nsame way twice, so what the child completed would differ from what \
+         its\nprogenitor completed by luck alone. It is not built and not benchmarked, and\nit \
+         is never chosen to procreate."
     ));
 }
 

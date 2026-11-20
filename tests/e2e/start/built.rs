@@ -18,7 +18,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
         ),
         ("--docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
-        ("--harness-run-command", "exit 0".into()),
+        ("--harness-run-command", "touch changed".into()),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),
         ("--genealogy-growth", "0".into()),

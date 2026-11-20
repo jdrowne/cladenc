@@ -231,3 +231,17 @@ fn discarding_a_baseline_leaves_the_progenitor_s_child_of_its_experiment() {
     let (_directory, outputs_directory) = discarded_after_it_ended();
     assert!(outputs_directory.harness(1).exists());
 }
+
+#[test]
+fn a_baseline_recorded_as_unchanged_records_the_word_unchanged() {
+    assert_eq!(
+        recorded(CreationOutcome::Unchanged, "outcome"),
+        "unchanged\n"
+    );
+}
+
+#[test]
+fn a_baseline_recorded_as_unchanged_leaves_no_directory_for_attempts() {
+    let (_directory, outputs_directory) = ended(CreationOutcome::Unchanged);
+    assert!(!outputs_directory.attempts(3).exists());
+}

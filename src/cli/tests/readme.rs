@@ -470,3 +470,28 @@ fn the_section_of_cladenc_resume_says_what_it_prints_of_a_directed_evolution_tha
          harness and the report again and does nothing else."
     ));
 }
+
+#[test]
+fn the_steps_of_cladenc_start_say_that_a_procreation_that_changes_nothing_creates_no_child() {
+    assert!(what_is_said_of("start").contains(
+        "A procreation in which the harness leaves the copy of its own source code as it was \
+         creates no child, and is recorded as unchanged."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_that_a_baseline_that_changes_nothing_creates_no_harness() {
+    assert!(what_is_said_of("start").contains(
+        "Where the primogenitor leaves the second copy of the source code of the progenitor as \
+         it was, no singleton control group harness is created."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_report_says_what_it_prints_of_a_harness_whose_procreation_changed_nothing()
+ {
+    assert!(what_is_said_of("report").contains(
+        "whether it was created, which reads `unchanged` where its procreation left the copy of \
+         the source code as it was"
+    ));
+}

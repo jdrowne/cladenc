@@ -16,6 +16,7 @@ pub(crate) type HarnessId = u64;
 #[serde(rename_all = "snake_case")]
 pub enum CreationOutcome {
     Created,
+    Unchanged,
     Failed,
     BuildFailed,
     TimedOut,
@@ -281,6 +282,7 @@ impl Genealogy {
 fn state_after(outcome: CreationOutcome) -> HarnessState {
     match outcome {
         CreationOutcome::Created => HarnessState::Created,
+        CreationOutcome::Unchanged => HarnessState::Unchanged,
         CreationOutcome::Failed | CreationOutcome::BuildFailed | CreationOutcome::TimedOut => {
             HarnessState::Failed
         }

@@ -94,6 +94,21 @@ fn the_state_of_a_failed_harness_is_written_as_failed() {
 }
 
 #[test]
+fn the_state_of_a_harness_whose_procreation_left_the_progenitor_s_copy_unchanged_is_written_as_unchanged()
+ {
+    let mut genealogy = Genealogy::new();
+    let child = genealogy.start_procreation(0).unwrap();
+    genealogy
+        .end_procreation(child, CreationOutcome::Unchanged)
+        .unwrap();
+    assert!(
+        Report::of(&settings(), &genealogy, &[], Some(0))
+            .json()
+            .contains(r#""id":1,"progenitor":0,"experiment":null,"state":"unchanged""#)
+    );
+}
+
+#[test]
 fn the_object_gives_no_lower_bound() {
     assert!(
         !Report::of(&settings(), &Genealogy::new(), &[], Some(0))

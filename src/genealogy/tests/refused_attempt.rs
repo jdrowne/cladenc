@@ -14,6 +14,14 @@ fn with_a_failed_child() -> Genealogy {
     genealogy
 }
 
+fn with_an_unchanged_child() -> Genealogy {
+    let mut genealogy = with_a_child_being_created();
+    genealogy
+        .end_procreation(1, CreationOutcome::Unchanged)
+        .unwrap();
+    genealogy
+}
+
 fn with_an_attempt_running() -> Genealogy {
     let mut genealogy = Genealogy::new();
     genealogy.start_attempt(0, "a").unwrap();
@@ -85,6 +93,14 @@ fn a_refused_attempt_of_a_failed_harness_changes_nothing() {
     let mut genealogy = with_a_failed_child();
     let _ = genealogy.start_attempt(1, "a");
     assert_eq!(genealogy, with_a_failed_child());
+}
+
+#[test]
+fn an_attempt_of_an_unchanged_harness_is_refused() {
+    assert_eq!(
+        with_an_unchanged_child().start_attempt(1, "a"),
+        Err(GenealogyError::HarnessNotCreated { harness: 1 })
+    );
 }
 
 #[test]

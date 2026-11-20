@@ -16,7 +16,7 @@ use std::time::Instant;
 
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
-use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files};
+use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
 use container::{Container, Mount};
@@ -25,29 +25,30 @@ pub use left::remove_left_behind;
 use program::{Ending, Limits, seconds_since};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
-    copy of your own source code. Improve that source code, so that the harness it makes \
-    completes more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are \
-    shown: one directory for each benchmark, and in it one directory for each task. In the \
-    directory of a task, the file named specification says what you were asked to do, the file \
-    named result reads completed, not_completed or timed_out, the directory named work holds \
-    the workspace of the task as you left it, the files named stdout and stderr hold what you \
-    printed, and the directory named grader holds what the grader of the task printed. \
-    /var/log/cladenc/line holds one directory for each harness you descend from, named by its \
-    id, and /var/log/cladenc/children one for each harness you made before, created or not. In \
-    the directory of such a harness, the directory named harness holds its source code, the \
-    directory named attempts holds its attempts, laid out as yours are, the directory named \
-    procreation holds what the harness that made it printed, in the files named stdout and \
-    stderr, with the id of that harness in the file named progenitor and one word in the file \
-    named outcome, created, failed, build_failed or timed_out, and the directory named build \
-    holds what its build printed. A directory that would hold nothing is not there. Use all of \
-    them to find what to improve, and to see what was changed before and what came of it. Make \
-    a change to how the harness works on any task: one that \
-    answers something you saw in several of your attempts, not in one. Leave nothing in the \
-    source code that names a task, a file of a task or the answer to one. Taking out what does \
-    not help is an improvement as well. Change files in the current directory only: what it \
-    holds when you end becomes a new harness, which attempts tasks in its turn. It may then be \
-    asked, as you are now, to improve a copy of its own source code, so a change that makes it \
-    better at that counts as well. The new harness is judged by tasks that you are not shown.";
+    copy of your own source code. Improve that source code, so that the harness it makes completes \
+    more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
+    directory for each benchmark, and in it one directory for each task. In the directory of a \
+    task, the file named specification says what you were asked to do, the file named result reads \
+    completed, not_completed or timed_out, the directory named work holds the workspace of the \
+    task as you left it, the files named stdout and stderr hold what you printed, and the \
+    directory named grader holds what the grader of the task printed. /var/log/cladenc/line holds \
+    one directory for each harness you descend from, named by its id, and \
+    /var/log/cladenc/children one for each harness you made before, created or not. In the \
+    directory of such a harness, the directory named harness holds its source code, the directory \
+    named attempts holds its attempts, laid out as yours are, the directory named procreation \
+    holds what the harness that made it printed, in the files named stdout and stderr, with the id \
+    of that harness in the file named progenitor and one word in the file named outcome, created, \
+    unchanged, failed, build_failed or timed_out, and the directory named build holds what its \
+    build printed. A directory that would hold nothing is not there. Use all of them to find what \
+    to improve, and to see what was changed before and what came of it. Make a change to how the \
+    harness works on any task: one that answers something you saw in several of your attempts, not \
+    in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
+    one. Taking out what does not help is an improvement as well. Change files in the current \
+    directory only: what it holds when you end becomes a new harness, which attempts tasks in its \
+    turn. It may then be asked, as you are now, to improve a copy of its own source code, so a \
+    change that makes it better at that counts as well. Where you leave the current directory as \
+    it was, no new harness is made: a change that you only print in your answer changes no file. \
+    The new harness is judged by tasks that you are not shown.";
 
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";
@@ -127,6 +128,7 @@ pub fn run_procreation(
     let shown = shown::to(outputs_directory, progenitor, None);
     let changing = Changing {
         harness: child,
+        copied_from: progenitor,
         running: &running,
         source: &source,
         made: &made,
@@ -161,6 +163,7 @@ pub fn run_baseline(
     );
     let changing = Changing {
         harness,
+        copied_from: experiment.progenitor,
         running: &running,
         source: &source,
         made: &made,
@@ -176,6 +179,7 @@ pub fn run_baseline(
 
 struct Changing<'a> {
     harness: HarnessId,
+    copied_from: HarnessId,
     running: &'a Path,
     source: &'a Path,
     made: &'a Path,
@@ -234,13 +238,27 @@ impl Changing<'_> {
         let ending = container.run(self.running, limits)?;
         let seconds = seconds_since(started);
         let outcome = match ending {
-            Ending::Exited(0) if holds_only_harness_files(self.made).unwrap_or(false) => {
-                build::build_child(outputs_directory, launch, self.harness, self.made, limits)?
-            }
+            Ending::Exited(0) => self.made_of_what_was_left(outputs_directory, launch, limits)?,
             Ending::Exited(_) => CreationOutcome::Failed,
             Ending::TimedOut => CreationOutcome::TimedOut,
         };
         Ok(Creation { outcome, seconds })
+    }
+
+    fn made_of_what_was_left(
+        &self,
+        outputs_directory: &OutputsDirectory,
+        launch: &Launch<'_>,
+        limits: Limits<'_>,
+    ) -> Result<CreationOutcome, ContainerError> {
+        let copied = outputs_directory.harness(self.copied_from);
+        if !holds_only_harness_files(self.made).unwrap_or(false) {
+            Ok(CreationOutcome::Failed)
+        } else if same_tree(self.made, &copied).unwrap_or(false) {
+            Ok(CreationOutcome::Unchanged)
+        } else {
+            build::build_child(outputs_directory, launch, self.harness, self.made, limits)
+        }
     }
 }
 

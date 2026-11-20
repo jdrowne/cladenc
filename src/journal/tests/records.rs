@@ -70,6 +70,20 @@ fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed
 }
 
 #[test]
+fn the_end_of_a_procreation_that_left_the_progenitor_s_copy_unchanged_is_written_as_unchanged() {
+    assert_eq!(
+        line(&procreation_finished(CreationOutcome::Unchanged)),
+        r#"{"record":"procreation_finished","child":1,"outcome":"unchanged","seconds":12.5}"#
+    );
+}
+
+#[test]
+fn the_end_of_a_procreation_that_left_the_progenitor_s_copy_unchanged_survives_being_read_back() {
+    let record = procreation_finished(CreationOutcome::Unchanged);
+    assert_eq!(read_back(&record), record);
+}
+
+#[test]
 fn the_build_of_the_primogenitor_is_written_with_its_name_alone() {
     assert_eq!(
         line(&Record::PrimogenitorBuilt),
@@ -206,4 +220,13 @@ fn the_start_of_a_baseline_survives_being_written_and_read_back() {
 fn the_end_of_a_baseline_survives_being_written_and_read_back() {
     let record = baseline_finished(CreationOutcome::Created);
     assert_eq!(read_back(&record), record);
+}
+
+#[test]
+fn the_end_of_a_baseline_that_left_the_source_code_of_the_progenitor_unchanged_is_written_as_unchanged()
+ {
+    assert_eq!(
+        line(&baseline_finished(CreationOutcome::Unchanged)),
+        r#"{"record":"baseline_finished","harness":3,"outcome":"unchanged","seconds":12.5}"#
+    );
 }

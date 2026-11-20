@@ -10,6 +10,7 @@ use crate::holdout::TaskSet;
 pub(crate) enum HarnessState {
     BeingCreated,
     Created,
+    Unchanged,
     Failed,
 }
 

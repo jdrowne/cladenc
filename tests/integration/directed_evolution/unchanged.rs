@@ -4,32 +4,32 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::cli::Cli;
-use cladenc::directed_evolution;
-use cladenc::journal::{self, Settings};
-use cladenc::report;
-use clap::CommandFactory;
+use cladenc::cli::{self, Cli};
+use cladenc::directed_evolution::{self, Found};
+use cladenc::genealogy::CreationOutcome;
+use cladenc::journal::{self, Record, Settings};
+use clap::Parser;
+use serde_json::Value;
 use tempfile::TempDir;
 
-fn run_command_the_help_gives(command: &str) -> String {
-    let mut cladenc = Cli::command();
-    let help = cladenc
-        .find_subcommand_mut("start")
-        .unwrap()
-        .render_long_help()
-        .to_string();
-    help.lines()
-        .find(|line| {
-            line.trim_start()
-                .starts_with("'[ -d /var/log/cladenc/attempts ]")
-        })
-        .unwrap()
-        .trim()
-        .trim_matches('\'')
-        .replace("<COMMAND>", command)
+const CHANGE_NOTHING: &str = "exit 0";
+
+const A_PRIMOGENITOR_THAT_CHANGES_NOTHING_FOR_A_BASELINE: &str = r#"if [ -d /var/log/cladenc/attempts ]
+then
+  [ -e improved ] && [ ! -e "$CLADENC_HARNESS/improved" ] && exit 0
+  echo improved >> improved
+else
+  touch "$CLADENC_HARNESS/solved"
+  cp "$CLADENC_HARNESS/solved" solved
+fi"#;
+
+struct Evolved {
+    directory: TempDir,
+    found: Found,
+    said: Vec<String>,
 }
 
-fn settings(directory: &Path) -> Settings {
+fn settings(directory: &Path, run_command: &str) -> Settings {
     Settings {
         primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
@@ -42,7 +42,7 @@ fn settings(directory: &Path) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: run_command_the_help_gives("echo attempted > attempted"),
+        harness_run_command: run_command.to_owned(),
         max_procreations: 2,
         genealogy_growth: 0.0,
         max_concurrent_containers: 1,
@@ -52,123 +52,196 @@ fn settings(directory: &Path) -> Settings {
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
-        seed: 7,
+        seed: 1,
     }
 }
 
-fn evolved() -> TempDir {
+fn evolved_by(run_command: &str) -> Evolved {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path());
+    let settings = settings(directory.path(), run_command);
     let outputs_directory = directory.path().join("outputs");
+    let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
-    directory
+    let found =
+        directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
+    let said = String::from_utf8(written).unwrap();
+    Evolved {
+        directory,
+        found,
+        said: said.lines().map(str::to_owned).collect(),
+    }
 }
 
-fn kept_in(tree: &Path) -> Vec<String> {
-    let mut kept: Vec<String> = fs::read_dir(tree)
+fn outputs_of(evolved: &Evolved) -> String {
+    evolved
+        .directory
+        .path()
+        .join("outputs")
+        .display()
+        .to_string()
+}
+
+fn records_of(evolved: &Evolved) -> Vec<Record> {
+    fs::read_to_string(journal::path(&evolved.directory.path().join("outputs")))
         .unwrap()
-        .flat_map(|entry| {
-            let path = entry.unwrap().path();
-            let name = path.file_name().unwrap().to_string_lossy().into_owned();
-            if path.is_dir() && !path.is_symlink() {
-                kept_in(&path)
-                    .into_iter()
-                    .map(|inside| format!("{name}/{inside}"))
-                    .collect()
-            } else {
-                vec![format!("{name}: {}", fs::read_to_string(&path).unwrap())]
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
+}
+
+fn starts(evolved: &Evolved) -> Vec<String> {
+    records_of(evolved)
+        .into_iter()
+        .filter_map(|record| match record {
+            Record::AttemptStarted { harness, .. } => Some(format!("attempt of {harness}")),
+            Record::ProcreationStarted { child, progenitor } => {
+                Some(format!("procreation of {child} by {progenitor}"))
             }
+            Record::BaselineStarted {
+                harness,
+                child,
+                progenitor,
+            } => Some(format!(
+                "baseline of {harness} for {child} from {progenitor}"
+            )),
+            _ => None,
         })
-        .collect();
-    kept.sort();
-    kept
+        .collect()
 }
 
-fn source_code_of(directory: &TempDir, harness: &str) -> Vec<String> {
-    kept_in(&directory.path().join("outputs/harnesses").join(harness))
-}
-
-fn journal_of(directory: &TempDir) -> String {
-    fs::read_to_string(journal::path(&directory.path().join("outputs"))).unwrap()
+fn reported(evolved: &Evolved) -> Value {
+    let outputs_dir = format!("--outputs-dir={}", outputs_of(evolved));
+    let cli = Cli::try_parse_from(["cladenc", "report", "--json", outputs_dir.as_str()]).unwrap();
+    let mut output = Vec::new();
+    cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut io::sink());
+    serde_json::from_slice(&output).unwrap()
 }
 
 #[test]
-fn the_run_command_the_help_gives_starts_the_command_of_the_other_only_for_an_attempt() {
+fn a_child_that_would_be_the_progenitor_s_copy_as_it_was_attempts_no_task() {
+    let evolved = evolved_by(CHANGE_NOTHING);
     assert_eq!(
-        run_command_the_help_gives("sh harness.sh"),
-        "[ -d /var/log/cladenc/attempts ] && exit 0; sh harness.sh"
+        starts(&evolved),
+        [
+            "attempt of 0",
+            "attempt of 0",
+            "attempt of 0",
+            "procreation of 1 by 0",
+            "procreation of 2 by 0",
+        ]
     );
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_every_procreation_creates_its_child() {
-    let directory = evolved();
+fn a_procreation_that_left_the_progenitor_s_copy_as_it_was_is_written_in_the_journal_as_unchanged()
+{
+    let evolved = evolved_by(CHANGE_NOTHING);
     assert_eq!(
-        journal_of(&directory)
-            .lines()
-            .filter(|line| line.contains(r#""record":"procreation_finished""#))
-            .filter(|line| line.contains(r#""outcome":"created""#))
+        records_of(&evolved)
+            .iter()
+            .filter(|record| {
+                matches!(
+                    record,
+                    Record::ProcreationFinished {
+                        outcome: CreationOutcome::Unchanged,
+                        ..
+                    }
+                )
+            })
             .count(),
         2
     );
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_the_source_code_of_each_child_is_that_of_the_primogenitor() {
-    let directory = evolved();
+fn a_directed_evolution_says_that_a_procreation_left_the_copy_unchanged_and_created_no_harness() {
+    let evolved = evolved_by(CHANGE_NOTHING);
+    assert!(evolved.said.contains(&format!(
+        "cladenc: the procreation of harness 1 by harness 0 left the copy of the source code of \
+         harness 0 unchanged, and created no harness: what the harness printed is kept in \
+         {}/procreations/1",
+        outputs_of(&evolved)
+    )));
+}
+
+#[test]
+fn the_best_harness_of_a_directed_evolution_whose_procreations_changed_nothing_is_the_primogenitor()
+{
+    assert_eq!(evolved_by(CHANGE_NOTHING).found.best_harness, 0);
+}
+
+#[test]
+fn what_a_procreation_that_changed_nothing_left_is_kept_under_harnesses() {
+    let evolved = evolved_by(CHANGE_NOTHING);
+    assert!(
+        evolved
+            .directory
+            .path()
+            .join("outputs/harnesses/1/harness.sh")
+            .is_file()
+    );
+}
+
+#[test]
+fn the_report_gives_the_state_of_a_child_that_would_be_the_copy_as_it_was_as_unchanged() {
+    let evolved = evolved_by(CHANGE_NOTHING);
     assert_eq!(
-        ["1", "2"].map(|child| source_code_of(&directory, child)),
+        reported(&evolved)["harnesses"][1]["state"],
+        serde_json::json!("unchanged")
+    );
+}
+
+#[test]
+fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_attempts_no_task() {
+    let evolved = evolved_by(A_PRIMOGENITOR_THAT_CHANGES_NOTHING_FOR_A_BASELINE);
+    assert_eq!(
+        starts(&evolved),
         [
-            source_code_of(&directory, "0"),
-            source_code_of(&directory, "0")
+            "attempt of 0",
+            "attempt of 0",
+            "attempt of 0",
+            "procreation of 1 by 0",
+            "attempt of 1",
+            "attempt of 1",
+            "attempt of 1",
+            "procreation of 2 by 1",
+            "baseline of 3 for 2 from 1",
+            "attempt of 2",
+            "attempt of 2",
+            "attempt of 2",
         ]
     );
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_every_harness_is_benchmarked_in_full() {
-    let directory = evolved();
-    let journal = journal_of(&directory);
-    assert_eq!(
-        [0, 1, 2].map(|harness| {
-            journal
-                .matches(&format!(
-                    r#""record":"attempt_finished","harness":{harness},"#
-                ))
-                .count()
-        }),
-        [3, 3, 3]
-    );
+fn a_directed_evolution_says_that_a_baseline_left_the_copy_unchanged_and_created_no_harness() {
+    let evolved = evolved_by(A_PRIMOGENITOR_THAT_CHANGES_NOTHING_FOR_A_BASELINE);
+    assert!(evolved.said.contains(&format!(
+        "cladenc: the creation of harness 3, the singleton control group harness, by the \
+         primogenitor from the source code of harness 1 left the copy of the source code of \
+         harness 1 unchanged, and created no harness: what the primogenitor printed is kept in \
+         {}/baselines/3",
+        outputs_of(&evolved)
+    )));
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_a_harness_is_started_as_ever_for_an_attempt() {
-    let directory = evolved();
+fn the_report_counts_no_singleton_control_group_harness_created_where_the_baseline_changed_nothing()
+{
+    let evolved = evolved_by(A_PRIMOGENITOR_THAT_CHANGES_NOTHING_FOR_A_BASELINE);
+    let experiments = &reported(&evolved)["experiments"];
     assert_eq!(
-        fs::read_to_string(
-            directory
-                .path()
-                .join("outputs/attempts/2/benchmark/t1/work/attempted")
-        )
-        .unwrap(),
-        "attempted\n"
-    );
-}
-
-#[test]
-fn the_report_of_such_a_directed_evolution_counts_the_tasks_one_harness_at_least_completed() {
-    let directory = evolved();
-    let report = report::read(&directory.path().join("outputs")).unwrap();
-    assert_eq!(
-        (
-            report.selection_tasks_completed_by_any,
-            report.selection_tasks,
-            report.corroboration_tasks_completed_by_any,
-            report.corroboration_tasks,
-            report.other_tasks_completed_by_any,
-            report.other_tasks
-        ),
-        (0, 1, 0, 1, 0, 1)
+        [
+            &experiments["conducted"],
+            &experiments["progenitors_child_created"],
+            &experiments["singleton_control_group_harness_created"],
+            &experiments["both_created"],
+        ],
+        [
+            &serde_json::json!(1),
+            &serde_json::json!(1),
+            &serde_json::json!(0),
+            &serde_json::json!(0),
+        ]
     );
 }

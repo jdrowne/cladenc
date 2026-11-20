@@ -224,3 +224,23 @@ fn a_procreation_that_failed_leaves_nothing_running() {
     let (_directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert!(!outputs_directory.running_procreation(1).exists());
 }
+
+#[test]
+fn a_procreation_recorded_as_unchanged_records_the_word_unchanged() {
+    assert_eq!(
+        recorded(CreationOutcome::Unchanged, "outcome"),
+        "unchanged\n"
+    );
+}
+
+#[test]
+fn a_procreation_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_harnesses() {
+    let (_directory, outputs_directory) = ended(CreationOutcome::Unchanged);
+    assert!(outputs_directory.harness(1).join("harness.sh").is_file());
+}
+
+#[test]
+fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_attempts_of_its_child() {
+    let (_directory, outputs_directory) = ended(CreationOutcome::Unchanged);
+    assert!(!outputs_directory.attempts(1).exists());
+}

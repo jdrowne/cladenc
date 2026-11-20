@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use crate::benchmark::Benchmark;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 
-pub use copy::{copy_tree, holds_only_harness_files};
+pub use copy::{copy_tree, holds_only_harness_files, same_tree};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputsDirectory {
@@ -190,9 +190,10 @@ impl OutputsDirectory {
     ) -> io::Result<()> {
         fs::rename(made, self.harness(harness)).and_then(|()| match outcome {
             CreationOutcome::Created => fs::create_dir(self.attempts(harness)),
-            CreationOutcome::Failed | CreationOutcome::BuildFailed | CreationOutcome::TimedOut => {
-                Ok(())
-            }
+            CreationOutcome::Unchanged
+            | CreationOutcome::Failed
+            | CreationOutcome::BuildFailed
+            | CreationOutcome::TimedOut => Ok(()),
         })
     }
 
@@ -295,6 +296,7 @@ impl OutputsDirectory {
 fn word_of(outcome: CreationOutcome) -> &'static str {
     match outcome {
         CreationOutcome::Created => "created\n",
+        CreationOutcome::Unchanged => "unchanged\n",
         CreationOutcome::Failed => "failed\n",
         CreationOutcome::BuildFailed => "build_failed\n",
         CreationOutcome::TimedOut => "timed_out\n",

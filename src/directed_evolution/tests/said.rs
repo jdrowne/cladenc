@@ -359,6 +359,18 @@ fn a_baseline_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
+fn a_baseline_that_left_the_source_code_of_the_progenitor_unchanged_is_said_to_have_created_no_harness()
+ {
+    assert_eq!(
+        established(CreationOutcome::Unchanged),
+        "the creation of harness 4, the singleton control group harness, by the primogenitor \
+         from the source code of harness 1 left the copy of the source code of harness 1 \
+         unchanged, and created no harness: what the primogenitor printed is kept in \
+         /outputs/baselines/4"
+    );
+}
+
+#[test]
 fn a_procreation_that_is_run_again_is_said_to_have_started_again_with_no_number() {
     assert_eq!(
         started(&procreation(), true),
@@ -395,6 +407,16 @@ fn a_procreation_that_failed_is_said_with_where_what_the_harness_printed_is_kept
     assert_eq!(
         procreated(CreationOutcome::Failed),
         "the procreation of harness 3 by harness 1 failed: what the harness printed is kept in \
+         /outputs/procreations/3"
+    );
+}
+
+#[test]
+fn a_procreation_that_left_the_progenitor_s_copy_unchanged_is_said_to_have_created_no_harness() {
+    assert_eq!(
+        procreated(CreationOutcome::Unchanged),
+        "the procreation of harness 3 by harness 1 left the copy of the source code of harness 1 \
+         unchanged, and created no harness: what the harness printed is kept in \
          /outputs/procreations/3"
     );
 }

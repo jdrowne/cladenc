@@ -13,7 +13,7 @@ impl CreatedNoChild {
         match child.state() {
             HarnessState::BeingCreated => self,
             HarnessState::Created => Self::default(),
-            HarnessState::Failed => Self {
+            HarnessState::Unchanged | HarnessState::Failed => Self {
                 in_a_row: self.in_a_row + 1,
                 last: procreation,
             },

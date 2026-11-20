@@ -115,7 +115,7 @@ Each of these directories is named by the id of its harness, and holds
   procreation  what the harness that made it printed, in stdout and
                stderr, with the id of that harness in the file named
                progenitor and one word in the file named outcome:
-               created, failed, build_failed or timed_out
+               created, unchanged, failed, build_failed or timed_out
   build        what its build printed, in stdout and stderr
 
 A directory that would hold nothing is not there: the primogenitor has no
@@ -160,13 +160,25 @@ full before the next procreation starts.
 
 How the harness ends decides what is recorded:
 
-  exit status 0     the procreation created a harness
+  exit status 0     the procreation created a harness, or is recorded as
+                    unchanged where the harness changed nothing
   exit status 125   Docker did not start the container: the directed
                     evolution stops, and `cladenc resume` carries out the
                     procreation again
   any other status  the procreation failed
   the time limit    the container is removed, and the procreation is
                     recorded as timed out
+
+A procreation whose harness leaves /var/lib/cladenc/work as it was creates
+no child, and is recorded as unchanged. cladenc compares what the harness
+left with the source code of that harness, as it is kept under harnesses in
+the outputs directory. The two are the same where they hold the same files,
+directories and symbolic links, each file with the same contents and the
+same permission bits, and each symbolic link with the same target. Such a
+child would be its progenitor over again, and a model does not answer the
+same way twice, so what the child completed would differ from what its
+progenitor completed by luck alone. It is not built and not benchmarked, and
+it is never chosen to procreate.
 
 A child that holds anything but regular files, directories and symbolic
 links is a failed procreation. The source code of every child is kept under
@@ -197,6 +209,8 @@ attempts of the progenitor at the tasks that are not held out, under
 under /var/log/cladenc/children the children the progenitor procreated
 before the progenitor's child of the experiment. What the primogenitor
 leaves in /var/lib/cladenc/work is the singleton control group harness.
+Where the primogenitor leaves /var/lib/cladenc/work as it was, no singleton
+control group harness is created, and the creation is recorded as unchanged.
 
 The singleton control group harness is built and benchmarked in full, as
 the progenitor's child is, and it takes no other part in the directed
@@ -391,31 +405,35 @@ control group harnesses are left out of the count of the tasks that at
 least one harness completed.
 
 How many more selection tasks the best of many harnesses that are all alike
-completes is measured by a directed evolution in which no harness changes:
-one carried out with the values of the directed evolution it is set beside,
-and with a run command that ends at once with exit status 0 where the
-harness is started for a procreation, as
+completes is measured by a directed evolution in which every harness works
+as the primogenitor does: one carried out with the values of the directed
+evolution it is set beside, and with a run command that, where the harness
+is started for a procreation, calls no model and adds one line to a file
+that no harness reads, as
 
-    --harness-run-command \\
-        '[ -d /var/log/cladenc/attempts ] && exit 0; <COMMAND>'
+    --harness-run-command 'if [ -d /var/log/cladenc/attempts ]
+        then echo >> procreated; else <COMMAND>; fi'
 
-where <COMMAND> is the run command of the other. /var/log/cladenc/attempts
-is there for a procreation and not for an attempt, so every procreation
-creates a child that is the source code of the primogenitor, unchanged, and
-calls no model. Such a directed evolution holds as many children as
---max-procreations gives, each of them benchmarked in full. In
-`cladenc report` of it, how far apart the counts of the harnesses lie is
+where <COMMAND> is the run command of the other, and procreated is a name
+that no file of the primogenitor has. /var/log/cladenc/attempts is there for
+a procreation and not for an attempt, so every procreation calls no model,
+and creates a child that is the source code of its progenitor with one line
+more in the file named procreated. The line is added because a procreation
+that changes nothing creates no child. Such a directed evolution holds as
+many children as --max-procreations gives, each of them benchmarked in full.
+In `cladenc report` of it, how far apart the counts of the harnesses lie is
 what luck does to the count of one harness, and how many more selection
 tasks the best harness completed than the primogenitor is what luck and the
-choosing give together, with nothing changed. The best harness of the other
-directed evolution is ahead of its primogenitor on the selection tasks by a
-change only as far as it is ahead by more than that. `cladenc report` also
-says how many tasks at least one harness completed, of the selection tasks,
-of the corroboration tasks and of the others, and `cladenc status` says how
-many so far. Where no harness changes, that is what one more attempt at
-each task for each child gives the primogenitor, and it is set beside the
-count of the best harness of the other directed evolution, which had one
-attempt at each task.
+choosing give together, with nothing changed in how a harness works. The
+best harness of the other directed evolution is ahead of its primogenitor on
+the selection tasks by a change only as far as it is ahead by more than
+that. `cladenc report` also says how many tasks at least one harness
+completed, of the selection tasks, of the corroboration tasks and of the
+others, and `cladenc status` says how many so far. Where every harness works
+as the primogenitor does, that is what one more attempt at each task for
+each child gives the primogenitor, and it is set beside the count of the
+best harness of the other directed evolution, which had one attempt at each
+task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps. First the harness is started, as it is for a procreation.

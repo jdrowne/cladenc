@@ -184,8 +184,8 @@ fn the_primogenitor_is_given_the_children_the_progenitor_procreated_before_and_n
 }
 
 #[test]
-fn a_baseline_whose_primogenitor_exits_with_0_creates_the_singleton_control_group_harness() {
-    let (_directory, _outputs_directory, result) = established("exit 0");
+fn a_baseline_whose_primogenitor_changes_the_copy_creates_the_singleton_control_group_harness() {
+    let (_directory, _outputs_directory, result) = established("touch changed");
     assert!(matches!(
         result,
         Ok(Creation {
@@ -233,8 +233,11 @@ fn the_standard_output_of_the_primogenitor_is_kept() {
 
 #[test]
 fn a_singleton_control_group_harness_is_built_where_a_build_command_is_given() {
-    let (_directory, outputs_directory, _result) =
-        established_in(test_inputs::IMAGE, "exit 0", Some("echo built > built"));
+    let (_directory, outputs_directory, _result) = established_in(
+        test_inputs::IMAGE,
+        "touch changed",
+        Some("echo built > built"),
+    );
     assert_eq!(
         fs::read_to_string(outputs_directory.harness(5).join("built")).unwrap(),
         "built\n"
@@ -259,4 +262,44 @@ fn a_baseline_that_cannot_be_started_in_the_outputs_directory_is_not_carried_out
         &AtomicBool::new(false),
     );
     assert!(matches!(result, Err(ContainerError::Io(_))));
+}
+
+#[test]
+fn a_baseline_whose_primogenitor_leaves_the_copy_as_it_was_creates_no_harness() {
+    let (_directory, _outputs_directory, result) = established("exit 0");
+    assert!(matches!(
+        result,
+        Ok(Creation {
+            outcome: CreationOutcome::Unchanged,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn a_baseline_that_left_the_copy_as_it_was_is_recorded_with_the_word_unchanged() {
+    let (_directory, outputs_directory, _result) = established("exit 0");
+    assert_eq!(
+        fs::read_to_string(outputs_directory.baseline(5).join("outcome")).unwrap(),
+        "unchanged\n"
+    );
+}
+
+#[test]
+fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_is_not_built() {
+    let (_directory, outputs_directory, _result) =
+        established_in(test_inputs::IMAGE, "exit 0", Some("echo built > built"));
+    assert!(!outputs_directory.build(5).exists());
+}
+
+#[test]
+fn what_the_primogenitor_leaves_is_compared_with_the_source_code_of_the_progenitor() {
+    let (_directory, _outputs_directory, result) = established("rm name");
+    assert!(matches!(
+        result,
+        Ok(Creation {
+            outcome: CreationOutcome::Created,
+            ..
+        })
+    ));
 }
