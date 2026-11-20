@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+import subprocess, sys
+def c(shift, text):
+    return subprocess.run([sys.executable, "cipher.py", str(shift)], input=text, capture_output=True, text=True, timeout=20).stdout
+ok = c(3, "Hello, World! xyz\n").rstrip("\n") == "Khoor, Zruog! abc"
+ok = ok and c(-1, "abc ABC\n").rstrip("\n") == "zab ZAB"
+ok = ok and c(27, "Zz 9\n").rstrip("\n") == "Aa 9"
+sys.exit(0 if ok else 1)

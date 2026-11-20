@@ -1,0 +1,1 @@
+Write cipher.py. `python3 cipher.py SHIFT` reads text on standard input and prints it with each letter of the English alphabet moved SHIFT places along it, wrapping from z to a, keeping its case. Everything that is not such a letter is left as it is. SHIFT can be negative or larger than 26.

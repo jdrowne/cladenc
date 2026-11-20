@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+import subprocess, sys, tempfile
+def total(text):
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as f:
+        f.write(text)
+    return subprocess.run([sys.executable, "report.py", f.name], capture_output=True, text=True, timeout=20).stdout.strip()
+ok = total("date,item,amount\n2026-01-02,pen,1.50\n2026-01-03,ink,12.25\n") == "13.75"
+ok = ok and total("amount,item\n2,a\n3.333,b\n") == "5.33"
+ok = ok and total("item,amount,date\nx,10,d\n") == "10.00"
+sys.exit(0 if ok else 1)

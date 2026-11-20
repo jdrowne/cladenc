@@ -1,0 +1,1 @@
+Write count.sh, a shell script. Run as `sh count.sh FILE`, it prints the number of lines of FILE that hold something other than spaces and tabs, and nothing else.

@@ -1,0 +1,1 @@
+Write reverse_words(text) in text.py. It returns the words of text in the opposite order, joined by single spaces, with no space at either end. Words are separated by any run of whitespace.

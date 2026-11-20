@@ -1,0 +1,1 @@
+settings.py prints the port a server would listen on, now always 8080. Make it take the port from the environment variable PORT when PORT is set and not empty. Where PORT is not a whole number from 1 to 65535, it prints an error on standard error and exits with status 2.

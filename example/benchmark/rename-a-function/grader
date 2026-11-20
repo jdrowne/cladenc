@@ -1,0 +1,4 @@
+#!/bin/sh
+! grep -rq get_usr --include='*.py' . || exit 1
+[ "$(python3 main.py)" = "$(printf 'hello, ada\nnobody')" ] || exit 1
+python3 -c 'from app.users import get_user; import sys; sys.exit(get_user(2) != "grace")'

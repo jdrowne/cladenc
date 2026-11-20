@@ -1,0 +1,1 @@
+`python3 convert.py DEGREES` takes degrees Celsius and prints them in Kelvin. Add a flag, --fahrenheit, that makes it print the temperature in degrees Fahrenheit in place of Kelvin, rounded to one decimal place as Kelvin is now.

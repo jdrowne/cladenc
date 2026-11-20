@@ -1,0 +1,8 @@
+#!/bin/sh
+f=$(mktemp)
+printf 'one\n\n  \ntwo\n\t\nthree\n' > "$f"
+[ "$(sh count.sh "$f" | tr -d ' ')" = 3 ] || exit 1
+printf '\n\n' > "$f"
+[ "$(sh count.sh "$f" | tr -d ' ')" = 0 ] || exit 1
+printf 'a\nb' > "$f"
+[ "$(sh count.sh "$f" | tr -d ' ')" = 2 ]

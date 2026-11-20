@@ -1,0 +1,1 @@
+find(items, target) in search.py is a binary search over a sorted list: it returns an index of target in items, or -1 when target is not there. It loops forever for some inputs and misses some targets. Fix it, keeping it a binary search.

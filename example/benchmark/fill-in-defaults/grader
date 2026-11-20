@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+import json, os, sys, tempfile
+sys.path.insert(0, os.getcwd())
+from config import load
+d = tempfile.mkdtemp()
+def file(data):
+    p = os.path.join(d, str(len(os.listdir(d))) + ".json")
+    with open(p, "w") as f:
+        json.dump(data, f)
+    return p
+ok = load(file({"port": 9000})) == {"host": "localhost", "port": 9000, "debug": False}
+ok = ok and load(file({})) == {"host": "localhost", "port": 8080, "debug": False}
+ok = ok and load(file({"debug": True, "name": "x"})) == {"host": "localhost", "port": 8080, "debug": True, "name": "x"}
+ok = ok and load(os.path.join(d, "missing.json")) == {"host": "localhost", "port": 8080, "debug": False}
+sys.exit(0 if ok else 1)

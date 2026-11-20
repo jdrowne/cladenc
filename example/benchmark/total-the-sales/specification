@@ -1,0 +1,1 @@
+`python3 report.py FILE` is meant to print the sum of the amount column of a CSV file with a header line, to two decimal places. It crashes on sales.csv. Fix report.py. The columns can come in any order.
