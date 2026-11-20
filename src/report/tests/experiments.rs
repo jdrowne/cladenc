@@ -224,13 +224,25 @@ fn the_likelihood_is_that_of_a_lead_of_the_progenitors_children_at_least_as_larg
         &["benchmark/c1", "benchmark/c2", "benchmark/c3"],
         &[],
     ));
-    assert_eq!(report.experiments.likelihood_by_luck, 0.125);
+    assert_eq!(report.experiments.likelihood_by_luck, Some(0.125));
 }
 
 #[test]
 fn where_no_task_tells_the_harnesses_of_the_experiments_apart_the_likelihood_is_1() {
+    let report = report_of(&after_an_experiment(&[], &[]));
+    assert_eq!(report.experiments.likelihood_by_luck, Some(1.0));
+}
+
+#[test]
+fn where_no_experiment_was_conducted_there_is_no_likelihood() {
     let report = report_of(&with_a_child_of_the_primogenitor());
-    assert_eq!(report.experiments.likelihood_by_luck, 1.0);
+    assert_eq!(report.experiments.likelihood_by_luck, None);
+}
+
+#[test]
+fn where_no_experiment_created_both_harnesses_there_is_no_likelihood() {
+    let report = report_of(&after_an_experiment_that_created((CREATED, FAILED)));
+    assert_eq!(report.experiments.likelihood_by_luck, None);
 }
 
 #[test]
@@ -260,6 +272,25 @@ fn the_table_says_what_told_the_harnesses_of_the_experiments_apart_and_how_likel
         "on the corroboration tasks of the experiments where both were created: only the \
          progenitor's child completed 2, only the singleton control group harness completed 1, \
          and luck alone gives a lead at least as large with likelihood 0.500"
+    );
+}
+
+#[test]
+fn the_table_says_that_no_experiment_created_both_harnesses_where_none_did() {
+    assert_eq!(
+        line_of(&after_an_experiment_that_created((FAILED, CREATED)), 5),
+        "on the corroboration tasks of the experiments: no experiment created both the \
+         progenitor's child and the singleton control group harness, so there are no two \
+         harnesses to compare"
+    );
+}
+
+#[test]
+fn the_table_still_says_what_the_experiments_created_where_none_created_both_harnesses() {
+    assert_eq!(
+        line_of(&after_an_experiment_that_created((FAILED, CREATED)), 4),
+        "experiments: conducted 1, the progenitor's child created in 0, the singleton control \
+         group harness created in 1, both created in 0"
     );
 }
 
@@ -305,4 +336,26 @@ fn the_object_names_the_experiment_of_a_singleton_control_group_harness() {
 #[test]
 fn the_object_names_no_experiment_for_a_child() {
     assert!(object_of(&after_two_experiments())["harnesses"][4]["experiment"].is_null());
+}
+
+#[test]
+fn the_object_gives_no_likelihood_where_no_experiment_created_both_harnesses() {
+    let object = object_of(&after_an_experiment_that_created((CREATED, FAILED)));
+    assert!(object["experiments"]["likelihood_by_luck"].is_null());
+}
+
+#[test]
+fn the_object_still_holds_the_counts_where_no_experiment_created_both_harnesses() {
+    assert_eq!(
+        object_of(&after_an_experiment_that_created((CREATED, FAILED)))["experiments"],
+        serde_json::json!({
+            "conducted": 1,
+            "progenitors_child_created": 1,
+            "singleton_control_group_harness_created": 0,
+            "both_created": 0,
+            "only_progenitors_child_completed": 0,
+            "only_singleton_control_group_harness_completed": 0,
+            "likelihood_by_luck": null
+        })
+    );
 }

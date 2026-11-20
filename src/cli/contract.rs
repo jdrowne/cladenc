@@ -402,7 +402,10 @@ task that one of the two has not attempted yet is left out. In the table,
 the row of a singleton control group harness names no progenitor, and names
 under experiment the progenitor's child of its experiment. The singleton
 control group harnesses are left out of the count of the tasks that at
-least one harness completed.
+least one harness completed. Where no experiment created both the
+progenitor's child and the singleton control group harness, each says so in
+the place of those counts and of the likelihood, and --json gives no
+likelihood for the experiments.
 
 How many more selection tasks the best of many harnesses that are all alike
 completes is measured by a directed evolution in which every harness works

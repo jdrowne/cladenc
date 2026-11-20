@@ -122,3 +122,12 @@ fn the_long_help_of_start_says_that_a_baseline_that_changes_nothing_creates_no_h
          group harness is created, and the creation is recorded as unchanged."
     ));
 }
+
+#[test]
+fn the_long_help_of_start_says_what_report_and_status_say_where_no_experiment_created_both() {
+    assert!(long_help_of_start().contains(
+        "Where no experiment created both the\nprogenitor's child and the singleton control \
+         group harness, each says so in\nthe place of those counts and of the likelihood, and \
+         --json gives no\nlikelihood for the experiments."
+    ));
+}

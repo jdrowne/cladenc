@@ -61,7 +61,7 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
             r#""singleton_control_group_harness_created":0,"both_created":0,"#,
             r#""only_progenitors_child_completed":0,"#,
-            r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":1.0},"#,
+            r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":null},"#,
             r#""harnesses":["#,
             r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
             r#""selection_completed":1,"selection_not_completed":0,"#,

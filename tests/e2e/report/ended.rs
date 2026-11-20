@@ -99,7 +99,7 @@ fn report_prints_the_table() {
          completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, other tasks 1 of 1\n\
          on the corroboration tasks: only the best harness completed 1, only the primogenitor completed 0, and luck alone gives a lead at least as large with likelihood 0.500\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
-         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
+         on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
          id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
          0   -           -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
@@ -121,7 +121,7 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
         r#""singleton_control_group_harness_created":0,"both_created":0,"#,
         r#""only_progenitors_child_completed":0,"#,
-        r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":1.0},"#,
+        r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":null},"#,
         r#""harnesses":["#,
         r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
         r#""selection_completed":0,"selection_not_completed":1,"#,

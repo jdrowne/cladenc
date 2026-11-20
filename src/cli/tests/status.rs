@@ -152,7 +152,7 @@ fn status_prints_the_state_so_far_on_standard_output() {
          completed by at least one harness: selection tasks 0 of 0, corroboration tasks 0 of 0, other tasks 0 of 1\n\
          on the corroboration tasks: the harness that is ahead so far is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
-         on the corroboration tasks of the experiments where both were created: only the progenitor's child completed 0, only the singleton control group harness completed 0, and luck alone gives a lead at least as large with likelihood 1.000\n\
+         on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
          id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
          0   -           -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\

@@ -13,7 +13,7 @@ pub(super) struct Experiments {
     pub(super) both_created: u64,
     pub(super) only_progenitors_child_completed: u64,
     pub(super) only_singleton_control_group_harness_completed: u64,
-    pub(super) likelihood_by_luck: f64,
+    pub(super) likelihood_by_luck: Option<f64>,
 }
 
 impl Experiments {
@@ -62,30 +62,43 @@ impl Experiments {
             both_created: both_created.len() as u64,
             only_progenitors_child_completed,
             only_singleton_control_group_harness_completed,
-            likelihood_by_luck: likelihood_by_luck(
-                only_progenitors_child_completed,
-                only_singleton_control_group_harness_completed,
-            ),
+            likelihood_by_luck: (!both_created.is_empty()).then(|| {
+                likelihood_by_luck(
+                    only_progenitors_child_completed,
+                    only_singleton_control_group_harness_completed,
+                )
+            }),
         }
     }
 }
 
 impl Display for Experiments {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        let told_apart = self.likelihood_by_luck.map_or_else(
+            || {
+                ": no experiment created both the progenitor's child and the singleton control \
+                 group harness, so there are no two harnesses to compare"
+                    .to_owned()
+            },
+            |likelihood| {
+                format!(
+                    " where both were created: only the progenitor's child completed {}, only \
+                     the singleton control group harness completed {}, and luck alone gives a \
+                     lead at least as large with likelihood {likelihood:.3}",
+                    self.only_progenitors_child_completed,
+                    self.only_singleton_control_group_harness_completed
+                )
+            },
+        );
         write!(
             formatter,
             "experiments: conducted {}, the progenitor's child created in {}, the singleton \
              control group harness created in {}, both created in {}\non the corroboration tasks \
-             of the experiments where both were created: only the progenitor's child completed \
-             {}, only the singleton control group harness completed {}, and luck alone gives a \
-             lead at least as large with likelihood {:.3}",
+             of the experiments{told_apart}",
             self.conducted,
             self.progenitors_child_created,
             self.singleton_control_group_harness_created,
-            self.both_created,
-            self.only_progenitors_child_completed,
-            self.only_singleton_control_group_harness_completed,
-            self.likelihood_by_luck
+            self.both_created
         )
     }
 }

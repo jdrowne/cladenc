@@ -495,3 +495,12 @@ fn the_section_of_cladenc_report_says_what_it_prints_of_a_harness_whose_procreat
          the source code as it was"
     ));
 }
+
+#[test]
+fn the_section_of_cladenc_report_says_what_it_prints_where_no_experiment_created_both_harnesses() {
+    assert!(what_is_said_of("report").contains(
+        "Where no experiment created both the progenitor's child and the singleton control group \
+         harness, it says so in place of those counts and of the likelihood, and `--json` gives \
+         no likelihood for the experiments."
+    ));
+}
