@@ -59,3 +59,4 @@
 - [An issue states a functional requirement](an-issue-states-a-functional-requirement.md) — a problem, or what cladenc is expected to do, seen from outside; never how to build it: no functions, files, Docker commands or mechanisms
 - [A flag name says what it holds](a-flag-name-says-what-it-holds.md) — the kind of value in full and its use in front, such as `--procreation-docker-image`; never a bare word like image
 - [CI caches all it can](ci-caches-all-it-can.md) — every job takes from the GitHub Actions cache what it would fetch or compile again: Rust builds, pip and npm downloads, the Docker images in `IMAGES`, what apt fetches; a new job gets the same
+- [How long a directed evolution takes does not matter](how-long-a-directed-evolution-takes-does-not-matter.md) — run time on the Mac is never a reason for part of a benchmark, fewer procreations or a smaller model, nor a decision written into an issue
