@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 3ac128cd-9432-4e14-bf1c-720fe0e77c5a
-  modified: 2026-11-17T06:49:57.102Z
+  modified: 2026-11-21T18:46:58.989Z
 ---
 
 # Every harness is benchmarked in full
@@ -14,9 +14,9 @@ Every harness of a directed evolution is benchmarked in full once it is made, on
 
 `cladenc` chooses which harness procreates. It does not choose which harness attempts next, and no harness is left benchmarked in part.
 
-A harness can be the progenitor of a procreation only once it has been benchmarked in full: it has attempted every task of every benchmark the directed evolution was given, and each of those attempts has finished. Where a procreation is due and no harness has been benchmarked in full, an attempt is started in its place.
+A harness can be the progenitor of a procreation only once it has been benchmarked in full: on every task of every benchmark the directed evolution was given, its attempt has finished. Where a procreation is due and no harness has been benchmarked in full, an attempt is started in its place.
 
-**Why:** A progenitor learns from all of its benchmarks, each as a whole, so a harness that has attempted part of its tasks does not procreate. What is measured is a harness against the benchmarks, each as a whole, and an attempt is not a unit a person thinks in or gives a number of. That a child which is plainly worse still attempts every task is accepted. `cladenc` is there for harnesses to improve themselves, so a directed evolution in which nothing procreates goes against what the tool is for. Every score is then over the same tasks, and no value of the flag pays for something other than what it says.
+**Why:** A progenitor learns from all of its benchmarks, each as a whole, so a harness that has attempted part of its tasks does not procreate. What is measured is a harness against the benchmarks, each as a whole, and an attempt is not a unit a person thinks in or gives a number of. That a child which is plainly worse is still benchmarked in full is accepted. `cladenc` is there for harnesses to improve themselves, so a directed evolution in which nothing procreates goes against what the tool is for. Every score is then over the same tasks, and no value of the flag pays for something other than what it says.
 
 **How to apply:**
 

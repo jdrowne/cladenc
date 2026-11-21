@@ -157,10 +157,10 @@ the child better at that counts, and that the child is judged by tasks
 the harness that procreates is not shown. An instruction is a request:
 cladenc enforces none of it.
 
-A harness procreates only once it has been benchmarked in full: it has
-attempted every task of every benchmark of the directed evolution, so that
-it finds every non-holdout task in /var/log/cladenc/attempts. The
-primogenitor is benchmarked in full before the first procreation.
+A harness procreates only once it has been benchmarked in full, on every
+task of every benchmark of the directed evolution, so that it finds every
+non-holdout task in /var/log/cladenc/attempts. The primogenitor is
+benchmarked in full before the first procreation.
 
 Every harness is benchmarked in full once it is created, whether it
 procreates or not. cladenc chooses which harness procreates, partly by

@@ -119,9 +119,9 @@ fn the_long_help_of_start_says_that_an_instruction_is_a_request_cladenc_does_not
 #[test]
 fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_in_full() {
     assert!(long_help_of_start().contains(
-        "A harness procreates only once it has been benchmarked in full: it has\nattempted \
-         every task of every benchmark of the directed evolution, so that\nit finds every \
-         non-holdout task in /var/log/cladenc/attempts."
+        "A harness procreates only once it has been benchmarked in full, on every\ntask of \
+         every benchmark of the directed evolution, so that it finds every\nnon-holdout task \
+         in /var/log/cladenc/attempts."
     ));
 }
 
@@ -129,7 +129,7 @@ fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_i
 fn the_long_help_of_start_says_that_the_primogenitor_is_benchmarked_before_the_first_procreation() {
     assert!(
         long_help_of_start()
-            .contains("The\nprimogenitor is benchmarked in full before the first procreation.")
+            .contains("The primogenitor is\nbenchmarked in full before the first procreation.")
     );
 }
 
