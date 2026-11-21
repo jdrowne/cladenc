@@ -28,6 +28,7 @@ fn settings() -> Settings {
         holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }

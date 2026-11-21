@@ -33,6 +33,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         holdout_tasks: Vec::new(),
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     };
     change(&mut settings);

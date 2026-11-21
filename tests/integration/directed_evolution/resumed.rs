@@ -42,6 +42,7 @@ fn settings(directory: &Path) -> Settings {
         holdout_tasks: Vec::new(),
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }
 }
@@ -225,7 +226,7 @@ fn a_resumed_directed_evolution_says_first_how_far_the_directed_evolution_had_go
 #[test]
 fn a_resumed_directed_evolution_says_that_it_starts_again_the_action_that_was_running() {
     let (_directory, _stopped, resumed) = said_when_stopped_at_t3_and_when_resumed();
-    assert!(resumed[1..2].iter().any(|line| {
+    assert!(resumed[7..8].iter().any(|line| {
         line.starts_with("cladenc: started again the attempt of harness ")
             && line.ends_with(" on task benchmark/t3")
     }));

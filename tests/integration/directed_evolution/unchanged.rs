@@ -51,6 +51,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 1,
     }
 }

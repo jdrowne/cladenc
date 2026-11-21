@@ -38,6 +38,29 @@ nothing, is built with no connection to the internet. cladenc does not ask
 Docker to fetch a base image and cannot forbid it: Docker fetches a base
 image that is not on the machine, from the registry of its name.
 
+cladenc builds the environment of every task of every benchmark when the
+directed evolution is started, and again each time it is resumed, before
+it brings up any container, as
+
+    docker build --tag <NAME> --label cladenc.task=<TASK> <DIR>
+
+  <NAME>  the name cladenc gives the environment: cladenc-environments-
+          and sixteen random hexadecimal digits, the same for every task
+          of the directed evolution, then a colon and the place of the
+          task among the tasks of the directed evolution, counted from 0
+  <TASK>  the task, as <BENCHMARK>/<TASK>
+  <DIR>   the environment directory of the copy of the task in the
+          outputs directory, the build context of its Dockerfile
+
+The build has no time limit, and environments/<BENCHMARK>/<TASK> in the
+outputs directory keeps what Docker printed. A task whose environment is
+not built stops the directed evolution with exit status 2, and
+`cladenc start` leaves it no journal. A resumed directed evolution builds
+each environment again, under the same name. The image that the Dockerfile
+of a task starts from has to be on the machine: cladenc does not ask
+Docker to fetch it and cannot forbid it, so Docker fetches a base image
+that is not on the machine, from the registry of its name.
+
 A harness is started in a container of the image of the directed evolution,
 as
 
@@ -566,6 +589,16 @@ hand.
 
 lists them, their names begin cladenc-, and `docker kill` with a name ends
 that container. Docker removes a container of cladenc once it has ended.
+
+Once the containers are removed, `cladenc resume` builds the environment
+of every task again, from the copy of the task in the outputs directory
+and under the name it was given when the directed evolution was started,
+before it brings up any container. The image that the Dockerfile of each
+task starts from has to be on the machine: Docker fetches one that is
+not, from the registry of its name. A task whose environment is not built
+stops `cladenc resume` with exit status 2, and
+environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker
+printed.
 
 When the directed evolution that it continued ends, `cladenc resume` prints
 on standard error what `cladenc report` prints, after the line that says

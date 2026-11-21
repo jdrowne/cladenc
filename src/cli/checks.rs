@@ -52,6 +52,7 @@ impl StartOptions {
             docker_image: self.docker_image.clone().unwrap_or_else(image_name),
             dockerfile: self.dockerfile.as_deref().map(dockerfile).transpose()?,
             docker_build_timeout: self.docker_build_timeout,
+            environment_image_repository: environment_image_repository(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             benchmarks,
@@ -135,6 +136,10 @@ fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
 
 fn image_name() -> String {
     format!("cladenc-{:016x}", rand::random::<u64>())
+}
+
+fn environment_image_repository() -> String {
+    format!("cladenc-environments-{:016x}", rand::random::<u64>())
 }
 
 fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {

@@ -34,6 +34,7 @@ pub(super) enum Said<'a> {
         error: &'a ContainerError,
         outputs_directory: &'a OutputsDirectory,
     },
+    Environments(Environments<'a>),
     Removed {
         containers: u64,
     },
@@ -146,6 +147,7 @@ impl Display for Said<'_> {
                 "the build of the image {error}: what Docker printed is kept in {}",
                 outputs_directory.image().display()
             ),
+            Self::Environments(said) => said.fmt(formatter),
             Self::Removed { containers } => write!(
                 formatter,
                 "removed {} that the directed evolution left running",
@@ -280,6 +282,59 @@ impl Display for Said<'_> {
                 counted(*attempts, "attempt", "attempts"),
                 counted(*harnesses, "harness", "harnesses"),
                 directory.display()
+            ),
+        }
+    }
+}
+
+pub(super) enum Environments<'a> {
+    Building {
+        task: &'a str,
+        image: &'a str,
+    },
+    Built {
+        tasks: u64,
+        outputs_directory: &'a OutputsDirectory,
+    },
+    NotBuilt {
+        task: &'a str,
+        error: &'a ContainerError,
+        outputs_directory: &'a OutputsDirectory,
+    },
+}
+
+impl Display for Environments<'_> {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Building { task, image } => write!(
+                formatter,
+                "building the environment of task {task} as the image {image}"
+            ),
+            Self::Built {
+                tasks,
+                outputs_directory,
+            } => {
+                let built = if *tasks == 1 {
+                    "environment"
+                } else {
+                    "environments"
+                };
+                write!(
+                    formatter,
+                    "built the {built} of the {}: what Docker printed is kept in {}",
+                    counted(*tasks, "task", "tasks"),
+                    outputs_directory.path().join("environments").display()
+                )
+            }
+            Self::NotBuilt {
+                task,
+                error,
+                outputs_directory,
+            } => write!(
+                formatter,
+                "the build of the environment of task {task} {error}: what Docker printed is kept \
+                 in {}",
+                outputs_directory.environment(task).display()
             ),
         }
     }

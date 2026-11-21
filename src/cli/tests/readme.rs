@@ -450,8 +450,52 @@ fn the_section_of_cladenc_start_says_that_a_directed_evolution_stopped_sooner_pr
 #[test]
 fn the_steps_of_cladenc_start_end_with_what_it_prints() {
     assert!(what_is_said_of("start").ends_with(
-        "\n9. It prints on standard error what `cladenc report` prints, and on standard output \
+        "\n10. It prints on standard error what `cladenc report` prints, and on standard output \
          the directory of the best harness."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_build_the_environment_of_every_task_before_any_container() {
+    assert!(what_is_said_of("start").contains(
+        "\n4. It builds the environment of every task of every benchmark, before it brings up any \
+         container: "
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_the_base_image_of_an_environment_has_to_be_on_the_machine()
+ {
+    assert!(what_is_said_of("start").contains(
+        "The image that the Dockerfile of a task starts from has to be on the machine: `cladenc` \
+         does not ask Docker to fetch it, and `docker build` has no flag that forbids it, so \
+         Docker fetches a base image that is not on the machine, from the registry of its name."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_an_environment_that_is_not_built_stops_with_status_2() {
+    assert!(what_is_said_of("start").contains(
+        "What Docker printed is kept in `environments` in the outputs directory, and a task whose \
+         environment is not built stops the directed evolution with exit status 2."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_resume_build_the_environments_again_under_the_same_names() {
+    assert!(what_is_said_of("resume").contains(
+        "\n2. It builds the environment of every task again, as `cladenc start` does, from the \
+         copy of the task in the outputs directory and under the name the environment was given \
+         when the directed evolution was started."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_resume_says_that_the_base_image_of_an_environment_has_to_be_on_the_machine()
+ {
+    assert!(what_is_said_of("resume").contains(
+        "The image that the Dockerfile of each task starts from has to be on the machine: Docker \
+         fetches one that is not, from the registry of its name."
     ));
 }
 

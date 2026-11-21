@@ -78,6 +78,15 @@ impl OutputsDirectory {
             .map(|_| image)
     }
 
+    pub fn environment(&self, task: &str) -> PathBuf {
+        self.path.join("environments").join(task)
+    }
+
+    pub fn start_environment(&self, task: &str) -> io::Result<PathBuf> {
+        let environment = self.environment(task);
+        fs::create_dir_all(&environment).map(|()| environment)
+    }
+
     pub fn harness(&self, id: HarnessId) -> PathBuf {
         self.path.join("harnesses").join(id.to_string())
     }

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::containers::ContainerError;
-use crate::directed_evolution::Said;
+use crate::directed_evolution::{Environments, Said};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -262,6 +262,58 @@ fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() 
         }
         .to_string(),
         "the build of the image exited with status 1: what Docker printed is kept in /outputs/image"
+    );
+}
+
+#[test]
+fn the_environment_of_a_task_is_said_to_be_being_built_with_the_image_it_is_built_as() {
+    assert_eq!(
+        Said::Environments(Environments::Building {
+            task: "benchmark/t1",
+            image: "cladenc-environments-0123456789abcdef:0",
+        })
+        .to_string(),
+        "building the environment of task benchmark/t1 as the image \
+         cladenc-environments-0123456789abcdef:0"
+    );
+}
+
+#[test]
+fn the_environment_of_the_one_task_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
+    assert_eq!(
+        Said::Environments(Environments::Built {
+            tasks: 1,
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "built the environment of the 1 task: what Docker printed is kept in /outputs/environments"
+    );
+}
+
+#[test]
+fn the_environments_of_several_tasks_are_said_to_be_built_with_how_many_tasks_there_are() {
+    assert_eq!(
+        Said::Environments(Environments::Built {
+            tasks: 3,
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "built the environments of the 3 tasks: what Docker printed is kept in \
+         /outputs/environments"
+    );
+}
+
+#[test]
+fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker_printed_is_kept() {
+    assert_eq!(
+        Said::Environments(Environments::NotBuilt {
+            task: "benchmark/t1",
+            error: &ContainerError::Exit(1),
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "the build of the environment of task benchmark/t1 exited with status 1: what Docker \
+         printed is kept in /outputs/environments/benchmark/t1"
     );
 }
 

@@ -70,20 +70,21 @@ fn a_run_stopped_by_a_docker_that_a_signal_ended_says_which_attempt_and_which_si
 }
 
 #[test]
-fn a_run_on_a_machine_where_docker_is_not_found_says_that_its_attempt_could_not_be_carried_out() {
+fn a_run_on_a_machine_where_docker_is_not_found_says_that_the_first_environment_is_not_built() {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), "exit 0");
     start.env("PATH", directory.path());
-    assert!(said_last(&mut start).starts_with(
-        "cladenc: the directed evolution stopped before its end: the attempt of harness 0 on \
-         task benchmark/t1 could not be carried out: "
-    ));
+    assert_eq!(
+        said_last(&mut start),
+        "cladenc: the environment of task benchmark/t1 was not built: its build could not be \
+         carried out: No such file or directory (os error 2)"
+    );
 }
 
 #[test]
-fn a_run_on_a_machine_where_docker_is_not_found_exits_with_1() {
+fn a_run_on_a_machine_where_docker_is_not_found_exits_with_2() {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), "exit 0");
     start.env("PATH", directory.path());
-    assert_eq!(start.output().unwrap().status.code(), Some(1));
+    assert_eq!(start.output().unwrap().status.code(), Some(2));
 }

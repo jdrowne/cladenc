@@ -51,6 +51,7 @@ fn settings(directory: &Path) -> Settings {
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 1,
     }
 }
@@ -307,7 +308,7 @@ fn a_directed_evolution_a_baseline_stopped_continues_to_the_journal_an_unbroken_
 fn a_resumed_directed_evolution_says_that_it_starts_again_the_baseline_that_was_under_way() {
     let directed_evolutions = stopped_at_its_baseline_and_resumed();
     assert_eq!(
-        directed_evolutions.said_when_resumed[1],
+        directed_evolutions.said_when_resumed[5],
         format!("cladenc: started again {THE_BASELINE}")
     );
 }

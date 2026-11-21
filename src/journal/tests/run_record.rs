@@ -34,6 +34,7 @@ fn settings() -> Settings {
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }
@@ -80,8 +81,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_24() {
-    assert_eq!(journal::FORMAT, 24);
+fn the_format_of_the_journal_is_25() {
+    assert_eq!(journal::FORMAT, 25);
 }
 
 #[test]
@@ -89,9 +90,10 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":24,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":25,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
+            r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2","t3"]}],"#,
             r#""holdout_percentage":50.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
@@ -391,6 +393,28 @@ fn the_settings_give_a_genealogy_that_selects_by_no_corroboration_task() {
 #[test]
 fn the_run_record_survives_being_written_and_read_back() {
     assert_eq!(read_back(&run(settings())), run(settings()));
+}
+
+#[test]
+fn the_settings_give_each_task_the_image_of_its_environment_tagged_with_its_place_among_the_tasks()
+{
+    assert_eq!(
+        settings().environments(),
+        [
+            (
+                "benchmark/t1".to_owned(),
+                "cladenc-environments-0123456789abcdef:0".to_owned()
+            ),
+            (
+                "benchmark/t2".to_owned(),
+                "cladenc-environments-0123456789abcdef:1".to_owned()
+            ),
+            (
+                "benchmark/t3".to_owned(),
+                "cladenc-environments-0123456789abcdef:2".to_owned()
+            )
+        ]
+    );
 }
 
 #[test]

@@ -36,6 +36,7 @@ fn settings() -> Settings {
         corroboration_tasks: ["c1", "c2", "c3"]
             .map(|id| format!("benchmark/{id}"))
             .to_vec(),
+        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }

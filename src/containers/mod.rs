@@ -21,7 +21,7 @@ use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_
 
 pub use build::build_primogenitor;
 use container::{Container, Mount, Shell};
-pub use image::build_image;
+pub use image::{build_environment, build_image};
 pub use left::remove_left_behind;
 use program::{Ending, Limits, seconds_since};
 

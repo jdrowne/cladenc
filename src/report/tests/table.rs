@@ -30,6 +30,7 @@ fn settings() -> Settings {
             .to_vec(),
         holdout_corroboration_percentage: 25.0,
         corroboration_tasks: vec!["benchmark/t4".to_owned()],
+        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }

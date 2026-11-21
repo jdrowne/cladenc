@@ -1,6 +1,6 @@
 use std::process::{self, Command};
 
-use test_inputs::{IMAGE, image};
+use test_inputs::{IMAGE, environment_image_repository, image};
 
 fn tag(name: &str) {
     Command::new("docker")
@@ -43,4 +43,18 @@ fn an_image_is_removed_once_it_is_let_go() {
     tag(&name);
     drop(held);
     assert!(!is_there(&name));
+}
+
+#[test]
+fn a_repository_of_environments_is_named_for_the_tests_of_cladenc_and_for_the_process_that_asks() {
+    let named = format!("cladenc-test-environments-{}-", process::id());
+    assert!(environment_image_repository().starts_with(&named));
+}
+
+#[test]
+fn two_repositories_of_environments_have_two_names() {
+    assert_ne!(
+        environment_image_repository(),
+        environment_image_repository()
+    );
 }

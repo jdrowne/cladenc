@@ -13,6 +13,10 @@ pub enum DirectedEvolutionError {
     Key(PathBuf),
     Left(io::Error),
     Image(ContainerError),
+    Environment {
+        task: String,
+        error: ContainerError,
+    },
     Journal(JournalError),
     Asked,
     Build(ContainerError),
@@ -42,6 +46,10 @@ impl Display for DirectedEvolutionError {
             Self::Image(error) => write!(
                 formatter,
                 "the image of the directed evolution was not built: its build {error}"
+            ),
+            Self::Environment { task, error } => write!(
+                formatter,
+                "the environment of task {task} was not built: its build {error}"
             ),
             Self::Journal(error) => write!(
                 formatter,

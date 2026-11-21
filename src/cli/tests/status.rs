@@ -60,6 +60,7 @@ fn started() -> Vec<Record> {
                 holdout_tasks: Vec::new(),
                 holdout_corroboration_percentage: 50.0,
                 corroboration_tasks: Vec::new(),
+                environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
                 seed: 7,
             }),
         },

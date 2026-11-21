@@ -19,6 +19,7 @@ mod start {
     mod benchmarks;
     mod built;
     mod called;
+    mod environment;
     mod experiment;
     mod finished;
     mod held_out;

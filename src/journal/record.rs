@@ -19,6 +19,7 @@ pub struct Settings {
     pub docker_image: String,
     pub dockerfile: Option<PathBuf>,
     pub docker_build_timeout: Option<u64>,
+    pub environment_image_repository: String,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
     pub benchmarks: Vec<Benchmark>,
@@ -74,6 +75,19 @@ impl Settings {
         self.benchmarks
             .iter()
             .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
+            .collect()
+    }
+
+    pub(crate) fn environments(&self) -> Vec<(String, String)> {
+        self.tasks()
+            .into_iter()
+            .enumerate()
+            .map(|(index, task)| {
+                (
+                    task,
+                    format!("{}:{index}", self.environment_image_repository),
+                )
+            })
             .collect()
     }
 

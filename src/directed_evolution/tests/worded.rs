@@ -90,6 +90,28 @@ fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
 }
 
 #[test]
+fn an_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Environment {
+            task: "benchmark/t1".to_owned(),
+            error: ContainerError::Exit(1),
+        }),
+        "the environment of task benchmark/t1 was not built: its build exited with status 1"
+    );
+}
+
+#[test]
+fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Environment {
+            task: "benchmark/t1".to_owned(),
+            error: ContainerError::Stopped,
+        }),
+        "the environment of task benchmark/t1 was not built: its build was stopped"
+    );
+}
+
+#[test]
 fn a_directed_evolution_the_build_of_its_primogenitor_stopped_says_how_the_build_ended() {
     assert_eq!(
         worded(DirectedEvolutionError::Build(ContainerError::Exit(2))),

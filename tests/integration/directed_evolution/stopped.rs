@@ -30,6 +30,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         holdout_tasks: Vec::new(),
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }
 }

@@ -328,7 +328,8 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
         | DirectedEvolutionError::Unusable(_)
         | DirectedEvolutionError::Key(_)
         | DirectedEvolutionError::Left(_)
-        | DirectedEvolutionError::Image(_) => 2,
+        | DirectedEvolutionError::Image(_)
+        | DirectedEvolutionError::Environment { .. } => 2,
         DirectedEvolutionError::Journal(_)
         | DirectedEvolutionError::Asked
         | DirectedEvolutionError::Build(_)

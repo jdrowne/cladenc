@@ -76,6 +76,15 @@ pub fn image() -> Image {
     }
 }
 
+pub fn environment_image_repository() -> String {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    format!(
+        "cladenc-test-environments-{}-{}",
+        process::id(),
+        NEXT.fetch_add(1, Ordering::SeqCst)
+    )
+}
+
 pub fn dockerfile(directory: &Path, steps: &str) -> PathBuf {
     let file = directory.join("Dockerfile");
     fs::write(&file, format!("FROM {IMAGE}\n{steps}")).expect("the Dockerfile can be written");

@@ -32,6 +32,7 @@ fn settings() -> Settings {
         holdout_tasks: EVERY_HOLDOUT_TASK.map(str::to_owned).to_vec(),
         holdout_corroboration_percentage: 66.0,
         corroboration_tasks: vec!["benchmark/c1".to_owned(), "benchmark/c2".to_owned()],
+        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }

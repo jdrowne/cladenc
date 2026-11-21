@@ -1,6 +1,7 @@
 mod benchmarks;
 mod checks;
 mod help;
+mod help_of_environments;
 mod help_of_experiments;
 mod help_of_procreations;
 mod help_of_reports;

@@ -39,6 +39,7 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         holdout_tasks: vec!["benchmark/t1".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }
 }
@@ -135,7 +136,7 @@ fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
             .lines()
             .position(|line| line.starts_with(start))
     });
-    assert_eq!(places, [Some(1), Some(3), Some(5)]);
+    assert_eq!(places, [Some(1), Some(3), Some(7)]);
 }
 
 #[test]

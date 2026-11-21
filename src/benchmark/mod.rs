@@ -13,7 +13,7 @@ pub(crate) const SPECIFICATION: &str = "instruction.md";
 const WORKSPACE: &str = "workspace";
 pub(crate) const TESTS: &str = "tests";
 const GRADER: &str = "test.sh";
-const ENVIRONMENT: &str = "environment";
+pub(crate) const ENVIRONMENT: &str = "environment";
 const DOCKERFILE: &str = "Dockerfile";
 const COMPOSE_FILES: [&str; 4] = [
     "compose.yaml",

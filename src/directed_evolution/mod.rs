@@ -19,7 +19,7 @@ use crate::outputs_directory::OutputsDirectory;
 use action::Ended;
 pub use error::DirectedEvolutionError;
 use progress::Progress;
-use said::{Said, say};
+use said::{Environments, Said, say};
 
 const WAIT: Duration = Duration::from_millis(100);
 
@@ -66,7 +66,9 @@ pub fn start(
         .map_err(DirectedEvolutionError::Io)
         .inspect(|_| say_the_holdout(settings, writer))
         .and_then(|outputs_directory| {
-            build_image(settings, &outputs_directory, stop, writer).map(|()| outputs_directory)
+            build_image(settings, &outputs_directory, stop, writer)
+                .and_then(|()| build_environments(settings, &outputs_directory, stop, writer))
+                .map(|()| outputs_directory)
         })
         .and_then(|outputs_directory| {
             Journal::open(path)
@@ -132,6 +134,44 @@ fn build_image(
     }
 }
 
+fn build_environments(
+    settings: &Settings,
+    outputs_directory: &OutputsDirectory,
+    stop: &AtomicBool,
+    writer: &mut dyn Write,
+) -> Result<(), DirectedEvolutionError> {
+    let environments = settings.environments();
+    for (task, image) in &environments {
+        say(
+            writer,
+            &Said::Environments(Environments::Building { task, image }),
+        );
+        containers::build_environment(outputs_directory, task, image, stop).map_err(|error| {
+            match error {
+                ContainerError::Stopped => DirectedEvolutionError::Asked,
+                error => {
+                    let not_built = Said::Environments(Environments::NotBuilt {
+                        task,
+                        error: &error,
+                        outputs_directory,
+                    });
+                    say(writer, &not_built);
+                    DirectedEvolutionError::Environment {
+                        task: task.clone(),
+                        error,
+                    }
+                }
+            }
+        })?;
+    }
+    let built = Said::Environments(Environments::Built {
+        tasks: environments.len() as u64,
+        outputs_directory,
+    });
+    say(writer, &built);
+    Ok(())
+}
+
 pub fn resume(
     path: &Path,
     stop: &AtomicBool,
@@ -181,6 +221,7 @@ pub fn resume(
                 harnesses: genealogy.harness_count(),
             };
             say(writer, &continuing);
+            build_environments(&settings, &outputs_directory, stop, writer)?;
             let progress = Progress::new(&settings, journal, writer).resumed(
                 genealogy,
                 unfinished,

@@ -4,6 +4,7 @@ use std::sync::atomic::AtomicBool;
 
 use super::ContainerError;
 use super::program::{self, Ending, LEEWAY, Limits};
+use crate::benchmark::ENVIRONMENT;
 use crate::outputs_directory::OutputsDirectory;
 
 pub fn build_image(
@@ -23,7 +24,28 @@ pub fn build_image(
         .args(["docker", "build", "--tag", image, "--file"])
         .arg(kept.join("Dockerfile"))
         .arg(kept.join("context"));
-    match program::run(build, &kept, Limits::starting_now(time_limit, stop))? {
+    program::run(build, &kept, Limits::starting_now(time_limit, stop)).and_then(built)
+}
+
+pub fn build_environment(
+    outputs_directory: &OutputsDirectory,
+    task: &str,
+    image: &str,
+    stop: &AtomicBool,
+) -> Result<(), ContainerError> {
+    let kept = outputs_directory
+        .start_environment(task)
+        .map_err(ContainerError::Io)?;
+    let mut build = Command::new("docker");
+    build
+        .args(["build", "--tag", image, "--label"])
+        .arg(format!("cladenc.task={task}"))
+        .arg(outputs_directory.task(task).join(ENVIRONMENT));
+    program::run(build, &kept, Limits::without_time_limit(stop)).and_then(built)
+}
+
+fn built(ending: Ending) -> Result<(), ContainerError> {
+    match ending {
         Ending::Exited(0) => Ok(()),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
         Ending::TimedOut => Err(ContainerError::TimeLimit),

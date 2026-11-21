@@ -37,6 +37,10 @@ impl<'a> Limits<'a> {
             stop,
         }
     }
+
+    pub(super) fn without_time_limit(stop: &'a AtomicBool) -> Self {
+        Self::starting_now(u64::from(u32::MAX), stop)
+    }
 }
 
 pub(super) fn run(

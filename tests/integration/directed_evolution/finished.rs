@@ -37,6 +37,7 @@ fn settings(directory: &Path) -> Settings {
         holdout_tasks: vec!["benchmark/t1".to_owned()],
         holdout_corroboration_percentage: 50.0,
         corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }
 }
@@ -405,7 +406,7 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 fn a_directed_evolution_says_each_action_as_it_starts() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
-        said[5],
+        said[7],
         "cladenc: started the procreation of harness 1 by harness 0, procreation 1 of 1"
     );
 }
@@ -425,7 +426,7 @@ fn a_directed_evolution_says_as_many_starts_as_its_journal_records() {
 fn a_directed_evolution_says_an_attempt_it_starts_with_no_number() {
     let (_directory, said) = said_over_one_task();
     assert_eq!(
-        said[3],
+        said[5],
         "cladenc: started the attempt of harness 0 on task benchmark/t1"
     );
 }

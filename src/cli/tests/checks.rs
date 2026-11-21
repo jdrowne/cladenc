@@ -42,7 +42,11 @@ fn with_a_dockerfile(directory: &TempDir, options: &mut StartOptions) {
 }
 
 fn is_named_by_cladenc(image: &str) -> bool {
-    image.strip_prefix("cladenc-").is_some_and(|digits| {
+    is_named_after("cladenc-", image)
+}
+
+fn is_named_after(prefix: &str, image: &str) -> bool {
+    image.strip_prefix(prefix).is_some_and(|digits| {
         digits.len() == 16
             && digits
                 .chars()
@@ -96,6 +100,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             holdout_tasks: settings.holdout_tasks.clone(),
             holdout_corroboration_percentage: 50.0,
             corroboration_tasks: settings.corroboration_tasks.clone(),
+            environment_image_repository: settings.environment_image_repository.clone(),
             seed: settings.seed,
         }
     );
@@ -191,6 +196,24 @@ fn a_dockerfile_is_a_setting_with_the_time_limit_of_its_build() {
 fn the_image_built_from_a_dockerfile_is_named_cladenc_and_sixteen_hexadecimal_digits() {
     let settings = checked(with_a_dockerfile).unwrap();
     assert!(is_named_by_cladenc(&settings.docker_image));
+}
+
+#[test]
+fn the_repository_of_the_environments_is_named_cladenc_environments_and_sixteen_hexadecimal_digits()
+{
+    let settings = checked(|_, _| ()).unwrap();
+    assert!(is_named_after(
+        "cladenc-environments-",
+        &settings.environment_image_repository
+    ));
+}
+
+#[test]
+fn two_directed_evolutions_started_from_one_command_line_are_given_different_repositories() {
+    assert_ne!(
+        checked(|_, _| ()).unwrap().environment_image_repository,
+        checked(|_, _| ()).unwrap().environment_image_repository
+    );
 }
 
 #[test]

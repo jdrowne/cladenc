@@ -331,14 +331,14 @@ fn every_container_is_started_from_the_image_docker_was_asked_to_build() {
 }
 
 #[test]
-fn docker_is_asked_to_build_once() {
+fn docker_is_asked_to_build_the_image_once_and_the_environment_of_each_of_the_three_tasks_once() {
     let (_directory, arguments) = arguments_of_a_docker_that_records_them();
     assert_eq!(
         arguments
             .iter()
             .filter(|argument| *argument == "build")
             .count(),
-        1
+        4
     );
 }
 
