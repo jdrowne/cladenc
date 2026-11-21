@@ -16,7 +16,7 @@ An issue describes a problem, or states a functional requirement: what `cladenc`
 
 **How to apply:**
 
-- Write each issue as a short list of behaviours that can be checked from the command line, the outputs directory or the README.
+- State each behaviour so that it can be checked from the command line, the outputs directory or the README.
 - Leave the design to the session that works on the issue; that session reads the code itself, per [[an-issue-is-brought-up-to-date-before-work]].
 - A constraint the work has to keep, such as [[cladenc-works-offline-and-self-hosted]], may be stated as a requirement; how to keep it is still left out.
 
