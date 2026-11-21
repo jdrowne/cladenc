@@ -23,4 +23,4 @@ Run every command that can take more than about a minute as a background `Bash` 
 - Other work that does not depend on the result goes on meanwhile. Once only the result is left to wait for, end the turn.
 - A turn made of many short foreground calls also holds the reminders back until it ends. Split long work at its natural boundaries, such as after a batch of edits.
 
-On the fifth point, other work goes on during a CI run as well, per [[the-work-does-not-wait-for-ci]]. A `cargo` build or test reads the working tree until it ends, so an edit to the code it is building depends on its result and waits for it.
+On the fifth point, a CI run is the exception: nothing else is done while it is queued or in progress, per [[the-work-waits-for-ci]]. A `cargo` build or test reads the working tree until it ends, so an edit to the code it is building depends on its result and waits for it.

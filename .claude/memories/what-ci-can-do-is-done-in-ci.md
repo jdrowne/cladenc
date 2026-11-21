@@ -7,7 +7,7 @@ metadata:
 
 # What CI can do is done in CI
 
-A check that a workflow of this repository runs is left to that workflow. It is not run locally, and a push never waits for one.
+A check that a workflow of this repository runs is left to that workflow. It is not run locally before a push; the push is made, and its runs are waited for per [[the-work-waits-for-ci]].
 
 **Why:** Whatever CI is able to do is done in CI: that is the user's rule. A commit held back while tests run on the user's machine is a change that is not yet pushed, and running the workflows' checks locally is nothing the user asks for.
 

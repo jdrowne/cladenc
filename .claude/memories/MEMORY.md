@@ -14,12 +14,12 @@
 - [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora
 - [Repositories outside jdrowne stay out of the record](repositories-outside-jdrowne-stay-out-of-the-record.md) — not mentioned in a memory, and nothing from one quoted in anything public
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
-- [The work does not wait for CI](the-work-does-not-wait-for-ci.md) — after a push go straight on, commits and pushes included; the organization's free-tier runners are shared, so a run can stay queued for hours
+- [The work waits for CI](the-work-waits-for-ci.md) — while a run of the session's push is queued or in progress, do nothing else: no reading, editing, filing, committing or pushing; end the turn until the watch reports its end; an autopilot reminder says so too
 - [What CI can do is done in CI](what-ci-can-do-is-done-in-ci.md) — no workflow check is run locally before a push: no test tier, clippy, format check, coverage, markdownlint or assert tool
 - [Every run is watched](every-run-is-watched.md) — each run a push starts gets a background watch to its end; the work goes on, and a failure is fixed when the watch reports it
 - [Long-running commands in the background](long-running-commands-in-the-background.md) — a command that can take more than about a minute is a background Bash call or a Monitor, with a time limit, never followed by a foreground wait
 - [cargo is not on the shell's PATH](cargo-is-not-on-the-shell-path.md) — Rust is installed in ~/.cargo/bin; put it on PATH before calling cargo, and do not install it again
-- [Reminders drive the loop](reminders-drive-the-loop.md) — an autopilot reminder only for a rule that says what to do next when it fires, one rule and one action each; every other rule is a memory
+- [Reminders drive the loop](reminders-drive-the-loop.md) — an autopilot reminder only for a rule that says what to do next when it fires, one rule and one action each; every other rule is a memory, and the wait for CI is both
 - [The work in hand can be several issues](the-work-in-hand-can-be-several-issues.md) — the autopilot takes the lowest unblocked issue, alone or with others it chooses; a blocked issue joins only with all its open blockers
 - [Issues have no fixed form](issues-have-no-fixed-form.md) — no house layout and no section owed; write each issue in whatever form lets a session that never saw the conversation act on it
 - [Issues are sized to one context](issues-are-sized-to-one-context.md) — split a plan too large for one context into stand-alone issues, re-using the original, ordered by blocked_by edges
