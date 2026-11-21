@@ -12,7 +12,7 @@ metadata:
 
 Every module of `src/` is a directory, and the module's own code is in the `mod.rs` of that directory: `src/cli/mod.rs`, with `src/cli/checks.rs` and `src/cli/contract.rs` beside it. A module of one file is a directory of one file, as `src/report/mod.rs`. The only files directly in `src/` are `lib.rs` and `main.rs`, which Rust needs to be files.
 
-**Why:** The layout is the user's choice among three: a file beside a directory of its name, a directory for each module, and directories only with `lib.rs` and `main.rs` one level down. My reading of the reason, not the user's: a listing of `src/` shows each module once, everything of a module is in one directory, its unit tests among them, and `src/` reads as the `src/` of the user's other Python repositories does.
+**Why:** The layout is the user's choice among three: a file beside a directory of its name, a directory for each module, and directories only with `lib.rs` and `main.rs` one level down. My reading of the reason, not the user's: a listing of `src/` shows each module once, everything of a module is in one directory, its unit tests among them.
 
 **How to apply:**
 
@@ -21,4 +21,4 @@ Every module of `src/` is a directory, and the module's own code is in the `mod.
 - A file is named `mod.rs` when a memory, an issue or a reply names a module's own code: `src/directed_evolution/mod.rs`, not `src/directed_evolution.rs`.
 - Two checks of `release.yml` hold the layout, per [[the-checks-the-code-faces]]: the job `assert-one-directory-per-module`, and `clippy::self_named_module_files` on the `cargo clippy` line.
 - The other two layouts are not proposed again, and `clippy::mod_module_files`, which refuses a `mod.rs`, is never turned on.
-- The unit tests of a module are a directory too: `src/<module>/tests/`, with a `mod.rs` that lists its files, per [[the-layout-follows-rust-conventions]]. `tests/integration` and `tests/e2e` need no `mod.rs`: the `main.rs` of each tier lists the files of each directory itself. `crates/` is laid out per [[crates-stores-shared-code]].
+- The unit tests and the tiers under `tests/` are laid out per [[the-layout-follows-rust-conventions]], and `crates/` per [[crates-stores-shared-code]].

@@ -22,12 +22,11 @@ Three things are kept apart from Rust's conventions, each a rule of the user's:
 - no comment is written, a doc comment included, per [[the-checks-the-code-faces]];
 - the settings of a linter are under `etc/`, per [[a-tool-is-configured-under-etc]].
 
-**Why:** The user chose Rust's conventions for this repository, where the user's other repositories name the same directories `test/` and `lib/`. My reading of the reason for the directory of tests, not the user's: the test code stays in files of its own, so the coverage measure leaves it out by the name of the directory, which a `mod tests { … }` inside a source file would not allow without a directive in the code.
+**Why:** The user chose Rust's conventions for this repository. My reading of the reason for the directory of tests, not the user's: the test code stays in files of its own, so the coverage measure leaves it out by the name of the directory, which a `mod tests { … }` inside a source file would not allow without a directive in the code.
 
 **How to apply:**
 
 - A new unit test goes in a file of `src/<module>/tests/`, and a new file there is added to that directory's `mod.rs`. A module that gets its first unit test gets the directory, its `mod.rs`, and the declaration at the foot of `src/<module>/mod.rs`.
 - The three tiers are run as `cargo test --lib` for the unit tier, `--test integration` and `--test e2e`. No test target is named `unit`.
 - With the unit tests inside it, Cargo builds the library twice, and the coverage tool counts a function by the better of its two builds unless it is told otherwise. The job `assert-coverage` adds the two builds up, per [[the-checks-the-code-faces]].
-- An older issue that names `test/unit/<module>/`, `test/integration/`, `test/e2e/`, `test/lib/test_inputs/` or `lib/test_inputs` means `src/<module>/tests/`, `tests/integration/`, `tests/e2e/`, `crates/test_inputs/tests/` and `crates/test_inputs`.
 - Nothing is `pub` for the unit tests, since they are inside the library, per [[an-item-is-as-private-as-its-uses-allow]].

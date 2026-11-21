@@ -19,6 +19,8 @@ Fetch `CronCreate`, `CronList` and `CronDelete` with `ToolSearch` first.
 
 A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". The wait for CI is both. It is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session back to work while a run is going. It is the one reminder of the form `reminders-only`, per "Reminders only".
 
+Before a reminder is added, the test is whether its rule would still hold with the autopilot stopped. When it would, the rule is written as a memory and given a row in "Rules that are memories", and it is a reminder as well only when a reminder that fires would otherwise lead the session against it, as with the wait for CI.
+
 Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders.
 
 Each reminder fires every fifteen minutes, on a minute of its own at least two minutes from the next, and none falls on the hour or the half hour. A reminder fires only while the session is idle, which is why every command that can run long goes in the background, per `.claude/memories/long-running-commands-in-the-background.md`.
@@ -76,6 +78,9 @@ Each file is under `.claude/memories/`.
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
 | An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
 | An issue documents one indivisible problem. | `one-indivisible-problem-per-issue.md` |
+| An issue too large for one context is split into issues that each stand alone. | `issues-are-sized-to-one-context.md` |
+| An issue states a functional requirement, seen from outside `cladenc`. | `an-issue-states-a-functional-requirement.md` |
+| An issue about a memory, a reminder or the skill carries the label `memories` or `reminders`. | `issues-about-the-sessions-rules-are-labelled.md` |
 | An issue has no fixed form and owes no section that other issues carry. | `issues-have-no-fixed-form.md` |
 | A `blocked_by` edge is written only where the block is real. | `a-blocked-by-edge-states-a-real-block.md` |
 | The work is clean-room. | `the-work-is-clean-room.md` |

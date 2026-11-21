@@ -12,7 +12,7 @@ metadata:
 
 `cladenc` conducts an experiment to test whether a progenitor is better at procreating better harnesses than the primogenitor. To conduct the experiment, `cladenc` has to establish a baseline. `cladenc` establishes the baseline by having the primogenitor create a harness from the same source code that the progenitor uses to procreate the progenitor's child. The harness the primogenitor creates from the progenitor's source code is the singleton control group harness.
 
-**Why:** The words are the user's, and the user holds that the experiment has to be worded with care. Each word says what the thing is for: an experiment tests something, a baseline is what an experiment needs, and a control group is what an experiment compares against. A short form that names none of it, such as the primogenitor making a control, was turned down.
+**Why:** The words are the user's, and the user holds that the experiment has to be worded with care. Each word says what the thing is for: an experiment tests something, a baseline is what an experiment needs, and a control group is what an experiment compares against. A short form that names none of it, such as the primogenitor making a control, is not used.
 
 **How to apply:** In the README, an issue, a commit, a reply and the names in the code, say that `cladenc` conducts the experiment and establishes the baseline, and that the primogenitor creates the singleton control group harness. Write the name in full each time. The primogenitor does not procreate there, and the singleton control group harness is nobody's child. The progenitor still procreates the progenitor's child, as in [[a-procreation-has-a-progenitor-a-copy-and-a-child]]. Issue 72 holds the design.
 
