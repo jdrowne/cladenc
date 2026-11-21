@@ -29,6 +29,4 @@ What `cladenc` does with them. Each of these is the user's decision:
 
 **How to apply:** Treat the three inputs as the intended interface. A program that a person writes to carry out part of a directed evolution, as one that makes a child or one that benchmarks a harness would be, is not part of the design, and `cladenc` has none: do not propose one. Say these words plainly to the user: benchmark first, and task only as one item of a benchmark; directed evolution, which is one run of `cladenc` from start to end; and session, which is one conversation with me.
 
-Mine, not the user's, and open to the session that does the work: the names `--harness-build-command` and `--model-key-file`; that an attempt starts the harness on a copy of the task's workspace, with the task specification as its instruction, and then runs the task's grader in a second container of the same image; that the tasks of several benchmarks count alike, so a larger benchmark weighs more; and that a directed evolution has one image, which has to suit every benchmark.
-
 Related: [[cladenc-works-offline-and-self-hosted]], [[the-simplest-design-is-offered-first]], [[the-paper-is-a-starting-point]], [[one-indivisible-problem-per-issue]], [[before-an-issue-is-labelled-needs-decision]].

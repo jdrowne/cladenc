@@ -23,7 +23,7 @@ A harness can be the progenitor of a procreation only once it has been benchmark
 - Do not offer a count of attempts as the number a person gives, and do not propose leaving a harness after some of its tasks to save attempts.
 - Do not propose a value, a flag or a mode that only benchmarks a harness and starts no procreation, as a way to learn a score or otherwise.
 - Do not propose one task, another number of tasks, or a flag that gives the number, as what a harness needs before it procreates. Where a harness that has attempted some of the tasks is meant, say how many tasks it has attempted, per [[an-explanation-says-what-happens]].
-- Being benchmarked in full is not being run in one container. Each attempt keeps a container of its own, and the grader a second one.
+- Being benchmarked in full is not being run in one container.
 - Code, help, README or an issue that has `--budget`, that counts in attempts how long a directed evolution goes on, or that has artificial selection choose which harness attempts which task, is older than this design and is brought to it, per [[an-issue-is-brought-up-to-date-before-work]].
 
 Related: [[the-words-about-benchmarks]], [[the-paper-is-a-starting-point]], [[no-flag-has-a-default]], [[an-explanation-says-what-happens]].

@@ -12,7 +12,7 @@ metadata:
 
 `cladenc` has no defaults. A flag that takes a value has to be given, and nothing is assumed in the place of one left out. A directed evolution does what a person stated on its command line and nothing they did not state.
 
-The seed of the random draws is not a flag. `cladenc` draws it when a directed evolution is started and writes it in the journal, and `cladenc resume` reads it from there.
+The seed of the random draws is not a flag. `cladenc` draws it.
 
 **Why:** It is the user's rule: `cladenc` assumes no value and does nothing that was not spelled out. Having to choose every value of a directed evolution, the most procreations and the numbers the artificial selection works from among them, is no problem to them, not even a small one of convenience. That the seed is drawn is the user's decision too: no value of it is better than another, and a directed evolution cannot be repeated, so a person has no reason to choose one.
 

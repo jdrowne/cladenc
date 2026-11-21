@@ -18,6 +18,5 @@ A flag's name says what kind of thing its value is, and what `cladenc` uses it f
 
 - When proposing a flag, name the kind of value in full and put its use in front.
 - When a change gives an existing flag a second meaning, or narrows it to one use, propose renaming it so the name says which.
-- The image for making harnesses (building a harness, procreating, creating the singleton control group harness) is one image. Each task brings its own image for attempts.
 
 Related: [[a-flag-is-not-called-an-option]], [[no-flag-has-a-default]], [[no-flag-for-what-cladenc-already-holds]].
