@@ -50,11 +50,11 @@ fn evolved_with(
     if let Some(key) = key {
         test_inputs::model_key_file(directory.path(), key);
     }
+    let outputs_directory = directory.path().join("outputs");
+    let settings = settings(directory.path(), &key_file);
     if stopped {
         test_inputs::end_with_125_on(directory.path(), "t1");
     }
-    let outputs_directory = directory.path().join("outputs");
-    let settings = settings(directory.path(), &key_file);
     let found = directed_evolution::start(
         &settings,
         &outputs_directory,
