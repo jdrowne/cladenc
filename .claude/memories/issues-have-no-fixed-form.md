@@ -19,7 +19,7 @@ Many of the issues here open with `Goal` and a list of what the issue relies on,
 **How to apply:**
 
 - Do not mirror an earlier issue's layout for its own sake. Do not add, rename or reorder sections to match the neighbours, and do not treat a divergence from them as a problem.
-- The form is free and the substance is not. What still holds: one indivisible problem per issue, per [[one-indivisible-problem-per-issue]]; an issue small enough for one context, with the terms it uses defined, per [[issues-are-sized-to-one-context]]; the words of [[the-paper-is-a-starting-point]]; the user's point restated and never copied, per [[never-quote-the-user-verbatim]]; and, where an issue is handed to a person, what they have to decide, per [[before-an-issue-is-labelled-needs-decision]].
+- The form is free and the substance is not. What still holds: one indivisible problem per issue, per [[one-indivisible-problem-per-issue]]; the terms the issue uses defined in it; the words of [[the-paper-is-a-starting-point]]; the user's point restated and never copied, per [[never-quote-the-user-verbatim]]; and, where an issue is handed to a person, what they have to decide, per [[before-an-issue-is-labelled-needs-decision]].
 - One rule of form comes with this one: where a body falls into parts, each part opens with a `##` heading on a line of its own, never with a bolded first sentence.
 
 An issue need not repeat a rule that holds for all the work, since such a rule has a home of its own. The clean-room rule is [[the-work-is-clean-room]], and the rules for the code are [[the-checks-the-code-faces]] and [[tests-are-written-before-code]].

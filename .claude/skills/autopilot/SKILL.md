@@ -81,8 +81,7 @@ Each file is under `.claude/memories/`.
 | The session works on one issue or several at a time. | `several-issues-can-be-worked-on-together.md` |
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
 | An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
-| An issue documents one indivisible problem. | `one-indivisible-problem-per-issue.md` |
-| An issue too large for one context is split into issues that each stand alone. | `issues-are-sized-to-one-context.md` |
+| An issue documents one indivisible problem, which alone sets its size. | `one-indivisible-problem-per-issue.md` |
 | An issue states a functional requirement, seen from outside `cladenc`. | `an-issue-states-a-functional-requirement.md` |
 | An issue about a memory, a reminder or the skill carries the label `memories` or `autopilot`. | `issues-about-the-sessions-rules-are-labelled.md` |
 | An issue has no fixed form and owes no section that other issues carry. | `issues-have-no-fixed-form.md` |

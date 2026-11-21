@@ -20,4 +20,4 @@ An issue describes a problem, or states a functional requirement: what `cladenc`
 - Leave the design to the session that works on the issue; that session reads the code itself, per [[an-issue-is-brought-up-to-date-before-work]].
 - A constraint the work has to keep, such as [[cladenc-works-offline-and-self-hosted]], may be stated as a requirement; how to keep it is still left out.
 
-Related: [[issues-have-no-fixed-form]], [[issues-are-sized-to-one-context]], [[one-indivisible-problem-per-issue]].
+Related: [[issues-have-no-fixed-form]], [[one-indivisible-problem-per-issue]].
