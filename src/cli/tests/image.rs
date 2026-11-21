@@ -15,8 +15,8 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
-    ("--holdout-percentage", "60"),
-    ("--holdout-corroboration-percentage", "25"),
+    ("--selection-tasks-percentage", "45"),
+    ("--corroboration-tasks-percentage", "15"),
 ];
 
 const IMAGE: &str = "--docker-image=image";

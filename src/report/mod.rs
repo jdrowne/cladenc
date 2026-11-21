@@ -28,8 +28,8 @@ const HEADER: [&str; COLUMNS] = [
     "selection not completed",
     "corroboration completed",
     "corroboration not completed",
-    "other completed",
-    "other not completed",
+    "non-holdout completed",
+    "non-holdout not completed",
     "clade completed",
     "clade not completed",
     "clade score",
@@ -50,8 +50,8 @@ pub struct Report {
     pub selection_tasks: u64,
     pub corroboration_tasks_completed_by_any: u64,
     pub corroboration_tasks: u64,
-    pub other_tasks_completed_by_any: u64,
-    pub other_tasks: u64,
+    pub non_holdout_tasks_completed_by_any: u64,
+    pub non_holdout_tasks: u64,
     corroboration_lead: Option<Lead>,
     experiments: Experiments,
     harnesses: Vec<HarnessReport>,
@@ -67,8 +67,8 @@ struct HarnessReport {
     selection_not_completed: u64,
     corroboration_completed: u64,
     corroboration_not_completed: u64,
-    other_completed: u64,
-    other_not_completed: u64,
+    non_holdout_completed: u64,
+    non_holdout_not_completed: u64,
     clade_completed: u64,
     clade_not_completed: u64,
     clade_score: Option<f64>,
@@ -105,7 +105,7 @@ impl Report {
         let (selection_tasks_completed_by_any, selection_tasks) = counted(TaskSet::Selection);
         let (corroboration_tasks_completed_by_any, corroboration_tasks) =
             counted(TaskSet::Corroboration);
-        let (other_tasks_completed_by_any, other_tasks) = counted(TaskSet::NonHoldout);
+        let (non_holdout_tasks_completed_by_any, non_holdout_tasks) = counted(TaskSet::NonHoldout);
         let leader = best_harness.map_or_else(
             || Leader::HarnessAheadSoFar(settings.artificial_selection().best_harness(genealogy)),
             Leader::BestHarness,
@@ -134,8 +134,8 @@ impl Report {
             selection_tasks,
             corroboration_tasks_completed_by_any,
             corroboration_tasks,
-            other_tasks_completed_by_any,
-            other_tasks,
+            non_holdout_tasks_completed_by_any,
+            non_holdout_tasks,
             corroboration_lead,
             experiments: Experiments::of(genealogy, &settings.tasks_of(TaskSet::Corroboration)),
             harnesses: harnesses
@@ -190,8 +190,8 @@ impl Report {
         );
         format!(
             "{opening}model {} at {}\nstarted {} of {} {procreations}, {}\ncompleted by at least \
-             one harness: selection tasks {} of {}, corroboration tasks {} of {}, other tasks {} \
-             of {}\n{lead}\n{}\n\n{lines}",
+             one harness: selection tasks {} of {}, corroboration tasks {} of {}, non-holdout \
+             tasks {} of {}\n{lead}\n{}\n\n{lines}",
             self.model,
             self.model_url,
             self.procreations_started,
@@ -201,8 +201,8 @@ impl Report {
             self.selection_tasks,
             self.corroboration_tasks_completed_by_any,
             self.corroboration_tasks,
-            self.other_tasks_completed_by_any,
-            self.other_tasks,
+            self.non_holdout_tasks_completed_by_any,
+            self.non_holdout_tasks,
             self.experiments
         )
     }
@@ -219,8 +219,8 @@ impl HarnessReport {
             selection_not_completed: harness.selection_not_completed(),
             corroboration_completed: harness.corroboration_completed(),
             corroboration_not_completed: harness.corroboration_not_completed(),
-            other_completed: harness.other_completed(),
-            other_not_completed: harness.other_not_completed(),
+            non_holdout_completed: harness.non_holdout_completed(),
+            non_holdout_not_completed: harness.non_holdout_not_completed(),
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
@@ -248,8 +248,8 @@ impl HarnessReport {
             self.selection_not_completed.to_string(),
             self.corroboration_completed.to_string(),
             self.corroboration_not_completed.to_string(),
-            self.other_completed.to_string(),
-            self.other_not_completed.to_string(),
+            self.non_holdout_completed.to_string(),
+            self.non_holdout_not_completed.to_string(),
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),

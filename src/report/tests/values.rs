@@ -25,9 +25,9 @@ fn settings() -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
-        holdout_percentage: 50.0,
+        selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
-        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks_percentage: 25.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
@@ -164,12 +164,12 @@ fn the_corroboration_counts_of_a_child_are_its_own_and_not_those_of_its_progenit
 }
 
 #[test]
-fn the_other_counts_of_a_harness_are_those_of_its_own_attempts_at_the_other_tasks() {
+fn the_non_holdout_counts_of_a_harness_are_those_of_its_own_attempts_at_the_non_holdout_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].other_completed,
-            report.harnesses[0].other_not_completed
+            report.harnesses[0].non_holdout_completed,
+            report.harnesses[0].non_holdout_not_completed
         ),
         (1, 0)
     );
@@ -367,17 +367,20 @@ fn the_tasks_of_each_set_are_counted_where_no_harness_has_completed_one() {
         (
             report.selection_tasks,
             report.corroboration_tasks,
-            report.other_tasks
+            report.non_holdout_tasks
         ),
         (1, 1, 1)
     );
 }
 
 #[test]
-fn the_other_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
+fn the_non_holdout_tasks_that_at_least_one_harness_completed_are_counted_out_of_all_of_them() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
-        (report.other_tasks_completed_by_any, report.other_tasks),
+        (
+            report.non_holdout_tasks_completed_by_any,
+            report.non_holdout_tasks
+        ),
         (1, 1)
     );
 }
@@ -389,7 +392,7 @@ fn a_task_that_no_harness_completed_is_not_counted_as_completed_by_one_at_least(
         (
             report.selection_tasks_completed_by_any,
             report.corroboration_tasks_completed_by_any,
-            report.other_tasks_completed_by_any
+            report.non_holdout_tasks_completed_by_any
         ),
         (0, 0, 0)
     );

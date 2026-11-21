@@ -26,9 +26,9 @@ fn settings() -> Settings {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 3600,
-        holdout_percentage: 50.0,
+        selection_tasks_percentage: 25.0,
         holdout_tasks: Vec::new(),
-        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks_percentage: 25.0,
         corroboration_tasks: Vec::new(),
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
@@ -215,7 +215,7 @@ fn rebuilding_counts_the_attempts_at_the_selection_tasks_of_the_run_record_apart
     assert_eq!(
         (
             primogenitor.selection_completed(),
-            primogenitor.other_not_completed()
+            primogenitor.non_holdout_not_completed()
         ),
         (1, 1)
     );

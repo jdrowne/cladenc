@@ -118,7 +118,7 @@ A procreation is carried out by the harness that procreates.
 /var/lib/cladenc/work holds a second copy of its source code, and the
 instruction asks the harness to improve that copy: what the harness leaves
 there is its child. /var/log/cladenc/attempts holds the finished attempts
-of the harness at the tasks that are not held out, to read: one directory
+of the harness at the non-holdout tasks, to read: one directory
 for each benchmark, and in it one for each task, holding what the attempt
 of that task kept.
 
@@ -134,7 +134,7 @@ any other harness.
 Each of these directories is named by the id of its harness, and holds
 
   harness      the source code of that harness
-  attempts     its attempts at the tasks that are not held out, laid out
+  attempts     its attempts at the non-holdout tasks, laid out
                as /var/log/cladenc/attempts is
   procreation  what the harness that made it printed, in stdout and
                stderr, with the id of that harness in the file named
@@ -159,7 +159,7 @@ cladenc enforces none of it.
 
 A harness procreates only once it has been benchmarked in full: it has
 attempted every task of every benchmark of the directed evolution, so that
-it finds every task that is not held out in /var/log/cladenc/attempts. The
+it finds every non-holdout task in /var/log/cladenc/attempts. The
 primogenitor is benchmarked in full before the first procreation.
 
 Every harness is benchmarked in full once it is created, whether it
@@ -231,7 +231,7 @@ cladenc brings up one container more for it, in which
 
 The primogenitor is given the instruction the progenitor is given, and what
 the progenitor is given to read: under /var/log/cladenc/attempts the
-attempts of the progenitor at the tasks that are not held out, under
+attempts of the progenitor at the non-holdout tasks, under
 /var/log/cladenc/line the harnesses the progenitor descends from, and
 under /var/log/cladenc/children the children the progenitor procreated
 before the progenitor's child of the experiment. What the primogenitor
@@ -326,44 +326,40 @@ each into a directory named after its benchmark, so the directed evolution
 keeps the tasks it started with, and `cladenc resume` does not read the
 directories that --benchmark named.
 
---holdout-percentage gives the part of the tasks of each benchmark that is
-held out, as so many in a hundred: a number above 0 and below 100, such as
-60 or 12.5. The holdout tasks are the tasks that no progenitor reads
-about. cladenc draws them at random when a directed evolution is started,
-out of each benchmark by itself: the number of its tasks times the
-percentage, divided by 100 and rounded to the nearest whole number, a half
-rounded up. At 60, a benchmark of 500 tasks has 300 holdout tasks. A value
-that leaves a benchmark no holdout task, or no task that is not held out,
-is refused, and so is a benchmark of one task, which cannot be divided.
-The draw is made once for a directed evolution and written in its journal,
-and `cladenc resume` reads it there and draws nothing.
+--selection-tasks-percentage gives the part of the tasks of each benchmark
+that are selection tasks, as so many in a hundred: a number above 0 and
+below 100, such as 45 or 12.5. --corroboration-tasks-percentage gives the
+part that are corroboration tasks, in the same way. The selection tasks and
+the corroboration tasks together are the holdout tasks. The holdout tasks
+are the tasks that no progenitor reads about, and the tasks that are not
+held out are the non-holdout tasks. cladenc draws the selection tasks and
+the corroboration tasks at random when a directed evolution is started, out
+of each benchmark by itself: the number of its tasks times the percentage,
+divided by 100 and rounded to the nearest whole number, a half rounded up.
+At 45 and 15, a benchmark of 500 tasks has 225 selection tasks, 75
+corroboration tasks and 200 non-holdout tasks.
 
---holdout-corroboration-percentage divides the holdout tasks of each
-benchmark in two. It gives the part of the holdout tasks that are
-corroboration tasks, as so many in a hundred: a number above 0 and below
-100. cladenc draws the corroboration tasks at random, once the holdout
-tasks are drawn, out of the holdout tasks of each benchmark by itself: the
-number of the holdout tasks of the benchmark times the percentage, divided
-by 100 and rounded in the same way. The holdout tasks that are left are the
-selection tasks. At 60 and 25, a benchmark of 500 tasks has 300 holdout
-tasks: 75 corroboration tasks and 225 selection tasks. A value that leaves
-a benchmark no corroboration task, or no selection task, is refused, so a
-benchmark holds three tasks at the least. The second draw is written in the
-journal beside the first.
+A --selection-tasks-percentage that leaves a benchmark no selection task is
+refused, and so is a --corroboration-tasks-percentage that leaves a
+benchmark no corroboration task, and so are two values that together leave
+a benchmark no non-holdout task. So a benchmark holds three tasks at the
+least, and a benchmark of fewer is refused. The draw is made once for a
+directed evolution and written in its journal, and `cladenc resume` reads
+it there and draws nothing.
 
-Every harness is benchmarked on the holdout tasks as on the others,
-selection tasks and corroboration tasks alike, and nothing a harness is
-given in an attempt says which of the sets its task is in. A harness that
-procreates is given its attempts at the tasks that are not held out, and
-nothing of the holdout tasks: no task specification, no workspace, no
-result, and no count of them.
+Every harness is benchmarked on the holdout tasks as on the non-holdout
+tasks, selection tasks and corroboration tasks alike, and nothing a harness
+is given in an attempt says which of the sets its task is in. A harness
+that procreates is given its attempts at the non-holdout tasks, and nothing
+of the holdout tasks: no task specification, no workspace, no result, and
+no count of them.
 
 Artificial selection goes by the selection tasks and by no others. cladenc
 chooses which harness procreates by the selection tasks that the harness
 and its descendants completed and did not complete, and it names as the
 best harness the created harness, benchmarked in full, that completed the
 most selection tasks: of several that completed as many, the one created
-first. The tasks that are not held out are what a harness reads to find
+first. The non-holdout tasks are what a harness reads to find
 what to change, and a harness that completes more of those alone is not
 chosen for it.
 

@@ -28,11 +28,11 @@ fn settings() -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
-        holdout_percentage: 80.0,
+        selection_tasks_percentage: 20.0,
         holdout_tasks: ["c1", "c2", "c3", "s1"]
             .map(|id| format!("benchmark/{id}"))
             .to_vec(),
-        holdout_corroboration_percentage: 75.0,
+        corroboration_tasks_percentage: 60.0,
         corroboration_tasks: ["c1", "c2", "c3"]
             .map(|id| format!("benchmark/{id}"))
             .to_vec(),

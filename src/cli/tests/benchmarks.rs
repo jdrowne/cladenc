@@ -29,8 +29,8 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 1800,
-        holdout_percentage: 60.0,
-        holdout_corroboration_percentage: 50.0,
+        selection_tasks_percentage: 30.0,
+        corroboration_tasks_percentage: 30.0,
     }
 }
 
@@ -99,7 +99,7 @@ fn through_a_symbolic_link(directory: &Path, benchmarks: &mut Vec<PathBuf>) {
 #[test]
 fn a_refused_benchmark_is_refused_by_the_flag_that_names_it() {
     let (_directory, settings) = checked(missing);
-    assert_eq!(settings.unwrap_err().option, "--benchmark");
+    assert_eq!(settings.unwrap_err().flags, ["--benchmark"]);
 }
 
 #[test]

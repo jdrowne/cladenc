@@ -30,8 +30,8 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
-        holdout_percentage: 60.0,
-        holdout_corroboration_percentage: 50.0,
+        selection_tasks_percentage: 30.0,
+        corroboration_tasks_percentage: 30.0,
     };
     change(directory.path(), &mut options);
     let mut output = Vec::new();
@@ -61,12 +61,12 @@ fn with_a_missing_dockerfile(directory: &Path, options: &mut StartOptions) {
     options.docker_build_timeout = Some(600);
 }
 
-fn with_a_holdout_percentage_that_holds_out_no_task(_: &Path, options: &mut StartOptions) {
-    options.holdout_percentage = 10.0;
+fn with_a_percentage_that_leaves_no_selection_task(_: &Path, options: &mut StartOptions) {
+    options.selection_tasks_percentage = 10.0;
 }
 
 fn with_a_percentage_that_leaves_no_corroboration_task(_: &Path, options: &mut StartOptions) {
-    options.holdout_corroboration_percentage = 10.0;
+    options.corroboration_tasks_percentage = 10.0;
 }
 
 fn in_an_outputs_directory_that_exists(directory: &Path, options: &mut StartOptions) {
@@ -182,30 +182,31 @@ fn an_outputs_directory_with_no_path_gives_exit_status_2() {
 }
 
 #[test]
-fn a_holdout_percentage_that_holds_out_no_task_of_a_benchmark_gives_exit_status_2() {
+fn a_percentage_that_leaves_a_benchmark_no_selection_task_gives_exit_status_2() {
     assert_eq!(
-        ran(with_a_holdout_percentage_that_holds_out_no_task).status,
+        ran(with_a_percentage_that_leaves_no_selection_task).status,
         2
     );
 }
 
 #[test]
-fn a_holdout_percentage_that_holds_out_no_task_of_a_benchmark_is_refused_with_the_benchmark() {
+fn a_percentage_that_leaves_a_benchmark_no_selection_task_is_refused_with_the_benchmark() {
     assert!(
-        ran(with_a_holdout_percentage_that_holds_out_no_task)
+        ran(with_a_percentage_that_leaves_no_selection_task)
             .errors
             .ends_with(
-                ": the benchmark `benchmark` holds 3 tasks, and none of them would be held out\n"
+                ": the benchmark `benchmark` holds 3 tasks, and none of them would be a selection \
+                 task\n"
             )
     );
 }
 
 #[test]
-fn a_holdout_percentage_that_is_refused_is_refused_before_the_outputs_directory_is_made() {
+fn a_percentage_that_leaves_no_selection_task_is_refused_before_the_outputs_directory_is_made() {
     assert!(
-        ran(with_a_holdout_percentage_that_holds_out_no_task)
+        ran(with_a_percentage_that_leaves_no_selection_task)
             .errors
-            .starts_with("cladenc: --holdout-percentage takes ")
+            .starts_with("cladenc: --selection-tasks-percentage takes ")
     );
 }
 
@@ -223,17 +224,18 @@ fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_is_refused_with_th
         ran(with_a_percentage_that_leaves_no_corroboration_task)
             .errors
             .ends_with(
-                ": the benchmark `benchmark` has 2 holdout tasks, and none of them would be a \
+                ": the benchmark `benchmark` holds 3 tasks, and none of them would be a \
                  corroboration task\n"
             )
     );
 }
 
 #[test]
-fn a_percentage_that_divides_no_holdout_tasks_is_refused_before_the_outputs_directory_is_made() {
+fn a_percentage_that_leaves_no_corroboration_task_is_refused_before_the_outputs_directory_is_made()
+{
     assert!(
         ran(with_a_percentage_that_leaves_no_corroboration_task)
             .errors
-            .starts_with("cladenc: --holdout-corroboration-percentage takes ")
+            .starts_with("cladenc: --corroboration-tasks-percentage takes ")
     );
 }

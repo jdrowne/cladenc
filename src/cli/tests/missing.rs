@@ -14,8 +14,8 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--attempt-timeout", "3600"),
-    ("--holdout-percentage", "60"),
-    ("--holdout-corroboration-percentage", "25"),
+    ("--selection-tasks-percentage", "45"),
+    ("--corroboration-tasks-percentage", "15"),
 ];
 
 fn without(left_out: &str) -> Result<Cli, clap::Error> {
@@ -128,17 +128,17 @@ fn leaving_out_the_attempt_timeout_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_holdout_percentage_is_an_error() {
+fn leaving_out_the_selection_tasks_percentage_is_an_error() {
     assert_eq!(
-        refusal_without("--holdout-percentage"),
+        refusal_without("--selection-tasks-percentage"),
         ErrorKind::MissingRequiredArgument
     );
 }
 
 #[test]
-fn leaving_out_the_holdout_corroboration_percentage_is_an_error() {
+fn leaving_out_the_corroboration_tasks_percentage_is_an_error() {
     assert_eq!(
-        refusal_without("--holdout-corroboration-percentage"),
+        refusal_without("--corroboration-tasks-percentage"),
         ErrorKind::MissingRequiredArgument
     );
 }

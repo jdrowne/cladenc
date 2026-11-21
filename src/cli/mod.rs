@@ -73,6 +73,14 @@ pub struct StartOptions {
     benchmark: Vec<PathBuf>,
     #[arg(
         long,
+        value_name = "NUMBER",
+        value_parser = checks::percentage,
+        help = "The percentage of each benchmark's tasks that are corroboration tasks, above 0 \
+                and below 100"
+    )]
+    corroboration_tasks_percentage: f64,
+    #[arg(
+        long,
         value_name = "SECONDS",
         value_parser = clap::value_parser!(u64).range(1..),
         requires = "dockerfile",
@@ -109,21 +117,6 @@ pub struct StartOptions {
         help = "The shell command that runs a harness in a container"
     )]
     harness_run_command: String,
-    #[arg(
-        long,
-        value_name = "NUMBER",
-        value_parser = checks::percentage,
-        help = "The percentage of each benchmark's holdout tasks that are corroboration tasks, \
-                above 0 and below 100"
-    )]
-    holdout_corroboration_percentage: f64,
-    #[arg(
-        long,
-        value_name = "NUMBER",
-        value_parser = checks::percentage,
-        help = "The percentage of each benchmark's tasks that is held out, above 0 and below 100"
-    )]
-    holdout_percentage: f64,
     #[arg(
         long,
         value_name = "COUNT",
@@ -177,6 +170,14 @@ pub struct StartOptions {
         help = "The time limit of one procreation"
     )]
     procreation_timeout: u64,
+    #[arg(
+        long,
+        value_name = "NUMBER",
+        value_parser = checks::percentage,
+        help = "The percentage of each benchmark's tasks that are selection tasks, above 0 and \
+                below 100"
+    )]
+    selection_tasks_percentage: f64,
 }
 
 #[derive(Clone, Debug, Args)]

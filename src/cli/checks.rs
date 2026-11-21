@@ -4,27 +4,42 @@ use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
 use crate::benchmark::{self, Benchmark, BenchmarkError};
-use crate::holdout;
+use crate::holdout::{self, Drawn, HoldoutError, Percentages};
 use crate::journal::Settings;
 use crate::model;
 use crate::outputs_directory::holds_only_harness_files;
 
+const BENCHMARK: &[&str] = &["--benchmark"];
+const SELECTION: &[&str] = &["--selection-tasks-percentage"];
+const CORROBORATION: &[&str] = &["--corroboration-tasks-percentage"];
+const SELECTION_AND_CORROBORATION: &[&str] = &[
+    "--selection-tasks-percentage",
+    "--corroboration-tasks-percentage",
+];
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Refused {
-    pub(super) option: &'static str,
+    pub(super) flags: &'static [&'static str],
     pub(super) accepted: &'static str,
     pub(super) reason: Option<String>,
 }
 
 impl Display for Refused {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        let takes = if self.flags.len() == 1 {
+            "takes"
+        } else {
+            "take"
+        };
+        write!(
+            formatter,
+            "{} {takes} {}",
+            self.flags.join(" and "),
+            self.accepted
+        )?;
         match &self.reason {
-            Some(reason) => write!(
-                formatter,
-                "{} takes {}: {reason}",
-                self.option, self.accepted
-            ),
-            None => write!(formatter, "{} takes {}", self.option, self.accepted),
+            Some(reason) => write!(formatter, ": {reason}"),
+            None => Ok(()),
         }
     }
 }
@@ -33,11 +48,12 @@ impl StartOptions {
     pub(super) fn settings(&self) -> Result<Settings, Refused> {
         let benchmarks = benchmarks(&self.benchmark)?;
         let seed = rand::random();
-        let holdout_tasks = holdout_tasks(&benchmarks, self.holdout_percentage, seed)?;
-        let corroboration_tasks = corroboration_tasks(
+        let drawn = drawn(
             &benchmarks,
-            &holdout_tasks,
-            self.holdout_corroboration_percentage,
+            Percentages {
+                selection: self.selection_tasks_percentage,
+                corroboration: self.corroboration_tasks_percentage,
+            },
             seed,
         )?;
         Ok(Settings {
@@ -56,10 +72,10 @@ impl StartOptions {
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
             benchmarks,
-            holdout_percentage: self.holdout_percentage,
-            holdout_tasks,
-            holdout_corroboration_percentage: self.holdout_corroboration_percentage,
-            corroboration_tasks,
+            selection_tasks_percentage: self.selection_tasks_percentage,
+            holdout_tasks: drawn.holdout_tasks,
+            corroboration_tasks_percentage: self.corroboration_tasks_percentage,
+            corroboration_tasks: drawn.corroboration_tasks,
             max_procreations: self.max_procreations,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
@@ -77,34 +93,38 @@ pub(super) fn percentage(given: &str) -> Result<f64, String> {
         .ok_or_else(|| "a number above 0 and below 100 is expected".to_owned())
 }
 
-fn holdout_tasks(
-    benchmarks: &[Benchmark],
-    percentage: f64,
-    seed: u64,
-) -> Result<Vec<String>, Refused> {
-    holdout::draw(benchmarks, percentage, seed).map_err(|error| Refused {
-        option: "--holdout-percentage",
-        accepted: "a number above 0 and below 100 that holds out at least one task of every \
-                   benchmark and leaves at least one",
-        reason: Some(error.to_string()),
-    })
-}
-
-fn corroboration_tasks(
-    benchmarks: &[Benchmark],
-    holdout_tasks: &[String],
-    percentage: f64,
-    seed: u64,
-) -> Result<Vec<String>, Refused> {
-    holdout::draw_corroboration(benchmarks, holdout_tasks, percentage, seed).map_err(|error| {
+fn drawn(benchmarks: &[Benchmark], percentages: Percentages, seed: u64) -> Result<Drawn, Refused> {
+    holdout::draw(benchmarks, percentages, seed).map_err(|error| {
+        let (flags, accepted) = refused_for(&error);
         Refused {
-            option: "--holdout-corroboration-percentage",
-            accepted: "a number above 0 and below 100 that makes at least one holdout task of \
-                       every benchmark a corroboration task and leaves at least one a selection \
-                       task",
+            flags,
+            accepted,
             reason: Some(error.to_string()),
         }
     })
+}
+
+fn refused_for(error: &HoldoutError) -> (&'static [&'static str], &'static str) {
+    match error {
+        HoldoutError::TooFewTasks { .. } => (
+            BENCHMARK,
+            "the directory of a benchmark of three tasks at the least",
+        ),
+        HoldoutError::NoSelectionTask { .. } => (
+            SELECTION,
+            "a number above 0 and below 100 that makes at least one task of every benchmark a \
+             selection task",
+        ),
+        HoldoutError::NoCorroborationTask { .. } => (
+            CORROBORATION,
+            "a number above 0 and below 100 that makes at least one task of every benchmark a \
+             corroboration task",
+        ),
+        HoldoutError::NoNonHoldoutTask { .. } => (
+            SELECTION_AND_CORROBORATION,
+            "numbers that together leave at least one task of every benchmark a non-holdout task",
+        ),
+    }
 }
 
 fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {
@@ -116,7 +136,7 @@ fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {
                 && holds_only_harness_files(directory).unwrap_or(false)
         })
         .ok_or(Refused {
-            option: "--primogenitor",
+            flags: &["--primogenitor"],
             accepted: "an existing directory that holds only regular files, directories and \
                        symbolic links",
             reason: None,
@@ -128,7 +148,7 @@ fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
         .ok()
         .filter(|file| file.to_str().is_some() && model::read_key(file).is_some())
         .ok_or(Refused {
-            option: "--model-key-file",
+            flags: &["--model-key-file"],
             accepted: "a file that holds a key on one line and nothing else",
             reason: None,
         })
@@ -147,7 +167,7 @@ fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
         .ok()
         .filter(|file| file.to_str().is_some() && file.is_file())
         .ok_or(Refused {
-            option: "--dockerfile",
+            flags: &["--dockerfile"],
             accepted: "an existing file",
             reason: None,
         })
@@ -175,7 +195,7 @@ fn benchmark(given: &Path) -> Result<Benchmark, Refused> {
 
 fn refused_benchmark(reason: String) -> Refused {
     Refused {
-        option: "--benchmark",
+        flags: BENCHMARK,
         accepted: "the directory of a benchmark, in which every directory is a task that holds \
                    a file of text named instruction.md, a directory named workspace, a directory \
                    named tests with an executable file named test.sh in it and a directory named \

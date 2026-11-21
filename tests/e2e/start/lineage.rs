@@ -26,8 +26,8 @@ fn ran(run_command: &str, max_procreations: &str) -> TempDir {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
-        ("--holdout-percentage", "50".into()),
-        ("--holdout-corroboration-percentage", "50".into()),
+        ("--selection-tasks-percentage", "25".into()),
+        ("--corroboration-tasks-percentage", "25".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     Command::new(env!("CARGO_BIN_EXE_cladenc"))

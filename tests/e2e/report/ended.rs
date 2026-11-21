@@ -28,8 +28,8 @@ fn ended() -> TempDir {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
-        ("--holdout-percentage", "50".into()),
-        ("--holdout-corroboration-percentage", "50".into()),
+        ("--selection-tasks-percentage", "25".into()),
+        ("--corroboration-tasks-percentage", "25".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -95,14 +95,14 @@ fn report_prints_the_table() {
         up_to_the_seconds(&table_of(directory.path())),
         "model a-model at http://models.example/v1\n\
          started 1 of 1 procreation, best harness 1\n\
-         completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, other tasks 1 of 1\n\
+         completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, non-holdout tasks 1 of 1\n\
          on the corroboration tasks: only the best harness completed 1, only the primogenitor completed 0, and luck alone gives a lead at least as large with likelihood 0.500\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score\n\
-         0   -           -           created  0                    1                        0                        1                            0                1                    1                1                    0.500\n\
-         1   0           -           created  1                    0                        1                        0                            1                0                    1                0                    1.000\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score\n\
+         0   -           -           created  0                    1                        0                        1                            0                      1                          1                1                    0.500\n\
+         1   0           -           created  1                    0                        1                        0                            1                      0                          1                0                    1.000\n"
     );
 }
 
@@ -114,7 +114,7 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
         r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
         r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
-        r#""other_tasks_completed_by_any":1,"other_tasks":1,"#,
+        r#""non_holdout_tasks_completed_by_any":1,"non_holdout_tasks":1,"#,
         r#""corroboration_lead":{"only_best_harness_completed":1,"#,
         r#""only_primogenitor_completed":0,"likelihood_by_luck":0.5},"#,
         r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
@@ -125,12 +125,12 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
         r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
         r#""selection_completed":0,"selection_not_completed":1,"#,
         r#""corroboration_completed":0,"corroboration_not_completed":1,"#,
-        r#""other_completed":0,"other_not_completed":1,"#,
+        r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
         r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5},"#,
         r#"{"id":1,"progenitor":0,"experiment":null,"state":"created","#,
         r#""selection_completed":1,"selection_not_completed":0,"#,
         r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
-        r#""other_completed":1,"other_not_completed":0,"#,
+        r#""non_holdout_completed":1,"non_holdout_not_completed":0,"#,
         r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0}]}"#,
     ))
     .unwrap();

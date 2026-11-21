@@ -44,9 +44,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         attempt_timeout: 30,
-        holdout_percentage: 40.0,
+        selection_tasks_percentage: 20.0,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t4".to_owned()],
-        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks_percentage: 20.0,
         corroboration_tasks: vec!["benchmark/t4".to_owned()],
         environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
@@ -158,7 +158,7 @@ fn the_attempts_of_each_harness_at_the_holdout_tasks_are_kept_under_holdout() {
 }
 
 #[test]
-fn the_attempts_of_each_harness_at_the_other_tasks_are_kept_under_attempts() {
+fn the_attempts_of_each_harness_at_the_non_holdout_tasks_are_kept_under_attempts() {
     let (directory, _said) = evolved();
     assert_eq!(
         tasks_kept_under(&directory, "attempts"),

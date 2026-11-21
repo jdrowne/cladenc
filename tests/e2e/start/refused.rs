@@ -18,8 +18,8 @@ fn options(directory: &Path, outputs_directory: &Path) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
-        ("--holdout-percentage", "50".into()),
-        ("--holdout-corroboration-percentage", "50".into()),
+        ("--selection-tasks-percentage", "25".into()),
+        ("--corroboration-tasks-percentage", "25".into()),
     ]
     .iter()
     .map(|(option, value)| format!("{option}={}", value.display()))
@@ -460,220 +460,217 @@ fn a_dockerfile_that_is_refused_leaves_no_outputs_directory() {
     assert!(!directory.path().join("outputs").exists());
 }
 
-fn with_the_holdout_percentage(directory: &Path, percentage: &str) -> Vec<String> {
+fn with_the_percentage(directory: &Path, flag: &str, percentage: &str) -> Vec<String> {
     options(directory, &directory.join("outputs"))
         .iter()
-        .map(|option| {
-            option.replace(
-                "--holdout-percentage=50",
-                &format!("--holdout-percentage={percentage}"),
-            )
-        })
+        .map(|option| option.replace(&format!("{flag}=25"), &format!("{flag}={percentage}")))
         .collect()
 }
 
+fn with_the_selection_tasks_percentage(directory: &Path, percentage: &str) -> Vec<String> {
+    with_the_percentage(directory, "--selection-tasks-percentage", percentage)
+}
+
+fn with_the_corroboration_tasks_percentage(directory: &Path, percentage: &str) -> Vec<String> {
+    with_the_percentage(directory, "--corroboration-tasks-percentage", percentage)
+}
+
 #[test]
-fn a_holdout_percentage_that_holds_out_no_task_of_a_benchmark_exits_with_2() {
+fn a_selection_tasks_percentage_that_makes_no_task_of_a_benchmark_a_selection_task_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "10");
+    let options = with_the_selection_tasks_percentage(directory.path(), "10");
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_holdout_percentage_that_holds_out_no_task_of_a_benchmark_is_refused_with_the_benchmark() {
+fn a_selection_tasks_percentage_that_makes_no_selection_task_is_refused_with_the_benchmark() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "10");
+    let options = with_the_selection_tasks_percentage(directory.path(), "10");
     assert_eq!(
         said(&options),
-        "cladenc: --holdout-percentage takes a number above 0 and below 100 that holds out at \
-         least one task of every benchmark and leaves at least one: the benchmark `benchmark` \
-         holds 3 tasks, and none of them would be held out\n"
+        "cladenc: --selection-tasks-percentage takes a number above 0 and below 100 that makes \
+         at least one task of every benchmark a selection task: the benchmark `benchmark` holds \
+         3 tasks, and none of them would be a selection task\n"
     );
 }
 
 #[test]
-fn a_holdout_percentage_that_holds_out_every_task_of_a_benchmark_is_refused_with_the_benchmark() {
+fn a_selection_tasks_percentage_that_is_refused_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "90");
-    assert!(said(&options).ends_with(
-        ": the benchmark `benchmark` holds 3 tasks, and every one of them would be held out\n"
-    ));
-}
-
-#[test]
-fn a_holdout_percentage_that_is_refused_leaves_no_outputs_directory() {
-    let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "10");
+    let options = with_the_selection_tasks_percentage(directory.path(), "10");
     let _ = status(&options);
     assert!(!directory.path().join("outputs").exists());
 }
 
 #[test]
-fn a_holdout_percentage_of_100_exits_with_2() {
+fn a_selection_tasks_percentage_of_100_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "100");
+    let options = with_the_selection_tasks_percentage(directory.path(), "100");
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_holdout_percentage_of_100_is_refused_for_the_value() {
+fn a_selection_tasks_percentage_of_100_is_refused_for_the_value() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "100");
+    let options = with_the_selection_tasks_percentage(directory.path(), "100");
     assert!(said(&options).starts_with(
-        "error: invalid value '100' for '--holdout-percentage <NUMBER>': a number above 0 and \
-         below 100 is expected\n"
+        "error: invalid value '100' for '--selection-tasks-percentage <NUMBER>': a number above \
+         0 and below 100 is expected\n"
     ));
 }
 
-fn with_a_benchmark_of_one_task(directory: &Path) -> Vec<String> {
-    let single = test_inputs::benchmark_named(directory, "single", &["t1"]);
-    options(directory, &directory.join("outputs"))
-        .into_iter()
-        .filter(|option| !option.starts_with("--benchmark="))
-        .chain([format!("--benchmark={}", single.display())])
-        .collect()
-}
-
 #[test]
-fn a_benchmark_of_one_task_exits_with_2() {
+fn a_corroboration_tasks_percentage_that_makes_no_corroboration_task_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_a_benchmark_of_one_task(directory.path());
+    let options = with_the_corroboration_tasks_percentage(directory.path(), "10");
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_benchmark_of_one_task_is_refused_as_one_that_cannot_be_divided() {
+fn a_corroboration_tasks_percentage_that_makes_no_corroboration_task_is_refused_with_the_benchmark()
+{
     let directory = test_inputs::temporary_directory();
-    let options = with_a_benchmark_of_one_task(directory.path());
-    assert!(
-        said(&options)
-            .ends_with(": the benchmark `single` holds one task, which cannot be divided\n")
-    );
-}
-
-fn without_the_holdout_percentage(directory: &Path) -> Vec<String> {
-    options(directory, &directory.join("outputs"))
-        .into_iter()
-        .filter(|option| !option.starts_with("--holdout-percentage="))
-        .collect()
-}
-
-#[test]
-fn a_command_line_without_the_holdout_percentage_exits_with_2() {
-    let directory = test_inputs::temporary_directory();
-    let options = without_the_holdout_percentage(directory.path());
-    assert_eq!(status(&options), Some(2));
-}
-
-#[test]
-fn a_command_line_without_the_holdout_percentage_is_refused_for_the_flag_it_lacks() {
-    let directory = test_inputs::temporary_directory();
-    let options = without_the_holdout_percentage(directory.path());
-    assert!(said(&options).contains("  --holdout-percentage <NUMBER>\n"));
-}
-
-fn with_the_holdout_corroboration_percentage(directory: &Path, percentage: &str) -> Vec<String> {
-    options(directory, &directory.join("outputs"))
-        .iter()
-        .map(|option| {
-            option.replace(
-                "--holdout-corroboration-percentage=50",
-                &format!("--holdout-corroboration-percentage={percentage}"),
-            )
-        })
-        .collect()
-}
-
-#[test]
-fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_exits_with_2() {
-    let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "10");
-    assert_eq!(status(&options), Some(2));
-}
-
-#[test]
-fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_is_refused_with_the_benchmark() {
-    let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "10");
+    let options = with_the_corroboration_tasks_percentage(directory.path(), "10");
     assert_eq!(
         said(&options),
-        "cladenc: --holdout-corroboration-percentage takes a number above 0 and below 100 that \
-         makes at least one holdout task of every benchmark a corroboration task and leaves at \
-         least one a selection task: the benchmark `benchmark` has 2 holdout tasks, and none of \
-         them would be a corroboration task\n"
+        "cladenc: --corroboration-tasks-percentage takes a number above 0 and below 100 that \
+         makes at least one task of every benchmark a corroboration task: the benchmark \
+         `benchmark` holds 3 tasks, and none of them would be a corroboration task\n"
     );
 }
 
 #[test]
-fn a_percentage_that_leaves_a_benchmark_no_selection_task_is_refused_with_the_benchmark() {
+fn a_corroboration_tasks_percentage_that_is_refused_leaves_no_outputs_directory() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "90");
-    assert!(said(&options).ends_with(
-        ": the benchmark `benchmark` has 2 holdout tasks, and every one of them would be a \
-         corroboration task\n"
-    ));
-}
-
-#[test]
-fn a_holdout_corroboration_percentage_that_is_refused_leaves_no_outputs_directory() {
-    let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "10");
+    let options = with_the_corroboration_tasks_percentage(directory.path(), "10");
     let _ = status(&options);
     assert!(!directory.path().join("outputs").exists());
 }
 
 #[test]
-fn a_holdout_corroboration_percentage_of_100_exits_with_2() {
+fn a_corroboration_tasks_percentage_of_100_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "100");
+    let options = with_the_corroboration_tasks_percentage(directory.path(), "100");
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_holdout_corroboration_percentage_of_100_is_refused_for_the_value() {
+fn a_corroboration_tasks_percentage_of_100_is_refused_for_the_value() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_corroboration_percentage(directory.path(), "100");
+    let options = with_the_corroboration_tasks_percentage(directory.path(), "100");
     assert!(said(&options).starts_with(
-        "error: invalid value '100' for '--holdout-corroboration-percentage <NUMBER>': a number \
+        "error: invalid value '100' for '--corroboration-tasks-percentage <NUMBER>': a number \
          above 0 and below 100 is expected\n"
     ));
 }
 
 #[test]
-fn a_benchmark_left_one_holdout_task_exits_with_2() {
+fn percentages_that_together_hold_out_every_task_of_a_benchmark_exit_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "40");
+    let options = with_the_selection_tasks_percentage(directory.path(), "50");
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_benchmark_left_one_holdout_task_is_refused_as_one_whose_holdout_tasks_cannot_be_divided() {
+fn percentages_that_together_hold_out_every_task_of_a_benchmark_are_refused_by_both_flags() {
     let directory = test_inputs::temporary_directory();
-    let options = with_the_holdout_percentage(directory.path(), "40");
-    assert!(
-        said(&options).ends_with(
-            ": the benchmark `benchmark` has one holdout task, which cannot be divided\n"
-        )
+    let options = with_the_selection_tasks_percentage(directory.path(), "50");
+    assert_eq!(
+        said(&options),
+        "cladenc: --selection-tasks-percentage and --corroboration-tasks-percentage take numbers \
+         that together leave at least one task of every benchmark a non-holdout task: the \
+         benchmark `benchmark` holds 3 tasks, and every one of them would be held out\n"
     );
 }
 
-fn without_the_holdout_corroboration_percentage(directory: &Path) -> Vec<String> {
+#[test]
+fn percentages_that_together_hold_out_every_task_leave_no_outputs_directory() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_the_selection_tasks_percentage(directory.path(), "50");
+    let _ = status(&options);
+    assert!(!directory.path().join("outputs").exists());
+}
+
+fn with_a_benchmark_of_two_tasks(directory: &Path) -> Vec<String> {
+    let pair = test_inputs::benchmark_named(directory, "pair", &["t1", "t2"]);
     options(directory, &directory.join("outputs"))
         .into_iter()
-        .filter(|option| !option.starts_with("--holdout-corroboration-percentage="))
+        .filter(|option| !option.starts_with("--benchmark="))
+        .chain([format!("--benchmark={}", pair.display())])
         .collect()
 }
 
 #[test]
-fn a_command_line_without_the_holdout_corroboration_percentage_exits_with_2() {
+fn a_benchmark_of_two_tasks_exits_with_2() {
     let directory = test_inputs::temporary_directory();
-    let options = without_the_holdout_corroboration_percentage(directory.path());
+    let options = with_a_benchmark_of_two_tasks(directory.path());
     assert_eq!(status(&options), Some(2));
 }
 
 #[test]
-fn a_command_line_without_the_holdout_corroboration_percentage_is_refused_for_the_flag_it_lacks() {
+fn a_benchmark_of_two_tasks_is_refused_as_one_that_cannot_be_divided() {
     let directory = test_inputs::temporary_directory();
-    let options = without_the_holdout_corroboration_percentage(directory.path());
-    assert!(said(&options).contains("  --holdout-corroboration-percentage <NUMBER>\n"));
+    let options = with_a_benchmark_of_two_tasks(directory.path());
+    assert_eq!(
+        said(&options),
+        "cladenc: --benchmark takes the directory of a benchmark of three tasks at the least: \
+         the benchmark `pair` holds fewer than three tasks, which cannot be divided into a \
+         selection task, a corroboration task and a non-holdout task\n"
+    );
+}
+
+fn without(directory: &Path, flag: &str) -> Vec<String> {
+    options(directory, &directory.join("outputs"))
+        .into_iter()
+        .filter(|option| !option.starts_with(&format!("{flag}=")))
+        .collect()
+}
+
+#[test]
+fn a_command_line_without_the_selection_tasks_percentage_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = without(directory.path(), "--selection-tasks-percentage");
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_command_line_without_the_selection_tasks_percentage_is_refused_for_the_flag_it_lacks() {
+    let directory = test_inputs::temporary_directory();
+    let options = without(directory.path(), "--selection-tasks-percentage");
+    assert!(said(&options).contains("  --selection-tasks-percentage <NUMBER>\n"));
+}
+
+#[test]
+fn a_command_line_without_the_corroboration_tasks_percentage_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = without(directory.path(), "--corroboration-tasks-percentage");
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_command_line_without_the_corroboration_tasks_percentage_is_refused_for_the_flag_it_lacks() {
+    let directory = test_inputs::temporary_directory();
+    let options = without(directory.path(), "--corroboration-tasks-percentage");
+    assert!(said(&options).contains("  --corroboration-tasks-percentage <NUMBER>\n"));
+}
+
+fn with_a_flag_that_is_gone(directory: &Path, flag: &str) -> Vec<String> {
+    options(directory, &directory.join("outputs"))
+        .into_iter()
+        .chain([format!("{flag}=50")])
+        .collect()
+}
+
+#[test]
+fn a_command_line_that_gives_the_holdout_percentage_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_flag_that_is_gone(directory.path(), "--holdout-percentage");
+    assert_eq!(status(&options), Some(2));
+}
+
+#[test]
+fn a_command_line_that_gives_the_holdout_corroboration_percentage_exits_with_2() {
+    let directory = test_inputs::temporary_directory();
+    let options = with_a_flag_that_is_gone(directory.path(), "--holdout-corroboration-percentage");
+    assert_eq!(status(&options), Some(2));
 }

@@ -33,8 +33,8 @@ fn counts_of_the_child(genealogy: &Genealogy) -> [u64; 6] {
         child.selection_not_completed(),
         child.corroboration_completed(),
         child.corroboration_not_completed(),
-        child.other_completed(),
-        child.other_not_completed(),
+        child.non_holdout_completed(),
+        child.non_holdout_not_completed(),
     ]
 }
 
@@ -129,7 +129,7 @@ fn a_result_of_timed_out_at_a_corroboration_task_counts_as_corroboration_not_com
 }
 
 #[test]
-fn a_completed_attempt_at_a_task_that_is_not_held_out_adds_one_to_the_other_completed_alone() {
+fn a_completed_attempt_at_a_task_not_held_out_adds_one_to_the_non_holdout_completed_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, AttemptResult::Completed)),
         [0, 0, 0, 0, 1, 0]
@@ -137,7 +137,7 @@ fn a_completed_attempt_at_a_task_that_is_not_held_out_adds_one_to_the_other_comp
 }
 
 #[test]
-fn an_attempt_not_completed_at_a_task_that_is_not_held_out_adds_one_to_the_other_not_completed() {
+fn an_attempt_not_completed_at_a_task_not_held_out_adds_one_to_the_non_holdout_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, AttemptResult::NotCompleted)),
         [0, 0, 0, 0, 0, 1]
@@ -145,7 +145,7 @@ fn an_attempt_not_completed_at_a_task_that_is_not_held_out_adds_one_to_the_other
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_task_that_is_not_held_out_counts_as_other_not_completed() {
+fn a_result_of_timed_out_at_a_task_not_held_out_counts_as_non_holdout_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, AttemptResult::TimedOut)),
         [0, 0, 0, 0, 0, 1]
@@ -219,7 +219,7 @@ fn a_genealogy_told_of_no_task_counts_every_task_as_one_that_is_not_held_out() {
     genealogy
         .end_attempt(0, SELECTION, AttemptResult::Completed)
         .unwrap();
-    assert_eq!(genealogy.harnesses()[0].other_completed(), 1);
+    assert_eq!(genealogy.harnesses()[0].non_holdout_completed(), 1);
 }
 
 #[test]

@@ -35,8 +35,8 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--attempt-timeout", "30".into()),
-        ("--holdout-percentage", "50".into()),
-        ("--holdout-corroboration-percentage", "50".into()),
+        ("--selection-tasks-percentage", "25".into()),
+        ("--corroboration-tasks-percentage", "25".into()),
     ]
     .into_iter()
     .chain(key_file.map(|file| ("--model-key-file", file)))

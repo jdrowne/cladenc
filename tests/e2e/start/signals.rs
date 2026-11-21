@@ -25,8 +25,8 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
         ("--attempt-timeout", "60".into()),
-        ("--holdout-percentage", "50".into()),
-        ("--holdout-corroboration-percentage", "50".into()),
+        ("--selection-tasks-percentage", "25".into()),
+        ("--corroboration-tasks-percentage", "25".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     [env!("CARGO_BIN_EXE_cladenc").to_owned(), "start".to_owned()]

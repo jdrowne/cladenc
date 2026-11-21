@@ -27,8 +27,8 @@ pub(crate) struct Harness {
     selection_not_completed: u64,
     corroboration_completed: u64,
     corroboration_not_completed: u64,
-    other_completed: u64,
-    other_not_completed: u64,
+    non_holdout_completed: u64,
+    non_holdout_not_completed: u64,
     clade_completed: u64,
     clade_not_completed: u64,
 }
@@ -47,8 +47,8 @@ impl Harness {
             selection_not_completed: 0,
             corroboration_completed: 0,
             corroboration_not_completed: 0,
-            other_completed: 0,
-            other_not_completed: 0,
+            non_holdout_completed: 0,
+            non_holdout_not_completed: 0,
             clade_completed: 0,
             clade_not_completed: 0,
         }
@@ -97,12 +97,12 @@ impl Harness {
         self.corroboration_not_completed
     }
 
-    pub(crate) fn other_completed(&self) -> u64 {
-        self.other_completed
+    pub(crate) fn non_holdout_completed(&self) -> u64 {
+        self.non_holdout_completed
     }
 
-    pub(crate) fn other_not_completed(&self) -> u64 {
-        self.other_not_completed
+    pub(crate) fn non_holdout_not_completed(&self) -> u64 {
+        self.non_holdout_not_completed
     }
 
     pub(crate) fn clade_completed(&self) -> u64 {
@@ -158,8 +158,8 @@ impl Harness {
                 (TaskSet::Selection, false) => &mut self.selection_not_completed,
                 (TaskSet::Corroboration, true) => &mut self.corroboration_completed,
                 (TaskSet::Corroboration, false) => &mut self.corroboration_not_completed,
-                (TaskSet::NonHoldout, true) => &mut self.other_completed,
-                (TaskSet::NonHoldout, false) => &mut self.other_not_completed,
+                (TaskSet::NonHoldout, true) => &mut self.non_holdout_completed,
+                (TaskSet::NonHoldout, false) => &mut self.non_holdout_not_completed,
             };
             *count += 1;
         }

@@ -196,9 +196,9 @@ fn the_long_help_of_start_says_which_harness_is_named_the_best() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_the_tasks_that_are_not_held_out_are_for() {
+fn the_long_help_of_start_says_what_the_non_holdout_tasks_are_for() {
     assert!(help_of_start(true).contains(
-        "The tasks that are not held out are what a harness reads to find\nwhat to change, and a \
+        "The non-holdout tasks are what a harness reads to find\nwhat to change, and a \
          harness that completes more of those alone is not\nchosen for it."
     ));
 }
@@ -220,20 +220,21 @@ fn the_long_help_of_start_says_that_two_benchmarks_of_the_same_name_are_refused(
 }
 
 #[test]
-fn the_short_help_of_start_names_the_flag_that_gives_the_holdout_percentage() {
-    assert!(help_of_start(false).contains("--holdout-percentage <NUMBER>"));
+fn the_short_help_of_start_names_the_flag_that_gives_the_selection_tasks_percentage() {
+    assert!(help_of_start(false).contains("--selection-tasks-percentage <NUMBER>"));
 }
 
 #[test]
-fn the_short_help_of_start_says_which_numbers_the_holdout_percentage_takes() {
+fn the_short_help_of_start_says_which_numbers_the_selection_tasks_percentage_takes() {
     assert!(help_of_start(false).contains("above 0 and below 100"));
 }
 
 #[test]
-fn the_long_help_of_start_says_what_the_holdout_percentage_gives() {
+fn the_long_help_of_start_says_what_the_selection_tasks_percentage_gives() {
     assert!(help_of_start(true).contains(
-        "--holdout-percentage gives the part of the tasks of each benchmark that is\nheld out, \
-         as so many in a hundred: a number above 0 and below 100, such as\n60 or 12.5."
+        "--selection-tasks-percentage gives the part of the tasks of each benchmark\nthat are \
+         selection tasks, as so many in a hundred: a number above 0 and\nbelow 100, such as 45 or \
+         12.5."
     ));
 }
 
@@ -241,58 +242,57 @@ fn the_long_help_of_start_says_what_the_holdout_percentage_gives() {
 fn the_long_help_of_start_says_what_the_holdout_tasks_are() {
     assert!(
         help_of_start(true)
-            .contains("The holdout tasks are the tasks that no progenitor reads\nabout.")
+            .contains("The holdout tasks\nare the tasks that no progenitor reads about")
     );
 }
 
 #[test]
 fn the_long_help_of_start_says_that_the_holdout_tasks_are_drawn_out_of_each_benchmark_by_itself() {
     assert!(help_of_start(true).contains(
-        "cladenc draws them at random when a directed evolution is started,\nout of each \
-         benchmark by itself:"
+        "cladenc draws the selection tasks and\nthe corroboration tasks at random when a directed \
+         evolution is started, out\nof each benchmark by itself:"
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_many_tasks_of_a_benchmark_are_held_out() {
     assert!(help_of_start(true).contains(
-        "the number of its tasks times the\npercentage, divided by 100 and rounded to the \
-         nearest whole number, a half\nrounded up. At 60, a benchmark of 500 tasks has 300 \
-         holdout tasks."
+        "the number of its tasks times the percentage,\ndivided by 100 and rounded to the nearest \
+         whole number, a half rounded up.\nAt 45 and 15, a benchmark of 500 tasks has 225 \
+         selection tasks, 75\ncorroboration tasks and 200 non-holdout tasks."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_which_holdout_percentage_is_refused() {
+fn the_long_help_of_start_says_which_selection_tasks_percentage_is_refused() {
     assert!(help_of_start(true).contains(
-        "A value\nthat leaves a benchmark no holdout task, or no task that is not held \
-         out,\nis refused, and so is a benchmark of one task, which cannot be divided."
+        "A --selection-tasks-percentage that leaves a benchmark no selection task is\nrefused,"
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_the_holdout_tasks_are_drawn_once_and_kept_in_the_journal() {
     assert!(help_of_start(true).contains(
-        "The draw is made once for a directed evolution and written in its journal,\nand \
-         `cladenc resume` reads it there and draws nothing."
+        "The draw is made once for a\ndirected evolution and written in its journal, and `cladenc \
+         resume` reads\nit there and draws nothing."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_too() {
     assert!(help_of_start(true).contains(
-        "Every harness is benchmarked on the holdout tasks as on the others,\nselection tasks and \
-         corroboration tasks alike, and nothing a harness is\ngiven in an attempt says which of \
-         the sets its task is in."
+        "Every harness is benchmarked on the holdout tasks as on the non-holdout\ntasks, \
+         selection tasks and corroboration tasks alike, and nothing a harness\nis given in an \
+         attempt says which of the sets its task is in."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
     assert!(help_of_start(true).contains(
-        "A harness that\nprocreates is given its attempts at the tasks that are not held out, \
-         and\nnothing of the holdout tasks: no task specification, no workspace, no\nresult, and \
-         no count of them."
+        "A harness\nthat procreates is given its attempts at the non-holdout tasks, and \
+         nothing\nof the holdout tasks: no task specification, no workspace, no result, and\nno \
+         count of them."
     ));
 }
 
@@ -393,45 +393,49 @@ fn the_long_help_of_start_says_that_the_model_may_know_the_task() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_the_holdout_corroboration_percentage_gives() {
+fn the_long_help_of_start_says_what_the_corroboration_tasks_percentage_gives() {
     assert!(help_of_start(true).contains(
-        "--holdout-corroboration-percentage divides the holdout tasks of each\nbenchmark in two. \
-         It gives the part of the holdout tasks that are\ncorroboration tasks, as so many in a \
-         hundred: a number above 0 and below\n100."
+        "--corroboration-tasks-percentage gives the\npart that are corroboration tasks, in the \
+         same way."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_corroboration_tasks_are_drawn_out_of_the_holdout_tasks() {
+fn the_long_help_of_start_says_that_the_selection_and_corroboration_tasks_are_the_holdout_tasks() {
     assert!(help_of_start(true).contains(
-        "cladenc draws the corroboration tasks at random, once the holdout\ntasks are drawn, out \
-         of the holdout tasks of each benchmark by itself: the\nnumber of the holdout tasks of the \
-         benchmark times the percentage, divided\nby 100 and rounded in the same way."
+        "The selection tasks and\nthe corroboration tasks together are the holdout tasks."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_holdout_tasks_that_are_left_are_the_selection_tasks() {
-    assert!(help_of_start(true).contains(
-        "The holdout tasks that are left are the\nselection tasks. At 60 and 25, a benchmark of \
-         500 tasks has 300 holdout\ntasks: 75 corroboration tasks and 225 selection tasks."
-    ));
-}
-
-#[test]
-fn the_long_help_of_start_says_which_holdout_corroboration_percentage_is_refused() {
-    assert!(help_of_start(true).contains(
-        "A value that leaves\na benchmark no corroboration task, or no selection task, is refused, \
-         so a\nbenchmark holds three tasks at the least."
-    ));
-}
-
-#[test]
-fn the_long_help_of_start_says_that_the_second_draw_is_written_in_the_journal_beside_the_first() {
+fn the_long_help_of_start_says_what_the_non_holdout_tasks_are() {
     assert!(
-        help_of_start(true)
-            .contains("The second draw is written in the\njournal beside the first.")
+        help_of_start(true).contains("the tasks that are not\nheld out are the non-holdout tasks.")
     );
+}
+
+#[test]
+fn the_long_help_of_start_says_which_corroboration_tasks_percentage_is_refused() {
+    assert!(help_of_start(true).contains(
+        "and so is a --corroboration-tasks-percentage that leaves a\nbenchmark no corroboration \
+         task"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_two_percentages_together_are_refused() {
+    assert!(
+        help_of_start(true).contains(
+            "and so are two values that together leave\na benchmark no non-holdout task."
+        )
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_benchmark_of_fewer_than_three_tasks_is_refused() {
+    assert!(help_of_start(true).contains(
+        "So a benchmark holds three tasks at the\nleast, and a benchmark of fewer is refused."
+    ));
 }
 
 #[test]
@@ -451,15 +455,22 @@ fn the_long_help_of_start_says_when_a_set_of_tasks_gives_a_fair_count() {
 }
 
 #[test]
-fn the_short_help_of_start_names_the_flag_that_divides_the_holdout_tasks() {
-    assert!(help_of_start(false).contains("--holdout-corroboration-percentage <NUMBER>"));
+fn the_short_help_of_start_names_the_flag_that_gives_the_corroboration_tasks_percentage() {
+    assert!(help_of_start(false).contains("--corroboration-tasks-percentage <NUMBER>"));
 }
 
 #[test]
-fn the_short_help_of_start_says_what_the_flag_that_divides_the_holdout_tasks_gives() {
+fn the_short_help_of_start_says_what_the_corroboration_tasks_percentage_gives() {
     assert!(
-        help_of_start(false).contains(
-            "The percentage of each benchmark's holdout tasks that are corroboration tasks"
-        )
+        help_of_start(false)
+            .contains("The percentage of each benchmark's tasks that are corroboration tasks")
+    );
+}
+
+#[test]
+fn the_short_help_of_start_says_what_the_selection_tasks_percentage_gives() {
+    assert!(
+        help_of_start(false)
+            .contains("The percentage of each benchmark's tasks that are selection tasks")
     );
 }

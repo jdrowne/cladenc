@@ -56,9 +56,9 @@ fn started() -> Vec<Record> {
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
                 attempt_timeout: 60,
-                holdout_percentage: 50.0,
+                selection_tasks_percentage: 25.0,
                 holdout_tasks: Vec::new(),
-                holdout_corroboration_percentage: 50.0,
+                corroboration_tasks_percentage: 25.0,
                 corroboration_tasks: Vec::new(),
                 environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
                 seed: 7,
@@ -149,14 +149,14 @@ fn status_prints_the_state_so_far_on_standard_output() {
         "the directed evolution has not ended: what follows is its state so far\n\
          model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, harness ahead so far 0\n\
-         completed by at least one harness: selection tasks 0 of 0, corroboration tasks 0 of 0, other tasks 0 of 1\n\
+         completed by at least one harness: selection tasks 0 of 0, corroboration tasks 0 of 0, non-holdout tasks 0 of 1\n\
          on the corroboration tasks: the harness that is ahead so far is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created        0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
-         1   0           -           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created        0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n"
     );
 }
 

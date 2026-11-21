@@ -24,11 +24,11 @@ fn settings() -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         attempt_timeout: 60,
-        holdout_percentage: 50.0,
+        selection_tasks_percentage: 37.5,
         holdout_tasks: ["t1", "t2", "t3", "t4"]
             .map(|id| format!("benchmark/{id}"))
             .to_vec(),
-        holdout_corroboration_percentage: 25.0,
+        corroboration_tasks_percentage: 12.5,
         corroboration_tasks: vec!["benchmark/t4".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
@@ -69,14 +69,14 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
-         completed by at least one harness: selection tasks 1 of 3, corroboration tasks 1 of 1, other tasks 0 of 1\n\
+         completed by at least one harness: selection tasks 1 of 3, corroboration tasks 1 of 1, non-holdout tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created        1                    0                        1                        0                            0                1                    1                0                    1.000        4.5              -\n\
-         1   0           -           being created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000        4.5              -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n"
     );
 }
 
@@ -109,14 +109,14 @@ fn a_failed_harness_is_shown_as_failed() {
         table,
         "model a-model at http://models.example/v1\n\
          started 1 of 800 procreations, best harness 0\n\
-         completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 of 1, other tasks 0 of 1\n\
+         completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 of 1, non-holdout tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  other completed  other not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created  0                    0                        0                        0                            0                0                    0                0                    -            0.0              -\n\
-         1   0           -           failed   0                    0                        0                        0                            0                0                    0                0                    -            0.0              30.3\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0              30.3\n"
     );
 }
 
@@ -181,7 +181,7 @@ fn the_line_above_the_table_says_how_many_tasks_at_least_one_harness_completed()
         table(|_| {}).lines().nth(2),
         Some(
             "completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 \
-             of 1, other tasks 0 of 1"
+             of 1, non-holdout tasks 0 of 1"
         )
     );
 }
@@ -204,7 +204,7 @@ fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_score() {
 fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_corroboration_tasks() {
     assert!(table(|_| {}).lines().nth(7).unwrap().contains(
         "  selection completed  selection not completed  corroboration completed  corroboration \
-         not completed  other completed  other not completed  "
+         not completed  non-holdout completed  non-holdout not completed  "
     ));
 }
 

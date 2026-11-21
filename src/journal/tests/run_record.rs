@@ -30,9 +30,9 @@ fn settings() -> Settings {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         attempt_timeout: 3600,
-        holdout_percentage: 50.0,
+        selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
-        holdout_corroboration_percentage: 50.0,
+        corroboration_tasks_percentage: 25.0,
         corroboration_tasks: vec!["benchmark/t3".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
@@ -81,8 +81,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_25() {
-    assert_eq!(journal::FORMAT, 25);
+fn the_format_of_the_journal_is_26() {
+    assert_eq!(journal::FORMAT, 26);
 }
 
 #[test]
@@ -90,14 +90,14 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":25,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":26,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2","t3"]}],"#,
-            r#""holdout_percentage":50.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
-            r#""holdout_corroboration_percentage":50.0,"#,
+            r#""selection_tasks_percentage":25.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
+            r#""corroboration_tasks_percentage":25.0,"#,
             r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#,
             r#""max_concurrent_containers":8,"#,
             r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
@@ -115,33 +115,33 @@ fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_set
 #[test]
 fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
-        r#""tasks":["t1","t2","t3"]}],"holdout_percentage":50.0,"#,
+        r#""tasks":["t1","t2","t3"]}],"selection_tasks_percentage":25.0,"#,
         r#""holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
-        r#""holdout_corroboration_percentage":50.0,"#
+        r#""corroboration_tasks_percentage":25.0,"#
     )));
 }
 
 #[test]
 fn the_run_record_holds_the_corroboration_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
-        r#""holdout_corroboration_percentage":50.0,"#,
+        r#""corroboration_tasks_percentage":25.0,"#,
         r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#
     )));
 }
 
 #[test]
-fn a_holdout_corroboration_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
+fn a_corroboration_tasks_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
     let corroborated = run(Settings {
-        holdout_corroboration_percentage: 12.5,
+        corroboration_tasks_percentage: 12.5,
         ..settings()
     });
     assert_eq!(read_back(&corroborated), corroborated);
 }
 
 #[test]
-fn a_holdout_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
+fn a_selection_tasks_percentage_with_a_decimal_point_survives_being_written_and_read_back() {
     let held_out = run(Settings {
-        holdout_percentage: 12.5,
+        selection_tasks_percentage: 12.5,
         ..settings()
     });
     assert_eq!(read_back(&held_out), held_out);

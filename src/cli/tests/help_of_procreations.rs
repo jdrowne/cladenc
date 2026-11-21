@@ -18,8 +18,8 @@ fn the_long_help_of_start_says_that_a_procreation_finds_its_attempts_by_benchmar
 #[test]
 fn the_long_help_of_start_says_where_a_procreation_finds_its_attempts() {
     assert!(long_help_of_start().contains(
-        "/var/log/cladenc/attempts holds the finished attempts\nof the harness at the tasks \
-         that are not held out, to read:"
+        "/var/log/cladenc/attempts holds the finished attempts\nof the harness at the \
+         non-holdout tasks, to read:"
     ));
 }
 
@@ -48,7 +48,7 @@ fn the_long_help_of_start_names_what_is_given_of_a_harness_of_the_line_or_a_chil
     let help = long_help_of_start();
     let given = [
         "  harness      the source code of that harness\n",
-        "  attempts     its attempts at the tasks that are not held out, laid out\n",
+        "  attempts     its attempts at the non-holdout tasks, laid out\n",
         "  procreation  what the harness that made it printed, in stdout and\n",
         "               progenitor and one word in the file named outcome:\n",
         "               created, unchanged, failed, build_failed or timed_out\n",
@@ -120,8 +120,8 @@ fn the_long_help_of_start_says_that_an_instruction_is_a_request_cladenc_does_not
 fn the_long_help_of_start_says_that_a_harness_procreates_only_once_benchmarked_in_full() {
     assert!(long_help_of_start().contains(
         "A harness procreates only once it has been benchmarked in full: it has\nattempted \
-         every task of every benchmark of the directed evolution, so that\nit finds every task \
-         that is not held out in /var/log/cladenc/attempts."
+         every task of every benchmark of the directed evolution, so that\nit finds every \
+         non-holdout task in /var/log/cladenc/attempts."
     ));
 }
 

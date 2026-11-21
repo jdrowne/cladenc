@@ -2,10 +2,15 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::holdout;
+use crate::holdout::{self, Percentages};
 use rand::SeedableRng;
 use rand::seq::index;
 use rand_chacha::ChaCha8Rng;
+
+const PERCENTAGES: Percentages = Percentages {
+    selection: 30.0,
+    corroboration: 20.0,
+};
 
 fn benchmark(name: &str, tasks: usize) -> Benchmark {
     Benchmark {
@@ -19,7 +24,9 @@ fn benchmarks() -> [Benchmark; 2] {
 }
 
 fn drawn(seed: u64) -> Vec<String> {
-    holdout::draw(&benchmarks(), 50.0, seed).unwrap()
+    holdout::draw(&benchmarks(), PERCENTAGES, seed)
+        .unwrap()
+        .holdout_tasks
 }
 
 fn drawn_of(name: &str, seed: u64) -> Vec<String> {
@@ -37,7 +44,7 @@ fn every_task() -> BTreeSet<String> {
 }
 
 #[test]
-fn the_percentage_is_taken_of_the_tasks_of_each_benchmark_by_itself() {
+fn the_holdout_tasks_of_each_benchmark_are_as_many_as_its_selection_and_corroboration_tasks() {
     assert_eq!(
         (drawn_of("bugs/", 7).len(), drawn_of("features/", 7).len()),
         (5, 2)
@@ -95,11 +102,19 @@ fn the_tasks_are_drawn_from_the_last_stream_of_the_seeded_generator() {
 }
 
 #[test]
-fn a_benchmark_of_two_tasks_is_divided_at_a_half() {
+fn a_benchmark_of_three_tasks_can_have_two_holdout_tasks() {
     assert_eq!(
-        holdout::draw(&[benchmark("bugs", 2)], 50.0, 7)
-            .unwrap()
-            .len(),
-        1
+        holdout::draw(
+            &[benchmark("bugs", 3)],
+            Percentages {
+                selection: 30.0,
+                corroboration: 30.0
+            },
+            7
+        )
+        .unwrap()
+        .holdout_tasks
+        .len(),
+        2
     );
 }
