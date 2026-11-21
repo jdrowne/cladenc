@@ -10,7 +10,7 @@ metadata:
 
 # Reminders drive the loop
 
-The autopilot skill schedules a reminder only for a rule that tells the session what to do next at the moment it fires. A rule that holds whether or not the autopilot is running is a memory, and the skill lists it under "Rules that are memories". The wait for CI, per [[the-work-waits-for-ci]], is both: the user wants it as a reminder as well as a memory, as in the user's other repositories, since the other reminders would otherwise draw the session back to work while a run is going. Every reminder is indivisible: it states one rule and names one action.
+The autopilot skill schedules a reminder only for a rule that tells the session what to do next at the moment it fires. A rule that holds whether or not the autopilot is running is a memory, and the skill lists it under "Rules that are memories". The wait for CI, per [[the-work-waits-for-ci]], is both: the user wants it as a reminder as well as a memory, as in the user's other repositories, since the other reminders would otherwise draw the session back to work while a run is going. It is the one reminder that `start reminders-only` schedules, for work done without the loop. Every reminder is indivisible: it states one rule and names one action.
 
 **Why:** A reminder for every rule the work is done under is more than is needed. The user's view is that every reminder is indivisible, that some rules are better kept as memories, and that the reminder to continue autonomously is the kind that is wanted. Which rule is a reminder and which a memory, and the test that sorts them, are my own call.
 

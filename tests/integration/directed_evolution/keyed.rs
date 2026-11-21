@@ -25,7 +25,9 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: "printf %s \"$CLADENC_MODEL_KEY\" > key-given".to_owned(),
+        harness_run_command: "[ -e end-with-125 ] && exit 125; printf %s \"$CLADENC_MODEL_KEY\" > \
+                              key-given"
+            .to_owned(),
         max_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
@@ -39,20 +41,29 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
     }
 }
 
-fn evolved_with(key: Option<&str>, stop: bool) -> (Keyed, Result<Found, DirectedEvolutionError>) {
+fn evolved_with(
+    key: Option<&str>,
+    stopped: bool,
+) -> (Keyed, Result<Found, DirectedEvolutionError>) {
     let directory = test_inputs::temporary_directory();
     let key_file = directory.path().join("model-key");
     if let Some(key) = key {
         test_inputs::model_key_file(directory.path(), key);
+    }
+    if stopped {
+        test_inputs::end_with_125_on(directory.path(), "t1");
     }
     let outputs_directory = directory.path().join("outputs");
     let settings = settings(directory.path(), &key_file);
     let found = directed_evolution::start(
         &settings,
         &outputs_directory,
-        &AtomicBool::new(stop),
+        &AtomicBool::new(false),
         &mut io::sink(),
     );
+    if stopped {
+        test_inputs::end_with_125_on_no_more(&outputs_directory, "t1");
+    }
     let keyed = Keyed {
         directory,
         key_file,

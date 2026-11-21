@@ -227,7 +227,7 @@ fn the_run_record_of_a_directed_evolution_that_builds_its_harnesses_holds_the_bu
         run(built_with("make harness"))
             .line()
             .unwrap()
-            .contains(r#""docker_build_timeout":null,"harness_build_command":"make harness","#)
+            .contains(r#""harness_build_command":"make harness","harness_run_command":"#)
     );
 }
 

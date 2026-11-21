@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues without being asked and end themselves when no issue is left to take. Use when the user says "start autopilot", "go autonomous on the open issues", "restart autopilot" or "stop autopilot", or asks to clear the reminders. Takes "start", "restart" or "stop"; "start" and "restart" also take `--skip-label <label>`, repeatable.
+description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues without being asked and end themselves when no issue is left to take, or schedule only the reminder that holds during any work. Use when the user says "start autopilot", "go autonomous on the open issues", "restart autopilot", "reminders only", "switch to reminders only", "stop autopilot" or "reminders off", or asks to clear the reminders. Takes "start", "start reminders-only", "restart", "restart reminders-only" or "stop"; "start" and "restart" without "reminders-only" also take `--skip-label <label>`, repeatable.
 ---
 
 # Autopilot
@@ -9,7 +9,7 @@ The autopilot is a set of scheduled reminders. Together they keep the session so
 
 The work in hand is one issue or several: it begins with the lowest-numbered listed issue that no open issue blocks, and other listed issues may join it, per `.claude/memories/the-work-in-hand-can-be-several-issues.md`.
 
-Starting the autopilot is the user's request to commit and push what it solves: each commit goes to `main` without a further go-ahead, per `.claude/memories/push-to-main.md`, and each closes at least one issue, per `.claude/memories/a-commit-closes-at-least-one-issue.md`.
+Starting the autopilot is the user's request to commit and push what it solves: each commit goes to `main` without a further go-ahead, per `.claude/memories/push-to-main.md`, and each closes at least one issue, per `.claude/memories/a-commit-closes-at-least-one-issue.md`. Each push is one commit, which may hold several things at once, per `.claude/memories/one-commit-per-push.md`.
 
 Every part of the work, reading, searching and filing as well as code, is done in the session itself: no Agent or Workflow call takes any part of it, per `.claude/memories/working-without-subagents.md`.
 
@@ -17,7 +17,7 @@ Fetch `CronCreate`, `CronList` and `CronDelete` with `ToolSearch` first.
 
 ## Reminders
 
-A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". The wait for CI is both. It is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session back to work while a run is going.
+A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". The wait for CI is both. It is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session back to work while a run is going. It is the one reminder of the form `reminders-only`, per "Reminders only".
 
 Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders.
 
@@ -83,9 +83,10 @@ Each file is under `.claude/memories/`.
 | The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
+| A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
 | After a push, nothing else is done until every run it started has ended. | `the-work-waits-for-ci.md` |
 | Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
-| A run found to have failed is fixed in the next commit pushed, ahead of other work. | `a-failed-run-is-fixed-before-other-work.md` |
+| A run found to have failed is fixed in the next commit pushed, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
 | After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
 
 ## Start
@@ -102,9 +103,17 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 6. Read in full each memory that "Rules that are memories" names.
 7. Take the lowest-numbered listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve that work. When no work is in hand and no issue can be taken, end the autopilot, per "Ending itself".
 
+## Reminders only
+
+`start reminders-only` schedules only the reminder whose rule holds during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`. The other five drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the five left out: "Stop" clears it.
+
+1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the six reminders on its own cron.
+2. `CronCreate` the wait for CI with `recurring: true` unless it is already scheduled.
+3. Tell the user how many reminders are running, that they last until "Stop" is run, and the two limits that come with them: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
+
 ## Restart
 
-Run "Stop", then "Start" with the `--skip-label` flags that `restart` was given. That leaves exactly the six reminders, each with thirty fresh days, and it is how a changed set of `--skip-label` flags takes effect.
+Run "Stop", then the form of start that `restart` names: "Start" with the `--skip-label` flags that `restart` was given, or "Reminders only" for `restart reminders-only`. That leaves exactly the reminders of the form, six or one, each with thirty fresh days. It is how a changed set of `--skip-label` flags takes effect, and how the session switches from one form to the other.
 
 ## Stop
 

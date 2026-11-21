@@ -20,4 +20,4 @@ While a workflow run that a push of the session's started is queued or in progre
 - The autopilot has a reminder of its own for this rule, per [[reminders-drive-the-loop]]. Another reminder that fires during the wait, to take work or to go on autonomously, does not override it. End the turn again.
 - Once every run of the push has ended: if all passed, the next work begins. If one failed, its fix comes first.
 - A session that starts or resumes while a run of an earlier push is queued or in progress waits for that run too.
-- Replies to the user are not held back. A change the user asks for during the wait is made in the working tree, and it is committed and pushed once the runs have ended.
+- Replies to the user are not held back. A change the user asks for during the wait is made in the working tree, and it goes in the next commit once the runs have ended, per [[one-commit-per-push]]. When a run failed, that commit is the one that holds the fix.
