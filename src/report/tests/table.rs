@@ -210,5 +210,5 @@ fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_cor
 
 #[test]
 fn the_table_has_no_column_of_the_holdout_tasks_together() {
-    assert!(!table(|_| {}).contains("holdout"));
+    assert!(!table(|_| {}).contains("  holdout"));
 }

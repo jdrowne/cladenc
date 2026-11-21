@@ -243,12 +243,13 @@ fn the_report_counts_a_task_a_harness_completed_as_a_non_holdout_task_where_it_i
 }
 
 #[test]
-fn the_report_counts_one_selection_task_one_corroboration_task_and_two_others_for_each_harness() {
+fn the_report_counts_one_selection_task_one_corroboration_task_and_two_non_holdout_tasks_for_each_harness()
+ {
     let (directory, _output) = ran();
     let report = report_of(&directory);
     assert_eq!(
         [0, 1].map(|harness: usize| {
-            ["selection", "corroboration", "other"].map(|set| {
+            ["selection", "corroboration", "non_holdout"].map(|set| {
                 ["completed", "not_completed"]
                     .map(|result| {
                         report["harnesses"][harness][format!("{set}_{result}")]
