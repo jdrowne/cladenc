@@ -1,4 +1,5 @@
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -48,6 +49,7 @@ struct Attempt<'a> {
     key: Option<&'a str>,
     harness: u64,
     time_limit: u64,
+    unreadable_in_the_harness: bool,
 }
 
 impl Default for Attempt<'_> {
@@ -59,6 +61,7 @@ impl Default for Attempt<'_> {
             key: None,
             harness: 0,
             time_limit: 30,
+            unreadable_in_the_harness: false,
         }
     }
 }
@@ -105,6 +108,11 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
     test_inputs::kept_grader(&path, "t1", attempt.grader);
+    if attempt.unreadable_in_the_harness {
+        let unreadable = outputs_directory.harness(0).join("unreadable");
+        fs::write(&unreadable, "unread").unwrap();
+        fs::set_permissions(&unreadable, fs::Permissions::from_mode(0o000)).unwrap();
+    }
     let (environment_image, built) = environment_of(&outputs_directory, attempt.environment);
     let launch = Launch {
         image: test_inputs::IMAGE,
@@ -730,6 +738,15 @@ fn after_an_error_the_directory_of_an_attempt_is_still_under_running() {
 fn an_attempt_of_a_harness_that_is_not_there_is_an_error() {
     let attempted = attempted_as(&Attempt {
         harness: 9,
+        ..Attempt::default()
+    });
+    assert!(matches!(attempted.result, Err(ContainerError::Io(_))));
+}
+
+#[test]
+fn an_attempt_whose_harness_cannot_be_copied_into_its_container_is_not_carried_out() {
+    let attempted = attempted_as(&Attempt {
+        unreadable_in_the_harness: true,
         ..Attempt::default()
     });
     assert!(matches!(attempted.result, Err(ContainerError::Io(_))));

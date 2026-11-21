@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::fs;
+use std::fs::File;
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -212,20 +212,20 @@ fn docker_run(outputs_directory: &OutputsDirectory, name: &str) -> Command {
 }
 
 fn detached(mut docker: Command, running: &Path) -> Result<(), ContainerError> {
-    let started = docker
-        .stdin(Stdio::null())
-        .output()
+    let said = running.join("stderr");
+    let status = File::create(&said)
+        .and_then(|stderr| {
+            docker
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(stderr)
+                .status()
+        })
         .map_err(ContainerError::Io)?;
-    match started.status.code() {
+    match status.code() {
         Some(0) => Ok(()),
-        Some(_) => {
-            let said = running.join("stderr");
-            fs::write(&said, started.stderr).map_err(ContainerError::Io)?;
-            Err(ContainerError::Docker(said))
-        }
-        None => Err(ContainerError::Signal(
-            started.status.signal().unwrap_or_default(),
-        )),
+        Some(_) => Err(ContainerError::Docker(said)),
+        None => Err(ContainerError::Signal(status.signal().unwrap_or_default())),
     }
 }
 
