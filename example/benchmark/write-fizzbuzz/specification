@@ -1,1 +1,0 @@
-Write fizzbuzz.py. Run as `python3 fizzbuzz.py N`, it prints one line for each number from 1 to N: Fizz for a multiple of 3, Buzz for a multiple of 5, FizzBuzz for a multiple of both, and the number itself otherwise.

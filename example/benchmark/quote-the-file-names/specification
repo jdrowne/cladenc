@@ -1,1 +1,0 @@
-`sh backup.sh FILE...` copies each file given into the directory backup, beside the file, as FILE.bak. It fails on a name holding a space. Fix backup.sh so that it works for any name.

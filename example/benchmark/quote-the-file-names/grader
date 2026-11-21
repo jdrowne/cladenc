@@ -1,9 +1,0 @@
-#!/bin/sh
-here=$PWD
-d=$(mktemp -d)
-mkdir "$d/my docs"
-echo one > "$d/my docs/a file.txt"
-echo two > "$d/plain.txt"
-sh "$here/backup.sh" "$d/my docs/a file.txt" "$d/plain.txt" || exit 1
-[ "$(cat "$d/my docs/backup/a file.txt.bak")" = one ] || exit 1
-[ "$(cat "$d/backup/plain.txt.bak")" = two ]

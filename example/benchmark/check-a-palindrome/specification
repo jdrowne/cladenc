@@ -1,1 +1,0 @@
-Write is_palindrome(text) in words.py. It returns True when the letters and digits of text, ignoring case and everything else, read the same in both directions, and False otherwise.

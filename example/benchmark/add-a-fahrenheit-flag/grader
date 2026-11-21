@@ -1,6 +1,0 @@
-#!/bin/sh
-c() { python3 convert.py "$@"; }
-[ "$(c 100)" = 373.1 ] || [ "$(c 100)" = 373.2 ] || exit 1
-[ "$(c --fahrenheit 100)" = 212.0 ] || exit 1
-[ "$(c 37 --fahrenheit)" = 98.6 ] || exit 1
-[ "$(c --fahrenheit -- -40)" = -40.0 ]

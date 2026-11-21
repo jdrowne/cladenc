@@ -1,6 +1,0 @@
-#!/usr/bin/env python3
-import os, sys
-sys.path.insert(0, os.getcwd())
-from words import is_palindrome
-cases = {"A man, a plan, a canal: Panama": True, "racecar": True, "Race car!": True, "hello": False, "": True, "12321": True, "ab2a": False}
-sys.exit(0 if all(is_palindrome(k) is v for k, v in cases.items()) else 1)

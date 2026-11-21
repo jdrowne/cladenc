@@ -1,1 +1,0 @@
-Write merge(intervals) in intervals.py. It is given a list of [start, end] pairs of numbers, in any order, and returns a list of the pairs that cover the same numbers with no two of them overlapping or touching, sorted by start. [1, 3] and [3, 5] touch and merge into [1, 5].

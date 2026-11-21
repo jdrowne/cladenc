@@ -1,6 +1,0 @@
-#!/usr/bin/env python3
-import os, sys
-sys.path.insert(0, os.getcwd())
-from text import reverse_words
-cases = {"a b c": "c b a", "  hello   world ": "world hello", "one": "one", "": "", "x\ty\nz": "z y x"}
-sys.exit(0 if all(reverse_words(k) == v for k, v in cases.items()) else 1)

@@ -1,1 +1,0 @@
-load(path) in config.py reads a JSON file of settings. It raises KeyError when the file leaves a setting out. Make it return every setting of DEFAULTS, with the value from the file where the file gives one and the default where it does not. A file that does not exist gives the defaults. Keys of the file that are not in DEFAULTS are kept as well.

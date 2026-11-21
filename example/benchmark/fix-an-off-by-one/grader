@@ -1,6 +1,0 @@
-#!/usr/bin/env python3
-import os, sys
-sys.path.insert(0, os.getcwd())
-from arith import sum_to
-cases = {0: 0, -3: 0, 1: 1, 2: 3, 10: 55, 100: 5050}
-sys.exit(0 if all(sum_to(n) == want for n, want in cases.items()) else 1)

@@ -1,1 +1,0 @@
-Write top_words(text, k) in freq.py. It returns a list of the k most frequent words of text as (word, count) pairs, most frequent first, and words of the same count in alphabetical order. A word is a run of letters, and case is ignored: words are returned in lower case.

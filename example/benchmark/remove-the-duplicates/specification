@@ -1,1 +1,0 @@
-Write dedupe(items) in lists.py. It returns a new list of the items of items, each one once, in the order in which each first appears. The items can be anything that can be compared with ==, lists among them, which cannot be hashed.

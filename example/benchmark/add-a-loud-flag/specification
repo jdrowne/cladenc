@@ -1,1 +1,0 @@
-greet.sh prints "hello, NAME" for the name it is given. Give it a flag, --loud, given before the name, that makes it print the same line in capital letters. Without the flag it prints as it does now.

@@ -1,8 +1,0 @@
-#!/bin/sh
-unset PORT
-[ "$(python3 settings.py)" = 8080 ] || exit 1
-[ "$(PORT= python3 settings.py)" = 8080 ] || exit 1
-[ "$(PORT=9000 python3 settings.py)" = 9000 ] || exit 1
-PORT=abc python3 settings.py >/dev/null 2>&1; [ $? -eq 2 ] || exit 1
-PORT=70000 python3 settings.py >/dev/null 2>&1; [ $? -eq 2 ] || exit 1
-[ "$(PORT=0 python3 settings.py 2>&1 >/dev/null)" != "" ]

@@ -1,4 +1,0 @@
-#!/bin/sh
-[ "$(sh greet.sh ada)" = "hello, ada" ] || exit 1
-[ "$(sh greet.sh --loud ada)" = "HELLO, ADA" ] || exit 1
-[ "$(sh greet.sh --loud grace)" = "HELLO, GRACE" ]

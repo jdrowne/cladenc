@@ -1,1 +1,0 @@
-The function get_usr is badly named. Rename it to get_user everywhere in this project, so that no file names get_usr any more and `python3 main.py` prints what it prints now.

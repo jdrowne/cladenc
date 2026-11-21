@@ -1,9 +1,0 @@
-#!/usr/bin/env python3
-import os, sys
-sys.path.insert(0, os.getcwd())
-from freq import top_words
-ok = [tuple(p) for p in top_words("the cat and The dog and THE bird", 2)] == [("the", 3), ("and", 2)]
-ok = ok and [tuple(p) for p in top_words("b a c b a", 3)] == [("a", 2), ("b", 2), ("c", 1)]
-ok = ok and [tuple(p) for p in top_words("it's fine, it is", 2)] == [("it", 2), ("fine", 1)]
-ok = ok and list(top_words("", 3)) == []
-sys.exit(0 if ok else 1)
