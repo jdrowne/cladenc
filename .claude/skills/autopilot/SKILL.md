@@ -1,11 +1,11 @@
 ---
 name: autopilot
-description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues without being asked and end themselves when no issue is left to take, or schedule only the reminder that holds during any work. Use when the user says "start autopilot", "go autonomous on the open issues", "restart autopilot", "reminders only", "switch to reminders only", "stop autopilot" or "reminders off", or asks to clear the reminders. Takes "start", "start reminders-only", "restart", "restart reminders-only" or "stop"; "start" and "restart" without "reminders-only" also take `--skip-label <label>`, repeatable.
+description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues, or only the open issues that carry one label, without being asked and end themselves when no issue is left to take, or schedule only the reminder that holds during any work. Use when the user says "start autopilot", "go autonomous on the open issues", "go autonomous on the issues labelled <label>", "restart autopilot", "reminders only", "switch to reminders only", "stop autopilot" or "reminders off", or asks to clear the reminders. Takes "start", "start bylabel <label>", "start reminders-only", the same three after "restart", or "stop"; every "start" and "restart" form but "reminders-only" also takes `--skip-label <label>`, repeatable.
 ---
 
 # Autopilot
 
-The autopilot is a set of scheduled reminders. Together they keep the session solving the open issues, in the order their `blocked by` edges set, until none is left that it can take. Then the autopilot ends itself, per "Ending itself".
+The autopilot is a set of scheduled reminders. Together they keep the session solving the open issues, or with `bylabel` only the open issues that carry one label, per "By label", in the order their `blocked by` edges set, until none is left that it can take. Then the autopilot ends itself, per "Ending itself".
 
 The session works on one issue or several at a time: the lowest-numbered listed issue that no open issue blocks, and any other listed issues it chooses to add, per `.claude/memories/several-issues-can-be-worked-on-together.md`.
 
@@ -37,6 +37,8 @@ The second, on `3,18,33,48 * * * *`, is the reminder that takes work:
 REMINDER: Run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(all(.labels[]; .name != "needs decision"))) | sort_by(.number) | map({number, title, labels: [.labels[].name]})' to list the open issues no label holds back, lowest number first; take the lowest-numbered issue it lists for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other listed issues you choose to solve with it, and run the same command again when they close.
 ```
 
+The `bylabel` form puts a reminder of its own that takes work on the same cron, in place of the one above, per "By label".
+
 The other three:
 
 | Cron | Prompt |
@@ -53,7 +55,7 @@ After a push the session does nothing else until every run the push started has 
 
 ## Ending itself
 
-The autopilot ends itself when nothing is left for it to do: no issue can be taken. That is so when no issue is open, and when each open issue carries a label that holds it back or is blocked by an open issue.
+The autopilot ends itself when nothing is left for it to do: no issue can be taken. That is so when no issue is open, and when each open issue carries a label that holds it back or is blocked by an open issue. In the `bylabel` form, only the open issues that carry its label count, per "By label".
 
 Left running, the reminders would wake the session every few minutes for nothing, until the session ends or their thirty days are up.
 
@@ -102,23 +104,45 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 
 1. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
 2. Run the listing's command once, its `--skip-label` filters in place. When it names no issue that can be taken, say so, say which label or blocking issue holds back each open issue, and stop: there is nothing to schedule reminders for.
-3. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute.
-4. `CronCreate` with `recurring: true` each reminder that is not already scheduled.
+3. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the form's five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute, and a reminder that takes work for another form.
+4. `CronCreate` with `recurring: true` each of the form's reminders that is not already scheduled.
 5. Tell the user how many reminders are running, that the autopilot ends itself when no issue is left that it can take, and the two limits that come with the reminders: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
 6. Read in full each memory that "Rules that are memories" names.
 7. Take the lowest-numbered listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve them. When they close, run the listing's command again. When it names no issue that can be taken, end the autopilot, per "Ending itself".
+
+## By label
+
+`start bylabel <label>` is "Start" held to the open issues that carry `<label>`. The autopilot takes those issues in the order and the way "Start" takes every open issue, and an open issue without the label is not its work. The form takes `--skip-label` as "Start" does.
+
+Its five reminders are those of "Start", but for the reminder that takes work on `3,18,33,48 * * * *`, which is this one, with the label itself put in place of each `<label>` when it is scheduled:
+
+```text
+REMINDER: Run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(any(.labels[]; .name == "<label>"))) | map(select(all(.labels[]; .name != "needs decision"))) | sort_by(.number) | map({number, title, labels: [.labels[].name]})' to list the open issues labelled '<label>' that no other label holds back, lowest number first; take the lowest-numbered issue it lists for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other listed issues you choose to solve with it, and run the same command again when they close. An open issue without the label '<label>' is not this loop's work.
+```
+
+`<number>` stays as written, for the session to fill with the issue it checks.
+
+The filter that keeps the label, `map(select(any(.labels[]; .name == "<label>"))) |`, stands in the `--jq` program ahead of the filter that leaves out `needs decision`, and never moves to `--label` or `--search`, for the reason "Start" gives for `--skip-label`. Each `--skip-label` still goes at the very start of the program, ahead of the filter that keeps the label.
+
+An open issue that blocks a labelled issue holds it back whether it carries the label or not. The autopilot does not take a blocker without the label: the labelled issue waits until a person, or another form of the autopilot, closes it.
+
+A `bylabel` that names `needs decision`, or a label that one of its `--skip-label` flags names too, lists no issue, so step 2 of "Start" finds nothing to take and schedules nothing.
+
+The steps are those of "Start", with this form's listing in steps 2 and 7 and this form's five reminders in steps 3 and 4. Step 3 deletes the reminder that takes work of "Start", or of `bylabel` with another label, since it is not one of this form's five.
+
+The autopilot ends itself, per "Ending itself", once no open issue that carries the label can be taken. In step 3 of "Ending itself" it tells the user that no open issue carries the label, or which label or blocking issue holds back each open issue that does.
 
 ## Reminders only
 
 `start reminders-only` schedules only the reminder whose rule holds during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`. The other four drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the five left out: "Stop" clears it.
 
-1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the five reminders on its own cron.
+1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is neither one of the five reminders of "Start" nor the reminder that takes work of "By label", whatever its label, each on its own cron.
 2. `CronCreate` the wait for CI with `recurring: true` unless it is already scheduled.
 3. Tell the user how many reminders are running, that they last until "Stop" is run, and the two limits that come with them: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
 
 ## Restart
 
-Run "Stop", then the form of start that `restart` names: "Start" with the `--skip-label` flags that `restart` was given, or "Reminders only" for `restart reminders-only`. That leaves exactly the reminders of the form, five or one, each with thirty fresh days. It is how a changed set of `--skip-label` flags takes effect, and how the session switches from one form to the other.
+Run "Stop", then the form of start that `restart` names: "Start" with the `--skip-label` flags that `restart` was given, "By label" with its label and `--skip-label` flags for `restart bylabel <label>`, or "Reminders only" for `restart reminders-only`. That leaves exactly the reminders of the form, five or one, each with thirty fresh days. It is how a changed set of `--skip-label` flags or a changed label takes effect, and how the session switches from one form to another.
 
 ## Stop
 
