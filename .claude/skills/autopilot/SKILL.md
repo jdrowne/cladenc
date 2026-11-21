@@ -88,14 +88,13 @@ Each `--skip-label <label>` puts `map(select(all(.labels[]; .name != "<label>"))
 
 An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by` lists an open issue.
 
-1. Say which model this session runs on, as its system prompt names it. The work on `cladenc` is done on the latest Fable model at Extra High effort, whether or not an issue says so, and only the user can set either. When the model is another, say so and stop here.
-2. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
-3. Run the listing's command once, its `--skip-label` filters in place. When it names no issue that can be taken, say so, say which label or blocking issue holds back each open issue, and stop: there is nothing to schedule reminders for.
-4. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute.
-5. `CronCreate` with `recurring: true` each reminder that is not already scheduled.
-6. Tell the user how many reminders are running, that the autopilot ends itself when no issue is left that it can take, and the two limits that come with the reminders: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after seven days.
-7. Read in full each memory that "Rules that are memories" names.
-8. Take the lowest-numbered listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve that work. When no work is in hand and no issue can be taken, end the autopilot, per "Ending itself".
+1. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
+2. Run the listing's command once, its `--skip-label` filters in place. When it names no issue that can be taken, say so, say which label or blocking issue holds back each open issue, and stop: there is nothing to schedule reminders for.
+3. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute.
+4. `CronCreate` with `recurring: true` each reminder that is not already scheduled.
+5. Tell the user how many reminders are running, that the autopilot ends itself when no issue is left that it can take, and the two limits that come with the reminders: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after seven days.
+6. Read in full each memory that "Rules that are memories" names.
+7. Take the lowest-numbered listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve that work. When no work is in hand and no issue can be taken, end the autopilot, per "Ending itself".
 
 ## Restart
 
