@@ -7,6 +7,7 @@ mod report {
 }
 
 mod resume {
+    mod configuration;
     mod continued;
     mod ended;
     mod held_out;
@@ -19,6 +20,7 @@ mod start {
     mod benchmarks;
     mod built;
     mod called;
+    mod configuration;
     mod environment;
     mod experiment;
     mod finished;

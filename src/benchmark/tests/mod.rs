@@ -1,3 +1,4 @@
+mod configuration;
 mod named;
 mod refused;
 mod several;

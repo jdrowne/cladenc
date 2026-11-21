@@ -16,13 +16,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
+use crate::benchmark::TaskConfiguration;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
-use container::{Container, Mount, Shell, Up};
-pub use image::{build_environment, build_image};
+use container::{Container, Mount, Run, Shell, Up};
+pub use image::{build_environment, build_image, find_image};
 pub use left::remove_left_behind;
 use program::{Ending, Limits, seconds_since};
 
@@ -71,11 +72,17 @@ pub struct Launch<'a> {
     pub attempt_timeout: u64,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Environment {
+    pub image: String,
+    pub configuration: TaskConfiguration,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Attempt<'a> {
     pub harness: HarnessId,
     pub task: &'a str,
-    pub environment_image: &'a str,
+    pub environment: &'a Environment,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -327,15 +334,24 @@ impl Attempting<'_> {
             environment: &environment,
         };
         let started = Instant::now();
-        let up = Up::start(
-            outputs_directory,
-            self.attempt.environment_image,
-            self.running,
-            limits,
+        let environment = self.attempt.environment;
+        let up = Up::start(outputs_directory, environment, self.running, limits)?;
+        let run = Run {
+            shell: &shell,
+            user: environment
+                .configuration
+                .harness_user
+                .as_deref()
+                .unwrap_or(up.user()),
+            variables: &[],
+        };
+        up.put(
+            &outputs_directory.harness(self.attempt.harness),
+            HARNESS,
+            run.user,
         )?;
-        up.put(&outputs_directory.harness(self.attempt.harness), HARNESS)?;
         let before: BTreeSet<String> = up.changes().into_iter().collect();
-        let ending = up.run(&shell, self.running, limits)?;
+        let ending = up.run(&run, self.running, limits)?;
         let seconds = seconds_since(started);
         let changes: String = up
             .changes()
@@ -346,13 +362,9 @@ impl Attempting<'_> {
         let _ = fs::write(self.running.join("changes"), changes);
         up.keep_work(&self.running.join("work"));
         let result = match ending {
-            Ending::Exited(_) => grader::run(
-                outputs_directory,
-                &up,
-                self.attempt.task,
-                self.running,
-                limits,
-            )?,
+            Ending::Exited(_) => {
+                grader::run(outputs_directory, &up, &self.attempt, self.running, limits)?
+            }
             Ending::TimedOut => AttemptResult::TimedOut,
         };
         Ok(Attempted { result, seconds })

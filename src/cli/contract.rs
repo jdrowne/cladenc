@@ -62,6 +62,18 @@ of a task starts from has to be on the machine: cladenc does not ask
 Docker to fetch it and cannot forbid it, so Docker fetches a base image
 that is not on the machine, from the registry of its name.
 
+A task whose task.toml names an image, as docker_image under environment,
+has that image as its environment: cladenc builds nothing for the task,
+and the task needs no environment directory. The image has to be on the
+machine before the directed evolution, as the image that --docker-image
+names has to be. cladenc looks for it when the directed evolution is
+started, and again each time it is resumed, as
+
+    docker image inspect --format {{.Id}} <IMAGE>
+
+and a task whose image is not on the machine stops the directed evolution
+with exit status 2. `cladenc start` then leaves it no journal.
+
 A harness is started in a container, of the image of the directed
 evolution for a procreation and of the environment of its task for an
 attempt, as
@@ -104,8 +116,9 @@ In the container of a harness,
                        flag is not given
 
 In a procreation the command runs as the user cladenc runs as, and in an
-attempt as the user of the environment of the task. It is given nothing on
-standard input, and its standard output and standard error are kept.
+attempt as the user of the environment of the task, or as the user that
+the task.toml of the task names. It is given nothing on standard input,
+and its standard output and standard error are kept.
 
 cladenc calls no model. A harness calls the model itself, at the address it
 is told. In every container, host.docker.internal names the machine cladenc
@@ -310,7 +323,8 @@ container is ever given. A file that is in the benchmark and in no task is
 left alone. A benchmark that holds no task is refused, and so is one with
 a task that lacks one of the three, or whose environment directory holds a
 Compose file, such as docker-compose.yaml: an environment of more than one
-container cannot be built.
+container cannot be built. A task whose task.toml names an image needs
+neither the Dockerfile nor the environment directory.
 
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on
@@ -485,7 +499,7 @@ harness is given nothing else of the task, so it can neither read nor
 change the grader. When the harness has ended, with whatever exit status,
 the tests directory of the task is copied into the same container, and its
 grader is run there, in the same working directory and as the same user,
-as
+unless the task.toml of the task names a user for the grader, as
 
     sh -c <TIMER> /tests/test.sh <SECONDS>
 
@@ -498,6 +512,45 @@ harness left outside /tests and /logs/verifier, and the processes it left
 running, are there as well. A grader calls no model, and is given none of
 the three variables of the model. The two steps share the time limit of one
 attempt, and the container is removed once the attempt has ended.
+
+A task may hold a file named task.toml, the task configuration of Harbor.
+cladenc obeys what it says of the environment of the task:
+
+  docker_image under environment  the image that is the environment, in
+                                  place of one built from the Dockerfile
+  workdir under environment       the working directory of the harness
+                                  and of the grader, in place of the one
+                                  the image names
+  env under environment           variables that the container is given,
+                                  so the harness and the grader alike
+  user under agent                the user the harness runs as, a name or
+                                  a number, in place of the user the
+                                  image names
+  user under verifier             the user the grader runs as, in the
+                                  same way
+  env under verifier              variables that the grader alone is
+                                  given
+
+cladenc reads nothing else of a task.toml. A setting that is left out, or
+written with nothing between its quotation marks, changes nothing, and
+neither does a task that holds no task.toml. The source code of the
+harness belongs to the user the harness runs as, and /tests and
+/logs/verifier belong to the user the grader runs as.
+
+In the value of a variable, ${NAME} stands for the value that the variable
+NAME has where cladenc runs, and ${NAME:-TEXT} for that value, or for TEXT
+where NAME is not set there. A variable that cladenc sets for a harness,
+such as CLADENC_MODEL, keeps the value cladenc gives it. cladenc reads the
+values when the directed evolution is started, and again each time it is
+resumed, and writes none of them in the journal. It keeps them off every
+command line: Docker reads them from its standard input, one line for each
+variable, so the name of a variable is made of letters, digits, dots,
+underscores and hyphens, and its value is one line of text.
+
+A task is refused when the directed evolution is started where its
+task.toml is not TOML, gives one of these settings a value of another
+kind, names a variable otherwise, or takes a value from a variable that is
+not set where cladenc runs and gives no text in its place.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is
@@ -604,6 +657,13 @@ not, from the registry of its name. A task whose environment is not built
 stops `cladenc resume` with exit status 2, and
 environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker
 printed.
+
+`cladenc resume` reads the task.toml of the copy of each task again, and
+the variables it names as they are set where `cladenc resume` runs. For a
+task whose task.toml names an image it builds nothing, and looks for the
+image on the machine. A task whose image is not there, or which takes a
+value from a variable that is not set, stops `cladenc resume` with exit
+status 2.
 
 When the directed evolution that it continued ends, `cladenc resume` prints
 on standard error what `cladenc report` prints, after the line that says

@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, ContainerError, Launch};
+use cladenc::containers::{self, Attempt, ContainerError, Environment, Launch};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -16,11 +16,6 @@ const MODEL: Model<'static> = Model {
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
 const SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY: &str = "hostname; sleep 300";
-const ATTEMPT: Attempt<'static> = Attempt {
-    harness: 0,
-    task: "benchmark/t1",
-    environment_image: test_inputs::IMAGE,
-};
 
 type Attempted = (
     TempDir,
@@ -32,6 +27,21 @@ type Procreated = (
     OutputsDirectory,
     Result<containers::Creation, ContainerError>,
 );
+
+fn environment() -> Environment {
+    Environment {
+        image: test_inputs::IMAGE.to_owned(),
+        ..Environment::default()
+    }
+}
+
+fn attempt(environment: &Environment) -> Attempt<'_> {
+    Attempt {
+        harness: 0,
+        task: "benchmark/t1",
+        environment,
+    }
+}
 
 fn made() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
@@ -77,7 +87,8 @@ fn timed_out() -> Attempted {
         ..launch(SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY)
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_attempt(&outputs_directory, &launch, ATTEMPT, &stop);
+    let result =
+        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), &stop);
     (directory, outputs_directory, result)
 }
 
@@ -88,7 +99,7 @@ fn stopped_while_its_harness_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&outputs_directory, &launch, ATTEMPT, stop)
+        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), stop)
     });
     (directory, outputs_directory, result)
 }
@@ -105,7 +116,7 @@ fn stopped_while_its_grader_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("grader/stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&outputs_directory, &launch, ATTEMPT, stop)
+        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), stop)
     });
     (directory, outputs_directory, result)
 }
@@ -176,7 +187,12 @@ fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let (_directory, outputs_directory) = made();
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        containers::run_attempt(&outputs_directory, &launch("sleep 300"), ATTEMPT, &stop),
+        containers::run_attempt(
+            &outputs_directory,
+            &launch("sleep 300"),
+            attempt(&environment()),
+            &stop
+        ),
         Err(ContainerError::Stopped)
     ));
 }

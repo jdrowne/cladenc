@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, Launch};
+use cladenc::containers::{self, Attempt, Environment, Launch};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -25,6 +25,13 @@ impl Drop for Left {
         let _ = Command::new("docker")
             .args(["rm", "--force", id.trim()])
             .output();
+    }
+}
+
+fn environment() -> Environment {
+    Environment {
+        image: test_inputs::IMAGE.to_owned(),
+        ..Environment::default()
     }
 }
 
@@ -93,7 +100,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
         let attempt = Attempt {
             harness: 0,
             task: "benchmark/t1",
-            environment_image: test_inputs::IMAGE,
+            environment: &environment(),
         };
         let _ = containers::run_attempt(&outputs_directory, &launch, attempt, &stop);
         let id = fs::read_to_string(&id_file).unwrap();

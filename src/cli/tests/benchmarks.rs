@@ -8,8 +8,10 @@ use crate::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named instruction.md, a directory named tests with an executable \
-                     file named test.sh in it and a directory named environment with a file named Dockerfile and no Compose file in it";
+                     a file of text named instruction.md, a directory named tests with an \
+                     executable file named test.sh in it and a directory named environment with a \
+                     file named Dockerfile and no Compose file in it, or, in place of the \
+                     Dockerfile, an image named in its file named task.toml";
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
@@ -140,9 +142,45 @@ fn a_benchmark_with_a_task_that_has_no_environment_names_the_task_and_what_it_la
     assert_eq!(
         reason,
         format!(
-            "{}: task t2 holds no directory named environment with a file named Dockerfile in it",
+            "{}: task t2 holds no directory named environment with a file named Dockerfile in \
+             it, and its task.toml names no image in its place",
             directory.path().join("benchmark").display()
         )
+    );
+}
+
+#[test]
+fn a_benchmark_with_a_task_whose_task_toml_cannot_be_obeyed_names_the_task_and_why() {
+    let (directory, reason) = reason_of(|_, benchmarks| {
+        fs::write(
+            benchmarks[0].join("t2/task.toml"),
+            "[agent]\nuser = \"worker\"\n\n[environment]\nworkdir = 3\n",
+        )
+        .unwrap();
+    });
+    assert_eq!(
+        reason,
+        format!(
+            "{}: task t2 holds a task.toml that is not valid at line 5: invalid type: integer \
+             `3`, expected a string",
+            directory.path().join("benchmark").display()
+        )
+    );
+}
+
+#[test]
+fn a_benchmark_with_a_task_that_names_an_image_in_its_task_toml_needs_no_dockerfile_for_it() {
+    let settings = settings_of(|_, benchmarks| {
+        fs::remove_dir_all(benchmarks[0].join("t2/environment")).unwrap();
+        fs::write(
+            benchmarks[0].join("t2/task.toml"),
+            "[environment]\ndocker_image = \"debian:stable-slim\"\n",
+        )
+        .unwrap();
+    });
+    assert_eq!(
+        settings.tasks(),
+        ["benchmark/t1", "benchmark/t2", "benchmark/t3"]
     );
 }
 

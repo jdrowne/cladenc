@@ -292,7 +292,12 @@ pub(super) enum Environments<'a> {
         task: &'a str,
         image: &'a str,
     },
+    Taking {
+        task: &'a str,
+        image: &'a str,
+    },
     Built {
+        built: u64,
         tasks: u64,
         outputs_directory: &'a OutputsDirectory,
     },
@@ -310,18 +315,28 @@ impl Display for Environments<'_> {
                 formatter,
                 "building the environment of task {task} as the image {image}"
             ),
+            Self::Taking { task, image } => write!(
+                formatter,
+                "taking the image {image} as the environment of task {task}, as its task.toml says"
+            ),
             Self::Built {
+                built,
                 tasks,
                 outputs_directory,
             } => {
-                let built = if *tasks == 1 {
+                let environments = if *built == 1 {
                     "environment"
                 } else {
                     "environments"
                 };
+                let some = if built == tasks {
+                    String::new()
+                } else {
+                    format!("{built} of ")
+                };
                 write!(
                     formatter,
-                    "built the {built} of the {}: what Docker printed is kept in {}",
+                    "built the {environments} of {some}the {}: what Docker printed is kept in {}",
                     counted(*tasks, "task", "tasks"),
                     outputs_directory.path().join("environments").display()
                 )

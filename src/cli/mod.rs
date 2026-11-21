@@ -331,6 +331,8 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
         | DirectedEvolutionError::Key(_)
         | DirectedEvolutionError::Left(_)
         | DirectedEvolutionError::Image(_)
+        | DirectedEvolutionError::Configuration { .. }
+        | DirectedEvolutionError::NotOnTheMachine { .. }
         | DirectedEvolutionError::Environment { .. } => 2,
         DirectedEvolutionError::Journal(_)
         | DirectedEvolutionError::Asked

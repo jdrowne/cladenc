@@ -5,6 +5,7 @@ mod help_of_environments;
 mod help_of_experiments;
 mod help_of_procreations;
 mod help_of_reports;
+mod help_of_task_configuration;
 mod help_of_tasks;
 mod image;
 mod missing;

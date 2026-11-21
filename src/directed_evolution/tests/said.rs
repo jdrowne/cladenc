@@ -282,6 +282,7 @@ fn the_environment_of_a_task_is_said_to_be_being_built_with_the_image_it_is_buil
 fn the_environment_of_the_one_task_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::Environments(Environments::Built {
+            built: 1,
             tasks: 1,
             outputs_directory: &outputs_directory(),
         })
@@ -294,12 +295,54 @@ fn the_environment_of_the_one_task_is_said_to_be_built_with_where_what_docker_pr
 fn the_environments_of_several_tasks_are_said_to_be_built_with_how_many_tasks_there_are() {
     assert_eq!(
         Said::Environments(Environments::Built {
+            built: 3,
             tasks: 3,
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
         "built the environments of the 3 tasks: what Docker printed is kept in \
          /outputs/environments"
+    );
+}
+
+#[test]
+fn the_environments_built_for_some_of_the_tasks_are_said_with_how_many_of_how_many() {
+    assert_eq!(
+        Said::Environments(Environments::Built {
+            built: 2,
+            tasks: 3,
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "built the environments of 2 of the 3 tasks: what Docker printed is kept in \
+         /outputs/environments"
+    );
+}
+
+#[test]
+fn the_one_environment_built_among_several_tasks_is_said_as_one() {
+    assert_eq!(
+        Said::Environments(Environments::Built {
+            built: 1,
+            tasks: 3,
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "built the environment of 1 of the 3 tasks: what Docker printed is kept in \
+         /outputs/environments"
+    );
+}
+
+#[test]
+fn an_image_that_a_task_names_is_said_to_be_taken_as_the_environment_of_the_task() {
+    assert_eq!(
+        Said::Environments(Environments::Taking {
+            task: "benchmark/t1",
+            image: "registry.example/tasks/parser:3",
+        })
+        .to_string(),
+        "taking the image registry.example/tasks/parser:3 as the environment of task \
+         benchmark/t1, as its task.toml says"
     );
 }
 

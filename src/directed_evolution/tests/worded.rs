@@ -2,6 +2,7 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 
+use crate::benchmark::ConfigurationError;
 use crate::containers::ContainerError;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::journal::{JournalError, Started};
@@ -97,6 +98,35 @@ fn an_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_e
             error: ContainerError::Exit(1),
         }),
         "the environment of task benchmark/t1 was not built: its build exited with status 1"
+    );
+}
+
+#[test]
+fn a_task_whose_task_toml_cannot_be_obeyed_is_worded_with_its_task_and_why() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Configuration {
+            task: "benchmark/t1".to_owned(),
+            error: ConfigurationError::NotSet {
+                table: "environment",
+                name: "API_TOKEN".to_owned(),
+                variable: "TOKEN".to_owned(),
+            },
+        }),
+        "task benchmark/t1 cannot be attempted: its task.toml gives API_TOKEN under \
+         environment.env the value of TOKEN, which is not set where cladenc runs"
+    );
+}
+
+#[test]
+fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
+    assert_eq!(
+        worded(DirectedEvolutionError::NotOnTheMachine {
+            task: "benchmark/t1".to_owned(),
+            image: "parser:3".to_owned(),
+            error: io::Error::other("No such image: parser:3"),
+        }),
+        "the environment of task benchmark/t1 is not on the machine: its task.toml names the \
+         image parser:3, and cladenc fetches no image: No such image: parser:3"
     );
 }
 

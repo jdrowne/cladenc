@@ -1,3 +1,5 @@
+mod configuration;
+
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -8,6 +10,9 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
+
+use configuration::CONFIGURATION;
+pub use configuration::{ConfigurationError, TaskConfiguration};
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
 pub(crate) const TESTS: &str = "tests";
@@ -80,15 +85,37 @@ pub enum BenchmarkError {
     NotADirectory,
     OneTask,
     NoTask,
-    NotNamed { directory: String },
-    GivenTwice { directory: PathBuf },
-    SameName { name: String },
-    NotAnId { directory: String },
-    NoSpecification { task: String },
-    NoGrader { task: String },
-    NoEnvironment { task: String },
-    ManyContainers { task: String },
-    OtherFiles { task: String },
+    NotNamed {
+        directory: String,
+    },
+    GivenTwice {
+        directory: PathBuf,
+    },
+    SameName {
+        name: String,
+    },
+    NotAnId {
+        directory: String,
+    },
+    NoSpecification {
+        task: String,
+    },
+    NoGrader {
+        task: String,
+    },
+    Configuration {
+        task: String,
+        error: ConfigurationError,
+    },
+    NoEnvironment {
+        task: String,
+    },
+    ManyContainers {
+        task: String,
+    },
+    OtherFiles {
+        task: String,
+    },
 }
 
 impl Display for BenchmarkError {
@@ -136,10 +163,16 @@ impl Display for BenchmarkError {
                 "task {task} holds no directory named {TESTS} with an executable file named \
                  {GRADER} in it"
             ),
+            Self::Configuration { task, error } => {
+                write!(
+                    formatter,
+                    "task {task} holds a {CONFIGURATION} that {error}"
+                )
+            }
             Self::NoEnvironment { task } => write!(
                 formatter,
                 "task {task} holds no directory named {ENVIRONMENT} with a file named \
-                 {DOCKERFILE} in it"
+                 {DOCKERFILE} in it, and its {CONFIGURATION} names no image in its place"
             ),
             Self::ManyContainers { task } => write!(
                 formatter,
@@ -197,7 +230,11 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if !is_grader(directory) {
         return Err(BenchmarkError::NoGrader { task });
     }
-    if !is_environment(directory) {
+    let configuration = match TaskConfiguration::read(directory) {
+        Ok(configuration) => configuration,
+        Err(error) => return Err(BenchmarkError::Configuration { task, error }),
+    };
+    if configuration.docker_image.is_none() && !is_environment(directory) {
         return Err(BenchmarkError::NoEnvironment { task });
     }
     if holds_compose_file(directory) {

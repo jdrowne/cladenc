@@ -1,8 +1,10 @@
+use std::io;
 use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
 use super::ContainerError;
+use super::left;
 use super::program::{self, Ending, LEEWAY, Limits};
 use crate::benchmark::ENVIRONMENT;
 use crate::outputs_directory::OutputsDirectory;
@@ -24,7 +26,7 @@ pub fn build_image(
         .args(["docker", "build", "--tag", image, "--file"])
         .arg(kept.join("Dockerfile"))
         .arg(kept.join("context"));
-    program::run(build, &kept, Limits::starting_now(time_limit, stop)).and_then(built)
+    program::run(build, "", &kept, Limits::starting_now(time_limit, stop)).and_then(built)
 }
 
 pub fn build_environment(
@@ -41,7 +43,13 @@ pub fn build_environment(
         .args(["build", "--tag", image, "--label"])
         .arg(format!("cladenc.task={task}"))
         .arg(outputs_directory.task(task).join(ENVIRONMENT));
-    program::run(build, &kept, Limits::without_time_limit(stop)).and_then(built)
+    program::run(build, "", &kept, Limits::without_time_limit(stop)).and_then(built)
+}
+
+pub fn find_image(image: &str) -> io::Result<()> {
+    let mut inspect = Command::new("docker");
+    inspect.args(["image", "inspect", "--format", "{{.Id}}", image]);
+    left::printed_by(inspect).map(drop)
 }
 
 fn built(ending: Ending) -> Result<(), ContainerError> {

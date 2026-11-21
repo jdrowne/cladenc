@@ -200,7 +200,8 @@ fn the_long_help_of_start_says_in_which_image_the_harness_of_an_attempt_is_start
 fn the_long_help_of_start_says_as_which_user_the_command_of_a_harness_runs() {
     assert!(help_of_start(true).contains(
         "In a procreation the command runs as the user cladenc runs as, and in an\nattempt as \
-         the user of the environment of the task."
+         the user of the environment of the task, or as the user that\nthe task.toml of the \
+         task names."
     ));
 }
 

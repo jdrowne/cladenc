@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io::Write;
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
@@ -45,6 +46,7 @@ impl<'a> Limits<'a> {
 
 pub(super) fn run(
     mut command: Command,
+    input: &str,
     running: &Path,
     limits: Limits<'_>,
 ) -> Result<Ending, ContainerError> {
@@ -52,13 +54,14 @@ pub(super) fn run(
         .and_then(|stdout| File::create(running.join("stderr")).map(|stderr| (stdout, stderr)))
         .and_then(|(stdout, stderr)| {
             command
-                .stdin(Stdio::null())
+                .stdin(Stdio::piped())
                 .stdout(stdout)
                 .stderr(stderr)
                 .process_group(0)
                 .spawn()
         })
         .map_err(ContainerError::Io)?;
+    give(&mut program, input);
     loop {
         if let Some(status) = program.try_wait().ok().flatten() {
             return status
@@ -76,6 +79,13 @@ pub(super) fn run(
         }
         thread::sleep(LOOK);
     }
+}
+
+pub(super) fn give(program: &mut Child, input: &str) {
+    let _ = program
+        .stdin
+        .take()
+        .map(|mut standard_input| standard_input.write_all(input.as_bytes()));
 }
 
 fn kill(program: &mut Child) {

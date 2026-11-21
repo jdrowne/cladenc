@@ -482,6 +482,77 @@ fn the_section_of_cladenc_start_says_that_an_environment_that_is_not_built_stops
 }
 
 #[test]
+fn the_section_of_cladenc_start_says_that_a_task_that_names_an_image_has_it_as_its_environment() {
+    assert!(what_is_said_of("start").contains(
+        "A task whose `task.toml` names an image, as `docker_image` under `environment`, has \
+         that image as its environment: `cladenc` builds nothing for the task, and the task \
+         needs no `environment` directory."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_an_image_that_is_not_on_the_machine_stops_with_status_2()
+{
+    assert!(what_is_said_of("start").contains(
+        "The image has to be on the machine, since `cladenc` fetches no image, and a task whose \
+         image is not on the machine stops the directed evolution with exit status 2."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_what_of_a_task_toml_takes_the_place_of_what_the_image_names() {
+    assert!(what_is_said_of("start").contains(
+        "`workdir` under `environment` is the working directory of the harness and of the \
+         grader, `user` under `agent` is the user the harness runs as, and `user` under \
+         `verifier` is the user the grader runs as, each user a name or a number."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_who_is_given_the_variables_of_a_task_toml() {
+    assert!(what_is_said_of("start").contains(
+        "The variables under `env` under `environment` are given to the container, so to the \
+         harness and the grader alike, and those under `env` under `verifier` to the grader \
+         alone."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_what_a_name_in_braces_stands_for() {
+    assert!(what_is_said_of("start").contains(
+        "In the value of a variable, `${NAME}` stands for the value that the variable `NAME` \
+         has where `cladenc` runs, and `${NAME:-TEXT}` for that value, or for `TEXT` where \
+         `NAME` is not set there."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_the_value_of_a_variable_is_kept_off_command_lines() {
+    assert!(what_is_said_of("start").contains(
+        "`cladenc` keeps the value of every variable of a task off every command line and out \
+         of the journal."
+    ));
+}
+
+#[test]
+fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
+    assert!(readme().contains(
+        "A task may also hold a file named `task.toml`, [Harbor's task \
+         configuration](https://docs.harborframework.com/tasks/configuration), and `cladenc` \
+         obeys what it says of the environment of the task: its image, its working directory, \
+         its users and its variables."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_resume_say_that_it_reads_the_task_toml_of_each_task_again() {
+    assert!(what_is_said_of("resume").contains(
+        "It reads the `task.toml` of the copy of each task again, with the variables it names \
+         as they are set where `cladenc resume` runs."
+    ));
+}
+
+#[test]
 fn the_steps_of_cladenc_resume_build_the_environments_again_under_the_same_names() {
     assert!(what_is_said_of("resume").contains(
         "\n2. It builds the environment of every task again, as `cladenc start` does, from the \

@@ -77,10 +77,11 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
         }
         Started::Attempt { harness, task } => cleared
             .and_then(|()| {
+                let environment = shared.environments.get(&task).cloned().unwrap_or_default();
                 let attempt = Attempt {
                     harness,
                     task: &task,
-                    environment_image: shared.environments.get(&task).map_or("", String::as_str),
+                    environment: &environment,
                 };
                 containers::run_attempt(outputs_directory, &shared.launch, attempt, &shared.halt)
             })

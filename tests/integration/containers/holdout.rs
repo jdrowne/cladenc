@@ -2,7 +2,7 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, ContainerError, Launch};
+use cladenc::containers::{self, Attempt, ContainerError, Environment, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -48,6 +48,13 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
+fn environment() -> Environment {
+    Environment {
+        image: test_inputs::IMAGE.to_owned(),
+        ..Environment::default()
+    }
+}
+
 fn attempted(
     run_command: &str,
     task: &str,
@@ -63,7 +70,7 @@ fn attempted(
         Attempt {
             harness: 0,
             task,
-            environment_image: test_inputs::IMAGE,
+            environment: &environment(),
         },
         &AtomicBool::new(false),
     );

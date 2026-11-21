@@ -2,6 +2,7 @@ mod containers {
     mod attempt;
     mod baseline;
     mod build;
+    mod configuration;
     mod environment;
     mod holdout;
     mod image;
@@ -18,6 +19,7 @@ mod directed_evolution {
     mod alike;
     mod built;
     mod concurrent;
+    mod configuration;
     mod ended;
     mod environment;
     mod experiment;

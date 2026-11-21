@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fmt::Write;
 use std::fs::File;
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
@@ -7,9 +8,9 @@ use std::time::Instant;
 
 use nix::unistd::{Gid, Uid};
 
-use super::ContainerError;
 use super::left;
 use super::program::{self, Ending, LEEWAY, Limits};
+use super::{ContainerError, Environment};
 use crate::outputs_directory::{OutputsDirectory, make_removable};
 
 const NOT_STARTED: i32 = 125;
@@ -18,6 +19,7 @@ const TIMER: &str =
     r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
 const SETTINGS: &str = "{{println .Config.User}}{{.Config.WorkingDir}}";
 const ROOT: &str = "0";
+const STANDARD_INPUT: &str = "/dev/stdin";
 const EMPTIED: &str = r#"rm -rf "$1" && mkdir -p "$1""#;
 
 pub(super) struct Mount<'a> {
@@ -38,9 +40,15 @@ pub(super) struct Container<'a> {
     pub(super) working_directory: &'a str,
 }
 
+pub(super) struct Run<'a> {
+    pub(super) shell: &'a Shell<'a>,
+    pub(super) user: &'a str,
+    pub(super) variables: &'a [(String, String)],
+}
+
 pub(super) struct Up {
     name: String,
-    owner: String,
+    user: String,
     working_directory: String,
 }
 
@@ -56,7 +64,7 @@ impl Container<'_> {
         shell.given_to(&mut docker);
         docker.arg(self.image);
         shell.timed(&mut docker, limits);
-        let ended = program::run(docker, running, limits);
+        let ended = program::run(docker, "", running, limits);
         if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
             remove(&name);
         }
@@ -79,20 +87,28 @@ impl Container<'_> {
 impl Up {
     pub(super) fn start(
         outputs_directory: &OutputsDirectory,
-        image: &str,
+        environment: &Environment,
         running: &Path,
         limits: Limits<'_>,
     ) -> Result<Self, ContainerError> {
+        let configuration = &environment.configuration;
         let mut up = Self {
             name: named(),
-            owner: String::new(),
+            user: String::new(),
             working_directory: String::new(),
         };
         let mut docker = docker_run(outputs_directory, &up.name);
         docker
-            .args(["--detach", image, "sleep"])
+            .args(
+                configuration
+                    .working_directory
+                    .iter()
+                    .flat_map(|directory| ["--workdir", directory]),
+            )
+            .args(["--env-file", STANDARD_INPUT])
+            .args(["--detach", &environment.image, "sleep"])
             .arg(seconds_of_the_timer(limits.deadline).to_string());
-        detached(docker, running)?;
+        detached(docker, &file_of(&configuration.variables), running)?;
         let mut inspect = Command::new("docker");
         inspect.args(["inspect", "--format", SETTINGS, &up.name]);
         left::printed_by(inspect)
@@ -100,28 +116,33 @@ impl Up {
                 let mut lines = printed.lines();
                 let user = lines.next().unwrap_or_default();
                 let working_directory = lines.next().unwrap_or_default().trim_matches('/');
-                up.owner = if user.is_empty() { ROOT } else { user }.to_owned();
+                up.user = if user.is_empty() { ROOT } else { user }.to_owned();
                 up.working_directory = format!("/{working_directory}");
                 up
             })
             .map_err(ContainerError::Io)
     }
 
+    pub(super) fn user(&self) -> &str {
+        &self.user
+    }
+
     pub(super) fn run(
         &self,
-        shell: &Shell<'_>,
+        run: &Run<'_>,
         running: &Path,
         limits: Limits<'_>,
     ) -> Result<Ending, ContainerError> {
         let mut docker = Command::new("docker");
-        docker.arg("exec");
-        shell.given_to(&mut docker);
-        docker.arg(&self.name);
-        shell.timed(&mut docker, limits);
-        started(program::run(docker, running, limits), running)
+        docker.args(["exec", "--env-file", STANDARD_INPUT]);
+        run.shell.given_to(&mut docker);
+        docker.args(["--user", run.user, &self.name]);
+        run.shell.timed(&mut docker, limits);
+        let ended = program::run(docker, &file_of(run.variables), running, limits);
+        started(ended, running)
     }
 
-    pub(super) fn put(&self, from: &Path, to: &str) -> Result<(), ContainerError> {
+    pub(super) fn put(&self, from: &Path, to: &str, owner: &str) -> Result<(), ContainerError> {
         let mut emptied = self.as_root();
         emptied.args(["sh", "-c", EMPTIED, "sh", to]);
         let mut copied = Command::new("docker");
@@ -130,7 +151,7 @@ impl Up {
             .arg(from.join("."))
             .arg(format!("{}:{to}", self.name));
         let mut owned = self.as_root();
-        owned.args(["chown", "-R", &self.owner, to]);
+        owned.args(["chown", "-R", owner, to]);
         [emptied, copied, owned]
             .into_iter()
             .try_for_each(|docker| left::printed_by(docker).map(drop))
@@ -211,15 +232,28 @@ fn docker_run(outputs_directory: &OutputsDirectory, name: &str) -> Command {
     docker
 }
 
-fn detached(mut docker: Command, running: &Path) -> Result<(), ContainerError> {
+pub(super) fn file_of(variables: &[(String, String)]) -> String {
+    variables
+        .iter()
+        .fold(String::new(), |mut file, (name, value)| {
+            let _ = writeln!(file, "{name}={value}");
+            file
+        })
+}
+
+fn detached(mut docker: Command, input: &str, running: &Path) -> Result<(), ContainerError> {
     let said = running.join("stderr");
     let status = File::create(&said)
         .and_then(|stderr| {
             docker
-                .stdin(Stdio::null())
+                .stdin(Stdio::piped())
                 .stdout(Stdio::null())
                 .stderr(stderr)
-                .status()
+                .spawn()
+        })
+        .and_then(|mut docker| {
+            program::give(&mut docker, input);
+            docker.wait()
         })
         .map_err(ContainerError::Io)?;
     match status.code() {

@@ -11,7 +11,8 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
-use crate::containers::{self, ContainerError, Launch};
+use crate::benchmark::TaskConfiguration;
+use crate::containers::{self, ContainerError, Environment, Launch};
 use crate::genealogy::HarnessId;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
@@ -32,10 +33,15 @@ pub struct Found {
 
 struct Shared<'a> {
     launch: Launch<'a>,
-    environments: BTreeMap<String, String>,
+    environments: BTreeMap<String, Environment>,
     outputs_directory: OutputsDirectory,
     halt: AtomicBool,
     sender: Sender<Ended>,
+}
+
+struct Made {
+    outputs_directory: OutputsDirectory,
+    environments: BTreeMap<String, Environment>,
 }
 
 pub fn start(
@@ -50,7 +56,7 @@ pub fn start(
         primogenitor: &settings.primogenitor,
     };
     say(writer, &making);
-    let (outputs_directory, journal) = OutputsDirectory::create(path, &settings.primogenitor)
+    let (made, journal) = OutputsDirectory::create(path, &settings.primogenitor)
         .and_then(|outputs_directory| {
             settings
                 .benchmarks
@@ -69,12 +75,15 @@ pub fn start(
         .inspect(|_| say_the_holdout(settings, writer))
         .and_then(|outputs_directory| {
             build_image(settings, &outputs_directory, stop, writer)
-                .and_then(|()| build_environments(settings, &outputs_directory, stop, writer))
-                .map(|()| outputs_directory)
+                .and_then(|()| environments(settings, &outputs_directory, stop, writer))
+                .map(|environments| Made {
+                    outputs_directory,
+                    environments,
+                })
         })
-        .and_then(|outputs_directory| {
+        .and_then(|made| {
             Journal::open(path)
-                .map(|journal| (outputs_directory, journal))
+                .map(|journal| (made, journal))
                 .map_err(DirectedEvolutionError::Journal)
         })?;
     let mut progress = Progress::new(settings, journal, writer);
@@ -82,7 +91,7 @@ pub fn start(
         format: journal::FORMAT,
         settings: Box::new(settings.clone()),
     });
-    carry_on(settings, key.as_deref(), outputs_directory, progress, stop)
+    carry_on(settings, key.as_deref(), made, progress, stop)
 }
 
 fn say_the_holdout(settings: &Settings, writer: &mut dyn Write) {
@@ -136,42 +145,94 @@ fn build_image(
     }
 }
 
-fn build_environments(
+fn environments(
     settings: &Settings,
     outputs_directory: &OutputsDirectory,
     stop: &AtomicBool,
     writer: &mut dyn Write,
-) -> Result<(), DirectedEvolutionError> {
-    let environments = settings.environments();
-    for (task, image) in &environments {
-        say(
-            writer,
-            &Said::Environments(Environments::Building { task, image }),
-        );
-        containers::build_environment(outputs_directory, task, image, stop).map_err(|error| {
-            match error {
-                ContainerError::Stopped => DirectedEvolutionError::Asked,
-                error => {
-                    let not_built = Said::Environments(Environments::NotBuilt {
-                        task,
-                        error: &error,
-                        outputs_directory,
-                    });
-                    say(writer, &not_built);
-                    DirectedEvolutionError::Environment {
-                        task: task.clone(),
-                        error,
-                    }
+) -> Result<BTreeMap<String, Environment>, DirectedEvolutionError> {
+    let mut environments = BTreeMap::new();
+    let mut count_built = 0;
+    for (task, image) in settings.environments() {
+        let configuration =
+            TaskConfiguration::read(&outputs_directory.task(&task)).map_err(|error| {
+                DirectedEvolutionError::Configuration {
+                    task: task.clone(),
+                    error,
                 }
+            })?;
+        let image = match configuration.docker_image.clone() {
+            Some(named) => take_image(&task, named, writer)?,
+            None => {
+                count_built += 1;
+                build_environment(outputs_directory, &task, image, stop, writer)?
             }
-        })?;
+        };
+        let environment = Environment {
+            image,
+            configuration,
+        };
+        environments.insert(task, environment);
     }
-    let built = Said::Environments(Environments::Built {
-        tasks: environments.len() as u64,
-        outputs_directory,
+    if count_built > 0 {
+        let built = Said::Environments(Environments::Built {
+            built: count_built,
+            tasks: environments.len() as u64,
+            outputs_directory,
+        });
+        say(writer, &built);
+    }
+    Ok(environments)
+}
+
+fn take_image(
+    task: &str,
+    image: String,
+    writer: &mut dyn Write,
+) -> Result<String, DirectedEvolutionError> {
+    let taking = Said::Environments(Environments::Taking {
+        task,
+        image: &image,
     });
-    say(writer, &built);
-    Ok(())
+    say(writer, &taking);
+    match containers::find_image(&image) {
+        Ok(()) => Ok(image),
+        Err(error) => Err(DirectedEvolutionError::NotOnTheMachine {
+            task: task.to_owned(),
+            image,
+            error,
+        }),
+    }
+}
+
+fn build_environment(
+    outputs_directory: &OutputsDirectory,
+    task: &str,
+    image: String,
+    stop: &AtomicBool,
+    writer: &mut dyn Write,
+) -> Result<String, DirectedEvolutionError> {
+    let building = Said::Environments(Environments::Building {
+        task,
+        image: &image,
+    });
+    say(writer, &building);
+    match containers::build_environment(outputs_directory, task, &image, stop) {
+        Ok(()) => Ok(image),
+        Err(ContainerError::Stopped) => Err(DirectedEvolutionError::Asked),
+        Err(error) => {
+            let not_built = Said::Environments(Environments::NotBuilt {
+                task,
+                error: &error,
+                outputs_directory,
+            });
+            say(writer, &not_built);
+            Err(DirectedEvolutionError::Environment {
+                task: task.to_owned(),
+                error,
+            })
+        }
+    }
 }
 
 pub fn resume(
@@ -223,13 +284,17 @@ pub fn resume(
                 harnesses: genealogy.harness_count(),
             };
             say(writer, &continuing);
-            build_environments(&settings, &outputs_directory, stop, writer)?;
+            let environments = environments(&settings, &outputs_directory, stop, writer)?;
+            let made = Made {
+                outputs_directory,
+                environments,
+            };
             let progress = Progress::new(&settings, journal, writer).resumed(
                 genealogy,
                 unfinished,
                 next_action,
             );
-            carry_on(&settings, key.as_deref(), outputs_directory, progress, stop)
+            carry_on(&settings, key.as_deref(), made, progress, stop)
         }
     }
 }
@@ -237,10 +302,14 @@ pub fn resume(
 fn carry_on(
     settings: &Settings,
     key: Option<&str>,
-    outputs_directory: OutputsDirectory,
+    made: Made,
     mut progress: Progress<'_>,
     stop: &AtomicBool,
 ) -> Result<Found, DirectedEvolutionError> {
+    let Made {
+        outputs_directory,
+        environments,
+    } = made;
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {
         progress.say(&Said::Building);
@@ -261,7 +330,7 @@ fn carry_on(
     let (sender, receiver) = mpsc::channel();
     let shared = Shared {
         launch,
-        environments: settings.environments().into_iter().collect(),
+        environments,
         outputs_directory,
         halt: AtomicBool::new(false),
         sender,

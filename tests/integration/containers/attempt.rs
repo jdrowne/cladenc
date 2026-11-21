@@ -127,13 +127,17 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         attempt_timeout: attempt.time_limit,
     };
     let stop = AtomicBool::new(false);
+    let environment = containers::Environment {
+        image: environment_image.clone(),
+        ..containers::Environment::default()
+    };
     let result = containers::run_attempt(
         &outputs_directory,
         &launch,
         containers::Attempt {
             harness: attempt.harness,
             task: TASK,
-            environment_image: &environment_image,
+            environment: &environment,
         },
         &stop,
     );

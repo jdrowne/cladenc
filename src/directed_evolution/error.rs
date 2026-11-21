@@ -3,6 +3,7 @@ use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::path::PathBuf;
 
+use crate::benchmark::ConfigurationError;
 use crate::containers::ContainerError;
 use crate::journal::{JournalError, Started};
 
@@ -13,6 +14,15 @@ pub enum DirectedEvolutionError {
     Key(PathBuf),
     Left(io::Error),
     Image(ContainerError),
+    Configuration {
+        task: String,
+        error: ConfigurationError,
+    },
+    NotOnTheMachine {
+        task: String,
+        image: String,
+        error: io::Error,
+    },
     Environment {
         task: String,
         error: ContainerError,
@@ -46,6 +56,15 @@ impl Display for DirectedEvolutionError {
             Self::Image(error) => write!(
                 formatter,
                 "the image of the directed evolution was not built: its build {error}"
+            ),
+            Self::Configuration { task, error } => write!(
+                formatter,
+                "task {task} cannot be attempted: its task.toml {error}"
+            ),
+            Self::NotOnTheMachine { task, image, error } => write!(
+                formatter,
+                "the environment of task {task} is not on the machine: its task.toml names the \
+                 image {image}, and cladenc fetches no image: {error}"
             ),
             Self::Environment { task, error } => write!(
                 formatter,

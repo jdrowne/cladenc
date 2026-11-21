@@ -1,0 +1,243 @@
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
+
+use cladenc::benchmark::{Benchmark, ConfigurationError};
+use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::journal::{self, Settings};
+use tempfile::TempDir;
+
+const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
+const NEVER_SET: &str = "[verifier.env]\nKEY = \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET}\"\n";
+const SAY_THE_MODE_OR_END_WITH_125: &str = "[ -e end-with-125 ] && exit 125; echo \"$MODE\"";
+
+struct Evolved {
+    directory: TempDir,
+    found: Result<Found, DirectedEvolutionError>,
+    said: String,
+}
+
+fn in_the_image(image: &str) -> String {
+    format!("[environment]\ndocker_image = \"{image}\"\n")
+}
+
+fn settings(directory: &Path, task_tomls: &[(&str, &str)]) -> Settings {
+    let benchmark = test_inputs::benchmark(directory, &["t1", "t2", "t3"]);
+    for (task, task_toml) in task_tomls {
+        fs::write(benchmark.join(task).join("task.toml"), task_toml).unwrap();
+    }
+    Settings {
+        primogenitor: test_inputs::primogenitor(directory),
+        model: test_inputs::MODEL.to_owned(),
+        model_url: test_inputs::MODEL_URL.to_owned(),
+        model_key_file: None,
+        benchmarks: vec![Benchmark::read(&benchmark).unwrap()],
+        docker_image: test_inputs::IMAGE.to_owned(),
+        dockerfile: None,
+        docker_build_timeout: None,
+        harness_build_command: None,
+        harness_run_command: SAY_THE_MODE_OR_END_WITH_125.to_owned(),
+        max_procreations: 1,
+        max_concurrent_containers: 1,
+        procreation_timeout: 30,
+        attempt_timeout: 30,
+        selection_tasks_percentage: 17.0,
+        holdout_tasks: vec!["benchmark/t3".to_owned()],
+        corroboration_tasks_percentage: 17.0,
+        corroboration_tasks: Vec::new(),
+        environment_image_repository: test_inputs::environment_image_repository(),
+        seed: 7,
+    }
+}
+
+fn evolved(task_tomls: &[(&str, &str)]) -> Evolved {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path(), task_tomls);
+    let mut written = Vec::new();
+    let found = directed_evolution::start(
+        &settings,
+        &directory.path().join("outputs"),
+        &AtomicBool::new(false),
+        &mut written,
+    );
+    Evolved {
+        directory,
+        found,
+        said: String::from_utf8(written).unwrap(),
+    }
+}
+
+fn with_t2_in(image: &str) -> Evolved {
+    evolved(&[("t2", &in_the_image(image))])
+}
+
+fn stopped_and_resumed(task_toml_of_t2: &str, change: impl FnOnce(&Path)) -> Evolved {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path(), &[("t2", task_toml_of_t2)]);
+    let outputs_directory = directory.path().join("outputs");
+    test_inputs::end_with_125_on(directory.path(), "t3");
+    let _ = directed_evolution::start(
+        &settings,
+        &outputs_directory,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    );
+    test_inputs::end_with_125_on_no_more(&outputs_directory, "t3");
+    change(&outputs_directory);
+    let mut written = Vec::new();
+    let found =
+        directed_evolution::resume(&outputs_directory, &AtomicBool::new(false), &mut written);
+    Evolved {
+        directory,
+        found,
+        said: String::from_utf8(written).unwrap(),
+    }
+}
+
+fn outputs_of(evolved: &Evolved) -> PathBuf {
+    evolved.directory.path().join("outputs")
+}
+
+fn kept_task_toml_of_t2(outputs_directory: &Path) -> PathBuf {
+    outputs_directory.join("benchmarks/benchmark/t2/task.toml")
+}
+
+fn printed_in_the_attempt_at(evolved: &Evolved, task: &str) -> String {
+    let attempt = test_inputs::kept_attempt(&outputs_of(evolved), 0, task);
+    fs::read_to_string(attempt.join("stdout")).unwrap()
+}
+
+#[test]
+fn a_directed_evolution_builds_no_environment_for_a_task_whose_task_toml_names_an_image() {
+    assert!(
+        !with_t2_in(test_inputs::IMAGE)
+            .said
+            .contains("cladenc: building the environment of task benchmark/t2 ")
+    );
+}
+
+#[test]
+fn a_directed_evolution_says_that_it_takes_the_image_a_task_names_as_the_environment_of_the_task() {
+    assert!(with_t2_in(test_inputs::IMAGE).said.contains(
+        "cladenc: taking the image debian:stable-slim as the environment of task benchmark/t2, \
+         as its task.toml says\n"
+    ));
+}
+
+#[test]
+fn a_directed_evolution_says_how_many_of_the_environments_it_built() {
+    let evolved = with_t2_in(test_inputs::IMAGE);
+    assert!(evolved.said.contains(&format!(
+        "cladenc: built the environments of 2 of the 3 tasks: what Docker printed is kept in \
+         {}/environments\n",
+        outputs_of(&evolved).display()
+    )));
+}
+
+#[test]
+fn a_directed_evolution_in_which_every_task_names_an_image_says_of_none_that_it_was_built() {
+    let image = in_the_image(test_inputs::IMAGE);
+    let evolved = evolved(&[("t1", &image), ("t2", &image), ("t3", &image)]);
+    assert!(!evolved.said.contains("cladenc: built the environment"));
+}
+
+#[test]
+fn a_directed_evolution_in_which_every_task_names_an_image_runs_to_its_end() {
+    let image = in_the_image(test_inputs::IMAGE);
+    assert!(
+        evolved(&[("t1", &image), ("t2", &image), ("t3", &image)])
+            .found
+            .is_ok()
+    );
+}
+
+#[test]
+fn an_attempt_at_a_task_that_names_an_image_is_carried_out_in_a_container_of_that_image() {
+    let evolved = with_t2_in(test_inputs::IMAGE);
+    let attempt = test_inputs::kept_attempt(&outputs_of(&evolved), 0, "benchmark/t2");
+    assert!(!attempt.join("work").exists());
+}
+
+#[test]
+fn an_attempt_at_a_task_is_given_the_variables_its_task_toml_names() {
+    let evolved = evolved(&[("t1", "[environment.env]\nMODE = \"strict\"\n")]);
+    assert_eq!(
+        printed_in_the_attempt_at(&evolved, "benchmark/t1"),
+        "strict\n"
+    );
+}
+
+#[test]
+fn an_attempt_at_a_task_is_given_no_variable_that_another_task_names() {
+    let evolved = evolved(&[("t1", "[environment.env]\nMODE = \"strict\"\n")]);
+    assert_eq!(printed_in_the_attempt_at(&evolved, "benchmark/t2"), "\n");
+}
+
+#[test]
+fn a_task_whose_image_is_not_on_the_machine_stops_the_directed_evolution_naming_both() {
+    assert!(matches!(
+        with_t2_in(NOT_ON_THE_MACHINE).found,
+        Err(DirectedEvolutionError::NotOnTheMachine { task, image, .. })
+            if task == "benchmark/t2" && image == NOT_ON_THE_MACHINE
+    ));
+}
+
+#[test]
+fn a_task_whose_image_is_not_on_the_machine_leaves_the_directed_evolution_no_journal() {
+    let evolved = with_t2_in(NOT_ON_THE_MACHINE);
+    assert!(!journal::path(&outputs_of(&evolved)).exists());
+}
+
+#[test]
+fn a_task_whose_image_is_not_on_the_machine_leaves_the_environments_after_it_unbuilt() {
+    assert!(
+        !with_t2_in(NOT_ON_THE_MACHINE)
+            .said
+            .contains("environment of task benchmark/t3")
+    );
+}
+
+#[test]
+fn a_resumed_directed_evolution_takes_the_image_a_task_names_again() {
+    let image = in_the_image(test_inputs::IMAGE);
+    assert!(stopped_and_resumed(&image, |_| ()).said.contains(
+        "cladenc: taking the image debian:stable-slim as the environment of task benchmark/t2, \
+         as its task.toml says\n"
+    ));
+}
+
+#[test]
+fn a_resumed_directed_evolution_whose_task_names_an_image_runs_to_its_end() {
+    let image = in_the_image(test_inputs::IMAGE);
+    assert!(stopped_and_resumed(&image, |_| ()).found.is_ok());
+}
+
+#[test]
+fn a_resumed_directed_evolution_reads_the_task_toml_of_the_copy_of_a_task() {
+    let evolved = stopped_and_resumed("", |outputs_directory| {
+        fs::write(kept_task_toml_of_t2(outputs_directory), NEVER_SET).unwrap();
+    });
+    assert!(matches!(
+        evolved.found,
+        Err(DirectedEvolutionError::Configuration {
+            task,
+            error: ConfigurationError::NotSet { .. },
+        }) if task == "benchmark/t2"
+    ));
+}
+
+#[test]
+fn a_resumed_directed_evolution_stops_for_an_image_that_is_no_longer_on_the_machine() {
+    let evolved = stopped_and_resumed("", |outputs_directory| {
+        fs::write(
+            kept_task_toml_of_t2(outputs_directory),
+            in_the_image(NOT_ON_THE_MACHINE),
+        )
+        .unwrap();
+    });
+    assert!(matches!(
+        evolved.found,
+        Err(DirectedEvolutionError::NotOnTheMachine { task, .. }) if task == "benchmark/t2"
+    ));
+}

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::BenchmarkError;
+use crate::benchmark::configuration::ConfigurationError;
 
 fn task() -> String {
     "fix-the-parser".to_owned()
@@ -65,7 +66,73 @@ fn a_task_with_no_environment_is_said_with_its_id() {
     assert_eq!(
         BenchmarkError::NoEnvironment { task: task() }.to_string(),
         "task fix-the-parser holds no directory named environment with a file named \
-         Dockerfile in it"
+         Dockerfile in it, and its task.toml names no image in its place"
+    );
+}
+
+#[test]
+fn a_task_whose_task_toml_cannot_be_obeyed_is_said_with_its_id_and_why() {
+    assert_eq!(
+        BenchmarkError::Configuration {
+            task: task(),
+            error: ConfigurationError::Unreadable {
+                reason: "Is a directory (os error 21)".to_owned()
+            },
+        }
+        .to_string(),
+        "task fix-the-parser holds a task.toml that cannot be read: Is a directory (os error 21)"
+    );
+}
+
+#[test]
+fn a_task_toml_that_is_not_valid_is_said_with_its_line_and_why() {
+    assert_eq!(
+        ConfigurationError::NotValid {
+            line: 7,
+            reason: "invalid type: integer `3`, expected a string".to_owned()
+        }
+        .to_string(),
+        "is not valid at line 7: invalid type: integer `3`, expected a string"
+    );
+}
+
+#[test]
+fn a_variable_that_is_not_named_as_one_is_said_with_its_table_and_its_name() {
+    assert_eq!(
+        ConfigurationError::NotAName {
+            table: "environment",
+            name: "API TOKEN".to_owned()
+        }
+        .to_string(),
+        "names a variable `API TOKEN` under environment.env, and the name of a variable is made \
+         of letters, digits, dots, underscores and hyphens alone"
+    );
+}
+
+#[test]
+fn a_variable_that_is_not_set_is_said_with_the_variable_it_takes_its_value_from() {
+    assert_eq!(
+        ConfigurationError::NotSet {
+            table: "verifier",
+            name: "API_TOKEN".to_owned(),
+            variable: "TOKEN".to_owned()
+        }
+        .to_string(),
+        "gives API_TOKEN under verifier.env the value of TOKEN, which is not set where cladenc \
+         runs"
+    );
+}
+
+#[test]
+fn a_variable_whose_value_is_not_one_line_is_said_with_its_table_and_its_name() {
+    assert_eq!(
+        ConfigurationError::NotOneLine {
+            table: "environment",
+            name: "NOTE".to_owned()
+        }
+        .to_string(),
+        "gives NOTE under environment.env a value that is not one line of text, which a \
+         container cannot be given"
     );
 }
 

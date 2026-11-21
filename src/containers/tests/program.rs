@@ -10,6 +10,11 @@ fn a_program_that_a_signal_ends_is_said_to_be_ended_by_that_signal() {
     let stop = AtomicBool::new(false);
     let mut killed = Command::new("sh");
     killed.args(["-c", "kill -s KILL $$"]);
-    let ended = program::run(killed, directory.path(), Limits::starting_now(60, &stop));
+    let ended = program::run(
+        killed,
+        "",
+        directory.path(),
+        Limits::starting_now(60, &stop),
+    );
     assert!(matches!(ended, Err(ContainerError::Signal(9))));
 }
