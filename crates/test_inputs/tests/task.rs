@@ -46,7 +46,7 @@ fn the_workspace_holds_a_file_of_work_to_do() {
 fn the_environment_is_built_from_the_test_image() {
     assert_eq!(
         written_in("environment/Dockerfile"),
-        "FROM debian:13.7-slim\n"
+        "FROM debian:stable-slim\n"
     );
 }
 

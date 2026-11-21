@@ -1,4 +1,4 @@
-FROM debian:13.7-slim
+FROM debian:stable-slim
 
 RUN apt-get update \
  && apt-get install --yes --no-install-recommends python3 diffutils grep sed gawk procps \

@@ -14,4 +14,4 @@ metadata:
 
 **Why:** Fedora is not needed, and `.deb` packages are enough.
 
-**How to apply:** `package` in `.github/workflows/release.yml` makes `cladenc-linux-arm64.deb` with nfpm, and `test-package` installs it with `apt-get install` on a clean `debian:13.7-slim`, the image every container of CI starts from, and runs `cladenc --version`, `docker --version` and `timeout --version`. Do not add another package format, or a system to test one on, unless the user asks. The platform is set by [[every-build-is-for-linux-arm64]].
+**How to apply:** `package` in `.github/workflows/release.yml` makes `cladenc-linux-arm64.deb` with nfpm, and `test-package` installs it with `apt-get install` on a clean `debian:stable-slim`, the image every container of CI starts from, and runs `cladenc --version`, `docker --version` and `timeout --version`. Do not add another package format, or a system to test one on, unless the user asks. The platform is set by [[every-build-is-for-linux-arm64]].

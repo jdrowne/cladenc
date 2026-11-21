@@ -1,2 +1,2 @@
-FROM debian:13.7-slim
+FROM debian:stable-slim
 RUN touch /made-here
