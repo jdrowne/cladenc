@@ -11,7 +11,8 @@ use crate::outputs_directory::holds_only_harness_files;
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
 const WORKSPACE: &str = "workspace";
-const GRADER: &str = "grader";
+pub(crate) const TESTS: &str = "tests";
+const GRADER: &str = "test.sh";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Benchmark {
@@ -130,7 +131,8 @@ impl Display for BenchmarkError {
             }
             Self::NoGrader { task } => write!(
                 formatter,
-                "task {task} holds no executable file named {GRADER}"
+                "task {task} holds no directory named {TESTS} with an executable file named \
+                 {GRADER} in it"
             ),
             Self::OtherFiles { task } => write!(
                 formatter,
@@ -154,8 +156,8 @@ fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
     directories.retain(|entry| entry.is_dir());
     directories.sort();
     if is_specification(&benchmark.join(SPECIFICATION))
-        && is_workspace(&benchmark.join(WORKSPACE))
-        && is_program(&benchmark.join(GRADER))
+        && is_directory(&benchmark.join(WORKSPACE))
+        && is_grader(benchmark)
     {
         return Err(BenchmarkError::OneTask);
     }
@@ -183,10 +185,10 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if !is_specification(&directory.join(SPECIFICATION)) {
         return Err(BenchmarkError::NoSpecification { task });
     }
-    if !is_workspace(&directory.join(WORKSPACE)) {
+    if !is_directory(&directory.join(WORKSPACE)) {
         return Err(BenchmarkError::NoWorkspace { task });
     }
-    if !is_program(&directory.join(GRADER)) {
+    if !is_grader(directory) {
         return Err(BenchmarkError::NoGrader { task });
     }
     if !can_be_copied(directory) {
@@ -208,8 +210,13 @@ fn is_specification(file: &Path) -> bool {
             .is_ok_and(|text| !text.trim().is_empty() && !text.contains('\0'))
 }
 
-fn is_workspace(directory: &Path) -> bool {
+fn is_directory(directory: &Path) -> bool {
     fs::symlink_metadata(directory).is_ok_and(|files| files.is_dir())
+}
+
+fn is_grader(task: &Path) -> bool {
+    let tests = task.join(TESTS);
+    is_directory(&tests) && is_program(&tests.join(GRADER))
 }
 
 fn is_program(file: &Path) -> bool {

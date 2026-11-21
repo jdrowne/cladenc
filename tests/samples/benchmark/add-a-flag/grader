@@ -1,2 +1,0 @@
-#!/bin/sh
-[ "$(sh greet.sh --loud)" = HELLO ]

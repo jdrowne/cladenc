@@ -173,7 +173,7 @@ fn a_task_whose_workspace_is_a_file_is_refused() {
 #[test]
 fn a_task_with_no_grader_is_refused() {
     assert_eq!(
-        refused(|benchmark| fs::remove_file(benchmark.join("t2/grader")).unwrap()),
+        refused(|benchmark| fs::remove_file(benchmark.join("t2/tests/test.sh")).unwrap()),
         no_grader()
     );
 }
@@ -183,7 +183,7 @@ fn a_task_whose_grader_is_not_executable_is_refused() {
     assert_eq!(
         refused(|benchmark| {
             fs::set_permissions(
-                benchmark.join("t2/grader"),
+                benchmark.join("t2/tests/test.sh"),
                 fs::Permissions::from_mode(0o640),
             )
             .unwrap();
@@ -196,8 +196,41 @@ fn a_task_whose_grader_is_not_executable_is_refused() {
 fn a_task_whose_grader_is_a_directory_is_refused() {
     assert_eq!(
         refused(|benchmark| {
-            fs::remove_file(benchmark.join("t2/grader")).unwrap();
-            fs::create_dir(benchmark.join("t2/grader")).unwrap();
+            fs::remove_file(benchmark.join("t2/tests/test.sh")).unwrap();
+            fs::create_dir(benchmark.join("t2/tests/test.sh")).unwrap();
+        }),
+        no_grader()
+    );
+}
+
+#[test]
+fn a_task_with_no_directory_named_tests_is_refused() {
+    assert_eq!(
+        refused(|benchmark| fs::remove_dir_all(benchmark.join("t2/tests")).unwrap()),
+        no_grader()
+    );
+}
+
+#[test]
+fn a_task_whose_tests_are_a_symbolic_link_to_a_directory_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::remove_dir_all(benchmark.join("t2/tests")).unwrap();
+            symlink("../t1/tests", benchmark.join("t2/tests")).unwrap();
+        }),
+        no_grader()
+    );
+}
+
+#[test]
+fn a_task_whose_grader_is_an_executable_file_named_grader_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::rename(
+                benchmark.join("t2/tests/test.sh"),
+                benchmark.join("t2/grader"),
+            )
+            .unwrap();
         }),
         no_grader()
     );
@@ -220,7 +253,7 @@ fn a_task_that_holds_a_socket_is_refused() {
 fn the_first_task_that_cannot_be_used_is_the_one_refused() {
     assert_eq!(
         refused(|benchmark| {
-            fs::remove_file(benchmark.join("t1/grader")).unwrap();
+            fs::remove_file(benchmark.join("t1/tests/test.sh")).unwrap();
             fs::remove_file(benchmark.join("t2/instruction.md")).unwrap();
         }),
         BenchmarkError::NoGrader {

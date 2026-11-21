@@ -9,19 +9,21 @@ fn written_in(file: &str) -> String {
     fs::read_to_string(task(directory.path(), "t1").join(file)).unwrap()
 }
 
-fn accepted(solved: Option<&str>) -> bool {
+fn scored(solved: Option<&str>) -> String {
     let directory = temporary_directory();
-    let grader = task(directory.path(), "t1").join("grader");
+    let verifier = directory.path().join("verifier");
+    let grader = fs::read_to_string(task(directory.path(), "t1").join("tests/test.sh")).unwrap();
+    fs::create_dir(&verifier).unwrap();
     if let Some(solved) = solved {
         fs::write(directory.path().join("solved"), solved).unwrap();
     }
     Command::new("sh")
-        .arg(grader)
+        .arg("-c")
+        .arg(grader.replace("/logs/verifier", &verifier.to_string_lossy()))
         .current_dir(directory.path())
         .output()
-        .unwrap()
-        .status
-        .success()
+        .unwrap();
+    fs::read_to_string(verifier.join("reward.txt")).unwrap()
 }
 
 #[test]
@@ -41,14 +43,18 @@ fn the_workspace_holds_a_file_of_work_to_do() {
 }
 
 #[test]
-fn the_grader_looks_for_the_id_of_the_task_on_a_line_of_the_file_solved() {
-    assert_eq!(written_in("grader"), "#!/bin/sh\ngrep -q -x -e t1 solved\n");
+fn the_grader_writes_a_score_of_1_when_a_line_of_the_file_solved_is_the_id_of_the_task() {
+    assert_eq!(
+        written_in("tests/test.sh"),
+        "#!/bin/sh\nif grep -q -x -e t1 solved; then echo 1; else echo 0; fi \
+         > /logs/verifier/reward.txt\n"
+    );
 }
 
 #[test]
 fn the_grader_can_be_run_by_its_owner_and_its_group_and_no_one_else() {
     let directory = temporary_directory();
-    let grader = task(directory.path(), "t1").join("grader");
+    let grader = task(directory.path(), "t1").join("tests/test.sh");
     assert_eq!(
         fs::metadata(grader).unwrap().permissions().mode() & 0o777,
         0o750
@@ -56,21 +62,21 @@ fn the_grader_can_be_run_by_its_owner_and_its_group_and_no_one_else() {
 }
 
 #[test]
-fn the_grader_accepts_work_whose_file_solved_names_the_task() {
-    assert!(accepted(Some("t1\n")));
+fn the_grader_scores_1_for_work_whose_file_solved_names_the_task() {
+    assert_eq!(scored(Some("t1\n")), "1\n");
 }
 
 #[test]
-fn the_grader_accepts_work_whose_file_solved_names_the_task_among_others() {
-    assert!(accepted(Some("t2\nt1\nt3\n")));
+fn the_grader_scores_1_for_work_whose_file_solved_names_the_task_among_others() {
+    assert_eq!(scored(Some("t2\nt1\nt3\n")), "1\n");
 }
 
 #[test]
-fn the_grader_does_not_accept_work_whose_file_solved_names_other_tasks_alone() {
-    assert!(!accepted(Some("t10\nt2\n")));
+fn the_grader_scores_0_for_work_whose_file_solved_names_other_tasks_alone() {
+    assert_eq!(scored(Some("t10\nt2\n")), "0\n");
 }
 
 #[test]
-fn the_grader_does_not_accept_work_that_has_no_file_solved() {
-    assert!(!accepted(None));
+fn the_grader_scores_0_for_work_that_has_no_file_solved() {
+    assert_eq!(scored(None), "0\n");
 }

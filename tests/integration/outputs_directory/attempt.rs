@@ -73,7 +73,7 @@ fn a_started_attempt_holds_the_specification_of_its_task() {
 }
 
 #[test]
-fn a_started_attempt_holds_an_empty_directory_for_what_the_grader_prints() {
+fn a_started_attempt_holds_a_directory_for_the_grader_with_nothing_in_it_but_its_logs() {
     let (_directory, outputs_directory) = started();
     assert_eq!(
         entries(
@@ -81,17 +81,30 @@ fn a_started_attempt_holds_an_empty_directory_for_what_the_grader_prints() {
                 .running_attempt(0, "benchmark/t1")
                 .join("grader")
         ),
+        1
+    );
+}
+
+#[test]
+fn a_started_attempt_holds_an_empty_directory_for_what_the_grader_leaves_in_logs_verifier() {
+    let (_directory, outputs_directory) = started();
+    assert_eq!(
+        entries(
+            outputs_directory
+                .running_attempt(0, "benchmark/t1")
+                .join("grader/logs/verifier")
+        ),
         0
     );
 }
 
 #[test]
-fn a_started_attempt_holds_no_copy_of_the_grader() {
+fn a_started_attempt_holds_no_copy_of_the_tests_of_the_task() {
     let (_directory, outputs_directory) = started();
     assert!(
         !outputs_directory
             .running_attempt(0, "benchmark/t1")
-            .join("work/grader")
+            .join("work/tests")
             .exists()
     );
 }

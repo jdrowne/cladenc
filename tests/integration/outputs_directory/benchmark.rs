@@ -54,7 +54,7 @@ fn the_copy_of_a_benchmark_holds_the_workspace_of_each_task() {
 #[test]
 fn the_grader_of_a_task_stays_executable_in_the_copy() {
     let (_directory, path, _) = copied(&["t1", "t2", "t3"]);
-    let mode = fs::metadata(path.join("benchmarks/benchmark/t1/grader"))
+    let mode = fs::metadata(path.join("benchmarks/benchmark/t1/tests/test.sh"))
         .unwrap()
         .permissions()
         .mode();

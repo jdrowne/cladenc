@@ -1,3 +1,0 @@
-#!/bin/sh
-printf 'one\ntwo' > lines.txt
-[ "$(sh count.sh lines.txt)" -eq 2 ]

@@ -162,11 +162,20 @@ fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness()
 }
 
 #[test]
-fn the_instruction_says_where_what_the_grader_printed_is() {
-    assert!(
-        containers::INSTRUCTION
-            .contains("the directory named grader holds what the grader of the task printed")
-    );
+fn the_instruction_says_where_what_the_grader_printed_and_left_is() {
+    assert!(containers::INSTRUCTION.contains(
+        "the directory named grader holds what the grader of the task printed, in the files \
+         named stdout and stderr, and the files it left in logs/verifier. "
+    ));
+}
+
+#[test]
+fn the_instruction_says_how_the_grader_judged_the_attempt() {
+    assert!(containers::INSTRUCTION.contains(
+        " Once you had ended, the grader ran the tests of the task, which you are not shown, on \
+         what you left, and wrote its score in logs/verifier/reward.txt, or one score for each \
+         label in logs/verifier/reward.json: the task was completed where every score is 1. "
+    ));
 }
 
 #[test]

@@ -235,7 +235,7 @@ impl OutputsDirectory {
         let given = self.task(task);
         let kept = self.attempt(harness, task);
         fs::create_dir(&running)
-            .and_then(|()| fs::create_dir(running.join("grader")))
+            .and_then(|()| fs::create_dir_all(running.join("grader/logs/verifier")))
             .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
             .and_then(|()| copy_tree(&given.join("workspace"), &running.join("work")))
             .and_then(|()| fs::copy(given.join(SPECIFICATION), running.join("specification")))

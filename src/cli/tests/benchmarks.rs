@@ -8,8 +8,8 @@ use crate::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named instruction.md, a directory named workspace and an \
-                     executable file named grader";
+                     a file of text named instruction.md, a directory named workspace and a \
+                     directory named tests with an executable file named test.sh in it";
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
@@ -135,12 +135,13 @@ fn a_benchmark_that_is_one_task_is_said_to_be_one_task() {
 #[test]
 fn a_benchmark_that_is_refused_for_a_task_names_the_benchmark_the_task_and_what_it_lacks() {
     let (directory, reason) = reason_of(|_, benchmarks| {
-        fs::remove_file(benchmarks[0].join("t2/grader")).unwrap();
+        fs::remove_dir_all(benchmarks[0].join("t2/tests")).unwrap();
     });
     assert_eq!(
         reason,
         format!(
-            "{}: task t2 holds no executable file named grader",
+            "{}: task t2 holds no directory named tests with an executable file named test.sh \
+             in it",
             directory.path().join("benchmark").display()
         )
     );

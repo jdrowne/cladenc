@@ -4,6 +4,7 @@ mod grader;
 mod image;
 mod left;
 mod program;
+mod reward;
 mod shown;
 
 use std::error::Error;
@@ -31,24 +32,28 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     task, the file named specification says what you were asked to do, the file named result reads \
     completed, not_completed or timed_out, the directory named work holds the workspace of the \
     task as you left it, the files named stdout and stderr hold what you printed, and the \
-    directory named grader holds what the grader of the task printed. /var/log/cladenc/line holds \
-    one directory for each harness you descend from, named by its id, and \
-    /var/log/cladenc/children one for each harness you made before, created or not. In the \
-    directory of such a harness, the directory named harness holds its source code, the directory \
-    named attempts holds its attempts, laid out as yours are, the directory named procreation \
-    holds what the harness that made it printed, in the files named stdout and stderr, with the id \
-    of that harness in the file named progenitor and one word in the file named outcome, created, \
-    unchanged, failed, build_failed or timed_out, and the directory named build holds what its \
-    build printed. A directory that would hold nothing is not there. Use all of them to find what \
-    to improve, and to see what was changed before and what came of it. Make a change to how the \
-    harness works on any task: one that answers something you saw in several of your attempts, not \
-    in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
-    one. Taking out what does not help is an improvement as well. Change files in the current \
-    directory only: what it holds when you end becomes a new harness, which attempts tasks in its \
-    turn. It may then be asked, as you are now, to improve a copy of its own source code, so a \
-    change that makes it better at that counts as well. Where you leave the current directory as \
-    it was, no new harness is made: a change that you only print in your answer changes no file. \
-    The new harness is judged by tasks that you are not shown.";
+    directory named grader holds what the grader of the task printed, in the files named stdout \
+    and stderr, and the files it left in logs/verifier. Once you had ended, the grader ran the \
+    tests of the task, which you are not shown, on what you left, and wrote its score in \
+    logs/verifier/reward.txt, or one score for each label in logs/verifier/reward.json: the task \
+    was completed where every score is 1. /var/log/cladenc/line holds one directory for each \
+    harness you descend from, named by its id, and /var/log/cladenc/children one for each harness \
+    you made before, created or not. In the directory of such a harness, the directory named \
+    harness holds its source code, the directory named attempts holds its attempts, laid out as \
+    yours are, the directory named procreation holds what the harness that made it printed, in the \
+    files named stdout and stderr, with the id of that harness in the file named progenitor and \
+    one word in the file named outcome, created, unchanged, failed, build_failed or timed_out, and \
+    the directory named build holds what its build printed. A directory that would hold nothing is \
+    not there. Use all of them to find what to improve, and to see what was changed before and \
+    what came of it. Make a change to how the harness works on any task: one that answers \
+    something you saw in several of your attempts, not in one. Leave nothing in the source code \
+    that names a task, a file of a task or the answer to one. Taking out what does not help is an \
+    improvement as well. Change files in the current directory only: what it holds when you end \
+    becomes a new harness, which attempts tasks in its turn. It may then be asked, as you are now, \
+    to improve a copy of its own source code, so a change that makes it better at that counts as \
+    well. Where you leave the current directory as it was, no new harness is made: a change that \
+    you only print in your answer changes no file. The new harness is judged by tasks that you are \
+    not shown.";
 
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";

@@ -11,8 +11,8 @@ const TIMER: &str =
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
                                              echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
                                              ${CLADENC_MODEL_KEY-none}\" > model";
-const SAY_WHAT_THE_GRADER_IS_GIVEN: &str = "echo \"$CLADENC_TASK\" > where-checked; pwd >> \
-                                           where-checked; echo \"${CLADENC_MODEL-none} \
+const SAY_WHAT_THE_GRADER_IS_GIVEN: &str = "ls /tests > where-checked; pwd >> where-checked; \
+                                           echo \"${CLADENC_MODEL-none} \
                                            ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
                                            > model-of-the-grader";
 
@@ -129,11 +129,11 @@ fn the_harness_of_an_attempt_is_told_the_model_the_address_it_is_served_at_and_i
 }
 
 #[test]
-fn the_grader_of_a_task_is_run_on_what_the_harness_left_and_told_where_its_task_is() {
+fn the_grader_of_a_task_is_run_on_what_the_harness_left_beside_the_tests_of_its_task() {
     let (directory, _output) = ran();
     assert_eq!(
         left_by_the_attempt(&directory, "where-checked"),
-        "/var/lib/cladenc/task\n/var/lib/cladenc/work\n"
+        "test.sh\n/var/lib/cladenc/work\n"
     );
 }
 
@@ -241,7 +241,7 @@ fn the_timer_of_a_harness_is_given_its_command_and_five_seconds_more_than_the_ti
 #[test]
 fn the_timer_of_a_grader_is_given_the_grader_of_the_task() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("{TIMER}\n/var/lib/cladenc/task/grader\n")));
+    assert!(arguments.contains(&format!("{TIMER}\n/tests/test.sh\n")));
 }
 
 #[test]

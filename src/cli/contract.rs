@@ -273,12 +273,13 @@ underscores and hyphens, and the directory holds
                   is to be done
   workspace       a directory of the files the work starts from, which may
                   hold none
-  grader          an executable file, the program that says by its exit
-                  status whether the task was completed
+  tests           a directory that holds test.sh, an executable file, the
+                  grader of the task, and whatever else the grader uses
 
-and may hold more, such as tests that the grader runs. A file that is in
-the benchmark and in no task is left alone. A benchmark that holds no task
-is refused, and so is one with a task that lacks one of the three.
+as in Harbor's task layout, and may hold more, such as solution, which no
+container is ever given. A file that is in the benchmark and in no task is
+left alone. A benchmark that holds no task is refused, and so is one with
+a task that lacks one of the three.
 
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on
@@ -452,15 +453,16 @@ First the harness is started in that container, as it is for a procreation.
 /var/lib/cladenc/work holds a copy of the workspace of the task, and
 CLADENC_INSTRUCTION holds the task specification. The harness is given
 nothing else of the task, so it can neither read nor change the grader.
-When the harness has ended, with whatever exit status, the directory of the
-task is copied into the same container, and its grader is run there, as
+When the harness has ended, with whatever exit status, the tests directory
+of the task is copied into the same container, and its grader is run
+there, as
 
-    sh -c <TIMER> /var/lib/cladenc/task/grader <SECONDS>
+    sh -c <TIMER> /tests/test.sh <SECONDS>
 
   /var/lib/cladenc/work  holds what the harness left, and is the working
                          directory
-  /var/lib/cladenc/task  holds a copy of the directory of the task
-  CLADENC_TASK           /var/lib/cladenc/task
+  /tests                 holds a copy of the tests directory of the task
+  /logs/verifier         an empty directory, for the score of the grader
 
 The grader finds the container as the harness left it: the files the
 harness left outside /var/lib/cladenc/work, and the processes it left
@@ -468,16 +470,26 @@ running, are there as well. A grader calls no model, and is given none of
 the three variables of the model. The two steps share the time limit of one
 attempt, and the container is removed once the attempt has ended.
 
+The grader writes its score in /logs/verifier/reward.txt, a single number,
+or in /logs/verifier/reward.json, an object of labelled numbers, which is
+read in place of reward.txt where both are there. /tests and
+/logs/verifier are the paths of Harbor's task layout, which a grader
+expects.
+
 How an attempt ends decides its result:
 
-  the grader exits with status 0   the harness completed the task
-  the grader exits with another    the harness did not complete the task
+  a score of 1, or 1 for every     the harness completed the task
+  label of reward.json
+  any other score, a file that     the harness did not complete the task
+  cannot be read, or no score
   exit status 125 of either step   Docker did not start the container: the
                                    directed evolution stops, and `cladenc
                                    resume` carries out the attempt again
   the time limit                   the container is removed, and the
                                    harness did not complete the task,
                                    which is recorded as timed_out
+
+The exit status of the grader decides nothing more.
 
 A task that is recorded as completed means that the harness did the work
 only as far as three things hold, and cladenc sees to none of them.
@@ -496,11 +508,11 @@ container as the harness left it, and everything there was the harness's
 to change: tests, build files, any program the grader starts from the
 workspace, and the processes the harness left running. A grader that runs
 the tests it finds in the workspace is passed by a harness that changed
-those tests, on a holdout task as on any other. The directory of the task
-is never given to a harness: a grader that keeps what it relies on there,
-its tests among them, and takes nothing from the workspace on trust, can
-be passed that way only by a harness that left a process running to
-change the copy of that directory once it is made.
+those tests, on a holdout task as on any other. The tests directory of the
+task is never given to a harness: a grader that keeps what it relies on
+there, and takes nothing from the workspace on trust, can be passed that
+way only by a harness that left a process running to change the copy of
+that directory, or the score, once they are made.
 
 The model may know the task. A task taken from a public source may have
 been among what the model was trained on. A harness then completes it from
@@ -516,7 +528,9 @@ benchmark, and in that one named after the task, which holds
   work           the workspace of the task as the harness left it
   stdout         the standard output of the harness
   stderr         the standard error of the harness
-  grader         the standard output and the standard error of the grader
+  grader         the standard output and the standard error of the grader,
+                 in stdout and stderr, and in logs/verifier what the grader
+                 left in /logs/verifier, its score among them
 
 holdout in the outputs directory keeps the attempts at the holdout tasks,
 selection tasks and corroboration tasks together, in the same way, apart

@@ -58,7 +58,7 @@ fn with_a_dockerfile(directory: &Path, dockerfile: &Path, image_too: bool) -> Ve
 
 fn with_a_task_that_lacks_its_grader(directory: &Path) -> Vec<String> {
     let options = options(directory, &directory.join("outputs"));
-    fs::remove_file(directory.join("benchmark/t1/grader")).unwrap();
+    fs::remove_dir_all(directory.join("benchmark/t1/tests")).unwrap();
     options
 }
 
@@ -74,9 +74,10 @@ fn a_benchmark_with_a_task_that_lacks_its_grader_is_refused_by_its_directory_and
  {
     let directory = test_inputs::temporary_directory();
     let options = with_a_task_that_lacks_its_grader(directory.path());
-    assert!(
-        said(&options).ends_with("/benchmark: task t1 holds no executable file named grader\n")
-    );
+    assert!(said(&options).ends_with(
+        "/benchmark: task t1 holds no directory named tests with an executable file named \
+         test.sh in it\n"
+    ));
 }
 
 #[test]

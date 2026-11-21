@@ -123,16 +123,23 @@ pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf 
 
 pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     let task = benchmark.join(id);
-    let grader = task.join("grader");
+    let grader = task.join("tests/test.sh");
     fs::create_dir_all(task.join("workspace")).expect("the task can be made");
+    fs::create_dir_all(task.join("tests")).expect("the tests of the task can be made");
     fs::write(
         task.join("instruction.md"),
         format!("Finish the work of {id}.\n"),
     )
     .expect("the specification can be written");
     fs::write(task.join("workspace/work.txt"), "to do\n").expect("the file can be written");
-    fs::write(&grader, format!("#!/bin/sh\ngrep -q -x -e {id} solved\n"))
-        .expect("the grader can be written");
+    fs::write(
+        &grader,
+        format!(
+            "#!/bin/sh\nif grep -q -x -e {id} solved; then echo 1; else echo 0; fi \
+             > /logs/verifier/reward.txt\n"
+        ),
+    )
+    .expect("the grader can be written");
     fs::set_permissions(&grader, fs::Permissions::from_mode(0o750))
         .expect("the grader can be given its permission bits");
     task
@@ -236,7 +243,7 @@ pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
 }
 
 pub fn grader(directory: &Path, task: &str, command: &str) {
-    let grader = directory.join("benchmark").join(task).join("grader");
+    let grader = directory.join("benchmark").join(task).join("tests/test.sh");
     fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
 }
 

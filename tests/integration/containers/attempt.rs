@@ -9,15 +9,15 @@ use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const FINISH: &str = "echo done > work.txt";
-const FINISHED: &str = "grep -q done work.txt";
+const FINISHED: &str = "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt";
 const SAY_THE_SECONDS_OF_THE_TIMER: &str = "p=$PPID; \
     while [ \"$(tr '\\0' '\\n' < /proc/$p/cmdline | wc -l)\" -lt 5 ]; \
     do p=$(awk '/^PPid/ {print $2}' /proc/$p/status); done; \
     tr '\\0' '\\n' < /proc/$p/cmdline | tail -n 1 > seconds";
 const LEAVE_A_PROCESS_RUNNING: &str =
     "(while true; do echo beat >> beats; sleep 1; done) > /dev/null 2>&1 & sleep 1";
-const THE_PROCESS_STILL_RUNS: &str =
-    "before=$(wc -l < beats); sleep 3; [ \"$(wc -l < beats)\" -gt \"$before\" ]";
+const THE_PROCESS_STILL_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
+    [ \"$(wc -l < beats)\" -gt \"$before\" ] && echo 1 > /logs/verifier/reward.txt";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 
 struct Attempted {
@@ -185,10 +185,10 @@ fn the_harness_of_a_directed_evolution_with_no_key_is_given_none() {
 }
 
 #[test]
-fn the_harness_is_given_neither_the_task_nor_its_own_attempts() {
+fn the_harness_is_given_neither_the_tests_of_the_task_nor_its_own_attempts() {
     assert_eq!(
         left_by_the_harness(
-            "ls -d /var/lib/cladenc/task /var/log/cladenc/attempts > given 2> /dev/null",
+            "ls -d /tests /logs /var/log/cladenc/attempts > given 2> /dev/null",
             "given"
         ),
         ""
@@ -257,7 +257,7 @@ fn a_harness_that_changes_its_copy_of_the_workspace_leaves_the_task_unchanged() 
 }
 
 #[test]
-fn a_grader_that_exits_with_0_on_what_the_harness_left_gives_completed() {
+fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
     assert!(matches!(
         attempted(FINISH, FINISHED).result,
         Ok(containers::Attempted {
@@ -268,7 +268,7 @@ fn a_grader_that_exits_with_0_on_what_the_harness_left_gives_completed() {
 }
 
 #[test]
-fn a_grader_that_exits_with_1_gives_not_completed() {
+fn a_grader_that_leaves_no_score_gives_not_completed() {
     assert!(matches!(
         attempted("true", FINISHED).result,
         Ok(containers::Attempted {
@@ -279,14 +279,86 @@ fn a_grader_that_exits_with_1_gives_not_completed() {
 }
 
 #[test]
-fn a_grader_that_exits_with_another_status_gives_not_completed() {
+fn a_grader_that_scores_0_gives_not_completed() {
     assert!(matches!(
-        attempted(FINISH, "exit 2").result,
+        attempted(FINISH, "echo 0 > /logs/verifier/reward.txt").result,
         Ok(containers::Attempted {
             result: AttemptResult::NotCompleted,
             ..
         })
     ));
+}
+
+#[test]
+fn a_grader_that_scores_1_and_exits_with_another_status_than_0_gives_completed() {
+    assert!(matches!(
+        attempted(FINISH, "echo 1 > /logs/verifier/reward.txt; exit 2").result,
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn a_grader_that_scores_1_on_every_label_of_reward_json_gives_completed() {
+    assert!(matches!(
+        attempted(
+            FINISH,
+            "echo '{\"tests\": 1, \"style\": 1.0}' > /logs/verifier/reward.json"
+        )
+        .result,
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn a_grader_whose_reward_json_says_less_than_1_on_a_label_gives_not_completed() {
+    assert!(matches!(
+        attempted(
+            FINISH,
+            "echo 1 > /logs/verifier/reward.txt; \
+             echo '{\"tests\": 1, \"style\": 0.5}' > /logs/verifier/reward.json"
+        )
+        .result,
+        Ok(containers::Attempted {
+            result: AttemptResult::NotCompleted,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn the_score_of_the_grader_is_kept_with_the_attempt() {
+    assert_eq!(
+        kept(
+            &attempted(FINISH, FINISHED),
+            "grader/logs/verifier/reward.txt"
+        ),
+        "1\n"
+    );
+}
+
+#[test]
+fn what_the_grader_leaves_in_logs_verifier_is_kept_with_the_attempt() {
+    assert_eq!(
+        kept(
+            &attempted(FINISH, "echo seen > /logs/verifier/notes.txt"),
+            "grader/logs/verifier/notes.txt"
+        ),
+        "seen\n"
+    );
+}
+
+#[test]
+fn the_grader_finds_logs_verifier_empty() {
+    assert_eq!(
+        left_by_the_grader("ls -A /logs/verifier > listed", "listed"),
+        ""
+    );
 }
 
 #[test]
@@ -309,65 +381,56 @@ fn the_working_directory_of_the_grader_holds_what_the_harness_left() {
 }
 
 #[test]
-fn the_grader_is_told_where_the_directory_of_its_task_is() {
+fn the_grader_finds_the_tests_of_its_task_at_tests() {
     assert_eq!(
-        left_by_the_grader(
-            "echo \"$CLADENC_TASK\" > told; cat /var/lib/cladenc/task/instruction.md >> told",
-            "told"
-        ),
-        "/var/lib/cladenc/task\nFinish the work of t1.\n"
+        left_by_the_grader("ls -A /tests > listed", "listed"),
+        "test.sh\n"
     );
 }
 
 #[test]
-fn the_grader_is_given_the_workspace_the_work_started_from() {
-    assert_eq!(
-        left_by_the_grader(
-            "cat /var/lib/cladenc/task/workspace/work.txt > started",
-            "started"
-        ),
-        "to do\n"
-    );
-}
-
-#[test]
-fn the_grader_cannot_change_its_task() {
-    let attempted = attempted(
-        FINISH,
-        "echo changed > /var/lib/cladenc/task/instruction.md",
-    );
+fn the_grader_cannot_change_the_tests_of_its_task() {
+    let attempted = attempted(FINISH, "echo changed > /tests/test.sh");
     assert_eq!(
         fs::read_to_string(
             attempted
                 .outputs_directory
                 .task("benchmark/t1")
-                .join("instruction.md")
+                .join("tests/test.sh")
         )
         .unwrap(),
-        "Finish the work of t1.\n"
+        "#!/bin/sh\necho changed > /tests/test.sh\n"
     );
 }
 
 #[test]
-fn the_grader_that_is_run_is_the_one_in_the_directory_of_its_task() {
+fn the_grader_that_is_run_is_the_test_sh_of_the_tests_of_its_task() {
     assert_eq!(
         left_by_the_grader("echo \"$0\" > called", "called"),
-        "/var/lib/cladenc/task/grader\n"
+        "/tests/test.sh\n"
     );
 }
 
 #[test]
-fn the_grader_finds_nothing_at_the_top_of_the_filesystem_that_its_image_does_not_hold() {
+fn the_grader_finds_at_the_top_of_the_filesystem_what_its_image_holds_with_logs_and_tests() {
+    let mut held: Vec<String> = test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
+        .lines()
+        .chain(["logs", "tests"])
+        .map(str::to_owned)
+        .collect();
+    held.sort();
     assert_eq!(
         left_by_the_grader("ls / > top", "top"),
-        test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
+        held.iter()
+            .map(|name| format!("{name}\n"))
+            .collect::<String>()
     );
 }
 
 #[test]
-fn the_grader_is_told_nothing_of_the_model() {
+fn the_grader_is_given_no_variable_of_cladenc() {
     assert_eq!(
-        left_by_the_grader("env | grep -c ^CLADENC_MODEL > told", "told"),
+        left_by_the_grader("env | grep -c ^CLADENC_ > told", "told"),
         "0\n"
     );
 }
@@ -375,7 +438,11 @@ fn the_grader_is_told_nothing_of_the_model() {
 #[test]
 fn the_grader_finds_what_the_harness_left_outside_the_workspace() {
     assert!(matches!(
-        attempted("echo done > /tmp/left", "grep -q done /tmp/left").result,
+        attempted(
+            "echo done > /tmp/left",
+            "grep -q done /tmp/left && echo 1 > /logs/verifier/reward.txt"
+        )
+        .result,
         Ok(containers::Attempted {
             result: AttemptResult::Completed,
             ..

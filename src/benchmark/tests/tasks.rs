@@ -1,7 +1,7 @@
 use std::fs;
 use std::os::unix::fs::symlink;
 
-use crate::benchmark::{self, GRADER, SPECIFICATION, WORKSPACE};
+use crate::benchmark::{self, GRADER, SPECIFICATION, TESTS, WORKSPACE};
 
 #[test]
 fn the_tasks_of_a_benchmark_are_the_names_of_its_directories_in_order() {
@@ -58,7 +58,7 @@ fn a_directory_given_through_a_symbolic_link_is_a_task() {
 }
 
 #[test]
-fn a_task_may_hold_more_than_its_specification_its_workspace_and_its_grader() {
+fn a_task_may_hold_more_than_its_specification_its_workspace_and_its_tests() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     fs::create_dir(benchmark.join("t1/hidden-tests")).unwrap();
@@ -80,9 +80,9 @@ fn a_task_that_starts_from_no_file_is_a_task() {
 }
 
 #[test]
-fn the_three_things_a_task_holds_are_named_instruction_md_workspace_and_grader() {
+fn the_things_a_task_holds_are_named_instruction_md_workspace_tests_and_test_sh() {
     assert_eq!(
-        [SPECIFICATION, WORKSPACE, GRADER],
-        ["instruction.md", "workspace", "grader"]
+        [SPECIFICATION, WORKSPACE, TESTS, GRADER],
+        ["instruction.md", "workspace", "tests", "test.sh"]
     );
 }

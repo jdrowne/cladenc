@@ -109,6 +109,15 @@ impl Up {
             .map(drop)
             .map_err(ContainerError::Io)
     }
+
+    pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
+        let mut docker = Command::new("docker");
+        docker
+            .arg("cp")
+            .arg(format!("{}:{from}/.", self.name))
+            .arg(to);
+        let _ = left::printed_by(docker);
+    }
 }
 
 impl Drop for Up {

@@ -172,8 +172,8 @@ fn refused_benchmark(reason: String) -> Refused {
     Refused {
         option: "--benchmark",
         accepted: "the directory of a benchmark, in which every directory is a task that holds \
-                   a file of text named instruction.md, a directory named workspace and an \
-                   executable file named grader",
+                   a file of text named instruction.md, a directory named workspace and a \
+                   directory named tests with an executable file named test.sh in it",
         reason: Some(reason),
     }
 }

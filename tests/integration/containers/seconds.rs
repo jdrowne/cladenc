@@ -7,6 +7,8 @@ use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
+const SCORE_1: &str = "echo 1 > /logs/verifier/reward.txt";
+
 fn launch<'a>(run_command: &'a str, build_command: Option<&'a str>, time_limit: u64) -> Launch<'a> {
     Launch {
         image: test_inputs::IMAGE,
@@ -61,7 +63,7 @@ fn procreated(run_command: &str, build_command: Option<&str>) -> containers::Cre
 
 #[test]
 fn the_seconds_of_an_attempt_are_those_its_harness_ran() {
-    assert!(attempted("sleep 2", "exit 0", 60).seconds >= 2.0);
+    assert!(attempted("sleep 2", SCORE_1, 60).seconds >= 2.0);
 }
 
 #[test]
@@ -71,20 +73,20 @@ fn the_seconds_of_an_attempt_leave_out_those_its_grader_ran() {
 
 #[test]
 fn the_seconds_of_an_attempt_that_ran_past_its_time_limit_are_no_fewer_than_the_limit() {
-    assert!(attempted("sleep 300", "exit 0", 1).seconds >= 1.0);
+    assert!(attempted("sleep 300", SCORE_1, 1).seconds >= 1.0);
 }
 
 #[test]
 fn an_attempt_comes_back_with_its_result_beside_its_seconds() {
     assert_eq!(
-        attempted("exit 0", "exit 0", 60).result,
+        attempted("exit 0", SCORE_1, 60).result,
         AttemptResult::Completed
     );
 }
 
 #[test]
 fn the_seconds_of_an_attempt_are_given_to_the_millisecond() {
-    let seconds = attempted("exit 0", "exit 0", 60).seconds;
+    let seconds = attempted("exit 0", SCORE_1, 60).seconds;
     assert_eq!((seconds * 1000.0).round() / 1000.0, seconds);
 }
 

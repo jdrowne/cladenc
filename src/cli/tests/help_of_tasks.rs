@@ -27,10 +27,7 @@ fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_
 
 #[test]
 fn the_long_help_of_start_shows_how_the_grader_of_a_task_is_called() {
-    assert!(
-        help_of_start(true)
-            .contains("\n    sh -c <TIMER> /var/lib/cladenc/task/grader <SECONDS>\n")
-    );
+    assert!(help_of_start(true).contains("\n    sh -c <TIMER> /tests/test.sh <SECONDS>\n"));
 }
 
 #[test]
@@ -38,10 +35,31 @@ fn the_long_help_of_start_names_what_a_grader_is_given() {
     let help = help_of_start(true);
     let given = [
         "  /var/lib/cladenc/work  holds what the harness left, and is the working\n",
-        "  /var/lib/cladenc/task  holds a copy of the directory of the task\n",
-        "  CLADENC_TASK           /var/lib/cladenc/task\n",
+        "  /tests                 holds a copy of the tests directory of the task\n",
+        "  /logs/verifier         an empty directory, for the score of the grader\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_grader_writes_its_score() {
+    assert!(help_of_start(true).contains(
+        "The grader writes its score in /logs/verifier/reward.txt, a single number,\nor in \
+         /logs/verifier/reward.json, an object of labelled numbers, which is\nread in place of \
+         reward.txt where both are there."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_exit_status_of_the_grader_decides_nothing_more() {
+    assert!(
+        help_of_start(true).contains("\nThe exit status of the grader decides nothing more.\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_no_container_is_given_the_solution_of_a_task() {
+    assert!(help_of_start(true).contains("such as solution, which no\ncontainer is ever given."));
 }
 
 #[test]
@@ -53,8 +71,8 @@ fn the_long_help_of_start_says_that_how_an_attempt_ends_decides_the_result() {
 fn the_long_help_of_start_says_what_each_way_an_attempt_ends_gives() {
     let help = help_of_start(true);
     let endings = [
-        "  the grader exits with status 0   the harness completed the task\n",
-        "  the grader exits with another    the harness did not complete the task\n",
+        "  a score of 1, or 1 for every     the harness completed the task\n",
+        "  any other score, a file that     the harness did not complete the task\n",
         "  exit status 125 of either step   Docker did not start the container",
         "  the time limit                   the container is removed",
     ];
@@ -78,7 +96,8 @@ fn the_long_help_of_start_names_what_the_outputs_directory_keeps_of_an_attempt()
         "  work           the workspace of the task as the harness left it\n",
         "  stdout         the standard output of the harness\n",
         "  stderr         the standard error of the harness\n",
-        "  grader         the standard output and the standard error of the grader",
+        "  grader         the standard output and the standard error of the grader,\n",
+        "                 in stdout and stderr, and in logs/verifier what the grader\n",
     ];
     assert!(kept.iter().all(|line| help.contains(line)));
 }
@@ -102,7 +121,7 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
     let held = [
         "  instruction.md  a file of text, the task specification, which says what\n",
         "  workspace       a directory of the files the work starts from",
-        "  grader          an executable file, the program that says by its exit\n",
+        "  tests           a directory that holds test.sh, an executable file, the\n",
     ];
     assert!(held.iter().all(|line| help.contains(line)));
 }
@@ -347,10 +366,10 @@ fn the_long_help_of_start_says_which_grader_a_harness_that_changed_the_tests_pas
 #[test]
 fn the_long_help_of_start_says_which_harness_can_pass_a_grader_that_trusts_nothing_it_left() {
     assert!(help_of_start(true).contains(
-        "The directory of the task\nis never given to a harness: a grader that keeps what \
-         it relies on there,\nits tests among them, and takes nothing from the workspace on \
-         trust, can\nbe passed that way only by a harness that left a process running to\n\
-         change the copy of that directory once it is made."
+        "The tests directory of the\ntask is never given to a harness: a grader that keeps \
+         what it relies on\nthere, and takes nothing from the workspace on trust, can be passed \
+         that\nway only by a harness that left a process running to change the copy of\nthat \
+         directory, or the score, once they are made."
     ));
 }
 

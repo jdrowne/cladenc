@@ -63,7 +63,8 @@ fn a_task_with_no_workspace_is_said_with_its_id() {
 fn a_task_with_no_grader_is_said_with_its_id() {
     assert_eq!(
         BenchmarkError::NoGrader { task: task() }.to_string(),
-        "task fix-the-parser holds no executable file named grader"
+        "task fix-the-parser holds no directory named tests with an executable file named \
+         test.sh in it"
     );
 }
 
