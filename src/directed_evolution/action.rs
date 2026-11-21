@@ -1,7 +1,7 @@
 use std::io;
 
 use super::Shared;
-use crate::containers::{self, Attempted, ContainerError, Creation};
+use crate::containers::{self, Attempt, Attempted, ContainerError, Creation};
 use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -77,13 +77,12 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
         }
         Started::Attempt { harness, task } => cleared
             .and_then(|()| {
-                containers::run_attempt(
-                    outputs_directory,
-                    &shared.launch,
+                let attempt = Attempt {
                     harness,
-                    &task,
-                    &shared.halt,
-                )
+                    task: &task,
+                    environment_image: shared.environments.get(&task).map_or("", String::as_str),
+                };
+                containers::run_attempt(outputs_directory, &shared.launch, attempt, &shared.halt)
             })
             .map(|attempted| Ended::Attempted {
                 harness,

@@ -8,7 +8,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname > id; sleep 300";
+const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
 
 struct Left {
     directory: TempDir,
@@ -52,16 +52,22 @@ fn resume(outputs_directory: &Path) -> Command {
 fn killed_outright() -> Left {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
-    fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
+    fs::write(
+        directory
+            .path()
+            .join("benchmark/t1/environment/workspace/hold"),
+        "",
+    )
+    .unwrap();
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
-    let written = outputs.join("running/attempt-0-benchmark+t1/work/id");
+    let written = outputs.join("running/attempt-0-benchmark+t1/stdout");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&written));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     cladenc.wait().unwrap();
     let id_file = directory.path().join("id-of-the-container-left");
     fs::copy(&written, &id_file).unwrap();
-    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
     Left { directory, id_file }
 }
 

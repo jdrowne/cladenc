@@ -1,6 +1,6 @@
 ---
 name: cladenc-runs-any-benchmark
-description: "cladenc runs a benchmark in the form it is published in, such as SWE-bench or Polyglot, and a person brings a free harness such as OpenCode; the repository writes no harness, no benchmark and no converter of its own, and example/ holds a Dockerfile and nothing else"
+description: "cladenc runs a benchmark in the form it is published in, such as SWE-bench or Polyglot, and a person brings a free harness such as OpenCode; what a Harbor task's own configuration says is obeyed and no flag overrides it; the repository writes no harness, no benchmark and no converter of its own, and example/ holds a Dockerfile and nothing else"
 metadata:
   node_type: memory
   type: project
@@ -19,6 +19,7 @@ metadata:
 - Do not propose a harness, a benchmark, or a script that converts one benchmark into `cladenc`'s own task layout, under `example/` or anywhere else in the repository.
 - `example/` holds a Dockerfile and nothing else.
 - Where a published benchmark does not run in `cladenc`, the fault is in `cladenc`: the issue is written against how `cladenc` reads a benchmark, not as a converter.
+- Every Harbor task carries its own configuration file, and `cladenc` obeys all of it: time limits, resources, network, environment, grader. No flag overrides a setting the configuration holds, and a flag that does is removed. Where a task leaves a setting out, the setting means what Harbor's documentation says it means when left out. A task without the configuration file is refused, as Harbor refuses it. A setting `cladenc` has no way to obey makes the task refused, never run otherwise than as published. The reason is that the task's author chose those values, and a value the task holds is one `cladenc` reads itself, per [[no-flag-for-what-cladenc-already-holds]].
 - The person still brings each benchmark as files on the machine, per [[cladenc-works-offline-and-self-hosted]].
 
 Related: [[cladenc-takes-a-primogenitor-and-a-model]], [[the-simplest-design-is-offered-first]].

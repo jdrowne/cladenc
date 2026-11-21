@@ -131,12 +131,12 @@ fn status_leaves_the_journal_unchanged() {
 #[test]
 fn status_exits_with_0_on_a_directed_evolution_that_is_still_going() {
     let directory = test_inputs::temporary_directory();
-    let mut going = start(directory.path(), "hostname > id; sleep 300")
+    let mut going = start(directory.path(), "hostname; sleep 300")
         .spawn()
         .unwrap();
     let id_file = directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/work/id");
+        .join("outputs/running/attempt-0-benchmark+t1/stdout");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let status = status(directory.path(), None).status.code();
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();

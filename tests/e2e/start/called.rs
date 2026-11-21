@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,10 +12,9 @@ const TIMER: &str =
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
                                              echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
                                              ${CLADENC_MODEL_KEY-none}\" > model";
-const SAY_WHAT_THE_GRADER_IS_GIVEN: &str = "ls /tests > where-checked; pwd >> where-checked; \
-                                           echo \"${CLADENC_MODEL-none} \
+const SAY_WHAT_THE_GRADER_IS_GIVEN: &str = "ls /tests; pwd; echo \"${CLADENC_MODEL-none} \
                                            ${CLADENC_MODEL_URL-none} ${CLADENC_MODEL_KEY-none}\" \
-                                           > model-of-the-grader";
+                                           >&2";
 
 fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     let options = [
@@ -87,9 +87,22 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("outputs/harnesses/1").join(file)).unwrap()
 }
 
-fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
+fn kept_with_the_attempt(directory: &TempDir, file: &str) -> String {
     let kept = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t1");
-    fs::read_to_string(kept.join("work").join(file)).unwrap()
+    fs::read_to_string(kept.join(file)).unwrap()
+}
+
+fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
+    kept_with_the_attempt(directory, &format!("work/{file}"))
+}
+
+fn followed_by<'a>(arguments: &'a str, word: &str) -> Vec<&'a str> {
+    let lines: Vec<&str> = arguments.lines().collect();
+    lines
+        .windows(2)
+        .filter(|pair| pair[0] == word)
+        .map(|pair| pair[1])
+        .collect()
 }
 
 #[test]
@@ -111,11 +124,11 @@ fn a_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_harness_of_an_attempt_is_started_on_the_workspace_of_the_task() {
+fn the_harness_of_an_attempt_is_started_in_the_working_directory_of_the_environment_of_its_task() {
     let (directory, _output) = ran();
     assert_eq!(
         left_by_the_attempt(&directory, "where"),
-        "/var/lib/cladenc/harness\n/var/lib/cladenc/work\n"
+        "/var/lib/cladenc/harness\n/app\n"
     );
 }
 
@@ -129,11 +142,11 @@ fn the_harness_of_an_attempt_is_told_the_model_the_address_it_is_served_at_and_i
 }
 
 #[test]
-fn the_grader_of_a_task_is_run_on_what_the_harness_left_beside_the_tests_of_its_task() {
+fn the_grader_of_a_task_is_run_where_the_harness_ran_beside_the_tests_of_its_task() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_attempt(&directory, "where-checked"),
-        "test.sh\n/var/lib/cladenc/work\n"
+        kept_with_the_attempt(&directory, "grader/stdout"),
+        "test.sh\n/app\n"
     );
 }
 
@@ -141,7 +154,7 @@ fn the_grader_of_a_task_is_run_on_what_the_harness_left_beside_the_tests_of_its_
 fn the_grader_of_a_task_is_told_nothing_of_the_model() {
     let (directory, _output) = ran();
     assert_eq!(
-        left_by_the_attempt(&directory, "model-of-the-grader"),
+        kept_with_the_attempt(&directory, "grader/stderr"),
         "none none none\n"
     );
 }
@@ -219,7 +232,8 @@ fn count_of(arguments: &str, word: &str) -> usize {
 fn every_command_is_started_under_a_timer_that_ends_it() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
     let timed = count_of(&arguments, "run") + count_of(&arguments, "exec");
-    let commands = timed - count_of(&arguments, "--detach");
+    let as_root = arguments.matches("exec\n--user\n0\n").count();
+    let commands = timed - count_of(&arguments, "--detach") - as_root;
     assert_eq!(
         arguments.matches(&format!("\nsh\n-c\n{TIMER}\n")).count(),
         commands.max(1)
@@ -229,7 +243,16 @@ fn every_command_is_started_under_a_timer_that_ends_it() {
 #[test]
 fn the_container_of_an_attempt_sleeps_five_seconds_more_than_the_time_limit() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("--detach\n{}\nsleep\n35\n", test_inputs::IMAGE)));
+    let image = followed_by(&arguments, "--detach")[0];
+    assert!(arguments.contains(&format!("--detach\n{image}\nsleep\n35\n")));
+}
+
+#[test]
+fn the_containers_of_the_attempts_are_started_from_the_images_built_from_the_environments() {
+    let arguments = ran_with_a_docker_that_records_its_arguments();
+    let started: BTreeSet<&str> = followed_by(&arguments, "--detach").into_iter().collect();
+    let built: BTreeSet<&str> = followed_by(&arguments, "--tag").into_iter().collect();
+    assert_eq!(started, built);
 }
 
 #[test]

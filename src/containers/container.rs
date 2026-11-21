@@ -1,4 +1,6 @@
 use std::ffi::OsString;
+use std::fs;
+use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Instant;
@@ -8,12 +10,15 @@ use nix::unistd::{Gid, Uid};
 use super::ContainerError;
 use super::left;
 use super::program::{self, Ending, LEEWAY, Limits};
-use crate::outputs_directory::OutputsDirectory;
+use crate::outputs_directory::{OutputsDirectory, make_removable};
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
 const TIMER: &str =
     r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
+const SETTINGS: &str = "{{println .Config.User}}{{.Config.WorkingDir}}";
+const ROOT: &str = "0";
+const EMPTIED: &str = r#"rm -rf "$1" && mkdir -p "$1""#;
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -35,6 +40,8 @@ pub(super) struct Container<'a> {
 
 pub(super) struct Up {
     name: String,
+    owner: String,
+    working_directory: String,
 }
 
 impl Container<'_> {
@@ -56,26 +63,11 @@ impl Container<'_> {
         started(ended, running)
     }
 
-    pub(super) fn start(&self, running: &Path, limits: Limits<'_>) -> Result<Up, ContainerError> {
-        let up = Up { name: named() };
-        let mut docker = self.docker_run(&up.name);
-        docker
-            .args(["--detach", self.image, "sleep"])
-            .arg(seconds_of_the_timer(limits.deadline).to_string());
-        match program::run(docker, running, limits)? {
-            Ending::Exited(0) | Ending::TimedOut => Ok(up),
-            Ending::Exited(_) => Err(ContainerError::Docker(running.join("stderr"))),
-        }
-    }
-
     fn docker_run(&self, name: &str) -> Command {
-        let mut docker = Command::new("docker");
+        let mut docker = docker_run(self.outputs_directory, name);
         docker
-            .args(["run", "--rm", "--pull", "never", "--name", name, "--label"])
-            .arg(left::label(self.outputs_directory))
             .arg("--user")
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
-            .args(["--add-host", MACHINE])
             .args(["--workdir", self.working_directory]);
         for mount in self.mounts {
             docker.arg("--volume").arg(mount.written());
@@ -85,6 +77,36 @@ impl Container<'_> {
 }
 
 impl Up {
+    pub(super) fn start(
+        outputs_directory: &OutputsDirectory,
+        image: &str,
+        running: &Path,
+        limits: Limits<'_>,
+    ) -> Result<Self, ContainerError> {
+        let mut up = Self {
+            name: named(),
+            owner: String::new(),
+            working_directory: String::new(),
+        };
+        let mut docker = docker_run(outputs_directory, &up.name);
+        docker
+            .args(["--detach", image, "sleep"])
+            .arg(seconds_of_the_timer(limits.deadline).to_string());
+        detached(docker, running)?;
+        let mut inspect = Command::new("docker");
+        inspect.args(["inspect", "--format", SETTINGS, &up.name]);
+        left::printed_by(inspect)
+            .map(move |printed| {
+                let mut lines = printed.lines();
+                let user = lines.next().unwrap_or_default();
+                let working_directory = lines.next().unwrap_or_default().trim_matches('/');
+                up.owner = if user.is_empty() { ROOT } else { user }.to_owned();
+                up.working_directory = format!("/{working_directory}");
+                up
+            })
+            .map_err(ContainerError::Io)
+    }
+
     pub(super) fn run(
         &self,
         shell: &Shell<'_>,
@@ -99,15 +121,36 @@ impl Up {
         started(program::run(docker, running, limits), running)
     }
 
-    pub(super) fn copy_into(&self, from: &Path, to: &str) -> Result<(), ContainerError> {
-        let mut docker = Command::new("docker");
-        docker
-            .args(["cp", "--archive"])
+    pub(super) fn put(&self, from: &Path, to: &str) -> Result<(), ContainerError> {
+        let mut emptied = self.as_root();
+        emptied.args(["sh", "-c", EMPTIED, "sh", to]);
+        let mut copied = Command::new("docker");
+        copied
+            .arg("cp")
             .arg(from.join("."))
             .arg(format!("{}:{to}", self.name));
-        left::printed_by(docker)
-            .map(drop)
+        let mut owned = self.as_root();
+        owned.args(["chown", "-R", &self.owner, to]);
+        [emptied, copied, owned]
+            .into_iter()
+            .try_for_each(|docker| left::printed_by(docker).map(drop))
             .map_err(ContainerError::Io)
+    }
+
+    pub(super) fn changes(&self) -> Vec<String> {
+        let mut docker = Command::new("docker");
+        docker.args(["diff", &self.name]);
+        left::printed_by(docker)
+            .unwrap_or_default()
+            .lines()
+            .map(str::to_owned)
+            .collect()
+    }
+
+    pub(super) fn keep_work(&self, work: &Path) {
+        if self.working_directory != "/" {
+            self.copy_out_of(&self.working_directory, work);
+        }
     }
 
     pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
@@ -117,6 +160,13 @@ impl Up {
             .arg(format!("{}:{from}/.", self.name))
             .arg(to);
         let _ = left::printed_by(docker);
+        make_removable(to);
+    }
+
+    fn as_root(&self) -> Command {
+        let mut docker = Command::new("docker");
+        docker.args(["exec", "--user", ROOT, &self.name]);
+        docker
     }
 }
 
@@ -149,6 +199,33 @@ impl Mount<'_> {
             written.push(":ro");
         }
         written
+    }
+}
+
+fn docker_run(outputs_directory: &OutputsDirectory, name: &str) -> Command {
+    let mut docker = Command::new("docker");
+    docker
+        .args(["run", "--rm", "--pull", "never", "--name", name, "--label"])
+        .arg(left::label(outputs_directory))
+        .args(["--add-host", MACHINE]);
+    docker
+}
+
+fn detached(mut docker: Command, running: &Path) -> Result<(), ContainerError> {
+    let started = docker
+        .stdin(Stdio::null())
+        .output()
+        .map_err(ContainerError::Io)?;
+    match started.status.code() {
+        Some(0) => Ok(()),
+        Some(_) => {
+            let said = running.join("stderr");
+            fs::write(&said, started.stderr).map_err(ContainerError::Io)?;
+            Err(ContainerError::Docker(said))
+        }
+        None => Err(ContainerError::Signal(
+            started.status.signal().unwrap_or_default(),
+        )),
     }
 }
 

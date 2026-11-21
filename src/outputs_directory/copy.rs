@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::fs;
 use std::io::{self, ErrorKind};
-use std::os::unix::fs::symlink;
+use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::Path;
 
 pub fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
@@ -27,6 +27,19 @@ pub fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
                 from.display()
             ),
         ))
+    }
+}
+
+pub(crate) fn make_removable(tree: &Path) {
+    if let Ok(found) = fs::symlink_metadata(tree)
+        && found.is_dir()
+    {
+        let mut permissions = found.permissions();
+        permissions.set_mode(permissions.mode() | 0o700);
+        let _ = fs::set_permissions(tree, permissions);
+        for entry in fs::read_dir(tree).into_iter().flatten().flatten() {
+            make_removable(&entry.path());
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use std::fs;
 use std::os::unix::fs::symlink;
 
 use crate::benchmark::{
-    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, GRADER, SPECIFICATION, TESTS, WORKSPACE,
+    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, GRADER, SPECIFICATION, TESTS,
 };
 
 #[test]
@@ -60,7 +60,7 @@ fn a_directory_given_through_a_symbolic_link_is_a_task() {
 }
 
 #[test]
-fn a_task_may_hold_more_than_its_specification_its_workspace_and_its_tests() {
+fn a_task_may_hold_more_than_its_specification_its_tests_and_its_environment() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     fs::create_dir(benchmark.join("t1/hidden-tests")).unwrap();
@@ -71,10 +71,10 @@ fn a_task_may_hold_more_than_its_specification_its_workspace_and_its_tests() {
 }
 
 #[test]
-fn a_task_that_starts_from_no_file_is_a_task() {
+fn a_task_that_holds_no_directory_named_workspace_is_a_task() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_file(benchmark.join("t2/workspace/work.txt")).unwrap();
+    fs::remove_dir_all(benchmark.join("t2/environment/workspace")).unwrap();
     assert_eq!(
         benchmark::tasks(&benchmark),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
@@ -82,10 +82,10 @@ fn a_task_that_starts_from_no_file_is_a_task() {
 }
 
 #[test]
-fn the_things_a_task_holds_are_named_instruction_md_workspace_tests_and_test_sh() {
+fn the_things_a_task_holds_are_named_instruction_md_tests_and_test_sh() {
     assert_eq!(
-        [SPECIFICATION, WORKSPACE, TESTS, GRADER],
-        ["instruction.md", "workspace", "tests", "test.sh"]
+        [SPECIFICATION, TESTS, GRADER],
+        ["instruction.md", "tests", "test.sh"]
     );
 }
 

@@ -48,12 +48,12 @@ struct InUse {
 
 fn resumed_while_in_use() -> InUse {
     let directory = test_inputs::temporary_directory();
-    let mut first = start(directory.path(), "hostname > id; sleep 300")
+    let mut first = start(directory.path(), "hostname; sleep 300")
         .spawn()
         .unwrap();
     let id_file = directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/work/id");
+        .join("outputs/running/attempt-0-benchmark+t1/stdout");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let second = resume(directory.path());
     let the_container_of_the_first_went_on = test_inputs::container_is_running(&id_file);

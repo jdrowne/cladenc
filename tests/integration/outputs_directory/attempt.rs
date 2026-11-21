@@ -52,19 +52,6 @@ fn entries(directory: PathBuf) -> usize {
 }
 
 #[test]
-fn a_started_attempt_holds_a_copy_of_its_harness() {
-    assert_eq!(
-        held_while_running("harness/harness.sh"),
-        "#!/bin/sh\necho harness\n"
-    );
-}
-
-#[test]
-fn a_started_attempt_holds_a_copy_of_the_workspace_of_its_task_to_work_on() {
-    assert_eq!(held_while_running("work/work.txt"), "to do\n");
-}
-
-#[test]
 fn a_started_attempt_holds_the_specification_of_its_task() {
     assert_eq!(
         held_while_running("specification"),
@@ -99,20 +86,37 @@ fn a_started_attempt_holds_an_empty_directory_for_what_the_grader_leaves_in_logs
 }
 
 #[test]
-fn a_started_attempt_holds_no_copy_of_the_tests_of_the_task() {
+fn a_started_attempt_holds_nothing_but_the_specification_and_a_directory_for_the_grader() {
     let (_directory, outputs_directory) = started();
-    assert!(
-        !outputs_directory
-            .running_attempt(0, "benchmark/t1")
-            .join("work/tests")
-            .exists()
-    );
+    let mut names: Vec<String> = fs::read_dir(outputs_directory.running_attempt(0, "benchmark/t1"))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    assert_eq!(names, ["grader", "specification"]);
 }
 
 #[test]
 fn a_started_attempt_has_an_empty_directory_for_its_benchmark_among_those_of_its_harness() {
     let (_directory, outputs_directory) = started();
     assert_eq!(entries(outputs_directory.attempts(0).join("benchmark")), 0);
+}
+
+#[test]
+fn an_attempt_of_a_harness_the_outputs_directory_does_not_hold_cannot_be_started() {
+    let (_directory, outputs_directory) = made();
+    assert!(outputs_directory.start_attempt(7, "benchmark/t1").is_err());
+}
+
+#[test]
+fn an_attempt_of_a_harness_the_outputs_directory_does_not_hold_leaves_nothing_running() {
+    let (_directory, outputs_directory) = made();
+    let _ = outputs_directory.start_attempt(7, "benchmark/t1");
+    assert!(
+        !outputs_directory
+            .running_attempt(7, "benchmark/t1")
+            .exists()
+    );
 }
 
 #[test]
@@ -151,13 +155,22 @@ fn an_ended_attempt_keeps_no_copy_of_its_harness() {
 }
 
 #[test]
-fn an_ended_attempt_keeps_the_work() {
-    let (_directory, outputs_directory) = ended(AttemptResult::Completed);
-    assert!(
-        outputs_directory
-            .attempt(0, "benchmark/t1")
-            .join("work/work.txt")
-            .is_file()
+fn an_ended_attempt_keeps_what_was_left_in_the_directory_of_the_running_attempt() {
+    let (_directory, outputs_directory) = started();
+    let running = outputs_directory.running_attempt(0, "benchmark/t1");
+    fs::create_dir(running.join("work")).unwrap();
+    fs::write(running.join("work/left"), "done\n").unwrap();
+    outputs_directory
+        .end_attempt(0, "benchmark/t1", AttemptResult::Completed)
+        .unwrap();
+    assert_eq!(
+        fs::read_to_string(
+            outputs_directory
+                .attempt(0, "benchmark/t1")
+                .join("work/left")
+        )
+        .unwrap(),
+        "done\n"
     );
 }
 

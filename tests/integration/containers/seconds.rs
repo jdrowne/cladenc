@@ -1,7 +1,7 @@
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Launch};
+use cladenc::containers::{self, Attempt, Launch};
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -42,8 +42,11 @@ fn attempted(run_command: &str, grader: &str, time_limit: u64) -> containers::At
     containers::run_attempt(
         &outputs_directory,
         &launch(run_command, None, time_limit),
-        0,
-        "benchmark/t1",
+        Attempt {
+            harness: 0,
+            task: "benchmark/t1",
+            environment_image: test_inputs::IMAGE,
+        },
         &AtomicBool::new(false),
     )
     .unwrap()

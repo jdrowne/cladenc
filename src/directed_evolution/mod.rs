@@ -3,6 +3,7 @@ mod error;
 mod progress;
 mod said;
 
+use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -31,6 +32,7 @@ pub struct Found {
 
 struct Shared<'a> {
     launch: Launch<'a>,
+    environments: BTreeMap<String, String>,
     outputs_directory: OutputsDirectory,
     halt: AtomicBool,
     sender: Sender<Ended>,
@@ -259,6 +261,7 @@ fn carry_on(
     let (sender, receiver) = mpsc::channel();
     let shared = Shared {
         launch,
+        environments: settings.environments().into_iter().collect(),
         outputs_directory,
         halt: AtomicBool::new(false),
         sender,

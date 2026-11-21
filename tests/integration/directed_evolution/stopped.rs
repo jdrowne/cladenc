@@ -52,9 +52,9 @@ fn stopped_at_its_first_attempt() -> (TempDir, Result<Found, DirectedEvolutionEr
 
 fn stopped_by_its_flag() -> (TempDir, Result<Found, DirectedEvolutionError>, String) {
     let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path(), "hostname > id; sleep 300");
+    let settings = settings(directory.path(), "hostname; sleep 300");
     let outputs_directory = directory.path().join("outputs");
-    let id_file = outputs_directory.join("running/attempt-0-benchmark+t1/work/id");
+    let id_file = outputs_directory.join("running/attempt-0-benchmark+t1/stdout");
     let stop = AtomicBool::new(false);
     let mut written = Vec::new();
     let found = thread::scope(|scope| {
@@ -165,7 +165,7 @@ fn a_directed_evolution_stopped_by_its_flag_leaves_no_container_behind() {
     assert!(test_inputs::container_is_gone(
         &directory
             .path()
-            .join("outputs/running/attempt-0-benchmark+t1/work/id")
+            .join("outputs/running/attempt-0-benchmark+t1/stdout")
     ));
 }
 

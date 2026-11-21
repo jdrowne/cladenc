@@ -18,12 +18,6 @@ fn no_specification() -> BenchmarkError {
     }
 }
 
-fn no_workspace() -> BenchmarkError {
-    BenchmarkError::NoWorkspace {
-        task: "t2".to_owned(),
-    }
-}
-
 fn no_grader() -> BenchmarkError {
     BenchmarkError::NoGrader {
         task: "t2".to_owned(),
@@ -148,25 +142,6 @@ fn a_task_whose_specification_holds_a_nul_is_refused() {
     assert_eq!(
         refused(|benchmark| fs::write(benchmark.join("t2/instruction.md"), "Fix\0it.\n").unwrap()),
         no_specification()
-    );
-}
-
-#[test]
-fn a_task_with_no_workspace_is_refused() {
-    assert_eq!(
-        refused(|benchmark| fs::remove_dir_all(benchmark.join("t2/workspace")).unwrap()),
-        no_workspace()
-    );
-}
-
-#[test]
-fn a_task_whose_workspace_is_a_file_is_refused() {
-    assert_eq!(
-        refused(|benchmark| {
-            fs::remove_dir_all(benchmark.join("t2/workspace")).unwrap();
-            fs::write(benchmark.join("t2/workspace"), "to do\n").unwrap();
-        }),
-        no_workspace()
     );
 }
 
@@ -388,7 +363,7 @@ fn a_task_with_no_grader_and_no_environment_is_refused_for_its_grader() {
 fn a_task_that_holds_a_socket_is_refused() {
     let directory = test_inputs::temporary_directory();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    let _socket = UnixListener::bind(benchmark.join("t2/workspace/socket")).unwrap();
+    let _socket = UnixListener::bind(benchmark.join("t2/environment/workspace/socket")).unwrap();
     assert_eq!(
         benchmark::tasks(&benchmark),
         Err(BenchmarkError::OtherFiles {

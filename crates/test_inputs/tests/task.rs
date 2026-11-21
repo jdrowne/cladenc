@@ -38,15 +38,15 @@ fn the_task_specification_names_the_task() {
 }
 
 #[test]
-fn the_workspace_holds_a_file_of_work_to_do() {
-    assert_eq!(written_in("workspace/work.txt"), "to do\n");
+fn the_workspace_of_the_environment_holds_a_file_of_work_to_do() {
+    assert_eq!(written_in("environment/workspace/work.txt"), "to do\n");
 }
 
 #[test]
-fn the_environment_is_built_from_the_test_image() {
+fn the_environment_is_built_from_the_test_image_with_its_workspace_in_the_working_directory() {
     assert_eq!(
         written_in("environment/Dockerfile"),
-        "FROM debian:stable-slim\n"
+        "FROM debian:stable-slim\nWORKDIR /app\nCOPY workspace .\n"
     );
 }
 

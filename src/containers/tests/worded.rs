@@ -156,8 +156,9 @@ fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there()
 fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
         "the file named specification says what you were asked to do, the file named result \
-         reads completed, not_completed or timed_out, the directory named work holds the \
-         workspace of the task as you left it"
+         reads completed, not_completed or timed_out, the directory named work holds what you \
+         left in the working directory of the task, the file named changes lists every path you \
+         added, changed or removed in the container of the task, one to a line after A, C or D, "
     ));
 }
 

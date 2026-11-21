@@ -324,7 +324,7 @@ fn docker_is_asked_to_build_from_the_copy_of_the_dockerfile_with_an_empty_direct
 }
 
 #[test]
-fn every_container_is_started_from_the_image_docker_was_asked_to_build() {
+fn the_container_of_a_procreation_is_started_from_the_image_docker_was_asked_to_build() {
     let (_directory, arguments) = arguments_of_a_docker_that_records_them();
     let started_from = format!("\n{}\nsh\n-c\n", arguments[2]);
     assert!(arguments.join("\n").contains(&started_from));

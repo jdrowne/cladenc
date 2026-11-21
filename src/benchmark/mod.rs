@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use crate::outputs_directory::holds_only_harness_files;
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
-const WORKSPACE: &str = "workspace";
 pub(crate) const TESTS: &str = "tests";
 const GRADER: &str = "test.sh";
 pub(crate) const ENVIRONMENT: &str = "environment";
@@ -86,7 +85,6 @@ pub enum BenchmarkError {
     SameName { name: String },
     NotAnId { directory: String },
     NoSpecification { task: String },
-    NoWorkspace { task: String },
     NoGrader { task: String },
     NoEnvironment { task: String },
     ManyContainers { task: String },
@@ -133,12 +131,6 @@ impl Display for BenchmarkError {
                 formatter,
                 "task {task} holds no file of text named {SPECIFICATION}"
             ),
-            Self::NoWorkspace { task } => {
-                write!(
-                    formatter,
-                    "task {task} holds no directory named {WORKSPACE}"
-                )
-            }
             Self::NoGrader { task } => write!(
                 formatter,
                 "task {task} holds no directory named {TESTS} with an executable file named \
@@ -175,10 +167,7 @@ fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
         .map_err(|_| BenchmarkError::NotADirectory)?;
     directories.retain(|entry| entry.is_dir());
     directories.sort();
-    if is_specification(&benchmark.join(SPECIFICATION))
-        && is_directory(&benchmark.join(WORKSPACE))
-        && is_grader(benchmark)
-    {
+    if is_specification(&benchmark.join(SPECIFICATION)) && is_grader(benchmark) {
         return Err(BenchmarkError::OneTask);
     }
     if directories.is_empty() {
@@ -204,9 +193,6 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     }
     if !is_specification(&directory.join(SPECIFICATION)) {
         return Err(BenchmarkError::NoSpecification { task });
-    }
-    if !is_directory(&directory.join(WORKSPACE)) {
-        return Err(BenchmarkError::NoWorkspace { task });
     }
     if !is_grader(directory) {
         return Err(BenchmarkError::NoGrader { task });

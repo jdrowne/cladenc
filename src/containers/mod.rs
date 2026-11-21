@@ -7,6 +7,7 @@ mod program;
 mod reward;
 mod shown;
 
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -20,7 +21,7 @@ use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
-use container::{Container, Mount, Shell};
+use container::{Container, Mount, Shell, Up};
 pub use image::{build_environment, build_image};
 pub use left::remove_left_behind;
 use program::{Ending, Limits, seconds_since};
@@ -30,8 +31,9 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
-    completed, not_completed or timed_out, the directory named work holds the workspace of the \
-    task as you left it, the files named stdout and stderr hold what you printed, and the \
+    completed, not_completed or timed_out, the directory named work holds what you left in the \
+    working directory of the task, the file named changes lists every path you added, changed or \
+    removed in the container of the task, one to a line after A, C or D, the files named stdout and stderr hold what you printed, and the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
     and stderr, and the files it left in logs/verifier. Once you had ended, the grader ran the \
     tests of the task, which you are not shown, on what you left, and wrote its score in \
@@ -67,6 +69,13 @@ pub struct Launch<'a> {
     pub model: Model<'a>,
     pub procreation_timeout: u64,
     pub attempt_timeout: u64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Attempt<'a> {
+    pub harness: HarnessId,
+    pub task: &'a str,
+    pub environment_image: &'a str,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -272,29 +281,28 @@ impl Changing<'_> {
 pub fn run_attempt(
     outputs_directory: &OutputsDirectory,
     launch: &Launch<'_>,
-    harness: HarnessId,
-    task: &str,
+    attempt: Attempt<'_>,
     stop: &AtomicBool,
 ) -> Result<Attempted, ContainerError> {
-    let running = outputs_directory.running_attempt(harness, task);
+    let running = outputs_directory.running_attempt(attempt.harness, attempt.task);
     let specification = outputs_directory
-        .start_attempt(harness, task)
+        .start_attempt(attempt.harness, attempt.task)
         .and_then(|()| fs::read_to_string(running.join("specification")))
         .map_err(ContainerError::Io)?;
     let attempting = Attempting {
-        task,
+        attempt,
         running: &running,
         specification: &specification,
     };
     let attempted = attempting.run(outputs_directory, launch, stop)?;
     outputs_directory
-        .end_attempt(harness, task, attempted.result)
+        .end_attempt(attempt.harness, attempt.task, attempted.result)
         .map(|()| attempted)
         .map_err(ContainerError::Io)
 }
 
 struct Attempting<'a> {
-    task: &'a str,
+    attempt: Attempt<'a>,
     running: &'a Path,
     specification: &'a str,
 }
@@ -306,26 +314,7 @@ impl Attempting<'_> {
         launch: &Launch<'_>,
         stop: &AtomicBool,
     ) -> Result<Attempted, ContainerError> {
-        let source = self.running.join("harness");
-        let work = self.running.join("work");
         let limits = Limits::starting_now(launch.attempt_timeout, stop);
-        let container = Container {
-            outputs_directory,
-            image: launch.image,
-            mounts: &[
-                Mount {
-                    from: &source,
-                    to: HARNESS,
-                    read_only: false,
-                },
-                Mount {
-                    from: &work,
-                    to: WORK,
-                    read_only: false,
-                },
-            ],
-            working_directory: WORK,
-        };
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
             ("CLADENC_INSTRUCTION", self.specification),
@@ -338,13 +327,32 @@ impl Attempting<'_> {
             environment: &environment,
         };
         let started = Instant::now();
-        let up = container.start(self.running, limits)?;
+        let up = Up::start(
+            outputs_directory,
+            self.attempt.environment_image,
+            self.running,
+            limits,
+        )?;
+        up.put(&outputs_directory.harness(self.attempt.harness), HARNESS)?;
+        let before: BTreeSet<String> = up.changes().into_iter().collect();
         let ending = up.run(&shell, self.running, limits)?;
         let seconds = seconds_since(started);
+        let changes: String = up
+            .changes()
+            .into_iter()
+            .filter(|change| !before.contains(change))
+            .map(|change| change + "\n")
+            .collect();
+        let _ = fs::write(self.running.join("changes"), changes);
+        up.keep_work(&self.running.join("work"));
         let result = match ending {
-            Ending::Exited(_) => {
-                grader::run(outputs_directory, &up, self.task, self.running, limits)?
-            }
+            Ending::Exited(_) => grader::run(
+                outputs_directory,
+                &up,
+                self.attempt.task,
+                self.running,
+                limits,
+            )?,
             Ending::TimedOut => AttemptResult::TimedOut,
         };
         Ok(Attempted { result, seconds })

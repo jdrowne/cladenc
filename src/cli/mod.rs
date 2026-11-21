@@ -92,15 +92,16 @@ pub struct StartOptions {
         long,
         value_name = "IMAGE",
         value_parser = NonEmptyStringValueParser::new(),
-        help = "The Docker image every container is started from, where --dockerfile is not given"
+        help = "The Docker image every procreation and every build of a harness is carried out \
+                in, where --dockerfile is not given"
     )]
     docker_image: Option<String>,
     #[arg(
         long,
         value_name = "FILE",
         requires = "docker_build_timeout",
-        help = "The Dockerfile cladenc builds the image of every container from, in place of \
-                --docker-image"
+        help = "The Dockerfile cladenc builds the image of every procreation and every build of a \
+                harness from, in place of --docker-image"
     )]
     dockerfile: Option<PathBuf>,
     #[arg(

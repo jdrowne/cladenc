@@ -1,8 +1,9 @@
 pub(super) const CONTRACT: &str = "\
-Every container of a directed evolution is started from one image, the
-image of the directed evolution. It is the image that --docker-image names,
-or the image that cladenc builds when the directed evolution is started,
-from the Dockerfile that --dockerfile names, as
+Every procreation, and every build of a harness, is carried out in a
+container of one image, the image of the directed evolution. It is the
+image that --docker-image names, or the image that cladenc builds when the
+directed evolution is started, from the Dockerfile that --dockerfile
+names, as
 
     timeout -s KILL <SECONDS> docker build --tag <NAME> --file <FILE> <DIR>
 
@@ -21,8 +22,8 @@ where cladenc was killed outright, as by `kill -9`, and is not there to end
 it. The machine cladenc runs on has to hold timeout, which the package
 coreutils brings. An image that is not built stops `cladenc start` with
 exit status 2, before the directed evolution has a journal. The image stays
-on the machine when the directed evolution ends: `cladenc resume` starts
-its containers from it and builds nothing.
+on the machine when the directed evolution ends: `cladenc resume` carries
+out its procreations and builds in it, and does not build it again.
 
 cladenc fetches no image, and has no flag for a registry, the server that
 Docker fetches an image from. The name of an image says which registry it
@@ -31,12 +32,12 @@ none is of Docker Hub. The image that --docker-image names has to be on the
 machine before the directed evolution: fetched there with `docker pull`,
 carried there as a file with `docker save` and `docker load`, or built
 there. cladenc tells Docker never to fetch the image of a container, so a
-directed evolution whose image is not on the machine stops at its first
-container, and `cladenc resume` continues it once the image is there. A
-Dockerfile whose base image is on the machine, and whose steps fetch
-nothing, is built with no connection to the internet. cladenc does not ask
-Docker to fetch a base image and cannot forbid it: Docker fetches a base
-image that is not on the machine, from the registry of its name.
+directed evolution whose image is not on the machine stops at the first
+container of that image, and `cladenc resume` continues it once the image
+is there. A Dockerfile whose base image is on the machine, and whose steps
+fetch nothing, is built with no connection to the internet. cladenc does
+not ask Docker to fetch a base image and cannot forbid it: Docker fetches
+a base image that is not on the machine, from the registry of its name.
 
 cladenc builds the environment of every task of every benchmark when the
 directed evolution is started, and again each time it is resumed, before
@@ -61,8 +62,9 @@ of a task starts from has to be on the machine: cladenc does not ask
 Docker to fetch it and cannot forbid it, so Docker fetches a base image
 that is not on the machine, from the registry of its name.
 
-A harness is started in a container of the image of the directed evolution,
-as
+A harness is started in a container, of the image of the directed
+evolution for a procreation and of the environment of its task for an
+attempt, as
 
     sh -c <TIMER> <COMMAND> <SECONDS>
 
@@ -77,7 +79,8 @@ seconds have passed, and hands on its exit status. Every container of a
 directed evolution is started under it, or, for an attempt, under sleep, so
 that a container ends itself once its time limit has passed, also when
 cladenc was killed outright, as by `kill -9`, and is not there to remove
-it. The image of the directed evolution has to hold sh and sleep.
+it. The image of the directed evolution has to hold sh and sleep, and the
+environment of every task sh, sleep, rm, mkdir and chown.
 
 Until then a container that was left goes on. `cladenc resume` removes the
 containers that the directed evolution left running before it does anything
@@ -88,8 +91,8 @@ In the container of a harness,
 
   /var/lib/cladenc/harness  holds the source code of the harness, a copy
                             made for this container
-  /var/lib/cladenc/work     is the directory the harness works in, and the
-                            working directory
+  /var/lib/cladenc/work     in a procreation, the directory the harness
+                            works in, and the working directory
 
   CLADENC_HARNESS      /var/lib/cladenc/harness
   CLADENC_INSTRUCTION  what the harness is asked to do
@@ -100,8 +103,9 @@ In the container of a harness,
                        that --model-key-file names, and not set where that
                        flag is not given
 
-The command runs as the user cladenc runs as, with nothing on standard
-input, and its standard output and standard error are kept.
+In a procreation the command runs as the user cladenc runs as, and in an
+attempt as the user of the environment of the task. It is given nothing on
+standard input, and its standard output and standard error are kept.
 
 cladenc calls no model. A harness calls the model itself, at the address it
 is told. In every container, host.docker.internal names the machine cladenc
@@ -294,18 +298,17 @@ underscores and hyphens, and the directory holds
 
   instruction.md  a file of text, the task specification, which says what
                   is to be done
-  workspace       a directory of the files the work starts from, which may
-                  hold none
   tests           a directory that holds test.sh, an executable file, the
                   grader of the task, and whatever else the grader uses
   environment     a directory that holds a file named Dockerfile, which
-                  describes the environment of the task, and whatever else
-                  the Dockerfile uses
+                  describes the environment of the task, the image its
+                  attempts are carried out in with the files the work
+                  starts from, and whatever else the Dockerfile uses
 
 as in Harbor's task layout, and may hold more, such as solution, which no
 container is ever given. A file that is in the benchmark and in no task is
 left alone. A benchmark that holds no task is refused, and so is one with
-a task that lacks one of the four, or whose environment directory holds a
+a task that lacks one of the three, or whose environment directory holds a
 Compose file, such as docker-compose.yaml: an environment of more than one
 container cannot be built.
 
@@ -351,8 +354,8 @@ Every harness is benchmarked on the holdout tasks as on the non-holdout
 tasks, selection tasks and corroboration tasks alike, and nothing a harness
 is given in an attempt says which of the sets its task is in. A harness
 that procreates is given its attempts at the non-holdout tasks, and nothing
-of the holdout tasks: no task specification, no workspace, no result, and
-no count of them.
+of the holdout tasks: no task specification, no work, no result, and no
+count of them.
 
 Artificial selection goes by the selection tasks and by no others. cladenc
 chooses which harness procreates by the selection tasks that the harness
@@ -468,28 +471,30 @@ best harness of the other directed evolution, which had one attempt at each
 task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
-out in two steps, in one container of the image of the directed evolution,
-started as
+out in two steps, in one container of the environment of the task, started
+as
 
     sleep <SECONDS>
 
-First the harness is started in that container, as it is for a procreation.
-/var/lib/cladenc/work holds a copy of the workspace of the task, and
-CLADENC_INSTRUCTION holds the task specification. The harness is given
-nothing else of the task, so it can neither read nor change the grader.
-When the harness has ended, with whatever exit status, the tests directory
-of the task is copied into the same container, and its grader is run
-there, as
+First the source code of the harness is copied into that container, at
+/var/lib/cladenc/harness, and the harness is started there, as it is for a
+procreation, in the working directory of the environment and as its user:
+the user and the working directory its Dockerfile names, and root and /
+where it names none. CLADENC_INSTRUCTION holds the task specification. The
+harness is given nothing else of the task, so it can neither read nor
+change the grader. When the harness has ended, with whatever exit status,
+the tests directory of the task is copied into the same container, and its
+grader is run there, in the same working directory and as the same user,
+as
 
     sh -c <TIMER> /tests/test.sh <SECONDS>
 
-  /var/lib/cladenc/work  holds what the harness left, and is the working
-                         directory
-  /tests                 holds a copy of the tests directory of the task
-  /logs/verifier         an empty directory, for the score of the grader
+  /tests          holds a copy of the tests directory of the task, and
+                  nothing that the harness left there
+  /logs/verifier  an empty directory, for the score of the grader
 
 The grader finds the container as the harness left it: the files the
-harness left outside /var/lib/cladenc/work, and the processes it left
+harness left outside /tests and /logs/verifier, and the processes it left
 running, are there as well. A grader calls no model, and is given none of
 the three variables of the model. The two steps share the time limit of one
 attempt, and the container is removed once the attempt has ended.
@@ -530,13 +535,14 @@ connection, with the model served on that machine.
 A grader may trust what the harness left. The grader is started in the
 container as the harness left it, and everything there was the harness's
 to change: tests, build files, any program the grader starts from the
-workspace, and the processes the harness left running. A grader that runs
-the tests it finds in the workspace is passed by a harness that changed
-those tests, on a holdout task as on any other. The tests directory of the
-task is never given to a harness: a grader that keeps what it relies on
-there, and takes nothing from the workspace on trust, can be passed that
-way only by a harness that left a process running to change the copy of
-that directory, or the score, once they are made.
+working directory, and the processes the harness left running. A grader
+that runs the tests it finds in the working directory is passed by a
+harness that changed those tests, on a holdout task as on any other. The
+tests directory of the task is never given to a harness: a grader that
+keeps what it relies on there, and takes nothing from the working
+directory on trust, can be passed that way only by a harness that left a
+process running to change the copy of that directory, or the score, once
+they are made.
 
 The model may know the task. A task taken from a public source may have
 been among what the model was trained on. A harness then completes it from
@@ -549,7 +555,10 @@ benchmark, and in that one named after the task, which holds
 
   result         one word: completed, not_completed or timed_out
   specification  the task specification
-  work           the workspace of the task as the harness left it
+  work           what the harness left in the working directory of the
+                 environment, not kept where that directory is /
+  changes        every path the harness added, changed or removed in the
+                 container, one to a line after A, C or D
   stdout         the standard output of the harness
   stderr         the standard error of the harness
   grader         the standard output and the standard error of the grader,

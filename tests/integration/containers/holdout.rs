@@ -2,7 +2,7 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, ContainerError, Launch};
+use cladenc::containers::{self, Attempt, ContainerError, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -16,7 +16,8 @@ const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/lib/cladenc /var/log/claden
                                          grep -r -l t2 /var/lib/cladenc /var/log/cladenc; } > \
                                          evidence; true";
 const SAY_WHAT_IS_GIVEN: &str = "{ env | grep ^CLADENC_ | grep -v ^CLADENC_INSTRUCTION= | sort; \
-                                 pwd; ls -R /var/lib/cladenc /var/log/cladenc 2>&1; } > given";
+                                 pwd; ls -R /var/lib/cladenc /var/log/cladenc 2>&1; }";
+const SOLVE_THE_HOLDOUT_TASK: &str = "echo t2 > solved; echo t2";
 
 fn launch(run_command: &str) -> Launch<'_> {
     Launch {
@@ -59,8 +60,11 @@ fn attempted(
     let result = containers::run_attempt(
         &outputs_directory,
         &launch(run_command),
-        0,
-        task,
+        Attempt {
+            harness: 0,
+            task,
+            environment_image: test_inputs::IMAGE,
+        },
         &AtomicBool::new(false),
     );
     (directory, outputs_directory, result)
@@ -68,7 +72,7 @@ fn attempted(
 
 fn given_in_the_attempt_at(task: &str) -> String {
     let (_directory, outputs_directory, _result) = attempted(SAY_WHAT_IS_GIVEN, task);
-    fs::read_to_string(outputs_directory.attempt(0, task).join("work/given")).unwrap()
+    fs::read_to_string(outputs_directory.attempt(0, task).join("stdout")).unwrap()
 }
 
 fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
@@ -115,7 +119,7 @@ fn the_harness_of_an_attempt_at_a_holdout_task_is_given_what_that_of_any_attempt
 
 #[test]
 fn the_grader_of_a_holdout_task_says_whether_the_harness_completed_it() {
-    let (_directory, _outputs_directory, result) = attempted("echo t2 > solved", HELD_OUT);
+    let (_directory, _outputs_directory, result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
     assert!(matches!(
         result,
         Ok(containers::Attempted {
@@ -126,13 +130,13 @@ fn the_grader_of_a_holdout_task_says_whether_the_harness_completed_it() {
 }
 
 #[test]
-fn an_attempt_at_a_holdout_task_is_kept_under_holdout_with_what_it_left() {
-    let (_directory, outputs_directory, _result) = attempted("echo t2 > solved", HELD_OUT);
+fn an_attempt_at_a_holdout_task_is_kept_under_holdout_with_what_it_printed() {
+    let (_directory, outputs_directory, _result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
     assert_eq!(
         fs::read_to_string(
             outputs_directory
                 .path()
-                .join("holdout/0/benchmark/t2/work/solved")
+                .join("holdout/0/benchmark/t2/stdout")
         )
         .unwrap(),
         "t2\n"
@@ -141,7 +145,7 @@ fn an_attempt_at_a_holdout_task_is_kept_under_holdout_with_what_it_left() {
 
 #[test]
 fn an_attempt_at_a_holdout_task_leaves_nothing_under_attempts() {
-    let (_directory, outputs_directory, _result) = attempted("echo t2 > solved", HELD_OUT);
+    let (_directory, outputs_directory, _result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
     assert_eq!(
         fs::read_dir(outputs_directory.attempts(0)).unwrap().count(),
         0

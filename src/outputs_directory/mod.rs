@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use crate::benchmark::{Benchmark, SPECIFICATION};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 
+pub(crate) use copy::make_removable;
 pub use copy::{copy_tree, holds_only_harness_files, same_tree};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -241,13 +242,16 @@ impl OutputsDirectory {
 
     pub fn start_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         let running = self.running_attempt(harness, task);
-        let given = self.task(task);
         let kept = self.attempt(harness, task);
-        fs::create_dir(&running)
+        fs::read_dir(self.harness(harness))
+            .and_then(|_| fs::create_dir(&running))
             .and_then(|()| fs::create_dir_all(running.join("grader/logs/verifier")))
-            .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
-            .and_then(|()| copy_tree(&given.join("workspace"), &running.join("work")))
-            .and_then(|()| fs::copy(given.join(SPECIFICATION), running.join("specification")))
+            .and_then(|()| {
+                fs::copy(
+                    self.task(task).join(SPECIFICATION),
+                    running.join("specification"),
+                )
+            })
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 
@@ -263,8 +267,7 @@ impl OutputsDirectory {
             AttemptResult::NotCompleted => "not_completed\n",
             AttemptResult::TimedOut => "timed_out\n",
         };
-        fs::remove_dir_all(running.join("harness"))
-            .and_then(|()| fs::write(running.join("result"), word))
+        fs::write(running.join("result"), word)
             .and_then(|()| fs::rename(&running, self.attempt(harness, task)))
     }
 

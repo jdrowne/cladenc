@@ -9,7 +9,6 @@ use crate::genealogy::AttemptResult;
 use crate::outputs_directory::OutputsDirectory;
 
 const GIVEN_TESTS: &str = "/tests";
-const LOGS: &str = "/logs";
 const VERIFIER: &str = "/logs/verifier";
 const GRADER: Shell<'static> = Shell {
     command: "/tests/test.sh",
@@ -25,8 +24,8 @@ pub(super) fn run(
 ) -> Result<AttemptResult, ContainerError> {
     let grader = running.join("grader");
     let verifier = grader.join("logs/verifier");
-    up.copy_into(&outputs_directory.task(task).join(TESTS), GIVEN_TESTS)
-        .and_then(|()| up.copy_into(&grader.join("logs"), LOGS))
+    up.put(&outputs_directory.task(task).join(TESTS), GIVEN_TESTS)
+        .and_then(|()| up.put(&verifier, VERIFIER))
         .and_then(|()| up.run(&GRADER, &grader, limits))
         .map(|ending| {
             up.copy_out_of(VERIFIER, &verifier);

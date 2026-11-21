@@ -6,7 +6,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname > id; sleep 300";
+const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
@@ -63,14 +63,20 @@ fn interrupted() -> TempDir {
 fn stopped_by(signal: Signal) -> TempDir {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
-    fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
+    fs::write(
+        directory
+            .path()
+            .join("benchmark/t1/environment/workspace/hold"),
+        "",
+    )
+    .unwrap();
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
-    let id_file = outputs.join("running/attempt-0-benchmark+t1/work/id");
+    let id_file = outputs.join("running/attempt-0-benchmark+t1/stdout");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
-    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
     directory
 }
 

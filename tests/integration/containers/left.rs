@@ -7,12 +7,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Launch};
+use cladenc::containers::{self, Attempt, Launch};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
+const SAY_THE_CONTAINER_AND_STAY: &str = "hostname; sleep 300";
 
 struct Left {
     directory: TempDir,
@@ -77,7 +77,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
     };
     let id_file = outputs_directory
         .running_attempt(0, "benchmark/t1")
-        .join("work/id");
+        .join("stdout");
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
         let listed = scope.spawn(|| {
@@ -90,7 +90,12 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             stop.store(true, Ordering::SeqCst);
             String::from_utf8(listed.stdout).unwrap()
         });
-        let _ = containers::run_attempt(&outputs_directory, &launch, 0, "benchmark/t1", &stop);
+        let attempt = Attempt {
+            harness: 0,
+            task: "benchmark/t1",
+            environment_image: test_inputs::IMAGE,
+        };
+        let _ = containers::run_attempt(&outputs_directory, &launch, attempt, &stop);
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })

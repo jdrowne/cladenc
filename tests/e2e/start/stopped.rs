@@ -6,7 +6,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
+const SAY_THE_CONTAINER_AND_STAY: &str = "hostname; sleep 300";
 
 fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command {
     let options = [
@@ -36,7 +36,7 @@ fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command 
 fn id_file(directory: &TempDir) -> PathBuf {
     directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/work/id")
+        .join("outputs/running/attempt-0-benchmark+t1/stdout")
 }
 
 fn signalled_within(signal: Signal, attempt_timeout: &str) -> (TempDir, ExitStatus) {
@@ -60,7 +60,7 @@ fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
 }
 
 fn killed_outright() -> (TempDir, ExitStatus) {
-    signalled_within(Signal::SIGKILL, "3")
+    signalled_within(Signal::SIGKILL, "10")
 }
 
 #[test]

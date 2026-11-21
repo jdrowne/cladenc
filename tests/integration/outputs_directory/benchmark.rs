@@ -43,10 +43,11 @@ fn the_copy_of_a_benchmark_holds_the_specification_of_each_task() {
 }
 
 #[test]
-fn the_copy_of_a_benchmark_holds_the_workspace_of_each_task() {
+fn the_copy_of_a_benchmark_holds_the_environment_of_each_task() {
     let (_directory, path, _) = copied(&["t1", "t2", "t3"]);
     assert_eq!(
-        fs::read_to_string(path.join("benchmarks/benchmark/t3/workspace/work.txt")).unwrap(),
+        fs::read_to_string(path.join("benchmarks/benchmark/t3/environment/workspace/work.txt"))
+            .unwrap(),
         "to do\n"
     );
 }

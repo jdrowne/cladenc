@@ -74,12 +74,12 @@ fn report_prints_nothing_on_standard_output_of_a_directed_evolution_that_stopped
 #[test]
 fn report_exits_with_2_on_a_directed_evolution_that_is_still_going() {
     let directory = test_inputs::temporary_directory();
-    let mut going = start(directory.path(), "hostname > id; sleep 300")
+    let mut going = start(directory.path(), "hostname; sleep 300")
         .spawn()
         .unwrap();
     let id_file = directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/work/id");
+        .join("outputs/running/attempt-0-benchmark+t1/stdout");
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     let status = report(directory.path()).status.code();
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();

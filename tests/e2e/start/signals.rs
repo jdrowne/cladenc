@@ -7,7 +7,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 
 const SAY_THE_CONTAINER_AND_STAY_WHILE_HELD: &str =
-    "[ -e hold ] || exit 0; hostname > id; while [ -e hold ]; do sleep 1; done";
+    "[ -e hold ] || exit 0; hostname; while [ -e hold ]; do sleep 1; done";
 
 fn start(directory: &Path, run_command: &str) -> Vec<String> {
     let options = [
@@ -39,7 +39,13 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
 fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
     let directory = test_inputs::temporary_directory();
     let arguments = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_WHILE_HELD);
-    fs::write(directory.path().join("benchmark/t1/workspace/hold"), "").unwrap();
+    fs::write(
+        directory
+            .path()
+            .join("benchmark/t1/environment/workspace/hold"),
+        "",
+    )
+    .unwrap();
     let mut cladenc = Command::new("nohup")
         .args(arguments)
         .stdin(Stdio::null())
@@ -48,11 +54,14 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .spawn()
         .unwrap();
     let outputs = directory.path().join("outputs");
-    let work = outputs.join("running/attempt-0-benchmark+t1/work");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&work.join("id")));
+    let id_file = outputs.join("running/attempt-0-benchmark+t1/stdout");
+    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGHUP).unwrap();
-    fs::remove_file(outputs.join("benchmarks/benchmark/t1/workspace/hold")).unwrap();
-    fs::remove_file(work.join("hold")).unwrap();
+    let id = fs::read_to_string(&id_file).unwrap();
+    Command::new("docker")
+        .args(["exec", id.trim(), "rm", "hold"])
+        .output()
+        .unwrap();
     assert_eq!(cladenc.wait().unwrap().code(), Some(0));
 }
 

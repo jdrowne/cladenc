@@ -62,7 +62,7 @@ fn resumed_after_a_procreation_stopped() -> TempDir {
 }
 
 fn resumed_after_an_attempt_stopped() -> TempDir {
-    resumed_after_a_stop_at(99, Some("t1"), "attempt-0-benchmark+t1/work/leftover")
+    resumed_after_a_stop_at(99, Some("t1"), "attempt-0-benchmark+t1/leftover")
 }
 
 fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
@@ -126,7 +126,7 @@ fn what_an_attempt_left_under_running_is_gone_before_it_runs_again() {
     assert!(
         !directory
             .path()
-            .join("outputs/attempts/0/benchmark/t1/work/leftover")
+            .join("outputs/attempts/0/benchmark/t1/leftover")
             .exists()
     );
 }

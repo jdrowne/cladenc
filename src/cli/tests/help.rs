@@ -174,9 +174,42 @@ fn the_long_help_of_start_says_that_the_container_of_an_attempt_is_started_under
 #[test]
 fn the_long_help_of_start_says_what_the_image_has_to_hold_for_the_timer() {
     assert!(
-        help_of_start(true)
-            .contains("it. The image of the directed evolution has to hold sh and sleep.\n")
+        help_of_start(true).contains(
+            "it. The image of the directed evolution has to hold sh and sleep, and the\n"
+        )
     );
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_environment_of_every_task_has_to_hold() {
+    assert!(
+        help_of_start(true)
+            .contains("\nenvironment of every task sh, sleep, rm, mkdir and chown.\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_in_which_image_the_harness_of_an_attempt_is_started() {
+    assert!(help_of_start(true).contains(
+        "A harness is started in a container, of the image of the directed\nevolution for a \
+         procreation and of the environment of its task for an\nattempt, as\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_as_which_user_the_command_of_a_harness_runs() {
+    assert!(help_of_start(true).contains(
+        "In a procreation the command runs as the user cladenc runs as, and in an\nattempt as \
+         the user of the environment of the task."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_image_of_the_directed_evolution_is_for() {
+    assert!(help_of_start(true).contains(
+        "Every procreation, and every build of a harness, is carried out in a\ncontainer of \
+         one image, the image of the directed evolution."
+    ));
 }
 
 #[test]
@@ -192,7 +225,7 @@ fn the_long_help_of_start_names_what_a_harness_is_told() {
     let help = help_of_start(true);
     let told = [
         "  /var/lib/cladenc/harness  holds the source code of the harness",
-        "  /var/lib/cladenc/work     is the directory the harness works in",
+        "  /var/lib/cladenc/work     in a procreation, the directory the harness\n",
         "  CLADENC_HARNESS      /var/lib/cladenc/harness\n",
         "  CLADENC_INSTRUCTION  ",
     ];
@@ -320,15 +353,15 @@ fn the_long_help_of_start_says_how_an_image_is_brought_to_the_machine() {
 fn the_long_help_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_container() {
     assert!(help_of_start(true).contains(
         "cladenc tells Docker never to fetch the image of a container, so a\ndirected evolution \
-         whose image is not on the machine stops at its first\ncontainer, and `cladenc resume` \
-         continues it once the image is there."
+         whose image is not on the machine stops at the first\ncontainer of that image, and \
+         `cladenc resume` continues it once the image\nis there."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection() {
     assert!(help_of_start(true).contains(
-        "A\nDockerfile whose base image is on the machine, and whose steps fetch\nnothing, is \
+        "A Dockerfile whose base image is on the machine, and whose steps\nfetch nothing, is \
          built with no connection to the internet."
     ));
 }
@@ -336,17 +369,17 @@ fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection
 #[test]
 fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does_not_hold() {
     assert!(help_of_start(true).contains(
-        "cladenc does not ask\nDocker to fetch a base image and cannot forbid it: Docker fetches \
-         a base\nimage that is not on the machine, from the registry of its name."
+        "cladenc does\nnot ask Docker to fetch a base image and cannot forbid it: Docker fetches\na \
+         base image that is not on the machine, from the registry of its name."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_resume_builds_no_image() {
-    assert!(
-        help_of_start(true)
-            .contains("`cladenc resume` starts\nits containers from it and builds nothing.\n")
-    );
+    assert!(help_of_start(true).contains(
+        "`cladenc resume` carries\nout its procreations and builds in it, and does not build it \
+         again.\n"
+    ));
 }
 
 #[test]

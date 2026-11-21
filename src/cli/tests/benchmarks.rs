@@ -8,9 +8,8 @@ use crate::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named instruction.md, a directory named workspace, a directory \
-                     named tests with an executable file named test.sh in it and a directory named \
-                     environment with a file named Dockerfile and no Compose file in it";
+                     a file of text named instruction.md, a directory named tests with an executable \
+                     file named test.sh in it and a directory named environment with a file named Dockerfile and no Compose file in it";
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {

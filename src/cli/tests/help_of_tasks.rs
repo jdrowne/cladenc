@@ -14,15 +14,46 @@ fn help_of_start(long: bool) -> String {
 
 #[test]
 fn the_long_help_of_start_says_what_the_harness_of_an_attempt_is_given_of_its_task() {
+    assert!(
+        help_of_start(true).contains(" CLADENC_INSTRUCTION holds the task specification. The\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_attempt_is_carried_out_in_the_environment_of_its_task() {
     assert!(help_of_start(true).contains(
-        "/var/lib/cladenc/work holds a copy of the workspace of the task, \
-         and\nCLADENC_INSTRUCTION holds the task specification."
+        "and cladenc carries it\nout in two steps, in one container of the environment of the \
+         task, started\nas\n"
     ));
 }
 
 #[test]
+fn the_long_help_of_start_says_where_the_source_code_of_the_harness_of_an_attempt_is() {
+    assert!(help_of_start(true).contains(
+        "First the source code of the harness is copied into that container, at\n\
+         /var/lib/cladenc/harness,"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_as_whom_and_where_the_harness_of_an_attempt_runs() {
+    assert!(help_of_start(true).contains(
+        "in the working directory of the environment and as its user:\nthe user and the \
+         working directory its Dockerfile names, and root and /\nwhere it names none."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_grader_runs_where_and_as_whom_the_harness_ran() {
+    assert!(
+        help_of_start(true)
+            .contains("grader is run there, in the same working directory and as the same user,\n")
+    );
+}
+
+#[test]
 fn the_long_help_of_start_says_that_the_harness_can_neither_read_nor_change_the_grader() {
-    assert!(help_of_start(true).contains("so it can neither read nor change the grader."));
+    assert!(help_of_start(true).contains("so it can neither read nor\nchange the grader."));
 }
 
 #[test]
@@ -34,9 +65,9 @@ fn the_long_help_of_start_shows_how_the_grader_of_a_task_is_called() {
 fn the_long_help_of_start_names_what_a_grader_is_given() {
     let help = help_of_start(true);
     let given = [
-        "  /var/lib/cladenc/work  holds what the harness left, and is the working\n",
-        "  /tests                 holds a copy of the tests directory of the task\n",
-        "  /logs/verifier         an empty directory, for the score of the grader\n",
+        "  /tests          holds a copy of the tests directory of the task, and\n",
+        "                  nothing that the harness left there\n",
+        "  /logs/verifier  an empty directory, for the score of the grader\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
 }
@@ -93,7 +124,10 @@ fn the_long_help_of_start_names_what_the_outputs_directory_keeps_of_an_attempt()
     let kept = [
         "  result         one word: completed, not_completed or timed_out\n",
         "  specification  the task specification\n",
-        "  work           the workspace of the task as the harness left it\n",
+        "  work           what the harness left in the working directory of the\n",
+        "                 environment, not kept where that directory is /\n",
+        "  changes        every path the harness added, changed or removed in the\n",
+        "                 container, one to a line after A, C or D\n",
         "  stdout         the standard output of the harness\n",
         "  stderr         the standard error of the harness\n",
         "  grader         the standard output and the standard error of the grader,\n",
@@ -120,11 +154,24 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
     let help = help_of_start(true);
     let held = [
         "  instruction.md  a file of text, the task specification, which says what\n",
-        "  workspace       a directory of the files the work starts from",
         "  tests           a directory that holds test.sh, an executable file, the\n",
         "  environment     a directory that holds a file named Dockerfile, which\n",
     ];
     assert!(held.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_environment_of_a_task_holds_the_files_the_work_starts_from()
+{
+    assert!(help_of_start(true).contains(
+        "describes the environment of the task, the image its\n                  attempts are \
+         carried out in with the files the work\n                  starts from,"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_task_that_lacks_one_of_the_three_is_refused() {
+    assert!(help_of_start(true).contains("a task that lacks one of the three,"));
 }
 
 #[test]
@@ -291,8 +338,8 @@ fn the_long_help_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_task
 fn the_long_help_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
     assert!(help_of_start(true).contains(
         "A harness\nthat procreates is given its attempts at the non-holdout tasks, and \
-         nothing\nof the holdout tasks: no task specification, no workspace, no result, and\nno \
-         count of them."
+         nothing\nof the holdout tasks: no task specification, no work, no result, and no\ncount \
+         of them."
     ));
 }
 
@@ -359,26 +406,26 @@ fn the_long_help_of_start_says_that_a_grader_may_trust_what_the_harness_left() {
     assert!(help_of_start(true).contains(
         "A grader may trust what the harness left. The grader is started in the\ncontainer as \
          the harness left it, and everything there was the harness's\nto change: tests, build \
-         files, any program the grader starts from the\nworkspace, and the processes the \
-         harness left running."
+         files, any program the grader starts from the\nworking directory, and the processes \
+         the harness left running."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_which_grader_a_harness_that_changed_the_tests_passes() {
     assert!(help_of_start(true).contains(
-        "A grader that runs\nthe tests it finds in the workspace is passed by a harness \
-         that changed\nthose tests, on a holdout task as on any other."
+        "A grader\nthat runs the tests it finds in the working directory is passed by a\nharness \
+         that changed those tests, on a holdout task as on any other."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_which_harness_can_pass_a_grader_that_trusts_nothing_it_left() {
     assert!(help_of_start(true).contains(
-        "The tests directory of the\ntask is never given to a harness: a grader that keeps \
-         what it relies on\nthere, and takes nothing from the workspace on trust, can be passed \
-         that\nway only by a harness that left a process running to change the copy of\nthat \
-         directory, or the score, once they are made."
+        "The\ntests directory of the task is never given to a harness: a grader that\nkeeps what \
+         it relies on there, and takes nothing from the working\ndirectory on trust, can be \
+         passed that way only by a harness that left a\nprocess running to change the copy of \
+         that directory, or the score, once\nthey are made."
     ));
 }
 

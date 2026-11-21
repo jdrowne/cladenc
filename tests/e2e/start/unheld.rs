@@ -51,7 +51,7 @@ fn kept_of_what_docker_said(stopped: &Stopped) -> PathBuf {
     stopped
         .directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/stderr")
+        .join("outputs/running/procreation-1/stderr")
 }
 
 fn what_docker_said(stopped: &Stopped) -> String {
@@ -76,15 +76,15 @@ fn a_directed_evolution_whose_image_the_machine_does_not_hold_exits_with_1() {
 }
 
 #[test]
-fn a_directed_evolution_whose_image_the_machine_does_not_hold_stops_at_its_first_container() {
+fn a_directed_evolution_whose_image_the_machine_does_not_hold_stops_at_its_first_procreation() {
     let stopped = stopped();
     let said = String::from_utf8_lossy(&stopped.output.stderr);
     assert_eq!(
         said.lines().last().unwrap_or_default(),
         format!(
-            "cladenc: the directed evolution stopped before its end: the attempt of harness 0 \
-             on task benchmark/t1 could not be carried out: Docker did not start its container, \
-             and {} holds what Docker said",
+            "cladenc: the directed evolution stopped before its end: the procreation of harness \
+             1 by harness 0 could not be carried out: Docker did not start its container, and {} \
+             holds what Docker said",
             kept_of_what_docker_said(&stopped).display()
         )
     );

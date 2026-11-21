@@ -133,12 +133,11 @@ pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf 
 pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     let task = benchmark.join(id);
     let grader = task.join("tests/test.sh");
-    fs::create_dir_all(task.join("workspace")).expect("the task can be made");
     fs::create_dir_all(task.join("tests")).expect("the tests of the task can be made");
-    fs::create_dir_all(task.join("environment")).expect("the environment can be made");
+    fs::create_dir_all(task.join("environment/workspace")).expect("the environment can be made");
     fs::write(
         task.join("environment/Dockerfile"),
-        format!("FROM {IMAGE}\n"),
+        format!("FROM {IMAGE}\nWORKDIR /app\nCOPY workspace .\n"),
     )
     .expect("the Dockerfile can be written");
     fs::write(
@@ -146,7 +145,8 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
         format!("Finish the work of {id}.\n"),
     )
     .expect("the specification can be written");
-    fs::write(task.join("workspace/work.txt"), "to do\n").expect("the file can be written");
+    fs::write(task.join("environment/workspace/work.txt"), "to do\n")
+        .expect("the file can be written");
     fs::write(
         &grader,
         format!(
@@ -245,7 +245,7 @@ pub fn end_with_125_on(directory: &Path, task: &str) {
     let marker = directory
         .join("benchmark")
         .join(task)
-        .join("workspace/end-with-125");
+        .join("environment/workspace/end-with-125");
     fs::write(marker, "").expect("the marker can be written");
 }
 
@@ -253,7 +253,7 @@ pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
     let marker = outputs_directory
         .join("benchmarks/benchmark")
         .join(task)
-        .join("workspace/end-with-125");
+        .join("environment/workspace/end-with-125");
     fs::remove_file(marker).expect("the marker can be removed");
 }
 
