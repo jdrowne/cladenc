@@ -80,7 +80,7 @@ Each file is under `.claude/memories/`.
 | An issue documents one indivisible problem. | `one-indivisible-problem-per-issue.md` |
 | An issue too large for one context is split into issues that each stand alone. | `issues-are-sized-to-one-context.md` |
 | An issue states a functional requirement, seen from outside `cladenc`. | `an-issue-states-a-functional-requirement.md` |
-| An issue about a memory, a reminder or the skill carries the label `memories` or `reminders`. | `issues-about-the-sessions-rules-are-labelled.md` |
+| An issue about a memory, a reminder or the skill carries the label `memories` or `autopilot`. | `issues-about-the-sessions-rules-are-labelled.md` |
 | An issue has no fixed form and owes no section that other issues carry. | `issues-have-no-fixed-form.md` |
 | A `blocked_by` edge is written only where the block is real. | `a-blocked-by-edge-states-a-real-block.md` |
 | The work is clean-room. | `the-work-is-clean-room.md` |
