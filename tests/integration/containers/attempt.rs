@@ -10,7 +10,15 @@ use tempfile::TempDir;
 
 const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt";
-const SAY_THE_SECONDS_OF_THE_TIMER: &str = "tr '\\0' '\\n' < /proc/1/cmdline | tail -n 1 > seconds";
+const SAY_THE_SECONDS_OF_THE_TIMER: &str = "p=$PPID; \
+    while [ \"$(tr '\\0' '\\n' < /proc/$p/cmdline | wc -l)\" -lt 5 ]; \
+    do p=$(awk '/^PPid/ {print $2}' /proc/$p/status); done; \
+    tr '\\0' '\\n' < /proc/$p/cmdline | tail -n 1 > seconds";
+const LEAVE_A_PROCESS_RUNNING: &str =
+    "(while true; do echo beat >> beats; sleep 1; done) > /dev/null 2>&1 & sleep 1";
+const THE_PROCESS_STILL_RUNS: &str =
+    "before=$(wc -l < beats); sleep 3; [ \"$(wc -l < beats)\" -gt \"$before\" ]";
+const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 
 struct Attempted {
     _directory: TempDir,
@@ -19,6 +27,7 @@ struct Attempted {
 }
 
 struct Attempt<'a> {
+    image: &'a str,
     run_command: &'a str,
     grader: &'a str,
     key: Option<&'a str>,
@@ -37,7 +46,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         .unwrap();
     test_inputs::kept_grader(&path, "t1", attempt.grader);
     let launch = Launch {
-        image: test_inputs::IMAGE,
+        image: attempt.image,
         run_command: attempt.run_command,
         build_command: None,
         model: Model {
@@ -65,6 +74,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
 
 fn attempted(run_command: &str, grader: &str) -> Attempted {
     attempted_as(&Attempt {
+        image: test_inputs::IMAGE,
         run_command,
         grader,
         key: None,
@@ -75,6 +85,7 @@ fn attempted(run_command: &str, grader: &str) -> Attempted {
 
 fn within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
     attempted_as(&Attempt {
+        image: test_inputs::IMAGE,
         run_command,
         grader,
         key: None,
@@ -103,6 +114,7 @@ fn left_by_the_grader(grader: &str, file: &str) -> String {
 
 fn told_of_the_model(key: Option<&str>) -> String {
     let attempted = attempted_as(&Attempt {
+        image: test_inputs::IMAGE,
         run_command: "env | grep ^CLADENC_MODEL | sort > model",
         grader: FINISHED,
         key,
@@ -358,6 +370,78 @@ fn the_grader_is_told_nothing_of_the_model() {
 }
 
 #[test]
+fn the_grader_finds_what_the_harness_left_outside_the_workspace() {
+    assert!(matches!(
+        attempted("echo done > /tmp/left", "grep -q done /tmp/left").result,
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn the_grader_finds_a_process_that_the_harness_left_running() {
+    assert!(matches!(
+        attempted(LEAVE_A_PROCESS_RUNNING, THE_PROCESS_STILL_RUNS).result,
+        Ok(containers::Attempted {
+            result: AttemptResult::Completed,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn the_grader_runs_in_the_container_the_harness_ran_in() {
+    let attempted = attempted("hostname > harness", "hostname > grader");
+    assert_eq!(
+        kept(&attempted, "work/grader"),
+        kept(&attempted, "work/harness")
+    );
+}
+
+#[test]
+fn an_attempt_that_ended_leaves_no_container_behind() {
+    let attempted = attempted("hostname > id", FINISHED);
+    assert!(test_inputs::container_is_gone(
+        &attempted
+            .outputs_directory
+            .attempt(0, "benchmark/t1")
+            .join("work/id")
+    ));
+}
+
+#[test]
+fn an_attempt_whose_image_is_not_on_the_machine_is_an_error() {
+    let attempted = attempted_as(&Attempt {
+        image: NOT_ON_THE_MACHINE,
+        run_command: FINISH,
+        grader: FINISHED,
+        key: None,
+        harness: 0,
+        time_limit: 30,
+    });
+    assert!(matches!(attempted.result, Err(ContainerError::Docker(_))));
+}
+
+#[test]
+fn what_docker_said_of_an_attempt_whose_image_is_not_on_the_machine_is_kept() {
+    let attempted = attempted_as(&Attempt {
+        image: NOT_ON_THE_MACHINE,
+        run_command: FINISH,
+        grader: FINISHED,
+        key: None,
+        harness: 0,
+        time_limit: 30,
+    });
+    let said = attempted
+        .outputs_directory
+        .running_attempt(0, "benchmark/t1")
+        .join("stderr");
+    assert!(fs::read_to_string(said).unwrap().contains(NOT_ON_THE_MACHINE));
+}
+
+#[test]
 fn the_standard_output_of_the_grader_is_kept_apart_from_that_of_the_harness() {
     assert_eq!(
         kept(&attempted(FINISH, "echo out"), "grader/stdout"),
@@ -487,6 +571,7 @@ fn after_an_error_the_directory_of_an_attempt_is_still_under_running() {
 #[test]
 fn an_attempt_of_a_harness_that_is_not_there_is_an_error() {
     let attempted = attempted_as(&Attempt {
+        image: test_inputs::IMAGE,
         run_command: FINISH,
         grader: FINISHED,
         key: None,

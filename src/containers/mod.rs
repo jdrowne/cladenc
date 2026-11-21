@@ -19,7 +19,7 @@ use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
-use container::{Container, Mount};
+use container::{Container, Mount, Shell};
 pub use image::build_image;
 pub use left::remove_left_behind;
 use program::{Ending, Limits, seconds_since};
@@ -229,13 +229,15 @@ impl Changing<'_> {
         let container = Container {
             outputs_directory,
             image: launch.image,
-            command: launch.run_command,
             mounts: &mounts,
             working_directory: WORK,
+        };
+        let shell = Shell {
+            command: launch.run_command,
             environment: &environment,
         };
         let started = Instant::now();
-        let ending = container.run(self.running, limits)?;
+        let ending = container.run(&shell, self.running, limits)?;
         let seconds = seconds_since(started);
         let outcome = match ending {
             Ending::Exited(0) => self.made_of_what_was_left(outputs_directory, launch, limits)?,
@@ -274,46 +276,74 @@ pub fn run_attempt(
         .start_attempt(harness, task)
         .and_then(|()| fs::read_to_string(running.join("specification")))
         .map_err(ContainerError::Io)?;
-    let source = running.join("harness");
-    let work = running.join("work");
-    let limits = Limits::starting_now(launch.attempt_timeout, stop);
-    let environment: Vec<(&str, &str)> = [
-        ("CLADENC_HARNESS", HARNESS),
-        ("CLADENC_INSTRUCTION", specification.as_str()),
-    ]
-    .into_iter()
-    .chain(launch.model.environment())
-    .collect();
-    let container = Container {
-        outputs_directory,
-        image: launch.image,
-        command: launch.run_command,
-        mounts: &[
-            Mount {
-                from: &source,
-                to: HARNESS,
-                read_only: false,
-            },
-            Mount {
-                from: &work,
-                to: WORK,
-                read_only: false,
-            },
-        ],
-        working_directory: WORK,
-        environment: &environment,
+    let attempting = Attempting {
+        task,
+        running: &running,
+        specification: &specification,
     };
-    let started = Instant::now();
-    let ending = container.run(&running, limits)?;
-    let seconds = seconds_since(started);
-    let result = match ending {
-        Ending::Exited(_) => grader::run(outputs_directory, launch.image, task, &running, limits)?,
-        Ending::TimedOut => AttemptResult::TimedOut,
-    };
+    let attempted = attempting.run(outputs_directory, launch, stop)?;
     outputs_directory
-        .end_attempt(harness, task, result)
-        .map(|()| Attempted { result, seconds })
+        .end_attempt(harness, task, attempted.result)
+        .map(|()| attempted)
         .map_err(ContainerError::Io)
+}
+
+struct Attempting<'a> {
+    task: &'a str,
+    running: &'a Path,
+    specification: &'a str,
+}
+
+impl Attempting<'_> {
+    fn run(
+        &self,
+        outputs_directory: &OutputsDirectory,
+        launch: &Launch<'_>,
+        stop: &AtomicBool,
+    ) -> Result<Attempted, ContainerError> {
+        let source = self.running.join("harness");
+        let work = self.running.join("work");
+        let limits = Limits::starting_now(launch.attempt_timeout, stop);
+        let container = Container {
+            outputs_directory,
+            image: launch.image,
+            mounts: &[
+                Mount {
+                    from: &source,
+                    to: HARNESS,
+                    read_only: false,
+                },
+                Mount {
+                    from: &work,
+                    to: WORK,
+                    read_only: false,
+                },
+            ],
+            working_directory: WORK,
+        };
+        let environment: Vec<(&str, &str)> = [
+            ("CLADENC_HARNESS", HARNESS),
+            ("CLADENC_INSTRUCTION", self.specification),
+        ]
+        .into_iter()
+        .chain(launch.model.environment())
+        .collect();
+        let shell = Shell {
+            command: launch.run_command,
+            environment: &environment,
+        };
+        let started = Instant::now();
+        let up = container.start(self.running, limits)?;
+        let ending = up.run(&shell, self.running, limits)?;
+        let seconds = seconds_since(started);
+        let result = match ending {
+            Ending::Exited(_) => {
+                grader::run(outputs_directory, &up, self.task, self.running, limits)?
+            }
+            Ending::TimedOut => AttemptResult::TimedOut,
+        };
+        Ok(Attempted { result, seconds })
+    }
 }
 
 #[cfg(test)]

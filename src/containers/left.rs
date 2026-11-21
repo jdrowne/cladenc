@@ -28,7 +28,7 @@ pub fn remove_left_behind(outputs_directory: &OutputsDirectory) -> io::Result<u6
     printed_by(remove).map(|_| left.len() as u64)
 }
 
-fn printed_by(mut docker: Command) -> io::Result<String> {
+pub(super) fn printed_by(mut docker: Command) -> io::Result<String> {
     let output = docker.stdin(Stdio::null()).output()?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).into_owned())

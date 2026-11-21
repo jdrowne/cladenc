@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use super::container::{Container, Mount};
+use super::container::{Container, Mount, Shell};
 use super::program::{Ending, Limits};
 use super::{ContainerError, HARNESS, Launch};
 use crate::genealogy::{CreationOutcome, HarnessId};
@@ -75,15 +75,17 @@ impl Build<'_> {
         let container = Container {
             outputs_directory,
             image: self.image,
-            command: self.command,
             mounts: &[Mount {
                 from: self.source,
                 to: HARNESS,
                 read_only: false,
             }],
             working_directory: HARNESS,
+        };
+        let shell = Shell {
+            command: self.command,
             environment: &[("CLADENC_HARNESS", HARNESS)],
         };
-        container.run(&kept, limits)
+        container.run(&shell, &kept, limits)
     }
 }

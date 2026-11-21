@@ -38,7 +38,7 @@ fn the_long_help_of_start_names_what_a_grader_is_given() {
     let help = help_of_start(true);
     let given = [
         "  /var/lib/cladenc/work  holds what the harness left, and is the working\n",
-        "  /var/lib/cladenc/task  holds the directory of the task, to read and not\n",
+        "  /var/lib/cladenc/task  holds a copy of the directory of the task\n",
         "  CLADENC_TASK           /var/lib/cladenc/task\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
@@ -329,26 +329,28 @@ fn the_long_help_of_start_says_how_a_harness_is_kept_from_reaching_further_than_
 #[test]
 fn the_long_help_of_start_says_that_a_grader_may_trust_what_the_harness_left() {
     assert!(help_of_start(true).contains(
-        "A grader may trust what the harness left. The grader is started in the\nworkspace as \
+        "A grader may trust what the harness left. The grader is started in the\ncontainer as \
          the harness left it, and everything there was the harness's\nto change: tests, build \
-         files, any program the grader starts from there."
+         files, any program the grader starts from the\nworkspace, and the processes the \
+         harness left running."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_which_grader_a_harness_that_changed_the_tests_passes() {
     assert!(help_of_start(true).contains(
-        "A grader that runs the tests it finds in the workspace is passed by a\nharness that \
-         changed those tests, on a holdout task as on any other."
+        "A grader that runs\nthe tests it finds in the workspace is passed by a harness \
+         that changed\nthose tests, on a holdout task as on any other."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_which_grader_cannot_be_passed_that_way() {
+fn the_long_help_of_start_says_which_harness_can_pass_a_grader_that_trusts_nothing_it_left() {
     assert!(help_of_start(true).contains(
-        "The\ndirectory of the task is never given to a harness: a grader that keeps\nwhat it \
-         relies on there, its tests among them, and takes nothing from the\nworkspace on \
-         trust, cannot be passed that way."
+        "The directory of the task\nis never given to a harness: a grader that keeps what \
+         it relies on there,\nits tests among them, and takes nothing from the workspace on \
+         trust, can\nbe passed that way only by a harness that left a process running to\n\
+         change the copy of that directory once it is made."
     ));
 }
 

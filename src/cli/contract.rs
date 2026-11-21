@@ -43,17 +43,18 @@ as
 
     sh -c <TIMER> <COMMAND> <SECONDS>
 
-  <TIMER>    sh -c \"$0\" & run=$!; (sleep \"$1\"; kill -9 $run) & wait $run
+  <TIMER>    sh -c \"$0\" & run=$!;
+             (sleep \"$1\"; kill -9 $run) > /dev/null 2>&1 & wait $run
   <COMMAND>  the value of --harness-run-command
   <SECONDS>  what is left of the time limit when the container is started,
              in whole seconds, and five seconds more
 
 The timer is a line of shell that starts the command, ends it once the
 seconds have passed, and hands on its exit status. Every container of a
-directed evolution is started under it, so that a container ends itself
-once its time limit has passed, also when cladenc was killed outright, as
-by `kill -9`, and is not there to remove it. The image of the directed
-evolution has to hold sh and sleep.
+directed evolution is started under it, or, for an attempt, under sleep, so
+that a container ends itself once its time limit has passed, also when
+cladenc was killed outright, as by `kill -9`, and is not there to remove
+it. The image of the directed evolution has to hold sh and sleep.
 
 Until then a container that was left goes on. `cladenc resume` removes the
 containers that the directed evolution left running before it does anything
@@ -442,23 +443,30 @@ best harness of the other directed evolution, which had one attempt at each
 task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
-out in two steps. First the harness is started, as it is for a procreation.
+out in two steps, in one container of the image of the directed evolution,
+started as
+
+    sleep <SECONDS>
+
+First the harness is started in that container, as it is for a procreation.
 /var/lib/cladenc/work holds a copy of the workspace of the task, and
 CLADENC_INSTRUCTION holds the task specification. The harness is given
 nothing else of the task, so it can neither read nor change the grader.
-When the harness has ended, with whatever exit status, the grader of the
-task is run in a second container of the same image, as
+When the harness has ended, with whatever exit status, the directory of the
+task is copied into the same container, and its grader is run there, as
 
     sh -c <TIMER> /var/lib/cladenc/task/grader <SECONDS>
 
   /var/lib/cladenc/work  holds what the harness left, and is the working
                          directory
-  /var/lib/cladenc/task  holds the directory of the task, to read and not
-                         to change
+  /var/lib/cladenc/task  holds a copy of the directory of the task
   CLADENC_TASK           /var/lib/cladenc/task
 
-A grader calls no model, and is given none of the three variables of the
-model. The two steps share the time limit of one attempt.
+The grader finds the container as the harness left it: the files the
+harness left outside /var/lib/cladenc/work, and the processes it left
+running, are there as well. A grader calls no model, and is given none of
+the three variables of the model. The two steps share the time limit of one
+attempt, and the container is removed once the attempt has ended.
 
 How an attempt ends decides its result:
 
@@ -484,13 +492,15 @@ model, carry out the directed evolution on a machine that has no other
 connection, with the model served on that machine.
 
 A grader may trust what the harness left. The grader is started in the
-workspace as the harness left it, and everything there was the harness's
-to change: tests, build files, any program the grader starts from there.
-A grader that runs the tests it finds in the workspace is passed by a
-harness that changed those tests, on a holdout task as on any other. The
-directory of the task is never given to a harness: a grader that keeps
-what it relies on there, its tests among them, and takes nothing from the
-workspace on trust, cannot be passed that way.
+container as the harness left it, and everything there was the harness's
+to change: tests, build files, any program the grader starts from the
+workspace, and the processes the harness left running. A grader that runs
+the tests it finds in the workspace is passed by a harness that changed
+those tests, on a holdout task as on any other. The directory of the task
+is never given to a harness: a grader that keeps what it relies on there,
+its tests among them, and takes nothing from the workspace on trust, can
+be passed that way only by a harness that left a process running to
+change the copy of that directory once it is made.
 
 The model may know the task. A task taken from a public source may have
 been among what the model was trained on. A harness then completes it from

@@ -127,9 +127,10 @@ fn the_long_help_of_start_shows_how_a_harness_is_started() {
 }
 
 #[test]
-fn the_long_help_of_start_shows_the_timer_that_every_container_is_started_under() {
+fn the_long_help_of_start_shows_the_timer_that_a_command_is_started_under() {
     assert!(help_of_start(true).contains(
-        "  <TIMER>    sh -c \"$0\" & run=$!; (sleep \"$1\"; kill -9 $run) & wait $run\n"
+        "  <TIMER>    sh -c \"$0\" & run=$!;\n             \
+         (sleep \"$1\"; kill -9 $run) > /dev/null 2>&1 & wait $run\n"
     ));
 }
 
@@ -157,8 +158,16 @@ fn the_long_help_of_start_says_what_the_timer_does() {
 #[test]
 fn the_long_help_of_start_says_that_a_container_ends_itself_when_cladenc_was_killed_outright() {
     assert!(help_of_start(true).contains(
-        "a container ends itself\nonce its time limit has passed, also when cladenc was killed \
-         outright, as\nby `kill -9`, and is not there to remove it."
+        "that a container ends itself once its time limit has passed, also when\ncladenc was \
+         killed outright, as by `kill -9`, and is not there to remove\nit."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_container_of_an_attempt_is_started_under_sleep() {
+    assert!(help_of_start(true).contains(
+        "Every container of a\ndirected evolution is started under it, or, for an attempt, \
+         under sleep,"
     ));
 }
 
@@ -166,7 +175,7 @@ fn the_long_help_of_start_says_that_a_container_ends_itself_when_cladenc_was_kil
 fn the_long_help_of_start_says_what_the_image_has_to_hold_for_the_timer() {
     assert!(
         help_of_start(true)
-            .contains("The image of the directed\nevolution has to hold sh and sleep.\n")
+            .contains("it. The image of the directed evolution has to hold sh and sleep.\n")
     );
 }
 

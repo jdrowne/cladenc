@@ -12,7 +12,8 @@ use crate::outputs_directory::OutputsDirectory;
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
-const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
+const TIMER: &str =
+    r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -20,22 +21,57 @@ pub(super) struct Mount<'a> {
     pub(super) read_only: bool,
 }
 
-pub(super) struct Container<'a> {
-    pub(super) outputs_directory: &'a OutputsDirectory,
-    pub(super) image: &'a str,
+pub(super) struct Shell<'a> {
     pub(super) command: &'a str,
-    pub(super) mounts: &'a [Mount<'a>],
-    pub(super) working_directory: &'a str,
     pub(super) environment: &'a [(&'a str, &'a str)],
 }
 
+pub(super) struct Container<'a> {
+    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) image: &'a str,
+    pub(super) mounts: &'a [Mount<'a>],
+    pub(super) working_directory: &'a str,
+}
+
+pub(super) struct Up {
+    name: String,
+}
+
 impl Container<'_> {
-    pub(super) fn run(&self, running: &Path, limits: Limits<'_>) -> Result<Ending, ContainerError> {
-        let seconds = seconds_of_the_timer(limits.deadline);
-        let name = format!("cladenc-{:016x}", rand::random::<u64>());
+    pub(super) fn run(
+        &self,
+        shell: &Shell<'_>,
+        running: &Path,
+        limits: Limits<'_>,
+    ) -> Result<Ending, ContainerError> {
+        let name = named();
+        let mut docker = self.docker_run(&name);
+        shell.given_to(&mut docker);
+        docker.arg(self.image);
+        shell.timed(&mut docker, limits);
+        let ended = program::run(docker, running, limits);
+        if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
+            remove(&name);
+        }
+        started(ended, running)
+    }
+
+    pub(super) fn start(&self, running: &Path, limits: Limits<'_>) -> Result<Up, ContainerError> {
+        let up = Up { name: named() };
+        let mut docker = self.docker_run(&up.name);
+        docker
+            .args(["--detach", self.image, "sleep"])
+            .arg(seconds_of_the_timer(limits.deadline).to_string());
+        match program::run(docker, running, limits)? {
+            Ending::Exited(0) | Ending::TimedOut => Ok(up),
+            Ending::Exited(_) => Err(ContainerError::Docker(running.join("stderr"))),
+        }
+    }
+
+    fn docker_run(&self, name: &str) -> Command {
         let mut docker = Command::new("docker");
         docker
-            .args(["run", "--rm", "--pull", "never", "--name", &name, "--label"])
+            .args(["run", "--rm", "--pull", "never", "--name", name, "--label"])
             .arg(left::label(self.outputs_directory))
             .arg("--user")
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
@@ -44,20 +80,54 @@ impl Container<'_> {
         for mount in self.mounts {
             docker.arg("--volume").arg(mount.written());
         }
+        docker
+    }
+}
+
+impl Up {
+    pub(super) fn run(
+        &self,
+        shell: &Shell<'_>,
+        running: &Path,
+        limits: Limits<'_>,
+    ) -> Result<Ending, ContainerError> {
+        let mut docker = Command::new("docker");
+        docker.arg("exec");
+        shell.given_to(&mut docker);
+        docker.arg(&self.name);
+        shell.timed(&mut docker, limits);
+        started(program::run(docker, running, limits), running)
+    }
+
+    pub(super) fn copy_into(&self, from: &Path, to: &str) -> Result<(), ContainerError> {
+        let mut docker = Command::new("docker");
+        docker
+            .args(["cp", "--archive"])
+            .arg(from.join("."))
+            .arg(format!("{}:{to}", self.name));
+        left::printed_by(docker)
+            .map(drop)
+            .map_err(ContainerError::Io)
+    }
+}
+
+impl Drop for Up {
+    fn drop(&mut self) {
+        remove(&self.name);
+    }
+}
+
+impl Shell<'_> {
+    fn given_to(&self, docker: &mut Command) {
         for &(variable, value) in self.environment {
             docker.args(["--env", variable]).env(variable, value);
         }
+    }
+
+    fn timed(&self, docker: &mut Command, limits: Limits<'_>) {
         docker
-            .args([self.image, "sh", "-c", TIMER, self.command])
-            .arg(seconds.to_string());
-        let ended = program::run(docker, running, limits);
-        if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
-            remove(&name);
-        }
-        ended.and_then(|ending| match ending {
-            Ending::Exited(NOT_STARTED) => Err(ContainerError::Docker(running.join("stderr"))),
-            started => Ok(started),
-        })
+            .args(["sh", "-c", TIMER, self.command])
+            .arg(seconds_of_the_timer(limits.deadline).to_string());
     }
 }
 
@@ -71,6 +141,20 @@ impl Mount<'_> {
         }
         written
     }
+}
+
+fn named() -> String {
+    format!("cladenc-{:016x}", rand::random::<u64>())
+}
+
+fn started(
+    ended: Result<Ending, ContainerError>,
+    running: &Path,
+) -> Result<Ending, ContainerError> {
+    ended.and_then(|ending| match ending {
+        Ending::Exited(NOT_STARTED) => Err(ContainerError::Docker(running.join("stderr"))),
+        other => Ok(other),
+    })
 }
 
 fn seconds_of_the_timer(deadline: Instant) -> u64 {
