@@ -10,7 +10,7 @@ metadata:
 
 # A commit closes at least one issue
 
-Every commit closes at least one issue. It may close more than one, as many as the work in hand has finished, and it never closes none.
+Every commit closes at least one issue. It may close more than one, as many as the work has finished, and it never closes none.
 
 **Why:** The rule is the user's. A string of commits that each touch an issue and none closes it leaves the issue's work half done on `main`, and the list of open issues stops saying what is still to do.
 

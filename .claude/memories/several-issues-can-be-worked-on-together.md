@@ -1,5 +1,5 @@
 ---
-name: the-work-in-hand-can-be-several-issues
+name: several-issues-can-be-worked-on-together
 description: "The work the autopilot takes on is the lowest-numbered unblocked issue, alone or with other listed issues it chooses; an issue with open blockers joins only when all of them are in the work"
 metadata:
   node_type: memory
@@ -8,7 +8,7 @@ metadata:
   modified: 2026-11-15T15:40:19.165Z
 ---
 
-# The work in hand can be several issues
+# Several issues can be worked on together
 
 The work the autopilot takes on is not limited to one issue. It begins with the lowest-numbered listed issue that no open issue blocks, and other listed issues may be added to it.
 

@@ -10,7 +10,7 @@ metadata:
 
 # Issues have no fixed form
 
-There is no house layout for an issue's title or body. An issue is written in whatever form best says what it has to say. The one test of it is whether a session that has never seen the conversation can act on it, with the code and the memories in hand.
+There is no house layout for an issue's title or body. An issue is written in whatever form best says what it has to say. The one test of it is whether a session that has never seen the conversation can act on it, given the code and the memories.
 
 Many of the issues here open with `Goal` and a list of what the issue relies on, and close with `Sources`, `Rules for the code` and `Working rules`. That is a pattern they share and not a rule. No section is owed, and no length either.
 
