@@ -438,7 +438,11 @@ fn what_docker_said_of_an_attempt_whose_image_is_not_on_the_machine_is_kept() {
         .outputs_directory
         .running_attempt(0, "benchmark/t1")
         .join("stderr");
-    assert!(fs::read_to_string(said).unwrap().contains(NOT_ON_THE_MACHINE));
+    assert!(
+        fs::read_to_string(said)
+            .unwrap()
+            .contains(NOT_ON_THE_MACHINE)
+    );
 }
 
 #[test]

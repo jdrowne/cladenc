@@ -227,7 +227,7 @@ fn the_long_help_of_start_says_that_a_build_is_not_told_the_model() {
 #[test]
 fn the_long_help_of_start_says_that_a_grader_is_not_told_the_model() {
     assert!(help_of_start(true).contains(
-        "A grader calls no model, and is given none of the three variables of the\nmodel."
+        "A grader calls no model, and is given none of\nthe three variables of the model."
     ));
 }
 

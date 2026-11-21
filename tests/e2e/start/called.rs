@@ -6,7 +6,8 @@ use std::process::{Command, Output};
 use tempfile::TempDir;
 
 const TOLD: &str = "a-model http://models.example/v1";
-const TIMER: &str = r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) & wait $run"#;
+const TIMER: &str =
+    r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
                                              echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
                                              ${CLADENC_MODEL_KEY-none}\" > model";
@@ -210,14 +211,25 @@ fn every_container_is_started_so_that_it_can_name_the_machine_cladenc_runs_on() 
     assert!(arguments.contains("--add-host\nhost.docker.internal:host-gateway\n"));
 }
 
+fn count_of(arguments: &str, word: &str) -> usize {
+    arguments.lines().filter(|line| *line == word).count()
+}
+
 #[test]
-fn every_container_is_started_under_a_timer_that_ends_its_command() {
+fn every_command_is_started_under_a_timer_that_ends_it() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
-    let containers = arguments.lines().filter(|line| *line == "run").count();
+    let timed = count_of(&arguments, "run") + count_of(&arguments, "exec");
+    let commands = timed - count_of(&arguments, "--detach");
     assert_eq!(
         arguments.matches(&format!("\nsh\n-c\n{TIMER}\n")).count(),
-        containers.max(1)
+        commands.max(1)
     );
+}
+
+#[test]
+fn the_container_of_an_attempt_sleeps_five_seconds_more_than_the_time_limit() {
+    let arguments = ran_with_a_docker_that_records_its_arguments();
+    assert!(arguments.contains(&format!("--detach\n{}\nsleep\n35\n", test_inputs::IMAGE)));
 }
 
 #[test]
