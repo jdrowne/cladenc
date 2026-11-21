@@ -28,7 +28,7 @@ Each reminder fires every fifteen minutes, on a minute of its own at least two m
 There are six. The first, on `1,16,31,46 * * * *`, is the wait for CI:
 
 ```text
-REMINDER: While a CI run that a push of this session started is queued or in progress, only wait: no reading, edits, issue writing, commits or pushes, except a change the user asks for, which is made, committed and pushed at once.
+REMINDER: While a CI run that a push of this session started is queued or in progress, only wait: no reading, edits, issue writing, commits or pushes, except what the user instructs, which is done in full at once.
 ```
 
 The second, on `3,18,33,48 * * * *`, is the listing:
@@ -50,7 +50,7 @@ In a prompt, `<number>` stands for the issue being checked, and `gh api` fills i
 
 An issue can be taken when the listing names it and no open issue blocks it. A listing that names no issue has none that can be taken.
 
-After a push the session does nothing else until every run the push started has ended, per `.claude/memories/the-work-waits-for-ci.md`, while a background command watches each run, per `.claude/memories/every-run-is-watched.md`. A change the user asks for is the one exception: the session makes, commits and pushes it during the wait, and watches the runs that push starts as well. The reminder on `1,16,31,46 * * * *` says so. Another reminder that fires during that wait, to take work or to go on, does not end it: the session ends its turn again.
+After a push the session does nothing else until every run the push started has ended, per `.claude/memories/the-work-waits-for-ci.md`, while a background command watches each run, per `.claude/memories/every-run-is-watched.md`. What the user instructs is the one exception, per `.claude/memories/what-the-user-instructs-is-done.md`: the session does it in full during the wait, and a change it makes is committed and pushed, with the runs of that push watched as well. The reminder on `1,16,31,46 * * * *` says so. Another reminder that fires during that wait, to take work or to go on, does not end it: the session ends its turn again.
 
 ## Ending itself
 
@@ -74,6 +74,7 @@ Each file is under `.claude/memories/`.
 
 | Rule | Memory |
 | --- | --- |
+| What the user instructs is done in full and at once, whatever a memory or reminder says. | `what-the-user-instructs-is-done.md` |
 | The work in hand is one issue or several. | `the-work-in-hand-can-be-several-issues.md` |
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
 | An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
@@ -89,7 +90,7 @@ Each file is under `.claude/memories/`.
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
-| After a push, nothing else is done until every run it started has ended, except a change the user asks for, which is made, committed and pushed at once. | `the-work-waits-for-ci.md` |
+| After a push, nothing else is done until every run it started has ended, except what the user instructs. | `the-work-waits-for-ci.md` |
 | Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
 | A run found to have failed is fixed in the next commit pushed, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
 | After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |

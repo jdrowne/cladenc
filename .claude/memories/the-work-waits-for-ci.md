@@ -1,6 +1,6 @@
 ---
 name: the-work-waits-for-ci
-description: "While a run that a push of the session's started is queued or in progress, the session does nothing else: no reading, editing, filing, committing or pushing; it ends the turn until the watch reports the run's end; a change the user asks for is the one exception, made, committed and pushed at once"
+description: "While a run that a push of the session's started is queued or in progress, the session does nothing else: no reading, editing, filing, committing or pushing; it ends the turn until the watch reports the run's end; what the user instructs is the one exception, done in full at once"
 metadata:
   node_type: memory
   type: feedback
@@ -20,4 +20,4 @@ While a workflow run that a push of the session's started is queued or in progre
 - The autopilot has a reminder of its own for this rule, exception included, per "Reminders" in `.claude/skills/autopilot/SKILL.md`. Another reminder that fires during the wait, to take work or to go on autonomously, does not override it. End the turn again.
 - Once every run of the push has ended: if all passed, the next work begins. If one failed, its fix comes first.
 - A session that starts or resumes while a run of an earlier push is queued or in progress waits for that run too.
-- Replies to the user are not held back. A change the user asks for during the wait is the one exception, and it is followed through in full: made, committed and pushed without waiting for the runs, per [[push-to-main]] and [[one-commit-per-push]]. The user's rule: a change they ask for is never left half done. The runs its push starts are watched like any other, and the wait goes on until every run of both pushes has ended.
+- What the user instructs during the wait is the one exception, done in full at once, per [[what-the-user-instructs-is-done]]: a question is answered with whatever reading it takes, and a change is made, committed and pushed without waiting for the runs, per [[push-to-main]] and [[one-commit-per-push]]. The runs its push starts are watched like any other, and the wait goes on until every run of both pushes has ended.
