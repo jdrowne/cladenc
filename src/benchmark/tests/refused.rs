@@ -236,6 +236,154 @@ fn a_task_whose_grader_is_an_executable_file_named_grader_is_refused() {
     );
 }
 
+fn no_environment() -> BenchmarkError {
+    BenchmarkError::NoEnvironment {
+        task: "t2".to_owned(),
+    }
+}
+
+fn many_containers() -> BenchmarkError {
+    BenchmarkError::ManyContainers {
+        task: "t2".to_owned(),
+    }
+}
+
+fn with_a_compose_file(name: &str) -> BenchmarkError {
+    refused(|benchmark| {
+        fs::write(
+            benchmark.join("t2/environment").join(name),
+            "services: {}\n",
+        )
+        .unwrap();
+    })
+}
+
+#[test]
+fn a_task_with_no_directory_named_environment_is_refused() {
+    assert_eq!(
+        refused(|benchmark| fs::remove_dir_all(benchmark.join("t2/environment")).unwrap()),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_environment_holds_no_dockerfile_is_refused() {
+    assert_eq!(
+        refused(|benchmark| fs::remove_file(benchmark.join("t2/environment/Dockerfile")).unwrap()),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_dockerfile_is_a_directory_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::remove_file(benchmark.join("t2/environment/Dockerfile")).unwrap();
+            fs::create_dir(benchmark.join("t2/environment/Dockerfile")).unwrap();
+        }),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_dockerfile_is_a_symbolic_link_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::remove_file(benchmark.join("t2/environment/Dockerfile")).unwrap();
+            symlink(
+                "../../t1/environment/Dockerfile",
+                benchmark.join("t2/environment/Dockerfile"),
+            )
+            .unwrap();
+        }),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_environment_is_a_symbolic_link_to_a_directory_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
+            symlink("../t1/environment", benchmark.join("t2/environment")).unwrap();
+        }),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_dockerfile_is_named_in_lowercase_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::rename(
+                benchmark.join("t2/environment/Dockerfile"),
+                benchmark.join("t2/environment/dockerfile"),
+            )
+            .unwrap();
+        }),
+        no_environment()
+    );
+}
+
+#[test]
+fn a_task_whose_environment_holds_docker_compose_yaml_is_refused() {
+    assert_eq!(
+        with_a_compose_file("docker-compose.yaml"),
+        many_containers()
+    );
+}
+
+#[test]
+fn a_task_whose_environment_holds_docker_compose_yml_is_refused() {
+    assert_eq!(with_a_compose_file("docker-compose.yml"), many_containers());
+}
+
+#[test]
+fn a_task_whose_environment_holds_compose_yaml_is_refused() {
+    assert_eq!(with_a_compose_file("compose.yaml"), many_containers());
+}
+
+#[test]
+fn a_task_whose_environment_holds_compose_yml_is_refused() {
+    assert_eq!(with_a_compose_file("compose.yml"), many_containers());
+}
+
+#[test]
+fn a_task_whose_compose_file_is_a_symbolic_link_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            symlink(
+                "Dockerfile",
+                benchmark.join("t2/environment/docker-compose.yaml"),
+            )
+            .unwrap();
+        }),
+        many_containers()
+    );
+}
+
+#[test]
+fn a_task_with_a_compose_file_beside_its_environment_is_not_refused_for_it() {
+    let directory = test_inputs::temporary_directory();
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    fs::write(benchmark.join("t2/docker-compose.yaml"), "services: {}\n").unwrap();
+    assert_eq!(
+        benchmark::tasks(&benchmark),
+        Ok(vec!["t1".to_owned(), "t2".to_owned()])
+    );
+}
+
+#[test]
+fn a_task_with_no_grader_and_no_environment_is_refused_for_its_grader() {
+    assert_eq!(
+        refused(|benchmark| {
+            fs::remove_dir_all(benchmark.join("t2/tests")).unwrap();
+            fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
+        }),
+        no_grader()
+    );
+}
+
 #[test]
 fn a_task_that_holds_a_socket_is_refused() {
     let directory = test_inputs::temporary_directory();

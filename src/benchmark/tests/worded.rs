@@ -69,6 +69,24 @@ fn a_task_with_no_grader_is_said_with_its_id() {
 }
 
 #[test]
+fn a_task_with_no_environment_is_said_with_its_id() {
+    assert_eq!(
+        BenchmarkError::NoEnvironment { task: task() }.to_string(),
+        "task fix-the-parser holds no directory named environment with a file named \
+         Dockerfile in it"
+    );
+}
+
+#[test]
+fn a_task_whose_environment_needs_more_than_one_container_is_said_with_its_id() {
+    assert_eq!(
+        BenchmarkError::ManyContainers { task: task() }.to_string(),
+        "task fix-the-parser holds a Compose file in its directory named environment, and an \
+         environment of more than one container cannot be built"
+    );
+}
+
+#[test]
 fn a_task_that_cannot_be_copied_is_said_with_its_id() {
     assert_eq!(
         BenchmarkError::OtherFiles { task: task() }.to_string(),

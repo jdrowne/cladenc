@@ -126,6 +126,12 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     let grader = task.join("tests/test.sh");
     fs::create_dir_all(task.join("workspace")).expect("the task can be made");
     fs::create_dir_all(task.join("tests")).expect("the tests of the task can be made");
+    fs::create_dir_all(task.join("environment")).expect("the environment can be made");
+    fs::write(
+        task.join("environment/Dockerfile"),
+        format!("FROM {IMAGE}\n"),
+    )
+    .expect("the Dockerfile can be written");
     fs::write(
         task.join("instruction.md"),
         format!("Finish the work of {id}.\n"),

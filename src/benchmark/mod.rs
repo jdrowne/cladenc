@@ -13,6 +13,14 @@ pub(crate) const SPECIFICATION: &str = "instruction.md";
 const WORKSPACE: &str = "workspace";
 pub(crate) const TESTS: &str = "tests";
 const GRADER: &str = "test.sh";
+const ENVIRONMENT: &str = "environment";
+const DOCKERFILE: &str = "Dockerfile";
+const COMPOSE_FILES: [&str; 4] = [
+    "compose.yaml",
+    "compose.yml",
+    "docker-compose.yaml",
+    "docker-compose.yml",
+];
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Benchmark {
@@ -80,6 +88,8 @@ pub enum BenchmarkError {
     NoSpecification { task: String },
     NoWorkspace { task: String },
     NoGrader { task: String },
+    NoEnvironment { task: String },
+    ManyContainers { task: String },
     OtherFiles { task: String },
 }
 
@@ -133,6 +143,16 @@ impl Display for BenchmarkError {
                 formatter,
                 "task {task} holds no directory named {TESTS} with an executable file named \
                  {GRADER} in it"
+            ),
+            Self::NoEnvironment { task } => write!(
+                formatter,
+                "task {task} holds no directory named {ENVIRONMENT} with a file named \
+                 {DOCKERFILE} in it"
+            ),
+            Self::ManyContainers { task } => write!(
+                formatter,
+                "task {task} holds a Compose file in its directory named {ENVIRONMENT}, and an \
+                 environment of more than one container cannot be built"
             ),
             Self::OtherFiles { task } => write!(
                 formatter,
@@ -191,6 +211,12 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if !is_grader(directory) {
         return Err(BenchmarkError::NoGrader { task });
     }
+    if !is_environment(directory) {
+        return Err(BenchmarkError::NoEnvironment { task });
+    }
+    if holds_compose_file(directory) {
+        return Err(BenchmarkError::ManyContainers { task });
+    }
     if !can_be_copied(directory) {
         return Err(BenchmarkError::OtherFiles { task });
     }
@@ -217,6 +243,19 @@ fn is_directory(directory: &Path) -> bool {
 fn is_grader(task: &Path) -> bool {
     let tests = task.join(TESTS);
     is_directory(&tests) && is_program(&tests.join(GRADER))
+}
+
+fn is_environment(task: &Path) -> bool {
+    let environment = task.join(ENVIRONMENT);
+    is_directory(&environment)
+        && fs::symlink_metadata(environment.join(DOCKERFILE))
+            .is_ok_and(|dockerfile| dockerfile.is_file())
+}
+
+fn holds_compose_file(task: &Path) -> bool {
+    COMPOSE_FILES
+        .iter()
+        .any(|file| fs::symlink_metadata(task.join(ENVIRONMENT).join(file)).is_ok())
 }
 
 fn is_program(file: &Path) -> bool {

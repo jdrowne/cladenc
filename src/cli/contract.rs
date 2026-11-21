@@ -275,11 +275,16 @@ underscores and hyphens, and the directory holds
                   hold none
   tests           a directory that holds test.sh, an executable file, the
                   grader of the task, and whatever else the grader uses
+  environment     a directory that holds a file named Dockerfile, which
+                  describes the environment of the task, and whatever else
+                  the Dockerfile uses
 
 as in Harbor's task layout, and may hold more, such as solution, which no
 container is ever given. A file that is in the benchmark and in no task is
 left alone. A benchmark that holds no task is refused, and so is one with
-a task that lacks one of the three.
+a task that lacks one of the four, or whose environment directory holds a
+Compose file, such as docker-compose.yaml: an environment of more than one
+container cannot be built.
 
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on

@@ -122,8 +122,17 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
         "  instruction.md  a file of text, the task specification, which says what\n",
         "  workspace       a directory of the files the work starts from",
         "  tests           a directory that holds test.sh, an executable file, the\n",
+        "  environment     a directory that holds a file named Dockerfile, which\n",
     ];
     assert!(held.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_task_whose_environment_holds_a_compose_file_is_refused() {
+    assert!(help_of_start(true).contains(
+        "or whose environment directory holds a\nCompose file, such as docker-compose.yaml: an \
+         environment of more than one\ncontainer cannot be built."
+    ));
 }
 
 #[test]

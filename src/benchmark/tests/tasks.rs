@@ -1,7 +1,9 @@
 use std::fs;
 use std::os::unix::fs::symlink;
 
-use crate::benchmark::{self, GRADER, SPECIFICATION, TESTS, WORKSPACE};
+use crate::benchmark::{
+    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, GRADER, SPECIFICATION, TESTS, WORKSPACE,
+};
 
 #[test]
 fn the_tasks_of_a_benchmark_are_the_names_of_its_directories_in_order() {
@@ -84,5 +86,23 @@ fn the_things_a_task_holds_are_named_instruction_md_workspace_tests_and_test_sh(
     assert_eq!(
         [SPECIFICATION, WORKSPACE, TESTS, GRADER],
         ["instruction.md", "workspace", "tests", "test.sh"]
+    );
+}
+
+#[test]
+fn the_environment_of_a_task_is_named_environment_and_its_dockerfile_dockerfile() {
+    assert_eq!([ENVIRONMENT, DOCKERFILE], ["environment", "Dockerfile"]);
+}
+
+#[test]
+fn the_compose_files_that_are_refused_are_the_four_names_compose_reads() {
+    assert_eq!(
+        COMPOSE_FILES,
+        [
+            "compose.yaml",
+            "compose.yml",
+            "docker-compose.yaml",
+            "docker-compose.yml"
+        ]
     );
 }

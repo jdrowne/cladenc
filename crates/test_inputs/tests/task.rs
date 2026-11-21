@@ -43,6 +43,14 @@ fn the_workspace_holds_a_file_of_work_to_do() {
 }
 
 #[test]
+fn the_environment_is_built_from_the_test_image() {
+    assert_eq!(
+        written_in("environment/Dockerfile"),
+        "FROM busybox:1.37.0\n"
+    );
+}
+
+#[test]
 fn the_grader_writes_a_score_of_1_when_a_line_of_the_file_solved_is_the_id_of_the_task() {
     assert_eq!(
         written_in("tests/test.sh"),
