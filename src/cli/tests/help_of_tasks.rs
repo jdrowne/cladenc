@@ -100,9 +100,9 @@ fn the_long_help_of_start_says_that_a_benchmark_holds_a_directory_for_each_task(
 fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
     let help = help_of_start(true);
     let held = [
-        "  specification  a file of text, the task specification, which says what\n",
-        "  workspace      a directory of the files the work starts from",
-        "  grader         an executable file, the program that says by its exit\n",
+        "  instruction.md  a file of text, the task specification, which says what\n",
+        "  workspace       a directory of the files the work starts from",
+        "  grader          an executable file, the program that says by its exit\n",
     ];
     assert!(held.iter().all(|line| help.contains(line)));
 }

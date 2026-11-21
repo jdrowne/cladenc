@@ -187,7 +187,7 @@ fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_output
         fs::read_to_string(
             directory
                 .path()
-                .join("outputs/benchmarks/benchmark/t1/specification")
+                .join("outputs/benchmarks/benchmark/t1/instruction.md")
         )
         .unwrap(),
         "Finish the work of t1.\n"

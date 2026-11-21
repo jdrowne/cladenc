@@ -37,12 +37,12 @@ fn a_benchmark_of_no_task_is_an_empty_directory() {
 }
 
 #[test]
-fn each_task_of_a_benchmark_has_a_grader_a_specification_and_a_workspace() {
+fn each_task_of_a_benchmark_has_a_grader_an_instruction_and_a_workspace() {
     let directory = temporary_directory();
     let made = benchmark(directory.path(), &["t1", "t2"]);
     assert_eq!(
         held_by(&made.join("t2")),
-        ["grader", "specification", "workspace"]
+        ["grader", "instruction.md", "workspace"]
     );
 }
 

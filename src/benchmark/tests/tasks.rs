@@ -80,9 +80,9 @@ fn a_task_that_starts_from_no_file_is_a_task() {
 }
 
 #[test]
-fn the_three_things_a_task_holds_are_named_specification_workspace_and_grader() {
+fn the_three_things_a_task_holds_are_named_instruction_md_workspace_and_grader() {
     assert_eq!(
         [SPECIFICATION, WORKSPACE, GRADER],
-        ["specification", "workspace", "grader"]
+        ["instruction.md", "workspace", "grader"]
     );
 }

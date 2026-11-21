@@ -6,7 +6,7 @@ use std::io;
 use std::iter;
 use std::path::{Path, PathBuf};
 
-use crate::benchmark::Benchmark;
+use crate::benchmark::{Benchmark, SPECIFICATION};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 
 pub use copy::{copy_tree, holds_only_harness_files, same_tree};
@@ -238,7 +238,7 @@ impl OutputsDirectory {
             .and_then(|()| fs::create_dir(running.join("grader")))
             .and_then(|()| copy_tree(&self.harness(harness), &running.join("harness")))
             .and_then(|()| copy_tree(&given.join("workspace"), &running.join("work")))
-            .and_then(|()| fs::copy(given.join("specification"), running.join("specification")))
+            .and_then(|()| fs::copy(given.join(SPECIFICATION), running.join("specification")))
             .and_then(|_| kept.parent().map_or(Ok(()), fs::create_dir_all))
     }
 

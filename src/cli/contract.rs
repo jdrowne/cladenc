@@ -269,12 +269,12 @@ A benchmark is a directory that holds one directory for each task. The name
 of a task's directory is the id of the task, made of letters, digits, dots,
 underscores and hyphens, and the directory holds
 
-  specification  a file of text, the task specification, which says what
-                 is to be done
-  workspace      a directory of the files the work starts from, which may
-                 hold none
-  grader         an executable file, the program that says by its exit
-                 status whether the task was completed
+  instruction.md  a file of text, the task specification, which says what
+                  is to be done
+  workspace       a directory of the files the work starts from, which may
+                  hold none
+  grader          an executable file, the program that says by its exit
+                  status whether the task was completed
 
 and may hold more, such as tests that the grader runs. A file that is in
 the benchmark and in no task is left alone. A benchmark that holds no task

@@ -59,7 +59,7 @@ fn a_benchmark_that_holds_nothing_is_refused() {
 #[test]
 fn a_benchmark_that_holds_files_and_no_directory_is_refused() {
     let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("specification"), "Fix the parser.\n").unwrap();
+    fs::write(directory.path().join("instruction.md"), "Fix the parser.\n").unwrap();
     assert_eq!(
         benchmark::tasks(directory.path()),
         Err(BenchmarkError::NoTask)
@@ -89,7 +89,18 @@ fn a_directory_with_a_space_in_its_name_is_refused() {
 #[test]
 fn a_task_with_no_specification_is_refused() {
     assert_eq!(
-        refused(|benchmark| fs::remove_file(benchmark.join("t2/specification")).unwrap()),
+        refused(|benchmark| fs::remove_file(benchmark.join("t2/instruction.md")).unwrap()),
+        no_specification()
+    );
+}
+
+#[test]
+fn a_task_whose_specification_is_in_a_file_named_specification_is_refused() {
+    assert_eq!(
+        refused(|benchmark| {
+            let task = benchmark.join("t2");
+            fs::rename(task.join("instruction.md"), task.join("specification")).unwrap();
+        }),
         no_specification()
     );
 }
@@ -98,8 +109,8 @@ fn a_task_with_no_specification_is_refused() {
 fn a_task_whose_specification_is_a_directory_is_refused() {
     assert_eq!(
         refused(|benchmark| {
-            fs::remove_file(benchmark.join("t2/specification")).unwrap();
-            fs::create_dir(benchmark.join("t2/specification")).unwrap();
+            fs::remove_file(benchmark.join("t2/instruction.md")).unwrap();
+            fs::create_dir(benchmark.join("t2/instruction.md")).unwrap();
         }),
         no_specification()
     );
@@ -109,8 +120,8 @@ fn a_task_whose_specification_is_a_directory_is_refused() {
 fn a_task_whose_specification_is_a_symbolic_link_is_refused() {
     assert_eq!(
         refused(|benchmark| {
-            fs::remove_file(benchmark.join("t2/specification")).unwrap();
-            symlink("../t1/specification", benchmark.join("t2/specification")).unwrap();
+            fs::remove_file(benchmark.join("t2/instruction.md")).unwrap();
+            symlink("../t1/instruction.md", benchmark.join("t2/instruction.md")).unwrap();
         }),
         no_specification()
     );
@@ -119,7 +130,7 @@ fn a_task_whose_specification_is_a_symbolic_link_is_refused() {
 #[test]
 fn a_task_whose_specification_says_nothing_is_refused() {
     assert_eq!(
-        refused(|benchmark| fs::write(benchmark.join("t2/specification"), " \n\n").unwrap()),
+        refused(|benchmark| fs::write(benchmark.join("t2/instruction.md"), " \n\n").unwrap()),
         no_specification()
     );
 }
@@ -127,7 +138,7 @@ fn a_task_whose_specification_says_nothing_is_refused() {
 #[test]
 fn a_task_whose_specification_is_not_text_is_refused() {
     assert_eq!(
-        refused(|benchmark| fs::write(benchmark.join("t2/specification"), [0xff, 0xfe]).unwrap()),
+        refused(|benchmark| fs::write(benchmark.join("t2/instruction.md"), [0xff, 0xfe]).unwrap()),
         no_specification()
     );
 }
@@ -135,7 +146,7 @@ fn a_task_whose_specification_is_not_text_is_refused() {
 #[test]
 fn a_task_whose_specification_holds_a_nul_is_refused() {
     assert_eq!(
-        refused(|benchmark| fs::write(benchmark.join("t2/specification"), "Fix\0it.\n").unwrap()),
+        refused(|benchmark| fs::write(benchmark.join("t2/instruction.md"), "Fix\0it.\n").unwrap()),
         no_specification()
     );
 }
@@ -210,7 +221,7 @@ fn the_first_task_that_cannot_be_used_is_the_one_refused() {
     assert_eq!(
         refused(|benchmark| {
             fs::remove_file(benchmark.join("t1/grader")).unwrap();
-            fs::remove_file(benchmark.join("t2/specification")).unwrap();
+            fs::remove_file(benchmark.join("t2/instruction.md")).unwrap();
         }),
         BenchmarkError::NoGrader {
             task: "t1".to_owned()

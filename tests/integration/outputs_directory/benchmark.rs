@@ -37,7 +37,7 @@ fn names_in(directory: PathBuf) -> Vec<String> {
 fn the_copy_of_a_benchmark_holds_the_specification_of_each_task() {
     let (_directory, path, _) = copied(&["t1", "t2", "t3"]);
     assert_eq!(
-        fs::read_to_string(path.join("benchmarks/benchmark/t2/specification")).unwrap(),
+        fs::read_to_string(path.join("benchmarks/benchmark/t2/instruction.md")).unwrap(),
         "Finish the work of t2.\n"
     );
 }
@@ -127,7 +127,7 @@ fn a_task_of_the_same_id_in_two_benchmarks_is_copied_twice() {
     let (directory, path, _) = copied(&["t1"]);
     let second = test_inputs::benchmark_named(directory.path(), "refactoring", &["t1"]);
     fs::write(
-        second.join("t1/specification"),
+        second.join("t1/instruction.md"),
         "Refactor the work of t1.\n",
     )
     .unwrap();
@@ -136,7 +136,7 @@ fn a_task_of_the_same_id_in_two_benchmarks_is_copied_twice() {
         .unwrap();
     assert_eq!(
         ["benchmark/t1", "refactoring/t1"].map(|task| {
-            fs::read_to_string(OutputsDirectory::at(&path).task(task).join("specification"))
+            fs::read_to_string(OutputsDirectory::at(&path).task(task).join("instruction.md"))
                 .unwrap()
         }),
         ["Finish the work of t1.\n", "Refactor the work of t1.\n"]

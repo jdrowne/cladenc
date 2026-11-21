@@ -294,8 +294,8 @@ fn a_refused_value_is_said_with_its_option_and_what_the_option_takes() {
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
     assert!(with_no_grader_in_a_task().to_string().starts_with(
         "--benchmark takes the directory of a benchmark, in which every directory is a task that \
-         holds a file of text named specification, a directory named workspace and an executable \
-         file named grader: /"
+         holds a file of text named instruction.md, a directory named workspace and an \
+         executable file named grader: /"
     ));
 }
 

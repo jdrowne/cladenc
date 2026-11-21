@@ -8,7 +8,7 @@ use crate::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named specification, a directory named workspace and an \
+                     a file of text named instruction.md, a directory named workspace and an \
                      executable file named grader";
 
 fn options(directory: &Path) -> StartOptions {

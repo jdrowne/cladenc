@@ -312,7 +312,7 @@ fn the_working_directory_of_the_grader_holds_what_the_harness_left() {
 fn the_grader_is_told_where_the_directory_of_its_task_is() {
     assert_eq!(
         left_by_the_grader(
-            "echo \"$CLADENC_TASK\" > told; cat /var/lib/cladenc/task/specification >> told",
+            "echo \"$CLADENC_TASK\" > told; cat /var/lib/cladenc/task/instruction.md >> told",
             "told"
         ),
         "/var/lib/cladenc/task\nFinish the work of t1.\n"
@@ -332,13 +332,13 @@ fn the_grader_is_given_the_workspace_the_work_started_from() {
 
 #[test]
 fn the_grader_cannot_change_its_task() {
-    let attempted = attempted(FINISH, "echo changed > /var/lib/cladenc/task/specification");
+    let attempted = attempted(FINISH, "echo changed > /var/lib/cladenc/task/instruction.md");
     assert_eq!(
         fs::read_to_string(
             attempted
                 .outputs_directory
                 .task("benchmark/t1")
-                .join("specification")
+                .join("instruction.md")
         )
         .unwrap(),
         "Finish the work of t1.\n"

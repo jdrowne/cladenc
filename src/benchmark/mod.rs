@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
 
-const SPECIFICATION: &str = "specification";
+pub(crate) const SPECIFICATION: &str = "instruction.md";
 const WORKSPACE: &str = "workspace";
 const GRADER: &str = "grader";
 

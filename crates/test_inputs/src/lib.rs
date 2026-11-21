@@ -126,7 +126,7 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
     let grader = task.join("grader");
     fs::create_dir_all(task.join("workspace")).expect("the task can be made");
     fs::write(
-        task.join("specification"),
+        task.join("instruction.md"),
         format!("Finish the work of {id}.\n"),
     )
     .expect("the specification can be written");
