@@ -31,16 +31,16 @@ impl Display for Refused {
         } else {
             "take"
         };
+        let reason = self
+            .reason
+            .as_ref()
+            .map_or_else(String::new, |reason| format!(": {reason}"));
         write!(
             formatter,
-            "{} {takes} {}",
+            "{} {takes} {}{reason}",
             self.flags.join(" and "),
             self.accepted
-        )?;
-        match &self.reason {
-            Some(reason) => write!(formatter, ": {reason}"),
-            None => Ok(()),
-        }
+        )
     }
 }
 
