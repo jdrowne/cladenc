@@ -14,7 +14,7 @@
 - [The only package is a .deb](the-only-package-is-a-deb.md) — no RPM is made, tested or released, and nothing in CI runs on Fedora
 - [Repositories outside jdrowne stay out of the record](repositories-outside-jdrowne-stay-out-of-the-record.md) — not mentioned in a memory, and nothing from one quoted in anything public
 - [Working without subagents](working-without-subagents.md) — no Agent or Workflow call, whatever the work's size; denied in the tracked settings.json, lifted only by the user's own ask
-- [The work waits for CI](the-work-waits-for-ci.md) — while a run of the session's push is queued or in progress, do nothing else: no reading, editing, filing, committing or pushing; end the turn until the watch reports its end; an autopilot reminder says so too
+- [The work waits for CI](the-work-waits-for-ci.md) — while a run of the session's push is queued or in progress, do nothing else: no reading, editing, filing, committing or pushing; end the turn until the watch reports its end; a change the user asks for is made in the working tree and committed after; an autopilot reminder says so too
 - [What CI can do is done in CI](what-ci-can-do-is-done-in-ci.md) — no workflow check is run locally before a push: no test tier, clippy, format check, coverage, markdownlint or assert tool
 - [Every run is watched](every-run-is-watched.md) — each run a push starts gets a background watch to its end, which exits with the run's status; never take a run to have passed without reading it
 - [Long-running commands in the background](long-running-commands-in-the-background.md) — a command that can take more than about a minute is a background Bash call or a Monitor, with a time limit, never followed by a foreground wait

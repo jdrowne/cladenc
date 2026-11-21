@@ -28,7 +28,7 @@ Each reminder fires every fifteen minutes, on a minute of its own at least two m
 There are six. The first, on `1,16,31,46 * * * *`, is the wait for CI:
 
 ```text
-REMINDER: While a CI run that a push of this session started is queued or in progress, only wait: no reading, edits, issue writing, commits or pushes.
+REMINDER: While a CI run that a push of this session started is queued or in progress, only wait: no reading, edits, issue writing, commits or pushes, except a change the user asks for, which stays in the working tree until the next commit.
 ```
 
 The second, on `3,18,33,48 * * * *`, is the listing:
@@ -50,7 +50,7 @@ In a prompt, `<number>` stands for the issue being checked, and `gh api` fills i
 
 An issue can be taken when the listing names it and no open issue blocks it. A listing that names no issue has none that can be taken.
 
-After a push the session does nothing else until every run the push started has ended, per `.claude/memories/the-work-waits-for-ci.md`, while a background command watches each run, per `.claude/memories/every-run-is-watched.md`. The reminder on `1,16,31,46 * * * *` says so. Another reminder that fires during that wait, to take work or to go on, does not end it: the session ends its turn again.
+After a push the session does nothing else until every run the push started has ended, per `.claude/memories/the-work-waits-for-ci.md`, while a background command watches each run, per `.claude/memories/every-run-is-watched.md`. A change the user asks for is the one exception: the session makes it in the working tree during the wait, and it goes in the next commit. The reminder on `1,16,31,46 * * * *` says so. Another reminder that fires during that wait, to take work or to go on, does not end it: the session ends its turn again.
 
 ## Ending itself
 
@@ -89,7 +89,7 @@ Each file is under `.claude/memories/`.
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
-| After a push, nothing else is done until every run it started has ended. | `the-work-waits-for-ci.md` |
+| After a push, nothing else is done until every run it started has ended, except a change the user asks for, which stays in the working tree until the next commit. | `the-work-waits-for-ci.md` |
 | Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
 | A run found to have failed is fixed in the next commit pushed, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
 | After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
