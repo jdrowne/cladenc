@@ -12,7 +12,7 @@ metadata:
 
 Every workflow run that a push of the session's starts is watched to its end. The watch is a background command, and the session does nothing else until the run ends, per [[the-work-waits-for-ci]].
 
-**Why:** A run that nobody watches can fail unseen, most of all when the session has no new work to take and stops. The user's rule is that CI is watched. The watch runs in the background so that the turn stays free for the user and for the reminders while the session waits.
+**Why:** A run that nobody watches can fail unseen, most of all when the session has no new work to take and stops. The watch runs in the background so that the turn stays free for the user and for the reminders while the session waits.
 
 **How to apply:**
 

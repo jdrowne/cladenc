@@ -1,6 +1,6 @@
 ---
 name: cladenc-works-offline-and-self-hosted
-description: "The user's rule: cladenc has to work with no connection to the internet, with everything a directed evolution uses hosted by the person who runs it, so cladenc fetches nothing and the person brings each thing a directed evolution needs, the whole benchmark among them"
+description: "cladenc has to work with no connection to the internet, with everything a directed evolution uses hosted by the person who runs it, so cladenc fetches nothing and the person brings each thing a directed evolution needs, the whole benchmark among them"
 metadata:
   node_type: memory
   type: project
@@ -12,7 +12,7 @@ metadata:
 
 `cladenc` has to work on a machine with no connection to the internet, with everything a directed evolution uses hosted by the person who runs it.
 
-**Why:** It is the user's rule. The user has given no reason for it.
+**Why:** No reason is recorded; the rule holds as it stands.
 
 **How to apply:**
 
@@ -21,6 +21,6 @@ metadata:
 - A benchmark is brought by the person, and `--benchmark` names the whole of it, every task it holds, never one task.
 - When a benchmark is shown by example, show several tasks in it. An example that holds one task reads as though the flag named a task.
 
-Mine, not the user's: that a model served somewhere else stays something a person may give, since the rule says what `cladenc` has to be able to do and not what a person may point it at; and that the rule reaches Docker: `cladenc` has Docker fetch no image, and has no flag for a registry, since the name of an image says which registry it is of.
+A model served somewhere else stays something a person may give, since the rule says what `cladenc` has to be able to do and not what a person may point it at. The rule reaches Docker: `cladenc` has Docker fetch no image, and has no flag for a registry, since the name of an image says which registry it is of.
 
 Related: [[cladenc-takes-a-primogenitor-and-a-model]], [[the-simplest-design-is-offered-first]], [[no-flag-has-a-default]].

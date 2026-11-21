@@ -12,7 +12,7 @@ metadata:
 
 While a workflow run that a push of the session's started is queued or in progress, the session does nothing else. That means no reading of code, no edits, no issue filed or changed, no commit and no push. It ends its turn, and the notification of the background watch kept per [[every-run-is-watched]] resumes it when the run ends.
 
-**Why:** The user's rule. Each push's result is known before the next piece of work begins, and a failure is fixed per [[a-failed-run-is-fixed-before-other-work]] with nothing built on top of it. The organization's free-tier runners are shared by all of its repositories, so a run can stay queued for hours, and the work waits for that long.
+**Why:** Each push's result is known before the next piece of work begins, and a failure is fixed per [[a-failed-run-is-fixed-before-other-work]] with nothing built on top of it. The organization's free-tier runners are shared by all of its repositories, so a run can stay queued for hours, and the work waits for that long.
 
 **How to apply:**
 

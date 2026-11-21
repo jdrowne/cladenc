@@ -12,6 +12,6 @@ metadata:
 
 The tests of a change are written before its code.
 
-**Why:** A test written first says what the code is for before the code can shape it. The user's other repositories hold the same rule as a memory. An issue does not have to say it, per [[issues-have-no-fixed-form]].
+**Why:** A test written first says what the code is for before the code can shape it. An issue does not have to say it, per [[issues-have-no-fixed-form]].
 
 **How to apply:** Write the tests an issue lists, then the code that makes them pass. Both land in the commit that closes the issue, per [[a-commit-closes-at-least-one-issue]]; the tests are never pushed ahead of the code as a commit of their own. `cargo` is reached per [[cargo-is-not-on-the-shell-path]], and a run that compiles the dependencies goes in the background, per [[long-running-commands-in-the-background]].

@@ -17,8 +17,8 @@ Two words, two things:
 
 Parent is not the word for either. The harness that procreates is the progenitor.
 
-**Why:** It is the user's rule, both the telling apart and the choice of progenitor over parent. With progenitor used for the first harness, a reader cannot tell whether a sentence is about the first harness or about the harness that procreates in the procreation at hand.
+**Why:** With progenitor used for the first harness, a reader cannot tell whether a sentence is about the first harness or about the harness that procreates in the procreation at hand.
 
 **How to apply:** Say primogenitor and progenitor in replies, issues, commits, the README, the help, what `cladenc` prints and the names in the code: the flag `--primogenitor`, the key `progenitor` of the journal's `procreation_started` record, the column `progenitor` of `cladenc report`. Never write progenitor for the first harness as such, and never write parent for the harness that procreates.
 
-Mine, not the user's: `Path::parent` of the standard library keeps its name, since it names a directory and no harness. Related: [[a-procreation-has-a-progenitor-a-copy-and-a-child]], [[the-paper-is-a-starting-point]], [[cladenc-takes-a-primogenitor-and-a-model]], [[a-harness-is-not-called-a-coding-agent]].
+`Path::parent` of the standard library keeps its name, since it names a directory and no harness. Related: [[a-procreation-has-a-progenitor-a-copy-and-a-child]], [[the-paper-is-a-starting-point]], [[cladenc-takes-a-primogenitor-and-a-model]], [[a-harness-is-not-called-a-coding-agent]].

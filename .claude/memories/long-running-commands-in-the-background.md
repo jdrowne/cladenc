@@ -12,7 +12,7 @@ metadata:
 
 Run every command that can take more than about a minute as a background `Bash` call (`run_in_background: true`) or under `Monitor`, then end the turn and let its notification resume the work. In this repository that covers a `cargo` build or test run that compiles the dependencies, a sweep of `gh` calls over many issues or runs, and a long `grep` or `find` over another of the user's repositories, as well as the watch of each workflow run, per [[every-run-is-watched]].
 
-**Why:** The user's rule. A foreground command holds the turn for as long as it runs, so every scheduled reminder due in that time waits behind it and the user cannot type. A background command frees the turn as soon as it starts.
+**Why:** A foreground command holds the turn for as long as it runs, so every scheduled reminder due in that time waits behind it and the user cannot type. A background command frees the turn as soon as it starts.
 
 **How to apply:**
 

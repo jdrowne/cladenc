@@ -12,7 +12,7 @@ metadata:
 
 When the user tells the session to do something, the session does it, in full and at once. No memory, autopilot reminder or wait for CI holds it back, and the session does not turn it into a question or a `needs decision` issue.
 
-**Why:** The user's rule. An instruction from the user is to be carried out, never left half done.
+**Why:** An instruction from the user is to be carried out, never left half done.
 
 **How to apply:**
 

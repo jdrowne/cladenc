@@ -11,4 +11,4 @@ An issue about a memory under `.claude/memories/` carries the label `memories`. 
 
 **Why:** The user made the two labels, so that the issues about how the session works stand apart from the issues about `cladenc`.
 
-**How to apply:** Put the label on when the issue is filed, with `gh issue create --label`. Mine, not the user's: an issue about `cladenc` that also changes a memory, as most work does along the way, carries neither label; the labels are for an issue whose problem is in a memory, a reminder or the skill. Related: [[a-contradiction-is-the-users-to-settle]].
+**How to apply:** Put the label on when the issue is filed, with `gh issue create --label`. An issue about `cladenc` that also changes a memory, as most work does along the way, carries neither label; the labels are for an issue whose problem is in a memory, a reminder or the skill. Related: [[a-contradiction-is-the-users-to-settle]].

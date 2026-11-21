@@ -19,7 +19,7 @@ There are four levels, and an item has the narrowest one that compiles:
 - **`pub(crate)`**: used by another module of the library;
 - **`pub`**: used by `src/main.rs` or by a tier under `tests/`, which are programs of their own and see the library from outside.
 
-**Why:** The user asked for what was `pub` only so that the unit tests could reach it to stop being `pub`. Mine, not the user's: the four levels, and taking the narrowest for every kind of item, fields and re-exports among them, are how I carried that out.
+**Why:** The unit tests sit inside the library and reach any item as `crate::…`, so `pub` for their sake shows more than the code uses. The narrowest level, for every kind of item, fields and re-exports among them, says how far each item is really used.
 
 **How to apply:**
 

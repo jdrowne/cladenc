@@ -1,6 +1,6 @@
 ---
 name: cladenc-takes-a-primogenitor-and-a-model
-description: "The user's design: a person brings the source code of the primogenitor, a model, remote or self-hosted, and one or more benchmarks, and cladenc does the self-improvement itself, starting every harness in Docker and calling no model itself"
+description: "A person brings the source code of the primogenitor, a model, remote or self-hosted, and one or more benchmarks, and cladenc does the self-improvement itself, starting every harness in Docker and calling no model itself"
 metadata:
   node_type: memory
   type: project
@@ -10,13 +10,13 @@ metadata:
 
 # cladenc takes a primogenitor and a model
 
-The user's design for `cladenc`: it does recursive self-improvement over coding harnesses, after the HGM paper, and it does all of it itself. A person brings three things to a directed evolution:
+`cladenc` does recursive self-improvement over coding harnesses, after the HGM paper, and it does all of it itself. A person brings three things to a directed evolution:
 
 - **The primogenitor**, as a directory that stores the harness's source code. The directory stores source code, not a harness; say it that way in replies, issues and commits.
 - **A model**, which may be remote or self-hosted. `cladenc` supports both. A self-hosted model needs the address it is served at as well as its name, so the model is not designed as a name alone, or as a hosted provider's alone. Ollama is an example of how a self-hosted model can be served, not a requirement.
 - **One or more benchmarks**, each given with the flag `--benchmark`, which names the whole benchmark and not one task. A benchmark is a set of tasks, and a task is one item of it. The person brings each benchmark and `cladenc` fetches none, per [[cladenc-works-offline-and-self-hosted]]. A directed evolution that is given several looks for one harness that does well across all of them, where the paper gives each benchmark a run of its own.
 
-What `cladenc` does with them. Each of these is the user's decision:
+What `cladenc` does with them:
 
 - It starts every harness itself, in a Docker container. `cladenc` knows about Docker, and Docker is a dependency of the `.deb` package.
 - How a harness is built and run is given in plain flags: `--docker-image` for the image a container starts from, `--harness-run-command` for how a harness is run, and a flag for how one is built, which is given only where a harness has to be built.
@@ -25,7 +25,7 @@ What `cladenc` does with them. Each of these is the user's decision:
 - A key reaches it in a file, per [[a-key-is-given-in-a-file]].
 - No flag has a default, per [[no-flag-has-a-default]].
 
-**Why:** The user wants a tool that is handed a harness, a model and benchmarks, and improves the harness. Having to write a program that carries out part of the self-improvement leaves the main work to the person.
+**Why:** `cladenc` is meant to be handed a harness, a model and benchmarks, and to improve the harness. Having to write a program that carries out part of the self-improvement leaves the main work to the person.
 
 **How to apply:** Treat the three inputs as the intended interface. A program that a person writes to carry out part of a directed evolution, as one that makes a child or one that benchmarks a harness would be, is not part of the design, and `cladenc` has none: do not propose one. Say these words plainly to the user: benchmark first, and task only as one item of a benchmark; directed evolution, which is one run of `cladenc` from start to end; and session, which is one conversation with me.
 

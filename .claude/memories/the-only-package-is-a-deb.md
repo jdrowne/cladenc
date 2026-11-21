@@ -12,6 +12,6 @@ metadata:
 
 `cladenc` is packaged as a `.deb` alone. No RPM is made, tested or released, and nothing in CI runs on Fedora.
 
-**Why:** It is the user's decision: Fedora is not needed, and `.deb` packages are enough.
+**Why:** Fedora is not needed, and `.deb` packages are enough.
 
 **How to apply:** `package` in `.github/workflows/release.yml` makes `cladenc-linux-arm64.deb` with nfpm, and `test-package` installs it with `dpkg --install` on a clean `ubuntu:latest` and runs `cladenc --version`. Do not add another package format, or a system to test one on, unless the user asks. The platform is set by [[every-build-is-for-linux-arm64]].

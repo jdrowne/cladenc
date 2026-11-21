@@ -1,6 +1,6 @@
 ---
 name: cladenc-runs-any-benchmark
-description: "The user's rule: cladenc runs a benchmark in the form it is published in, such as SWE-bench or Polyglot, and a person brings a free harness such as OpenCode; the repository writes no harness, no benchmark and no converter of its own, and example/ holds a Dockerfile and nothing else"
+description: "cladenc runs a benchmark in the form it is published in, such as SWE-bench or Polyglot, and a person brings a free harness such as OpenCode; the repository writes no harness, no benchmark and no converter of its own, and example/ holds a Dockerfile and nothing else"
 metadata:
   node_type: memory
   type: project
@@ -12,7 +12,7 @@ metadata:
 
 `cladenc` is expected to run a benchmark as the benchmark is published, with nothing written for that one benchmark. A person brings a harness and benchmarks that already exist as free software: OpenCode as a harness, SWE-bench and Polyglot as benchmarks, for example.
 
-**Why:** It is the user's rule. Free harnesses and benchmarks exist, so a harness or a benchmark written for `cladenc` alone is work nobody needs, and a converter written for one benchmark means `cladenc` does not in fact run any benchmark.
+**Why:** Free harnesses and benchmarks exist, so a harness or a benchmark written for `cladenc` alone is work nobody needs, and a converter written for one benchmark means `cladenc` does not in fact run any benchmark.
 
 **How to apply:**
 

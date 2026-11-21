@@ -12,15 +12,15 @@ metadata:
 
 A memory states a rule or a fact as it holds now, the reason for it, and how to apply it. It is not a history: it tells nothing of how the rule came about.
 
-**Why:** It is the user's rule. My reading of the reason: a memory is read to decide what to do next, and an account of who proposed what, what was turned down and on which day changes nothing about that. It makes the memory long and it goes stale. What happened is kept where it happened, in the issues, the commits and the transcript of the conversation.
+**Why:** A memory is read to decide what to do next, and an account of who proposed what, what was turned down and on which day changes nothing about that. It makes the memory long and it goes stale. What happened is kept where it happened, in the issues, the commits and the transcript of the conversation.
 
-**How to apply:** The list is my reading of the rule, which the user states in one sentence.
+**How to apply:**
 
 - Write in the present tense: what the rule is, not when or how it was set.
 - Give the reason as a reason, not as an event. A sentence that starts with a date is the sign of an event.
 - Leave out the date of a conversation, what I proposed first, what the user answered, and the order things were decided in.
 - Leave out the state of the work: that an issue was split, closed, labelled or brought up to date, what a commit or a session did, and how the code stood on some day.
-- Say whose a rule is, since that decides whether it may be reopened: the user's rule, or my own reading that the user has not confirmed. That is a fact about the rule, not a story.
+- Leave out whose a rule is. Every rule in the memories binds alike, and a change to one goes to the user, per [[a-contradiction-is-the-users-to-settle]]; a label of who set each rule only makes the memories longer.
 - When a rule changes, rewrite the memory to say the new rule. Do not add a paragraph that says it changed.
 - Before saving, ask whether the memory would read the same if it were written a month from now. If not, what differs is history.
 

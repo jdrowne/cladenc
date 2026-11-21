@@ -12,7 +12,7 @@ metadata:
 
 An issue describes a problem, or states a functional requirement: what `cladenc` does wrong, or what it is expected to do, seen from outside: what a person gives it, what it does with that, and what comes out. It does not say how to build it: no functions or files to change, no Docker commands, no mechanism to choose between.
 
-**Why:** The user wants an issue to be a requirement. Steps for carrying it out make the issue long, tie the session that does the work to one way of doing it, and hide what is being asked.
+**Why:** Steps for carrying it out make the issue long, tie the session that does the work to one way of doing it, and hide what is being asked.
 
 **How to apply:**
 

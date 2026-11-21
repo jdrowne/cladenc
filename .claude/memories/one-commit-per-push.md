@@ -12,7 +12,7 @@ metadata:
 
 Every push carries exactly one commit. Local `main` is never more than one commit ahead of `origin/main`: a commit is pushed as soon as it is made, before another is made. That one commit may hold several things at once. It may hold the work of several issues, the fix for a failed run, changes the user asked for, and memory or skill edits: whatever is finished in the working tree when it is made.
 
-**Why:** The user's rule, as in their other repositories. CI checks a push as one run against its head, so with one commit per push each run says how exactly one commit fared. Within that limit, the user wants finished things committed and pushed together, not queued for a push each, since every push waits out its own runs per [[the-work-waits-for-ci]].
+**Why:** CI checks a push as one run against its head, so with one commit per push each run says how exactly one commit fared. Within that limit, finished things are committed and pushed together, not queued for a push each, since every push waits out its own runs per [[the-work-waits-for-ci]].
 
 **How to apply:**
 

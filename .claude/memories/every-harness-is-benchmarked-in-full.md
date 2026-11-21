@@ -1,6 +1,6 @@
 ---
 name: every-harness-is-benchmarked-in-full
-description: "The user's design: every harness is benchmarked in full once it is made, and the one number that bounds a directed evolution is the most procreations, given with --max-procreations; a count of attempts is never offered as what a person gives; a harness procreates only once it is benchmarked in full"
+description: "Every harness is benchmarked in full once it is made, and the one number that bounds a directed evolution is the most procreations, given with --max-procreations; a count of attempts is never offered as what a person gives; a harness procreates only once it is benchmarked in full"
 metadata:
   node_type: memory
   type: project
@@ -16,7 +16,7 @@ Every harness of a directed evolution is benchmarked in full once it is made, on
 
 A harness can be the progenitor of a procreation only once it has been benchmarked in full: it has attempted every task of every benchmark the directed evolution was given, and each of those attempts has finished. Where a procreation is due and no harness has been benchmarked in full, an attempt is started in its place.
 
-**Why:** It is the user's design, and the name of the flag is the user's choice. To the user a progenitor learns from all of its benchmarks, each as a whole, so a harness that has attempted part of its tasks does not procreate. To the user what is measured is a harness against the benchmarks, each as a whole, and an attempt is not a unit a person thinks in or gives a number of. That a child which is plainly worse still attempts every task is known to the user and accepted. `cladenc` is there for harnesses to improve themselves, so to the user a directed evolution in which nothing procreates goes against what the tool is for. My reading, not the user's words: every score is then over the same tasks, and no value of the flag pays for something other than what it says.
+**Why:** A progenitor learns from all of its benchmarks, each as a whole, so a harness that has attempted part of its tasks does not procreate. What is measured is a harness against the benchmarks, each as a whole, and an attempt is not a unit a person thinks in or gives a number of. That a child which is plainly worse still attempts every task is accepted. `cladenc` is there for harnesses to improve themselves, so a directed evolution in which nothing procreates goes against what the tool is for. Every score is then over the same tasks, and no value of the flag pays for something other than what it says.
 
 **How to apply:**
 

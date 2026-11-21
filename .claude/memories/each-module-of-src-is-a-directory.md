@@ -1,6 +1,6 @@
 ---
 name: each-module-of-src-is-a-directory
-description: "The user's layout for src/: every module is a directory with its own code in mod.rs, a module of one file among them; lib.rs and main.rs are the only files directly in src/, and no Rust file sits beside a directory of its name"
+description: "The layout of src/: every module is a directory with its own code in mod.rs, a module of one file among them; lib.rs and main.rs are the only files directly in src/, and no Rust file sits beside a directory of its name"
 metadata:
   node_type: memory
   type: project
@@ -12,7 +12,7 @@ metadata:
 
 Every module of `src/` is a directory, and the module's own code is in the `mod.rs` of that directory: `src/cli/mod.rs`, with `src/cli/checks.rs` and `src/cli/contract.rs` beside it. A module of one file is a directory of one file, as `src/report/mod.rs`. The only files directly in `src/` are `lib.rs` and `main.rs`, which Rust needs to be files.
 
-**Why:** The layout is the user's choice among three: a file beside a directory of its name, a directory for each module, and directories only with `lib.rs` and `main.rs` one level down. My reading of the reason, not the user's: a listing of `src/` shows each module once, everything of a module is in one directory, its unit tests among them.
+**Why:** A listing of `src/` shows each module once, everything of a module is in one directory, its unit tests among them.
 
 **How to apply:**
 
