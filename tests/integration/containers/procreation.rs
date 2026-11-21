@@ -116,7 +116,9 @@ fn heard_from_a_harness_that_says(said: &str) -> String {
             .and_then(|(mut harness, _)| harness.read_to_string(&mut heard));
         heard
     });
-    let _ = procreated(&format!("echo {said} | nc host.docker.internal {port}"));
+    let _ = procreated(&format!(
+        "bash -c 'echo {said} > /dev/tcp/host.docker.internal/{port}'"
+    ));
     drop(TcpStream::connect(("127.0.0.1", port)));
     hearing.join().unwrap()
 }

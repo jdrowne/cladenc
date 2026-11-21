@@ -1,1 +1,1 @@
-FROM busybox:1.37.0
+FROM debian:13.7-slim

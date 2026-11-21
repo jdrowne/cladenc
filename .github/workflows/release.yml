@@ -76,7 +76,7 @@ jobs:
         with:
           tool: cargo-llvm-cov@0.9.1
       - name: Fetch the image the tests start containers from
-        run: docker pull busybox:1.37.0
+        run: docker pull debian:13.7-slim
       - name: Assert that its own tests reach every line, region and function
         run: |
           cargo llvm-cov --locked --show-missing-lines \
@@ -364,7 +364,7 @@ jobs:
         with:
           name: coverage-build
       - name: Fetch the image the tests start containers from
-        run: docker pull busybox:1.37.0
+        run: docker pull debian:13.7-slim
       - name: E2E tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
@@ -389,7 +389,7 @@ jobs:
         with:
           name: debug
       - name: Fetch the image the tests start containers from
-        run: docker pull busybox:1.37.0
+        run: docker pull debian:13.7-slim
       - name: E2E tests
         run: |
           tar -xf debug.tar
@@ -405,7 +405,7 @@ jobs:
         with:
           name: coverage-build
       - name: Fetch the image the tests start containers from
-        run: docker pull busybox:1.37.0
+        run: docker pull debian:13.7-slim
       - name: Integration tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
@@ -430,7 +430,7 @@ jobs:
         with:
           name: debug
       - name: Fetch the image the tests start containers from
-        run: docker pull busybox:1.37.0
+        run: docker pull debian:13.7-slim
       - name: Integration tests
         run: |
           tar -xf debug.tar
@@ -540,7 +540,7 @@ jobs:
       - name: Install the package on a clean system and run what it needs
         run: >-
           docker run --rm --env DEBIAN_FRONTEND=noninteractive
-          --volume "$PWD/package:/package:ro" ubuntu:latest
+          --volume "$PWD/package:/package:ro" debian:13.7-slim
           sh -ec "apt-get update
           && apt-get install --yes --no-install-recommends
           /package/cladenc-linux-arm64.deb

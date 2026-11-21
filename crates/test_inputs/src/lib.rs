@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use tempfile::TempDir;
 
-pub const IMAGE: &str = "busybox:1.37.0";
+pub const IMAGE: &str = "debian:13.7-slim";
 
 pub const MODEL: &str = "a-model";
 
