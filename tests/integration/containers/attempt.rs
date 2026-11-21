@@ -332,7 +332,10 @@ fn the_grader_is_given_the_workspace_the_work_started_from() {
 
 #[test]
 fn the_grader_cannot_change_its_task() {
-    let attempted = attempted(FINISH, "echo changed > /var/lib/cladenc/task/instruction.md");
+    let attempted = attempted(
+        FINISH,
+        "echo changed > /var/lib/cladenc/task/instruction.md",
+    );
     assert_eq!(
         fs::read_to_string(
             attempted

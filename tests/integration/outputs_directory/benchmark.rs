@@ -136,8 +136,12 @@ fn a_task_of_the_same_id_in_two_benchmarks_is_copied_twice() {
         .unwrap();
     assert_eq!(
         ["benchmark/t1", "refactoring/t1"].map(|task| {
-            fs::read_to_string(OutputsDirectory::at(&path).task(task).join("instruction.md"))
-                .unwrap()
+            fs::read_to_string(
+                OutputsDirectory::at(&path)
+                    .task(task)
+                    .join("instruction.md"),
+            )
+            .unwrap()
         }),
         ["Finish the work of t1.\n", "Refactor the work of t1.\n"]
     );
