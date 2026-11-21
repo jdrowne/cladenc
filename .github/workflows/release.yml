@@ -5,6 +5,8 @@ concurrency:
 defaults:
   run:
     shell: bash
+env:
+  IMAGES: debian:stable-slim goreleaser/nfpm
 jobs:
   assert-coverage:
     needs:
@@ -14,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -24,7 +26,7 @@ jobs:
         with:
           tool: cargo-llvm-cov@0.9.1
       - name: Take the instrumented build and the profiles of each tier
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           pattern: coverage-*
@@ -63,20 +65,31 @@ jobs:
           sys.exit(missed)
           PYTHON
   assert-coverage-of-test-inputs:
+    needs: cache-images
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
+      - name: Restore what earlier runs compiled
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov@0.9.1
-      - name: Fetch the image the tests start containers from
-        run: docker pull debian:stable-slim
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - name: Assert that its own tests reach every line, region and function
         run: |
           cargo llvm-cov --locked --show-missing-lines \
@@ -89,11 +102,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install assert-no-comments
       - name: assert-no-comments
@@ -106,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Assert that every test file holds a test
         run: |
           tests=('tests/*.rs' 'src/*/tests/*.rs' 'crates/*/tests/*.rs')
@@ -123,11 +144,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install assert-no-inline-directives
       - name: assert-no-inline-directives
@@ -140,11 +169,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install assert-no-linter-config-files
       - name: assert-no-linter-config-files
@@ -158,11 +195,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install tree-sitter==0.26.1 tree-sitter-rust==0.24.2
       - name: Assert that no function has more than 50 statements
@@ -218,7 +263,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Assert that no Rust file has more than 1000 lines
         run: |
           git ls-files -z '*.rs' | xargs -0 wc -l | awk -v limit=1000 '
@@ -232,11 +277,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install assert-one-assert-per-test
       - name: assert-one-assert-per-test
@@ -245,7 +298,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Assert that each module of src is a directory
         run: |
           files=(':(glob)src/*.rs' ':!src/lib.rs' ':!src/main.rs')
@@ -261,11 +314,15 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
+      - name: Restore what earlier runs compiled
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
@@ -287,7 +344,7 @@ jobs:
           tar -cPf coverage.tar coverage.env target/debug/cladenc \
             target/test-* $(cat target/test-*) "${unit%/out/*}/fingerprint"
       - name: Hand on what was built
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-build
           path: coverage.tar
@@ -296,9 +353,13 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
+      - name: Restore what earlier runs compiled
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Build the program and the tests
         run: |
           cargo test --locked --no-run \
@@ -313,7 +374,7 @@ jobs:
           done
           tar -cf debug.tar target/debug/cladenc target/debug/test-*
       - name: Hand on what was built
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: debug
           path: debug.tar
@@ -322,28 +383,69 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
+      - name: Restore what earlier runs compiled
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Build the program for release
         run: |
           cargo build --locked --release
           cp target/release/cladenc cladenc-linux-arm64
       - name: Hand on the program
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: program
           path: cladenc-linux-arm64
           retention-days: 1
+  cache-images:
+    outputs:
+      key: ${{ steps.key.outputs.key }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - id: key
+        name: Name the cache after the digest of every image
+        run: |
+          for image in $IMAGES; do
+            docker buildx imagetools inspect --raw "$image" | sha256sum
+          done > digests
+          key="images-$(sha256sum < digests | cut -c1-64)"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+      - id: cached
+        name: Look for the images in the cache
+        uses: actions/cache/restore@v6
+        with:
+          key: ${{ steps.key.outputs.key }}
+          lookup-only: true
+          path: images.tar
+      - if: steps.cached.outputs.cache-hit != 'true'
+        name: Fetch the images
+        run: |
+          for image in $IMAGES; do
+            docker pull "$image"
+          done
+          docker save --output images.tar $IMAGES
+      - if: steps.cached.outputs.cache-hit != 'true'
+        name: Keep the images in the cache
+        uses: actions/cache/save@v6
+        with:
+          key: ${{ steps.key.outputs.key }}
+          path: images.tar
   clippy:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - name: Restore what earlier runs compiled
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - env:
           CLIPPY_CONF_DIR: ${{ github.workspace }}/etc/clippy
         name: clippy
@@ -354,17 +456,25 @@ jobs:
           -D clippy::self_named_module_files
           -D clippy::too_many_lines
   e2e-test-coverage:
-    needs: build-coverage
+    needs:
+      - build-coverage
+      - cache-images
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-build
-      - name: Fetch the image the tests start containers from
-        run: docker pull debian:stable-slim
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - name: E2E tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
@@ -373,39 +483,55 @@ jobs:
           "$(cat target/test-e2e)"
           tar -cf profiles-e2e.tar target/*.profraw
       - name: Hand on the profiles
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-e2e
           path: profiles-e2e.tar
           retention-days: 1
   e2e-test-debug:
-    needs: build-debug
+    needs:
+      - build-debug
+      - cache-images
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: debug
-      - name: Fetch the image the tests start containers from
-        run: docker pull debian:stable-slim
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - name: E2E tests
         run: |
           tar -xf debug.tar
           target/debug/test-e2e
   integration-test-coverage:
-    needs: build-coverage
+    needs:
+      - build-coverage
+      - cache-images
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-build
-      - name: Fetch the image the tests start containers from
-        run: docker pull debian:stable-slim
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - name: Integration tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
@@ -414,40 +540,58 @@ jobs:
           "$(cat target/test-integration)"
           tar -cf profiles-integration.tar target/*.profraw
       - name: Hand on the profiles
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-integration
           path: profiles-integration.tar
           retention-days: 1
   integration-test-debug:
-    needs: build-debug
+    needs:
+      - build-debug
+      - cache-images
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: debug
-      - name: Fetch the image the tests start containers from
-        run: docker pull debian:stable-slim
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - name: Integration tests
         run: |
           tar -xf debug.tar
           target/debug/test-integration
   package:
-    needs: build-release
+    needs:
+      - build-release
+      - cache-images
     outputs:
       version: ${{ steps.version.outputs.version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take the program
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: program
           path: programs
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
       - id: version
         name: Number the release by the time
         run: echo "version=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
@@ -462,7 +606,7 @@ jobs:
             --config etc/nfpm/nfpm.yaml --packager deb \
             --target package/cladenc-linux-arm64.deb
       - name: Hand on the package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: package
           path: package
@@ -480,6 +624,7 @@ jobs:
       - assert-no-oversized-source-files
       - assert-one-assert-per-test
       - assert-one-directory-per-module
+      - cache-images
       - clippy
       - e2e-test-debug
       - integration-test-debug
@@ -493,14 +638,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take the program
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: program
           path: release
       - name: Take the package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: package
           path: release
@@ -519,7 +664,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install the toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -529,32 +674,53 @@ jobs:
       - name: rustfmt, on every Rust file, built or not
         run: rustfmt --check --edition 2024 $(git ls-files '*.rs')
   test-package:
-    needs: package
+    needs:
+      - cache-images
+      - package
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Take the package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: package
           path: package
+      - name: Take the images from the cache
+        uses: actions/cache/restore@v6
+        with:
+          fail-on-cache-miss: true
+          key: ${{ needs.cache-images.outputs.key }}
+          path: images.tar
+      - name: Load the images
+        run: docker load --input images.tar
+      - name: Restore the packages and lists apt fetched before
+        uses: actions/cache@v6
+        with:
+          key: apt-${{ needs.cache-images.outputs.key }}
+          path: apt
+          restore-keys: apt-
       - name: Install the package on a clean system and run what it needs
         run: >-
           docker run --rm --env DEBIAN_FRONTEND=noninteractive
-          --volume "$PWD/package:/package:ro" debian:stable-slim
-          sh -ec "apt-get update
+          --volume "$PWD/package:/package:ro"
+          --volume "$PWD/apt/archives:/var/cache/apt/archives"
+          --volume "$PWD/apt/lists:/var/lib/apt/lists"
+          debian:stable-slim
+          sh -ec "rm -f /etc/apt/apt.conf.d/docker-clean
+          && apt-get update
           && apt-get install --yes --no-install-recommends
           /package/cladenc-linux-arm64.deb
           && cladenc --version
           && docker --version
-          && timeout --version"
+          && timeout --version
+          && chmod -R a+rX /var/cache/apt/archives /var/lib/apt/lists"
   unit-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-build
       - name: Unit tests, keeping their profiles
@@ -565,7 +731,7 @@ jobs:
           "$(cat target/test-unit)"
           tar -cf profiles-unit.tar target/*.profraw
       - name: Hand on the profiles
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-unit
           path: profiles-unit.tar
@@ -575,9 +741,9 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Take what was built
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: debug
       - name: Unit tests
@@ -588,11 +754,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install yamllint
       - name: yamllint

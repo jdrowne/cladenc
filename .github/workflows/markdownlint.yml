@@ -7,13 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
+      - name: Restore what npm fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            npm-${{ github.job }}-${{
+            hashFiles('.github/workflows/markdownlint.yml') }}
+          path: ~/.npm
+          restore-keys: npm-${{ github.job }}-
       - name: Install dependencies
-        run: npm install -g markdownlint-cli
+        run: npm install --global --prefer-offline markdownlint-cli
       - name: markdownlint
         run: >-
           markdownlint --dot --disable MD013 --ignore 'tests/**/samples/**'
@@ -22,11 +30,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/markdownlint.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
       - name: Install dependencies
         run: pip install yamllint
       - name: yamllint

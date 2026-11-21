@@ -58,3 +58,4 @@
 - [cladenc runs any benchmark](cladenc-runs-any-benchmark.md) — a benchmark is run as published and a free harness such as OpenCode is brought; no harness, benchmark or converter is written in the repository, and example/ holds only a Dockerfile
 - [An issue states a functional requirement](an-issue-states-a-functional-requirement.md) — a problem, or what cladenc is expected to do, seen from outside; never how to build it: no functions, files, Docker commands or mechanisms
 - [A flag name says what it holds](a-flag-name-says-what-it-holds.md) — the kind of value in full and its use in front, such as `--procreation-docker-image`; never a bare word like image
+- [CI caches all it can](ci-caches-all-it-can.md) — every job takes from the GitHub Actions cache what it would fetch or compile again: Rust builds, pip and npm downloads, the Docker images in `IMAGES`, what apt fetches; a new job gets the same
