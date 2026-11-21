@@ -19,7 +19,7 @@
 - [Every run is watched](every-run-is-watched.md) — each run a push starts gets a background watch to its end, which exits with the run's status; never take a run to have passed without reading it
 - [Long-running commands in the background](long-running-commands-in-the-background.md) — a command that can take more than about a minute is a background Bash call or a Monitor, with a time limit, never followed by a foreground wait
 - [cargo is not on the shell's PATH](cargo-is-not-on-the-shell-path.md) — Rust is installed in ~/.cargo/bin; put it on PATH before calling cargo, and do not install it again
-- [Several issues can be worked on together](several-issues-can-be-worked-on-together.md) — the autopilot takes the lowest unblocked issue, alone or with others it chooses; a blocked issue joins only with all its open blockers
+- [Several issues can be worked on together](several-issues-can-be-worked-on-together.md) — the autopilot takes the first unblocked issue it lists, an issue labelled `memories` or `autopilot` first outside `bylabel`, alone or with others it chooses; a blocked issue joins only with all its open blockers
 - [Issues have no fixed form](issues-have-no-fixed-form.md) — no house layout and no section owed; write each issue in whatever form lets a session that never saw the conversation act on it
 - [Issues are sized to one context](issues-are-sized-to-one-context.md) — split a plan too large for one context into stand-alone issues, re-using the original, ordered by blocked_by edges
 - [One indivisible problem per issue](one-indivisible-problem-per-issue.md) — an issue documenting more than one problem is split, re-using the issue as one of the splits

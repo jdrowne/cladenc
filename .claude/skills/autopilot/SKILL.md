@@ -7,7 +7,7 @@ description: Start, restart or stop the autopilot reminders, which keep the sess
 
 The autopilot is a set of scheduled reminders. Together they keep the session solving the open issues, or with `bylabel` only the open issues that carry one label, per "By label", in the order their `blocked by` edges set, until none is left that it can take. Then the autopilot ends itself, per "Ending itself".
 
-The session works on one issue or several at a time: the lowest-numbered listed issue that no open issue blocks, and any other listed issues it chooses to add, per `.claude/memories/several-issues-can-be-worked-on-together.md`.
+The session works on one issue or several at a time: the first listed issue that no open issue blocks, and any other listed issues it chooses to add, per `.claude/memories/several-issues-can-be-worked-on-together.md`.
 
 Starting the autopilot is the user's request to commit and push what it solves: each commit goes to `main` without a further go-ahead, per `.claude/memories/push-to-main.md`, and each closes at least one issue, per `.claude/memories/a-commit-closes-at-least-one-issue.md`. Each push is one commit, which may hold several things at once, per `.claude/memories/one-commit-per-push.md`.
 
@@ -21,7 +21,7 @@ A rule is a reminder only when it tells the session what to do next at the momen
 
 Before a reminder is added, the test is whether its rule would still hold with the autopilot stopped. When it would, the rule is written as a memory and given a row in "Rules that are memories", and it is a reminder as well only when a reminder that fires would otherwise lead the session against it, as with the wait for CI.
 
-Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders. The reminder that takes work is one rule, taking the issues in turn: listing them, taking the lowest, and listing them again once those close are its steps, so the same words hold at the first start and in the middle of work.
+Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders. The reminder that takes work is one rule, taking the issues in turn: listing them, taking the first, and listing them again once those close are its steps, so the same words hold at the first start and in the middle of work.
 
 Each reminder fires every fifteen minutes, on a minute of its own at least two minutes from the next, and none falls on the hour or the half hour. A reminder fires only while the session is idle, which is why every command that can run long goes in the background, per `.claude/memories/long-running-commands-in-the-background.md`.
 
@@ -34,8 +34,10 @@ REMINDER: While a CI run that a push of this session started is queued or in pro
 The second, on `3,18,33,48 * * * *`, is the reminder that takes work:
 
 ```text
-REMINDER: Run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(all(.labels[]; .name != "needs decision"))) | sort_by(.number) | map({number, title, labels: [.labels[].name]})' to list the open issues no label holds back, lowest number first; take the lowest-numbered issue it lists for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other listed issues you choose to solve with it, and run the same command again when they close.
+REMINDER: Run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(all(.labels[]; .name != "needs decision"))) | sort_by((if any(.labels[]; .name == "memories" or .name == "autopilot") then 0 else 1 end), .number) | map({number, title, labels: [.labels[].name]})' to list the open issues no label holds back, those labelled 'memories' or 'autopilot' first and then the rest, each part lowest number first; take the first issue it lists for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other listed issues you choose to solve with it, and run the same command again when they close.
 ```
+
+An issue labelled `memories` or `autopilot` changes a rule the session works under, so it is taken before any other: every issue solved after it is solved under the changed rule. Such an issue that an open issue blocks still waits for its blocker, so the first issue taken can be one of the others.
 
 The `bylabel` form puts a reminder of its own that takes work on the same cron, in place of the one above, per "By label".
 
@@ -108,11 +110,11 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 4. `CronCreate` with `recurring: true` each of the form's reminders that is not already scheduled.
 5. Tell the user how many reminders are running, that the autopilot ends itself when no issue is left that it can take, and the two limits that come with the reminders: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
 6. Read in full each memory that "Rules that are memories" names.
-7. Take the lowest-numbered listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve them. When they close, run the listing's command again. When it names no issue that can be taken, end the autopilot, per "Ending itself".
+7. Take the first listed issue that no open issue blocks, alone or with other listed issues chosen to be solved with it, and solve them. When they close, run the listing's command again. When it names no issue that can be taken, end the autopilot, per "Ending itself".
 
 ## By label
 
-`start bylabel <label>` is "Start" held to the open issues that carry `<label>`. The autopilot takes those issues in the order and the way "Start" takes every open issue, and an open issue without the label is not its work. The form takes `--skip-label` as "Start" does.
+`start bylabel <label>` is "Start" held to the open issues that carry `<label>`. The autopilot takes those issues the way "Start" takes every open issue, but lowest number first, with no place ahead for an issue labelled `memories` or `autopilot`, and an open issue without the label is not its work. The form takes `--skip-label` as "Start" does.
 
 Its five reminders are those of "Start", but for the reminder that takes work on `3,18,33,48 * * * *`, which is this one, with the label itself put in place of each `<label>` when it is scheduled:
 
