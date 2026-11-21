@@ -16,14 +16,15 @@ pub(super) fn run(
     running: &Path,
     limits: Limits<'_>,
 ) -> Result<AttemptResult, ContainerError> {
-    up.copy_into(&outputs_directory.task(task), TASK)?;
     let shell = Shell {
         command: GRADER,
         environment: &[("CLADENC_TASK", TASK)],
     };
-    Ok(match up.run(&shell, &running.join("grader"), limits)? {
-        Ending::Exited(0) => AttemptResult::Completed,
-        Ending::Exited(_) => AttemptResult::NotCompleted,
-        Ending::TimedOut => AttemptResult::TimedOut,
-    })
+    up.copy_into(&outputs_directory.task(task), TASK)
+        .and_then(|()| up.run(&shell, &running.join("grader"), limits))
+        .map(|ending| match ending {
+            Ending::Exited(0) => AttemptResult::Completed,
+            Ending::Exited(_) => AttemptResult::NotCompleted,
+            Ending::TimedOut => AttemptResult::TimedOut,
+        })
 }
