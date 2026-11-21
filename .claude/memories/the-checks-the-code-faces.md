@@ -33,7 +33,7 @@ metadata:
 
 **Why:** The release waits for every one of these, so code that breaks one releases nothing, and its failed run is fixed before other work, per [[a-failed-run-is-fixed-before-other-work]]. No issue has to say these rules, per [[issues-have-no-fixed-form]], so a session that writes code finds them here.
 
-**How to apply:** The workflow is the list: where it and this memory disagree, the workflow is right, and this memory is corrected. Write to the checks and leave the running of them to CI, per [[what-ci-can-do-is-done-in-ci]]. Code under `crates/` is held to the same checks, per [[crates-stores-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].
+**How to apply:** The workflow is the list: where it and this memory disagree, the workflow is right, and this memory is corrected. Write to the checks and leave the running of them to CI, but for the quick checks of [[only-quick-checks-run-before-a-push]]. Code under `crates/` is held to the same checks, per [[crates-stores-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].
 
 - A function that would take a sixth parameter is given a value that carries two of them together, as `Limits` carries a deadline and a stop flag in `src/containers/program.rs`, or what it needs is put in a value it already takes, as the time limits are in `Launch`.
 - A block that would be a fifth level is flattened: a `let … else { break }` at the head of a loop becomes a condition of the loop, or the inner part becomes a function of its own.

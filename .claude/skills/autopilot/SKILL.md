@@ -89,6 +89,7 @@ Each file is under `.claude/memories/`.
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
+| Before a push, only `cargo fmt --all`, each new test and the test files the commit changes run on the Mac; every other check is left to CI. | `only-quick-checks-run-before-a-push.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
