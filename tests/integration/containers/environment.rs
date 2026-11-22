@@ -73,14 +73,20 @@ fn printed_by_docker(built: &Built) -> String {
         .collect()
 }
 
-fn label_of(image: &str) -> String {
+fn inspected(image: &str, format: &str) -> String {
     let inspected = Command::new("docker")
-        .args(["image", "inspect", "--format"])
-        .arg(r#"{{index .Config.Labels "cladenc.task"}}"#)
-        .arg(image)
+        .args(["image", "inspect", "--format", format, image])
         .output()
         .unwrap();
     String::from_utf8(inspected.stdout).unwrap()
+}
+
+fn label_of(image: &str, label: &str) -> String {
+    inspected(image, &format!("{{{{index .Config.Labels \"{label}\"}}}}"))
+}
+
+fn id_of(built: &Built) -> String {
+    inspected(&built.image.name, "{{.Id}}")
 }
 
 #[test]
@@ -109,7 +115,30 @@ fn the_environment_is_built_with_the_environment_directory_of_the_task_as_its_bu
 #[test]
 fn the_image_of_an_environment_is_labelled_with_its_task() {
     let built = built(MADE);
-    assert_eq!(label_of(&built.image.name), "benchmark/t1\n");
+    assert_eq!(
+        label_of(&built.image.name, "cladenc.task"),
+        "benchmark/t1\n"
+    );
+}
+
+#[test]
+fn the_image_of_an_environment_is_labelled_with_its_directed_evolution() {
+    let built = built(MADE);
+    assert_eq!(
+        label_of(&built.image.name, "cladenc.directed-evolution"),
+        format!(
+            "{}\n",
+            fs::canonicalize(built.outputs_directory.path())
+                .unwrap()
+                .display()
+        )
+    );
+}
+
+#[test]
+fn the_environments_two_directed_evolutions_build_from_one_task_are_two_images() {
+    let (one, other) = (built(MADE), built(MADE));
+    assert_ne!(id_of(&one), id_of(&other));
 }
 
 #[test]

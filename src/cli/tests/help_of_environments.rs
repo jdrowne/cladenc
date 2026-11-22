@@ -18,10 +18,36 @@ fn the_long_help_of_start_says_when_the_environment_of_every_task_is_built() {
 
 #[test]
 fn the_long_help_of_start_shows_how_docker_is_asked_to_build_an_environment() {
-    assert!(
-        long_help_of("start")
-            .contains("\n    docker build --tag <NAME> --label cladenc.task=<TASK> <DIR>\n")
-    );
+    assert!(long_help_of("start").contains(
+        "\n    docker build --tag <NAME> --label cladenc.task=<TASK> \\\n        --label \
+         cladenc.directed-evolution=<PATH> <DIR>\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_path_the_label_of_an_environment_holds() {
+    assert!(long_help_of("start").contains(
+        "  <PATH>  the path of the outputs directory, with every symbolic link in\n          it \
+         resolved\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_labels_of_an_environment_are() {
+    assert!(long_help_of("start").contains(
+        "The two labels are Docker labels, each a name and a value that Docker\nkeeps with an \
+         image. The second is the label that every container of the\ndirected evolution \
+         carries."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_two_directed_evolutions_build_two_images_of_one_task() {
+    assert!(long_help_of("start").contains(
+        "It makes the environments of two directed\nevolutions two images, even where both \
+         are built from one task of one\nbenchmark, so that removing those of one leaves \
+         those of the other on the\nmachine."
+    ));
 }
 
 #[test]

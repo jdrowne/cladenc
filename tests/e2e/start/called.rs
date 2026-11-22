@@ -271,13 +271,13 @@ fn every_container_carries_the_label_of_its_directed_evolution() {
     let directory = test_inputs::temporary_directory();
     let arguments = ran_in_with_a_docker_that_records_its_arguments(&directory);
     let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
-    let containers = arguments.lines().filter(|line| *line == "run").count();
+    let label = format!("cladenc.directed-evolution={}", outputs.display());
+    let lines: Vec<&str> = arguments.lines().collect();
+    let containers = lines.iter().filter(|line| **line == "run").count();
     assert_eq!(
-        arguments
-            .matches(&format!(
-                "\n--label\ncladenc.directed-evolution={}\n",
-                outputs.display()
-            ))
+        lines
+            .windows(4)
+            .filter(|told| told[0] == "--name" && told[2] == "--label" && told[3] == label)
             .count(),
         containers.max(1)
     );

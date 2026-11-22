@@ -49,15 +49,25 @@ cladenc builds the environment of every task of every benchmark when the
 directed evolution is started, and again each time it is resumed, before
 it brings up any container, as
 
-    docker build --tag <NAME> --label cladenc.task=<TASK> <DIR>
+    docker build --tag <NAME> --label cladenc.task=<TASK> \\
+        --label cladenc.directed-evolution=<PATH> <DIR>
 
   <NAME>  the name cladenc gives the environment: cladenc-environments-
           and sixteen random hexadecimal digits, the same for every task
           of the directed evolution, then a colon and the place of the
           task among the tasks of the directed evolution, counted from 0
   <TASK>  the task, as <BENCHMARK>/<TASK>
+  <PATH>  the path of the outputs directory, with every symbolic link in
+          it resolved
   <DIR>   the environment directory of the copy of the task in the
           outputs directory, the build context of its Dockerfile
+
+The two labels are Docker labels, each a name and a value that Docker
+keeps with an image. The second is the label that every container of the
+directed evolution carries. It makes the environments of two directed
+evolutions two images, even where both are built from one task of one
+benchmark, so that removing those of one leaves those of the other on the
+machine.
 
 The build has the time limit that the task.toml of the task gives, as
 build_timeout_sec under environment, or 600 seconds where it gives none.

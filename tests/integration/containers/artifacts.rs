@@ -276,10 +276,8 @@ fn what_a_harness_that_was_stopped_left_at_a_path_the_task_lists_is_kept() {
 #[test]
 fn an_attempt_whose_harness_was_not_started_keeps_nothing_of_the_paths_the_task_lists() {
     let attempted = attempted(
-        &format!(
-            "artifacts = [\"/app/work.txt\"]\n\n[environment.healthcheck]\ncommand = \"exit \
-             1\"\ninterval_sec = 0\nretries = 1\n"
-        ),
+        "artifacts = [\"/app/work.txt\"]\n\n[environment.healthcheck]\ncommand = \"exit \
+         1\"\ninterval_sec = 0\nretries = 1\n",
         WRITE_A_REPORT,
     );
     assert_eq!(

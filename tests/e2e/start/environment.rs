@@ -113,17 +113,34 @@ fn a_task_whose_environment_is_not_built_leaves_no_journal() {
 }
 
 #[test]
-fn docker_is_asked_to_build_each_environment_from_the_copy_of_the_task_labelled_with_the_task() {
+fn docker_is_asked_to_build_each_environment_from_the_copy_of_the_task_with_its_two_labels() {
     let (directory, arguments) = arguments_of_a_docker_that_records_them();
     let task = directory.path().join("outputs/benchmarks/benchmark/t2");
+    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
     assert_eq!(
         [&builds(&arguments)[1][..1], &builds(&arguments)[1][2..]].concat(),
         [
             "--tag".to_owned(),
             "--label".to_owned(),
             "cladenc.task=benchmark/t2".to_owned(),
+            "--label".to_owned(),
+            format!("cladenc.directed-evolution={}", outputs.display()),
             task.join("environment").display().to_string(),
         ]
+    );
+}
+
+#[test]
+fn docker_is_asked_to_label_every_environment_with_its_directed_evolution() {
+    let (directory, arguments) = arguments_of_a_docker_that_records_them();
+    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
+    let label = format!("cladenc.directed-evolution={}", outputs.display());
+    assert_eq!(
+        builds(&arguments)
+            .iter()
+            .filter(|build| build.contains(&label))
+            .count(),
+        3
     );
 }
 

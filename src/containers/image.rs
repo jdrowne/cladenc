@@ -47,6 +47,8 @@ pub fn build_environment(
     build
         .args(["build", "--tag", image, "--label"])
         .arg(format!("cladenc.task={task}"))
+        .arg("--label")
+        .arg(left::label(outputs_directory))
         .arg(outputs_directory.task(task).join(ENVIRONMENT));
     program::run(build, "", &kept, Limits::within(time_limit, stop)).and_then(built)
 }
