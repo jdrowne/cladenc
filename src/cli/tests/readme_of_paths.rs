@@ -76,3 +76,13 @@ fn the_readme_says_that_cladenc_makes_no_directory_at_the_top_of_the_filesystem(
          link, as the Filesystem Hierarchy Standard asks of an application."
     ));
 }
+
+#[test]
+fn the_readme_says_where_the_package_installs_the_manual_pages_and_how_man_shows_one() {
+    assert!(readme().contains(
+        "`--help` after a sub-command prints its flags, and the manual page of the sub-command \
+         says the rest. The package installs the manual pages under `/opt/cladenc/share/man`: \
+         `man -M /opt/cladenc/share/man cladenc-start` shows the page of `cladenc start`, and \
+         `man cladenc-start` shows it where `/opt/cladenc/bin` is on `PATH`."
+    ));
+}

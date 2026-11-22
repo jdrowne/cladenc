@@ -3,13 +3,8 @@ use std::process::Command;
 
 use tempfile::TempDir;
 
-fn run_command_the_help_gives(command: &str) -> String {
-    let help = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .args(["start", "--help"])
-        .output()
-        .unwrap();
-    String::from_utf8(help.stdout)
-        .unwrap()
+fn run_command_the_manual_gives(command: &str) -> String {
+    test_inputs::manual("cladenc-start")
         .split_once("--harness-run-command '")
         .and_then(|(_, after)| after.split_once('\''))
         .map(|(given, _)| given.replace("<COMMAND>", command))
@@ -32,7 +27,7 @@ fn ran() -> TempDir {
         ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
-            run_command_the_help_gives("echo attempted > attempted").into(),
+            run_command_the_manual_gives("echo attempted > attempted").into(),
         ),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "2".into()),
@@ -75,7 +70,7 @@ fn names_in_harness(directory: &TempDir, harness: &str) -> Vec<String> {
 }
 
 #[test]
-fn a_run_with_the_run_command_the_help_gives_creates_as_many_children_as_the_most_procreations() {
+fn a_run_with_the_run_command_the_manual_gives_creates_as_many_children_as_the_most_procreations() {
     let directory = ran();
     let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert_eq!(
@@ -89,7 +84,7 @@ fn a_run_with_the_run_command_the_help_gives_creates_as_many_children_as_the_mos
 }
 
 #[test]
-fn a_run_with_the_run_command_the_help_gives_adds_to_one_file_of_each_child_and_names_no_other() {
+fn a_run_with_the_run_command_the_manual_gives_adds_to_one_file_of_each_child_and_names_no_other() {
     let directory = ran();
     assert_eq!(
         ["1", "2"].map(|child| names_in_harness(&directory, child)),
@@ -101,7 +96,7 @@ fn a_run_with_the_run_command_the_help_gives_adds_to_one_file_of_each_child_and_
 }
 
 #[test]
-fn a_run_with_the_run_command_the_help_gives_leaves_the_script_of_each_child_unchanged() {
+fn a_run_with_the_run_command_the_manual_gives_leaves_the_script_of_each_child_unchanged() {
     let directory = ran();
     assert_eq!(
         ["1", "2"].map(|child| script_of(&directory, child)),
@@ -110,7 +105,7 @@ fn a_run_with_the_run_command_the_help_gives_leaves_the_script_of_each_child_unc
 }
 
 #[test]
-fn a_run_with_the_run_command_the_help_gives_adds_one_line_to_a_file_of_a_child() {
+fn a_run_with_the_run_command_the_manual_gives_adds_one_line_to_a_file_of_a_child() {
     let directory = ran();
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/procreated")).unwrap(),

@@ -4,21 +4,14 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::cli::Cli;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Settings};
 use cladenc::report;
-use clap::CommandFactory;
 use tempfile::TempDir;
 
-fn run_command_the_help_gives(command: &str) -> String {
-    let mut cladenc = Cli::command();
-    let help = cladenc
-        .find_subcommand_mut("start")
-        .unwrap()
-        .render_long_help()
-        .to_string();
-    help.split_once("--harness-run-command '")
+fn run_command_the_manual_gives(command: &str) -> String {
+    test_inputs::manual("cladenc-start")
+        .split_once("--harness-run-command '")
         .and_then(|(_, after)| after.split_once('\''))
         .map(|(given, _)| given.replace("<COMMAND>", command))
         .unwrap()
@@ -37,7 +30,7 @@ fn settings(directory: &Path) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: run_command_the_help_gives("echo attempted > attempted"),
+        harness_run_command: run_command_the_manual_gives("echo attempted > attempted"),
         max_procreations: 2,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
@@ -100,16 +93,16 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn the_run_command_the_help_gives_starts_the_command_of_the_other_only_for_an_attempt() {
+fn the_run_command_the_manual_gives_starts_the_command_of_the_other_only_for_an_attempt() {
     assert_eq!(
-        run_command_the_help_gives("sh harness.sh"),
+        run_command_the_manual_gives("sh harness.sh"),
         "if [ -d /var/log/cladenc/attempts ]\n        then echo >> procreated; else sh harness.sh; \
          fi"
     );
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_every_procreation_creates_its_child() {
+fn with_the_run_command_the_manual_gives_every_procreation_creates_its_child() {
     let directory = evolved();
     assert_eq!(
         journal_of(&directory)
@@ -122,7 +115,7 @@ fn with_the_run_command_the_help_gives_every_procreation_creates_its_child() {
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_each_child_holds_the_files_of_the_primogenitor_as_they_were()
+fn with_the_run_command_the_manual_gives_each_child_holds_the_files_of_the_primogenitor_unchanged()
 {
     let directory = evolved();
     assert_eq!(
@@ -136,7 +129,8 @@ fn with_the_run_command_the_help_gives_each_child_holds_the_files_of_the_primoge
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_a_child_of_the_primogenitor_holds_a_file_of_one_line_more() {
+fn with_the_run_command_the_manual_gives_a_child_of_the_primogenitor_holds_a_file_of_one_line_more()
+{
     let directory = evolved();
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/procreated")).unwrap(),
@@ -145,7 +139,7 @@ fn with_the_run_command_the_help_gives_a_child_of_the_primogenitor_holds_a_file_
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_every_harness_is_benchmarked_in_full() {
+fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() {
     let directory = evolved();
     let journal = journal_of(&directory);
     assert_eq!(
@@ -161,7 +155,7 @@ fn with_the_run_command_the_help_gives_every_harness_is_benchmarked_in_full() {
 }
 
 #[test]
-fn with_the_run_command_the_help_gives_a_harness_is_started_as_ever_for_an_attempt() {
+fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_an_attempt() {
     let directory = evolved();
     assert_eq!(
         fs::read_to_string(

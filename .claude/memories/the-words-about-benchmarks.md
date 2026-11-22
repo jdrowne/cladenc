@@ -1,6 +1,6 @@
 ---
 name: the-words-about-benchmarks
-description: "The words about benchmarks are the industry's but for non-holdout and corroboration; the README and `cladenc start --help` define them, and no definition or file name is kept here; the words never said; a harness is benchmarked, never said to attempt every task; a new word is the user's to choose, asked one question per word in the text of a reply"
+description: "The words about benchmarks are the industry's but for non-holdout and corroboration; the README and the manual page of `cladenc start` define them, and no definition or file name is kept here; the words never said; a harness is benchmarked, never said to attempt every task; a new word is the user's to choose, asked one question per word in the text of a reply"
 metadata:
   node_type: memory
   type: feedback
@@ -10,13 +10,13 @@ metadata:
 
 # The words about benchmarks
 
-The words `cladenc` uses about benchmarks are benchmark, task, task specification, workspace, grader, attempt, completed and not completed, result, to benchmark, score, holdout, non-holdout, selection and corroboration. Each but non-holdout and corroboration is taken from the names the industry has for the thing. The README and the help that `cladenc start --help` prints say what each word means, and the code says which file of a task holds what. No definition and no file name is written in a memory.
+The words `cladenc` uses about benchmarks are benchmark, task, task specification, workspace, grader, attempt, completed and not completed, result, to benchmark, score, holdout, non-holdout, selection and corroboration. Each but non-holdout and corroboration is taken from the names the industry has for the thing. The README and the manual page of `cladenc start`, `docs/man/man1/cladenc-start.1`, say what each word means, and the code says which file of a task holds what. No definition and no file name is written in a memory.
 
 **Why:** The benchmarks people already run, and the names the industry has adopted for what is in them, are the source of truth, so a reader already knows the words. A definition or a file name written both in a memory and in the repository drifts apart from the one in the repository when the code changes.
 
 **How to apply:**
 
-- Say the words in replies, issues, commits, the README, the help, what `cladenc` prints and the names in the code.
+- Say the words in replies, issues, commits, the README, the help, the manual pages, what `cladenc` prints and the names in the code.
 - Assessment, assess, statement, check, success and failure are never said for them. Score is never said for how one attempt ended: result is.
 - What a harness works on is a task, with its task specification and its workspace. Project, repository and code base are never said for it, and the source code of a harness is called that. Workspace names the files of a task and nothing else: neither the outputs directory nor the directory a harness works in is called a workspace.
 - A harness is benchmarked: the primogenitor is benchmarked, a child is benchmarked, `cladenc` benchmarks a harness. A sentence that has a harness attempting every task is wrong, not another way to say the same. That each task takes one attempt is said once, where the word attempt is explained, and attempt stays the word wherever one attempt is what a sentence is about, such as which attempt starts next.

@@ -1,0 +1,72 @@
+.TH CLADENC 1 "" cladenc "cladenc"
+.SH NAME
+cladenc \- carries out a directed evolution of an agentic coding harness, in which harnesses procreate, each changing a copy of its own source code, and are benchmarked
+.SH SYNOPSIS
+.nf
+\fBcladenc\fP [\fB\-\-help\fP] [\fB\-\-version\fP]
+\fBcladenc report\fP \fB\-\-outputs\-dir\fP <DIR> [\fB\-\-json\fP]
+\fBcladenc resume\fP \fB\-\-outputs\-dir\fP <DIR>
+\fBcladenc start\fP \fB\-\-outputs\-dir\fP <DIR> ...
+\fBcladenc status\fP \fB\-\-outputs\-dir\fP <DIR> [\fB\-\-json\fP]
+.fi
+.SH DESCRIPTION
+\fBcladenc\fP works by directed evolution.
+A directed evolution starts from one harness, the primogenitor.
+Harnesses procreate, each making a changed copy of its own source code, and
+are benchmarked on every task of the benchmarks a person brings.
+A part of the tasks of each benchmark is held out: no harness that procreates
+reads about them.
+The holdout tasks are divided in two, the selection tasks and the
+corroboration tasks.
+Artificial selection chooses which harness procreates, and at the end names
+the best harness, both by the selection tasks alone.
+Every harness is scored on the corroboration tasks and nothing is chosen by
+them, so they say how far the best harness is ahead of the primogenitor on
+tasks that had no part in the choosing.
+.PP
+\fBcladenc\fP does its work through a sub-command.
+Called with neither a sub-command nor a flag, it prints what \fB\-\-help\fP
+prints, on standard error, and exits with status 2.
+\fB\-\-help\fP after a sub-command prints its flags, and the manual page of
+the sub-command says the rest.
+.SH SUB\-COMMANDS
+.TP
+\fBcladenc report\fP
+Prints the report of a directed evolution that has ended, without changing it.
+Its manual page is \fBcladenc\-report\fP(1).
+.TP
+\fBcladenc resume\fP
+Continues a directed evolution that stopped before its end.
+Its manual page is \fBcladenc\-resume\fP(1).
+.TP
+\fBcladenc start\fP
+Starts a new directed evolution and prints the directory of its best harness.
+Its manual page is \fBcladenc\-start\fP(1).
+.TP
+\fBcladenc status\fP
+Prints the state so far of a directed evolution that has not ended, without
+changing it.
+Its manual page is \fBcladenc\-status\fP(1).
+.SH FLAGS
+.TP
+\fB\-h\fP, \fB\-\-help\fP
+Print help.
+.TP
+\fB\-V\fP, \fB\-\-version\fP
+Print version.
+.SH FILES
+.TP
+\fB/opt/cladenc/bin/cladenc\fP
+The program, where the package of a release installs it.
+A person calls the program by that full path, or adds /opt/cladenc/bin to PATH
+and calls it as \fBcladenc\fP.
+.TP
+\fB/opt/cladenc/share/man\fP
+The manual pages, where the package of a release installs them.
+\fBman\fP finds them where /opt/cladenc/bin is on PATH, and is told where they
+are otherwise, as \fBman \-M /opt/cladenc/share/man cladenc\-start\fP.
+.SH SEE ALSO
+\fBcladenc\-report\fP(1),
+\fBcladenc\-resume\fP(1),
+\fBcladenc\-start\fP(1),
+\fBcladenc\-status\fP(1)

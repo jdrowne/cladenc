@@ -1,0 +1,88 @@
+.TH CLADENC-REPORT 1 "" cladenc "cladenc"
+.SH NAME
+cladenc\-report \- print the report of a directed evolution that has ended, without changing it
+.SH SYNOPSIS
+.nf
+\fBcladenc report\fP
+    [\fB\-\-help\fP]
+    [\fB\-\-json\fP]
+    \fB\-\-outputs\-dir\fP <DIR>
+.fi
+.SH DESCRIPTION
+\fBcladenc report\fP is for a directed evolution that has ended.
+It reads the journal in the outputs directory and prints the report of the
+directed evolution on standard output, without changing it: the model, how
+many procreations were started, the best harness, how many of the selection
+tasks, of the corroboration tasks and of the non-holdout tasks at least one
+harness completed, and for each harness its progenitor, whether it was
+created, which reads unchanged where its procreation left the copy of the
+source code as it was, how many of the selection tasks it completed and did
+not complete, how many of the corroboration tasks it completed and did not
+complete, how many of the non-holdout tasks it completed and did not complete,
+the counts of the selection tasks for its clade, which is the harness and all
+its descendants together, and how many seconds the harness ran in all its
+attempts together and how many its progenitor ran in the procreation that made
+it.
+.PP
+Nothing is chosen by the corroboration tasks, so the counts of the
+corroboration tasks are where a person reads how far the best harness is ahead
+of the primogenitor.
+\fBcladenc\-start\fP(1) says what the selection tasks, the corroboration tasks
+and the non-holdout tasks are.
+.PP
+Given a directed evolution that has not ended, \fBcladenc report\fP prints
+nothing on standard output: it says on standard error that the directed
+evolution has not ended and that \fBcladenc status\fP is the sub-command to
+call, and exits with status 2.
+.SH FLAGS
+.TP
+\fB\-h\fP, \fB\-\-help\fP
+Print help.
+.TP
+\fB\-\-json\fP
+Print one JSON object in place of the table.
+.TP
+\fB\-\-outputs\-dir\fP <DIR>
+The outputs directory of the directed evolution to report on.
+.SH THE BEST HARNESS AND THE PRIMOGENITOR
+\fBcladenc report\fP says three things of the best harness and the
+primogenitor, counted on the corroboration tasks: how many of them only the
+best harness completed, how many only the primogenitor completed, and how
+likely luck alone gives a lead at least as large.
+A corroboration task that both harnesses completed, or that neither completed,
+says nothing about which of the two is ahead, and is left out.
+Where two harnesses are equally good, a task that only one of them completed
+is as likely the one's as the other's, like the toss of a fair coin.
+So the likelihood is that of as many heads or more in as many tosses as there
+are tasks that tell the two apart: with 14 tasks that only the best harness
+completed and 6 that only the primogenitor completed, 14 heads or more in 20
+tosses, which is 0.058, about 6 times in a hundred.
+Where no task tells the two apart the likelihood is 1, and where the best
+harness is the primogenitor there are no two harnesses to compare.
+cladenc draws no line through the likelihood: what counts as more than luck is
+for the person who reads it to say.
+The likelihood is shown for the best harness alone, since among many harnesses
+one or two show a low likelihood by luck.
+.SH EXPERIMENTS
+\fBcladenc report\fP and \fBcladenc status\fP say of the experiments how many
+were conducted, in how many the progenitor's child was created, in how many
+the singleton control group harness was created, and in how many both were.
+Over the experiments where both were created, each counts the corroboration
+tasks that only the progenitor's child completed and those that only the
+singleton control group harness completed, and says how likely luck alone
+gives a lead at least as large where the two are created equally well, counted
+as it is for the best harness and the primogenitor.
+A corroboration task that one of the two has not attempted yet is left out.
+In the table, the row of a singleton control group harness names no
+progenitor, and names under experiment the progenitor's child of its
+experiment.
+The singleton control group harnesses are left out of the count of the tasks
+that at least one harness completed.
+Where no experiment created both the progenitor's child and the singleton
+control group harness, each says so in the place of those counts and of the
+likelihood, and \fB\-\-json\fP gives no likelihood for the experiments.
+.SH SEE ALSO
+\fBcladenc\fP(1),
+\fBcladenc\-resume\fP(1),
+\fBcladenc\-start\fP(1),
+\fBcladenc\-status\fP(1)

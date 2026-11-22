@@ -1,5 +1,4 @@
 mod checks;
-mod contract;
 
 use std::io::Write;
 use std::path::{self, Path, PathBuf};
@@ -23,6 +22,7 @@ const HAS_ENDED: &str =
     version,
     about = "Carries out a directed evolution of an agentic coding harness, in which harnesses \
              procreate, each changing a copy of its own source code, and are benchmarked",
+    after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc",
     disable_help_subcommand = true
 )]
 pub struct Cli {
@@ -34,21 +34,23 @@ pub struct Cli {
 pub enum Command {
     #[command(
         about = "Start a new directed evolution and print the directory of its best harness",
-        after_long_help = contract::CONTRACT
+        after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc-start"
     )]
     Start(Box<StartOptions>),
     #[command(
         about = "Continue a directed evolution that stopped before its end",
-        after_long_help = contract::RESUMING
+        after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc-resume"
     )]
     Resume(ResumeOptions),
     #[command(
-        about = "Print the report of a directed evolution that has ended, without changing it"
+        about = "Print the report of a directed evolution that has ended, without changing it",
+        after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc-report"
     )]
     Report(ReportOptions),
     #[command(
         about = "Print the state so far of a directed evolution that has not ended, without \
-                 changing it"
+                 changing it",
+        after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc-status"
     )]
     Status(StatusOptions),
 }

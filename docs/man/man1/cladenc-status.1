@@ -1,0 +1,60 @@
+.TH CLADENC-STATUS 1 "" cladenc "cladenc"
+.SH NAME
+cladenc\-status \- print the state so far of a directed evolution that has not ended, without changing it
+.SH SYNOPSIS
+.nf
+\fBcladenc status\fP
+    [\fB\-\-help\fP]
+    [\fB\-\-json\fP]
+    \fB\-\-outputs\-dir\fP <DIR>
+.fi
+.SH DESCRIPTION
+\fBcladenc status\fP is for a directed evolution that has not ended, whether
+the directed evolution is still going or stopped before its end.
+It reads the journal in the outputs directory and prints the state of the
+directed evolution so far on standard output, without changing it.
+It says first that the directed evolution has not ended, and then prints what
+\fBcladenc report\fP prints, with the harness that is ahead so far in place of
+the best harness.
+.PP
+Given a directed evolution that has ended, \fBcladenc status\fP prints nothing
+on standard output: it says on standard error that the directed evolution has
+ended and that \fBcladenc report\fP is the sub-command to call, and exits with
+status 2.
+.SH FLAGS
+.TP
+\fB\-h\fP, \fB\-\-help\fP
+Print help.
+.TP
+\fB\-\-json\fP
+Print one JSON object in place of the table.
+.TP
+\fB\-\-outputs\-dir\fP <DIR>
+The outputs directory of the directed evolution to print the state of.
+.SH THE HARNESS THAT IS AHEAD SO FAR
+A directed evolution that has not ended has no best harness.
+In its place \fBcladenc status\fP names the harness that is ahead so far: the
+harness that would be named the best harness if the directed evolution ended
+now.
+What \fBcladenc status\fP prints is the state so far, which can change until
+the directed evolution ends: another harness can be ahead later, and the lead
+of the harness that is ahead so far can grow or shrink.
+.PP
+\fBcladenc\-report\fP(1) says three things of the best harness and the
+primogenitor, counted on the corroboration tasks.
+\fBcladenc status\fP says the same three things of the harness that is ahead
+so far and the primogenitor.
+A person who calls \fBcladenc status\fP many times reads many likelihoods, and
+one of many likelihoods is low by luck more often than one that is read once.
+Each of them is the state so far, and not the result of the directed
+evolution.
+.SH EXPERIMENTS
+Of the experiments, \fBcladenc status\fP says what \fBcladenc report\fP says,
+as \fBcladenc\-report\fP(1) describes.
+A corroboration task that the progenitor's child or the singleton control
+group harness has not attempted yet is left out.
+.SH SEE ALSO
+\fBcladenc\fP(1),
+\fBcladenc\-report\fP(1),
+\fBcladenc\-resume\fP(1),
+\fBcladenc\-start\fP(1)

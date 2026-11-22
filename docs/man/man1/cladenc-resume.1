@@ -1,0 +1,95 @@
+.TH CLADENC-RESUME 1 "" cladenc "cladenc"
+.SH NAME
+cladenc\-resume \- continue a directed evolution that stopped before its end
+.SH SYNOPSIS
+.nf
+\fBcladenc resume\fP
+    [\fB\-\-help\fP]
+    \fB\-\-outputs\-dir\fP <DIR>
+.fi
+.SH DESCRIPTION
+\fBcladenc resume\fP continues a directed evolution that stopped before its
+end, with the values that \fBcladenc start\fP was given, and prints the
+directory of the best harness on standard output once the directed evolution
+has ended, and nothing else there.
+It says on standard error what it is doing.
+It is stopped in the way \fBcladenc start\fP is, and then prints no report.
+.PP
+Before it does anything else, it removes the containers that the directed
+evolution left running, and then builds the environment of every task again.
+It then starts again each procreation, each creation of a singleton control
+group harness and each attempt that was under way when the directed evolution
+stopped, and carries the directed evolution on to its end, as \fBcladenc
+start\fP does.
+\fBcladenc\-start\fP(1) says how a directed evolution is carried out.
+.SH FLAGS
+.TP
+\fB\-h\fP, \fB\-\-help\fP
+Print help.
+.TP
+\fB\-\-outputs\-dir\fP <DIR>
+The outputs directory of the directed evolution to continue.
+.SH CONTAINERS LEFT RUNNING
+A cladenc that is killed outright, as by \fBkill \-9\fP, ends none of its
+containers, and each goes on until its time limit has passed.
+Before it does anything else, \fBcladenc resume\fP removes the containers that
+the directed evolution left running, so that it never works beside one of
+them.
+.PP
+Every container of a directed evolution carries a Docker label, a name and a
+value that Docker keeps with a container:
+.PP
+.RS 4
+.EX
+cladenc.directed\-evolution=<DIR>
+.EE
+.RE
+.PP
+where <DIR> is the path of the outputs directory, with every symbolic link in
+it resolved.
+Once it has the outputs directory to itself, \fBcladenc resume\fP asks Docker
+for the containers that carry the label of its directed evolution, removes
+them, and says how many it removed.
+Where Docker cannot be asked, it exits with status 2 and continues nothing.
+.PP
+Where the directed evolution is not resumed, its containers are removed by
+hand.
+.PP
+.RS 4
+.EX
+docker ps \-\-filter label=cladenc.directed\-evolution=<DIR>
+.EE
+.RE
+.PP
+lists them, their names begin cladenc\-, and \fBdocker kill\fP with a name
+ends that container.
+Docker removes a container of cladenc once it has ended.
+.SH ENVIRONMENTS
+Once the containers are removed, \fBcladenc resume\fP builds the environment
+of every task again, from the copy of the task in the outputs directory and
+under the name it was given when the directed evolution was started, before it
+brings up any container.
+The image that the Dockerfile of each task starts from has to be on the
+machine: Docker fetches one that is not, from the registry of its name.
+A task whose environment is not built stops \fBcladenc resume\fP with exit
+status 2, and environments/<BENCHMARK>/<TASK> in the outputs directory keeps
+what Docker printed.
+.PP
+\fBcladenc resume\fP reads the task.toml of the copy of each task again, and
+the variables it names as they are set where \fBcladenc resume\fP runs.
+For a task whose task.toml names an image it builds nothing, and looks for the
+image on the machine.
+A task whose image is not there, or which takes a value from a variable that
+is not set, stops \fBcladenc resume\fP with exit status 2.
+.SH REPORT
+When the directed evolution that it continued ends, \fBcladenc resume\fP
+prints on standard error what \fBcladenc report\fP prints, after the line that
+says that the directed evolution finished, and prints on standard output the
+directory of the best harness and nothing else.
+Of a directed evolution that had ended already, it prints the same after a
+line that says that the directed evolution had finished.
+.SH SEE ALSO
+\fBcladenc\fP(1),
+\fBcladenc\-report\fP(1),
+\fBcladenc\-start\fP(1),
+\fBcladenc\-status\fP(1)

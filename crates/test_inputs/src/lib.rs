@@ -12,6 +12,15 @@ const LOOK: Duration = Duration::from_millis(10);
 const TEN_SECONDS: u32 = 1_000;
 const TWO_MINUTES: u32 = 12_000;
 
+const ROFF_ESCAPES: [(&str, &str); 6] = [
+    ("\\-", "-"),
+    ("\\(aq", "'"),
+    ("\\fB", ""),
+    ("\\fP", ""),
+    ("\\&", ""),
+    ("\\e", "\\"),
+];
+
 pub const IMAGE: &str = "debian:stable-slim";
 
 pub const MODEL: &str = "a-model";
@@ -187,6 +196,42 @@ pub fn without_seconds(journal: &str) -> String {
             None => format!("{line}\n"),
         })
         .collect()
+}
+
+pub fn manual(page: &str) -> String {
+    let file = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/man/man1")
+        .join(format!("{page}.1"));
+    text_of_roff(&fs::read_to_string(file).unwrap())
+}
+
+pub fn manual_on_one_line(page: &str) -> String {
+    manual(page)
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ")
+}
+
+pub fn text_of_roff(roff: &str) -> String {
+    roff.lines()
+        .map(text_of_roff_line)
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+fn text_of_roff_line(line: &str) -> String {
+    let said = match line.strip_prefix('.') {
+        None => line,
+        Some(request) => request
+            .strip_prefix("SH ")
+            .or_else(|| request.strip_prefix("SS "))
+            .unwrap_or_default(),
+    };
+    ROFF_ESCAPES
+        .iter()
+        .fold(said.to_owned(), |text, (escape, meaning)| {
+            text.replace(escape, meaning)
+        })
 }
 
 pub fn sample(tier: &str, name: &str) -> PathBuf {

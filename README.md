@@ -30,7 +30,7 @@ cladenc \
 | `cladenc start` | Starts a new directed evolution and prints the directory of its best harness. |
 | `cladenc status` | Prints the state so far of a directed evolution that has not ended, without changing it. |
 
-`--help` after a sub-command prints its flags.
+`--help` after a sub-command prints its flags, and the manual page of the sub-command says the rest. The package installs the manual pages under `/opt/cladenc/share/man`: `man -M /opt/cladenc/share/man cladenc-start` shows the page of `cladenc start`, and `man cladenc-start` shows it where `/opt/cladenc/bin` is on `PATH`.
 
 ### `cladenc report`
 

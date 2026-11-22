@@ -687,12 +687,27 @@ jobs:
           sh -ec 'rm -f /etc/apt/apt.conf.d/docker-clean
           && apt-get update
           && apt-get install --yes --no-install-recommends
-          /package/cladenc-linux-arm64.deb
+          /package/cladenc-linux-arm64.deb man-db
           && /opt/cladenc/bin/cladenc --version
           && test -z "$(command -v cladenc)"
           && PATH="/opt/cladenc/bin:$PATH" cladenc --version
           && test "$(dpkg -L cladenc | grep -v -x -F -e /. -e /opt
-          -e /opt/cladenc -e /opt/cladenc/bin)" = /opt/cladenc/bin/cladenc
+          -e /opt/cladenc -e /opt/cladenc/bin -e /opt/cladenc/share
+          -e /opt/cladenc/share/man -e /opt/cladenc/share/man/man1
+          | LC_ALL=C sort | xargs)" = "/opt/cladenc/bin/cladenc
+          /opt/cladenc/share/man/man1/cladenc-report.1
+          /opt/cladenc/share/man/man1/cladenc-resume.1
+          /opt/cladenc/share/man/man1/cladenc-start.1
+          /opt/cladenc/share/man/man1/cladenc-status.1
+          /opt/cladenc/share/man/man1/cladenc.1"
+          && for page in cladenc cladenc-report cladenc-resume cladenc-start
+          cladenc-status; do
+          test "$(man -M /opt/cladenc/share/man --where "$page")"
+          = "/opt/cladenc/share/man/man1/$page.1"
+          && man -M /opt/cladenc/share/man "$page" | grep -q "SEE ALSO"
+          || exit 1; done
+          && test "$(PATH="/opt/cladenc/bin:$PATH" man --where cladenc-start)"
+          = /opt/cladenc/share/man/man1/cladenc-start.1
           && test ! -e /etc/opt/cladenc
           && test ! -e /var/opt/cladenc
           && docker --version
@@ -773,6 +788,7 @@ on:
       - "Cargo.lock"
       - "Cargo.toml"
       - "crates/**"
+      - "docs/**"
       - "etc/**"
       - "example/**"
       - "src/**"

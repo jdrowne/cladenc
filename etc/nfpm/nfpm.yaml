@@ -5,6 +5,26 @@ contents:
     file_info:
       mode: 0755
     src: stage/cladenc
+  - dst: /opt/cladenc/share/man/man1/cladenc-report.1
+    file_info:
+      mode: 0644
+    src: docs/man/man1/cladenc-report.1
+  - dst: /opt/cladenc/share/man/man1/cladenc-resume.1
+    file_info:
+      mode: 0644
+    src: docs/man/man1/cladenc-resume.1
+  - dst: /opt/cladenc/share/man/man1/cladenc-start.1
+    file_info:
+      mode: 0644
+    src: docs/man/man1/cladenc-start.1
+  - dst: /opt/cladenc/share/man/man1/cladenc-status.1
+    file_info:
+      mode: 0644
+    src: docs/man/man1/cladenc-status.1
+  - dst: /opt/cladenc/share/man/man1/cladenc.1
+    file_info:
+      mode: 0644
+    src: docs/man/man1/cladenc.1
 depends:
   - docker-cli | docker-ce-cli | docker.io
   - docker.io | docker-ce
