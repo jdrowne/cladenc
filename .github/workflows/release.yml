@@ -103,10 +103,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
       - name: Restore what pip fetched before
         uses: actions/cache@v6
         with:
@@ -115,14 +111,12 @@ jobs:
             hashFiles('.github/workflows/release.yml') }}
           path: ~/.cache/pip
           restore-keys: pip-${{ github.job }}-
-      - name: Install dependencies
-        run: pip install assert-no-comments
       - name: assert-no-comments
-        run: >-
-          assert-no-comments
-          --annotate
-          --verbose
-          ${{ github.workspace }}
+        uses: 10U-Labs/assert-no-comments@latest
+        with:
+          annotate: "true"
+          trees: ${{ github.workspace }}
+          verbose: "true"
   assert-no-empty-test-files:
     runs-on: ubuntu-latest
     steps:
@@ -145,10 +139,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
       - name: Restore what pip fetched before
         uses: actions/cache@v6
         with:
@@ -157,23 +147,17 @@ jobs:
             hashFiles('.github/workflows/release.yml') }}
           path: ~/.cache/pip
           restore-keys: pip-${{ github.job }}-
-      - name: Install dependencies
-        run: pip install assert-no-inline-directives
       - name: assert-no-inline-directives
-        run: >-
-          assert-no-inline-directives
-          --tools clippy,coverage,markdownlint,rustc,rustdoc,rustfmt,yamllint
-          --verbose
-          ${{ github.workspace }}
+        uses: 10U-Labs/assert-no-inline-directives@latest
+        with:
+          files: ${{ github.workspace }}
+          tools: clippy,coverage,markdownlint,rustc,rustdoc,rustfmt,yamllint
+          verbose: "true"
   assert-no-linter-config-files:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
       - name: Restore what pip fetched before
         uses: actions/cache@v6
         with:
@@ -182,15 +166,13 @@ jobs:
             hashFiles('.github/workflows/release.yml') }}
           path: ~/.cache/pip
           restore-keys: pip-${{ github.job }}-
-      - name: Install dependencies
-        run: pip install assert-no-linter-config-files
       - name: assert-no-linter-config-files
-        run: >-
-          assert-no-linter-config-files
-          --exclude ${{ github.workspace }}/etc/clippy/clippy.toml
-          --linters clippy,markdownlint,rustc,rustdoc,rustfmt,yamllint
-          --verbose
-          ${{ github.workspace }}
+        uses: 10U-Labs/assert-no-linter-config-files@latest
+        with:
+          directories: ${{ github.workspace }}
+          exclude: ${{ github.workspace }}/etc/clippy/clippy.toml
+          linters: clippy,markdownlint,rustc,rustdoc,rustfmt,yamllint
+          verbose: "true"
   assert-no-oversized-functions:
     runs-on: ubuntu-latest
     steps:
@@ -278,10 +260,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
       - name: Restore what pip fetched before
         uses: actions/cache@v6
         with:
@@ -290,10 +268,11 @@ jobs:
             hashFiles('.github/workflows/release.yml') }}
           path: ~/.cache/pip
           restore-keys: pip-${{ github.job }}-
-      - name: Install dependencies
-        run: pip install assert-one-assert-per-test
       - name: assert-one-assert-per-test
-        run: assert-one-assert-per-test --verbose src tests crates
+        uses: 10U-Labs/assert-one-assert-per-test@latest
+        with:
+          files: src tests crates
+          verbose: "true"
   assert-one-directory-per-module:
     runs-on: ubuntu-latest
     steps:
