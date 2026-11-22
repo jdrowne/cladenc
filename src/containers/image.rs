@@ -124,7 +124,7 @@ pub fn find_image(image: &str) -> io::Result<()> {
     left::printed_by(inspect).map(drop)
 }
 
-fn built(ending: Ending) -> Result<(), ContainerError> {
+pub(super) fn built(ending: Ending) -> Result<(), ContainerError> {
     match ending {
         Ending::Exited(0) => Ok(()),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),

@@ -120,7 +120,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     }
 }
 
-fn discard(outputs_directory: &OutputsDirectory, action: &Started) -> io::Result<()> {
+pub(super) fn discard(outputs_directory: &OutputsDirectory, action: &Started) -> io::Result<()> {
     match action {
         Started::Procreation { child, .. } => outputs_directory.discard_procreation(*child),
         Started::Baseline { harness, .. } => outputs_directory.discard_baseline(*harness),

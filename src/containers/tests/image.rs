@@ -7,6 +7,7 @@ use tempfile::TempDir;
 use crate::benchmark::Benchmark;
 use crate::containers::ContainerError;
 use crate::containers::image;
+use crate::containers::program::Ending;
 use crate::outputs_directory::OutputsDirectory;
 
 const TASK: &str = "benchmark/t1";
@@ -65,4 +66,25 @@ fn a_dockerfile_that_is_gone_is_not_built() {
         &AtomicBool::new(false),
     );
     assert!(matches!(result, Err(ContainerError::Io(_))));
+}
+
+#[test]
+fn a_build_that_exits_with_zero_has_built_its_image() {
+    assert!(matches!(image::built(Ending::Exited(0)), Ok(())));
+}
+
+#[test]
+fn a_build_that_exits_with_another_status_is_an_error_of_that_status() {
+    assert!(matches!(
+        image::built(Ending::Exited(2)),
+        Err(ContainerError::Exit(2))
+    ));
+}
+
+#[test]
+fn a_build_that_runs_past_its_time_limit_is_an_error_of_the_time_limit() {
+    assert!(matches!(
+        image::built(Ending::TimedOut),
+        Err(ContainerError::TimeLimit)
+    ));
 }

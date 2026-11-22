@@ -127,7 +127,7 @@ impl Container<'_> {
         started(ended, running)
     }
 
-    fn docker_run(&self, name: &str) -> Command {
+    pub(super) fn docker_run(&self, name: &str) -> Command {
         let mut docker = docker_run(self.outputs_directory, name);
         docker
             .arg("--user")
@@ -315,13 +315,13 @@ impl Drop for Up {
 }
 
 impl Shell<'_> {
-    fn given_to(&self, docker: &mut Command) {
+    pub(super) fn given_to(&self, docker: &mut Command) {
         for &(variable, value) in self.environment {
             docker.args(["--env", variable]).env(variable, value);
         }
     }
 
-    fn timed(&self, docker: &mut Command, limits: Limits<'_>) {
+    pub(super) fn timed(&self, docker: &mut Command, limits: Limits<'_>) {
         docker
             .args(["sh", "-c", TIMER, self.command])
             .arg(seconds_of_the_timer(limits.deadline).to_string());
@@ -329,7 +329,7 @@ impl Shell<'_> {
 }
 
 impl Mount<'_> {
-    fn written(&self) -> OsString {
+    pub(super) fn written(&self) -> OsString {
         let mut written = self.from.as_os_str().to_owned();
         written.push(":");
         written.push(self.to);
@@ -358,7 +358,7 @@ pub(super) fn file_of(variables: &[(String, String)]) -> String {
         })
 }
 
-fn detached(mut run: Child, input: &str, said: PathBuf) -> Result<(), ContainerError> {
+pub(super) fn detached(mut run: Child, input: &str, said: PathBuf) -> Result<(), ContainerError> {
     program::give(&mut run, input);
     run.wait()
         .map_err(ContainerError::Io)
@@ -373,7 +373,7 @@ fn named() -> String {
     format!("cladenc-{:016x}", rand::random::<u64>())
 }
 
-fn started(
+pub(super) fn started(
     ended: Result<Ending, ContainerError>,
     running: &Path,
 ) -> Result<Ending, ContainerError> {
@@ -383,7 +383,7 @@ fn started(
     })
 }
 
-fn seconds_of_the_timer(deadline: Instant) -> u64 {
+pub(super) fn seconds_of_the_timer(deadline: Instant) -> u64 {
     let left = deadline.saturating_duration_since(Instant::now());
     left.as_secs() + u64::from(left.subsec_nanos() > 0) + LEEWAY
 }

@@ -23,5 +23,6 @@ mod report;
 mod resume;
 mod start;
 mod status;
+mod stopped;
 mod values;
 mod version;

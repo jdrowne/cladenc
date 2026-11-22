@@ -39,21 +39,21 @@ impl Drop for Built {
     }
 }
 
-fn of_the_grader(image: &str) -> String {
+pub(super) fn of_the_grader(image: &str) -> String {
     format!("{image}{OF_THE_GRADER}")
 }
 
 #[derive(Clone, Copy)]
-enum Whose {
+pub(super) enum Whose {
     TheTask,
     TheGrader,
 }
 
-struct Making<'a> {
-    outputs_directory: &'a OutputsDirectory,
-    stop: &'a AtomicBool,
-    writer: &'a mut dyn Write,
-    machine: Option<Machine>,
+pub(super) struct Making<'a> {
+    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) stop: &'a AtomicBool,
+    pub(super) writer: &'a mut dyn Write,
+    pub(super) machine: Option<Machine>,
 }
 
 pub(super) fn made(
@@ -115,7 +115,7 @@ pub(super) fn made(
     Ok(environments)
 }
 
-fn megabytes(memory: Option<u64>) -> Option<f64> {
+pub(super) fn megabytes(memory: Option<u64>) -> Option<f64> {
     memory.map(|megabytes| megabytes as f64)
 }
 
@@ -227,7 +227,7 @@ impl Making<'_> {
         }
     }
 
-    fn not_built(
+    pub(super) fn not_built(
         &mut self,
         whose: Whose,
         task: &str,

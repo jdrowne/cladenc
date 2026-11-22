@@ -64,7 +64,7 @@ fn keep_one(up: &Up, artifact: &Artifact, kept: &Path) -> PathBuf {
     place
 }
 
-fn remove_above_where_empty(place: &Path, kept: &Path) {
+pub(super) fn remove_above_where_empty(place: &Path, kept: &Path) {
     place
         .ancestors()
         .skip(1)
@@ -74,7 +74,7 @@ fn remove_above_where_empty(place: &Path, kept: &Path) {
         });
 }
 
-fn place_of(artifact: &Artifact, kept: &Path) -> PathBuf {
+pub(super) fn place_of(artifact: &Artifact, kept: &Path) -> PathBuf {
     artifact
         .destination
         .split('/')
@@ -102,7 +102,7 @@ pub(super) fn give(
     gave
 }
 
-fn remove(given: &Path) {
+pub(super) fn remove(given: &Path) {
     let _ = fs::remove_file(given).or_else(|_| fs::remove_dir_all(given));
 }
 
