@@ -208,6 +208,17 @@ impl Up {
         started(ended, running)
     }
 
+    pub(super) fn make(&self, directory: &str, owner: &str) -> Result<(), ContainerError> {
+        let mut emptied = self.as_root();
+        emptied.args(["sh", "-c", EMPTIED, "sh", directory]);
+        let mut owned = self.as_root();
+        owned.args(["chown", "-R", owner, directory]);
+        [emptied, owned]
+            .into_iter()
+            .try_for_each(|docker| left::printed_by(docker).map(drop))
+            .map_err(ContainerError::Io)
+    }
+
     pub(super) fn put(&self, from: &Path, to: &str, owner: &str) -> Result<(), ContainerError> {
         self.place(EMPTIED, &from.join("."), to, owner)
     }

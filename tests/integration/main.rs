@@ -4,6 +4,7 @@ mod containers {
     mod attempt;
     mod baseline;
     mod build;
+    mod collect;
     mod configuration;
     mod environment;
     mod health_check;

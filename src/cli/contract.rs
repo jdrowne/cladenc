@@ -610,6 +610,27 @@ run.txt in every directory named logs. In a pattern, * stands for any run of
 characters, / among them, ? for any one character, the characters between [
 and ] for any one of them, and a character after \\ for itself.
 
+The container of an attempt holds /logs/artifacts when the harness is
+started: an empty directory that belongs to the user the harness runs as, as
+in Harbor. What the harness left in it is kept as a path that the task lists
+is, as artifacts/logs/artifacts, though the task lists no such path, and
+nothing is kept where the harness left nothing there. A task that lists
+/logs/artifacts itself, or a path that is kept at the same place, has that
+entry obeyed in its place.
+
+Where the task.toml of a task lists commands under verifier.collect, cladenc
+runs each in the container of the harness once the harness has ended or was
+stopped, before it keeps any path, in the order the task lists them. A
+command is run as the harness is, under the same timer and in the working
+directory of the environment, as the user its entry names as user, or the
+user of the environment where it names none. It has the time limit that its
+entry gives as timeout_sec, or 60 seconds where it gives none. A command
+that exits with another status than 0, or runs past its time limit, does not
+end the attempt: the next command is run, and the paths are kept as they
+then are. collect in the directory of the attempt keeps what each command
+printed, in a directory named after the place of the command in the list,
+counted from 1.
+
 Where the task.toml of a task says that its grader runs separately, cladenc
 runs the grader in a container of its own, which holds nothing of the
 container of the harness but the paths the task lists under artifacts. A
@@ -716,6 +737,9 @@ what it says of the environment of the task:
   environment under verifier      what environment says of the container
                                   of the harness, said of the container
                                   of the grader
+  collect under verifier          commands that are run in the container
+                                  once the harness has ended, before the
+                                  paths under artifacts are kept
   build_timeout_sec under         the time limit of the build of the
   environment                     environment, in seconds
   cpus under environment          the most CPUs the container of an
@@ -771,11 +795,12 @@ or names no file or directory.
 A task is refused as well where its task.toml asks for what cladenc has no
 way to give: several steps, as [[steps]]; a GPU, as gpus under environment
 above 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; a
-skills directory, as skills_dir; a path of a container other than that of
-the harness, as service of an entry under artifacts that is not main; or the
-whole container of the harness in the container of the grader, as an entry
-under artifacts whose path names no file or directory, where the grader runs
-separately. The refusal names the task and what it asks for.
+skills directory, as skills_dir; a path or a command of a container other
+than that of the harness, as service of an entry under artifacts or under
+verifier.collect that is not main; or the whole container of the harness in
+the container of the grader, as an entry under artifacts whose path names no
+file or directory, where the grader runs separately. The refusal names the
+task and what it asks for.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is
@@ -843,7 +868,10 @@ benchmark, and in that one named after the task, which holds
   changes        every path the harness added, changed or removed in the
                  container, one to a line after A, C or D
   artifacts      what the harness left at the paths the task lists under
-                 artifacts, where it lists any
+                 artifacts, where it lists any, and in /logs/artifacts
+  collect        what each command under verifier.collect printed, in a
+                 directory named after its place in the list, where the
+                 task lists any
   stdout         the standard output of the harness
   stderr         the standard error of the harness
   grader         the standard output and the standard error of the grader,

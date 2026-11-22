@@ -567,9 +567,9 @@ fn the_section_of_cladenc_start_says_that_an_attempt_is_given_no_more_than_its_t
 fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
     assert!(readme().contains(
         "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
-         TPU, Windows, MCP servers, a skills directory, a path of a container other than that \
-         of the harness, or the whole container of the harness in the container of a grader \
-         that runs separately."
+         TPU, Windows, MCP servers, a skills directory, a path or a command of a container \
+         other than that of the harness, or the whole container of the harness in the \
+         container of a grader that runs separately."
     ));
 }
 

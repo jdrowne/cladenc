@@ -96,7 +96,7 @@ fn the_long_help_of_start_says_which_entries_under_artifacts_are_refused() {
 #[test]
 fn the_long_help_of_start_says_where_what_was_left_at_the_paths_under_artifacts_is_kept() {
     assert!(long_help_of_start().contains(
-        "  artifacts      what the harness left at the paths the task lists under\n                 \
-         artifacts, where it lists any\n"
+        "  artifacts      what the harness left at the paths the task lists \
+         under\n                 artifacts, where it lists any, and in /logs/artifacts\n"
     ));
 }

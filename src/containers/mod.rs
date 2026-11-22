@@ -1,5 +1,6 @@
 mod artifacts;
 mod build;
+mod collect;
 mod container;
 mod grader;
 mod health_check;
@@ -18,7 +19,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
-use crate::benchmark::TaskConfiguration;
+use crate::benchmark::{PUBLISHED, TaskConfiguration};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
@@ -46,7 +47,10 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     working directory of the task, the file named changes lists every path you added, changed or \
     removed in the container of the task, one to a line after A, C or D, the directory named \
     artifacts holds what you left at the paths that the task names to be kept, where it names \
-    any, the files named stdout and stderr hold what you printed, the \
+    any, and what you left in /logs/artifacts, in logs/artifacts, the directory named collect \
+    holds what the commands that the task runs before those paths are kept printed, one \
+    directory for each, where it runs any, the files named stdout and stderr hold what you \
+    printed, the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
     and stderr, and the files it left in logs/verifier, and the directory named health-check \
     holds what the health check of the environment of the task printed the last time it ran, in \
@@ -79,6 +83,7 @@ const WORK: &str = "/var/lib/cladenc/work";
 const ATTEMPTS: &str = "/var/log/cladenc/attempts";
 const HEALTH_CHECK: &str = "health-check";
 const ARTIFACTS: &str = "artifacts";
+const COLLECT: &str = "collect";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -384,7 +389,8 @@ impl Attempting<'_> {
             &outputs_directory.harness(self.attempt.harness),
             HARNESS,
             run.user,
-        )?;
+        )
+        .and_then(|()| up.make(PUBLISHED, run.user))?;
         let before: BTreeSet<String> = up.changes().into_iter().collect();
         let time_limit = environment.configuration.harness_time_limit;
         let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);
@@ -405,6 +411,12 @@ impl Attempting<'_> {
             .collect();
         let _ = fs::write(self.running.join("changes"), changes);
         up.keep_work(&self.running.join("work"));
+        collect::run(
+            &up,
+            &environment.configuration.collect_commands,
+            &self.running.join(COLLECT),
+            stop,
+        )?;
         artifacts::keep(
             &up,
             &environment.configuration.artifacts,

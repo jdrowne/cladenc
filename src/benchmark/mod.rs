@@ -13,10 +13,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
 
-pub(crate) use artifacts::Artifact;
+pub(crate) use artifacts::{Artifact, PUBLISHED};
 use configuration::CONFIGURATION;
 pub use configuration::{
-    ConfigurationError, EnvironmentConfiguration, HealthCheck, TaskConfiguration,
+    CollectCommand, ConfigurationError, EnvironmentConfiguration, HealthCheck, TaskConfiguration,
 };
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";

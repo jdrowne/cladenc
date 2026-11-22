@@ -2,7 +2,8 @@ use serde::Deserialize;
 
 use super::configuration::ConfigurationError;
 
-const OF_THE_HARNESS: &str = "main";
+pub(super) const OF_THE_HARNESS: &str = "main";
+pub(crate) const PUBLISHED: &str = "/logs/artifacts";
 const STEP_BACK: &str = "..";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -15,6 +16,18 @@ pub struct Artifact {
 impl Artifact {
     pub(crate) fn path(&self) -> String {
         format!("/{}", parts(&self.source).join("/"))
+    }
+
+    pub(crate) fn published(listed: &[Self]) -> Option<Self> {
+        let published = Self {
+            source: PUBLISHED.to_owned(),
+            destination: parts(PUBLISHED).join("/"),
+            exclude: Vec::new(),
+        };
+        let is_listed = listed
+            .iter()
+            .any(|artifact| artifact.path() == PUBLISHED || overlap(artifact, &published));
+        (!is_listed).then_some(published)
     }
 }
 

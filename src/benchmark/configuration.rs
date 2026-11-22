@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use serde::Deserialize;
 
-use super::artifacts::{self, Artifact};
+use super::artifacts::{self, Artifact, OF_THE_HARNESS};
 use super::{is_name, valid};
 
 pub(super) const CONFIGURATION: &str = "task.toml";
@@ -16,6 +16,8 @@ const VERIFIER: &str = "verifier";
 const SEPARATE: &str = "separate";
 const EVERYTHING: &str = "the whole container of the harness in the container of the grader";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
+const COLLECT_TIME_LIMIT: Duration = Duration::from_secs(60);
+const ELSEWHERE: &str = "a command in a container other than that of the harness";
 const CHECKED_EVERY: Duration = Duration::from_secs(5);
 const CHECK_TIME_LIMIT: Duration = Duration::from_secs(30);
 const RETRIES_LEFT_OUT: u64 = 3;
@@ -99,6 +101,13 @@ impl Default for EnvironmentConfiguration {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CollectCommand {
+    pub command: String,
+    pub user: Option<String>,
+    pub time_limit: Duration,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaskConfiguration {
     pub docker_image: Option<String>,
@@ -114,6 +123,7 @@ pub struct TaskConfiguration {
     pub grader_variables: Vec<(String, String)>,
     pub grader_time_limit: Duration,
     pub grader_environment: Option<EnvironmentConfiguration>,
+    pub collect_commands: Vec<CollectCommand>,
     pub artifacts: Vec<Artifact>,
 }
 
@@ -133,6 +143,7 @@ impl Default for TaskConfiguration {
             grader_variables: Vec::new(),
             grader_time_limit: TIME_LIMIT_LEFT_OUT,
             grader_environment: None,
+            collect_commands: Vec::new(),
             artifacts: Vec::new(),
         }
     }
@@ -312,6 +323,16 @@ struct WrittenVerifier {
     timeout_sec: Option<f64>,
     environment_mode: Option<String>,
     environment: Option<toml::Value>,
+    #[serde(default)]
+    collect: Vec<WrittenCollect>,
+}
+
+#[derive(Deserialize)]
+struct WrittenCollect {
+    command: String,
+    service: Option<String>,
+    timeout_sec: Option<f64>,
+    user: Option<User>,
 }
 
 #[derive(Deserialize)]
@@ -396,8 +417,32 @@ pub(super) fn read_with(
         grader_variables: variables(VERIFIER, verifier.env, set)?,
         grader_time_limit: grader.unwrap_or(TIME_LIMIT_LEFT_OUT),
         grader_environment,
+        collect_commands: collect_commands(verifier.collect)?,
         artifacts,
     })
+}
+
+fn collect_commands(
+    written: Vec<WrittenCollect>,
+) -> Result<Vec<CollectCommand>, ConfigurationError> {
+    written
+        .into_iter()
+        .filter(|written| !written.command.is_empty())
+        .map(|written| {
+            let elsewhere = written
+                .service
+                .is_some_and(|service| !service.is_empty() && service != OF_THE_HARNESS);
+            if elsewhere {
+                return Err(ConfigurationError::Needs { what: ELSEWHERE });
+            }
+            let time_limit = time_limit("verifier.collect.timeout_sec", written.timeout_sec)?;
+            Ok(CollectCommand {
+                command: written.command,
+                user: given(written.user.map(User::named)),
+                time_limit: time_limit.unwrap_or(COLLECT_TIME_LIMIT),
+            })
+        })
+        .collect()
 }
 
 fn settings(

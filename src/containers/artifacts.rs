@@ -46,18 +46,32 @@ impl Set {
 
 pub(super) fn keep(up: &Up, artifacts: &[Artifact], kept: &Path) {
     for artifact in artifacts {
-        let place = place_of(artifact, kept);
-        let _ = place.parent().map(fs::create_dir_all);
-        up.copy_what_is_at(&artifact.source, &place);
-        leave_out(&place, &artifact.exclude);
-        place
-            .ancestors()
-            .skip(1)
-            .take_while(|above| above.starts_with(kept))
-            .for_each(|above| {
-                let _ = fs::remove_dir(above);
-            });
+        let place = keep_one(up, artifact, kept);
+        remove_above_where_empty(&place, kept);
     }
+    if let Some(published) = Artifact::published(artifacts) {
+        let place = keep_one(up, &published, kept);
+        let _ = fs::remove_dir(&place);
+        remove_above_where_empty(&place, kept);
+    }
+}
+
+fn keep_one(up: &Up, artifact: &Artifact, kept: &Path) -> PathBuf {
+    let place = place_of(artifact, kept);
+    let _ = place.parent().map(fs::create_dir_all);
+    up.copy_what_is_at(&artifact.source, &place);
+    leave_out(&place, &artifact.exclude);
+    place
+}
+
+fn remove_above_where_empty(place: &Path, kept: &Path) {
+    place
+        .ancestors()
+        .skip(1)
+        .take_while(|above| above.starts_with(kept))
+        .for_each(|above| {
+            let _ = fs::remove_dir(above);
+        });
 }
 
 fn place_of(artifact: &Artifact, kept: &Path) -> PathBuf {
@@ -75,7 +89,8 @@ pub(super) fn give(
     owner: &str,
 ) -> Result<(), ContainerError> {
     let given = kept.with_file_name(GIVEN);
-    let gave = artifacts.iter().try_for_each(|artifact| {
+    let published = Artifact::published(artifacts);
+    let gave = artifacts.iter().chain(&published).try_for_each(|artifact| {
         remove(&given);
         match trusted(&place_of(artifact, kept), &given) {
             Some(true) => up.put(&given, &artifact.path(), owner),

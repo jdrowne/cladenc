@@ -20,6 +20,7 @@ mod start {
     mod benchmarks;
     mod built;
     mod called;
+    mod collect;
     mod configuration;
     mod environment;
     mod experiment;
