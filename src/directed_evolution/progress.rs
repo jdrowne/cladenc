@@ -114,24 +114,30 @@ impl<'a> Progress<'a> {
         shared: &'scope Shared<'_>,
         scope: &'scope Scope<'scope, '_>,
     ) {
-        let recorded = self.failure.is_none();
-        let _ = recorded.then(|| {
-            say(
-                self.writer,
-                &Said::Started {
-                    action: &action,
-                    again,
-                    procreations: self.genealogy.procreations_started(),
-                    max_procreations: self.artificial_selection.max_procreations,
-                },
-            );
+        let _ = self.set_running(&action, again).then(|| {
             scope.spawn(move || {
                 let _ = shared
                     .sender
                     .send(Told::Ended(carry_out(shared, action, again)));
             })
         });
-        self.running += u64::from(recorded);
+    }
+
+    pub(super) fn set_running(&mut self, action: &Started, again: bool) -> bool {
+        let recorded = self.failure.is_none();
+        if recorded {
+            say(
+                self.writer,
+                &Said::Started {
+                    action,
+                    again,
+                    procreations: self.genealogy.procreations_started(),
+                    max_procreations: self.artificial_selection.max_procreations,
+                },
+            );
+            self.running += 1;
+        }
+        recorded
     }
 
     pub(super) fn hear(&mut self, told: Told, outputs_directory: &OutputsDirectory) {
