@@ -2,8 +2,8 @@ use std::ffi::OsString;
 use std::fmt::Write;
 use std::fs::File;
 use std::os::unix::process::ExitStatusExt;
-use std::path::Path;
-use std::process::{Command, Stdio};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 use nix::unistd::{Gid, Uid};
@@ -146,12 +146,8 @@ impl Up {
         bringing: &Bringing<'_>,
         running: &Path,
     ) -> Result<Self, ContainerError> {
-        let mut up = Self {
-            name: named(),
-            user: String::new(),
-            working_directory: String::new(),
-        };
-        let mut docker = docker_run(outputs_directory, &up.name);
+        let name = named();
+        let mut docker = docker_run(outputs_directory, &name);
         docker
             .args(
                 bringing
@@ -174,7 +170,22 @@ impl Up {
             .args(["--env-file", STANDARD_INPUT])
             .args(["--detach", bringing.image, "sleep"])
             .arg(bringing.stays.as_secs().to_string());
-        detached(docker, &file_of(bringing.variables), running)?;
+        let said = running.join("stderr");
+        let run = File::create(&said)
+            .and_then(|stderr| {
+                docker
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::null())
+                    .stderr(stderr)
+                    .spawn()
+            })
+            .map_err(ContainerError::Io)?;
+        let mut up = Self {
+            name,
+            user: String::new(),
+            working_directory: String::new(),
+        };
+        detached(run, &file_of(bringing.variables), said)?;
         let mut inspect = Command::new("docker");
         inspect.args(["inspect", "--format", SETTINGS, &up.name]);
         left::printed_by(inspect)
@@ -347,26 +358,15 @@ pub(super) fn file_of(variables: &[(String, String)]) -> String {
         })
 }
 
-fn detached(mut docker: Command, input: &str, running: &Path) -> Result<(), ContainerError> {
-    let said = running.join("stderr");
-    let status = File::create(&said)
-        .and_then(|stderr| {
-            docker
-                .stdin(Stdio::piped())
-                .stdout(Stdio::null())
-                .stderr(stderr)
-                .spawn()
+fn detached(mut run: Child, input: &str, said: PathBuf) -> Result<(), ContainerError> {
+    program::give(&mut run, input);
+    run.wait()
+        .map_err(ContainerError::Io)
+        .and_then(|status| match status.code() {
+            Some(0) => Ok(()),
+            Some(_) => Err(ContainerError::Docker(said)),
+            None => Err(ContainerError::Signal(status.signal().unwrap_or_default())),
         })
-        .and_then(|mut docker| {
-            program::give(&mut docker, input);
-            docker.wait()
-        })
-        .map_err(ContainerError::Io)?;
-    match status.code() {
-        Some(0) => Ok(()),
-        Some(_) => Err(ContainerError::Docker(said)),
-        None => Err(ContainerError::Signal(status.signal().unwrap_or_default())),
-    }
 }
 
 fn named() -> String {

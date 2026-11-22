@@ -1,11 +1,11 @@
 ---
 name: the-checks-the-code-faces
-description: "The code is written to pass the checks of release.yml: no comments, one assertion per test, no directive that silences a tool, no linter configuration file but etc/clippy/clippy.toml, no Rust file over 1000 lines, no function over 50 statements, no test file without a test, each module of src a directory and no file beside a directory of its name, every line, region and function of src reached by the three tiers together and of crates/test_inputs by its own tests, rustfmt clean, and clippy clean with limits on each function's cognitive complexity, nesting, parameters and lines; the release waits for every one of them"
+description: "The code is written to pass the checks of release.yml: no comments, one assertion per test, no directive that silences a tool, no linter configuration file but etc/clippy/clippy.toml, no Rust file over 1000 lines, no function over 50 statements, no test file without a test, each module of src a directory and no file beside a directory of its name, every line, region and function of src reached by the three tiers together and of crates/test_inputs by its own tests, no unit test that starts docker, rustfmt clean, and clippy clean with limits on each function's cognitive complexity, nesting, parameters and lines; the release waits for every one of them"
 metadata:
   node_type: memory
   type: project
   originSessionId: 16a1d745-ea25-4971-9454-4ef3ef668142
-  modified: 2026-11-18T03:22:09.655Z
+  modified: 2026-11-22T19:52:17.000Z
 ---
 
 # The checks the code faces
@@ -23,6 +23,7 @@ metadata:
 - `assert-coverage`: the tests of the three tiers, taken together, reach every line, region and function of the code under `src/`. Cargo builds the library twice, once with the unit tests in it, per [[the-layout-follows-rust-conventions]], and once for the `cladenc` program and the other two tiers. The job adds the counts of the two builds up, so a function that the unit tests reach in part and the other tiers reach the rest of passes. The table `cargo llvm-cov` prints goes by the better build, so a file can show under 100 percent there while the job passes. The test code is kept out of the measure, the unit tests under `src/` among them, and so is `crates/test_inputs`.
   - The three jobs that use `cargo-llvm-cov` install version 0.9.1 of it, and the version is raised by hand in all three at once. A later version may count `--fail-uncovered-lines` by the better build, and the check is read again when the version is raised.
 - `assert-coverage-of-test-inputs`: the tests of `crates/test_inputs`, which are in `crates/test_inputs/tests/`, reach every line, region and function of the package. They alone are counted: that a tier of `cladenc` calls a function of the package counts for nothing.
+- The two jobs that run the unit tests, `unit-test-debug` and `unit-test-coverage`, fail when a unit test starts `docker`, whether the test means to or it happens on the way out of what it calls. Each job puts the `docker` of `tests/e2e/samples/fake`, which only records what it is given, ahead of the real one on `PATH`, and fails when anything was recorded. A unit test ends before the first line that starts `docker`, and what needs a container is tested in the integration or the end-to-end tier.
 - `clippy`, with every warning an error, and `rustfmt`.
 - `clippy::self_named_module_files`, which `clippy` is given as an error: no Rust file beside a directory of its name, in `src`, `tests` and `crates` alike. A module that has files of its own under it is a directory, and its own code is in the `mod.rs` of that directory.
 - The limits `clippy` holds each function to, in `src`, `tests` and `crates` alike. `etc/clippy/clippy.toml` sets the numbers:

@@ -723,12 +723,18 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: coverage-build
-      - name: Unit tests, keeping their profiles
+      - name: Unit tests that start no docker, keeping their profiles
         run: |
           tar -xPf coverage.tar
           source coverage.env
           export LLVM_PROFILE_FILE="$PWD/target/unit-%p-%m.profraw"
-          "$(cat target/test-unit)"
+          export CLADENC_TEST_ARGUMENTS_OF_DOCKER="$RUNNER_TEMP/docker"
+          PATH="$PWD/tests/e2e/samples/fake:$PATH" "$(cat target/test-unit)"
+          if [ -e "$CLADENC_TEST_ARGUMENTS_OF_DOCKER" ]; then
+            echo "::error::a unit test started docker, given what follows"
+            cat "$CLADENC_TEST_ARGUMENTS_OF_DOCKER"
+            exit 1
+          fi
           tar -cf profiles-unit.tar target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
@@ -746,10 +752,16 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: debug
-      - name: Unit tests
+      - name: Unit tests that start no docker
         run: |
           tar -xf debug.tar
-          target/debug/test-unit
+          export CLADENC_TEST_ARGUMENTS_OF_DOCKER="$RUNNER_TEMP/docker"
+          PATH="$PWD/tests/e2e/samples/fake:$PATH" target/debug/test-unit
+          if [ -e "$CLADENC_TEST_ARGUMENTS_OF_DOCKER" ]; then
+            echo "::error::a unit test started docker, given what follows"
+            cat "$CLADENC_TEST_ARGUMENTS_OF_DOCKER"
+            exit 1
+          fi
   yamllint:
     runs-on: ubuntu-latest
     steps:
