@@ -23,7 +23,7 @@ use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_
 
 pub use build::build_primogenitor;
 use container::{Container, Mount, Run, Shell, Up};
-pub use image::{Machine, build_environment, build_image, find_image, machine};
+pub use image::{Machine, build_environment, build_image, find_image, machine, remove_images};
 pub use left::remove_left_behind;
 use program::{Ending, FOREVER, Limits, seconds_since};
 

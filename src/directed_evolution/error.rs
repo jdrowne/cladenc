@@ -35,6 +35,7 @@ pub enum DirectedEvolutionError {
         error: ContainerError,
     },
     Journal(JournalError),
+    NotStarted,
     Asked,
     Build(ContainerError),
     Action {
@@ -94,6 +95,11 @@ impl Display for DirectedEvolutionError {
                 formatter,
                 "the directed evolution stopped before its end: its journal could not be \
                  written: {error}"
+            ),
+            Self::NotStarted => write!(
+                formatter,
+                "the directed evolution was stopped before it was started, so `cladenc resume` \
+                 has nothing to continue"
             ),
             Self::Asked => write!(
                 formatter,

@@ -70,6 +70,24 @@ of a task starts from has to be on the machine: cladenc does not ask
 Docker to fetch it and cannot forbid it, so Docker fetches a base image
 that is not on the machine, from the registry of its name.
 
+cladenc removes the environments it built once `cladenc start` or
+`cladenc resume` ends, whether the directed evolution finished, stopped or
+could not go on, as
+
+    docker image rm --force <NAME>...
+
+so no directed evolution leaves them on the machine. An image that the
+task.toml of a task names is not one cladenc built, and is left alone. A
+cladenc that was killed outright removes nothing: `cladenc resume` builds
+the environments again, and removes them when it ends.
+
+A stop while the image of the directed evolution or an environment is
+built comes before the directed evolution has a journal. `cladenc start`
+then exits with status 2 and says that the directed evolution was stopped
+before it was started: `cladenc resume` has nothing to continue, and the
+outputs directory is removed by hand before it is named to `cladenc start`
+again.
+
 A task whose task.toml names an image, as docker_image under environment,
 has that image as its environment: cladenc builds nothing for the task, and
 the task needs no environment directory. The image has to be on the machine
@@ -486,11 +504,11 @@ best harness of the other directed evolution is ahead of its primogenitor on
 the selection tasks by a change only as far as it is ahead by more than
 that. `cladenc report` also says how many tasks at least one harness
 completed, of the selection tasks, of the corroboration tasks and of the
-others, and `cladenc status` says how many so far. Where every harness works
-as the primogenitor does, that is what one more attempt at each task for
-each child gives the primogenitor, and it is set beside the count of the
-best harness of the other directed evolution, which had one attempt at each
-task.
+non-holdout tasks, and `cladenc status` says how many so far. Where every
+harness works as the primogenitor does, that is what one more attempt at
+each task for each child gives the primogenitor, and it is set beside the
+count of the best harness of the other directed evolution, which had one
+attempt at each task.
 
 An attempt is one harness working on one task, once, and cladenc carries it
 out in two steps, in one container of the environment of the task, started

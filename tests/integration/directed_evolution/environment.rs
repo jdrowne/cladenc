@@ -110,9 +110,6 @@ fn stopped_and_resumed_with_its_stop_flag_at(
     test_inputs::end_with_125_on(directory.path(), "t2");
     let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t2");
-    for (_task, image) in environments(&settings) {
-        remove(&image);
-    }
     change(&outputs_directory);
     let mut written = Vec::new();
     let found =
@@ -152,30 +149,16 @@ fn environments(settings: &Settings) -> Vec<(String, String)> {
         .collect()
 }
 
-fn remove(image: &str) {
-    Command::new("docker")
-        .args(["image", "rm", "--force", image])
+fn environments_left_by(evolved: &Evolved) -> Vec<String> {
+    let listed = Command::new("docker")
+        .args(["image", "ls", "--format", "{{.Repository}}:{{.Tag}}"])
+        .arg(&evolved.settings.environment_image_repository)
         .output()
         .unwrap();
-}
-
-fn label_of(image: &str) -> String {
-    let inspected = Command::new("docker")
-        .args(["image", "inspect", "--format"])
-        .arg(r#"{{index .Config.Labels "cladenc.task"}}"#)
-        .arg(image)
-        .output()
-        .unwrap();
-    String::from_utf8(inspected.stdout)
+    String::from_utf8(listed.stdout)
         .unwrap()
-        .trim()
-        .to_owned()
-}
-
-fn labels_of_the_environments(evolved: &Evolved) -> Vec<(String, String)> {
-    environments(&evolved.settings)
-        .into_iter()
-        .map(|(task, image)| (task, label_of(&image)))
+        .lines()
+        .map(str::to_owned)
         .collect()
 }
 
@@ -198,14 +181,20 @@ fn building(evolved: &Evolved) -> Vec<String> {
 }
 
 #[test]
-fn a_directed_evolution_builds_the_environment_of_every_task_labelled_with_the_task() {
-    let evolved = evolved();
+fn a_directed_evolution_that_ended_leaves_no_environment_it_built_on_the_machine() {
+    assert_eq!(environments_left_by(&evolved()), Vec::<String>::new());
+}
+
+#[test]
+fn a_directed_evolution_whose_environment_is_not_built_leaves_none_it_built_on_the_machine() {
+    assert_eq!(environments_left_by(&not_built()), Vec::<String>::new());
+}
+
+#[test]
+fn a_directed_evolution_stopped_while_an_environment_is_built_leaves_none_on_the_machine() {
     assert_eq!(
-        labels_of_the_environments(&evolved),
-        environments(&evolved.settings)
-            .into_iter()
-            .map(|(task, _image)| (task.clone(), task))
-            .collect::<Vec<_>>()
+        environments_left_by(&stopped_while_t2_is_built()),
+        Vec::<String>::new()
     );
 }
 
@@ -320,15 +309,28 @@ fn a_task_whose_environment_is_not_built_leaves_the_environments_after_it_unbuil
 }
 
 #[test]
-fn a_resumed_directed_evolution_builds_the_environments_again_under_the_same_names() {
-    let evolved = resumed();
-    assert_eq!(
-        labels_of_the_environments(&evolved),
-        environments(&evolved.settings)
-            .into_iter()
-            .map(|(task, _image)| (task.clone(), task))
-            .collect::<Vec<_>>()
+fn a_resumed_directed_evolution_that_ended_leaves_no_environment_it_built_on_the_machine() {
+    assert_eq!(environments_left_by(&resumed()), Vec::<String>::new());
+}
+
+#[test]
+fn a_directed_evolution_that_stopped_at_an_attempt_leaves_no_environment_on_the_machine() {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(directory.path());
+    test_inputs::end_with_125_on(directory.path(), "t2");
+    let found = directed_evolution::start(
+        &settings,
+        &directory.path().join("outputs"),
+        &AtomicBool::new(false),
+        &mut io::sink(),
     );
+    let stopped = Evolved {
+        directory,
+        settings,
+        found,
+        said: String::new(),
+    };
+    assert_eq!(environments_left_by(&stopped), Vec::<String>::new());
 }
 
 #[test]
@@ -358,10 +360,10 @@ fn a_resumed_directed_evolution_builds_the_environments_from_the_tasks_in_its_ou
 }
 
 #[test]
-fn a_directed_evolution_asked_to_stop_while_an_environment_is_built_stops_as_asked() {
+fn a_directed_evolution_asked_to_stop_while_an_environment_is_built_was_never_started() {
     assert!(matches!(
         stopped_while_t2_is_built().found,
-        Err(DirectedEvolutionError::Asked)
+        Err(DirectedEvolutionError::NotStarted)
     ));
 }
 

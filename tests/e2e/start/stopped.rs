@@ -67,6 +67,17 @@ fn killed_outright() -> (TempDir, ExitStatus) {
         .args(String::from_utf8(listed.stdout).unwrap().lines())
         .output()
         .unwrap();
+    let journal = fs::read_to_string(outputs.join("journal.jsonl")).unwrap_or_default();
+    let repository = journal
+        .split("\"environment_image_repository\":\"")
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .unwrap_or_default();
+    Command::new("docker")
+        .args(["image", "rm", "--force"])
+        .args((0..3).map(|place| format!("{repository}:{place}")))
+        .output()
+        .unwrap();
     (directory, status)
 }
 

@@ -582,6 +582,25 @@ fn the_flag_of_the_image_says_which_containers_are_started_from_the_image() {
 }
 
 #[test]
+fn the_section_of_cladenc_start_says_what_a_stop_before_the_journal_does() {
+    assert!(what_is_said_of("start").contains(
+        "A stop while the image or an environment is built comes before the directed evolution \
+         has a journal: `cladenc start` then exits with status 2, `cladenc resume` has nothing \
+         to continue, and the outputs directory is removed by hand before it is named to \
+         `cladenc start` again."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_that_the_environments_it_built_are_removed_when_it_ends() {
+    assert!(what_is_said_of("start").contains(
+        "`cladenc` removes the environments it built once `cladenc start` or `cladenc resume` \
+         ends, whether the directed evolution finished, stopped or could not go on, so none is \
+         left on the machine."
+    ));
+}
+
+#[test]
 fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
     assert!(readme().contains(
         "A task may also hold a file named `task.toml`, [Harbor's task \

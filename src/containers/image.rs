@@ -1,6 +1,6 @@
 use std::io;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -73,6 +73,16 @@ pub fn machine() -> io::Result<Machine> {
                 io::Error::other("Docker did not say how many CPUs and how much memory it has")
             })
     })
+}
+
+pub fn remove_images(images: &[String]) {
+    let _ = Command::new("docker")
+        .args(["image", "rm", "--force"])
+        .args(images)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
 }
 
 pub fn find_image(image: &str) -> io::Result<()> {

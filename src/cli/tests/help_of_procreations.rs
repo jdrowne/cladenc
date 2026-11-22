@@ -278,18 +278,18 @@ fn the_long_help_of_start_says_how_far_a_best_harness_is_ahead_by_a_change() {
 fn the_long_help_of_start_says_that_report_counts_the_tasks_one_harness_at_least_completed() {
     assert!(long_help_of_start().contains(
         "`cladenc report` also says how many tasks at least one harness\ncompleted, of the \
-         selection tasks, of the corroboration tasks and of the\nothers, and `cladenc status` \
-         says how many so far."
+         selection tasks, of the corroboration tasks and of the\nnon-holdout tasks, and \
+         `cladenc status` says how many so far."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_how_that_count_is_read_where_every_harness_works_alike() {
     assert!(long_help_of_start().contains(
-        "Where every harness works\nas the primogenitor does, that is what one more attempt at \
-         each task for\neach child gives the primogenitor, and it is set beside the count of \
-         the\nbest harness of the other directed evolution, which had one attempt at \
-         each\ntask."
+        "Where every\nharness works as the primogenitor does, that is what one more attempt \
+         at\neach task for each child gives the primogenitor, and it is set beside \
+         the\ncount of the best harness of the other directed evolution, which had \
+         one\nattempt at each task."
     ));
 }
 

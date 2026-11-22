@@ -1,7 +1,8 @@
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::ContainerError;
@@ -207,4 +208,22 @@ fn a_directed_evolution_that_is_resumed_runs_its_harnesses_in_the_image_that_was
 #[test]
 fn a_directed_evolution_that_is_resumed_ends_though_the_dockerfile_it_was_given_is_gone() {
     assert!(stopped_and_resumed_with_its_dockerfile_gone().found.is_ok());
+}
+
+#[test]
+fn a_directed_evolution_asked_to_stop_while_its_image_is_built_was_never_started() {
+    let directory = test_inputs::temporary_directory();
+    let image = test_inputs::image();
+    let settings = settings(directory.path(), &image, "RUN sleep 300\n");
+    let outputs_directory = directory.path().join("outputs");
+    let printed = outputs_directory.join("image/stdout");
+    let stop = AtomicBool::new(false);
+    let found = thread::scope(|scope| {
+        scope.spawn(|| {
+            test_inputs::within_ten_seconds(|| printed.exists());
+            stop.store(true, Ordering::SeqCst);
+        });
+        directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
+    });
+    assert!(matches!(found, Err(DirectedEvolutionError::NotStarted)));
 }

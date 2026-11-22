@@ -42,6 +42,38 @@ struct Shared<'a> {
 struct Made {
     outputs_directory: OutputsDirectory,
     environments: BTreeMap<String, Environment>,
+    built: Built,
+}
+
+struct Built {
+    images: Vec<String>,
+}
+
+impl Built {
+    fn by(settings: &Settings) -> Self {
+        Self {
+            images: settings
+                .environments()
+                .into_iter()
+                .map(|(_task, image)| image)
+                .collect(),
+        }
+    }
+}
+
+impl Drop for Built {
+    fn drop(&mut self) {
+        containers::remove_images(&self.images);
+    }
+}
+
+fn not_started(error: DirectedEvolutionError) -> DirectedEvolutionError {
+    match error {
+        DirectedEvolutionError::Asked | DirectedEvolutionError::Image(ContainerError::Stopped) => {
+            DirectedEvolutionError::NotStarted
+        }
+        other => other,
+    }
 }
 
 pub fn start(
@@ -74,13 +106,16 @@ pub fn start(
         .map_err(DirectedEvolutionError::Io)
         .inspect(|_| say_the_holdout(settings, writer))
         .and_then(|outputs_directory| {
+            let built = Built::by(settings);
             build_image(settings, &outputs_directory, stop, writer)
                 .and_then(|()| environments(settings, &outputs_directory, stop, writer))
                 .map(|environments| Made {
                     outputs_directory,
                     environments,
+                    built,
                 })
         })
+        .map_err(not_started)
         .and_then(|made| {
             Journal::open(path)
                 .map(|journal| (made, journal))
@@ -338,10 +373,12 @@ pub fn resume(
                 harnesses: genealogy.harness_count(),
             };
             say(writer, &continuing);
+            let built = Built::by(&settings);
             let environments = environments(&settings, &outputs_directory, stop, writer)?;
             let made = Made {
                 outputs_directory,
                 environments,
+                built,
             };
             let progress = Progress::new(&settings, journal, writer).resumed(
                 genealogy,
@@ -363,6 +400,7 @@ fn carry_on(
     let Made {
         outputs_directory,
         environments,
+        built: _built,
     } = made;
     let launch = settings.launch(key);
     if progress.awaits_build(stop) {

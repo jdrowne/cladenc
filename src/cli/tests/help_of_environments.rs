@@ -98,3 +98,42 @@ fn the_long_help_of_resume_says_that_an_environment_that_is_not_built_stops_with
          and\nenvironments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker\nprinted."
     ));
 }
+
+#[test]
+fn the_long_help_of_start_says_that_the_environments_cladenc_built_are_removed_when_it_ends() {
+    assert!(long_help_of("start").contains(
+        "cladenc removes the environments it built once `cladenc start` or\n`cladenc resume` \
+         ends, whether the directed evolution finished, stopped or\ncould not go on, as\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_shows_how_docker_is_asked_to_remove_an_environment() {
+    assert!(long_help_of("start").contains("\n    docker image rm --force <NAME>...\n"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_image_a_task_names_is_left_alone() {
+    assert!(long_help_of("start").contains(
+        "An image that the\ntask.toml of a task names is not one cladenc built, and is left \
+         alone."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_cladenc_killed_outright_removes_no_environment() {
+    assert!(long_help_of("start").contains(
+        "A\ncladenc that was killed outright removes nothing: `cladenc resume` builds\nthe \
+         environments again, and removes them when it ends."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_stop_before_the_journal_does() {
+    assert!(long_help_of("start").contains(
+        "`cladenc start`\nthen exits with status 2 and says that the directed evolution was \
+         stopped\nbefore it was started: `cladenc resume` has nothing to continue, and \
+         the\noutputs directory is removed by hand before it is named to `cladenc \
+         start`\nagain."
+    ));
+}

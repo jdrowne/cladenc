@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues, or only the open issues that carry one label, without being asked and end themselves when no issue is left to take, or schedule only the reminder that holds during any work. Use when the user says "start autopilot", "go autonomous on the open issues", "go autonomous on the issues labelled <label>", "restart autopilot", "reminders only", "switch to reminders only", "stop autopilot" or "reminders off", or asks to clear the reminders. Takes "start", "start bylabel <label>", "start reminders-only", the same three after "restart", or "stop"; every "start" and "restart" form but "reminders-only" also takes `--skip-label <label>`, repeatable.
+description: Start, restart or stop the autopilot reminders, which keep the session solving the open issues, or only the open issues that carry one label, without being asked and end themselves when no issue is left to take, or schedule only the reminders that hold during any work. Use when the user says "start autopilot", "go autonomous on the open issues", "go autonomous on the issues labelled <label>", "restart autopilot", "reminders only", "switch to reminders only", "stop autopilot" or "reminders off", or asks to clear the reminders. Takes "start", "start bylabel <label>", "start reminders-only", the same three after "restart", or "stop"; every "start" and "restart" form but "reminders-only" also takes `--skip-label <label>`, repeatable.
 ---
 
 # Autopilot
@@ -17,15 +17,15 @@ Fetch `CronCreate`, `CronList` and `CronDelete` with `ToolSearch` first.
 
 ## Reminders
 
-A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". The wait for CI is both. It is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session back to work while a run is going. It is the one reminder of the form `reminders-only`, per "Reminders only".
+A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". Two rules are both: the wait for CI, and that no test runs on the Mac. Each is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session against it: back to work while a run is going, or to running a test on the Mac to check the work it took. They are the two reminders of the form `reminders-only`, per "Reminders only".
 
-Before a reminder is added, the test is whether its rule would still hold with the autopilot stopped. When it would, the rule is written as a memory and given a row in "Rules that are memories", and it is a reminder as well only when a reminder that fires would otherwise lead the session against it, as with the wait for CI.
+Before a reminder is added, the test is whether its rule would still hold with the autopilot stopped. When it would, the rule is written as a memory and given a row in "Rules that are memories", and it is a reminder as well only when a reminder that fires would otherwise lead the session against it, as with the wait for CI and with the tests that run in CI alone.
 
 Each reminder is indivisible: it states one rule and names one action, so no rule can be quietly dropped from a merged block of text. A rule that names two actions is written as two reminders. The reminder that takes work is one rule, taking the issues in turn: listing them, taking the first, and listing them again once those close are its steps, so the same words hold at the first start and in the middle of work.
 
 Each reminder fires every fifteen minutes, on a minute of its own at least two minutes from the next, and none falls on the hour or the half hour. A reminder fires only while the session is idle, which is why every command that can run long goes in the background, per `.claude/memories/long-running-commands-in-the-background.md`.
 
-There are five. The first, on `1,16,31,46 * * * *`, is the wait for CI:
+There are six. The first, on `1,16,31,46 * * * *`, is the wait for CI:
 
 ```text
 REMINDER: While a CI run that a push of this session started is queued or in progress, only wait: no reading, edits, issue writing, commits or pushes, except what the user instructs, which is done in full at once.
@@ -41,13 +41,14 @@ An issue labelled `memories` or `autopilot` changes a rule the session works und
 
 The `bylabel` form puts a reminder of its own that takes work on the same cron, in place of the one above, per "By label".
 
-The other three:
+The other four:
 
 | Cron | Prompt |
 | --- | --- |
 | `7,22,37,52 * * * *` | `REMINDER: When the listing names no issue that can be taken, end the autopilot: CronDelete every job that CronList returns.` |
 | `9,24,39,54 * * * *` | `REMINDER: Continue autonomously: while an open issue can be taken, do not stop to ask or to report.` |
 | `11,26,41,56 * * * *` | `REMINDER: When an issue you are working on cannot go on without a person's answer, hand it to a person by labelling it 'needs decision'.` |
+| `13,28,43,58 * * * *` | `REMINDER: Run no test on the Mac, of the unit, integration or end-to-end tier: push the tests with their code and let CI run them.` |
 
 In a prompt, `<number>` stands for the issue being checked, and `gh api` fills in `{owner}` and `{repo}` from the repository the session runs in.
 
@@ -89,7 +90,7 @@ Each file is under `.claude/memories/`.
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
-| Before a push, only `cargo fmt --all`, each new test and the test files the commit changes run on the Mac; every other check is left to CI. | `only-quick-checks-run-before-a-push.md` |
+| No test runs on the Mac: before a push only `cargo fmt --all` and a compile check run there, and every test and every other check is left to CI. | `only-quick-checks-run-before-a-push.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
@@ -106,7 +107,7 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 
 1. Make sure the label the autopilot leaves to a person exists: when `gh label list --search 'needs decision' --json name --jq '.[].name'` does not print `needs decision`, create it with `gh label create 'needs decision' --description 'Left to a person' --color d876e3`.
 2. Run the listing's command once, its `--skip-label` filters in place. When it names no issue that can be taken, say so, say which label or blocking issue holds back each open issue, and stop: there is nothing to schedule reminders for.
-3. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the form's five reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute, and a reminder that takes work for another form.
+3. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is not one of the form's six reminders on its own cron. That clears a reminder left from before one was changed or moved to another minute, and a reminder that takes work for another form.
 4. `CronCreate` with `recurring: true` each of the form's reminders that is not already scheduled.
 5. Tell the user how many reminders are running, that the autopilot ends itself when no issue is left that it can take, and the two limits that come with the reminders: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
 6. Read in full each memory that "Rules that are memories" names.
@@ -116,7 +117,7 @@ An issue is blocked while `gh api repos/{owner}/{repo}/issues/<number>/dependenc
 
 `start bylabel <label>` is "Start" held to the open issues that carry `<label>`. The autopilot takes those issues the way "Start" takes every open issue, but lowest number first, with no place ahead for an issue labelled `memories` or `autopilot`, and an open issue without the label is not its work. The form takes `--skip-label` as "Start" does.
 
-Its five reminders are those of "Start", but for the reminder that takes work on `3,18,33,48 * * * *`, which is this one, with the label itself put in place of each `<label>` when it is scheduled:
+Its six reminders are those of "Start", but for the reminder that takes work on `3,18,33,48 * * * *`, which is this one, with the label itself put in place of each `<label>` when it is scheduled:
 
 ```text
 REMINDER: Run gh issue list --state open --limit 10000 --json number,title,labels --jq 'map(select(any(.labels[]; .name == "<label>"))) | map(select(all(.labels[]; .name != "needs decision"))) | sort_by(.number) | map({number, title, labels: [.labels[].name]})' to list the open issues labelled '<label>' that no other label holds back, lowest number first; take the lowest-numbered issue it lists for which gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by --jq '.[].state' prints no open, alone or with other listed issues you choose to solve with it, and run the same command again when they close. An open issue without the label '<label>' is not this loop's work.
@@ -130,21 +131,21 @@ An open issue that blocks a labelled issue holds it back whether it carries the 
 
 A `bylabel` that names `needs decision`, or a label that one of its `--skip-label` flags names too, lists no issue, so step 2 of "Start" finds nothing to take and schedules nothing.
 
-The steps are those of "Start", with this form's listing in steps 2 and 7 and this form's five reminders in steps 3 and 4. Step 3 deletes the reminder that takes work of "Start", or of `bylabel` with another label, since it is not one of this form's five.
+The steps are those of "Start", with this form's listing in steps 2 and 7 and this form's six reminders in steps 3 and 4. Step 3 deletes the reminder that takes work of "Start", or of `bylabel` with another label, since it is not one of this form's six.
 
 The autopilot ends itself, per "Ending itself", once no open issue that carries the label can be taken. In step 3 of "Ending itself" it tells the user that no open issue carries the label, or which label or blocking issue holds back each open issue that does.
 
 ## Reminders only
 
-`start reminders-only` schedules only the reminder whose rule holds during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`. The other four drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the five left out: "Stop" clears it.
+`start reminders-only` schedules only the reminders whose rules hold during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`, and the reminder that no test runs on the Mac, on `13,28,43,58 * * * *`. The other four drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the four left out: "Stop" clears it.
 
-1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is neither one of the five reminders of "Start" nor the reminder that takes work of "By label", whatever its label, each on its own cron.
-2. `CronCreate` the wait for CI with `recurring: true` unless it is already scheduled.
+1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is neither one of the six reminders of "Start" nor the reminder that takes work of "By label", whatever its label, each on its own cron.
+2. `CronCreate` each of the two reminders with `recurring: true` unless it is already scheduled.
 3. Tell the user how many reminders are running, that they last until "Stop" is run, and the two limits that come with them: the jobs live in this session only and are gone when it ends, and recurring jobs auto-expire after thirty days.
 
 ## Restart
 
-Run "Stop", then the form of start that `restart` names: "Start" with the `--skip-label` flags that `restart` was given, "By label" with its label and `--skip-label` flags for `restart bylabel <label>`, or "Reminders only" for `restart reminders-only`. That leaves exactly the reminders of the form, five or one, each with thirty fresh days. It is how a changed set of `--skip-label` flags or a changed label takes effect, and how the session switches from one form to another.
+Run "Stop", then the form of start that `restart` names: "Start" with the `--skip-label` flags that `restart` was given, "By label" with its label and `--skip-label` flags for `restart bylabel <label>`, or "Reminders only" for `restart reminders-only`. That leaves exactly the reminders of the form, six or two, each with thirty fresh days. It is how a changed set of `--skip-label` flags or a changed label takes effect, and how the session switches from one form to another.
 
 ## Stop
 

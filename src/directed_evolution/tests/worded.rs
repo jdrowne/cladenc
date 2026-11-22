@@ -155,6 +155,15 @@ fn a_machine_that_cannot_be_told_is_worded_with_why() {
 }
 
 #[test]
+fn a_directed_evolution_stopped_before_it_was_started_is_worded_with_what_resume_can_do() {
+    assert_eq!(
+        worded(DirectedEvolutionError::NotStarted),
+        "the directed evolution was stopped before it was started, so `cladenc resume` has \
+         nothing to continue"
+    );
+}
+
+#[test]
 fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
