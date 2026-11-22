@@ -96,8 +96,7 @@ fn journal_of(directory: &TempDir) -> String {
 fn the_run_command_the_manual_gives_starts_the_command_of_the_other_only_for_an_attempt() {
     assert_eq!(
         run_command_the_manual_gives("sh harness.sh"),
-        "if [ -d /var/log/cladenc/attempts ]\n        then echo >> procreated; else sh harness.sh; \
-         fi"
+        "if [ -d /var/log/cladenc/attempts ]\n    then echo >> procreated; else sh harness.sh; fi"
     );
 }
 
