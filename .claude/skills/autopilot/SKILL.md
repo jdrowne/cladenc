@@ -90,7 +90,7 @@ Each file is under `.claude/memories/`.
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
-| No test runs locally and no change is compiled locally to check it: before a push, `cargo fmt --all` and the scripts of the jobs `assert-no-empty-test-files`, `assert-no-oversized-source-files` and `assert-one-directory-per-module` run locally, and whether the code compiles, every test and every other check are left to CI. | `only-quick-checks-run-before-a-push.md` |
+| No test runs locally and no change is compiled locally to check it: before a push, seven checks run locally: `assert-no-inline-directives` and `assert-no-linter-config-files` before every push, `cargo fmt --all` and the scripts of the jobs `assert-no-empty-test-files`, `assert-no-oversized-source-files` and `assert-one-directory-per-module` for a commit that changes a Rust file, and `yamllint` for a commit that changes a workflow. Whether the code compiles, every test and every other check are left to CI. | `only-quick-checks-run-before-a-push.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
