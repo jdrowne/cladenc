@@ -2,8 +2,8 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
-use cladenc::genealogy::{CreationOutcome, Experiment};
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::genealogy::{CreationOutcome, Experiment};
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const EXPERIMENT: Experiment = Experiment {

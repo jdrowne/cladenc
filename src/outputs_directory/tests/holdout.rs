@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::Path;
 
-use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::AttemptResult;
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::benchmark::Benchmark;
+use crate::genealogy::AttemptResult;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const SHOWN: &str = "benchmark/t1";

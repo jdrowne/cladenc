@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const TASK: &str = "benchmark/t1";

@@ -3,7 +3,7 @@ use std::io::ErrorKind;
 use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn made() -> (TempDir, PathBuf) {

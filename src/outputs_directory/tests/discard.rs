@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use cladenc::benchmark::Benchmark;
-use cladenc::genealogy::{AttemptResult, CreationOutcome};
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::benchmark::Benchmark;
+use crate::genealogy::{AttemptResult, CreationOutcome};
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn made() -> (TempDir, OutputsDirectory) {

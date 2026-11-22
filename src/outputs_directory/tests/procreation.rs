@@ -2,8 +2,8 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
-use cladenc::genealogy::CreationOutcome;
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::genealogy::CreationOutcome;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn started() -> (TempDir, OutputsDirectory) {

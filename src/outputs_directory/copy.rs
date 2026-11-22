@@ -5,7 +5,7 @@ use std::io::{self, ErrorKind};
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::Path;
 
-pub fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
+pub(super) fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
     let kind = fs::symlink_metadata(from)?.file_type();
     if kind.is_dir() {
         fs::create_dir(to)
@@ -43,7 +43,7 @@ pub(crate) fn make_removable(tree: &Path) {
     }
 }
 
-pub fn holds_only_harness_files(tree: &Path) -> io::Result<bool> {
+pub(crate) fn holds_only_harness_files(tree: &Path) -> io::Result<bool> {
     let kind = fs::symlink_metadata(tree)?.file_type();
     if kind.is_dir() {
         fs::read_dir(tree).and_then(|mut entries| {
@@ -58,7 +58,7 @@ pub fn holds_only_harness_files(tree: &Path) -> io::Result<bool> {
     }
 }
 
-pub fn same_tree(one: &Path, other: &Path) -> io::Result<bool> {
+pub(crate) fn same_tree(one: &Path, other: &Path) -> io::Result<bool> {
     let found = fs::symlink_metadata(one)?;
     let other_found = fs::symlink_metadata(other)?;
     let kind = found.file_type();

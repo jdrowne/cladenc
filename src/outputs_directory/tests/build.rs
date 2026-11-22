@@ -1,6 +1,6 @@
 use std::fs;
 
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn made() -> (TempDir, OutputsDirectory) {

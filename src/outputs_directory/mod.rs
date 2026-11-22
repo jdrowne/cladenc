@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 use crate::benchmark::{Benchmark, SPECIFICATION};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 
-pub(crate) use copy::make_removable;
-pub use copy::{copy_tree, holds_only_harness_files, same_tree};
+use copy::copy_tree;
+pub(crate) use copy::{holds_only_harness_files, make_removable, same_tree};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputsDirectory {
@@ -71,7 +71,7 @@ impl OutputsDirectory {
         self.path.join("image")
     }
 
-    pub fn start_image(&self, dockerfile: &Path) -> io::Result<PathBuf> {
+    pub(crate) fn start_image(&self, dockerfile: &Path) -> io::Result<PathBuf> {
         let image = self.image();
         fs::create_dir(&image)
             .and_then(|()| fs::create_dir(image.join("context")))
@@ -83,7 +83,7 @@ impl OutputsDirectory {
         self.path.join("environments").join(task)
     }
 
-    pub fn start_environment(&self, task: &str) -> io::Result<PathBuf> {
+    pub(crate) fn start_environment(&self, task: &str) -> io::Result<PathBuf> {
         let environment = self.environment(task);
         fs::create_dir_all(&environment).map(|()| environment)
     }
@@ -92,7 +92,7 @@ impl OutputsDirectory {
         self.environment(task).join("grader")
     }
 
-    pub fn start_grader_environment(&self, task: &str) -> io::Result<PathBuf> {
+    pub(crate) fn start_grader_environment(&self, task: &str) -> io::Result<PathBuf> {
         let environment = self.grader_environment(task);
         fs::create_dir_all(&environment).map(|()| environment)
     }
@@ -113,7 +113,7 @@ impl OutputsDirectory {
         self.path.join("attempts").join(harness.to_string())
     }
 
-    pub fn holdout(&self, harness: HarnessId) -> PathBuf {
+    fn holdout(&self, harness: HarnessId) -> PathBuf {
         self.path.join("holdout").join(harness.to_string())
     }
 
@@ -169,7 +169,11 @@ impl OutputsDirectory {
             .and_then(|()| fs::rename(&running, self.procreation(child)))
     }
 
-    pub fn start_baseline(&self, harness: HarnessId, progenitor: HarnessId) -> io::Result<()> {
+    pub(crate) fn start_baseline(
+        &self,
+        harness: HarnessId,
+        progenitor: HarnessId,
+    ) -> io::Result<()> {
         let running = self.running_baseline(harness);
         fs::create_dir(&running)
             .and_then(|()| copy_tree(&self.harness(0), &running.join("primogenitor")))
@@ -181,7 +185,7 @@ impl OutputsDirectory {
             })
     }
 
-    pub fn end_baseline(
+    pub(crate) fn end_baseline(
         &self,
         harness: HarnessId,
         experiment: Experiment,
@@ -222,7 +226,7 @@ impl OutputsDirectory {
             .and_then(|id| id.trim().parse().ok())
     }
 
-    pub fn line_of(&self, harness: HarnessId) -> Vec<HarnessId> {
+    pub(crate) fn line_of(&self, harness: HarnessId) -> Vec<HarnessId> {
         iter::successors(self.progenitor_of(harness), |ancestor| {
             self.progenitor_of(*ancestor)
                 .filter(|earlier| earlier < ancestor)
@@ -230,7 +234,7 @@ impl OutputsDirectory {
         .collect()
     }
 
-    pub fn children_of(&self, progenitor: HarnessId) -> Vec<HarnessId> {
+    pub(crate) fn children_of(&self, progenitor: HarnessId) -> Vec<HarnessId> {
         let mut children: Vec<HarnessId> = fs::read_dir(self.path.join("procreations"))
             .into_iter()
             .flatten()
@@ -280,7 +284,7 @@ impl OutputsDirectory {
             .and_then(|()| fs::rename(&running, self.attempt(harness, task)))
     }
 
-    pub fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
+    pub(crate) fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
         [
             self.running_procreation(child),
             self.harness(child),
@@ -292,7 +296,7 @@ impl OutputsDirectory {
         .try_for_each(|left| remove_if_there(left))
     }
 
-    pub fn discard_baseline(&self, harness: HarnessId) -> io::Result<()> {
+    pub(crate) fn discard_baseline(&self, harness: HarnessId) -> io::Result<()> {
         [
             self.running_baseline(harness),
             self.harness(harness),
@@ -304,7 +308,7 @@ impl OutputsDirectory {
         .try_for_each(|left| remove_if_there(left))
     }
 
-    pub fn discard_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+    pub(crate) fn discard_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
         [
             self.running_attempt(harness, task),
             self.attempt(harness, task),
@@ -331,3 +335,6 @@ fn remove_if_there(directory: &Path) -> io::Result<()> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests;

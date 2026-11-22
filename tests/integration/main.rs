@@ -40,18 +40,3 @@ mod directed_evolution {
     mod unchanged;
     mod unusable;
 }
-
-mod outputs_directory {
-    mod attempt;
-    mod baseline;
-    mod benchmark;
-    mod build;
-    mod copy;
-    mod create;
-    mod discard;
-    mod environment;
-    mod holdout;
-    mod image;
-    mod line;
-    mod procreation;
-}

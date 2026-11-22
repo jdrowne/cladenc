@@ -3,8 +3,8 @@ use std::io::{self, ErrorKind};
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
-use cladenc::benchmark::Benchmark;
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::benchmark::Benchmark;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn benchmark_of(directory: &Path, ids: &[&str]) -> Benchmark {

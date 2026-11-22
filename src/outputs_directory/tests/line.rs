@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-use cladenc::genealogy::CreationOutcome;
-use cladenc::outputs_directory::OutputsDirectory;
+use crate::genealogy::CreationOutcome;
+use crate::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 fn made() -> (TempDir, OutputsDirectory) {

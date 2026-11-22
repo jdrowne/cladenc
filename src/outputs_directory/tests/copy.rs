@@ -4,7 +4,7 @@ use std::os::unix::fs::{PermissionsExt, symlink};
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 
-use cladenc::outputs_directory::{copy_tree, holds_only_harness_files, same_tree};
+use crate::outputs_directory::copy::{copy_tree, holds_only_harness_files, same_tree};
 use tempfile::TempDir;
 
 fn copied() -> (TempDir, PathBuf) {
