@@ -14,6 +14,30 @@ pub(super) const CONFIGURATION: &str = "task.toml";
 const ENVIRONMENT: &str = "environment";
 const VERIFIER: &str = "verifier";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
+const CHECKED_EVERY: Duration = Duration::from_secs(5);
+const CHECK_TIME_LIMIT: Duration = Duration::from_secs(30);
+const RETRIES_LEFT_OUT: u64 = 3;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HealthCheck {
+    pub command: String,
+    pub interval: Duration,
+    pub time_limit: Duration,
+    pub start_period: Duration,
+    pub start_interval: Duration,
+    pub retries: u64,
+}
+
+impl HealthCheck {
+    pub(crate) fn longest(&self) -> Duration {
+        let retries = u32::try_from(self.retries).unwrap_or(u32::MAX);
+        self.time_limit
+            .saturating_add(self.interval)
+            .saturating_mul(retries)
+            .saturating_add(self.time_limit)
+            .saturating_add(self.start_period)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaskConfiguration {
@@ -23,6 +47,7 @@ pub struct TaskConfiguration {
     pub build_time_limit: Duration,
     pub cpus: Option<f64>,
     pub memory_megabytes: Option<u64>,
+    pub health_check: Option<HealthCheck>,
     pub harness_user: Option<String>,
     pub harness_time_limit: Option<Duration>,
     pub grader_user: Option<String>,
@@ -39,6 +64,7 @@ impl Default for TaskConfiguration {
             build_time_limit: TIME_LIMIT_LEFT_OUT,
             cpus: None,
             memory_megabytes: None,
+            health_check: None,
             harness_user: None,
             harness_time_limit: None,
             grader_user: None,
@@ -76,6 +102,9 @@ pub enum ConfigurationError {
         key: &'static str,
     },
     NotAbove0 {
+        key: &'static str,
+    },
+    NotAWait {
         key: &'static str,
     },
     NotASize {
@@ -129,6 +158,10 @@ impl Display for ConfigurationError {
                 formatter,
                 "gives {key} a value that is not a number above 0"
             ),
+            Self::NotAWait { key } => write!(
+                formatter,
+                "gives {key} a value that is not a number of seconds, 0 or more"
+            ),
             Self::NotASize { key } => write!(
                 formatter,
                 "gives {key} a value that is not a size of a megabyte or more, written as a \
@@ -166,11 +199,22 @@ struct WrittenEnvironment {
     cpus: Option<f64>,
     memory_mb: Option<i64>,
     memory: Option<toml::Value>,
+    healthcheck: Option<toml::Value>,
     gpus: Option<i64>,
     tpu: Option<toml::Value>,
     os: Option<String>,
     mcp_servers: Option<toml::Value>,
     skills_dir: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct WrittenHealthCheck {
+    command: String,
+    interval_sec: Option<f64>,
+    timeout_sec: Option<f64>,
+    start_period_sec: Option<f64>,
+    start_interval_sec: Option<f64>,
+    retries: Option<i64>,
 }
 
 #[derive(Default, Deserialize)]
@@ -248,6 +292,7 @@ pub(super) fn read_with(
         build_time_limit: build.unwrap_or(TIME_LIMIT_LEFT_OUT),
         cpus: above_0("environment.cpus", written.environment.cpus)?,
         memory_megabytes: memory,
+        health_check: health_check(written.environment.healthcheck)?,
         harness_user: given(written.agent.user.map(User::named)),
         harness_time_limit: time_limit("agent.timeout_sec", written.agent.timeout_sec)?,
         grader_user: given(written.verifier.user.map(User::named)),
@@ -266,6 +311,56 @@ fn time_limit(
                 .ok()
                 .filter(|time_limit| !time_limit.is_zero())
                 .ok_or(ConfigurationError::NotATimeLimit { key })
+        })
+        .transpose()
+}
+
+fn health_check(written: Option<toml::Value>) -> Result<Option<HealthCheck>, ConfigurationError> {
+    let Some(written) = written
+        .and_then(|written| written.try_into::<WrittenHealthCheck>().ok())
+        .filter(|written| !written.command.is_empty())
+    else {
+        return Ok(None);
+    };
+    let time_limit = time_limit("environment.healthcheck.timeout_sec", written.timeout_sec)?;
+    let interval = wait("environment.healthcheck.interval_sec", written.interval_sec)?;
+    let start_period = wait(
+        "environment.healthcheck.start_period_sec",
+        written.start_period_sec,
+    )?;
+    let start_interval = wait(
+        "environment.healthcheck.start_interval_sec",
+        written.start_interval_sec,
+    )?;
+    let retries = whole_above_0("environment.healthcheck.retries", written.retries)?;
+    Ok(Some(HealthCheck {
+        command: written.command,
+        interval: interval.unwrap_or(CHECKED_EVERY),
+        time_limit: time_limit.unwrap_or(CHECK_TIME_LIMIT),
+        start_period: start_period.unwrap_or_default(),
+        start_interval: start_interval.unwrap_or(CHECKED_EVERY),
+        retries: retries.unwrap_or(RETRIES_LEFT_OUT),
+    }))
+}
+
+fn wait(key: &'static str, seconds: Option<f64>) -> Result<Option<Duration>, ConfigurationError> {
+    seconds
+        .map(|seconds| {
+            Duration::try_from_secs_f64(seconds).map_err(|_| ConfigurationError::NotAWait { key })
+        })
+        .transpose()
+}
+
+fn whole_above_0(
+    key: &'static str,
+    number: Option<i64>,
+) -> Result<Option<u64>, ConfigurationError> {
+    number
+        .map(|number| {
+            u64::try_from(number)
+                .ok()
+                .filter(|number| *number > 0)
+                .ok_or(ConfigurationError::NotAbove0 { key })
         })
         .transpose()
 }
@@ -317,16 +412,7 @@ fn megabytes(
     newer: Option<i64>,
 ) -> Result<Option<u64>, ConfigurationError> {
     let older = size(key, older)?;
-    let newer = newer
-        .map(|megabytes| {
-            u64::try_from(megabytes)
-                .ok()
-                .filter(|megabytes| *megabytes > 0)
-                .ok_or(ConfigurationError::NotAbove0 {
-                    key: "environment.memory_mb",
-                })
-        })
-        .transpose()?;
+    let newer = whole_above_0("environment.memory_mb", newer)?;
     match (older, newer) {
         (Some(older), Some(newer)) if older != newer => Err(ConfigurationError::TwoSizes { key }),
         (older, newer) => Ok(newer.or(older)),

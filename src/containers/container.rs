@@ -11,6 +11,7 @@ use nix::unistd::{Gid, Uid};
 use super::left;
 use super::program::{self, Ending, FOREVER, LEEWAY, Limits};
 use super::{ContainerError, Environment};
+use crate::benchmark::HealthCheck;
 use crate::outputs_directory::{OutputsDirectory, make_removable};
 
 const NOT_STARTED: i32 = 125;
@@ -98,6 +99,13 @@ impl Up {
             .unwrap_or(FOREVER)
             .min(FOREVER)
             .saturating_add(configuration.grader_time_limit.min(FOREVER))
+            .saturating_add(
+                configuration
+                    .health_check
+                    .as_ref()
+                    .map_or(Duration::ZERO, HealthCheck::longest)
+                    .min(FOREVER),
+            )
             .saturating_add(COPYING);
         let mut up = Self {
             name: named(),

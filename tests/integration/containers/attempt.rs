@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Launch};
+use cladenc::containers::{self, ContainerError, HarnessEnding, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -193,7 +193,7 @@ fn ran_out_of_time(attempted: &Attempted) -> Option<bool> {
         .result
         .as_ref()
         .ok()
-        .map(|attempted| attempted.ran_out_of_time)
+        .map(|attempted| attempted.ending == HarnessEnding::Stopped)
 }
 
 fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &str) -> Attempted {

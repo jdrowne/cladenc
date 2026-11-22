@@ -240,8 +240,8 @@ fn the_long_help_of_start_says_that_a_container_with_no_time_limit_does_not_end_
 fn the_long_help_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
     assert!(long_help_of("start").contains(
         "  <SECONDS>  the time limit of the harness and the time limit of the\n             \
-         grader together, and ten minutes more, for what cladenc\n             copies in and \
-         out\n"
+         grader together, the longest the health check of the task\n             can take, \
+         and ten minutes more, for what cladenc copies in\n             and out\n"
     ));
 }
 
@@ -255,8 +255,9 @@ fn the_long_help_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused(
 #[test]
 fn the_long_help_of_start_says_that_an_attempt_keeps_whether_its_harness_was_stopped() {
     assert!(long_help_of("start").contains(
-        "  ending         one word: ended, or stopped where the harness ran past\n                 \
-         its time limit\n"
+        "  ending         one word: ended, stopped where the harness ran past its\n                 \
+         time limit, or not_started where the environment did\n                 not pass its \
+         health check\n"
     ));
 }
 

@@ -615,7 +615,26 @@ fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
 fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
     assert!(readme().contains(
         "`cladenc` obeys what the `task.toml` says of the environment of the task: its image, \
-         its working directory, its users and its variables."
+         its working directory, its users, its variables and its health check."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_when_the_health_check_of_a_task_is_run() {
+    assert!(what_is_said_of("start").contains(
+        "Where the task's `task.toml` gives a health check, as `command` under \
+         `environment.healthcheck`, `cladenc` runs that command in the container before it \
+         copies the harness in, and runs it again after each failure, as the settings beside \
+         the command say. The harness is started once the command has exited with status 0."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_what_a_health_check_that_does_not_pass_gives() {
+    assert!(what_is_said_of("start").contains(
+        "Where the health check does not pass, the harness is not started and the grader is \
+         not run: the harness did not complete the task, and the attempt keeps `not_started` \
+         as its ending."
     ));
 }
 

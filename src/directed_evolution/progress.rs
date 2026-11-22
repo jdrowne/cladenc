@@ -182,7 +182,7 @@ impl<'a> Progress<'a> {
                     Attempted {
                         result,
                         seconds,
-                        ran_out_of_time,
+                        ending,
                     },
             } => {
                 self.genealogy
@@ -192,7 +192,7 @@ impl<'a> Progress<'a> {
                     harness,
                     task: &task,
                     result,
-                    ran_out_of_time,
+                    ending,
                     outputs_directory,
                 });
                 self.record(&Record::AttemptFinished {

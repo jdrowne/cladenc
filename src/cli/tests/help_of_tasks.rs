@@ -104,7 +104,10 @@ fn the_long_help_of_start_says_what_each_way_an_attempt_ends_gives() {
     let endings = [
         "  a score of 1, or 1 for every     the harness completed the task\n",
         "  any other score, a file that     the harness did not complete the task\n",
-        "  exit status 125 of either step   Docker did not start the container",
+        "  exit status 125 of either step   Docker did not start the container: the\n  or \
+         of the health check           directed evolution stops",
+        "  a health check that does not     the harness is not started, and did not\n  pass                             \
+         complete the task\n",
         "  the time limit of the grader     the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));

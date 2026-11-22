@@ -284,12 +284,12 @@ fn a_health_check_without_a_command_is_refused() {
 
 #[test]
 fn a_health_check_with_every_setting_harbor_names_is_valid() {
-    assert_eq!(
+    assert!(
         read(&format!(
             "{CHECKED}interval_sec = 5\ntimeout_sec = 30.0\nstart_period_sec = \
              0\nstart_interval_sec = 0.5\nretries = 3\n"
-        )),
-        left_out()
+        ))
+        .is_ok()
     );
 }
 

@@ -157,6 +157,18 @@ fn a_time_limit_that_is_not_one_is_said_with_its_key() {
 }
 
 #[test]
+fn a_wait_that_is_not_one_is_said_with_its_key() {
+    assert_eq!(
+        ConfigurationError::NotAWait {
+            key: "environment.healthcheck.interval_sec"
+        }
+        .to_string(),
+        "gives environment.healthcheck.interval_sec a value that is not a number of seconds, 0 \
+         or more"
+    );
+}
+
+#[test]
 fn a_number_that_is_not_above_0_is_said_with_its_key() {
     assert_eq!(
         ConfigurationError::NotAbove0 {

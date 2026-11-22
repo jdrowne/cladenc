@@ -4,6 +4,7 @@ mod containers {
     mod build;
     mod configuration;
     mod environment;
+    mod health_check;
     mod holdout;
     mod image;
     mod left;

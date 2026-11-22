@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::outputs_directory::holds_only_harness_files;
 
 use configuration::CONFIGURATION;
-pub use configuration::{ConfigurationError, TaskConfiguration};
+pub use configuration::{ConfigurationError, HealthCheck, TaskConfiguration};
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
 pub(crate) const TESTS: &str = "tests";

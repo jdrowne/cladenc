@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::containers::ContainerError;
+use crate::containers::{ContainerError, HarnessEnding};
 use crate::directed_evolution::{Environments, Said};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
@@ -70,7 +70,7 @@ fn attempted(result: AttemptResult) -> String {
         harness: 3,
         task: "fix-the-parser",
         result,
-        ran_out_of_time: false,
+        ending: HarnessEnding::Ended,
         outputs_directory: &outputs_directory(),
     }
     .to_string()
@@ -81,7 +81,7 @@ fn attempted_by_a_harness_that_ran_out_of_time(result: AttemptResult) -> String 
         harness: 3,
         task: "fix-the-parser",
         result,
-        ran_out_of_time: true,
+        ending: HarnessEnding::Stopped,
         outputs_directory: &outputs_directory(),
     }
     .to_string()
@@ -184,13 +184,30 @@ fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is
 }
 
 #[test]
+fn a_harness_that_was_not_started_is_said_with_the_health_check_that_did_not_pass() {
+    assert_eq!(
+        Said::Attempted {
+            harness: 3,
+            task: "fix-the-parser",
+            result: AttemptResult::NotCompleted,
+            ending: HarnessEnding::NotStarted,
+            outputs_directory: &outputs_directory(),
+        }
+        .to_string(),
+        "harness 3 did not complete task fix-the-parser, as the environment of the task did not \
+         pass its health check and the harness was not started: what the attempt left is kept \
+         in /outputs/attempts/3/fix-the-parser"
+    );
+}
+
+#[test]
 fn an_attempt_at_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps_it() {
     assert_eq!(
         Said::Attempted {
             harness: 3,
             task: "parsing/fix-the-parser",
             result: AttemptResult::Completed,
-            ran_out_of_time: false,
+            ending: HarnessEnding::Ended,
             outputs_directory: &outputs_directory()
                 .holding_out(&["parsing/fix-the-parser".to_owned()]),
         }

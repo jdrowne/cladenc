@@ -1,4 +1,5 @@
 mod configuration;
+mod health_check;
 mod named;
 mod refused;
 mod several;

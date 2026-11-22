@@ -519,8 +519,9 @@ as
     sleep <SECONDS>
 
   <SECONDS>  the time limit of the harness and the time limit of the
-             grader together, and ten minutes more, for what cladenc
-             copies in and out
+             grader together, the longest the health check of the task
+             can take, and ten minutes more, for what cladenc copies in
+             and out
 
 First the source code of the harness is copied into that container, at
 /var/lib/cladenc/harness, and the harness is started there, as it is for a
@@ -555,6 +556,23 @@ moment the harness ended or was stopped. No flag gives a time limit of an
 attempt. Where a task gives its harness no time limit, the container of an
 attempt does not end itself: a cladenc that was killed outright leaves it
 running until `cladenc resume` removes it, or a person does.
+
+Where the task.toml of a task gives a health check, as command under
+environment.healthcheck, cladenc runs that command in the container before
+it copies the source code of the harness in, under the same timer, as the
+user of the environment and in its working directory. The harness is
+started only once the command has exited with status 0. A run of the
+command has the time limit timeout_sec, or 30 seconds where the task gives
+none. A run that exits with another status, or runs past its time limit,
+has failed, and the command is run again after interval_sec, or 5 seconds
+where the task gives none. The health check has not passed once the
+command has failed as many times as retries says, or 3 times where the
+task gives none. A failure within start_period_sec of the first run, or 0
+seconds where the task gives none, is not counted, and the command is then
+run again after start_interval_sec, or 5 seconds where the task gives none.
+Where the health check does not pass, the harness is not started and the
+grader is not run: the harness did not complete the task, and cladenc says
+that the environment of the task did not pass its health check.
 
 The container of an attempt is given no more CPUs and no more memory than
 its task asks for, as --cpus and --memory of `docker run`, so the harness
@@ -598,6 +616,9 @@ what it says of the environment of the task:
                                   part of one
   memory_mb under environment     the most memory that container is
                                   given, in megabytes
+  healthcheck under environment   a command that has to pass before the
+                                  harness is started, and how often it
+                                  is run
 
 cladenc obeys nothing else of a task.toml. A setting that is left out, or
 written with nothing between its quotation marks, changes nothing. The
@@ -630,7 +651,10 @@ A task is also refused where its task.toml names a variable otherwise, or
 takes a value from a variable that is not set where cladenc runs and gives
 no text in its place. A time limit that is not a number of seconds above 0
 is refused in the same way, and so are CPUs or megabytes of memory that are
-not a number above 0.
+not a number above 0. Of a health check, timeout_sec is refused where it is
+not a number of seconds above 0, retries where they are not a number above
+0, and interval_sec, start_period_sec and start_interval_sec where they are
+not a number of seconds, 0 or more.
 
 A task is refused as well where its task.toml asks for what cladenc has no
 way to give: several steps, as [[steps]]; a GPU, as gpus under environment
@@ -650,8 +674,10 @@ How an attempt ends decides its result:
   label of reward.json
   any other score, a file that     the harness did not complete the task
   cannot be read, or no score
+  a health check that does not     the harness is not started, and did not
+  pass                             complete the task
   exit status 125 of either step   Docker did not start the container: the
-                                   directed evolution stops, and `cladenc
+  or of the health check           directed evolution stops, and `cladenc
                                    resume` carries out the attempt again
   the time limit of the grader     the container is removed, and the
                                    harness did not complete the task,
@@ -693,8 +719,9 @@ held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 
   result         one word: completed, not_completed or timed_out
-  ending         one word: ended, or stopped where the harness ran past
-                 its time limit
+  ending         one word: ended, stopped where the harness ran past its
+                 time limit, or not_started where the environment did
+                 not pass its health check
   specification  the task specification
   work           what the harness left in the working directory of the
                  environment, not kept where that directory is /
@@ -705,6 +732,12 @@ benchmark, and in that one named after the task, which holds
   grader         the standard output and the standard error of the grader,
                  in stdout and stderr, and in logs/verifier what the grader
                  left in /logs/verifier, its score among them
+  health-check   the standard output and the standard error of the last
+                 run of the health check, in stdout and stderr, where the
+                 task gives one
+
+An attempt whose harness was not started keeps result, ending,
+specification and health-check, and nothing else.
 
 holdout in the outputs directory keeps the attempts at the holdout tasks,
 selection tasks and corroboration tasks together, in the same way, apart

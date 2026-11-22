@@ -3,6 +3,7 @@ mod checks;
 mod help;
 mod help_of_environments;
 mod help_of_experiments;
+mod help_of_health_checks;
 mod help_of_procreations;
 mod help_of_reports;
 mod help_of_task_configuration;

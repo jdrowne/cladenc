@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::containers::ContainerError;
+use crate::containers::{ContainerError, HarnessEnding};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -76,7 +76,7 @@ pub(super) enum Said<'a> {
         harness: HarnessId,
         task: &'a str,
         result: AttemptResult,
-        ran_out_of_time: bool,
+        ending: HarnessEnding,
         outputs_directory: &'a OutputsDirectory,
     },
     Failed {
@@ -242,7 +242,7 @@ impl Display for Said<'_> {
                 harness,
                 task,
                 result,
-                ran_out_of_time,
+                ending,
                 outputs_directory,
             } => {
                 let (how, why) = match result {
@@ -253,10 +253,13 @@ impl Display for Said<'_> {
                         ", as the grader ran past its time limit",
                     ),
                 };
-                let stopped = if *ran_out_of_time {
-                    ", after it was stopped at its time limit"
-                } else {
-                    ""
+                let stopped = match ending {
+                    HarnessEnding::Ended => "",
+                    HarnessEnding::Stopped => ", after it was stopped at its time limit",
+                    HarnessEnding::NotStarted => {
+                        ", as the environment of the task did not pass its health check and the \
+                         harness was not started"
+                    }
                 };
                 write!(
                     formatter,

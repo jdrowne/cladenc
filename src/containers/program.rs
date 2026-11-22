@@ -12,7 +12,7 @@ use nix::unistd::Pid;
 
 use super::ContainerError;
 
-const LOOK: Duration = Duration::from_millis(20);
+pub(super) const LOOK: Duration = Duration::from_millis(20);
 
 pub(super) const FOREVER: Duration = Duration::from_secs(u32::MAX as u64);
 

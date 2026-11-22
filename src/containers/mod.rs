@@ -1,6 +1,7 @@
 mod build;
 mod container;
 mod grader;
+mod health_check;
 mod image;
 mod left;
 mod program;
@@ -32,13 +33,17 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
-    completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
-    you ran past the time limit of the task and were stopped, the directory named work holds what \
+    completed, not_completed or timed_out, the file named ending reads ended, stopped where \
+    you ran past the time limit of the task and were stopped, or not_started where the \
+    environment of the task did not pass its health check, so that you were never started and \
+    the attempt holds nothing of you or of the grader, the directory named work holds what \
     you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \
-    removed in the container of the task, one to a line after A, C or D, the files named stdout and stderr hold what you printed, and the \
+    removed in the container of the task, one to a line after A, C or D, the files named stdout and stderr hold what you printed, the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
-    and stderr, and the files it left in logs/verifier. Once you had ended or were stopped, the grader ran the \
+    and stderr, and the files it left in logs/verifier, and the directory named health-check \
+    holds what the health check of the environment of the task printed the last time it ran, in \
+    the files named stdout and stderr. Once you had ended or were stopped, the grader ran the \
     tests of the task, which you are not shown, on what you left, and wrote its score in \
     logs/verifier/reward.txt, or one score for each label in logs/verifier/reward.json: the task \
     was completed where every score is 1. /var/log/cladenc/line holds one directory for each \
@@ -63,6 +68,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
 const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";
 const ATTEMPTS: &str = "/var/log/cladenc/attempts";
+const HEALTH_CHECK: &str = "health-check";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -92,11 +98,18 @@ pub struct Creation {
     pub seconds: f64,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HarnessEnding {
+    Ended,
+    Stopped,
+    NotStarted,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Attempted {
     pub result: AttemptResult,
     pub seconds: f64,
-    pub ran_out_of_time: bool,
+    pub ending: HarnessEnding,
 }
 
 #[derive(Debug)]
@@ -337,6 +350,9 @@ impl Attempting<'_> {
         let started = Instant::now();
         let environment = self.attempt.environment;
         let up = Up::start(outputs_directory, environment, self.running)?;
+        if !self.is_healthy(&up, stop)? {
+            return Ok(self.not_started(started));
+        }
         let run = Run {
             shell: &shell,
             user: environment
@@ -356,12 +372,11 @@ impl Attempting<'_> {
         let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);
         let ending = up.run(&run, self.running, limits)?;
         let seconds = seconds_since(started);
-        let ran_out_of_time = matches!(ending, Ending::TimedOut);
-        let word = if ran_out_of_time {
+        let (ending, word) = if matches!(ending, Ending::TimedOut) {
             up.end_everything();
-            "stopped\n"
+            (HarnessEnding::Stopped, "stopped\n")
         } else {
-            "ended\n"
+            (HarnessEnding::Ended, "ended\n")
         };
         let _ = fs::write(self.running.join("ending"), word);
         let changes: String = up
@@ -376,8 +391,30 @@ impl Attempting<'_> {
         Ok(Attempted {
             result,
             seconds,
-            ran_out_of_time,
+            ending,
         })
+    }
+
+    fn is_healthy(&self, up: &Up, stop: &AtomicBool) -> Result<bool, ContainerError> {
+        match &self.attempt.environment.configuration.health_check {
+            Some(health_check) => {
+                let kept = self.running.join(HEALTH_CHECK);
+                let _ = fs::create_dir(&kept);
+                health_check::passes(up, health_check, &kept, stop)
+            }
+            None => Ok(true),
+        }
+    }
+
+    fn not_started(&self, started: Instant) -> Attempted {
+        let _ = fs::write(self.running.join("ending"), "not_started\n");
+        let _ = fs::remove_file(self.running.join("stderr"));
+        let _ = fs::remove_dir_all(self.running.join("grader"));
+        Attempted {
+            result: AttemptResult::NotCompleted,
+            seconds: seconds_since(started),
+            ending: HarnessEnding::NotStarted,
+        }
     }
 }
 
