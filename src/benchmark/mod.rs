@@ -1,3 +1,4 @@
+mod artifacts;
 mod configuration;
 mod valid;
 
@@ -12,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
 
+pub(crate) use artifacts::Artifact;
 use configuration::CONFIGURATION;
 pub use configuration::{ConfigurationError, HealthCheck, TaskConfiguration};
 

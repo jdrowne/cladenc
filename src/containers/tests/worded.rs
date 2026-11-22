@@ -167,6 +167,15 @@ fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness()
 }
 
 #[test]
+fn the_instruction_says_where_what_was_left_at_the_paths_the_task_lists_under_artifacts_is() {
+    assert!(containers::INSTRUCTION.contains(
+        "one to a line after A, C or D, the directory named artifacts holds what you left at \
+         the paths that the task names to be kept, where it names any, the files named stdout \
+         and stderr hold what you printed, "
+    ));
+}
+
+#[test]
 fn the_instruction_says_where_what_the_grader_printed_and_left_is() {
     assert!(containers::INSTRUCTION.contains(
         "the files named stdout and stderr hold what you printed, the directory named grader \

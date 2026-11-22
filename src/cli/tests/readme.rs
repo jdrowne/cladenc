@@ -567,7 +567,8 @@ fn the_section_of_cladenc_start_says_that_an_attempt_is_given_no_more_than_its_t
 fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
     assert!(readme().contains(
         "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
-         TPU, Windows, MCP servers or a skills directory."
+         TPU, Windows, MCP servers, a skills directory or a path of a container other than \
+         that of the harness."
     ));
 }
 
@@ -617,6 +618,33 @@ fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
         "`cladenc` obeys what the `task.toml` says of the environment of the task: its image, \
          its working directory, its users, its variables and its health check."
     ));
+}
+
+#[test]
+fn the_flag_of_the_benchmark_says_that_the_paths_a_task_lists_under_artifacts_are_kept() {
+    assert!(readme().contains(
+        "its variables and its health check. It keeps with each attempt the paths that the \
+         `task.toml` lists under `artifacts`."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_when_and_where_the_paths_under_artifacts_are_kept() {
+    assert!(what_is_said_of("start").contains(
+        "Where the task's `task.toml` lists paths under `artifacts`, `cladenc` keeps each \
+         with the attempt as the harness left it, before the grader is run: at the place the \
+         entry gives as `destination`, or at the path itself without its leading `/`, and, of \
+         a directory, without what the patterns the entry lists as `exclude` match."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_what_a_path_that_is_not_in_the_container_keeps() {
+    assert!(
+        what_is_said_of("start").contains(
+            "A path that is not in the container keeps nothing, and the attempt goes on."
+        )
+    );
 }
 
 #[test]

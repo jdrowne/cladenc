@@ -24,6 +24,7 @@ const STANDARD_INPUT: &str = "/dev/stdin";
 const EMPTIED: &str = r#"rm -rf "$1" && mkdir -p "$1""#;
 const END_EVERYTHING: &str = "kill -9 -1";
 const COPYING: Duration = Duration::from_secs(600);
+const FOLLOW_LINK: &str = "--follow-link";
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -208,10 +209,19 @@ impl Up {
     }
 
     pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
+        self.copy(&[], &format!("{from}/."), to);
+    }
+
+    pub(super) fn copy_what_is_at(&self, from: &str, to: &Path) {
+        self.copy(&[FOLLOW_LINK], from, to);
+    }
+
+    fn copy(&self, flags: &[&str], from: &str, to: &Path) {
         let mut docker = Command::new("docker");
         docker
             .arg("cp")
-            .arg(format!("{}:{from}/.", self.name))
+            .args(flags)
+            .arg(format!("{}:{from}", self.name))
             .arg(to);
         let _ = left::printed_by(docker);
         make_removable(to);

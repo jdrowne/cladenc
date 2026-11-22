@@ -1,3 +1,4 @@
+mod artifacts;
 mod build;
 mod container;
 mod grader;
@@ -39,7 +40,9 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     the attempt holds nothing of you or of the grader, the directory named work holds what \
     you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \
-    removed in the container of the task, one to a line after A, C or D, the files named stdout and stderr hold what you printed, the \
+    removed in the container of the task, one to a line after A, C or D, the directory named \
+    artifacts holds what you left at the paths that the task names to be kept, where it names \
+    any, the files named stdout and stderr hold what you printed, the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
     and stderr, and the files it left in logs/verifier, and the directory named health-check \
     holds what the health check of the environment of the task printed the last time it ran, in \
@@ -69,6 +72,7 @@ const HARNESS: &str = "/var/lib/cladenc/harness";
 const WORK: &str = "/var/lib/cladenc/work";
 const ATTEMPTS: &str = "/var/log/cladenc/attempts";
 const HEALTH_CHECK: &str = "health-check";
+const ARTIFACTS: &str = "artifacts";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -387,6 +391,11 @@ impl Attempting<'_> {
             .collect();
         let _ = fs::write(self.running.join("changes"), changes);
         up.keep_work(&self.running.join("work"));
+        artifacts::keep(
+            &up,
+            &environment.configuration.artifacts,
+            &self.running.join(ARTIFACTS),
+        );
         let result = grader::run(outputs_directory, &up, &self.attempt, self.running, stop)?;
         Ok(Attempted {
             result,

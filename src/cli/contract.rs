@@ -574,6 +574,28 @@ Where the health check does not pass, the harness is not started and the
 grader is not run: the harness did not complete the task, and cladenc says
 that the environment of the task did not pass its health check.
 
+Where the task.toml of a task lists paths under artifacts, cladenc keeps
+each with the attempt, a file or a directory with all it holds, as the
+harness left it: it copies them out of the container once the harness has
+ended or was stopped, before the tests directory is copied in. An entry of
+the list is a path in the container, or a table that names the path as
+source. The path is kept in artifacts in the directory of the attempt, at
+the place the table gives as destination, and at the path itself without its
+leading / where the table gives none or the entry is a path alone:
+/app/out/report.json is kept as artifacts/app/out/report.json. A symbolic
+link at the path is followed. A path that is not in the container keeps
+nothing, and the attempt goes on. Where two entries would be kept at the
+same place, or one inside the other, the first is kept and the other is not.
+
+Of a directory, what the table lists as exclude is left out. Each is a
+pattern as `tar --exclude` takes one: it leaves out a file or a directory
+whose name it matches, with all the directory holds, and a pattern with a /
+in it is matched against the path of the file from the directory that is
+kept, or from any directory inside it, so that logs/run.txt leaves out
+run.txt in every directory named logs. In a pattern, * stands for any run of
+characters, / among them, ? for any one character, the characters between [
+and ] for any one of them, and a character after \\ for itself.
+
 The container of an attempt is given no more CPUs and no more memory than
 its task asks for, as --cpus and --memory of `docker run`, so the harness
 and the grader have them between them. A task that asks for neither is
@@ -619,6 +641,9 @@ what it says of the environment of the task:
   healthcheck under environment   a command that has to pass before the
                                   harness is started, and how often it
                                   is run
+  artifacts                       paths in the container that are kept
+                                  with the attempt once the harness has
+                                  ended
 
 cladenc obeys nothing else of a task.toml. A setting that is left out, or
 written with nothing between its quotation marks, changes nothing. The
@@ -654,13 +679,16 @@ is refused in the same way, and so are CPUs or megabytes of memory that are
 not a number above 0. Of a health check, timeout_sec is refused where it is
 not a number of seconds above 0, retries where they are not a number above
 0, and interval_sec, start_period_sec and start_interval_sec where they are
-not a number of seconds, 0 or more.
+not a number of seconds, 0 or more. Of an entry under artifacts, the path is
+refused where it holds .., and destination where it begins with /, holds ..,
+or names no file or directory.
 
 A task is refused as well where its task.toml asks for what cladenc has no
 way to give: several steps, as [[steps]]; a GPU, as gpus under environment
-above 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; or
-a skills directory, as skills_dir. The refusal names the task and what it
-asks for.
+above 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; a
+skills directory, as skills_dir; or a path of a container other than that of
+the harness, as service of an entry under artifacts that is not main. The
+refusal names the task and what it asks for.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is
@@ -727,6 +755,8 @@ benchmark, and in that one named after the task, which holds
                  environment, not kept where that directory is /
   changes        every path the harness added, changed or removed in the
                  container, one to a line after A, C or D
+  artifacts      what the harness left at the paths the task lists under
+                 artifacts, where it lists any
   stdout         the standard output of the harness
   stderr         the standard error of the harness
   grader         the standard output and the standard error of the grader,

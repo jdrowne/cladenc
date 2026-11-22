@@ -1,4 +1,5 @@
 mod containers {
+    mod artifacts;
     mod attempt;
     mod baseline;
     mod build;

@@ -1,3 +1,4 @@
+mod artifacts;
 mod configuration;
 mod health_check;
 mod named;

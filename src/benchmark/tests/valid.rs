@@ -357,16 +357,24 @@ fn mcp_servers_that_are_not_a_list_are_refused() {
 
 #[test]
 fn an_artifact_may_be_named_by_its_path_alone() {
-    assert_eq!(read("artifacts = [\"/app/out\"]\n"), left_out());
+    assert!(read("artifacts = [\"/app/out\"]\n").is_ok());
 }
 
 #[test]
 fn an_artifact_may_be_a_table_with_every_setting_harbor_names() {
-    assert_eq!(
+    assert!(
         read(&format!(
-            "{KEPT}destination = \"out\"\nexclude = [\"*.tmp\"]\n"
-        )),
-        left_out()
+            "{KEPT}destination = \"out\"\nexclude = [\"*.tmp\"]\nservice = \"main\"\n"
+        ))
+        .is_ok()
+    );
+}
+
+#[test]
+fn the_service_of_an_artifact_is_refused_where_it_is_not_text() {
+    assert_eq!(
+        read(&format!("{KEPT}service = 5\n")),
+        not_valid(3, "invalid type: integer `5`, expected a string")
     );
 }
 

@@ -211,6 +211,29 @@ fn what_a_task_needs_and_cladenc_cannot_give_is_said() {
 }
 
 #[test]
+fn a_path_under_artifacts_that_steps_back_is_said_with_the_path() {
+    assert_eq!(
+        ConfigurationError::StepsBack {
+            path: "/app/../etc".to_owned()
+        }
+        .to_string(),
+        "lists the path `/app/../etc` under artifacts, and a path that is kept holds no `..`"
+    );
+}
+
+#[test]
+fn a_destination_under_artifacts_that_is_no_place_is_said_with_what_a_destination_is() {
+    assert_eq!(
+        ConfigurationError::NotAPlace {
+            destination: "/srv/kept".to_owned()
+        }
+        .to_string(),
+        "gives a path under artifacts the destination `/srv/kept`, and a destination names a \
+         file or a directory by a path that does not begin with `/` and holds no `..`"
+    );
+}
+
+#[test]
 fn a_variable_whose_value_is_not_one_line_is_said_with_its_table_and_its_name() {
     assert_eq!(
         ConfigurationError::NotOneLine {

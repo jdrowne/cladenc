@@ -165,6 +165,37 @@ fn an_attempt_at_a_task_that_does_not_pass_its_health_check_keeps_what_the_check
     );
 }
 
+#[test]
+fn a_path_that_a_task_lists_under_artifacts_is_kept_with_the_attempt() {
+    let (directory, _output) = started("artifacts = [\"/app/work.txt\"]\n");
+    let attempt = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t2");
+    assert_eq!(
+        fs::read_to_string(attempt.join("artifacts/app/work.txt")).unwrap(),
+        "to do\n"
+    );
+}
+
+#[test]
+fn a_task_that_lists_a_path_that_steps_back_under_artifacts_is_reported_with_the_path() {
+    assert!(
+        said(&started("artifacts = [\"/app/../etc\"]\n").1).ends_with(
+            "benchmark: task t2 holds a task.toml that lists the path `/app/../etc` under \
+             artifacts, and a path that is kept holds no `..`\n"
+        )
+    );
+}
+
+#[test]
+fn a_task_that_lists_a_path_of_another_container_under_artifacts_is_reported_with_the_task() {
+    assert!(
+        said(&started("[[artifacts]]\nsource = \"/var/log/api\"\nservice = \"api\"\n").1)
+            .ends_with(
+                "benchmark: task t2 holds a task.toml that asks for a path of a container other \
+                 than that of the harness, which cladenc has no way to give\n"
+            )
+    );
+}
+
 fn started_with_no_task_toml_in_t2() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
     let mut cladenc = start(directory.path(), "");

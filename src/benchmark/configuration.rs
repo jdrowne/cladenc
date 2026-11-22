@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use serde::Deserialize;
 
+use super::artifacts::{self, Artifact};
 use super::{is_name, valid};
 
 pub(super) const CONFIGURATION: &str = "task.toml";
@@ -53,6 +54,7 @@ pub struct TaskConfiguration {
     pub grader_user: Option<String>,
     pub grader_variables: Vec<(String, String)>,
     pub grader_time_limit: Duration,
+    pub artifacts: Vec<Artifact>,
 }
 
 impl Default for TaskConfiguration {
@@ -70,6 +72,7 @@ impl Default for TaskConfiguration {
             grader_user: None,
             grader_variables: Vec::new(),
             grader_time_limit: TIME_LIMIT_LEFT_OUT,
+            artifacts: Vec::new(),
         }
     }
 }
@@ -115,6 +118,12 @@ pub enum ConfigurationError {
     },
     Needs {
         what: &'static str,
+    },
+    StepsBack {
+        path: String,
+    },
+    NotAPlace {
+        destination: String,
     },
 }
 
@@ -174,6 +183,16 @@ impl Display for ConfigurationError {
                 formatter,
                 "asks for {what}, which cladenc has no way to give"
             ),
+            Self::StepsBack { path } => write!(
+                formatter,
+                "lists the path `{path}` under artifacts, and a path that is kept holds no `..`"
+            ),
+            Self::NotAPlace { destination } => write!(
+                formatter,
+                "gives a path under artifacts the destination `{destination}`, and a \
+                 destination names a file or a directory by a path that does not begin with \
+                 `/` and holds no `..`"
+            ),
         }
     }
 }
@@ -187,6 +206,7 @@ struct Written {
     #[serde(default)]
     verifier: WrittenVerifier,
     steps: Option<toml::Value>,
+    artifacts: Option<toml::Value>,
 }
 
 #[derive(Default, Deserialize)]
@@ -298,6 +318,7 @@ pub(super) fn read_with(
         grader_user: given(written.verifier.user.map(User::named)),
         grader_variables: variables(VERIFIER, written.verifier.env, set)?,
         grader_time_limit: grader.unwrap_or(TIME_LIMIT_LEFT_OUT),
+        artifacts: artifacts::read(written.artifacts)?,
     })
 }
 

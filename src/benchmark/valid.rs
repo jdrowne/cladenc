@@ -148,6 +148,7 @@ static ARTIFACT: Table = Table {
         ("source", Kind::Text),
         ("destination", Kind::Text),
         ("exclude", TEXTS),
+        ("service", Kind::Text),
     ],
 };
 
