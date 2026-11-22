@@ -1,6 +1,6 @@
 ---
 name: a-procreation-has-a-progenitor-a-copy-and-a-child
-description: "Whatever is written about a procreation says which harness it means: the progenitor that procreates, the progenitor's copy that it changes, or the child that copy becomes; the copy is never said without whose it is, and a bare a harness, the harness or it is not enough"
+description: "The three harnesses of a procreation and their names: the progenitor that procreates, the progenitor's copy that the progenitor changes, and the child that the copy becomes"
 metadata:
   node_type: memory
   type: feedback
@@ -10,14 +10,14 @@ metadata:
 
 # A procreation has a progenitor, a copy and a child
 
-Three harnesses are part of a procreation, and whatever is written about one of them says which it means:
+Three harnesses are part of a procreation:
 
 - The progenitor is the harness that procreates. `cladenc` starts it in a container, and it is never changed.
 - The progenitor's copy is the copy of the progenitor's source code that the progenitor is asked to improve. It is all the progenitor changes. Where the primogenitor is the one that procreates, it is the primogenitor's copy.
 - The child is the new harness that the progenitor's copy becomes when the progenitor has ended.
 
-**Why:** A text is convoluted when it says a harness, the harness or it, and leaves the reader to work out which of the three is meant. The copy, said alone, does not tell the reader what is meant, where the progenitor's copy, the primogenitor's copy or the child does.
+The first harness that procreates in a directed evolution is the primogenitor, as no other harness exists yet. From the second procreation on, the harness that `cladenc` chooses is the progenitor, and it can be the primogenitor again.
 
-**How to apply:** Make one of the three names the subject of each sentence about a procreation: the progenitor is given a directory to read, the progenitor changes the progenitor's copy, the progenitor's copy becomes the child. Write the progenitor's copy or the primogenitor's copy in full every time, and never the copy, its copy or that copy as a name. Where what is meant is the harness that results, say the child. Where a sentence is about any harness, say what would make it one of the three, as in a harness can be a progenitor only once it has been benchmarked in full. The harness a directed evolution starts from is named too, per [[the-first-harness-is-the-primogenitor]]. In an account of a directed evolution step by step, the first harness that procreates is the primogenitor, as no other harness exists yet, and the step says so: the primogenitor procreates. A step that says only that a harness procreates is wrong. From the second procreation on, the harness that `cladenc` chooses is the progenitor, and it can be the primogenitor again.
+**Why:** The three are different things with different roles, and each has a name of its own.
 
-The rule covers replies as well as issues. Related: [[an-explanation-says-what-happens]], [[the-paper-is-a-starting-point]].
+**How to apply:** These are the names of the three, in the code and everywhere else. Related: [[the-first-harness-is-the-primogenitor]], [[the-paper-is-a-starting-point]].

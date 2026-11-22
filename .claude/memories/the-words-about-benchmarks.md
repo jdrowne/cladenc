@@ -23,8 +23,8 @@ The words `cladenc` uses about benchmarks are benchmark, task, task specificatio
 - Completed is said only where the grader accepted the work, and an attempt that ran past its time limit is not completed. An attempt that has ended, whatever came of it, has finished.
 - The tasks that are not held out are the non-holdout tasks, never the other tasks.
 - The holdout tasks that `cladenc` only scores, and chooses nothing by, are the corroboration tasks, never test tasks, though test is the industry's word. Corroboration is taken from science: a claim is corroborated when it survives a test that could have refuted it, and corroborated does not mean proven. The holdout tasks that are left are the selection tasks, which artificial selection goes by, never pick or validation tasks.
-- No word is coined for something that has a name, per [[the-simplest-design-is-offered-first]].
+- No word is coined for something that has a name.
 - A word not in the list at the top is chosen by the user, and is added to the list once chosen. Put the things to them one at a time, one question for each: say what `cladenc` does, what `cladenc` calls it today, and every name the industry has for it, with who uses which. Do not put several words into one choice, do not choose for them, and say plainly where a word they bring is not the industry's. Ask in the text of a reply and not with the question dialog, which holds too few options to list every name.
 - What the user says about one of the words in passing describes the idea. It is not a definition: do not take it to the letter.
 
-Related: [[the-paper-is-a-starting-point]], which holds the biological words, [[every-harness-is-benchmarked-in-full]] and [[an-explanation-says-what-happens]].
+Related: [[the-paper-is-a-starting-point]], which holds the biological words, and [[every-harness-is-benchmarked-in-full]].

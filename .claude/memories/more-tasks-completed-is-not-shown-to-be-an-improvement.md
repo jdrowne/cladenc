@@ -16,7 +16,7 @@ That a harness of a directed evolution completes more tasks than its progenitor 
 
 **How to apply:**
 
-- Say that a child completes more tasks, or completes more of the tasks its progenitor read about. Say improved, better or self-improvement only for what is shown on tasks that no progenitor of the line read about, and write the rest as what is meant or expected, per [[an-issue-says-what-is-expected-apart-from-what-happens]].
+- Say that a child completes more tasks, or completes more of the tasks its progenitor read about. Say improved, better or self-improvement only for what is shown on tasks that no progenitor of the line read about, and write the rest as what is meant or expected.
 - Do not put into the README, the help or an issue, as a fact, that `cladenc` leads to recursive self-improvement or that its harnesses improve themselves. That `cladenc` is there for that, and that a progenitor is asked to improve the progenitor's copy, can be said: each is a purpose or an instruction.
 - Issue 62 holds the analysis. The tasks that no progenitor reads about are the holdout tasks, per [[the-words-about-benchmarks]]. `cladenc` draws them at random out of each benchmark a person brings, and a person brings no benchmark of them.
 - A person has to be able to tell whether the lead of the best harness is luck, as the scientific method asks, though luck in the choosing does not stop a directed evolution. So a part of the holdout tasks is kept from artificial selection and only scored, per [[the-words-about-benchmarks]]. `cladenc` never chooses the best harness by that part.
