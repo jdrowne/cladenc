@@ -1,8 +1,11 @@
 mod artifacts;
+mod build;
 mod container;
 mod health_check;
+mod image;
 mod program;
 mod retried;
 mod reward;
 mod trusted;
+mod unstarted;
 mod worded;

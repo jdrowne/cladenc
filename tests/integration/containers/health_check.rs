@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::{Benchmark, HealthCheck, TaskConfiguration};
+use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, Environment, HarnessEnding, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
@@ -284,21 +284,4 @@ fn the_container_of_an_attempt_stays_for_the_longest_its_health_check_can_take_a
         )
     );
     assert_eq!(printed_by_the_check(&task_toml), "sleep 690 ");
-}
-
-#[test]
-fn the_health_check_of_a_task_is_read_from_its_task_toml() {
-    let directory = test_inputs::temporary_directory();
-    fs::write(
-        directory.path().join("task.toml"),
-        checked_by("true", "retries = 4\n"),
-    )
-    .unwrap();
-    assert_eq!(
-        TaskConfiguration::read(directory.path())
-            .unwrap()
-            .health_check
-            .map(|HealthCheck { retries, .. }| retries),
-        Some(4)
-    );
 }

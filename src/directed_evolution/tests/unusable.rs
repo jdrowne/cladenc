@@ -2,9 +2,10 @@ use std::fs;
 use std::io;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
-use cladenc::journal::{self, Journal, JournalError};
 use tempfile::TempDir;
+
+use crate::directed_evolution::{self, DirectedEvolutionError, Found};
+use crate::journal::{self, Journal, JournalError};
 
 fn resumed(directory: &TempDir) -> Result<Found, DirectedEvolutionError> {
     directed_evolution::resume(directory.path(), &AtomicBool::new(false), &mut io::sink())

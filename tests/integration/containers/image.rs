@@ -113,17 +113,3 @@ fn a_build_is_ended_when_the_directed_evolution_is_asked_to_stop() {
         Err(ContainerError::Stopped)
     ));
 }
-
-#[test]
-fn a_dockerfile_that_is_gone_is_not_built() {
-    let (directory, outputs_directory) = made();
-    let image = test_inputs::image();
-    let result = containers::build_image(
-        &outputs_directory,
-        &directory.path().join("missing"),
-        &image.name,
-        60,
-        &AtomicBool::new(false),
-    );
-    assert!(matches!(result, Err(ContainerError::Io(_))));
-}

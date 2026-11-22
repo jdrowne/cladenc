@@ -276,20 +276,3 @@ fn what_a_harness_that_was_stopped_left_at_a_path_the_task_lists_is_kept() {
     );
     assert_eq!(kept(&attempted, "artifacts/app/report.txt"), "found\n");
 }
-
-#[test]
-fn the_paths_a_task_lists_under_artifacts_are_read_from_its_task_toml() {
-    let directory = test_inputs::temporary_directory();
-    fs::write(
-        directory.path().join("task.toml"),
-        "artifacts = [\"/app/report.txt\", { source = \"/app/out\", destination = \"out\" }]\n",
-    )
-    .unwrap();
-    assert_eq!(
-        TaskConfiguration::read(directory.path())
-            .unwrap()
-            .artifacts
-            .len(),
-        2
-    );
-}

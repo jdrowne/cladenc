@@ -208,13 +208,6 @@ fn a_directed_evolution_copies_no_task_of_its_benchmark_that_is_not_one_of_its_o
 }
 
 #[test]
-fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_outputs_directory() {
-    let (_directory, found) =
-        evolved(|settings| settings.benchmarks[0].tasks.push("missing".to_owned()));
-    assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
-}
-
-#[test]
 fn a_directed_evolution_starts_with_an_attempt_of_the_primogenitor() {
     let (directory, _found) = evolved(|settings| settings.benchmarks[0].tasks.truncate(1));
     assert!(
@@ -469,19 +462,6 @@ fn a_directed_evolution_says_last_that_it_finished_and_which_harness_is_its_best
 fn a_directed_evolution_copies_no_record_of_its_journal_to_its_writer() {
     let (_directory, said) = said_over_one_task();
     assert!(!said.iter().any(|line| line.contains("\"record\"")));
-}
-
-#[test]
-fn a_directed_evolution_cannot_start_in_an_outputs_directory_that_exists() {
-    let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path());
-    let found = directed_evolution::start(
-        &settings,
-        directory.path(),
-        &AtomicBool::new(false),
-        &mut io::sink(),
-    );
-    assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
 }
 
 #[test]

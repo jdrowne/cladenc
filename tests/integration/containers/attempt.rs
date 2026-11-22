@@ -55,7 +55,6 @@ struct Attempt<'a> {
     run_command: &'a str,
     grader: &'a str,
     key: Option<&'a str>,
-    harness: u64,
     harness_time_limit: Option<u64>,
     grader_time_limit: u64,
     unreadable_in_the_harness: bool,
@@ -68,7 +67,6 @@ impl Default for Attempt<'_> {
             run_command: FINISH,
             grader: FINISHED,
             key: None,
-            harness: 0,
             harness_time_limit: Some(30),
             grader_time_limit: 30,
             unreadable_in_the_harness: false,
@@ -152,7 +150,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         &outputs_directory,
         &launch,
         containers::Attempt {
-            harness: attempt.harness,
+            harness: 0,
             task: TASK,
             environment: &environment,
         },
@@ -807,15 +805,6 @@ fn after_an_error_the_directory_of_an_attempt_is_still_under_running() {
             .join("stdout")
             .is_file()
     );
-}
-
-#[test]
-fn an_attempt_of_a_harness_that_is_not_there_is_an_error() {
-    let attempted = attempted_as(&Attempt {
-        harness: 9,
-        ..Attempt::default()
-    });
-    assert!(matches!(attempted.result, Err(ContainerError::Io(_))));
 }
 
 #[test]

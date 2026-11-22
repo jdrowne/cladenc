@@ -135,7 +135,7 @@ impl OutputsDirectory {
             .join(format!("procreation-{child}"))
     }
 
-    pub fn running_baseline(&self, harness: HarnessId) -> PathBuf {
+    pub(crate) fn running_baseline(&self, harness: HarnessId) -> PathBuf {
         self.path
             .join("running")
             .join(format!("baseline-{harness}"))

@@ -38,5 +38,4 @@ mod directed_evolution {
     mod resumed;
     mod stopped;
     mod unchanged;
-    mod unusable;
 }

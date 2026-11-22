@@ -164,21 +164,6 @@ fn the_build_of_an_environment_is_ended_when_the_directed_evolution_is_asked_to_
 }
 
 #[test]
-fn an_environment_whose_directory_in_the_outputs_directory_cannot_be_made_is_not_built() {
-    let (_directory, outputs_directory) = made();
-    fs::write(outputs_directory.path().join("environments"), "").unwrap();
-    let image = test_inputs::image();
-    let result = containers::build_environment(
-        &outputs_directory,
-        TASK,
-        &image.name,
-        Duration::from_secs(600),
-        &AtomicBool::new(false),
-    );
-    assert!(matches!(result, Err(ContainerError::Io(_))));
-}
-
-#[test]
 fn the_build_of_an_environment_that_runs_past_its_time_limit_is_ended() {
     assert!(matches!(
         built_within(2, "RUN sleep 300\n", false).result,
@@ -268,19 +253,4 @@ fn an_environment_of_a_grader_with_a_step_that_fails_is_not_built() {
         grader_built("RUN exit 3\n").result,
         Err(ContainerError::Exit(_))
     ));
-}
-
-#[test]
-fn an_environment_of_a_grader_whose_directory_cannot_be_made_is_not_built() {
-    let (_directory, outputs_directory) = made();
-    fs::write(outputs_directory.path().join("environments"), "").unwrap();
-    let image = test_inputs::image();
-    let result = containers::build_grader_environment(
-        &outputs_directory,
-        TASK,
-        &image.name,
-        Duration::from_secs(600),
-        &AtomicBool::new(false),
-    );
-    assert!(matches!(result, Err(ContainerError::Io(_))));
 }

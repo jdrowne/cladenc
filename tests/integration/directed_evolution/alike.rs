@@ -93,14 +93,6 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn the_run_command_the_manual_gives_starts_the_command_of_the_other_only_for_an_attempt() {
-    assert_eq!(
-        run_command_the_manual_gives("sh harness.sh"),
-        "if [ -d /var/log/cladenc/attempts ]\n    then echo >> procreated; else sh harness.sh; fi"
-    );
-}
-
-#[test]
 fn with_the_run_command_the_manual_gives_every_procreation_creates_its_child() {
     let directory = evolved();
     assert_eq!(

@@ -22,12 +22,12 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn built_from(image: &str, build_command: Option<&str>, time_limit: u64, stop: bool) -> Built {
+fn built_from(image: &str, build_command: &str, time_limit: u64, stop: bool) -> Built {
     let (directory, outputs_directory) = made();
     let launch = Launch {
         image,
         run_command: "exit 0",
-        build_command,
+        build_command: Some(build_command),
         model: MODEL,
         procreation_timeout: time_limit,
         max_grader_health_check_retries: 0,
@@ -39,7 +39,7 @@ fn built_from(image: &str, build_command: Option<&str>, time_limit: u64, stop: b
 }
 
 fn built(build_command: &str) -> Built {
-    built_from(test_inputs::IMAGE, Some(build_command), 30, false)
+    built_from(test_inputs::IMAGE, build_command, 30, false)
 }
 
 fn left_in_the_primogenitor(build_command: &str, file: &str) -> String {
@@ -124,7 +124,7 @@ fn a_primogenitor_whose_build_exits_with_another_status_is_an_error_that_holds_t
 #[test]
 fn a_primogenitor_whose_build_runs_past_the_time_limit_is_an_error() {
     let (_directory, _outputs_directory, result) =
-        built_from(test_inputs::IMAGE, Some("sleep 300"), 1, false);
+        built_from(test_inputs::IMAGE, "sleep 300", 1, false);
     assert!(matches!(result, Err(ContainerError::TimeLimit)));
 }
 
@@ -136,8 +136,7 @@ fn a_primogenitor_whose_build_leaves_a_named_pipe_is_an_error() {
 
 #[test]
 fn a_build_of_the_primogenitor_that_docker_does_not_start_is_an_error() {
-    let (_directory, outputs_directory, result) =
-        built_from("Not An Image", Some("exit 0"), 30, false);
+    let (_directory, outputs_directory, result) = built_from("Not An Image", "exit 0", 30, false);
     assert!(matches!(
         result,
         Err(ContainerError::Docker(said)) if said == outputs_directory.build(0).join("stderr")
@@ -147,18 +146,6 @@ fn a_build_of_the_primogenitor_that_docker_does_not_start_is_an_error() {
 #[test]
 fn a_build_of_the_primogenitor_whose_stop_flag_is_set_reports_that_it_was_stopped() {
     let (_directory, _outputs_directory, result) =
-        built_from(test_inputs::IMAGE, Some("sleep 300"), 60, true);
+        built_from(test_inputs::IMAGE, "sleep 300", 60, true);
     assert!(matches!(result, Err(ContainerError::Stopped)));
-}
-
-#[test]
-fn with_no_build_command_the_primogenitor_is_taken_as_built() {
-    let (_directory, _outputs_directory, result) = built_from(test_inputs::IMAGE, None, 30, false);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn with_no_build_command_nothing_is_kept_under_builds() {
-    let (_directory, outputs_directory, _result) = built_from(test_inputs::IMAGE, None, 30, false);
-    assert!(!outputs_directory.build(0).exists());
 }

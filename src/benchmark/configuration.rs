@@ -24,12 +24,12 @@ const RETRIES_LEFT_OUT: u64 = 3;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HealthCheck {
-    pub command: String,
-    pub interval: Duration,
-    pub time_limit: Duration,
-    pub start_period: Duration,
-    pub start_interval: Duration,
-    pub retries: u64,
+    pub(crate) command: String,
+    pub(crate) interval: Duration,
+    pub(crate) time_limit: Duration,
+    pub(crate) start_period: Duration,
+    pub(crate) start_interval: Duration,
+    pub(crate) retries: u64,
 }
 
 impl HealthCheck {

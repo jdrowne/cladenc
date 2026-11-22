@@ -1,4 +1,12 @@
-use test_inputs::manual_on_one_line;
+use test_inputs::{manual, manual_on_one_line};
+
+fn run_command_the_manual_gives(command: &str) -> String {
+    manual("cladenc-start")
+        .split_once("--harness-run-command '")
+        .and_then(|(_, after)| after.split_once('\''))
+        .map(|(given, _)| given.replace("<COMMAND>", command))
+        .unwrap()
+}
 
 #[test]
 fn the_manual_of_start_says_that_a_procreation_finds_its_attempts_by_benchmark() {
@@ -222,6 +230,14 @@ fn the_manual_of_start_gives_a_run_command_that_adds_one_line_in_a_procreation()
          <COMMAND>; fi' where <COMMAND> is the run command of the other, and procreated is a name \
          that no file of the primogenitor has."
     ));
+}
+
+#[test]
+fn the_run_command_the_manual_gives_starts_the_command_of_the_other_only_for_an_attempt() {
+    assert_eq!(
+        run_command_the_manual_gives("sh harness.sh"),
+        "if [ -d /var/log/cladenc/attempts ]\n    then echo >> procreated; else sh harness.sh; fi"
+    );
 }
 
 #[test]

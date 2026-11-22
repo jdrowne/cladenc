@@ -260,20 +260,6 @@ fn a_baseline_whose_container_docker_does_not_start_is_not_carried_out() {
 }
 
 #[test]
-fn a_baseline_that_cannot_be_started_in_the_outputs_directory_is_not_carried_out() {
-    let (_directory, outputs_directory) = family();
-    fs::create_dir(outputs_directory.running_baseline(5)).unwrap();
-    let result = containers::run_baseline(
-        &outputs_directory,
-        &launch(test_inputs::IMAGE, "exit 0", None),
-        5,
-        EXPERIMENT,
-        &AtomicBool::new(false),
-    );
-    assert!(matches!(result, Err(ContainerError::Io(_))));
-}
-
-#[test]
 fn a_baseline_whose_primogenitor_leaves_the_copy_as_it_was_creates_no_harness() {
     let (_directory, _outputs_directory, result) = established("exit 0");
     assert!(matches!(

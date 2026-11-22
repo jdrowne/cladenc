@@ -37,7 +37,6 @@ fn started_from(
     image: &str,
     run_command: &str,
     outputs_directory: &OutputsDirectory,
-    progenitor: u64,
     time_limit: u64,
 ) -> Result<containers::Creation, ContainerError> {
     let launch = Launch {
@@ -49,34 +48,27 @@ fn started_from(
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    containers::run_procreation(
-        outputs_directory,
-        &launch,
-        1,
-        progenitor,
-        &AtomicBool::new(false),
-    )
+    containers::run_procreation(outputs_directory, &launch, 1, 0, &AtomicBool::new(false))
 }
 
-fn procreated_by(run_command: &str, progenitor: u64, time_limit: u64) -> Procreated {
+fn procreated_within(run_command: &str, time_limit: u64) -> Procreated {
     let (directory, outputs_directory) = made_at("outputs");
     let result = started_from(
         test_inputs::IMAGE,
         run_command,
         &outputs_directory,
-        progenitor,
         time_limit,
     );
     (directory, outputs_directory, result)
 }
 
 fn procreated(run_command: &str) -> Procreated {
-    procreated_by(run_command, 0, 30)
+    procreated_within(run_command, 30)
 }
 
 fn not_started_by_docker() -> Procreated {
     let (directory, outputs_directory) = made_at("outputs");
-    let result = started_from("Not An Image", "exit 0", &outputs_directory, 0, 30);
+    let result = started_from("Not An Image", "exit 0", &outputs_directory, 30);
     (directory, outputs_directory, result)
 }
 
@@ -211,7 +203,6 @@ fn a_harness_can_read_the_ended_attempts_of_its_progenitor_and_none_still_runnin
         test_inputs::IMAGE,
         "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence",
         &outputs_directory,
-        0,
         30,
     );
     assert_eq!(
@@ -337,7 +328,7 @@ fn a_procreation_that_failed_keeps_what_its_harness_left_beside_the_harnesses() 
 
 #[test]
 fn a_harness_that_runs_past_the_time_limit_times_out() {
-    let (_directory, _outputs_directory, result) = procreated_by("sleep 300", 0, 1);
+    let (_directory, _outputs_directory, result) = procreated_within("sleep 300", 1);
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -349,7 +340,7 @@ fn a_harness_that_runs_past_the_time_limit_times_out() {
 
 #[test]
 fn the_time_limit_removes_the_container_of_a_harness() {
-    let (_directory, outputs_directory, _result) = procreated_by("hostname > id; sleep 300", 0, 5);
+    let (_directory, outputs_directory, _result) = procreated_within("hostname > id; sleep 300", 5);
     assert!(test_inputs::container_is_gone(
         &outputs_directory.harness(1).join("id")
     ));
@@ -384,12 +375,6 @@ fn what_docker_said_is_kept_under_running() {
 }
 
 #[test]
-fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
-    let (_directory, _outputs_directory, result) = procreated_by("exit 0", 9, 30);
-    assert!(matches!(result, Err(ContainerError::Io(_))));
-}
-
-#[test]
 fn a_harness_that_writes_into_the_source_code_it_runs_from_leaves_its_progenitor_unchanged() {
     let (_directory, outputs_directory, _result) =
         procreated("echo changed > \"$CLADENC_HARNESS/harness.sh\"");
@@ -415,14 +400,14 @@ fn a_child_that_holds_a_named_pipe_is_failed() {
 fn a_procreation_whose_directory_cannot_be_put_in_place_is_an_error() {
     let (_directory, outputs_directory) = made_at("outputs");
     fs::create_dir_all(outputs_directory.procreation(1).join("in the way")).unwrap();
-    let result = started_from(test_inputs::IMAGE, "exit 0", &outputs_directory, 0, 30);
+    let result = started_from(test_inputs::IMAGE, "exit 0", &outputs_directory, 30);
     assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]
 fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_mounted() {
     let (_directory, outputs_directory) = made_at("outputs,a\"b c");
-    let result = started_from(test_inputs::IMAGE, "touch made", &outputs_directory, 0, 30);
+    let result = started_from(test_inputs::IMAGE, "touch made", &outputs_directory, 30);
     assert!(matches!(
         result,
         Ok(containers::Creation {
