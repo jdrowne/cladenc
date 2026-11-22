@@ -35,6 +35,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<
             outputs_directory,
             TASK,
             &image.name,
+            configuration.build_time_limit,
             &AtomicBool::new(false),
         )
         .unwrap();
@@ -76,7 +77,6 @@ fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
-        attempt_timeout: 30,
     };
     let result = containers::run_attempt(
         &outputs_directory,

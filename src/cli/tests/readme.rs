@@ -535,6 +535,26 @@ fn the_section_of_cladenc_start_says_that_the_value_of_a_variable_is_kept_off_co
 }
 
 #[test]
+fn the_section_of_cladenc_start_says_what_time_limits_the_harness_and_the_grader_have() {
+    assert!(what_is_said_of("start").contains(
+        "The harness has the time limit that the task's `task.toml` gives, as `timeout_sec` \
+         under `agent`, and no time limit where it gives none. A harness that runs past its \
+         time limit is stopped, with every process it left running, and what it left is judged \
+         all the same. The grader has a time limit of its own, `timeout_sec` under `verifier`, \
+         or 600 seconds where the task gives none, counted from the moment the harness ended or \
+         was stopped. No flag gives a time limit of an attempt."
+    ));
+}
+
+#[test]
+fn the_section_of_cladenc_start_says_what_time_limit_the_build_of_an_environment_has() {
+    assert!(what_is_said_of("start").contains(
+        "The build of an environment has the time limit that the task's `task.toml` gives, as \
+         `build_timeout_sec` under `environment`, or 600 seconds where it gives none."
+    ));
+}
+
+#[test]
 fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
     assert!(readme().contains(
         "A task may also hold a file named `task.toml`, [Harbor's task \

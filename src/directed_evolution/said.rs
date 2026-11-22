@@ -76,6 +76,7 @@ pub(super) enum Said<'a> {
         harness: HarnessId,
         task: &'a str,
         result: AttemptResult,
+        ran_out_of_time: bool,
         outputs_directory: &'a OutputsDirectory,
     },
     Failed {
@@ -241,6 +242,7 @@ impl Display for Said<'_> {
                 harness,
                 task,
                 result,
+                ran_out_of_time,
                 outputs_directory,
             } => {
                 let (how, why) = match result {
@@ -248,12 +250,18 @@ impl Display for Said<'_> {
                     AttemptResult::NotCompleted => ("did not complete", ""),
                     AttemptResult::TimedOut => (
                         "did not complete",
-                        ", as the attempt ran past its time limit",
+                        ", as the grader ran past its time limit",
                     ),
+                };
+                let stopped = if *ran_out_of_time {
+                    ", after it was stopped at its time limit"
+                } else {
+                    ""
                 };
                 write!(
                     formatter,
-                    "harness {harness} {how} task {task}{why}: what the attempt left is kept in {}",
+                    "harness {harness} {how} task {task}{stopped}{why}: what the attempt left is \
+                     kept in {}",
                     outputs_directory.attempt(*harness, task).display()
                 )
             }

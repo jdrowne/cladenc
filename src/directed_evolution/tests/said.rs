@@ -70,6 +70,18 @@ fn attempted(result: AttemptResult) -> String {
         harness: 3,
         task: "fix-the-parser",
         result,
+        ran_out_of_time: false,
+        outputs_directory: &outputs_directory(),
+    }
+    .to_string()
+}
+
+fn attempted_by_a_harness_that_ran_out_of_time(result: AttemptResult) -> String {
+    Said::Attempted {
+        harness: 3,
+        task: "fix-the-parser",
+        result,
+        ran_out_of_time: true,
         outputs_directory: &outputs_directory(),
     }
     .to_string()
@@ -154,12 +166,31 @@ fn one_selection_task_and_one_corroboration_task_are_not_said_as_several() {
 }
 
 #[test]
+fn a_harness_that_was_stopped_at_its_time_limit_and_completed_its_task_is_said_with_both() {
+    assert_eq!(
+        attempted_by_a_harness_that_ran_out_of_time(AttemptResult::Completed),
+        "harness 3 completed task fix-the-parser, after it was stopped at its time limit: what \
+         the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+    );
+}
+
+#[test]
+fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is_said_with_both() {
+    assert_eq!(
+        attempted_by_a_harness_that_ran_out_of_time(AttemptResult::NotCompleted),
+        "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
+         limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+    );
+}
+
+#[test]
 fn an_attempt_at_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps_it() {
     assert_eq!(
         Said::Attempted {
             harness: 3,
             task: "parsing/fix-the-parser",
             result: AttemptResult::Completed,
+            ran_out_of_time: false,
             outputs_directory: &outputs_directory()
                 .holding_out(&["parsing/fix-the-parser".to_owned()]),
         }
@@ -553,11 +584,11 @@ fn a_harness_that_did_not_complete_a_task_is_said_not_to_have_completed_it() {
 }
 
 #[test]
-fn a_harness_whose_attempt_timed_out_is_said_not_to_have_completed_the_task_for_it() {
+fn a_harness_whose_grader_timed_out_is_said_not_to_have_completed_the_task_for_it() {
     assert_eq!(
         attempted(AttemptResult::TimedOut),
-        "harness 3 did not complete task fix-the-parser, as the attempt ran past its \
-         time limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+        "harness 3 did not complete task fix-the-parser, as the grader ran past its time \
+         limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
     );
 }
 

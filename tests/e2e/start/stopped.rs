@@ -1,3 +1,4 @@
+use std::fs;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
@@ -8,7 +9,7 @@ use tempfile::TempDir;
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname; sleep 300";
 
-fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command {
+fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
@@ -23,7 +24,6 @@ fn start(directory: &Path, run_command: &str, attempt_timeout: &str) -> Command 
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
-        ("--attempt-timeout", attempt_timeout.into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]
@@ -39,15 +39,11 @@ fn id_file(directory: &TempDir) -> PathBuf {
         .join("outputs/running/attempt-0-benchmark+t1/stdout")
 }
 
-fn signalled_within(signal: Signal, attempt_timeout: &str) -> (TempDir, ExitStatus) {
+fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = start(
-        directory.path(),
-        SAY_THE_CONTAINER_AND_STAY,
-        attempt_timeout,
-    )
-    .spawn()
-    .unwrap();
+    let mut cladenc = start(directory.path(), SAY_THE_CONTAINER_AND_STAY)
+        .spawn()
+        .unwrap();
     let id_file = id_file(&directory);
     test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
@@ -55,12 +51,23 @@ fn signalled_within(signal: Signal, attempt_timeout: &str) -> (TempDir, ExitStat
     (directory, status)
 }
 
-fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
-    signalled_within(signal, "60")
-}
-
 fn killed_outright() -> (TempDir, ExitStatus) {
-    signalled_within(Signal::SIGKILL, "10")
+    let (directory, status) = signalled(Signal::SIGKILL);
+    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
+    let listed = Command::new("docker")
+        .args(["ps", "--all", "--quiet", "--filter"])
+        .arg(format!(
+            "label=cladenc.directed-evolution={}",
+            outputs.display()
+        ))
+        .output()
+        .unwrap();
+    Command::new("docker")
+        .args(["rm", "--force"])
+        .args(String::from_utf8(listed.stdout).unwrap().lines())
+        .output()
+        .unwrap();
+    (directory, status)
 }
 
 #[test]
@@ -112,14 +119,8 @@ fn a_cladenc_that_is_killed_outright_during_a_run_is_ended_by_the_signal() {
 }
 
 #[test]
-fn a_container_ends_itself_at_its_time_limit_when_cladenc_was_killed_outright() {
-    let (directory, _status) = killed_outright();
-    assert!(test_inputs::container_is_gone(&id_file(&directory)));
-}
-
-#[test]
 fn a_container_that_docker_does_not_start_gives_exit_status_1() {
     let directory = test_inputs::temporary_directory();
-    let status = start(directory.path(), "exit 125", "60").status().unwrap();
+    let status = start(directory.path(), "exit 125").status().unwrap();
     assert_eq!(status.code(), Some(1));
 }

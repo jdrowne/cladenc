@@ -2,6 +2,7 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
+use std::time::Duration;
 
 use super::ContainerError;
 use super::left;
@@ -33,6 +34,7 @@ pub fn build_environment(
     outputs_directory: &OutputsDirectory,
     task: &str,
     image: &str,
+    time_limit: Duration,
     stop: &AtomicBool,
 ) -> Result<(), ContainerError> {
     let kept = outputs_directory
@@ -43,7 +45,7 @@ pub fn build_environment(
         .args(["build", "--tag", image, "--label"])
         .arg(format!("cladenc.task={task}"))
         .arg(outputs_directory.task(task).join(ENVIRONMENT));
-    program::run(build, "", &kept, Limits::without_time_limit(stop)).and_then(built)
+    program::run(build, "", &kept, Limits::within(time_limit, stop)).and_then(built)
 }
 
 pub fn find_image(image: &str) -> io::Result<()> {

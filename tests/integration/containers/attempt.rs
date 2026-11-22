@@ -1,8 +1,9 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::sync::atomic::AtomicBool;
+use std::time::Duration;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, Launch};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
@@ -20,6 +21,11 @@ const LEAVE_A_PROCESS_RUNNING: &str =
     "(while true; do echo beat >> beats; sleep 1; done) > /dev/null 2>&1 & sleep 1";
 const THE_PROCESS_STILL_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
     [ \"$(wc -l < beats)\" -gt \"$before\" ] && echo 1 > /logs/verifier/reward.txt";
+const FINISH_AND_STAY: &str = "echo done > work.txt; sleep 300";
+const LEAVE_A_PROCESS_RUNNING_AND_STAY: &str =
+    "(while true; do echo beat >> beats; sleep 1; done) > /dev/null 2>&1 & sleep 300";
+const THE_PROCESS_NO_LONGER_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
+    [ \"$(wc -l < beats)\" -eq \"$before\" ] && echo 1 > /logs/verifier/reward.txt";
 const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
     "mkdir -p locked/inner && touch locked/inner/file && chmod 500 locked/inner locked";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
@@ -48,7 +54,8 @@ struct Attempt<'a> {
     grader: &'a str,
     key: Option<&'a str>,
     harness: u64,
-    time_limit: u64,
+    harness_time_limit: Option<u64>,
+    grader_time_limit: u64,
     unreadable_in_the_harness: bool,
 }
 
@@ -60,7 +67,8 @@ impl Default for Attempt<'_> {
             grader: FINISHED,
             key: None,
             harness: 0,
-            time_limit: 30,
+            harness_time_limit: Some(30),
+            grader_time_limit: 30,
             unreadable_in_the_harness: false,
         }
     }
@@ -72,6 +80,7 @@ fn built(outputs_directory: &OutputsDirectory) -> Image {
         outputs_directory,
         TASK,
         &image.name,
+        Duration::from_secs(600),
         &AtomicBool::new(false),
     )
     .unwrap();
@@ -123,13 +132,16 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             url: test_inputs::MODEL_URL,
             key: attempt.key,
         },
-        procreation_timeout: attempt.time_limit,
-        attempt_timeout: attempt.time_limit,
+        procreation_timeout: 30,
     };
     let stop = AtomicBool::new(false);
     let environment = containers::Environment {
         image: environment_image.clone(),
-        ..containers::Environment::default()
+        configuration: TaskConfiguration {
+            harness_time_limit: attempt.harness_time_limit.map(Duration::from_secs),
+            grader_time_limit: Duration::from_secs(attempt.grader_time_limit),
+            ..TaskConfiguration::default()
+        },
     };
     let result = containers::run_attempt(
         &outputs_directory,
@@ -162,9 +174,26 @@ fn within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
     attempted_as(&Attempt {
         run_command,
         grader,
-        time_limit,
+        harness_time_limit: Some(time_limit),
         ..Attempt::default()
     })
+}
+
+fn graded_within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
+    attempted_as(&Attempt {
+        run_command,
+        grader,
+        grader_time_limit: time_limit,
+        ..Attempt::default()
+    })
+}
+
+fn ran_out_of_time(attempted: &Attempted) -> Option<bool> {
+    attempted
+        .result
+        .as_ref()
+        .ok()
+        .map(|attempted| attempted.ran_out_of_time)
 }
 
 fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &str) -> Attempted {
@@ -653,46 +682,88 @@ fn an_attempt_that_ended_keeps_no_copy_of_the_harness() {
 }
 
 #[test]
-fn a_harness_that_runs_past_the_time_limit_times_out() {
+fn what_a_harness_that_ran_past_its_time_limit_left_is_still_judged() {
     assert!(with_its_result(
-        &within(1, "sleep 300", FINISHED),
-        AttemptResult::TimedOut
+        &within(2, FINISH_AND_STAY, FINISHED),
+        AttemptResult::Completed
     ));
 }
 
 #[test]
-fn a_harness_that_timed_out_is_not_checked() {
-    let attempted = within(1, "sleep 300", "echo checked");
-    assert!(
-        !attempted
-            .outputs_directory
-            .attempt(0, TASK)
-            .join("grader/stdout")
-            .exists()
+fn a_harness_that_ran_past_its_time_limit_is_checked() {
+    let attempted = within(2, "sleep 300", "echo checked");
+    assert_eq!(kept(&attempted, "grader/stdout"), "checked\n");
+}
+
+#[test]
+fn a_harness_that_ran_past_its_time_limit_comes_back_as_having_run_out_of_time() {
+    assert_eq!(
+        ran_out_of_time(&within(2, "sleep 300", FINISHED)),
+        Some(true)
     );
 }
 
 #[test]
-fn a_grader_that_runs_past_what_is_left_of_the_time_limit_times_out() {
+fn a_harness_that_ended_by_itself_comes_back_as_not_having_run_out_of_time() {
+    assert_eq!(ran_out_of_time(&attempted(FINISH, FINISHED)), Some(false));
+}
+
+#[test]
+fn an_attempt_whose_harness_ran_past_its_time_limit_keeps_the_word_stopped() {
+    assert_eq!(
+        kept(&within(2, "sleep 300", FINISHED), "ending"),
+        "stopped\n"
+    );
+}
+
+#[test]
+fn an_attempt_whose_harness_ended_by_itself_keeps_the_word_ended() {
+    assert_eq!(kept(&attempted(FINISH, FINISHED), "ending"), "ended\n");
+}
+
+#[test]
+fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_grader_runs() {
     assert!(with_its_result(
-        &within(20, FINISH, "sleep 300"),
+        &within(
+            3,
+            LEAVE_A_PROCESS_RUNNING_AND_STAY,
+            THE_PROCESS_NO_LONGER_RUNS
+        ),
+        AttemptResult::Completed
+    ));
+}
+
+#[test]
+fn a_harness_whose_task_gives_it_no_time_limit_is_given_none() {
+    let attempted = attempted_as(&Attempt {
+        run_command: SAY_THE_SECONDS_OF_THE_TIMER,
+        harness_time_limit: None,
+        ..Attempt::default()
+    });
+    assert!(kept(&attempted, "stdout").trim().parse::<u64>().unwrap() >= u64::from(u32::MAX));
+}
+
+#[test]
+fn a_grader_that_runs_past_its_time_limit_times_out() {
+    assert!(with_its_result(
+        &graded_within(2, FINISH, "sleep 300"),
         AttemptResult::TimedOut
     ));
 }
 
 #[test]
-fn the_timer_of_a_harness_waits_for_what_is_left_of_the_time_limit_and_five_seconds_more() {
+fn the_timer_of_a_harness_waits_for_the_time_limit_of_the_harness_and_five_seconds_more() {
     let seconds = kept(&attempted(SAY_THE_SECONDS_OF_THE_TIMER, FINISHED), "stdout");
     assert!((30..=35).contains(&seconds.trim().parse::<u64>().unwrap()));
 }
 
 #[test]
-fn the_timer_of_a_grader_waits_for_what_the_harness_left_of_the_time_limit() {
+fn the_time_of_a_grader_is_counted_from_the_moment_the_harness_ends() {
     let seconds = kept(
-        &attempted("sleep 2", SAY_THE_SECONDS_OF_THE_TIMER),
+        &graded_within(40, "sleep 8", SAY_THE_SECONDS_OF_THE_TIMER),
         "grader/stdout",
     );
-    assert!(seconds.trim().parse::<u64>().unwrap() <= 33);
+    assert!((40..=45).contains(&seconds.trim().parse::<u64>().unwrap()));
 }
 
 #[test]

@@ -156,9 +156,11 @@ fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there()
 fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
         "the file named specification says what you were asked to do, the file named result \
-         reads completed, not_completed or timed_out, the directory named work holds what you \
-         left in the working directory of the task, the file named changes lists every path you \
-         added, changed or removed in the container of the task, one to a line after A, C or D, "
+         reads completed, not_completed or timed_out, the file named ending reads ended, or \
+         stopped where you ran past the time limit of the task and were stopped, the directory \
+         named work holds what you left in the working directory of the task, the file named \
+         changes lists every path you added, changed or removed in the container of the task, \
+         one to a line after A, C or D, "
     ));
 }
 
@@ -173,7 +175,8 @@ fn the_instruction_says_where_what_the_grader_printed_and_left_is() {
 #[test]
 fn the_instruction_says_how_the_grader_judged_the_attempt() {
     assert!(containers::INSTRUCTION.contains(
-        " Once you had ended, the grader ran the tests of the task, which you are not shown, on \
+        " Once you had ended or were stopped, the grader ran the tests of the task, which you \
+         are not shown, on \
          what you left, and wrote its score in logs/verifier/reward.txt, or one score for each \
          label in logs/verifier/reward.json: the task was completed where every score is 1. "
     ));

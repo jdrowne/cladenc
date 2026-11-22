@@ -46,7 +46,6 @@ fn started_from(
         build_command: None,
         model: MODEL,
         procreation_timeout: time_limit,
-        attempt_timeout: time_limit,
     };
     containers::run_procreation(
         outputs_directory,
@@ -100,7 +99,6 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
             ..MODEL
         },
         procreation_timeout: 30,
-        attempt_timeout: 30,
     };
     let _ = containers::run_procreation(&outputs_directory, &launch, 1, 0, &AtomicBool::new(false));
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()

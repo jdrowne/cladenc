@@ -142,8 +142,8 @@ fn the_long_help_of_start_says_which_command_the_timer_of_a_harness_starts() {
 #[test]
 fn the_long_help_of_start_says_how_long_the_timer_of_a_container_waits() {
     assert!(help_of_start(true).contains(
-        "  <SECONDS>  what is left of the time limit when the container is started,\n             \
-         in whole seconds, and five seconds more\n"
+        "  <SECONDS>  what is left of the time limit of the command when it is\n             \
+         started, in whole seconds, and five seconds more\n"
     ));
 }
 

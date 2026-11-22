@@ -25,7 +25,6 @@ fn launch<'a>(image: &'a str, run_command: &'a str, build_command: Option<&'a st
             key: None,
         },
         procreation_timeout: 30,
-        attempt_timeout: 30,
     }
 }
 

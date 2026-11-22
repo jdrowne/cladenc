@@ -148,3 +148,76 @@ fn the_long_help_of_resume_says_what_of_a_task_toml_stops_it_with_exit_status_2(
          set, stops `cladenc resume` with exit\nstatus 2."
     ));
 }
+
+#[test]
+fn the_long_help_of_start_names_the_time_limits_of_a_task_toml_that_cladenc_obeys() {
+    let help = long_help_of("start");
+    let settings = [
+        "  timeout_sec under agent         the time limit of the harness, in\n",
+        "  timeout_sec under verifier      the time limit of the grader, in\n",
+        "  build_timeout_sec under         the time limit of the build of the\n",
+    ];
+    assert!(settings.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_time_limit_the_harness_of_an_attempt_has() {
+    assert!(long_help_of("start").contains(
+        "The harness has the time limit that the task.toml of the task gives, as\ntimeout_sec \
+         under agent, and no time limit where it gives none, as in\nHarbor."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_what_a_stopped_harness_left_is_judged_all_the_same() {
+    assert!(long_help_of("start").contains(
+        "A harness that runs past its time limit is stopped, and every\nprocess it left \
+         running is ended, as by `kill -9 -1`. What it left is\njudged all the same."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_time_limit_the_grader_has_and_from_when_it_is_counted() {
+    assert!(long_help_of("start").contains(
+        "The grader has a time limit of its own, timeout_sec\nunder verifier, or 600 seconds \
+         where the task gives none, counted from the\nmoment the harness ended or was stopped."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_no_flag_gives_a_time_limit_of_an_attempt() {
+    assert!(long_help_of("start").contains("No flag gives a time limit of an\nattempt."));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_container_with_no_time_limit_does_not_end_itself() {
+    assert!(long_help_of("start").contains(
+        "Where a task gives its harness no time limit, the container of an\nattempt does not \
+         end itself: a cladenc that was killed outright leaves it\nrunning until `cladenc \
+         resume` removes it, or a person does."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
+    assert!(long_help_of("start").contains(
+        "  <SECONDS>  the time limit of the harness and the time limit of the\n             \
+         grader together, and ten minutes more, for what cladenc\n             copies in and \
+         out\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused() {
+    assert!(long_help_of("start").contains(
+        "A time limit\nthat is not a number of seconds above 0 is refused in the same way."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_attempt_keeps_whether_its_harness_was_stopped() {
+    assert!(long_help_of("start").contains(
+        "  ending         one word: ended, or stopped where the harness ran past\n                 \
+         its time limit\n"
+    ));
+}

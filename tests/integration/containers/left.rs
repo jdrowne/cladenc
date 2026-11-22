@@ -80,7 +80,6 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             key: None,
         },
         procreation_timeout: 60,
-        attempt_timeout: 60,
     };
     let id_file = outputs_directory
         .running_attempt(0, "benchmark/t1")

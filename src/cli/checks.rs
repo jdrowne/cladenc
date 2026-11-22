@@ -79,7 +79,6 @@ impl StartOptions {
             max_procreations: self.max_procreations,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
-            attempt_timeout: self.attempt_timeout,
             seed,
         })
     }

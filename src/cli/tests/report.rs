@@ -56,7 +56,6 @@ fn started() -> Vec<Record> {
                 max_procreations: 800,
                 max_concurrent_containers: 1,
                 procreation_timeout: 60,
-                attempt_timeout: 60,
                 selection_tasks_percentage: 25.0,
                 holdout_tasks: Vec::new(),
                 corroboration_tasks_percentage: 25.0,

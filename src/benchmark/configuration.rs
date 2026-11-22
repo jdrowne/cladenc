@@ -4,6 +4,7 @@ use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::io::{self, ErrorKind};
 use std::path::Path;
+use std::time::Duration;
 
 use serde::Deserialize;
 
@@ -12,15 +13,35 @@ use super::is_name;
 pub(super) const CONFIGURATION: &str = "task.toml";
 const ENVIRONMENT: &str = "environment";
 const VERIFIER: &str = "verifier";
+const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TaskConfiguration {
     pub docker_image: Option<String>,
     pub working_directory: Option<String>,
     pub variables: Vec<(String, String)>,
+    pub build_time_limit: Duration,
     pub harness_user: Option<String>,
+    pub harness_time_limit: Option<Duration>,
     pub grader_user: Option<String>,
     pub grader_variables: Vec<(String, String)>,
+    pub grader_time_limit: Duration,
+}
+
+impl Default for TaskConfiguration {
+    fn default() -> Self {
+        Self {
+            docker_image: None,
+            working_directory: None,
+            variables: Vec::new(),
+            build_time_limit: TIME_LIMIT_LEFT_OUT,
+            harness_user: None,
+            harness_time_limit: None,
+            grader_user: None,
+            grader_variables: Vec::new(),
+            grader_time_limit: TIME_LIMIT_LEFT_OUT,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -44,6 +65,9 @@ pub enum ConfigurationError {
     NotOneLine {
         table: &'static str,
         name: String,
+    },
+    NotATimeLimit {
+        key: &'static str,
     },
 }
 
@@ -73,6 +97,10 @@ impl Display for ConfigurationError {
                 "gives {name} under {table}.env a value that is not one line of text, which a \
                  container cannot be given"
             ),
+            Self::NotATimeLimit { key } => write!(
+                formatter,
+                "gives {key} a value that is not a number of seconds above 0"
+            ),
         }
     }
 }
@@ -93,11 +121,13 @@ struct WrittenEnvironment {
     workdir: Option<String>,
     #[serde(default)]
     env: BTreeMap<String, String>,
+    build_timeout_sec: Option<f64>,
 }
 
 #[derive(Default, Deserialize)]
 struct WrittenAgent {
     user: Option<User>,
+    timeout_sec: Option<f64>,
 }
 
 #[derive(Default, Deserialize)]
@@ -105,6 +135,7 @@ struct WrittenVerifier {
     user: Option<User>,
     #[serde(default)]
     env: BTreeMap<String, String>,
+    timeout_sec: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -144,14 +175,36 @@ pub(super) fn read_with(
         line: line_of(&text, error.span().map_or(0, |span| span.start)),
         reason: error.message().to_owned(),
     })?;
+    let build = time_limit(
+        "environment.build_timeout_sec",
+        written.environment.build_timeout_sec,
+    )?;
+    let grader = time_limit("verifier.timeout_sec", written.verifier.timeout_sec)?;
     Ok(TaskConfiguration {
         docker_image: given(written.environment.docker_image),
         working_directory: given(written.environment.workdir),
         variables: variables(ENVIRONMENT, written.environment.env, set)?,
+        build_time_limit: build.unwrap_or(TIME_LIMIT_LEFT_OUT),
         harness_user: given(written.agent.user.map(User::named)),
+        harness_time_limit: time_limit("agent.timeout_sec", written.agent.timeout_sec)?,
         grader_user: given(written.verifier.user.map(User::named)),
         grader_variables: variables(VERIFIER, written.verifier.env, set)?,
+        grader_time_limit: grader.unwrap_or(TIME_LIMIT_LEFT_OUT),
     })
+}
+
+fn time_limit(
+    key: &'static str,
+    seconds: Option<f64>,
+) -> Result<Option<Duration>, ConfigurationError> {
+    seconds
+        .map(|seconds| {
+            Duration::try_from_secs_f64(seconds)
+                .ok()
+                .filter(|time_limit| !time_limit.is_zero())
+                .ok_or(ConfigurationError::NotATimeLimit { key })
+        })
+        .transpose()
 }
 
 fn written_in(file: &Path) -> io::Result<String> {

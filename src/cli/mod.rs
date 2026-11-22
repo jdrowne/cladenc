@@ -58,13 +58,6 @@ pub enum Command {
 pub struct StartOptions {
     #[arg(
         long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one attempt"
-    )]
-    attempt_timeout: u64,
-    #[arg(
-        long,
         value_name = "DIR",
         required = true,
         help = "The directory of a benchmark, which holds a directory for each task, given once \

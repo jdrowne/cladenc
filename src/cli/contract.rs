@@ -53,8 +53,10 @@ it brings up any container, as
   <DIR>   the environment directory of the copy of the task in the
           outputs directory, the build context of its Dockerfile
 
-The build has no time limit, and environments/<BENCHMARK>/<TASK> in the
-outputs directory keeps what Docker printed. A task whose environment is
+The build has the time limit that the task.toml of the task gives, as
+build_timeout_sec under environment, or 600 seconds where it gives none.
+environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker
+printed. A task whose environment is
 not built stops the directed evolution with exit status 2, and
 `cladenc start` leaves it no journal. A resumed directed evolution builds
 each environment again, under the same name. The image that the Dockerfile
@@ -83,8 +85,8 @@ attempt, as
   <TIMER>    sh -c \"$0\" & run=$!;
              (sleep \"$1\"; kill -9 $run) > /dev/null 2>&1 & wait $run
   <COMMAND>  the value of --harness-run-command
-  <SECONDS>  what is left of the time limit when the container is started,
-             in whole seconds, and five seconds more
+  <SECONDS>  what is left of the time limit of the command when it is
+             started, in whole seconds, and five seconds more
 
 The timer is a line of shell that starts the command, ends it once the
 seconds have passed, and hands on its exit status. Every container of a
@@ -490,6 +492,10 @@ as
 
     sleep <SECONDS>
 
+  <SECONDS>  the time limit of the harness and the time limit of the
+             grader together, and ten minutes more, for what cladenc
+             copies in and out
+
 First the source code of the harness is copied into that container, at
 /var/lib/cladenc/harness, and the harness is started there, as it is for a
 procreation, in the working directory of the environment and as its user:
@@ -510,8 +516,19 @@ unless the task.toml of the task names a user for the grader, as
 The grader finds the container as the harness left it: the files the
 harness left outside /tests and /logs/verifier, and the processes it left
 running, are there as well. A grader calls no model, and is given none of
-the three variables of the model. The two steps share the time limit of one
-attempt, and the container is removed once the attempt has ended.
+the three variables of the model. The container is removed once the attempt
+has ended.
+
+The harness has the time limit that the task.toml of the task gives, as
+timeout_sec under agent, and no time limit where it gives none, as in
+Harbor. A harness that runs past its time limit is stopped, and every
+process it left running is ended, as by `kill -9 -1`. What it left is
+judged all the same. The grader has a time limit of its own, timeout_sec
+under verifier, or 600 seconds where the task gives none, counted from the
+moment the harness ended or was stopped. No flag gives a time limit of an
+attempt. Where a task gives its harness no time limit, the container of an
+attempt does not end itself: a cladenc that was killed outright leaves it
+running until `cladenc resume` removes it, or a person does.
 
 A task may hold a file named task.toml, the task configuration of Harbor.
 cladenc obeys what it says of the environment of the task:
@@ -530,6 +547,12 @@ cladenc obeys what it says of the environment of the task:
                                   same way
   env under verifier              variables that the grader alone is
                                   given
+  timeout_sec under agent         the time limit of the harness, in
+                                  seconds
+  timeout_sec under verifier      the time limit of the grader, in
+                                  seconds
+  build_timeout_sec under         the time limit of the build of the
+  environment                     environment, in seconds
 
 cladenc reads nothing else of a task.toml. A setting that is left out, or
 written with nothing between its quotation marks, changes nothing, and
@@ -550,7 +573,8 @@ underscores and hyphens, and its value is one line of text.
 A task is refused when the directed evolution is started where its
 task.toml is not TOML, gives one of these settings a value of another
 kind, names a variable otherwise, or takes a value from a variable that is
-not set where cladenc runs and gives no text in its place.
+not set where cladenc runs and gives no text in its place. A time limit
+that is not a number of seconds above 0 is refused in the same way.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is
@@ -567,7 +591,7 @@ How an attempt ends decides its result:
   exit status 125 of either step   Docker did not start the container: the
                                    directed evolution stops, and `cladenc
                                    resume` carries out the attempt again
-  the time limit                   the container is removed, and the
+  the time limit of the grader     the container is removed, and the
                                    harness did not complete the task,
                                    which is recorded as timed_out
 
@@ -607,6 +631,8 @@ held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 
   result         one word: completed, not_completed or timed_out
+  ending         one word: ended, or stopped where the harness ran past
+                 its time limit
   specification  the task specification
   work           what the harness left in the working directory of the
                  environment, not kept where that directory is /

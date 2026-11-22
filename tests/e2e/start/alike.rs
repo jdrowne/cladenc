@@ -38,7 +38,6 @@ fn ran() -> TempDir {
         ("--max-procreations", "2".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--attempt-timeout", "30".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]

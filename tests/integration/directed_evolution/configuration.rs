@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, ConfigurationError};
+use cladenc::containers::ContainerError;
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -41,7 +42,6 @@ fn settings(directory: &Path, task_tomls: &[(&str, &str)]) -> Settings {
         max_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
-        attempt_timeout: 30,
         selection_tasks_percentage: 17.0,
         holdout_tasks: vec!["benchmark/t3".to_owned()],
         corroboration_tasks_percentage: 17.0,
@@ -240,4 +240,97 @@ fn a_resumed_directed_evolution_stops_for_an_image_that_is_no_longer_on_the_mach
         evolved.found,
         Err(DirectedEvolutionError::NotOnTheMachine { task, .. }) if task == "benchmark/t2"
     ));
+}
+
+fn with_a_time_limit_of_2_seconds_for_every_harness() -> Evolved {
+    let directory = test_inputs::temporary_directory();
+    let within_2 = "[agent]\ntimeout_sec = 2\n";
+    let settings = Settings {
+        harness_run_command: "[ -d /var/log/cladenc/attempts ] || sleep 300".to_owned(),
+        ..settings(
+            directory.path(),
+            &[("t1", within_2), ("t2", within_2), ("t3", within_2)],
+        )
+    };
+    let mut written = Vec::new();
+    let found = directed_evolution::start(
+        &settings,
+        &directory.path().join("outputs"),
+        &AtomicBool::new(false),
+        &mut written,
+    );
+    Evolved {
+        directory,
+        found,
+        said: String::from_utf8(written).unwrap(),
+    }
+}
+
+fn with_an_environment_of_t2_that_builds_for_too_long() -> Evolved {
+    let directory = test_inputs::temporary_directory();
+    let settings = settings(
+        directory.path(),
+        &[("t2", "[environment]\nbuild_timeout_sec = 2\n")],
+    );
+    fs::write(
+        directory.path().join("benchmark/t2/environment/Dockerfile"),
+        format!("FROM {}\nRUN sleep 300\n", test_inputs::IMAGE),
+    )
+    .unwrap();
+    let mut written = Vec::new();
+    let found = directed_evolution::start(
+        &settings,
+        &directory.path().join("outputs"),
+        &AtomicBool::new(false),
+        &mut written,
+    );
+    Evolved {
+        directory,
+        found,
+        said: String::from_utf8(written).unwrap(),
+    }
+}
+
+#[test]
+fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stopped_at_it() {
+    assert!(
+        with_a_time_limit_of_2_seconds_for_every_harness()
+            .said
+            .contains(
+                "cladenc: harness 0 did not complete task benchmark/t1, after it was stopped at \
+                 its time limit: what the attempt left is kept in "
+            )
+    );
+}
+
+#[test]
+fn a_directed_evolution_whose_harnesses_all_run_out_of_time_runs_to_its_end() {
+    assert!(
+        with_a_time_limit_of_2_seconds_for_every_harness()
+            .found
+            .is_ok()
+    );
+}
+
+#[test]
+fn an_environment_whose_build_runs_past_the_time_limit_of_its_task_stops_the_directed_evolution() {
+    assert!(matches!(
+        with_an_environment_of_t2_that_builds_for_too_long().found,
+        Err(DirectedEvolutionError::Environment {
+            task,
+            error: ContainerError::TimeLimit,
+        }) if task == "benchmark/t2"
+    ));
+}
+
+#[test]
+fn an_environment_whose_build_runs_past_its_time_limit_is_said_to_have_run_past_it() {
+    assert!(
+        with_an_environment_of_t2_that_builds_for_too_long()
+            .said
+            .contains(
+                "cladenc: the build of the environment of task benchmark/t2 ran past its time \
+                 limit: what Docker printed is kept in "
+            )
+    );
 }

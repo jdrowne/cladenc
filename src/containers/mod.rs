@@ -25,18 +25,20 @@ pub use build::build_primogenitor;
 use container::{Container, Mount, Run, Shell, Up};
 pub use image::{build_environment, build_image, find_image};
 pub use left::remove_left_behind;
-use program::{Ending, Limits, seconds_since};
+use program::{Ending, FOREVER, Limits, seconds_since};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes completes \
     more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
-    completed, not_completed or timed_out, the directory named work holds what you left in the \
+    completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
+    you ran past the time limit of the task and were stopped, the directory named work holds what \
+    you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \
     removed in the container of the task, one to a line after A, C or D, the files named stdout and stderr hold what you printed, and the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
-    and stderr, and the files it left in logs/verifier. Once you had ended, the grader ran the \
+    and stderr, and the files it left in logs/verifier. Once you had ended or were stopped, the grader ran the \
     tests of the task, which you are not shown, on what you left, and wrote its score in \
     logs/verifier/reward.txt, or one score for each label in logs/verifier/reward.json: the task \
     was completed where every score is 1. /var/log/cladenc/line holds one directory for each \
@@ -69,7 +71,6 @@ pub struct Launch<'a> {
     pub build_command: Option<&'a str>,
     pub model: Model<'a>,
     pub procreation_timeout: u64,
-    pub attempt_timeout: u64,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -95,6 +96,7 @@ pub struct Creation {
 pub struct Attempted {
     pub result: AttemptResult,
     pub seconds: f64,
+    pub ran_out_of_time: bool,
 }
 
 #[derive(Debug)]
@@ -321,7 +323,6 @@ impl Attempting<'_> {
         launch: &Launch<'_>,
         stop: &AtomicBool,
     ) -> Result<Attempted, ContainerError> {
-        let limits = Limits::starting_now(launch.attempt_timeout, stop);
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
             ("CLADENC_INSTRUCTION", self.specification),
@@ -335,7 +336,7 @@ impl Attempting<'_> {
         };
         let started = Instant::now();
         let environment = self.attempt.environment;
-        let up = Up::start(outputs_directory, environment, self.running, limits)?;
+        let up = Up::start(outputs_directory, environment, self.running)?;
         let run = Run {
             shell: &shell,
             user: environment
@@ -351,8 +352,18 @@ impl Attempting<'_> {
             run.user,
         )?;
         let before: BTreeSet<String> = up.changes().into_iter().collect();
+        let time_limit = environment.configuration.harness_time_limit;
+        let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);
         let ending = up.run(&run, self.running, limits)?;
         let seconds = seconds_since(started);
+        let ran_out_of_time = matches!(ending, Ending::TimedOut);
+        let word = if ran_out_of_time {
+            up.end_everything();
+            "stopped\n"
+        } else {
+            "ended\n"
+        };
+        let _ = fs::write(self.running.join("ending"), word);
         let changes: String = up
             .changes()
             .into_iter()
@@ -361,13 +372,12 @@ impl Attempting<'_> {
             .collect();
         let _ = fs::write(self.running.join("changes"), changes);
         up.keep_work(&self.running.join("work"));
-        let result = match ending {
-            Ending::Exited(_) => {
-                grader::run(outputs_directory, &up, &self.attempt, self.running, limits)?
-            }
-            Ending::TimedOut => AttemptResult::TimedOut,
-        };
-        Ok(Attempted { result, seconds })
+        let result = grader::run(outputs_directory, &up, &self.attempt, self.running, stop)?;
+        Ok(Attempted {
+            result,
+            seconds,
+            ran_out_of_time,
+        })
     }
 }
 

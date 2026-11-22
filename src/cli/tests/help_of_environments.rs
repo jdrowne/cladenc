@@ -45,8 +45,15 @@ fn the_long_help_of_start_says_that_an_environment_is_built_from_the_copy_of_its
 #[test]
 fn the_long_help_of_start_says_where_what_docker_printed_for_an_environment_is_kept() {
     assert!(long_help_of("start").contains(
-        "The build has no time limit, and environments/<BENCHMARK>/<TASK> in the\noutputs \
-         directory keeps what Docker printed."
+        "environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker\nprinted."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_time_limit_the_build_of_an_environment_has() {
+    assert!(long_help_of("start").contains(
+        "The build has the time limit that the task.toml of the task gives, \
+         as\nbuild_timeout_sec under environment, or 600 seconds where it gives none."
     ));
 }
 

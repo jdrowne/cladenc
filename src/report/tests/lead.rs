@@ -29,7 +29,6 @@ fn settings() -> Settings {
         max_procreations: 800,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        attempt_timeout: 60,
         selection_tasks_percentage: 17.0,
         holdout_tasks: ["c1", "c2", "c3", "c4", "c5", "s1"]
             .map(|id| format!("benchmark/{id}"))

@@ -11,7 +11,8 @@ const SUB_COMMANDS: [&str; 8] = [
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const NEVER_SET: &str =
     "[environment.env]\nKEY = \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET}\"\n";
-const OBEYED: &str = "[agent]\nuser = 1000\n\n[verifier]\nuser = 2000\n\n[verifier.env]\nJUDGE = \
+const OBEYED: &str = "[agent]\nuser = 1000\ntimeout_sec = 30\n\n[verifier]\nuser = \
+                      2000\ntimeout_sec = 20.0\n\n[verifier.env]\nJUDGE = \
                       \"${CLADENC_TEST_TOKEN}\"\n\n[environment]\nworkdir = \
                       \"/srv/elsewhere\"\n\n[environment.env]\nAPI_TOKEN = \
                       \"${CLADENC_TEST_TOKEN}\"\n";
@@ -31,7 +32,6 @@ fn start(directory: &Path, task_toml_of_t2: &str) -> Command {
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--attempt-timeout", "30".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]
@@ -249,4 +249,39 @@ fn the_harness_and_the_grader_of_a_task_are_started_as_the_users_the_task_names(
         })
         .collect();
     assert_eq!(users, ["0", "0", "1000", "2000", "0", "0"]);
+}
+
+fn last_arguments_of(calls: &[Vec<String>], command: &str) -> Vec<String> {
+    calls
+        .iter()
+        .filter(|call| call.iter().any(|argument| argument == command))
+        .map(|call| call.last().cloned().unwrap_or_default())
+        .collect()
+}
+
+#[test]
+fn the_container_of_an_attempt_sleeps_for_both_time_limits_of_its_task_and_ten_minutes_more() {
+    let arguments = arguments_of_a_docker_that_records_them();
+    assert_eq!(
+        last_arguments_of(&containers_of_the_attempts(&arguments), "sleep"),
+        ["4294968495", "650", "4294968495"]
+    );
+}
+
+#[test]
+fn the_timer_of_a_harness_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
+    let arguments = arguments_of_a_docker_that_records_them();
+    assert_eq!(
+        last_arguments_of(&calls(&arguments, "exec"), "exit 0"),
+        ["4294967300", "35", "4294967300"]
+    );
+}
+
+#[test]
+fn the_timer_of_a_grader_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
+    let arguments = arguments_of_a_docker_that_records_them();
+    assert_eq!(
+        last_arguments_of(&calls(&arguments, "exec"), "/tests/test.sh"),
+        ["605", "25", "605"]
+    );
 }

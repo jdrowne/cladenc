@@ -1,6 +1,7 @@
 use std::fs;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
+use std::time::Duration;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError};
@@ -30,6 +31,10 @@ fn made() -> (TempDir, OutputsDirectory) {
 }
 
 fn built_from(steps: &str, stop: bool) -> Built {
+    built_within(600, steps, stop)
+}
+
+fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
     let (directory, outputs_directory) = made();
     let environment = outputs_directory.task(TASK).join("environment");
     fs::write(environment.join("given.txt"), "from the build context\n").unwrap();
@@ -40,7 +45,13 @@ fn built_from(steps: &str, stop: bool) -> Built {
     .unwrap();
     let image = test_inputs::image();
     let stop = AtomicBool::new(stop);
-    let result = containers::build_environment(&outputs_directory, TASK, &image.name, &stop);
+    let result = containers::build_environment(
+        &outputs_directory,
+        TASK,
+        &image.name,
+        Duration::from_secs(time_limit),
+        &stop,
+    );
     Built {
         _directory: directory,
         outputs_directory,
@@ -131,7 +142,16 @@ fn an_environment_whose_directory_in_the_outputs_directory_cannot_be_made_is_not
         &outputs_directory,
         TASK,
         &image.name,
+        Duration::from_secs(600),
         &AtomicBool::new(false),
     );
     assert!(matches!(result, Err(ContainerError::Io(_))));
+}
+
+#[test]
+fn the_build_of_an_environment_that_runs_past_its_time_limit_is_ended() {
+    assert!(matches!(
+        built_within(2, "RUN sleep 300\n", false).result,
+        Err(ContainerError::TimeLimit)
+    ));
 }

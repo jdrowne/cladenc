@@ -23,7 +23,6 @@ fn settings() -> Settings {
         max_procreations: 800,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
-        attempt_timeout: 60,
         selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,

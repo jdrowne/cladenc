@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::time::Duration;
 
 use tempfile::TempDir;
 
@@ -73,10 +74,130 @@ fn a_task_toml_that_holds_nothing_leaves_every_setting_out() {
 fn a_task_toml_that_holds_only_what_cladenc_does_not_read_leaves_every_setting_out() {
     assert_eq!(
         says(
-            "schema_version = \"1.4\"\n[metadata]\ndifficulty = \"hard\"\n[agent]\ntimeout_sec \
-             = 900.0\n[environment]\ncpus = 2\n[solution]\nenv = { ANSWER = \"42\" }\n"
+            "schema_version = \"1.4\"\n[metadata]\ndifficulty = \"hard\"\n[agent]\nnetwork_mode \
+             = \"public\"\n[environment]\ncpus = 2\n[solution]\nenv = { ANSWER = \"42\" }\n"
         ),
         TaskConfiguration::default()
+    );
+}
+
+fn not_a_time_limit(key: &'static str) -> Result<TaskConfiguration, ConfigurationError> {
+    Err(ConfigurationError::NotATimeLimit { key })
+}
+
+#[test]
+fn a_task_that_gives_the_harness_no_time_limit_sets_none() {
+    assert_eq!(
+        says("[agent]\nuser = \"worker\"\n").harness_time_limit,
+        None
+    );
+}
+
+#[test]
+fn the_time_limit_of_the_harness_is_read_from_timeout_sec_under_agent() {
+    assert_eq!(
+        says("[agent]\ntimeout_sec = 1800.0\n").harness_time_limit,
+        Some(Duration::from_secs(1800))
+    );
+}
+
+#[test]
+fn a_time_limit_may_be_a_whole_number_of_seconds() {
+    assert_eq!(
+        says("[agent]\ntimeout_sec = 90\n").harness_time_limit,
+        Some(Duration::from_secs(90))
+    );
+}
+
+#[test]
+fn a_time_limit_may_be_a_part_of_a_second() {
+    assert_eq!(
+        says("[agent]\ntimeout_sec = 0.5\n").harness_time_limit,
+        Some(Duration::from_millis(500))
+    );
+}
+
+#[test]
+fn the_time_limit_of_the_grader_is_read_from_timeout_sec_under_verifier() {
+    assert_eq!(
+        says("[verifier]\ntimeout_sec = 120\n").grader_time_limit,
+        Duration::from_secs(120)
+    );
+}
+
+#[test]
+fn a_task_that_gives_the_grader_no_time_limit_gives_it_600_seconds() {
+    assert_eq!(
+        says("[agent]\ntimeout_sec = 90\n").grader_time_limit,
+        Duration::from_secs(600)
+    );
+}
+
+#[test]
+fn the_time_limit_of_the_build_of_the_environment_is_read_from_build_timeout_sec() {
+    assert_eq!(
+        says("[environment]\nbuild_timeout_sec = 1800.0\n").build_time_limit,
+        Duration::from_secs(1800)
+    );
+}
+
+#[test]
+fn a_task_that_gives_the_build_of_its_environment_no_time_limit_gives_it_600_seconds() {
+    assert_eq!(
+        says("[environment]\nworkdir = \"/app\"\n").build_time_limit,
+        Duration::from_secs(600)
+    );
+}
+
+#[test]
+fn a_task_with_no_task_toml_gives_the_grader_and_the_build_600_seconds_each() {
+    let configuration = TaskConfiguration::default();
+    assert_eq!(
+        (
+            configuration.grader_time_limit,
+            configuration.build_time_limit
+        ),
+        (Duration::from_secs(600), Duration::from_secs(600))
+    );
+}
+
+#[test]
+fn a_time_limit_of_0_seconds_is_refused() {
+    assert_eq!(
+        read("[agent]\ntimeout_sec = 0\n"),
+        not_a_time_limit("agent.timeout_sec")
+    );
+}
+
+#[test]
+fn a_time_limit_below_0_is_refused() {
+    assert_eq!(
+        read("[verifier]\ntimeout_sec = -5.0\n"),
+        not_a_time_limit("verifier.timeout_sec")
+    );
+}
+
+#[test]
+fn a_time_limit_that_is_not_a_number_is_refused() {
+    assert_eq!(
+        read("[environment]\nbuild_timeout_sec = nan\n"),
+        not_a_time_limit("environment.build_timeout_sec")
+    );
+}
+
+#[test]
+fn a_time_limit_without_end_is_refused() {
+    assert_eq!(
+        read("[agent]\ntimeout_sec = inf\n"),
+        not_a_time_limit("agent.timeout_sec")
+    );
+}
+
+#[test]
+fn a_time_limit_written_as_text_is_refused() {
+    assert_eq!(
+        read("[agent]\ntimeout_sec = \"long\"\n"),
+        not_valid(2, "invalid type: string \"long\", expected f64")
     );
 }
 

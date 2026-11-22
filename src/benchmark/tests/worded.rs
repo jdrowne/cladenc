@@ -124,6 +124,17 @@ fn a_variable_that_is_not_set_is_said_with_the_variable_it_takes_its_value_from(
 }
 
 #[test]
+fn a_time_limit_that_is_not_one_is_said_with_its_key() {
+    assert_eq!(
+        ConfigurationError::NotATimeLimit {
+            key: "agent.timeout_sec"
+        }
+        .to_string(),
+        "gives agent.timeout_sec a value that is not a number of seconds above 0"
+    );
+}
+
+#[test]
 fn a_variable_whose_value_is_not_one_line_is_said_with_its_table_and_its_name() {
     assert_eq!(
         ConfigurationError::NotOneLine {

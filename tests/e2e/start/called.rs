@@ -34,7 +34,6 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--attempt-timeout", "30".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]
@@ -241,10 +240,10 @@ fn every_command_is_started_under_a_timer_that_ends_it() {
 }
 
 #[test]
-fn the_container_of_an_attempt_sleeps_five_seconds_more_than_the_time_limit() {
+fn the_container_of_an_attempt_whose_task_gives_no_time_limit_sleeps_without_end() {
     let arguments = ran_with_a_docker_that_records_its_arguments();
     let image = followed_by(&arguments, "--detach")[0];
-    assert!(arguments.contains(&format!("--detach\n{image}\nsleep\n35\n")));
+    assert!(arguments.contains(&format!("--detach\n{image}\nsleep\n4294968495\n")));
 }
 
 #[test]

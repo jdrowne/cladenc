@@ -14,6 +14,8 @@ use super::ContainerError;
 
 const LOOK: Duration = Duration::from_millis(20);
 
+pub(super) const FOREVER: Duration = Duration::from_secs(u32::MAX as u64);
+
 pub(super) const LEEWAY: u64 = 5;
 
 pub(super) fn seconds_since(started: Instant) -> f64 {
@@ -33,14 +35,14 @@ pub(super) struct Limits<'a> {
 
 impl<'a> Limits<'a> {
     pub(super) fn starting_now(time_limit: u64, stop: &'a AtomicBool) -> Self {
-        Self {
-            deadline: Instant::now() + Duration::from_secs(time_limit),
-            stop,
-        }
+        Self::within(Duration::from_secs(time_limit), stop)
     }
 
-    pub(super) fn without_time_limit(stop: &'a AtomicBool) -> Self {
-        Self::starting_now(u64::from(u32::MAX), stop)
+    pub(super) fn within(time_limit: Duration, stop: &'a AtomicBool) -> Self {
+        Self {
+            deadline: Instant::now() + time_limit.min(FOREVER),
+            stop,
+        }
     }
 }
 

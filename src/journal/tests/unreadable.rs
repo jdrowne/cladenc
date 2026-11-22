@@ -4,7 +4,7 @@ use crate::genealogy::GenealogyError;
 use crate::journal::{self, JournalError};
 
 const RUN: &str = concat!(
-    r#"{"record":"run","format":26,"primogenitor":"/abs/harness","model":"a-model","#,
+    r#"{"record":"run","format":27,"primogenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
     r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
@@ -14,7 +14,7 @@ const RUN: &str = concat!(
     r#""corroboration_tasks_percentage":25.0,"corroboration_tasks":["benchmark/t3"],"#,
     r#""max_procreations":800,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"seed":7}"#
 );
 
 const RUN_OF_FORMAT_20: &str = concat!(
@@ -27,7 +27,7 @@ const RUN_OF_FORMAT_20: &str = concat!(
     r#""max_procreations":800,"#,
     r#""genealogy_growth":0.6,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"seed":7}"#
 );
 
 const RUN_OF_FORMAT_18: &str = concat!(
@@ -39,7 +39,7 @@ const RUN_OF_FORMAT_18: &str = concat!(
     r#""max_procreations":800,"#,
     r#""genealogy_growth":0.6,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"seed":7}"#
 );
 
 const RUN_OF_FORMAT_17: &str = concat!(
@@ -51,7 +51,7 @@ const RUN_OF_FORMAT_17: &str = concat!(
     r#""max_procreations":800,"#,
     r#""genealogy_growth":0.6,"confidence":99.0,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"seed":7}"#
 );
 
 const RUN_OF_FORMAT_16: &str = concat!(
@@ -63,7 +63,7 @@ const RUN_OF_FORMAT_16: &str = concat!(
     r#""budget":800,"#,
     r#""genealogy_growth":0.6,"confidence":99.0,"#,
     r#""max_concurrent_containers":8,"#,
-    r#""procreation_timeout":3600,"attempt_timeout":3600,"seed":7}"#
+    r#""procreation_timeout":3600,"seed":7}"#
 );
 
 const RUN_OF_FORMAT_15: &str = concat!(
@@ -155,10 +155,22 @@ fn a_journal_whose_first_record_is_not_run_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_format_is_not_26_cannot_be_read() {
+fn a_journal_whose_format_is_not_27_cannot_be_read() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":26"#, r#""format":27"#)]),
-        JournalError::UnknownFormat { format: 27 }
+        error_of(&[&RUN.replace(r#""format":27"#, r#""format":28"#)]),
+        JournalError::UnknownFormat { format: 28 }
+    ));
+}
+
+#[test]
+fn a_journal_of_format_26_is_refused_for_its_format_since_its_run_record_names_an_attempt_timeout()
+{
+    assert!(matches!(
+        error_of(&[&RUN.replace(r#""format":27"#, r#""format":26"#).replace(
+            r#""procreation_timeout":3600,"#,
+            r#""procreation_timeout":3600,"attempt_timeout":3600,"#
+        )]),
+        JournalError::UnknownFormat { format: 26 }
     ));
 }
 
@@ -167,7 +179,7 @@ fn a_journal_of_format_25_is_refused_for_its_format_since_its_run_record_names_a
  {
     assert!(matches!(
         error_of(&[&RUN
-            .replace(r#""format":26"#, r#""format":25"#)
+            .replace(r#""format":27"#, r#""format":25"#)
             .replace(
                 r#""selection_tasks_percentage":25.0"#,
                 r#""holdout_percentage":50.0"#
@@ -183,7 +195,7 @@ fn a_journal_of_format_25_is_refused_for_its_format_since_its_run_record_names_a
 #[test]
 fn a_journal_of_format_24_is_refused_for_its_format_since_it_names_no_repository_of_environments() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":26"#, r#""format":24"#).replace(
+        error_of(&[&RUN.replace(r#""format":27"#, r#""format":24"#).replace(
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
             ""
         )]),
@@ -195,7 +207,7 @@ fn a_journal_of_format_24_is_refused_for_its_format_since_it_names_no_repository
 fn a_journal_of_format_23_is_refused_for_its_format_since_its_run_record_holds_a_genealogy_growth()
 {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":26"#, r#""format":23"#).replace(
+        error_of(&[&RUN.replace(r#""format":27"#, r#""format":23"#).replace(
             r#""max_procreations":800,"#,
             r#""max_procreations":800,"genealogy_growth":0.6,"#
         )]),
@@ -208,7 +220,7 @@ fn a_journal_of_format_22_is_refused_for_its_format_since_it_counts_an_unchanged
 {
     assert!(matches!(
         error_of(&[
-            &RUN.replace(r#""format":26"#, r#""format":22"#),
+            &RUN.replace(r#""format":27"#, r#""format":22"#),
             r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
             r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":1.5}"#
         ]),
@@ -220,7 +232,7 @@ fn a_journal_of_format_22_is_refused_for_its_format_since_it_counts_an_unchanged
 fn a_journal_of_format_21_is_refused_for_its_format_since_it_records_no_baseline() {
     assert!(matches!(
         error_of(&[
-            &RUN.replace(r#""format":26"#, r#""format":21"#),
+            &RUN.replace(r#""format":27"#, r#""format":21"#),
             r#"{"record":"procreation_started","child":1,"progenitor":0}"#
         ]),
         JournalError::UnknownFormat { format: 21 }
@@ -242,7 +254,7 @@ fn a_journal_of_format_20_is_refused_for_its_format_since_it_names_no_corroborat
 fn a_journal_of_format_19_is_refused_for_its_format_since_its_records_hold_no_seconds() {
     assert!(matches!(
         error_of(&[
-            &RUN.replace(r#""format":26"#, r#""format":19"#),
+            &RUN.replace(r#""format":27"#, r#""format":19"#),
             r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#,
             r#"{"record":"attempt_finished","harness":0,"task":"benchmark/t1","result":"completed"}"#
         ]),
@@ -487,7 +499,7 @@ fn a_journal_of_format_3_is_refused_for_its_format_since_it_names_no_model() {
 #[test]
 fn a_journal_of_format_2_is_refused_for_its_format_though_this_cladenc_could_read_its_records() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""format":26"#, r#""format":2"#)]),
+        error_of(&[&RUN.replace(r#""format":27"#, r#""format":2"#)]),
         JournalError::UnknownFormat { format: 2 }
     ));
 }
@@ -508,7 +520,7 @@ fn a_journal_of_format_1_is_refused_for_its_format_though_its_settings_are_other
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":26,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":27,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -592,9 +604,9 @@ fn a_record_of_this_format_named_progenitor_built_is_not_a_record() {
 }
 
 #[test]
-fn a_run_record_of_this_format_that_names_the_time_limit_of_an_assessment_is_not_a_record() {
+fn a_run_record_of_this_format_that_names_no_time_limit_of_a_procreation_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""attempt_timeout":"#, r#""assessment_timeout":"#)]),
+        error_of(&[&RUN.replace(r#""procreation_timeout":"#, r#""procreation_time_limit":"#)]),
         JournalError::NotARecord { line: 1 }
     ));
 }

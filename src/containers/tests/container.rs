@@ -1,14 +1,10 @@
-use std::sync::atomic::AtomicBool;
-
 use crate::containers::container::{self, Up};
-use crate::containers::program::Limits;
 use crate::containers::{ContainerError, Environment};
 use crate::outputs_directory::OutputsDirectory;
 
 #[test]
 fn a_container_with_no_directory_to_keep_what_docker_says_is_not_started() {
     let directory = test_inputs::temporary_directory();
-    let stop = AtomicBool::new(false);
     let environment = Environment {
         image: test_inputs::IMAGE.to_owned(),
         ..Environment::default()
@@ -17,7 +13,6 @@ fn a_container_with_no_directory_to_keep_what_docker_says_is_not_started() {
         &OutputsDirectory::at(directory.path()),
         &environment,
         &directory.path().join("missing"),
-        Limits::starting_now(60, &stop),
     );
     assert!(matches!(started, Err(ContainerError::Io(_))));
 }

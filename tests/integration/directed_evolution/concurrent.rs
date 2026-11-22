@@ -28,7 +28,6 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         max_procreations: 1,
         max_concurrent_containers: 3,
         procreation_timeout: 30,
-        attempt_timeout: 30,
         selection_tasks_percentage: 25.0,
         holdout_tasks: Vec::new(),
         corroboration_tasks_percentage: 25.0,

@@ -25,7 +25,6 @@ fn settings() -> Settings {
         max_procreations: 800,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        attempt_timeout: 3600,
         selection_tasks_percentage: 25.0,
         holdout_tasks: Vec::new(),
         corroboration_tasks_percentage: 25.0,

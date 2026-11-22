@@ -165,7 +165,12 @@ fn environments(
             Some(named) => take_image(&task, named, writer)?,
             None => {
                 count_built += 1;
-                build_environment(outputs_directory, &task, image, stop, writer)?
+                let building = Building {
+                    task: &task,
+                    image,
+                    time_limit: configuration.build_time_limit,
+                };
+                build_environment(outputs_directory, building, stop, writer)?
             }
         };
         let environment = Environment {
@@ -205,19 +210,29 @@ fn take_image(
     }
 }
 
+struct Building<'a> {
+    task: &'a str,
+    image: String,
+    time_limit: Duration,
+}
+
 fn build_environment(
     outputs_directory: &OutputsDirectory,
-    task: &str,
-    image: String,
+    building: Building<'_>,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<String, DirectedEvolutionError> {
+    let Building {
+        task,
+        image,
+        time_limit,
+    } = building;
     let building = Said::Environments(Environments::Building {
         task,
         image: &image,
     });
     say(writer, &building);
-    match containers::build_environment(outputs_directory, task, &image, stop) {
+    match containers::build_environment(outputs_directory, task, &image, time_limit, stop) {
         Ok(()) => Ok(image),
         Err(ContainerError::Stopped) => Err(DirectedEvolutionError::Asked),
         Err(error) => {

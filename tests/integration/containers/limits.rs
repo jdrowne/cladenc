@@ -1,8 +1,9 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
+use std::time::Duration;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, Attempt, ContainerError, Environment, Launch};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -62,7 +63,6 @@ fn launch(run_command: &str) -> Launch<'_> {
         build_command: None,
         model: MODEL,
         procreation_timeout: 60,
-        attempt_timeout: 60,
     }
 }
 
@@ -82,13 +82,16 @@ fn stopped_once_written<Outcome>(
 
 fn timed_out() -> Attempted {
     let (directory, outputs_directory) = made();
-    let launch = Launch {
-        attempt_timeout: 10,
-        ..launch(SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY)
+    let launch = launch(SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY);
+    let environment = Environment {
+        image: test_inputs::IMAGE.to_owned(),
+        configuration: TaskConfiguration {
+            harness_time_limit: Some(Duration::from_secs(3)),
+            ..TaskConfiguration::default()
+        },
     };
     let stop = AtomicBool::new(false);
-    let result =
-        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), &stop);
+    let result = containers::run_attempt(&outputs_directory, &launch, attempt(&environment), &stop);
     (directory, outputs_directory, result)
 }
 

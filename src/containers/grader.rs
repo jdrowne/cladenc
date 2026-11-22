@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 
 use super::container::{Run, Shell, Up};
 use super::program::{Ending, Limits};
@@ -20,9 +21,10 @@ pub(super) fn run(
     up: &Up,
     attempt: &Attempt<'_>,
     running: &Path,
-    limits: Limits<'_>,
+    stop: &AtomicBool,
 ) -> Result<AttemptResult, ContainerError> {
     let configuration = &attempt.environment.configuration;
+    let limits = Limits::within(configuration.grader_time_limit, stop);
     let grader = running.join("grader");
     let verifier = grader.join("logs/verifier");
     let tests = outputs_directory.task(attempt.task).join(TESTS);

@@ -4,12 +4,12 @@ use std::fs::File;
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use nix::unistd::{Gid, Uid};
 
 use super::left;
-use super::program::{self, Ending, LEEWAY, Limits};
+use super::program::{self, Ending, FOREVER, LEEWAY, Limits};
 use super::{ContainerError, Environment};
 use crate::outputs_directory::{OutputsDirectory, make_removable};
 
@@ -21,6 +21,8 @@ const SETTINGS: &str = "{{println .Config.User}}{{.Config.WorkingDir}}";
 const ROOT: &str = "0";
 const STANDARD_INPUT: &str = "/dev/stdin";
 const EMPTIED: &str = r#"rm -rf "$1" && mkdir -p "$1""#;
+const END_EVERYTHING: &str = "kill -9 -1";
+const COPYING: Duration = Duration::from_secs(600);
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -89,9 +91,14 @@ impl Up {
         outputs_directory: &OutputsDirectory,
         environment: &Environment,
         running: &Path,
-        limits: Limits<'_>,
     ) -> Result<Self, ContainerError> {
         let configuration = &environment.configuration;
+        let stays = configuration
+            .harness_time_limit
+            .unwrap_or(FOREVER)
+            .min(FOREVER)
+            .saturating_add(configuration.grader_time_limit.min(FOREVER))
+            .saturating_add(COPYING);
         let mut up = Self {
             name: named(),
             user: String::new(),
@@ -107,7 +114,7 @@ impl Up {
             )
             .args(["--env-file", STANDARD_INPUT])
             .args(["--detach", &environment.image, "sleep"])
-            .arg(seconds_of_the_timer(limits.deadline).to_string());
+            .arg(stays.as_secs().to_string());
         detached(docker, &file_of(&configuration.variables), running)?;
         let mut inspect = Command::new("docker");
         inspect.args(["inspect", "--format", SETTINGS, &up.name]);
@@ -156,6 +163,12 @@ impl Up {
             .into_iter()
             .try_for_each(|docker| left::printed_by(docker).map(drop))
             .map_err(ContainerError::Io)
+    }
+
+    pub(super) fn end_everything(&self) {
+        let mut docker = self.as_root();
+        docker.args(["sh", "-c", END_EVERYTHING]);
+        let _ = left::printed_by(docker);
     }
 
     pub(super) fn changes(&self) -> Vec<String> {

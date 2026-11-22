@@ -4,7 +4,7 @@ use crate::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 12] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -15,7 +15,6 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--max-procreations", "800"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--attempt-timeout", "3600"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),
 ];
@@ -273,10 +272,12 @@ fn a_procreation_timeout_of_0_is_an_error() {
 }
 
 #[test]
-fn an_attempt_timeout_of_0_is_an_error() {
+fn a_time_limit_of_an_attempt_is_no_flag_of_start() {
     assert_eq!(
-        refusal("--attempt-timeout", "0"),
-        ErrorKind::ValueValidation
+        and(Some("--attempt-timeout=3600".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
     );
 }
 
