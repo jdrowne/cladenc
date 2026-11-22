@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, HealthCheck, TaskConfiguration};
@@ -70,6 +71,7 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &outputs_directory,
@@ -88,6 +90,10 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         outputs_directory,
         result,
     }
+}
+
+fn running(attempted: &Attempted) -> PathBuf {
+    attempted.outputs_directory.running_attempt(0, TASK)
 }
 
 fn kept(attempted: &Attempted, file: &str) -> String {
@@ -154,44 +160,63 @@ fn a_failure_in_the_start_period_of_a_health_check_is_not_counted() {
 }
 
 #[test]
-fn a_health_check_that_fails_as_many_times_as_its_retries_leaves_the_task_not_completed() {
+fn a_health_check_that_fails_as_many_times_as_its_retries_gives_no_result_but_an_error() {
+    assert!(matches!(
+        attempted(&checked_by(FAIL_ONCE, "retries = 1\n"), FINISH).result,
+        Err(ContainerError::TaskHealthCheck { tries: 1, .. })
+    ));
+}
+
+#[test]
+fn the_error_of_a_harness_that_was_never_started_names_where_what_the_check_printed_is() {
+    let attempted = never_passing();
+    assert!(matches!(
+        &attempted.result,
+        Err(ContainerError::TaskHealthCheck { kept, .. })
+            if *kept == running(&attempted).join("health-check")
+    ));
+}
+
+#[test]
+fn an_attempt_whose_harness_was_never_started_keeps_no_result() {
+    assert!(!never_passing().outputs_directory.attempt(0, TASK).exists());
+}
+
+#[test]
+fn a_harness_whose_task_did_not_pass_its_health_check_leaves_nothing_as_it_was_never_started() {
+    let running = running(&never_passing());
+    let left = [
+        "stdout",
+        "ending",
+        "changes",
+        "work",
+        "collect",
+        "artifacts",
+    ]
+    .map(|left| running.join(left).exists());
+    assert_eq!(left, [false; 6]);
+}
+
+#[test]
+fn what_a_health_check_that_did_not_pass_printed_is_kept_where_the_attempt_was_running() {
     assert_eq!(
-        result_of(&attempted(&checked_by(FAIL_ONCE, "retries = 1\n"), FINISH)),
-        Some(AttemptResult::NotCompleted)
+        fs::read_to_string(running(&never_passing()).join("health-check/stdout")).unwrap(),
+        "not ready\n"
     );
 }
 
 #[test]
-fn a_harness_whose_task_did_not_pass_its_health_check_is_said_not_to_have_been_started() {
-    assert_eq!(ending_of(&never_passing()), Some(HarnessEnding::NotStarted));
-}
-
-#[test]
-fn an_attempt_whose_harness_was_not_started_keeps_not_started_as_its_ending() {
-    assert_eq!(kept(&never_passing(), "ending"), "not_started\n");
-}
-
-#[test]
-fn an_attempt_whose_harness_was_not_started_keeps_not_completed_as_its_result() {
-    assert_eq!(kept(&never_passing(), "result"), "not_completed\n");
-}
-
-#[test]
-fn an_attempt_whose_harness_was_not_started_keeps_nothing_of_the_harness_or_of_the_grader() {
+fn what_a_health_check_that_did_not_pass_printed_on_standard_error_is_kept_as_well() {
     assert_eq!(
-        everything_kept(&never_passing()),
-        ["ending", "health-check", "result", "specification"]
+        fs::read_to_string(running(&never_passing()).join("health-check/stderr")).unwrap(),
+        "no server\n"
     );
 }
 
 #[test]
-fn what_a_health_check_that_did_not_pass_printed_is_kept_with_the_attempt() {
-    assert_eq!(kept(&never_passing(), "health-check/stdout"), "not ready\n");
-}
-
-#[test]
-fn what_a_health_check_printed_on_standard_error_is_kept_with_the_attempt() {
-    assert_eq!(kept(&never_passing(), "health-check/stderr"), "no server\n");
+fn what_a_health_check_that_passed_printed_on_standard_error_is_kept_with_the_attempt() {
+    let attempted = attempted(&checked_by("echo listening >&2", ""), FINISH);
+    assert_eq!(kept(&attempted, "health-check/stderr"), "listening\n");
 }
 
 #[test]
@@ -211,10 +236,10 @@ fn an_attempt_whose_task_gives_no_health_check_keeps_nothing_of_one() {
 #[test]
 fn a_run_of_a_health_check_that_runs_past_its_time_limit_has_failed() {
     let task_toml = checked_by("sleep 300", "timeout_sec = 1\nretries = 1\n");
-    assert_eq!(
-        ending_of(&attempted(&task_toml, FINISH)),
-        Some(HarnessEnding::NotStarted)
-    );
+    assert!(matches!(
+        attempted(&task_toml, FINISH).result,
+        Err(ContainerError::TaskHealthCheck { .. })
+    ));
 }
 
 #[test]

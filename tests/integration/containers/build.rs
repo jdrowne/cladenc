@@ -40,6 +40,7 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
         model: MODEL,
         procreation_timeout: time_limit,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_procreation(&outputs_directory, &launch, 1, 0, &stop);
@@ -59,6 +60,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
         model: MODEL,
         procreation_timeout: 60,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let id_file = outputs_directory.running_procreation(1).join("child/id");
     let stop = AtomicBool::new(false);
@@ -84,6 +86,7 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let _ = containers::run_procreation(&outputs_directory, &launch, 1, 0, &AtomicBool::new(false));
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
@@ -311,6 +314,7 @@ fn a_build_whose_output_cannot_be_kept_is_an_error() {
         model: MODEL,
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
     assert!(matches!(

@@ -42,6 +42,7 @@ fn settings(directory: &Path) -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
         selection_tasks_percentage: 33.5,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         corroboration_tasks_percentage: 33.5,

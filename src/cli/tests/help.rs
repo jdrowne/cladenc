@@ -463,6 +463,16 @@ fn the_short_help_of_start_says_what_the_flag_of_the_most_retries_counts() {
 }
 
 #[test]
+fn the_short_help_of_start_names_the_flag_that_gives_the_most_retries_of_a_task_s_health_check() {
+    assert!(help_of_start(false).contains("--max-task-health-check-retries <COUNT>"));
+}
+
+#[test]
+fn the_short_help_of_start_says_what_the_flag_of_the_most_retries_of_a_task_counts() {
+    assert!(help_of_start(false).contains("The most times the container of a task"));
+}
+
+#[test]
 fn the_long_help_of_start_says_where_the_copy_that_a_procreation_improves_is() {
     assert!(help_of_start(true).contains(
         "/var/opt/cladenc/work holds a second copy of its source code, and the\ninstruction asks \

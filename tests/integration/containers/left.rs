@@ -81,6 +81,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
         },
         procreation_timeout: 60,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let id_file = outputs_directory
         .running_attempt(0, "benchmark/t1")

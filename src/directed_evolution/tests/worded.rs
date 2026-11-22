@@ -295,3 +295,23 @@ fn a_directed_evolution_that_a_grader_s_health_check_stopped_says_precisely_what
          printed the last time it ran"
     );
 }
+
+#[test]
+fn a_directed_evolution_that_a_task_s_health_check_stopped_says_precisely_what_happened() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Action {
+            action: Started::Attempt {
+                harness: 3,
+                task: "parsing/t1".to_owned()
+            },
+            error: ContainerError::TaskHealthCheck {
+                tries: 4,
+                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/health-check"),
+            }
+        }),
+        "the directed evolution stopped before its end: the attempt of harness 3 on task \
+         parsing/t1 was not carried out: the health check of the task did not pass in 4 tries, \
+         so the harness was not started, and /outputs/running/attempt-3-parsing+t1/health-check \
+         holds what the health check printed the last time it ran"
+    );
+}

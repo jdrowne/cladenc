@@ -10,7 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Environment, GraderImage, Launch, Retry};
+use cladenc::containers::{self, Checked, ContainerError, Environment, GraderImage, Launch, Retry};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -168,6 +168,7 @@ fn carried_out_with(
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: max_retries,
+        max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &prepared.outputs_directory,
@@ -731,11 +732,13 @@ fn each_retry_is_told_with_a_wait_that_starts_at_the_interval_of_the_health_chec
         retried(NEVER_READY_IN_HALF_A_SECOND, 2).told,
         [
             Retry {
+                checked: Checked::Grader,
                 number: 1,
                 most: 2,
                 wait: Duration::from_millis(500),
             },
             Retry {
+                checked: Checked::Grader,
                 number: 2,
                 most: 2,
                 wait: Duration::from_secs(1),

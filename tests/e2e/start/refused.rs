@@ -18,6 +18,7 @@ fn options(directory: &Path, outputs_directory: &Path) -> Vec<String> {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--max-grader-health-check-retries", "0".into()),
+        ("--max-task-health-check-retries", "0".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]

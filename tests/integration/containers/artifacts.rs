@@ -76,6 +76,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &outputs_directory,
@@ -274,19 +275,6 @@ fn what_a_harness_that_was_stopped_left_at_a_path_the_task_lists_is_kept() {
         "echo found > report.txt; sleep 300",
     );
     assert_eq!(kept(&attempted, "artifacts/app/report.txt"), "found\n");
-}
-
-#[test]
-fn an_attempt_whose_harness_was_not_started_keeps_nothing_of_the_paths_the_task_lists() {
-    let attempted = attempted(
-        "artifacts = [\"/app/work.txt\"]\n\n[environment.healthcheck]\ncommand = \"exit \
-         1\"\ninterval_sec = 0\nretries = 1\n",
-        WRITE_A_REPORT,
-    );
-    assert_eq!(
-        everything_kept(&attempted),
-        ["ending", "health-check", "result", "specification"]
-    );
 }
 
 #[test]

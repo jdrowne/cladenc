@@ -28,6 +28,7 @@ fn settings() -> Settings {
         max_concurrent_containers: 1,
         procreation_timeout: 60,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.5,
         holdout_tasks: EVERY_HOLDOUT_TASK.map(str::to_owned).to_vec(),
         corroboration_tasks_percentage: 49.5,

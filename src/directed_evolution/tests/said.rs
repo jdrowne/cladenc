@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::containers::{ContainerError, HarnessEnding, Retry};
+use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::said::{Environments, Retrying};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
@@ -182,23 +182,6 @@ fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is
         attempted_by_a_harness_that_ran_out_of_time(AttemptResult::NotCompleted),
         "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
          limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
-    );
-}
-
-#[test]
-fn a_harness_that_was_not_started_is_said_with_the_health_check_that_did_not_pass() {
-    assert_eq!(
-        Said::Attempted {
-            harness: 3,
-            task: "fix-the-parser",
-            result: AttemptResult::NotCompleted,
-            ending: HarnessEnding::NotStarted,
-            outputs_directory: &outputs_directory(),
-        }
-        .to_string(),
-        "harness 3 did not complete task fix-the-parser, as the environment of the task did not \
-         pass its health check and the harness was not started: what the attempt left is kept \
-         in /outputs/attempts/3/fix-the-parser"
     );
 }
 
@@ -702,17 +685,40 @@ fn the_end_of_a_directed_evolution_is_said_with_its_best_harness_and_where_it_is
     );
 }
 
-fn retrying_after(wait: Duration) -> String {
+fn retrying(checked: Checked, wait: Duration) -> String {
     Said::Retrying(Retrying {
         harness: 3,
         task: "parsing/fix-the-parser",
         retry: Retry {
+            checked,
             number: 2,
             most: 5,
             wait,
         },
     })
     .to_string()
+}
+
+fn retrying_after(wait: Duration) -> String {
+    retrying(Checked::Grader, wait)
+}
+
+#[test]
+fn a_retry_of_the_health_check_of_a_task_is_said_with_its_attempt_its_wait_and_its_number() {
+    assert_eq!(
+        retrying(Checked::Task, Duration::from_secs(10)),
+        "the attempt of harness 3 on task parsing/fix-the-parser is not carried out yet: the \
+         health check of the task did not pass, and cladenc tries again in a new container \
+         after 10 seconds, retry 2 of 5"
+    );
+}
+
+#[test]
+fn a_wait_of_1_second_before_a_retry_of_the_health_check_of_a_task_is_not_said_as_several() {
+    assert!(
+        retrying(Checked::Task, Duration::from_secs(1))
+            .ends_with(" in a new container after 1 second, retry 2 of 5")
+    );
 }
 
 #[test]
@@ -756,5 +762,23 @@ fn a_grader_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
          the container of its grader did not pass in 1 try, so the grader was not run, and \
          /outputs/running/attempt-3-fix-the-parser/grader/health-check holds what the health \
          check printed the last time it ran"
+    );
+}
+
+#[test]
+fn a_harness_that_was_never_started_is_said_with_what_stopped_it_from_being_started() {
+    assert_eq!(
+        Said::Failed {
+            action: &attempt(),
+            error: &ContainerError::TaskHealthCheck {
+                tries: 1,
+                kept: "/outputs/running/attempt-3-fix-the-parser/health-check".into(),
+            },
+        }
+        .to_string(),
+        "the attempt of harness 3 on task fix-the-parser was not carried out: the health check \
+         of the task did not pass in 1 try, so the harness was not started, and \
+         /outputs/running/attempt-3-fix-the-parser/health-check holds what the health check \
+         printed the last time it ran"
     );
 }

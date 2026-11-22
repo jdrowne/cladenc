@@ -79,6 +79,7 @@ fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &outputs_directory,

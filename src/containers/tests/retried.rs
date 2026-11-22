@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use crate::containers::health_check::{self, Backoff};
-use crate::containers::{ContainerError, Retry};
+use crate::containers::{Checked, ContainerError, Retry};
 
 const A_MOMENT: Duration = Duration::from_millis(40);
 const A_MILLISECOND: Duration = Duration::from_millis(1);
@@ -18,6 +18,7 @@ struct Tried {
 fn tried_with(first_wait: Duration, max_retries: u64, failures: u64) -> Tried {
     let stop = AtomicBool::new(false);
     let backoff = Backoff {
+        checked: Checked::Grader,
         first_wait,
         max_retries,
         stop: &stop,
@@ -102,17 +103,37 @@ fn each_retry_is_told_with_its_number_the_most_retries_and_its_wait() {
         never_passing(A_MILLISECOND, 2).told,
         [
             Retry {
+                checked: Checked::Grader,
                 number: 1,
                 most: 2,
                 wait: A_MILLISECOND,
             },
             Retry {
+                checked: Checked::Grader,
                 number: 2,
                 most: 2,
                 wait: A_MILLISECOND * 2,
             }
         ]
     );
+}
+
+#[test]
+fn a_retry_is_told_with_the_health_check_that_did_not_pass() {
+    let stop = AtomicBool::new(false);
+    let backoff = Backoff {
+        checked: Checked::Task,
+        first_wait: Duration::ZERO,
+        max_retries: 1,
+        stop: &stop,
+    };
+    let told = RefCell::new(Vec::new());
+    let _ = health_check::retried::<u64>(
+        &backoff,
+        &|retry: Retry| told.borrow_mut().push(retry.checked),
+        || Ok(None),
+    );
+    assert_eq!(told.into_inner(), [Checked::Task]);
 }
 
 #[test]
@@ -157,6 +178,7 @@ fn no_wait_follows_the_last_retry() {
 fn a_try_that_could_not_be_made_is_an_error() {
     let stop = AtomicBool::new(false);
     let backoff = Backoff {
+        checked: Checked::Grader,
         first_wait: Duration::ZERO,
         max_retries: 3,
         stop: &stop,
@@ -169,6 +191,7 @@ fn a_try_that_could_not_be_made_is_an_error() {
 fn a_retry_that_waits_when_cladenc_is_asked_to_stop_is_stopped() {
     let stop = AtomicBool::new(true);
     let backoff = Backoff {
+        checked: Checked::Grader,
         first_wait: Duration::from_secs(600),
         max_retries: 3,
         stop: &stop,

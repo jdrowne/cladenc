@@ -30,6 +30,7 @@ fn settings() -> Settings {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         max_grader_health_check_retries: 3,
+        max_task_health_check_retries: 2,
         selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,
@@ -81,8 +82,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_28() {
-    assert_eq!(journal::FORMAT, 28);
+fn the_format_of_the_journal_is_29() {
+    assert_eq!(journal::FORMAT, 29);
 }
 
 #[test]
@@ -90,7 +91,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":28,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":29,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
@@ -100,7 +101,8 @@ fn the_run_record_is_written_key_for_key() {
             r#""corroboration_tasks_percentage":25.0,"#,
             r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#,
             r#""max_concurrent_containers":8,"#,
-            r#""procreation_timeout":3600,"max_grader_health_check_retries":3,"seed":7}"#
+            r#""procreation_timeout":3600,"max_grader_health_check_retries":3,"#,
+            r#""max_task_health_check_retries":2,"seed":7}"#
         )
     );
 }
@@ -328,6 +330,7 @@ fn the_settings_give_how_a_harness_is_built_and_run() {
             },
             procreation_timeout: 3600,
             max_grader_health_check_retries: 3,
+            max_task_health_check_retries: 2,
         }
     );
 }
@@ -357,6 +360,40 @@ fn the_most_retries_of_the_health_check_of_a_grader_being_0_survives_being_writt
         ..settings()
     });
     assert_eq!(read_back(&never_retried), never_retried);
+}
+
+#[test]
+fn the_settings_give_the_most_retries_of_the_health_check_of_a_task() {
+    let settings = Settings {
+        max_task_health_check_retries: 4,
+        ..settings()
+    };
+    assert_eq!(settings.launch(None).max_task_health_check_retries, 4);
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_task_being_0_survives_being_written_and_read_back() {
+    let never_retried = run(Settings {
+        max_task_health_check_retries: 0,
+        ..settings()
+    });
+    assert_eq!(read_back(&never_retried), never_retried);
+}
+
+#[test]
+fn the_run_record_holds_the_most_retries_of_a_task_after_those_of_a_grader_and_before_the_seed() {
+    assert!(run(settings()).line().unwrap().contains(
+        r#""max_grader_health_check_retries":3,"max_task_health_check_retries":2,"seed":7}"#
+    ));
+}
+
+#[test]
+fn a_run_record_that_names_no_most_retries_of_the_health_check_of_a_task_is_not_a_record() {
+    let line = run(settings())
+        .line()
+        .unwrap()
+        .replace(r#""max_task_health_check_retries":2,"#, "");
+    assert!(serde_json::from_str::<Record>(&line).is_err());
 }
 
 #[test]

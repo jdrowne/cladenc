@@ -606,9 +606,22 @@ command has failed as many times as retries says, or 3 times where the
 task gives none. A failure within start_period_sec of the first run, or 0
 seconds where the task gives none, is not counted, and the command is then
 run again after start_interval_sec, or 5 seconds where the task gives none.
-Where the health check does not pass, the harness is not started and the
-grader is not run: the harness did not complete the task, and cladenc says
-that the environment of the task did not pass its health check.
+
+Where the health check of a task does not pass, the harness was never
+started, so cladenc does not record that the harness did not complete the
+task. It removes the container, waits, brings up a new container of the
+task and runs the health check there again, as many times as
+--max-task-health-check-retries gives. Before the first retry it waits
+interval_sec of the health check, or 5 seconds where the task gives none,
+and before each retry after that twice as long as before the last: 5
+seconds, then 10, then 20. It says each retry on standard error. Where the
+health check passes in no container, the directed evolution stops with exit
+status 1, and no result is recorded for the attempt. cladenc then names the
+harness and the task, says that the health check of the task did not pass
+and in how many tries, and names the directory that holds what the health
+check printed the last time it ran. That directory is under running in the
+outputs directory, and stays there until `cladenc resume` carries out the
+attempt again.
 
 Where the task.toml of a task lists paths under artifacts, cladenc keeps
 each with the attempt, a file or a directory with all it holds, as the
@@ -856,11 +869,10 @@ How an attempt ends decides its result:
   label of reward.json
   any other score, a file that     the harness did not complete the task
   cannot be read, or no score
-  a health check of the task that  the harness is not started, and did not
-  does not pass                    complete the task
-  a health check of the container  no result is recorded: the directed
-  of the grader that does not      evolution stops, and `cladenc resume`
-  pass in any of its tries         carries out the attempt again
+  a health check of the task, or   no result is recorded: the directed
+  of the container of the grader,  evolution stops, and `cladenc resume`
+  that passes in none of its       carries out the attempt again
+  tries
   exit status 125 of either step   Docker did not start the container: the
   or of the health check           directed evolution stops, and `cladenc
                                    resume` carries out the attempt again
@@ -904,9 +916,8 @@ held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 
   result         one word: completed, not_completed or timed_out
-  ending         one word: ended, stopped where the harness ran past its
-                 time limit, or not_started where the environment did
-                 not pass its health check
+  ending         one word: ended, or stopped where the harness ran past
+                 its time limit
   specification  the task specification
   work           what the harness left in the working directory of the
                  environment, not kept where that directory is /
@@ -927,9 +938,6 @@ benchmark, and in that one named after the task, which holds
   health-check   the standard output and the standard error of the last
                  run of the health check, in stdout and stderr, where the
                  task gives one
-
-An attempt whose harness was not started keeps result, ending,
-specification and health-check, and nothing else.
 
 holdout in the outputs directory keeps the attempts at the holdout tasks,
 selection tasks and corroboration tasks together, in the same way, apart

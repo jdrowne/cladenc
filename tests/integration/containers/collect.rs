@@ -17,8 +17,6 @@ const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const ROWS: &str = "artifacts = [\"/app/rows.txt\"]\n";
 const COPY_THE_REPORT: &str = "[[verifier.collect]]\ncommand = \"cat report.txt > rows.txt\"\n";
-const NEVER_HEALTHY: &str =
-    "[environment.healthcheck]\ncommand = \"exit 1\"\ninterval_sec = 0\nretries = 1\n";
 
 struct Attempted {
     _directory: TempDir,
@@ -84,6 +82,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         },
         procreation_timeout: 30,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &outputs_directory,
@@ -303,15 +302,6 @@ fn the_commands_under_collect_are_run_for_a_harness_that_was_stopped() {
 fn a_command_under_collect_that_exits_with_status_125_is_an_error_of_docker() {
     let attempted = attempted(&collecting(&["exit 125"]), WRITE_A_REPORT);
     assert!(matches!(attempted.result, Err(ContainerError::Docker(_))));
-}
-
-#[test]
-fn no_command_under_collect_is_run_for_a_harness_that_was_not_started() {
-    let attempted = attempted(
-        &format!("{NEVER_HEALTHY}\n{COPY_THE_REPORT}"),
-        WRITE_A_REPORT,
-    );
-    assert!(!kept_at(&attempted, "collect").exists());
 }
 
 #[test]

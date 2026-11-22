@@ -64,6 +64,7 @@ fn launch(run_command: &str) -> Launch<'_> {
         model: MODEL,
         procreation_timeout: 60,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
     }
 }
 

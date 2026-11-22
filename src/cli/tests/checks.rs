@@ -32,6 +32,7 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         max_grader_health_check_retries: 3,
+        max_task_health_check_retries: 2,
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,
     }
@@ -101,6 +102,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
             max_grader_health_check_retries: 3,
+            max_task_health_check_retries: 2,
             selection_tasks_percentage: 30.0,
             holdout_tasks: settings.holdout_tasks.clone(),
             corroboration_tasks_percentage: 30.0,

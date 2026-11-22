@@ -87,6 +87,7 @@ impl StartOptions {
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
             max_grader_health_check_retries: self.max_grader_health_check_retries,
+            max_task_health_check_retries: self.max_task_health_check_retries,
             seed,
         })
     }

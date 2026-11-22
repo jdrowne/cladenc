@@ -659,11 +659,51 @@ fn the_steps_of_cladenc_start_say_when_the_health_check_of_a_task_is_run() {
 }
 
 #[test]
-fn the_steps_of_cladenc_start_say_what_a_health_check_that_does_not_pass_gives() {
+fn the_steps_of_cladenc_start_say_that_a_health_check_that_does_not_pass_is_tried_again() {
     assert!(what_is_said_of("start").contains(
-        "Where the health check does not pass, the harness is not started and the grader is \
-         not run: the harness did not complete the task, and the attempt keeps `not_started` \
-         as its ending."
+        "Where the health check does not pass, the harness was never started, so `cladenc` does \
+         not record that the harness did not complete the task: it removes the container, \
+         waits, brings up a new container of the task and runs the health check there again, as \
+         many times as `--max-task-health-check-retries` gives."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_how_long_cladenc_waits_before_a_retry_of_a_task() {
+    assert!(what_is_said_of("start").contains(
+        "`--max-task-health-check-retries` gives. It waits the `interval_sec` of the health \
+         check before the first retry, or 5 seconds where the task gives none, and twice as \
+         long before each retry after that, and says each retry on standard error."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_that_a_task_that_is_never_ready_stops_the_directed_evolution() {
+    assert!(what_is_said_of("start").contains(
+        "the task gives none, and twice as long before each retry after that, and says each \
+         retry on standard error. Where the health check passes in no container, the directed \
+         evolution stops with exit status 1 and no result is recorded for the attempt: \
+         `cladenc` names the harness, the task, the number of tries and the directory that \
+         holds what the health check printed the last time it ran, and `cladenc resume` \
+         carries out the attempt again. Where the task's `task.toml`"
+    ));
+}
+
+#[test]
+fn the_readme_names_no_attempt_whose_harness_was_not_started() {
+    assert!(!readme().contains("not_started"));
+}
+
+#[test]
+fn the_flag_of_the_most_retries_of_a_task_says_all_that_a_retry_is() {
+    assert!(readme().contains(
+        "| `--max-task-health-check-retries <COUNT>` | Required | The most times the container \
+         of a task is brought up again, where its health check does not pass, 0 or more. It \
+         counts for a task whose `task.toml` gives a health check. Each retry is a new \
+         container, and `cladenc` waits before it: the `interval_sec` of the health check \
+         before the first retry, and twice as long before each retry after that. Where the \
+         health check passes in no container, the directed evolution stops and no result is \
+         recorded for the attempt. |\n"
     ));
 }
 

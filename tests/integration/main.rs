@@ -16,6 +16,7 @@ mod containers {
     mod lineage;
     mod primogenitor;
     mod procreation;
+    mod retried;
     mod seconds;
 }
 
@@ -30,6 +31,7 @@ mod directed_evolution {
     mod experiment;
     mod finished;
     mod grader;
+    mod health_check;
     mod held_out;
     mod image;
     mod keyed;

@@ -2,7 +2,7 @@ use crate::cli::Cli;
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -14,6 +14,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--max-grader-health-check-retries", "3"),
+    ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),
 ];
@@ -115,6 +116,14 @@ fn leaving_out_the_limit_of_concurrent_containers_is_an_error() {
 fn leaving_out_the_most_retries_of_the_health_check_of_a_grader_is_an_error() {
     assert_eq!(
         refusal_without("--max-grader-health-check-retries"),
+        ErrorKind::MissingRequiredArgument
+    );
+}
+
+#[test]
+fn leaving_out_the_most_retries_of_the_health_check_of_a_task_is_an_error() {
+    assert_eq!(
+        refusal_without("--max-task-health-check-retries"),
         ErrorKind::MissingRequiredArgument
     );
 }

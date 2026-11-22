@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::containers::{ContainerError, HarnessEnding, Retry};
+use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -258,10 +258,6 @@ impl Display for Said<'_> {
                 let stopped = match ending {
                     HarnessEnding::Ended => "",
                     HarnessEnding::Stopped => ", after it was stopped at its time limit",
-                    HarnessEnding::NotStarted => {
-                        ", as the environment of the task did not pass its health check and the \
-                         harness was not started"
-                    }
                 };
                 write!(
                     formatter,
@@ -409,7 +405,16 @@ pub(super) struct Retrying<'a> {
 
 impl Display for Retrying<'_> {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-        let Retry { number, most, wait } = self.retry;
+        let Retry {
+            checked,
+            number,
+            most,
+            wait,
+        } = self.retry;
+        let (not_yet, of) = match checked {
+            Checked::Task => ("carried out", "task"),
+            Checked::Grader => ("graded", "container of its grader"),
+        };
         let wait = if wait == Duration::from_secs(1) {
             "1 second".to_owned()
         } else {
@@ -417,9 +422,9 @@ impl Display for Retrying<'_> {
         };
         write!(
             formatter,
-            "the attempt of harness {} on task {} is not graded yet: the health check of the \
-             container of its grader did not pass, and cladenc tries again in a new container \
-             after {wait}, retry {number} of {most}",
+            "the attempt of harness {} on task {} is not {not_yet} yet: the health check of \
+             the {of} did not pass, and cladenc tries again in a new container after {wait}, \
+             retry {number} of {most}",
             self.harness, self.task
         )
     }

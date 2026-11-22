@@ -11,8 +11,6 @@ const SUB_COMMANDS: [&str; 8] = [
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const NEVER_SET: &str =
     "[environment.env]\nKEY = \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET}\"\n";
-const NEVER_HEALTHY: &str = "[environment.healthcheck]\ncommand = \"echo not ready; exit \
-                             1\"\ninterval_sec = 0\nretries = 2\n";
 const OBEYED: &str = "[agent]\nuser = 1000\ntimeout_sec = 30\n\n[verifier]\nuser = \
                       2000\ntimeout_sec = 20.0\n\n[verifier.env]\nJUDGE = \
                       \"${CLADENC_TEST_TOKEN}\"\n\n[environment]\nworkdir = \
@@ -35,6 +33,7 @@ fn start(directory: &Path, task_toml_of_t2: &str) -> Command {
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
         ("--max-grader-health-check-retries", "0".into()),
+        ("--max-task-health-check-retries", "0".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]
@@ -139,30 +138,6 @@ fn a_task_whose_health_check_cannot_be_obeyed_is_reported_with_the_task_and_the_
             "benchmark: task t2 holds a task.toml that gives environment.healthcheck.retries a \
              value that is not a number above 0\n"
         )
-    );
-}
-
-#[test]
-fn a_harness_whose_task_does_not_pass_its_health_check_is_said_not_to_have_been_started() {
-    assert!(said(&started(NEVER_HEALTHY).1).contains(
-        "cladenc: harness 0 did not complete task benchmark/t2, as the environment of the task \
-         did not pass its health check and the harness was not started: what the attempt left \
-         is kept in "
-    ));
-}
-
-#[test]
-fn a_directed_evolution_with_a_task_that_does_not_pass_its_health_check_runs_to_its_end() {
-    assert_eq!(started(NEVER_HEALTHY).1.status.code(), Some(0));
-}
-
-#[test]
-fn an_attempt_at_a_task_that_does_not_pass_its_health_check_keeps_what_the_check_printed() {
-    let (directory, _output) = started(NEVER_HEALTHY);
-    let attempt = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t2");
-    assert_eq!(
-        fs::read_to_string(attempt.join("health-check/stdout")).unwrap(),
-        "not ready\n"
     );
 }
 

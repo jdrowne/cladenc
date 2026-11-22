@@ -67,12 +67,67 @@ fn the_long_help_of_start_says_that_a_failure_in_the_start_period_is_not_counted
 }
 
 #[test]
-fn the_long_help_of_start_says_what_a_health_check_that_does_not_pass_gives() {
+fn the_long_help_of_start_says_that_a_harness_that_was_never_started_is_given_no_result() {
     assert!(long_help_of_start().contains(
-        "Where the health check does not pass, the harness is not started and the\ngrader is \
-         not run: the harness did not complete the task, and cladenc says\nthat the environment \
-         of the task did not pass its health check."
+        "\nWhere the health check of a task does not pass, the harness was never\nstarted, so \
+         cladenc does not record that the harness did not complete the\ntask."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_health_check_of_a_task_is_tried_again_in_a_new_container() {
+    assert!(long_help_of_start().contains(
+        "It removes the container, waits, brings up a new container of the\ntask and runs the \
+         health check there again, as many times as\n--max-task-health-check-retries gives."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_long_cladenc_waits_before_each_retry_of_a_task() {
+    assert!(long_help_of_start().contains(
+        "gives. Before the first retry it waits\ninterval_sec of the health check, or 5 seconds \
+         where the task gives none,\nand before each retry after that twice as long as before \
+         the last: 5\nseconds, then 10, then 20."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_each_retry_of_the_health_check_of_a_task_is_said() {
+    assert!(
+        long_help_of_start()
+            .contains("then 20. It says each retry on standard error. Where the\nhealth check")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_task_that_is_never_ready_stops_the_directed_evolution() {
+    assert!(long_help_of_start().contains(
+        "Where the\nhealth check passes in no container, the directed evolution stops with \
+         exit\nstatus 1, and no result is recorded for the attempt."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_cladenc_names_of_a_harness_that_was_never_started() {
+    assert!(long_help_of_start().contains(
+        "cladenc then names the\nharness and the task, says that the health check of the task \
+         did not pass\nand in how many tries, and names the directory that holds what the \
+         health\ncheck printed the last time it ran."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_what_the_health_check_of_a_task_printed_stays() {
+    assert!(long_help_of_start().contains(
+        "ran. That directory is under running in the\noutputs directory, and stays there until \
+         `cladenc resume` carries out the\nattempt again.\n\nWhere the task.toml of a task \
+         lists paths under artifacts"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_does_not_say_that_a_harness_that_was_not_started_did_not_complete() {
+    assert!(!long_help_of_start().contains("the harness is not started"));
 }
 
 #[test]
@@ -94,9 +149,6 @@ fn the_long_help_of_start_says_where_what_a_health_check_printed_is_kept() {
 }
 
 #[test]
-fn the_long_help_of_start_says_what_an_attempt_whose_harness_was_not_started_keeps() {
-    assert!(long_help_of_start().contains(
-        "\nAn attempt whose harness was not started keeps result, ending,\nspecification and \
-         health-check, and nothing else.\n"
-    ));
+fn the_long_help_of_start_names_no_attempt_whose_harness_was_not_started() {
+    assert!(!long_help_of_start().contains("not_started"));
 }

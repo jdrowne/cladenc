@@ -156,14 +156,17 @@ fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there()
 fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
         "the file named specification says what you were asked to do, the file named result \
-         reads completed, not_completed or timed_out, the file named ending reads ended, \
-         stopped where you ran past the time limit of the task and were stopped, or not_started \
-         where the environment of the task did not pass its health check, so that you were \
-         never started and the attempt holds nothing of you or of the grader, the directory \
+         reads completed, not_completed or timed_out, the file named ending reads ended, or \
+         stopped where you ran past the time limit of the task and were stopped, the directory \
          named work holds what you left in the working directory of the task, the file named \
          changes lists every path you added, changed or removed in the container of the task, \
          one to a line after A, C or D, "
     ));
+}
+
+#[test]
+fn the_instruction_names_no_attempt_whose_harness_was_never_started() {
+    assert!(!containers::INSTRUCTION.contains("not_started"));
 }
 
 #[test]
@@ -259,6 +262,33 @@ fn one_try_of_the_health_check_of_a_grader_is_not_worded_as_several() {
         .starts_with(
             "was not graded: the health check of the container of its grader did not pass in 1 \
              try, so the grader was not run, "
+        )
+    );
+}
+
+#[test]
+fn a_harness_that_was_never_started_is_worded_with_the_tries_and_where_the_health_check_is() {
+    assert_eq!(
+        worded(ContainerError::TaskHealthCheck {
+            tries: 4,
+            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/health-check"),
+        }),
+        "was not carried out: the health check of the task did not pass in 4 tries, so the \
+         harness was not started, and /outputs/running/attempt-3-parsing+t1/health-check holds \
+         what the health check printed the last time it ran"
+    );
+}
+
+#[test]
+fn one_try_of_the_health_check_of_a_task_is_not_worded_as_several() {
+    assert!(
+        worded(ContainerError::TaskHealthCheck {
+            tries: 1,
+            kept: PathBuf::from("/kept"),
+        })
+        .starts_with(
+            "was not carried out: the health check of the task did not pass in 1 try, so the \
+             harness was not started, "
         )
     );
 }

@@ -6,7 +6,8 @@ use super::container::{Bringing, Run, Shell, Up};
 use super::health_check::{self, Backoff};
 use super::program::{Ending, Limits};
 use super::{
-    ARTIFACTS, Attempt, ContainerError, GraderImage, HEALTH_CHECK, Retry, artifacts, harbor, reward,
+    ARTIFACTS, Attempt, Checked, ContainerError, GraderImage, HEALTH_CHECK, Retry, artifacts,
+    harbor, reward,
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::AttemptResult;
@@ -57,6 +58,7 @@ impl Grading<'_> {
             .and_then(|own| own.health_check.as_ref());
         let kept = grader.join(HEALTH_CHECK);
         let backoff = Backoff {
+            checked: Checked::Grader,
             first_wait: health_check.map_or(Duration::ZERO, |health_check| health_check.interval),
             max_retries: self.max_retries,
             stop: self.stop,

@@ -28,6 +28,7 @@ use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_
 pub use build::build_primogenitor;
 use container::{Bringing, Container, Mount, Run, Shell, Up};
 use grader::Grading;
+use health_check::Backoff;
 pub use image::{
     Machine, build_environment, build_grader_environment, build_image, find_image, machine,
     remove_images,
@@ -40,10 +41,8 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
-    completed, not_completed or timed_out, the file named ending reads ended, stopped where \
-    you ran past the time limit of the task and were stopped, or not_started where the \
-    environment of the task did not pass its health check, so that you were never started and \
-    the attempt holds nothing of you or of the grader, the directory named work holds what \
+    completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
+    you ran past the time limit of the task and were stopped, the directory named work holds what \
     you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \
     removed in the container of the task, one to a line after A, C or D, the directory named \
@@ -94,6 +93,7 @@ pub struct Launch<'a> {
     pub model: Model<'a>,
     pub procreation_timeout: u64,
     pub max_grader_health_check_retries: u64,
+    pub max_task_health_check_retries: u64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -126,11 +126,17 @@ pub struct Creation {
 pub enum HarnessEnding {
     Ended,
     Stopped,
-    NotStarted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Checked {
+    Task,
+    Grader,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Retry {
+    pub checked: Checked,
     pub number: u64,
     pub most: u64,
     pub wait: Duration,
@@ -152,6 +158,7 @@ pub enum ContainerError {
     Signal(i32),
     TimeLimit,
     OtherFiles,
+    TaskHealthCheck { tries: u64, kept: PathBuf },
     GraderHealthCheck { tries: u64, kept: PathBuf },
 }
 
@@ -172,6 +179,14 @@ impl Display for ContainerError {
             Self::OtherFiles => write!(
                 formatter,
                 "left something that is not a regular file, a directory or a symbolic link"
+            ),
+            Self::TaskHealthCheck { tries, kept } => write!(
+                formatter,
+                "was not carried out: the health check of the task did not pass in {tries} {}, \
+                 so the harness was not started, and {} holds what the health check printed the \
+                 last time it ran",
+                if *tries == 1 { "try" } else { "tries" },
+                kept.display()
             ),
             Self::GraderHealthCheck { tries, kept } => write!(
                 formatter,
@@ -389,13 +404,8 @@ impl Attempting<'_> {
             command: launch.run_command,
             environment: &environment,
         };
-        let started = Instant::now();
         let environment = self.attempt.environment;
-        let bringing = Bringing::of_the_task(environment);
-        let up = Up::start(outputs_directory, &bringing, self.running)?;
-        if !self.is_healthy(&up, stop)? {
-            return Ok(self.not_started(started));
-        }
+        let (up, started) = self.brought_up(outputs_directory, launch, stop, retrying)?;
         let run = Run {
             shell: &shell,
             user: environment
@@ -458,21 +468,32 @@ impl Attempting<'_> {
         })
     }
 
-    fn is_healthy(&self, up: &Up, stop: &AtomicBool) -> Result<bool, ContainerError> {
+    fn brought_up(
+        &self,
+        outputs_directory: &OutputsDirectory,
+        launch: &Launch<'_>,
+        stop: &AtomicBool,
+        retrying: &dyn Fn(Retry),
+    ) -> Result<(Up, Instant), ContainerError> {
+        let bringing = Bringing::of_the_task(self.attempt.environment);
         let health_check = self.attempt.environment.configuration.health_check.as_ref();
         let kept = self.running.join(HEALTH_CHECK);
-        health_check::passes_where_given(up, health_check, &kept, stop)
-    }
-
-    fn not_started(&self, started: Instant) -> Attempted {
-        let _ = fs::write(self.running.join("ending"), "not_started\n");
-        let _ = fs::remove_file(self.running.join("stderr"));
-        let _ = fs::remove_dir_all(self.running.join("grader"));
-        Attempted {
-            result: AttemptResult::NotCompleted,
-            seconds: seconds_since(started),
-            ending: HarnessEnding::NotStarted,
-        }
+        let backoff = Backoff {
+            checked: Checked::Task,
+            first_wait: health_check.map_or(Duration::ZERO, |health_check| health_check.interval),
+            max_retries: launch.max_task_health_check_retries,
+            stop,
+        };
+        let healthy = health_check::retried(&backoff, retrying, || {
+            let started = Instant::now();
+            let up = Up::start(outputs_directory, &bringing, self.running)?;
+            health_check::passes_where_given(&up, health_check, &kept, stop)
+                .map(|passes| passes.then_some((up, started)))
+        })?;
+        healthy.ok_or(ContainerError::TaskHealthCheck {
+            tries: launch.max_task_health_check_retries.saturating_add(1),
+            kept,
+        })
     }
 }
 

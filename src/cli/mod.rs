@@ -109,6 +109,13 @@ pub struct StartOptions {
     max_procreations: u64,
     #[arg(
         long,
+        value_name = "COUNT",
+        help = "The most times the container of a task is brought up again, where its health \
+                check does not pass, 0 or more"
+    )]
+    max_task_health_check_retries: u64,
+    #[arg(
+        long,
         value_name = "NAME",
         value_parser = NonEmptyStringValueParser::new(),
         help = "The name of the model the harnesses call, as its server knows it"

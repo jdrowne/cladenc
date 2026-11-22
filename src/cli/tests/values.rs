@@ -4,7 +4,7 @@ use crate::cli::{Cli, Command};
 use clap::Parser;
 use clap::error::ErrorKind;
 
-const OPTIONS: [(&str, &str); 13] = [
+const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
@@ -16,6 +16,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
     ("--max-grader-health-check-retries", "3"),
+    ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),
 ];
@@ -292,6 +293,38 @@ fn the_most_retries_of_the_health_check_of_a_grader_being_below_0_is_an_error() 
 fn the_most_retries_of_the_health_check_of_a_grader_not_being_a_number_is_an_error() {
     assert_eq!(
         refusal("--max-grader-health-check-retries", "many"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_task_are_the_number_given() {
+    assert!(matches!(
+        with("--max-task-health-check-retries", "5").unwrap().command,
+        Command::Start(options) if options.max_task_health_check_retries == 5
+    ));
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_task_being_0_is_accepted() {
+    assert!(matches!(
+        with("--max-task-health-check-retries", "0").unwrap().command,
+        Command::Start(options) if options.max_task_health_check_retries == 0
+    ));
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_task_being_below_0_is_an_error() {
+    assert_eq!(
+        refusal("--max-task-health-check-retries", "-1"),
+        ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_task_not_being_a_number_is_an_error() {
+    assert_eq!(
+        refusal("--max-task-health-check-retries", "many"),
         ErrorKind::ValueValidation
     );
 }

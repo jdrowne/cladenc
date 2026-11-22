@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use super::container::{Run, Shell, Up};
 use super::program::{Ending, FOREVER, LOOK, Limits};
-use super::{ContainerError, Retry};
+use super::{Checked, ContainerError, Retry};
 use crate::benchmark::HealthCheck;
 
 pub(super) fn passes_where_given(
@@ -68,6 +68,7 @@ pub(super) fn passes_with(
 }
 
 pub(super) struct Backoff<'a> {
+    pub(super) checked: Checked,
     pub(super) first_wait: Duration,
     pub(super) max_retries: u64,
     pub(super) stop: &'a AtomicBool,
@@ -87,6 +88,7 @@ pub(super) fn retried<T>(
         }
         retries += 1;
         retrying(Retry {
+            checked: backoff.checked,
             number: retries,
             most: backoff.max_retries,
             wait,

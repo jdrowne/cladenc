@@ -168,11 +168,9 @@ fn the_long_help_of_start_says_what_each_way_an_attempt_ends_gives() {
         "  any other score, a file that     the harness did not complete the task\n",
         "  exit status 125 of either step   Docker did not start the container: the\n  or \
          of the health check           directed evolution stops",
-        "  a health check of the task that  the harness is not started, and did not\n  \
-         does not pass                    complete the task\n",
-        "  a health check of the container  no result is recorded: the directed\n  of the \
-         grader that does not      evolution stops, and `cladenc resume`\n  pass in any of \
-         its tries         carries out the attempt again\n",
+        "  a health check of the task, or   no result is recorded: the directed\n  of the \
+         container of the grader,  evolution stops, and `cladenc resume`\n  that passes in \
+         none of its       carries out the attempt again\n  tries\n",
         "  the time limit of the grader     the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));

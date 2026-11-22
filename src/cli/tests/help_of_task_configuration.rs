@@ -260,9 +260,8 @@ fn the_long_help_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused(
 #[test]
 fn the_long_help_of_start_says_that_an_attempt_keeps_whether_its_harness_was_stopped() {
     assert!(long_help_of("start").contains(
-        "  ending         one word: ended, stopped where the harness ran past its\n                 \
-         time limit, or not_started where the environment did\n                 not pass its \
-         health check\n"
+        "  ending         one word: ended, or stopped where the harness ran past\n                 \
+         its time limit\n  specification"
     ));
 }
 

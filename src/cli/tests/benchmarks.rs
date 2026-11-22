@@ -31,6 +31,7 @@ fn options(directory: &Path) -> StartOptions {
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
         max_grader_health_check_retries: 0,
+        max_task_health_check_retries: 0,
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,
     }
