@@ -134,7 +134,15 @@ fn the_source_code_that_is_changed_for_a_baseline_is_a_copy_of_that_of_the_proge
 
 #[test]
 fn the_working_directory_of_a_baseline_is_the_copy_that_is_changed() {
-    assert_eq!(found("pwd"), "/var/lib/cladenc/work\n");
+    assert_eq!(found("pwd"), "/var/opt/cladenc/work\n");
+}
+
+#[test]
+fn the_container_of_a_baseline_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
+    assert_eq!(
+        found("{ ls -d /var/lib/cladenc 2> /dev/null; echo looked; }"),
+        "looked\n"
+    );
 }
 
 #[test]

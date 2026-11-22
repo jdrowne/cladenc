@@ -684,14 +684,20 @@ jobs:
           --volume "$PWD/apt/archives:/var/cache/apt/archives"
           --volume "$PWD/apt/lists:/var/lib/apt/lists"
           debian:stable-slim
-          sh -ec "rm -f /etc/apt/apt.conf.d/docker-clean
+          sh -ec 'rm -f /etc/apt/apt.conf.d/docker-clean
           && apt-get update
           && apt-get install --yes --no-install-recommends
           /package/cladenc-linux-arm64.deb
-          && cladenc --version
+          && /opt/cladenc/bin/cladenc --version
+          && test -z "$(command -v cladenc)"
+          && PATH="/opt/cladenc/bin:$PATH" cladenc --version
+          && test "$(dpkg -L cladenc | grep -v -x -F -e /. -e /opt
+          -e /opt/cladenc -e /opt/cladenc/bin)" = /opt/cladenc/bin/cladenc
+          && test ! -e /etc/opt/cladenc
+          && test ! -e /var/opt/cladenc
           && docker --version
           && timeout --version
-          && chmod -R a+rX /var/cache/apt/archives /var/lib/apt/lists"
+          && chmod -R a+rX /var/cache/apt/archives /var/lib/apt/lists'
   unit-test-coverage:
     needs: build-coverage
     runs-on: ubuntu-24.04-arm

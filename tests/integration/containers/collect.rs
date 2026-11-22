@@ -12,8 +12,7 @@ use test_inputs::Image;
 
 const TASK: &str = "benchmark/t1";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
-const PUBLISH_A_REPORT: &str =
-    "mkdir -p /logs/artifacts && echo found > /logs/artifacts/report.txt";
+const PUBLISH_A_REPORT: &str = "echo found > /logs/artifacts/report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const ROWS: &str = "artifacts = [\"/app/rows.txt\"]\n";
@@ -161,7 +160,7 @@ fn what_a_harness_left_in_logs_artifacts_is_kept_though_the_task_lists_no_path()
 fn what_a_harness_left_in_logs_artifacts_is_kept_beside_the_paths_the_task_lists() {
     let attempted = attempted(
         "artifacts = [\"/app/report.txt\"]\n",
-        "echo found > report.txt; mkdir -p /logs/artifacts; echo noted > /logs/artifacts/notes.txt",
+        "echo found > report.txt; echo noted > /logs/artifacts/notes.txt",
     );
     assert_eq!(
         artifacts_of(&attempted),
@@ -193,6 +192,16 @@ fn a_grader_that_runs_separately_finds_what_the_harness_left_in_logs_artifacts()
         task_toml: SEPARATE,
         run_command: PUBLISH_A_REPORT,
         grader: "cat /logs/artifacts/report.txt",
+    });
+    assert_eq!(kept(&attempted, "grader/stdout"), "found\n");
+}
+
+#[test]
+fn what_a_grader_that_runs_separately_is_given_in_logs_artifacts_is_under_var_log() {
+    let attempted = attempted_as(&Attempt {
+        task_toml: SEPARATE,
+        run_command: PUBLISH_A_REPORT,
+        grader: "cat /var/log/cladenc/harbor/artifacts/report.txt",
     });
     assert_eq!(kept(&attempted, "grader/stdout"), "found\n");
 }

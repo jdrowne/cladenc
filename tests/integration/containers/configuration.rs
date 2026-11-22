@@ -125,7 +125,7 @@ fn the_harness_runs_as_the_user_the_task_names_by_name() {
 #[test]
 fn the_source_code_of_the_harness_belongs_to_the_user_the_task_names() {
     assert_eq!(
-        printed_by_the_harness(AS_1000, "stat -c %u /var/lib/cladenc/harness/harness.sh"),
+        printed_by_the_harness(AS_1000, "stat -c %u /var/opt/cladenc/harness/harness.sh"),
         "1000\n"
     );
 }

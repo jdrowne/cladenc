@@ -184,7 +184,7 @@ fn the_long_help_of_start_says_what_the_image_has_to_hold_for_the_timer() {
 fn the_long_help_of_start_says_what_the_environment_of_every_task_has_to_hold() {
     assert!(
         help_of_start(true)
-            .contains("\nenvironment of every task sh, sleep, rm, mkdir and chown.\n")
+            .contains("\nenvironment of every task sh, sleep, rm, mkdir, chown and ln.\n")
     );
 }
 
@@ -225,9 +225,9 @@ fn the_long_help_of_start_shows_how_a_harness_is_built() {
 fn the_long_help_of_start_names_what_a_harness_is_told() {
     let help = help_of_start(true);
     let told = [
-        "  /var/lib/cladenc/harness  holds the source code of the harness",
-        "  /var/lib/cladenc/work     in a procreation, the directory the harness\n",
-        "  CLADENC_HARNESS      /var/lib/cladenc/harness\n",
+        "  /var/opt/cladenc/harness  holds the source code of the harness",
+        "  /var/opt/cladenc/work     in a procreation, the directory the harness\n",
+        "  CLADENC_HARNESS      /var/opt/cladenc/harness\n",
         "  CLADENC_INSTRUCTION  ",
     ];
     assert!(told.iter().all(|line| help.contains(line)));
@@ -413,7 +413,7 @@ fn the_long_help_of_start_says_where_a_harness_is_built() {
     let help = help_of_start(true);
     let said = [
         "Where --harness-build-command is given, a harness is built before it is\n",
-        "with /var/lib/cladenc/harness as the working directory",
+        "with /var/opt/cladenc/harness as the working directory",
         "builds in the outputs directory",
     ];
     assert!(said.iter().all(|line| help.contains(line)));
@@ -455,9 +455,14 @@ fn the_short_help_of_start_says_that_the_flag_gives_the_most_procreations_to_sta
 #[test]
 fn the_long_help_of_start_says_where_the_copy_that_a_procreation_improves_is() {
     assert!(help_of_start(true).contains(
-        "/var/lib/cladenc/work holds a second copy of its source code, and the\ninstruction asks \
+        "/var/opt/cladenc/work holds a second copy of its source code, and the\ninstruction asks \
          the harness to improve that copy: what the harness leaves\nthere is its child."
     ));
+}
+
+#[test]
+fn the_long_help_of_start_names_no_directory_under_var_lib() {
+    assert!(!help_of_start(true).contains("/var/lib"));
 }
 
 #[test]

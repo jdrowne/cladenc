@@ -270,6 +270,34 @@ fn a_grader_that_runs_in_a_copy_of_the_environment_is_given_the_tests_of_the_tas
 }
 
 #[test]
+fn a_grader_that_runs_in_a_copy_of_the_environment_finds_tests_a_symbolic_link_under_var_opt() {
+    assert_eq!(
+        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "readlink /tests"),
+        "/var/opt/cladenc/harbor/tests\n"
+    );
+}
+
+#[test]
+fn a_grader_that_runs_separately_finds_logs_a_symbolic_link_to_a_directory_under_var_log() {
+    assert_eq!(
+        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "readlink /logs"),
+        "/var/log/cladenc/harbor\n"
+    );
+}
+
+#[test]
+fn logs_verifier_of_a_grader_that_runs_separately_belongs_to_the_user_the_grader_runs_as() {
+    assert_eq!(
+        printed_by_the_grader(
+            "[verifier]\nenvironment_mode = \"separate\"\nuser = 1000\n",
+            WRITE_A_REPORT,
+            "stat -c %u /var/log/cladenc/harbor/verifier"
+        ),
+        "1000\n"
+    );
+}
+
+#[test]
 fn a_path_the_task_lists_is_at_the_same_path_in_the_container_of_the_grader() {
     assert_eq!(
         printed_by_the_grader(&separate_and(REPORT), WRITE_A_REPORT, "cat /app/report.txt"),
@@ -426,6 +454,17 @@ fn a_grader_in_an_image_built_from_the_tests_of_the_task_is_the_grader_the_image
     assert_eq!(
         printed_by_the_grader_in_its_image(SEPARATE, "echo from the image"),
         "from the image\n"
+    );
+}
+
+#[test]
+fn nothing_is_made_at_tests_in_a_container_whose_image_holds_the_grader() {
+    assert_eq!(
+        printed_by_the_grader_in_its_image(
+            SEPARATE,
+            "[ -L /tests ] || echo no link; ls -d /var/opt/cladenc/harbor 2> /dev/null"
+        ),
+        "no link\n"
     );
 }
 

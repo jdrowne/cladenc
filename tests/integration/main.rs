@@ -7,6 +7,7 @@ mod containers {
     mod collect;
     mod configuration;
     mod environment;
+    mod harbor;
     mod health_check;
     mod holdout;
     mod image;

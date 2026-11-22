@@ -31,7 +31,7 @@ fn the_long_help_of_start_says_that_an_attempt_is_carried_out_in_the_environment
 fn the_long_help_of_start_says_where_the_source_code_of_the_harness_of_an_attempt_is() {
     assert!(help_of_start(true).contains(
         "First the source code of the harness is copied into that container, at\n\
-         /var/lib/cladenc/harness,"
+         /var/opt/cladenc/harness,"
     ));
 }
 
@@ -45,10 +45,9 @@ fn the_long_help_of_start_says_as_whom_and_where_the_harness_of_an_attempt_runs(
 
 #[test]
 fn the_long_help_of_start_says_that_the_grader_runs_where_and_as_whom_the_harness_ran() {
-    assert!(
-        help_of_start(true)
-            .contains("grader is run there, in the same working directory and as the same user,\n")
-    );
+    assert!(help_of_start(true).contains(
+        "its grader is run there,\nin the same working directory and as the same user, "
+    ));
 }
 
 #[test]
@@ -65,11 +64,74 @@ fn the_long_help_of_start_shows_how_the_grader_of_a_task_is_called() {
 fn the_long_help_of_start_names_what_a_grader_is_given() {
     let help = help_of_start(true);
     let given = [
-        "  /tests          holds a copy of the tests directory of the task, and\n",
+        "  /tests          a symbolic link to /var/opt/cladenc/harbor/tests, which\n",
+        "                  holds a copy of the tests directory of the task, and\n",
         "                  nothing that the harness left there\n",
         "  /logs/verifier  an empty directory, for the score of the grader\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_names_what_cladenc_makes_before_the_harness_of_an_attempt_is_started() {
+    let help = help_of_start(true);
+    let made = [
+        "change the grader. Before the harness is started, cladenc makes\n",
+        "  /logs            a symbolic link to /var/log/cladenc/harbor\n",
+        "  /logs/artifacts  an empty directory, for what the harness saves to be\n",
+        "                   kept with the attempt\n",
+    ];
+    assert!(made.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_cladenc_makes_no_directory_at_the_top_of_the_filesystem() {
+    assert!(help_of_start(true).contains(
+        "/logs and /tests are the two names that Harbor's task layout fixes at the\ntop of the \
+         filesystem. cladenc makes no directory there, as the Filesystem\nHierarchy Standard \
+         asks of an application: each of the two is a symbolic\nlink."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_the_two_links_point_and_why() {
+    assert!(help_of_start(true).contains(
+        "/logs is a link to /var/log/cladenc/harbor, since /var/log/cladenc\nholds the records \
+         cladenc keeps, and /tests is a link to\n/var/opt/cladenc/harbor/tests, since \
+         /var/opt/cladenc holds what cladenc\ngives a container to work with."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_where_logs_artifacts_and_logs_verifier_are() {
+    assert!(help_of_start(true).contains(
+        "So /logs/artifacts is\n/var/log/cladenc/harbor/artifacts, and /logs/verifier \
+         is\n/var/log/cladenc/harbor/verifier."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_harness_finds_nothing_of_the_tests() {
+    assert!(help_of_start(true).contains(
+        "While the harness runs, the container\nholds neither /tests nor the directory that \
+         /tests is a link to."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_cladenc_does_where_the_environment_holds_logs() {
+    assert!(help_of_start(true).contains(
+        "Where the\nimage of the environment already holds something at /logs, cladenc makes \
+         no\nlink and leaves what is there, and makes /logs/artifacts and \
+         /logs/verifier\ninside it."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_what_was_left_at_tests_is_removed_before_the_link_is_made() {
+    assert!(help_of_start(true).contains(
+        "What the image or the harness left at /tests is removed before\nthe link is made."
+    ));
 }
 
 #[test]

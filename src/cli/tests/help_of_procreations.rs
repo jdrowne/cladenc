@@ -296,7 +296,7 @@ fn the_long_help_of_start_says_how_that_count_is_read_where_every_harness_works_
 #[test]
 fn the_long_help_of_start_says_that_a_procreation_that_changes_nothing_creates_no_child() {
     assert!(long_help_of_start().contains(
-        "A procreation whose harness leaves /var/lib/cladenc/work as it was creates\nno child, \
+        "A procreation whose harness leaves /var/opt/cladenc/work as it was creates\nno child, \
          and is recorded as unchanged."
     ));
 }

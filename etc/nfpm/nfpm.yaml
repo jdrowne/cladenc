@@ -1,7 +1,7 @@
 ---
 arch: arm64
 contents:
-  - dst: /usr/bin/cladenc
+  - dst: /opt/cladenc/bin/cladenc
     file_info:
       mode: 0755
     src: stage/cladenc

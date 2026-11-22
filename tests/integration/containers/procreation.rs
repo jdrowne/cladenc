@@ -134,7 +134,7 @@ fn harness_script(harness: &Path) -> String {
 fn the_working_directory_of_a_harness_is_the_copy_that_becomes_its_child() {
     assert_eq!(
         left_in_the_child("pwd > where", "where"),
-        "/var/lib/cladenc/work\n"
+        "/var/opt/cladenc/work\n"
     );
 }
 
@@ -142,7 +142,7 @@ fn the_working_directory_of_a_harness_is_the_copy_that_becomes_its_child() {
 fn a_harness_is_told_where_its_source_code_is() {
     assert_eq!(
         left_in_the_child("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/var/lib/cladenc/harness\n"
+        "/var/opt/cladenc/harness\n"
     );
 }
 
@@ -221,6 +221,17 @@ fn a_harness_cannot_write_into_the_attempts_of_its_progenitor() {
     let (_directory, outputs_directory, _result) =
         procreated("touch /var/log/cladenc/attempts/written");
     assert!(!outputs_directory.attempts(0).join("written").exists());
+}
+
+#[test]
+fn the_container_of_a_procreation_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
+    assert_eq!(
+        left_in_the_child(
+            "ls -d /var/lib/cladenc > held 2> /dev/null; echo looked >> held",
+            "held"
+        ),
+        "looked\n"
+    );
 }
 
 #[test]

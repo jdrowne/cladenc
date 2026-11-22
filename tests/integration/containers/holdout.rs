@@ -12,11 +12,11 @@ const SHOWN: &str = "benchmark/t1";
 const HELD_OUT: &str = "benchmark/t2";
 const LIST_THE_ATTEMPTS: &str =
     "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence";
-const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/lib/cladenc /var/log/cladenc -name '*t2*'; \
-                                         grep -r -l t2 /var/lib/cladenc /var/log/cladenc; } > \
+const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/opt/cladenc /var/log/cladenc -name '*t2*'; \
+                                         grep -r -l t2 /var/opt/cladenc /var/log/cladenc; } > \
                                          evidence; true";
 const SAY_WHAT_IS_GIVEN: &str = "{ env | grep ^CLADENC_ | grep -v ^CLADENC_INSTRUCTION= | sort; \
-                                 pwd; ls -R /var/lib/cladenc /var/log/cladenc 2>&1; }";
+                                 pwd; ls -R /var/opt/cladenc /var/log/cladenc 2>&1; }";
 const SOLVE_THE_HOLDOUT_TASK: &str = "echo t2 > solved; echo t2";
 
 fn launch(run_command: &str) -> Launch<'_> {

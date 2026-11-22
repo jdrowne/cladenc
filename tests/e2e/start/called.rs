@@ -109,7 +109,7 @@ fn a_harness_is_started_in_a_container_that_holds_its_source_code_and_the_copy_t
     let (directory, _output) = ran();
     assert_eq!(
         kept_by_the_harness(&directory, "where"),
-        "/var/lib/cladenc/harness\n/var/lib/cladenc/work\n"
+        "/var/opt/cladenc/harness\n/var/opt/cladenc/work\n"
     );
 }
 
@@ -127,7 +127,7 @@ fn the_harness_of_an_attempt_is_started_in_the_working_directory_of_the_environm
     let (directory, _output) = ran();
     assert_eq!(
         left_by_the_attempt(&directory, "where"),
-        "/var/lib/cladenc/harness\n/app\n"
+        "/var/opt/cladenc/harness\n/app\n"
     );
 }
 

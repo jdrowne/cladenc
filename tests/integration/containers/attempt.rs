@@ -29,6 +29,8 @@ const THE_PROCESS_NO_LONGER_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
 const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
     "mkdir -p locked/inner && touch locked/inner/file && chmod 500 locked/inner locked";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
+const LOOK_FOR_THE_TESTS: &str = "ls -d /tests /var/opt/cladenc/harbor/tests \
+    /var/log/cladenc/attempts > given 2> /dev/null";
 const TASK: &str = "benchmark/t1";
 const AS_A_USER: &str = "RUN mkdir /app && chown 1000:1000 /app\nUSER 1000\nWORKDIR /app\n\
                          COPY --chown=1000:1000 workspace .\n";
@@ -288,10 +290,10 @@ fn no_work_is_kept_where_the_working_directory_of_the_environment_is_the_top() {
 fn the_harness_is_told_where_its_source_code_is() {
     assert_eq!(
         left_by_the_harness(
-            "echo \"$CLADENC_HARNESS\" > told; cat /var/lib/cladenc/harness/harness.sh >> told",
+            "echo \"$CLADENC_HARNESS\" > told; cat /var/opt/cladenc/harness/harness.sh >> told",
             "told"
         ),
-        "/var/lib/cladenc/harness\n#!/bin/sh\necho harness\n"
+        "/var/opt/cladenc/harness\n#!/bin/sh\necho harness\n"
     );
 }
 
@@ -299,7 +301,7 @@ fn the_harness_is_told_where_its_source_code_is() {
 fn the_source_code_of_the_harness_belongs_to_the_user_of_the_environment() {
     let attempted = in_the_environment(
         Environment::BuiltWith(AS_A_USER),
-        "stat -c %u /var/lib/cladenc/harness/harness.sh",
+        "stat -c %u /var/opt/cladenc/harness/harness.sh",
         FINISHED,
     );
     assert_eq!(kept(&attempted, "stdout"), "1000\n");
@@ -340,21 +342,15 @@ fn the_harness_of_a_directed_evolution_with_no_key_is_given_none() {
 
 #[test]
 fn the_harness_is_given_neither_the_tests_of_the_task_nor_its_own_attempts() {
-    assert_eq!(
-        left_by_the_harness(
-            "ls -d /tests /logs /var/log/cladenc/attempts > given 2> /dev/null",
-            "given"
-        ),
-        ""
-    );
+    assert_eq!(left_by_the_harness(LOOK_FOR_THE_TESTS, "given"), "");
 }
 
 #[test]
-fn the_harness_finds_nothing_at_the_top_of_the_filesystem_that_the_environment_does_not_hold() {
+fn the_harness_finds_at_the_top_of_the_filesystem_what_the_environment_holds_with_logs() {
     let attempted = attempted("ls / > top", FINISHED);
     assert_eq!(
         kept(&attempted, "work/top"),
-        the_top_of_the_filesystem_of(&attempted, &[])
+        the_top_of_the_filesystem_of(&attempted, &["logs"])
     );
 }
 
@@ -395,7 +391,7 @@ fn every_path_the_harness_added_is_listed_with_the_attempt() {
 #[test]
 fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
     let attempted = attempted(
-        "echo changed > /var/lib/cladenc/harness/harness.sh",
+        "echo changed > /var/opt/cladenc/harness/harness.sh",
         FINISHED,
     );
     assert_eq!(

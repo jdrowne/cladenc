@@ -57,8 +57,9 @@ fn the_long_help_of_start_lists_what_the_container_of_a_grader_is_a_container_of
 fn the_long_help_of_start_says_which_images_hold_the_grader_and_which_are_given_the_tests() {
     assert!(long_help_of("start").contains(
         "An image of 1 or 2 holds the grader, at /tests/test.sh: cladenc copies no\ntests \
-         directory into its container, and the task needs no test.sh. Into a\ncontainer of 3 \
-         the tests directory of the task is copied, at /tests."
+         directory into its container and makes nothing at /tests, and the task\nneeds no \
+         test.sh. Into a container of 3 the tests directory of the task is\ncopied, and /tests \
+         is a symbolic link to the copy, as said above."
     ));
 }
 
@@ -127,9 +128,17 @@ fn the_long_help_of_start_says_what_a_health_check_of_a_grader_that_does_not_pas
 #[test]
 fn the_long_help_of_start_says_where_the_kept_paths_are_copied_in_the_container_of_a_grader() {
     assert!(long_help_of("start").contains(
-        "Each path that was kept is then copied to the same path\nin the container of the \
-         grader, the path of its entry and not destination,\nwithout what exclude left out. A \
-         directory takes the place of what the image\nholds at that path."
+        "each path that was kept is copied to the same\npath in the container of the \
+         grader, the path of its entry and not\ndestination, without what exclude left out. A \
+         directory takes the place of\nwhat the image holds at that path."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_logs_is_the_same_link_in_the_container_of_a_grader() {
+    assert!(long_help_of("start").contains(
+        "/logs is then made the symbolic link that it is in the\ncontainer of the harness, and \
+         each path that was kept is copied"
     ));
 }
 
@@ -166,7 +175,7 @@ fn the_long_help_of_start_says_how_long_the_container_of_a_grader_stays() {
 fn the_long_help_of_start_says_what_the_image_of_a_grader_has_to_hold() {
     assert!(long_help_of("start").contains(
         "and is removed once the grader has ended. The image of a grader has to hold\nwhat \
-         the environment of a task has to: sh, sleep, rm, mkdir and chown."
+         the environment of a task has to: sh, sleep, rm, mkdir, chown and ln."
     ));
 }
 

@@ -17,18 +17,19 @@ fn the_long_help_of_start_says_where_what_a_harness_left_in_logs_artifacts_is_ke
 }
 
 #[test]
-fn the_long_help_of_start_says_that_cladenc_does_not_make_logs_artifacts() {
+fn the_long_help_of_start_says_that_cladenc_makes_logs_artifacts_for_the_user_of_the_harness() {
     assert!(long_help_of("start").contains(
-        "cladenc\ndoes not make the directory: the container of an attempt holds it only \
-         where\nthe environment of the task does, or the harness made it."
+        "cladenc\nmakes the directory before the harness is started, as said above, and \
+         it\nbelongs to the user the harness runs as, so that a harness that does not \
+         run\nas root saves a file there as well."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_what_a_task_that_lists_logs_artifacts_itself_gets() {
     assert!(long_help_of("start").contains(
-        "A task that lists\n/logs/artifacts itself, or a path that is kept at the same place, \
-         has that\nentry obeyed in its place."
+        "A task that lists /logs/artifacts\nitself, or a path that is kept at the same place, \
+         has that entry obeyed in\nits place."
     ));
 }
 

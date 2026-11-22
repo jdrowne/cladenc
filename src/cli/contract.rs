@@ -128,7 +128,7 @@ directed evolution is started under it, or, for an attempt, under sleep, so
 that a container ends itself once its time limit has passed, also when
 cladenc was killed outright, as by `kill -9`, and is not there to remove
 it. The image of the directed evolution has to hold sh and sleep, and the
-environment of every task sh, sleep, rm, mkdir and chown.
+environment of every task sh, sleep, rm, mkdir, chown and ln.
 
 Until then a container that was left goes on. `cladenc resume` removes the
 containers that the directed evolution left running before it does anything
@@ -137,12 +137,12 @@ by hand where the directed evolution is not resumed.
 
 In the container of a harness,
 
-  /var/lib/cladenc/harness  holds the source code of the harness, a copy
+  /var/opt/cladenc/harness  holds the source code of the harness, a copy
                             made for this container
-  /var/lib/cladenc/work     in a procreation, the directory the harness
+  /var/opt/cladenc/work     in a procreation, the directory the harness
                             works in, and the working directory
 
-  CLADENC_HARNESS      /var/lib/cladenc/harness
+  CLADENC_HARNESS      /var/opt/cladenc/harness
   CLADENC_INSTRUCTION  what the harness is asked to do
   CLADENC_MODEL        the name of the model, the value of --model
   CLADENC_MODEL_URL    the address the model is served at, the value of
@@ -168,7 +168,7 @@ and again each time the directed evolution is resumed. cladenc keeps the
 key off every command line, out of the journal and out of what it prints.
 
 A procreation is carried out by the harness that procreates.
-/var/lib/cladenc/work holds a second copy of its source code, and the
+/var/opt/cladenc/work holds a second copy of its source code, and the
 instruction asks the harness to improve that copy: what the harness leaves
 there is its child. /var/log/cladenc/attempts holds the finished attempts
 of the harness at the non-holdout tasks, to read: one directory
@@ -249,7 +249,7 @@ How the harness ends decides what is recorded:
   the time limit    the container is removed, and the procreation is
                     recorded as timed out
 
-A procreation whose harness leaves /var/lib/cladenc/work as it was creates
+A procreation whose harness leaves /var/opt/cladenc/work as it was creates
 no child, and is recorded as unchanged. cladenc compares what the harness
 left with the source code of that harness, as it is kept under harnesses in
 the outputs directory. The two are the same where they hold the same files,
@@ -277,9 +277,9 @@ the progenitor's child. The harness the primogenitor creates from the
 source code of the progenitor is the singleton control group harness.
 cladenc brings up one container more for it, in which
 
-  /var/lib/cladenc/harness  holds a copy of the source code of the
+  /var/opt/cladenc/harness  holds a copy of the source code of the
                             primogenitor, which is what runs
-  /var/lib/cladenc/work     holds a second copy of the source code of the
+  /var/opt/cladenc/work     holds a second copy of the source code of the
                             progenitor, which is what is changed
 
 The primogenitor is given the instruction the progenitor is given, and what
@@ -288,8 +288,8 @@ attempts of the progenitor at the non-holdout tasks, under
 /var/log/cladenc/line the harnesses the progenitor descends from, and
 under /var/log/cladenc/children the children the progenitor procreated
 before the progenitor's child of the experiment. What the primogenitor
-leaves in /var/lib/cladenc/work is the singleton control group harness.
-Where the primogenitor leaves /var/lib/cladenc/work as it was, no singleton
+leaves in /var/opt/cladenc/work is the singleton control group harness.
+Where the primogenitor leaves /var/opt/cladenc/work as it was, no singleton
 control group harness is created, and the creation is recorded as unchanged.
 
 The singleton control group harness is built and benchmarked in full, as
@@ -315,7 +315,7 @@ run for the first time, in a container of the same image, as
     sh -c <TIMER> <COMMAND> <SECONDS>
 
 where <COMMAND> is the value of that flag and the timer is the same one,
-with /var/lib/cladenc/harness as the working directory, which holds the
+with /var/opt/cladenc/harness as the working directory, which holds the
 source code of the harness and is what CLADENC_HARNESS names. A build calls
 no model, and is given none of the three variables of the model. What the
 build makes stays there, and is part of every copy made of the harness. The
@@ -538,19 +538,26 @@ as
              and out
 
 First the source code of the harness is copied into that container, at
-/var/lib/cladenc/harness, and the harness is started there, as it is for a
+/var/opt/cladenc/harness, and the harness is started there, as it is for a
 procreation, in the working directory of the environment and as its user:
 the user and the working directory its Dockerfile names, and root and /
 where it names none. CLADENC_INSTRUCTION holds the task specification. The
 harness is given nothing else of the task, so it can neither read nor
-change the grader. When the harness has ended, with whatever exit status,
-the tests directory of the task is copied into the same container, and its
-grader is run there, in the same working directory and as the same user,
-unless the task.toml of the task names a user for the grader, as
+change the grader. Before the harness is started, cladenc makes
+
+  /logs            a symbolic link to /var/log/cladenc/harbor
+  /logs/artifacts  an empty directory, for what the harness saves to be
+                   kept with the attempt
+
+When the harness has ended, with whatever exit status, the tests directory
+of the task is copied into the same container, and its grader is run there,
+in the same working directory and as the same user, unless the task.toml of
+the task names a user for the grader, as
 
     sh -c <TIMER> /tests/test.sh <SECONDS>
 
-  /tests          holds a copy of the tests directory of the task, and
+  /tests          a symbolic link to /var/opt/cladenc/harbor/tests, which
+                  holds a copy of the tests directory of the task, and
                   nothing that the harness left there
   /logs/verifier  an empty directory, for the score of the grader
 
@@ -559,6 +566,21 @@ harness left outside /tests and /logs/verifier, and the processes it left
 running, are there as well. A grader calls no model, and is given none of
 the three variables of the model. The container is removed once the attempt
 has ended.
+
+/logs and /tests are the two names that Harbor's task layout fixes at the
+top of the filesystem. cladenc makes no directory there, as the Filesystem
+Hierarchy Standard asks of an application: each of the two is a symbolic
+link. /logs is a link to /var/log/cladenc/harbor, since /var/log/cladenc
+holds the records cladenc keeps, and /tests is a link to
+/var/opt/cladenc/harbor/tests, since /var/opt/cladenc holds what cladenc
+gives a container to work with. So /logs/artifacts is
+/var/log/cladenc/harbor/artifacts, and /logs/verifier is
+/var/log/cladenc/harbor/verifier. While the harness runs, the container
+holds neither /tests nor the directory that /tests is a link to. Where the
+image of the environment already holds something at /logs, cladenc makes no
+link and leaves what is there, and makes /logs/artifacts and /logs/verifier
+inside it. What the image or the harness left at /tests is removed before
+the link is made.
 
 The harness has the time limit that the task.toml of the task gives, as
 timeout_sec under agent, and no time limit where it gives none, as in
@@ -613,10 +635,11 @@ and ] for any one of them, and a character after \\ for itself.
 What a harness left in /logs/artifacts is kept as a path that the task lists
 is, as artifacts/logs/artifacts, though the task lists no such path, as in
 Harbor, and nothing is kept where the harness left nothing there. cladenc
-does not make the directory: the container of an attempt holds it only where
-the environment of the task does, or the harness made it. A task that lists
-/logs/artifacts itself, or a path that is kept at the same place, has that
-entry obeyed in its place.
+makes the directory before the harness is started, as said above, and it
+belongs to the user the harness runs as, so that a harness that does not run
+as root saves a file there as well. A task that lists /logs/artifacts
+itself, or a path that is kept at the same place, has that entry obeyed in
+its place.
 
 Where the task.toml of a task lists commands under verifier.collect, cladenc
 runs each in the container of the harness once the harness has ended or was
@@ -650,8 +673,9 @@ task gives:
   3. the environment of the task, as it is before a harness works in it
 
 An image of 1 or 2 holds the grader, at /tests/test.sh: cladenc copies no
-tests directory into its container, and the task needs no test.sh. Into a
-container of 3 the tests directory of the task is copied, at /tests. cladenc
+tests directory into its container and makes nothing at /tests, and the task
+needs no test.sh. Into a container of 3 the tests directory of the task is
+copied, and /tests is a symbolic link to the copy, as said above. cladenc
 builds an image of 2 when it builds the environments of the tasks, and as it
 builds those, under the name of the environment of the task with -grader
 after it, and removes it when it removes them.
@@ -672,10 +696,11 @@ kept, cladenc removes the container of the harness and brings up that of the
 grader, so that an attempt is one container at a time. Where the settings of
 the grader give a health check, cladenc runs it there as it runs that of the
 task: where it does not pass, the grader is not run, and the harness did not
-complete the task. Each path that was kept is then copied to the same path
-in the container of the grader, the path of its entry and not destination,
-without what exclude left out. A directory takes the place of what the image
-holds at that path.
+complete the task. /logs is then made the symbolic link that it is in the
+container of the harness, and each path that was kept is copied to the same
+path in the container of the grader, the path of its entry and not
+destination, without what exclude left out. A directory takes the place of
+what the image holds at that path.
 
 What is copied in is not trusted. No file keeps a setuid or a setgid bit. A
 file that is not a regular file, a directory or a symbolic link is left out,
@@ -694,7 +719,7 @@ container of the grader is started as
              of the grader can take, and ten minutes more
 
 and is removed once the grader has ended. The image of a grader has to hold
-what the environment of a task has to: sh, sleep, rm, mkdir and chown.
+what the environment of a task has to: sh, sleep, rm, mkdir, chown and ln.
 
 The container of an attempt is given no more CPUs and no more memory than
 its task asks for, as --cpus and --memory of `docker run`, so the harness
@@ -756,8 +781,9 @@ what it says of the environment of the task:
 
 cladenc obeys nothing else of a task.toml. A setting that is left out, or
 written with nothing between its quotation marks, changes nothing. The
-source code of the harness belongs to the user the harness runs as, and
-/tests and /logs/verifier belong to the user the grader runs as.
+source code of the harness and /logs/artifacts belong to the user the
+harness runs as, and the copy of the tests directory and /logs/verifier
+belong to the user the grader runs as.
 
 In the value of a variable, ${NAME} stands for the value that the variable
 NAME has where cladenc runs, and ${NAME:-TEXT} for that value, or for TEXT

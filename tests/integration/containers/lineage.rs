@@ -8,8 +8,8 @@ use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
-const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/lib/cladenc /var/log/cladenc -name '*t2*'; \
-                                         grep -r -l t2 /var/lib/cladenc /var/log/cladenc; } > \
+const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/opt/cladenc /var/log/cladenc -name '*t2*'; \
+                                         grep -r -l t2 /var/opt/cladenc /var/log/cladenc; } > \
                                          evidence; true";
 
 fn launch(run_command: &str) -> Launch<'_> {

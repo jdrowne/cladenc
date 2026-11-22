@@ -4,16 +4,15 @@ use std::sync::atomic::AtomicBool;
 use super::container::{Bringing, Run, Shell, Up};
 use super::program::{Ending, Limits};
 use super::{
-    ARTIFACTS, Attempt, ContainerError, GraderImage, HEALTH_CHECK, artifacts, health_check, reward,
+    ARTIFACTS, Attempt, ContainerError, GraderImage, HEALTH_CHECK, artifacts, harbor, health_check,
+    reward,
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::AttemptResult;
 use crate::outputs_directory::OutputsDirectory;
 
-const GIVEN_TESTS: &str = "/tests";
-const VERIFIER: &str = "/logs/verifier";
 const GRADER: Shell<'static> = Shell {
-    command: "/tests/test.sh",
+    command: harbor::GRADER,
     environment: &[],
 };
 
@@ -49,12 +48,9 @@ impl Grading<'_> {
             return Ok(AttemptResult::NotCompleted);
         }
         let user = configuration.grader_user.as_deref().unwrap_or(up.user());
-        artifacts::give(
-            &up,
-            &configuration.artifacts,
-            &self.running.join(ARTIFACTS),
-            user,
-        )?;
+        let paths = self.running.join(ARTIFACTS);
+        harbor::link_logs(&up)
+            .and_then(|()| artifacts::give(&up, &configuration.artifacts, &paths, user))?;
         self.run_in(&up, !image.holds_grader)
     }
 
@@ -70,15 +66,15 @@ impl Grading<'_> {
             variables: &configuration.grader_variables,
         };
         let given = if tests_are_given {
-            up.put(&tests, GIVEN_TESTS, run.user)
+            harbor::give_tests(up, &tests, run.user)
         } else {
             Ok(())
         };
         given
-            .and_then(|()| up.put(&verifier, VERIFIER, run.user))
+            .and_then(|()| harbor::empty_verifier(up, run.user))
             .and_then(|()| up.run(&run, &grader, limits))
             .map(|ending| {
-                up.copy_out_of(VERIFIER, &verifier);
+                up.copy_out_of(harbor::VERIFIER, &verifier);
                 match ending {
                     Ending::TimedOut => AttemptResult::TimedOut,
                     Ending::Exited(_) if reward::completed(&verifier) => AttemptResult::Completed,

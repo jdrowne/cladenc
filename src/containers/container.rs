@@ -237,6 +237,18 @@ impl Up {
             .map_err(ContainerError::Io)
     }
 
+    pub(super) fn run_as_root(
+        &self,
+        script: &str,
+        arguments: &[&str],
+    ) -> Result<(), ContainerError> {
+        let mut docker = self.as_root();
+        docker.args(["sh", "-c", script, "sh"]).args(arguments);
+        left::printed_by(docker)
+            .map(drop)
+            .map_err(ContainerError::Io)
+    }
+
     pub(super) fn end_everything(&self) {
         let mut docker = self.as_root();
         docker.args(["sh", "-c", END_EVERYTHING]);

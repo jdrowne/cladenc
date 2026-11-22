@@ -37,9 +37,9 @@ fn the_long_help_of_start_names_the_singleton_control_group_harness() {
 fn the_long_help_of_start_says_which_source_code_runs_and_which_is_changed_for_a_baseline() {
     let help = long_help_of_start();
     let given = [
-        "  /var/lib/cladenc/harness  holds a copy of the source code of the\n",
+        "  /var/opt/cladenc/harness  holds a copy of the source code of the\n",
         "                            primogenitor, which is what runs\n",
-        "  /var/lib/cladenc/work     holds a second copy of the source code of the\n",
+        "  /var/opt/cladenc/work     holds a second copy of the source code of the\n",
         "                            progenitor, which is what is changed\n",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
@@ -118,7 +118,7 @@ fn the_long_help_of_start_says_how_the_harnesses_of_the_experiments_are_told_apa
 #[test]
 fn the_long_help_of_start_says_that_a_baseline_that_changes_nothing_creates_no_harness() {
     assert!(long_help_of_start().contains(
-        "Where the primogenitor leaves /var/lib/cladenc/work as it was, no singleton\ncontrol \
+        "Where the primogenitor leaves /var/opt/cladenc/work as it was, no singleton\ncontrol \
          group harness is created, and the creation is recorded as unchanged."
     ));
 }

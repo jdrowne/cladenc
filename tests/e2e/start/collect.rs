@@ -4,8 +4,7 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-const PUBLISH_A_REPORT: &str =
-    "mkdir -p /logs/artifacts 2> /dev/null && echo found > /logs/artifacts/report.txt; true";
+const PUBLISH_A_REPORT: &str = "echo found > /logs/artifacts/report.txt; true";
 const SAY_COLLECTED: &str = "[[verifier.collect]]\ncommand = \"echo collected\"\n";
 
 fn start(directory: &Path, run_command: &str, task_toml_of_t2: &str) -> Command {

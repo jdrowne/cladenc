@@ -100,7 +100,7 @@ fn kept_of_the_build(build_command: &str, file: &str) -> String {
 fn the_working_directory_of_the_build_of_a_child_is_the_source_code_of_the_child() {
     assert_eq!(
         left_in_the_child("pwd > where", "where"),
-        "/var/lib/cladenc/harness\n"
+        "/var/opt/cladenc/harness\n"
     );
 }
 
@@ -108,7 +108,18 @@ fn the_working_directory_of_the_build_of_a_child_is_the_source_code_of_the_child
 fn the_build_of_a_child_is_told_where_the_source_code_is() {
     assert_eq!(
         left_in_the_child("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/var/lib/cladenc/harness\n"
+        "/var/opt/cladenc/harness\n"
+    );
+}
+
+#[test]
+fn the_container_of_the_build_of_a_child_holds_nothing_under_var_lib_named_after_cladenc() {
+    assert_eq!(
+        left_in_the_child(
+            "ls -d /var/lib/cladenc > held 2> /dev/null; echo looked >> held",
+            "held"
+        ),
+        "looked\n"
     );
 }
 

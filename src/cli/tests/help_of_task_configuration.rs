@@ -59,8 +59,9 @@ fn the_long_help_of_start_says_that_a_setting_that_is_left_out_changes_nothing()
 #[test]
 fn the_long_help_of_start_says_to_whom_what_cladenc_copies_into_the_container_belongs() {
     assert!(long_help_of("start").contains(
-        "The\nsource code of the harness belongs to the user the harness runs as, and\n/tests \
-         and /logs/verifier belong to the user the grader runs as."
+        "The\nsource code of the harness and /logs/artifacts belong to the user the\nharness \
+         runs as, and the copy of the tests directory and /logs/verifier\nbelong to the user \
+         the grader runs as."
     ));
 }
 
@@ -139,7 +140,7 @@ fn the_long_help_of_start_says_which_variable_of_a_task_toml_has_its_task_refuse
 #[test]
 fn the_long_help_of_start_says_that_the_grader_runs_as_the_user_the_task_toml_names_for_it() {
     assert!(long_help_of("start").contains(
-        "as the same user,\nunless the task.toml of the task names a user for the grader, as\n"
+        "as the same user, unless the task.toml of\nthe task names a user for the grader, as\n"
     ));
 }
 

@@ -16,6 +16,7 @@ mod missing;
 mod readme;
 mod readme_of_collect;
 mod readme_of_graders;
+mod readme_of_paths;
 mod report;
 mod resume;
 mod start;

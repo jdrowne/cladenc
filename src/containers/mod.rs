@@ -3,6 +3,7 @@ mod build;
 mod collect;
 mod container;
 mod grader;
+mod harbor;
 mod health_check;
 mod image;
 mod left;
@@ -78,8 +79,8 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     you only print in your answer changes no file. The new harness is judged by tasks that you are \
     not shown.";
 
-const HARNESS: &str = "/var/lib/cladenc/harness";
-const WORK: &str = "/var/lib/cladenc/work";
+const HARNESS: &str = "/var/opt/cladenc/harness";
+const WORK: &str = "/var/opt/cladenc/work";
 const ATTEMPTS: &str = "/var/log/cladenc/attempts";
 const HEALTH_CHECK: &str = "health-check";
 const ARTIFACTS: &str = "artifacts";
@@ -389,7 +390,8 @@ impl Attempting<'_> {
             &outputs_directory.harness(self.attempt.harness),
             HARNESS,
             run.user,
-        )?;
+        )
+        .and_then(|()| harbor::make_artifacts(&up, run.user))?;
         let before: BTreeSet<String> = up.changes().into_iter().collect();
         let time_limit = environment.configuration.harness_time_limit;
         let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);

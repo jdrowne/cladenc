@@ -6,12 +6,10 @@ fn readme() -> String {
 }
 
 #[test]
-fn the_readme_says_that_what_a_harness_left_in_logs_artifacts_is_kept_and_who_makes_it() {
+fn the_readme_says_that_what_a_harness_left_in_logs_artifacts_is_kept() {
     assert!(readme().contains(
         "What a harness left in `/logs/artifacts` is kept as `artifacts/logs/artifacts`, \
-         though the task lists no such path; `cladenc` does not make that directory, so the \
-         container holds it only where the environment of the task does or the harness made \
-         it."
+         though the task lists no such path."
     ));
 }
 

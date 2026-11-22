@@ -57,7 +57,7 @@ fn the_primogenitor_is_built_in_its_place_among_the_harnesses() {
 fn the_working_directory_of_the_build_of_the_primogenitor_is_its_source_code() {
     assert_eq!(
         left_in_the_primogenitor("pwd > where", "where"),
-        "/var/lib/cladenc/harness\n"
+        "/var/opt/cladenc/harness\n"
     );
 }
 
@@ -65,7 +65,19 @@ fn the_working_directory_of_the_build_of_the_primogenitor_is_its_source_code() {
 fn the_build_of_the_primogenitor_is_told_where_the_source_code_is() {
     assert_eq!(
         left_in_the_primogenitor("echo \"$CLADENC_HARNESS\" > told", "told"),
-        "/var/lib/cladenc/harness\n"
+        "/var/opt/cladenc/harness\n"
+    );
+}
+
+#[test]
+fn the_container_of_the_build_of_the_primogenitor_holds_nothing_under_var_lib_named_after_cladenc()
+{
+    assert_eq!(
+        left_in_the_primogenitor(
+            "ls -d /var/lib/cladenc > held 2> /dev/null; echo looked >> held",
+            "held"
+        ),
+        "looked\n"
     );
 }
 
