@@ -18,9 +18,9 @@ const OPTIONS: [(&str, &str); 11] = [
     ("--corroboration-tasks-percentage", "15"),
 ];
 
-const IMAGE: &str = "--docker-image=image";
-const DOCKERFILE: &str = "--dockerfile=/images/Dockerfile";
-const TIME_LIMIT: &str = "--docker-build-timeout=600";
+const IMAGE: &str = "--procreation-docker-image=image";
+const DOCKERFILE: &str = "--procreation-dockerfile=/images/Dockerfile";
+const TIME_LIMIT: &str = "--procreation-docker-image-build-timeout=600";
 
 fn given(image: &[&str]) -> Result<Cli, clap::Error> {
     let options = OPTIONS
@@ -79,7 +79,7 @@ fn the_time_limit_of_a_build_with_nothing_to_build_is_an_error() {
 #[test]
 fn a_time_limit_of_a_build_of_0_seconds_is_an_error() {
     assert_eq!(
-        refusal(&[DOCKERFILE, "--docker-build-timeout=0"]),
+        refusal(&[DOCKERFILE, "--procreation-docker-image-build-timeout=0"]),
         ErrorKind::ValueValidation
     );
 }
@@ -89,7 +89,7 @@ fn the_dockerfile_is_the_one_given() {
     assert!(matches!(
         given(&[DOCKERFILE, TIME_LIMIT]).unwrap().command,
         Command::Start(options)
-            if options.dockerfile.as_deref() == Some(Path::new("/images/Dockerfile"))
+            if options.procreation_dockerfile.as_deref() == Some(Path::new("/images/Dockerfile"))
     ));
 }
 
@@ -97,7 +97,7 @@ fn the_dockerfile_is_the_one_given() {
 fn the_time_limit_of_the_build_is_the_one_given() {
     assert!(matches!(
         given(&[DOCKERFILE, TIME_LIMIT]).unwrap().command,
-        Command::Start(options) if options.docker_build_timeout == Some(600)
+        Command::Start(options) if options.procreation_docker_image_build_timeout == Some(600)
     ));
 }
 
@@ -105,7 +105,7 @@ fn the_time_limit_of_the_build_is_the_one_given() {
 fn a_command_line_with_a_dockerfile_names_no_image() {
     assert!(matches!(
         given(&[DOCKERFILE, TIME_LIMIT]).unwrap().command,
-        Command::Start(options) if options.docker_image.is_none()
+        Command::Start(options) if options.procreation_docker_image.is_none()
     ));
 }
 
@@ -113,7 +113,7 @@ fn a_command_line_with_a_dockerfile_names_no_image() {
 fn a_command_line_with_an_image_names_no_dockerfile() {
     assert!(matches!(
         given(&[IMAGE]).unwrap().command,
-        Command::Start(options) if options.dockerfile.is_none()
+        Command::Start(options) if options.procreation_dockerfile.is_none()
     ));
 }
 
@@ -121,6 +121,6 @@ fn a_command_line_with_an_image_names_no_dockerfile() {
 fn the_image_is_the_one_given() {
     assert!(matches!(
         given(&[IMAGE]).unwrap().command,
-        Command::Start(options) if options.docker_image.as_deref() == Some("image")
+        Command::Start(options) if options.procreation_docker_image.as_deref() == Some("image")
     ));
 }

@@ -13,7 +13,7 @@ fn status_of_one_that_has_ended() -> Output {
             "--benchmark",
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
             test_inputs::SOLVE_EVERY_TASK.into(),

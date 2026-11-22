@@ -14,7 +14,7 @@ fn start(directory: &Path) -> Command {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
             test_inputs::SOLVE_ONE_MORE_OR_END_WITH_125.into(),

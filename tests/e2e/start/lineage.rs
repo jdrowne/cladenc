@@ -19,7 +19,7 @@ fn ran(run_command: &str, max_procreations: &str) -> TempDir {
             "--benchmark",
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", max_procreations.into()),

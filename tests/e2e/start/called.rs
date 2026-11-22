@@ -25,7 +25,7 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
             SAY_WHAT_THE_HARNESS_IS_GIVEN.into(),

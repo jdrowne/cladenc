@@ -19,7 +19,7 @@ metadata:
 What `cladenc` does with them:
 
 - It starts every harness itself, in a Docker container. `cladenc` knows about Docker, and Docker is a dependency of the `.deb` package.
-- How a harness is built and run is given in plain flags: `--docker-image` for the image a container starts from, `--harness-run-command` for how a harness is run, and a flag for how one is built, which is given only where a harness has to be built.
+- How a harness is built and run is given in plain flags: `--procreation-docker-image` for the image the containers that make harnesses start from, `--harness-run-command` for how a harness is run, and a flag for how one is built, which is given only where a harness has to be built.
 - The source code of every child is kept, whether or not it builds, all in one folder, and `cladenc`'s own record says which built.
 - It hands the model to the harnesses it starts and calls no model itself. Work that calls for `cladenc` to call a model would be an issue of its own.
 - A key reaches it in a file, per [[a-key-is-given-in-a-file]].

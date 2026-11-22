@@ -22,7 +22,7 @@ fn ran() -> (TempDir, Output) {
             "--benchmark",
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
             CREATE_ONLY_WHERE_NO_CHILD_IS_GIVEN_TO_READ.into(),

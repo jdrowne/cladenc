@@ -1,13 +1,17 @@
 pub(super) const CONTRACT: &str = "\
 Every procreation, and every build of a harness, is carried out in a
-container of one image, the image of the directed evolution. It is the
-image that --docker-image names, or the image that cladenc builds when the
-directed evolution is started, from the Dockerfile that --dockerfile
-names, as
+container of one image, the image of the directed evolution. The creation
+of a singleton control group harness is carried out in a container of that
+image as well, and no attempt is: an attempt is carried out in the
+environment of its task. The image of the directed evolution is the image
+that --procreation-docker-image names, or the image that cladenc builds
+when the directed evolution is started, from the Dockerfile that
+--procreation-dockerfile names, as
 
     timeout -s KILL <SECONDS> docker build --tag <NAME> --file <FILE> <DIR>
 
-  <SECONDS>  the value of --docker-build-timeout, and five seconds more
+  <SECONDS>  the value of --procreation-docker-image-build-timeout, and
+             five seconds more
   <NAME>     the name cladenc gives the image: cladenc- and sixteen random
              hexadecimal digits
   <FILE>     a copy of the Dockerfile, kept in image in the outputs
@@ -15,29 +19,31 @@ names, as
   <DIR>      an empty directory, so the Dockerfile has no file to copy into
              the image
 
-The build has the time limit that --docker-build-timeout gives, and image
-in the outputs directory keeps what Docker printed. cladenc ends a build
-that runs past its time limit, and the build ends itself five seconds later
-where cladenc was killed outright, as by `kill -9`, and is not there to end
-it. The machine cladenc runs on has to hold timeout, which the package
-coreutils brings. An image that is not built stops `cladenc start` with
-exit status 2, before the directed evolution has a journal. The image stays
-on the machine when the directed evolution ends: `cladenc resume` carries
-out its procreations and builds in it, and does not build it again.
+The build has the time limit that --procreation-docker-image-build-timeout
+gives, and image in the outputs directory keeps what Docker printed.
+cladenc ends a build that runs past its time limit, and the build ends
+itself five seconds later where cladenc was killed outright, as by `kill
+-9`, and is not there to end it. The machine cladenc runs on has to hold
+timeout, which the package coreutils brings. An image that is not built
+stops `cladenc start` with exit status 2, before the directed evolution has
+a journal. The image stays on the machine when the directed evolution ends:
+`cladenc resume` carries out its procreations and builds in it, and does
+not build it again.
 
 cladenc fetches no image, and has no flag for a registry, the server that
 Docker fetches an image from. The name of an image says which registry it
 is of, as registry.example:5000/tools/harness:1 does, and a name that says
-none is of Docker Hub. The image that --docker-image names has to be on the
-machine before the directed evolution: fetched there with `docker pull`,
-carried there as a file with `docker save` and `docker load`, or built
-there. cladenc tells Docker never to fetch the image of a container, so a
-directed evolution whose image is not on the machine stops at the first
-container of that image, and `cladenc resume` continues it once the image
-is there. A Dockerfile whose base image is on the machine, and whose steps
-fetch nothing, is built with no connection to the internet. cladenc does
-not ask Docker to fetch a base image and cannot forbid it: Docker fetches
-a base image that is not on the machine, from the registry of its name.
+none is of Docker Hub. The image that --procreation-docker-image names has
+to be on the machine before the directed evolution: fetched there with
+`docker pull`, carried there as a file with `docker save` and `docker
+load`, or built there. cladenc tells Docker never to fetch the image of a
+container, so a directed evolution whose image is not on the machine stops
+at the first container of that image, and `cladenc resume` continues it
+once the image is there. A Dockerfile whose base image is on the machine,
+and whose steps fetch nothing, is built with no connection to the internet.
+cladenc does not ask Docker to fetch a base image and cannot forbid it:
+Docker fetches a base image that is not on the machine, from the registry
+of its name.
 
 cladenc builds the environment of every task of every benchmark when the
 directed evolution is started, and again each time it is resumed, before
@@ -65,9 +71,9 @@ Docker to fetch it and cannot forbid it, so Docker fetches a base image
 that is not on the machine, from the registry of its name.
 
 A task whose task.toml names an image, as docker_image under environment,
-has that image as its environment: cladenc builds nothing for the task,
-and the task needs no environment directory. The image has to be on the
-machine before the directed evolution, as the image that --docker-image
+has that image as its environment: cladenc builds nothing for the task, and
+the task needs no environment directory. The image has to be on the machine
+before the directed evolution, as the image that --procreation-docker-image
 names has to be. cladenc looks for it when the directed evolution is
 started, and again each time it is resumed, as
 

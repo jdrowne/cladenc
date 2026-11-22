@@ -572,6 +572,16 @@ fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_wa
 }
 
 #[test]
+fn the_flag_of_the_image_says_which_containers_are_started_from_the_image() {
+    assert!(readme().contains(
+        "| `--procreation-docker-image <IMAGE>` | Not Required | The Docker image every \
+         procreation, every build of a harness and every creation of a singleton control group \
+         harness is carried out in. No attempt is carried out in it: an attempt is carried out \
+         in the environment of its task,"
+    ));
+}
+
+#[test]
 fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
     assert!(readme().contains(
         "A task may also hold a file named `task.toml`, [Harbor's task \

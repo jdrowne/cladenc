@@ -7,7 +7,7 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
-    ("--docker-image", "image"),
+    ("--procreation-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
@@ -73,7 +73,7 @@ fn leaving_out_the_benchmark_is_an_error() {
 #[test]
 fn leaving_out_the_docker_image_is_an_error() {
     assert_eq!(
-        refusal_without("--docker-image"),
+        refusal_without("--procreation-docker-image"),
         ErrorKind::MissingRequiredArgument
     );
 }

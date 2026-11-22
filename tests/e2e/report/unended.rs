@@ -13,7 +13,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-procreations", "1".into()),

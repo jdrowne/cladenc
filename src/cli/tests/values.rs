@@ -9,7 +9,7 @@ const OPTIONS: [(&str, &str); 12] = [
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
-    ("--docker-image", "image"),
+    ("--procreation-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-procreations", "800"),
@@ -57,7 +57,7 @@ fn refusal(changed: &str, given: &str) -> ErrorKind {
 
 #[test]
 fn an_empty_docker_image_is_an_error() {
-    assert!(with("--docker-image", "").is_err());
+    assert!(with("--procreation-docker-image", "").is_err());
 }
 
 #[test]
@@ -268,6 +268,36 @@ fn a_procreation_timeout_of_0_is_an_error() {
     assert_eq!(
         refusal("--procreation-timeout", "0"),
         ErrorKind::ValueValidation
+    );
+}
+
+#[test]
+fn the_older_name_of_the_flag_of_the_image_is_no_flag_of_start() {
+    assert_eq!(
+        and(Some("--docker-image=image".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
+fn the_older_name_of_the_flag_of_the_dockerfile_is_no_flag_of_start() {
+    assert_eq!(
+        and(Some("--dockerfile=Dockerfile".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
+fn the_older_name_of_the_flag_of_the_time_limit_of_the_build_of_the_image_is_no_flag_of_start() {
+    assert_eq!(
+        and(Some("--docker-build-timeout=600".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
     );
 }
 

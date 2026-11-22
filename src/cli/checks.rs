@@ -65,9 +65,16 @@ impl StartOptions {
                 .as_deref()
                 .map(model_key_file)
                 .transpose()?,
-            docker_image: self.docker_image.clone().unwrap_or_else(image_name),
-            dockerfile: self.dockerfile.as_deref().map(dockerfile).transpose()?,
-            docker_build_timeout: self.docker_build_timeout,
+            docker_image: self
+                .procreation_docker_image
+                .clone()
+                .unwrap_or_else(image_name),
+            dockerfile: self
+                .procreation_dockerfile
+                .as_deref()
+                .map(dockerfile)
+                .transpose()?,
+            docker_build_timeout: self.procreation_docker_image_build_timeout,
             environment_image_repository: environment_image_repository(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
@@ -166,7 +173,7 @@ fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
         .ok()
         .filter(|file| file.to_str().is_some() && file.is_file())
         .ok_or(Refused {
-            flags: &["--dockerfile"],
+            flags: &["--procreation-dockerfile"],
             accepted: "an existing file",
             reason: None,
         })

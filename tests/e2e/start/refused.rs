@@ -11,7 +11,7 @@ fn options(directory: &Path, outputs_directory: &Path) -> Vec<String> {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
         ("--outputs-dir", outputs_directory.to_owned()),
         ("--max-procreations", "1".into()),
@@ -47,10 +47,10 @@ fn said(options: &[String]) -> String {
 fn with_a_dockerfile(directory: &Path, dockerfile: &Path, image_too: bool) -> Vec<String> {
     options(directory, &directory.join("outputs"))
         .into_iter()
-        .filter(|option| image_too || !option.starts_with("--docker-image="))
+        .filter(|option| image_too || !option.starts_with("--procreation-docker-image="))
         .chain([
-            format!("--dockerfile={}", dockerfile.display()),
-            "--docker-build-timeout=60".to_owned(),
+            format!("--procreation-dockerfile={}", dockerfile.display()),
+            "--procreation-docker-image-build-timeout=60".to_owned(),
         ])
         .collect()
 }
@@ -429,8 +429,8 @@ fn an_image_and_a_dockerfile_together_are_refused_by_the_flags_of_both() {
     let dockerfile = test_inputs::dockerfile(directory.path(), "RUN touch /made-here\n");
     let options = with_a_dockerfile(directory.path(), &dockerfile, true);
     assert!(said(&options).starts_with(
-        "error: the argument '--docker-image <IMAGE>' cannot be used with:\n  \
-         --dockerfile <FILE>\n"
+        "error: the argument '--procreation-docker-image <IMAGE>' cannot be used with:\n  \
+         --procreation-dockerfile <FILE>\n"
     ));
 }
 
@@ -447,7 +447,7 @@ fn a_dockerfile_that_does_not_exist_is_refused_for_what_its_flag_takes() {
     let options = with_a_dockerfile(directory.path(), &directory.path().join("missing"), false);
     assert_eq!(
         said(&options),
-        "cladenc: --dockerfile takes an existing file\n"
+        "cladenc: --procreation-dockerfile takes an existing file\n"
     );
 }
 

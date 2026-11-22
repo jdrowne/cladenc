@@ -22,9 +22,9 @@ fn options(directory: &Path) -> StartOptions {
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
         benchmark: vec![test_inputs::benchmark(directory, &["t3", "t2", "t1"])],
-        docker_image: Some("image".to_owned()),
-        dockerfile: None,
-        docker_build_timeout: None,
+        procreation_docker_image: Some("image".to_owned()),
+        procreation_dockerfile: None,
+        procreation_docker_image_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.join("outputs"),
@@ -37,12 +37,12 @@ fn options(directory: &Path) -> StartOptions {
 }
 
 fn with_a_dockerfile(directory: &TempDir, options: &mut StartOptions) {
-    options.docker_image = None;
-    options.dockerfile = Some(test_inputs::dockerfile(
+    options.procreation_docker_image = None;
+    options.procreation_dockerfile = Some(test_inputs::dockerfile(
         directory.path(),
         "RUN touch /made-here\n",
     ));
-    options.docker_build_timeout = Some(600);
+    options.procreation_docker_image_build_timeout = Some(600);
 }
 
 fn is_named_by_cladenc(image: &str) -> bool {
@@ -154,7 +154,7 @@ fn a_primogenitor_that_holds_a_socket_is_refused() {
 #[test]
 fn the_image_and_the_run_command_are_settings_as_they_were_given() {
     let settings = checked(|_, options| {
-        options.docker_image = Some("registry.example/harness:1".to_owned());
+        options.procreation_docker_image = Some("registry.example/harness:1".to_owned());
         options.harness_run_command = "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned();
     })
     .unwrap();
@@ -232,9 +232,9 @@ fn a_dockerfile_that_does_not_exist_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.dockerfile = Some(directory.path().join("missing"));
+            options.procreation_dockerfile = Some(directory.path().join("missing"));
         }),
-        ["--dockerfile"]
+        ["--procreation-dockerfile"]
     );
 }
 
@@ -243,9 +243,9 @@ fn a_dockerfile_that_is_a_directory_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.dockerfile = Some(options.primogenitor.clone());
+            options.procreation_dockerfile = Some(options.primogenitor.clone());
         }),
-        ["--dockerfile"]
+        ["--procreation-dockerfile"]
     );
 }
 
@@ -254,9 +254,9 @@ fn a_dockerfile_with_no_path_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.dockerfile = Some(PathBuf::new());
+            options.procreation_dockerfile = Some(PathBuf::new());
         }),
-        ["--dockerfile"]
+        ["--procreation-dockerfile"]
     );
 }
 
@@ -264,11 +264,11 @@ fn a_dockerfile_with_no_path_is_refused() {
 fn a_dockerfile_that_is_refused_is_said_with_what_the_flag_takes() {
     let refused = checked(|directory, options| {
         with_a_dockerfile(directory, options);
-        options.dockerfile = Some(directory.path().join("missing"));
+        options.procreation_dockerfile = Some(directory.path().join("missing"));
     });
     assert_eq!(
         refused.unwrap_err().to_string(),
-        "--dockerfile takes an existing file"
+        "--procreation-dockerfile takes an existing file"
     );
 }
 
@@ -276,7 +276,7 @@ fn a_dockerfile_that_is_refused_is_said_with_what_the_flag_takes() {
 fn a_dockerfile_given_from_the_working_directory_is_made_absolute() {
     let settings = checked(|directory, options| {
         with_a_dockerfile(directory, options);
-        options.dockerfile = Some(PathBuf::from("tests/samples/Dockerfile"));
+        options.procreation_dockerfile = Some(PathBuf::from("tests/samples/Dockerfile"));
     })
     .unwrap();
     assert!(settings.dockerfile.unwrap().is_absolute());
@@ -288,7 +288,7 @@ fn a_dockerfile_given_through_a_symbolic_link_is_the_file_it_leads_to() {
         with_a_dockerfile(directory, options);
         let link = directory.path().join("link");
         symlink(directory.path().join("Dockerfile"), &link).unwrap();
-        options.dockerfile = Some(link);
+        options.procreation_dockerfile = Some(link);
     })
     .unwrap();
     assert!(settings.dockerfile.unwrap().ends_with("Dockerfile"));
@@ -309,11 +309,14 @@ fn the_build_command_is_a_setting_as_it_was_given() {
 #[test]
 fn a_refused_value_is_said_with_its_flag_and_what_the_flag_takes() {
     let refused = Refused {
-        flags: &["--dockerfile"],
+        flags: &["--procreation-dockerfile"],
         accepted: "an existing file",
         reason: None,
     };
-    assert_eq!(refused.to_string(), "--dockerfile takes an existing file");
+    assert_eq!(
+        refused.to_string(),
+        "--procreation-dockerfile takes an existing file"
+    );
 }
 
 #[test]

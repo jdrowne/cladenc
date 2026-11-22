@@ -16,7 +16,7 @@ fn ran(build_command: &str) -> (TempDir, Output) {
             "--benchmark",
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         ("--harness-build-command", build_command.into()),
         ("--harness-run-command", "touch changed".into()),
         ("--outputs-dir", directory.path().join("outputs")),

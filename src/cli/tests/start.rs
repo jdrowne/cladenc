@@ -20,9 +20,9 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
             directory.path(),
             &["t1", "t2", "t3"],
         )],
-        docker_image: Some("image".to_owned()),
-        dockerfile: None,
-        docker_build_timeout: None,
+        procreation_docker_image: Some("image".to_owned()),
+        procreation_dockerfile: None,
+        procreation_docker_image_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.path().join("outputs"),
@@ -55,9 +55,9 @@ fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) 
 }
 
 fn with_a_missing_dockerfile(directory: &Path, options: &mut StartOptions) {
-    options.docker_image = None;
-    options.dockerfile = Some(directory.join("missing"));
-    options.docker_build_timeout = Some(600);
+    options.procreation_docker_image = None;
+    options.procreation_dockerfile = Some(directory.join("missing"));
+    options.procreation_docker_image_build_timeout = Some(600);
 }
 
 fn with_a_percentage_that_leaves_no_selection_task(_: &Path, options: &mut StartOptions) {
@@ -126,7 +126,7 @@ fn a_dockerfile_that_does_not_exist_gives_exit_status_2() {
 fn a_dockerfile_that_does_not_exist_is_refused_for_what_the_flag_takes() {
     assert_eq!(
         ran(with_a_missing_dockerfile).errors,
-        "cladenc: --dockerfile takes an existing file\n"
+        "cladenc: --procreation-dockerfile takes an existing file\n"
     );
 }
 

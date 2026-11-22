@@ -115,8 +115,8 @@ fn the_long_help_of_start_says_that_the_grader_runs_as_the_user_the_task_toml_na
 fn the_long_help_of_start_says_that_a_task_that_names_an_image_has_it_as_its_environment() {
     assert!(long_help_of("start").contains(
         "A task whose task.toml names an image, as docker_image under environment,\nhas that \
-         image as its environment: cladenc builds nothing for the task,\nand the task needs no \
-         environment directory."
+         image as its environment: cladenc builds nothing for the task, and\nthe task needs \
+         no environment directory."
     ));
 }
 

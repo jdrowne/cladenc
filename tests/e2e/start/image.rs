@@ -45,8 +45,14 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
-        ("--dockerfile", test_inputs::dockerfile(directory, steps)),
-        ("--docker-build-timeout", build_timeout.into()),
+        (
+            "--procreation-dockerfile",
+            test_inputs::dockerfile(directory, steps),
+        ),
+        (
+            "--procreation-docker-image-build-timeout",
+            build_timeout.into(),
+        ),
         (
             "--harness-run-command",
             test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.into(),

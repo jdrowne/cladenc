@@ -20,7 +20,7 @@ fn stopped() -> TempDir {
             "--benchmark",
             test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", END_WITH_125_WHERE_MARKED.into()),
         ("--outputs-dir", directory.path().join("outputs")),
         ("--max-procreations", "1".into()),

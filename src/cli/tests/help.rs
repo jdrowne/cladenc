@@ -303,25 +303,26 @@ fn the_long_help_of_start_says_what_docker_is_given_to_build_an_image_from() {
 
 #[test]
 fn the_long_help_of_start_says_how_long_the_timeout_of_the_build_of_the_image_waits() {
-    assert!(
-        help_of_start(true)
-            .contains("  <SECONDS>  the value of --docker-build-timeout, and five seconds more\n")
-    );
+    assert!(help_of_start(true).contains(
+        "<SECONDS>  the value of --procreation-docker-image-build-timeout, and\n             \
+         five seconds more"
+    ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_the_build_of_the_image_ends_itself_at_its_time_limit() {
     assert!(help_of_start(true).contains(
-        "cladenc ends a build\nthat runs past its time limit, and the build ends itself five \
-         seconds later\nwhere cladenc was killed outright, as by `kill -9`, and is not there to \
-         end\nit."
+        "cladenc ends a build that runs past its time limit, and the build ends\nitself five \
+         seconds later where cladenc was killed outright, as by `kill\n-9`, and is not there \
+         to end it."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_the_machine_has_to_hold_timeout() {
     assert!(help_of_start(true).contains(
-        "The machine cladenc runs on has to hold timeout, which the package\ncoreutils brings."
+        "The machine cladenc runs on has to hold\ntimeout, which the package coreutils \
+         brings."
     ));
 }
 
@@ -344,25 +345,25 @@ fn the_long_help_of_start_says_that_the_name_of_an_image_says_which_registry_it_
 #[test]
 fn the_long_help_of_start_says_how_an_image_is_brought_to_the_machine() {
     assert!(help_of_start(true).contains(
-        "The image that --docker-image names has to be on the\nmachine before the directed \
-         evolution: fetched there with `docker pull`,\ncarried there as a file with `docker \
-         save` and `docker load`, or built\nthere."
+        "The image that --procreation-docker-image names has\nto be on the machine before the \
+         directed evolution: fetched there with\n`docker pull`, carried there as a file with \
+         `docker save` and `docker\nload`, or built there."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_container() {
     assert!(help_of_start(true).contains(
-        "cladenc tells Docker never to fetch the image of a container, so a\ndirected evolution \
-         whose image is not on the machine stops at the first\ncontainer of that image, and \
-         `cladenc resume` continues it once the image\nis there."
+        "cladenc tells Docker never to fetch the image of a\ncontainer, so a directed \
+         evolution whose image is not on the machine stops\nat the first container of that \
+         image, and `cladenc resume` continues it\nonce the image is there."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection() {
     assert!(help_of_start(true).contains(
-        "A Dockerfile whose base image is on the machine, and whose steps\nfetch nothing, is \
+        "A Dockerfile whose base image is on the machine,\nand whose steps fetch nothing, is \
          built with no connection to the internet."
     ));
 }
@@ -370,23 +371,26 @@ fn the_long_help_of_start_says_that_a_dockerfile_can_be_built_with_no_connection
 #[test]
 fn the_long_help_of_start_says_that_docker_fetches_a_base_image_the_machine_does_not_hold() {
     assert!(help_of_start(true).contains(
-        "cladenc does\nnot ask Docker to fetch a base image and cannot forbid it: Docker fetches\na \
-         base image that is not on the machine, from the registry of its name."
+        "cladenc does not ask Docker to fetch a base image and cannot forbid it:\nDocker \
+         fetches a base image that is not on the machine, from the registry\nof its name."
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_that_resume_builds_no_image() {
     assert!(help_of_start(true).contains(
-        "`cladenc resume` carries\nout its procreations and builds in it, and does not build it \
-         again.\n"
+        "`cladenc resume` carries out its procreations and builds in it, and does\nnot build \
+         it again."
     ));
 }
 
 #[test]
 fn the_short_help_of_start_names_the_two_flags_of_a_dockerfile() {
     let help = help_of_start(false);
-    let flags = ["--dockerfile <FILE>", "--docker-build-timeout <SECONDS>"];
+    let flags = [
+        "--procreation-dockerfile <FILE>",
+        "--procreation-docker-image-build-timeout <SECONDS>",
+    ];
     assert!(flags.iter().all(|flag| help.contains(flag)));
 }
 
@@ -541,4 +545,22 @@ fn help_written_as_a_sub_command_is_refused() {
         Cli::try_parse_from(["cladenc", "help"]).unwrap_err().kind(),
         ErrorKind::InvalidSubcommand
     );
+}
+
+#[test]
+fn the_long_help_of_start_says_which_containers_are_started_from_the_image() {
+    assert!(help_of_start(true).contains(
+        "The creation\nof a singleton control group harness is carried out in a container of \
+         that\nimage as well, and no attempt is: an attempt is carried out in \
+         the\nenvironment of its task."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_the_flags_of_the_image_by_what_the_image_is_for() {
+    assert!(help_of_start(true).contains(
+        "The image of the directed evolution is the image\nthat --procreation-docker-image \
+         names, or the image that cladenc builds\nwhen the directed evolution is started, \
+         from the Dockerfile that\n--procreation-dockerfile names, as\n"
+    ));
 }

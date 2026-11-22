@@ -54,7 +54,7 @@ pub enum Command {
 }
 
 #[derive(Clone, Debug, Args)]
-#[command(group(ArgGroup::new("image").required(true).args(["docker_image", "dockerfile"])))]
+#[command(group(ArgGroup::new("image").required(true).args(["procreation_docker_image", "procreation_dockerfile"])))]
 pub struct StartOptions {
     #[arg(
         long,
@@ -72,31 +72,6 @@ pub struct StartOptions {
                 and below 100"
     )]
     corroboration_tasks_percentage: f64,
-    #[arg(
-        long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        requires = "dockerfile",
-        conflicts_with = "docker_image",
-        help = "The time limit of the build of the image, given with --dockerfile"
-    )]
-    docker_build_timeout: Option<u64>,
-    #[arg(
-        long,
-        value_name = "IMAGE",
-        value_parser = NonEmptyStringValueParser::new(),
-        help = "The Docker image every procreation and every build of a harness is carried out \
-                in, where --dockerfile is not given"
-    )]
-    docker_image: Option<String>,
-    #[arg(
-        long,
-        value_name = "FILE",
-        requires = "docker_build_timeout",
-        help = "The Dockerfile cladenc builds the image of every procreation and every build of a \
-                harness from, in place of --docker-image"
-    )]
-    dockerfile: Option<PathBuf>,
     #[arg(
         long,
         value_name = "COMMAND",
@@ -157,6 +132,31 @@ pub struct StartOptions {
         help = "The directory of source code copied to make the primogenitor"
     )]
     primogenitor: PathBuf,
+    #[arg(
+        long,
+        value_name = "IMAGE",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The Docker image every procreation and every build of a harness is carried out \
+                in, where --procreation-dockerfile is not given"
+    )]
+    procreation_docker_image: Option<String>,
+    #[arg(
+        long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        requires = "procreation_dockerfile",
+        conflicts_with = "procreation_docker_image",
+        help = "The time limit of the build of the image, given with --procreation-dockerfile"
+    )]
+    procreation_docker_image_build_timeout: Option<u64>,
+    #[arg(
+        long,
+        value_name = "FILE",
+        requires = "procreation_docker_image_build_timeout",
+        help = "The Dockerfile cladenc builds the image of every procreation and every build of a \
+                harness from, in place of --procreation-docker-image"
+    )]
+    procreation_dockerfile: Option<PathBuf>,
     #[arg(
         long,
         value_name = "SECONDS",

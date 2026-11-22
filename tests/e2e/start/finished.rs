@@ -14,7 +14,7 @@ fn options(directory: &Path) -> Vec<String> {
             "--benchmark",
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
-        ("--docker-image", test_inputs::IMAGE.into()),
+        ("--procreation-docker-image", test_inputs::IMAGE.into()),
         (
             "--harness-run-command",
             test_inputs::SOLVE_EVERY_TASK.into(),
