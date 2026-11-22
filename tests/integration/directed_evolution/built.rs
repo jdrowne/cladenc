@@ -215,9 +215,9 @@ fn a_directed_evolution_asked_to_stop_while_its_primogenitor_is_built_leaves_no_
 }
 
 #[test]
-fn a_directed_evolution_asked_to_stop_before_it_starts_stops() {
+fn a_directed_evolution_asked_to_stop_before_it_starts_was_never_started() {
     let (_directory, found) = evolved_with_its_stop_flag_at(COUNT_THE_BUILDS, true);
-    assert!(matches!(found, Err(DirectedEvolutionError::Asked)));
+    assert!(matches!(found, Err(DirectedEvolutionError::NotStarted)));
 }
 
 #[test]
