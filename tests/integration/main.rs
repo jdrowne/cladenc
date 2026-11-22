@@ -1,4 +1,5 @@
 mod containers {
+    mod apart;
     mod artifacts;
     mod attempt;
     mod baseline;
@@ -26,6 +27,7 @@ mod directed_evolution {
     mod environment;
     mod experiment;
     mod finished;
+    mod grader;
     mod held_out;
     mod image;
     mod keyed;

@@ -12,6 +12,7 @@ use test_inputs::Image;
 const TASK: &str = "benchmark/t1";
 
 const MADE: &str = "RUN echo by the environment > /made-here\n";
+const HELD: &str = "COPY notes.txt /tests/notes.txt\n";
 
 struct Built {
     _directory: TempDir,
@@ -183,4 +184,103 @@ fn the_build_of_an_environment_that_runs_past_its_time_limit_is_ended() {
         built_within(2, "RUN sleep 300\n", false).result,
         Err(ContainerError::TimeLimit)
     ));
+}
+
+fn grader_built(steps: &str) -> Built {
+    let (directory, outputs_directory) = made();
+    let tests = outputs_directory.task(TASK).join("tests");
+    fs::write(tests.join("notes.txt"), "from the tests of the task\n").unwrap();
+    fs::write(
+        tests.join("Dockerfile"),
+        format!("FROM {}\n{steps}", test_inputs::IMAGE),
+    )
+    .unwrap();
+    let image = test_inputs::image();
+    let result = containers::build_grader_environment(
+        &outputs_directory,
+        TASK,
+        &image.name,
+        Duration::from_secs(600),
+        &AtomicBool::new(false),
+    );
+    Built {
+        _directory: directory,
+        outputs_directory,
+        image,
+        result,
+    }
+}
+
+fn printed_by_docker_for_the_grader(built: &Built) -> String {
+    ["stdout", "stderr"]
+        .iter()
+        .map(|file| {
+            fs::read_to_string(built.outputs_directory.grader_environment(TASK).join(file)).unwrap()
+        })
+        .collect()
+}
+
+#[test]
+fn the_environment_of_a_grader_is_built_from_the_dockerfile_in_the_tests_of_its_task() {
+    assert!(grader_built(HELD).result.is_ok());
+}
+
+#[test]
+fn the_environment_of_a_grader_is_built_with_the_tests_of_its_task_as_its_build_context() {
+    let built = grader_built(HELD);
+    assert_eq!(
+        test_inputs::printed_in_a_container_of(&built.image.name, "cat /tests/notes.txt"),
+        "from the tests of the task\n"
+    );
+}
+
+#[test]
+fn what_docker_printed_while_it_built_the_environment_of_a_grader_is_kept_in_grader() {
+    assert!(printed_by_docker_for_the_grader(&grader_built(HELD)).contains("COPY notes.txt"));
+}
+
+#[test]
+fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_task() {
+    let built = grader_built(HELD);
+    assert_eq!(
+        label_of(&built.image.name, "cladenc.task"),
+        "benchmark/t1\n"
+    );
+}
+
+#[test]
+fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_directed_evolution() {
+    let built = grader_built(HELD);
+    assert_eq!(
+        label_of(&built.image.name, "cladenc.directed-evolution"),
+        format!(
+            "{}\n",
+            fs::canonicalize(built.outputs_directory.path())
+                .unwrap()
+                .display()
+        )
+    );
+}
+
+#[test]
+fn an_environment_of_a_grader_with_a_step_that_fails_is_not_built() {
+    assert!(matches!(
+        grader_built("RUN exit 3\n").result,
+        Err(ContainerError::Exit(_))
+    ));
+}
+
+#[test]
+fn an_environment_of_a_grader_whose_directory_cannot_be_made_is_not_built() {
+    let (_directory, outputs_directory) = made();
+    fs::write(outputs_directory.path().join("environments"), "").unwrap();
+    let image = test_inputs::image();
+    let result = containers::build_grader_environment(
+        &outputs_directory,
+        TASK,
+        &image.name,
+        Duration::from_secs(600),
+        &AtomicBool::new(false),
+    );
+    assert!(matches!(result, Err(ContainerError::Io(_))));
 }

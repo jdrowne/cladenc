@@ -364,6 +364,10 @@ Compose file, such as docker-compose.yaml: an environment of more than one
 container cannot be built. A task whose task.toml names an image needs
 neither the Dockerfile nor the environment directory.
 
+A task whose grader runs in a container of its own, as said below, is
+refused as well for a Compose file in its tests directory. Where the image
+of that container holds the grader, the task needs no test.sh.
+
 --benchmark is given once for each benchmark of the directed evolution. A
 directed evolution that is given several has each harness benchmarked on
 all of them, and looks for the one harness that completes the most of their
@@ -606,6 +610,71 @@ run.txt in every directory named logs. In a pattern, * stands for any run of
 characters, / among them, ? for any one character, the characters between [
 and ] for any one of them, and a character after \\ for itself.
 
+Where the task.toml of a task says that its grader runs separately, cladenc
+runs the grader in a container of its own, which holds nothing of the
+container of the harness but the paths the task lists under artifacts. A
+task says so with environment_mode under verifier, written as separate, or
+with a table named environment under verifier, which says so by being there.
+A task that gives neither, or writes environment_mode as shared, has its
+grader run in the container of the harness, as said above.
+
+The container of the grader is a container of the first of these that the
+task gives:
+
+  1. the image that docker_image under verifier.environment names, which
+     has to be on the machine, as an image that a task names for its
+     environment has to be
+  2. an image that cladenc builds from the Dockerfile in the tests
+     directory of the task, with that directory as the build context
+  3. the environment of the task, as it is before a harness works in it
+
+An image of 1 or 2 holds the grader, at /tests/test.sh: cladenc copies no
+tests directory into its container, and the task needs no test.sh. Into a
+container of 3 the tests directory of the task is copied, at /tests. cladenc
+builds an image of 2 when it builds the environments of the tasks, and as it
+builds those, under the name of the environment of the task with -grader
+after it, and removes it when it removes them.
+environments/<BENCHMARK>/<TASK>/grader in the outputs directory keeps what
+Docker printed. An image of 1 that is not on the machine, and an image of 2
+that is not built, stop the directed evolution with exit status 2.
+
+Where the task.toml holds the table environment under verifier, the
+container of the grader follows that table and nothing of environment:
+workdir, env, cpus, memory_mb, healthcheck and build_timeout_sec are obeyed
+there as they are under environment, and a setting the table leaves out is
+left out. Where the task.toml holds no such table, the container of the
+grader follows environment. What is refused under environment is refused
+under verifier.environment as well.
+
+Once the harness has ended or was stopped, and the paths under artifacts are
+kept, cladenc removes the container of the harness and brings up that of the
+grader, so that an attempt is one container at a time. Where the settings of
+the grader give a health check, cladenc runs it there as it runs that of the
+task: where it does not pass, the grader is not run, and the harness did not
+complete the task. Each path that was kept is then copied to the same path
+in the container of the grader, the path of its entry and not destination,
+without what exclude left out. A directory takes the place of what the image
+holds at that path.
+
+What is copied in is not trusted. No file keeps a setuid or a setgid bit. A
+file that is not a regular file, a directory or a symbolic link is left out,
+and so is a symbolic link that points outside the path it was kept with.
+What is copied in belongs to the user the grader runs as.
+
+Then the tests directory is copied in where the image holds no grader,
+/logs/verifier is emptied, and the grader is run as said above, in the
+working directory and as the user of its own container, unless the task.toml
+names a user for the grader. Its time limit is counted from then. The
+container of the grader is started as
+
+    sleep <SECONDS>
+
+  <SECONDS>  the time limit of the grader, the longest the health check
+             of the grader can take, and ten minutes more
+
+and is removed once the grader has ended. The image of a grader has to hold
+what the environment of a task has to: sh, sleep, rm, mkdir and chown.
+
 The container of an attempt is given no more CPUs and no more memory than
 its task asks for, as --cpus and --memory of `docker run`, so the harness
 and the grader have them between them. A task that asks for neither is
@@ -641,6 +710,12 @@ what it says of the environment of the task:
                                   seconds
   timeout_sec under verifier      the time limit of the grader, in
                                   seconds
+  environment_mode under          separate where the grader runs in a
+  verifier                        container of its own, and shared where
+                                  it runs in that of the harness
+  environment under verifier      what environment says of the container
+                                  of the harness, said of the container
+                                  of the grader
   build_timeout_sec under         the time limit of the build of the
   environment                     environment, in seconds
   cpus under environment          the most CPUs the container of an
@@ -696,9 +771,11 @@ or names no file or directory.
 A task is refused as well where its task.toml asks for what cladenc has no
 way to give: several steps, as [[steps]]; a GPU, as gpus under environment
 above 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; a
-skills directory, as skills_dir; or a path of a container other than that of
-the harness, as service of an entry under artifacts that is not main. The
-refusal names the task and what it asks for.
+skills directory, as skills_dir; a path of a container other than that of
+the harness, as service of an entry under artifacts that is not main; or the
+whole container of the harness in the container of the grader, as an entry
+under artifacts whose path names no file or directory, where the grader runs
+separately. The refusal names the task and what it asks for.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is
@@ -771,7 +848,9 @@ benchmark, and in that one named after the task, which holds
   stderr         the standard error of the harness
   grader         the standard output and the standard error of the grader,
                  in stdout and stderr, and in logs/verifier what the grader
-                 left in /logs/verifier, its score among them
+                 left in /logs/verifier, its score among them; where the
+                 grader ran in a container of its own with a health check,
+                 what the last run of that printed, in health-check
   health-check   the standard output and the standard error of the last
                  run of the health check, in stdout and stderr, where the
                  task gives one

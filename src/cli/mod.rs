@@ -329,7 +329,9 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
         | DirectedEvolutionError::Machine(_)
         | DirectedEvolutionError::NotStarted
         | DirectedEvolutionError::TooLarge { .. }
-        | DirectedEvolutionError::Environment { .. } => 2,
+        | DirectedEvolutionError::Environment { .. }
+        | DirectedEvolutionError::GraderNotOnTheMachine { .. }
+        | DirectedEvolutionError::GraderEnvironment { .. } => 2,
         DirectedEvolutionError::Journal(_)
         | DirectedEvolutionError::Asked
         | DirectedEvolutionError::Build(_)

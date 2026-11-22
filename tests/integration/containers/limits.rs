@@ -89,6 +89,7 @@ fn timed_out() -> Attempted {
             harness_time_limit: Some(Duration::from_secs(3)),
             ..TaskConfiguration::default()
         },
+        grader: None,
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_attempt(&outputs_directory, &launch, attempt(&environment), &stop);

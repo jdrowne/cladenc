@@ -15,7 +15,9 @@ use crate::outputs_directory::holds_only_harness_files;
 
 pub(crate) use artifacts::Artifact;
 use configuration::CONFIGURATION;
-pub use configuration::{ConfigurationError, HealthCheck, TaskConfiguration};
+pub use configuration::{
+    ConfigurationError, EnvironmentConfiguration, HealthCheck, TaskConfiguration,
+};
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
 pub(crate) const TESTS: &str = "tests";
@@ -119,6 +121,9 @@ pub enum BenchmarkError {
     ManyContainers {
         task: String,
     },
+    ManyGraderContainers {
+        task: String,
+    },
     OtherFiles {
         task: String,
     },
@@ -188,6 +193,12 @@ impl Display for BenchmarkError {
                 "task {task} holds a Compose file in its directory named {ENVIRONMENT}, and an \
                  environment of more than one container cannot be built"
             ),
+            Self::ManyGraderContainers { task } => write!(
+                formatter,
+                "task {task} has its grader run in a container of its own and holds a Compose \
+                 file in its directory named {TESTS}, and an environment of more than one \
+                 container cannot be built"
+            ),
             Self::OtherFiles { task } => write!(
                 formatter,
                 "task {task} holds something that is not a regular file, a directory or a \
@@ -236,10 +247,14 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if !is_specification(&directory.join(SPECIFICATION)) {
         return Err(BenchmarkError::NoSpecification { task });
     }
-    if !is_grader(directory) {
+    let configuration = TaskConfiguration::read(directory);
+    let in_an_image = configuration
+        .as_ref()
+        .is_ok_and(|configuration| grader_is_in_an_image(configuration, directory));
+    if !in_an_image && !is_grader(directory) {
         return Err(BenchmarkError::NoGrader { task });
     }
-    let configuration = match TaskConfiguration::read(directory) {
+    let configuration = match configuration {
         Ok(configuration) => configuration,
         Err(ConfigurationError::Missing) => return Err(BenchmarkError::NoConfiguration { task }),
         Err(error) => return Err(BenchmarkError::Configuration { task, error }),
@@ -247,8 +262,11 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     if configuration.docker_image.is_none() && !is_environment(directory) {
         return Err(BenchmarkError::NoEnvironment { task });
     }
-    if holds_compose_file(directory) {
+    if holds_compose_file(&directory.join(ENVIRONMENT)) {
         return Err(BenchmarkError::ManyContainers { task });
+    }
+    if configuration.grader_environment.is_some() && holds_compose_file(&directory.join(TESTS)) {
+        return Err(BenchmarkError::ManyGraderContainers { task });
     }
     if !can_be_copied(directory) {
         return Err(BenchmarkError::OtherFiles { task });
@@ -279,16 +297,30 @@ fn is_grader(task: &Path) -> bool {
 }
 
 fn is_environment(task: &Path) -> bool {
-    let environment = task.join(ENVIRONMENT);
-    is_directory(&environment)
-        && fs::symlink_metadata(environment.join(DOCKERFILE))
+    holds_dockerfile(&task.join(ENVIRONMENT))
+}
+
+pub(crate) fn holds_grader_dockerfile(task: &Path) -> bool {
+    holds_dockerfile(&task.join(TESTS))
+}
+
+fn holds_dockerfile(directory: &Path) -> bool {
+    is_directory(directory)
+        && fs::symlink_metadata(directory.join(DOCKERFILE))
             .is_ok_and(|dockerfile| dockerfile.is_file())
 }
 
-fn holds_compose_file(task: &Path) -> bool {
+fn grader_is_in_an_image(configuration: &TaskConfiguration, task: &Path) -> bool {
+    configuration
+        .grader_environment
+        .as_ref()
+        .is_some_and(|own| own.docker_image.is_some() || holds_grader_dockerfile(task))
+}
+
+fn holds_compose_file(directory: &Path) -> bool {
     COMPOSE_FILES
         .iter()
-        .any(|file| fs::symlink_metadata(task.join(ENVIRONMENT).join(file)).is_ok())
+        .any(|file| fs::symlink_metadata(directory.join(file)).is_ok())
 }
 
 fn is_program(file: &Path) -> bool {

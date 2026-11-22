@@ -11,7 +11,7 @@ use nix::unistd::{Gid, Uid};
 use super::left;
 use super::program::{self, Ending, FOREVER, LEEWAY, Limits};
 use super::{ContainerError, Environment};
-use crate::benchmark::HealthCheck;
+use crate::benchmark::{HealthCheck, TaskConfiguration};
 use crate::outputs_directory::{OutputsDirectory, make_removable};
 
 const NOT_STARTED: i32 = 125;
@@ -22,6 +22,7 @@ const SETTINGS: &str = "{{println .Config.User}}{{.Config.WorkingDir}}";
 const ROOT: &str = "0";
 const STANDARD_INPUT: &str = "/dev/stdin";
 const EMPTIED: &str = r#"rm -rf "$1" && mkdir -p "$1""#;
+const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
 const END_EVERYTHING: &str = "kill -9 -1";
 const COPYING: Duration = Duration::from_secs(600);
 const FOLLOW_LINK: &str = "--follow-link";
@@ -50,10 +51,61 @@ pub(super) struct Run<'a> {
     pub(super) variables: &'a [(String, String)],
 }
 
+pub(super) struct Bringing<'a> {
+    pub(super) image: &'a str,
+    pub(super) working_directory: Option<&'a str>,
+    pub(super) cpus: Option<f64>,
+    pub(super) memory_megabytes: Option<u64>,
+    pub(super) variables: &'a [(String, String)],
+    pub(super) stays: Duration,
+}
+
 pub(super) struct Up {
     name: String,
     user: String,
     working_directory: String,
+}
+
+impl<'a> Bringing<'a> {
+    pub(super) fn of_the_task(environment: &'a Environment) -> Self {
+        let configuration = &environment.configuration;
+        Self {
+            image: &environment.image,
+            working_directory: configuration.working_directory.as_deref(),
+            cpus: configuration.cpus,
+            memory_megabytes: configuration.memory_megabytes,
+            variables: &configuration.variables,
+            stays: configuration
+                .harness_time_limit
+                .unwrap_or(FOREVER)
+                .min(FOREVER)
+                .saturating_add(configuration.grader_time_limit.min(FOREVER))
+                .saturating_add(longest(configuration.health_check.as_ref()))
+                .saturating_add(COPYING),
+        }
+    }
+
+    pub(super) fn of_the_grader(image: &'a str, configuration: &'a TaskConfiguration) -> Self {
+        let own = configuration.grader_environment.as_ref();
+        Self {
+            image,
+            working_directory: own.and_then(|own| own.working_directory.as_deref()),
+            cpus: own.and_then(|own| own.cpus),
+            memory_megabytes: own.and_then(|own| own.memory_megabytes),
+            variables: own.map_or(&[][..], |own| own.variables.as_slice()),
+            stays: configuration
+                .grader_time_limit
+                .min(FOREVER)
+                .saturating_add(longest(own.and_then(|own| own.health_check.as_ref())))
+                .saturating_add(COPYING),
+        }
+    }
+}
+
+fn longest(health_check: Option<&HealthCheck>) -> Duration {
+    health_check
+        .map_or(Duration::ZERO, HealthCheck::longest)
+        .min(FOREVER)
 }
 
 impl Container<'_> {
@@ -91,23 +143,9 @@ impl Container<'_> {
 impl Up {
     pub(super) fn start(
         outputs_directory: &OutputsDirectory,
-        environment: &Environment,
+        bringing: &Bringing<'_>,
         running: &Path,
     ) -> Result<Self, ContainerError> {
-        let configuration = &environment.configuration;
-        let stays = configuration
-            .harness_time_limit
-            .unwrap_or(FOREVER)
-            .min(FOREVER)
-            .saturating_add(configuration.grader_time_limit.min(FOREVER))
-            .saturating_add(
-                configuration
-                    .health_check
-                    .as_ref()
-                    .map_or(Duration::ZERO, HealthCheck::longest)
-                    .min(FOREVER),
-            )
-            .saturating_add(COPYING);
         let mut up = Self {
             name: named(),
             user: String::new(),
@@ -116,27 +154,27 @@ impl Up {
         let mut docker = docker_run(outputs_directory, &up.name);
         docker
             .args(
-                configuration
+                bringing
                     .working_directory
-                    .iter()
+                    .into_iter()
                     .flat_map(|directory| ["--workdir", directory]),
             )
             .args(
-                configuration
+                bringing
                     .cpus
                     .iter()
                     .flat_map(|cpus| ["--cpus".to_owned(), cpus.to_string()]),
             )
             .args(
-                configuration
+                bringing
                     .memory_megabytes
                     .iter()
                     .flat_map(|megabytes| ["--memory".to_owned(), format!("{megabytes}m")]),
             )
             .args(["--env-file", STANDARD_INPUT])
-            .args(["--detach", &environment.image, "sleep"])
-            .arg(stays.as_secs().to_string());
-        detached(docker, &file_of(&configuration.variables), running)?;
+            .args(["--detach", bringing.image, "sleep"])
+            .arg(bringing.stays.as_secs().to_string());
+        detached(docker, &file_of(bringing.variables), running)?;
         let mut inspect = Command::new("docker");
         inspect.args(["inspect", "--format", SETTINGS, &up.name]);
         left::printed_by(inspect)
@@ -171,12 +209,25 @@ impl Up {
     }
 
     pub(super) fn put(&self, from: &Path, to: &str, owner: &str) -> Result<(), ContainerError> {
+        self.place(EMPTIED, &from.join("."), to, owner)
+    }
+
+    pub(super) fn put_file(
+        &self,
+        from: &Path,
+        to: &str,
+        owner: &str,
+    ) -> Result<(), ContainerError> {
+        self.place(ROOM_MADE, from, to, owner)
+    }
+
+    fn place(&self, room: &str, from: &Path, to: &str, owner: &str) -> Result<(), ContainerError> {
         let mut emptied = self.as_root();
-        emptied.args(["sh", "-c", EMPTIED, "sh", to]);
+        emptied.args(["sh", "-c", room, "sh", to]);
         let mut copied = Command::new("docker");
         copied
             .arg("cp")
-            .arg(from.join("."))
+            .arg(from)
             .arg(format!("{}:{to}", self.name));
         let mut owned = self.as_root();
         owned.args(["chown", "-R", owner, to]);

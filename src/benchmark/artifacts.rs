@@ -12,6 +12,12 @@ pub struct Artifact {
     pub(crate) exclude: Vec<String>,
 }
 
+impl Artifact {
+    pub(crate) fn path(&self) -> String {
+        format!("/{}", parts(&self.source).join("/"))
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum Written {

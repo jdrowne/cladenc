@@ -1,4 +1,5 @@
 mod action;
+mod environments;
 mod error;
 mod progress;
 mod said;
@@ -11,17 +12,17 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
-use crate::benchmark::TaskConfiguration;
-use crate::containers::{self, ContainerError, Environment, Launch, Machine};
+use crate::containers::{self, ContainerError, Environment, Launch};
 use crate::genealogy::HarnessId;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::outputs_directory::OutputsDirectory;
 
 use action::Ended;
+use environments::Built;
 pub use error::DirectedEvolutionError;
 use progress::Progress;
-use said::{Environments, Said, say};
+use said::{Said, say};
 
 const WAIT: Duration = Duration::from_millis(100);
 
@@ -43,28 +44,6 @@ struct Made {
     outputs_directory: OutputsDirectory,
     environments: BTreeMap<String, Environment>,
     built: Built,
-}
-
-struct Built {
-    images: Vec<String>,
-}
-
-impl Built {
-    fn by(settings: &Settings) -> Self {
-        Self {
-            images: settings
-                .environments()
-                .into_iter()
-                .map(|(_task, image)| image)
-                .collect(),
-        }
-    }
-}
-
-impl Drop for Built {
-    fn drop(&mut self) {
-        containers::remove_images(&self.images);
-    }
 }
 
 fn not_started(error: DirectedEvolutionError) -> DirectedEvolutionError {
@@ -108,7 +87,7 @@ pub fn start(
         .and_then(|outputs_directory| {
             let built = Built::by(settings);
             build_image(settings, &outputs_directory, stop, writer)
-                .and_then(|()| environments(settings, &outputs_directory, stop, writer))
+                .and_then(|()| environments::made(settings, &outputs_directory, stop, writer))
                 .map(|environments| Made {
                     outputs_directory,
                     environments,
@@ -180,150 +159,6 @@ fn build_image(
     }
 }
 
-fn environments(
-    settings: &Settings,
-    outputs_directory: &OutputsDirectory,
-    stop: &AtomicBool,
-    writer: &mut dyn Write,
-) -> Result<BTreeMap<String, Environment>, DirectedEvolutionError> {
-    let mut environments = BTreeMap::new();
-    let mut count_built = 0;
-    let mut machine = None;
-    for (task, image) in settings.environments() {
-        let configuration =
-            TaskConfiguration::read(&outputs_directory.task(&task)).map_err(|error| {
-                DirectedEvolutionError::Configuration {
-                    task: task.clone(),
-                    error,
-                }
-            })?;
-        fits(&task, &configuration, &mut machine)?;
-        let image = match configuration.docker_image.clone() {
-            Some(named) => take_image(&task, named, writer)?,
-            None => {
-                count_built += 1;
-                let building = Building {
-                    task: &task,
-                    image,
-                    time_limit: configuration.build_time_limit,
-                };
-                build_environment(outputs_directory, building, stop, writer)?
-            }
-        };
-        let environment = Environment {
-            image,
-            configuration,
-        };
-        environments.insert(task, environment);
-    }
-    if count_built > 0 {
-        let built = Said::Environments(Environments::Built {
-            built: count_built,
-            tasks: environments.len() as u64,
-            outputs_directory,
-        });
-        say(writer, &built);
-    }
-    Ok(environments)
-}
-
-fn fits(
-    task: &str,
-    configuration: &TaskConfiguration,
-    machine: &mut Option<Machine>,
-) -> Result<(), DirectedEvolutionError> {
-    if configuration.cpus.is_none() && configuration.memory_megabytes.is_none() {
-        return Ok(());
-    }
-    let machine = match machine {
-        Some(machine) => *machine,
-        None => *machine.insert(containers::machine().map_err(DirectedEvolutionError::Machine)?),
-    };
-    let cpus = configuration
-        .cpus
-        .filter(|cpus| *cpus > machine.cpus)
-        .map(|cpus| ("cpus", cpus.to_string(), machine.cpus.to_string()));
-    let memory = configuration
-        .memory_megabytes
-        .filter(|megabytes| *megabytes > machine.memory_megabytes)
-        .map(|megabytes| {
-            (
-                "memory_mb",
-                megabytes.to_string(),
-                machine.memory_megabytes.to_string(),
-            )
-        });
-    match cpus.or(memory) {
-        Some((key, asked, has)) => Err(DirectedEvolutionError::TooLarge {
-            task: task.to_owned(),
-            key,
-            asked,
-            has,
-        }),
-        None => Ok(()),
-    }
-}
-
-fn take_image(
-    task: &str,
-    image: String,
-    writer: &mut dyn Write,
-) -> Result<String, DirectedEvolutionError> {
-    let taking = Said::Environments(Environments::Taking {
-        task,
-        image: &image,
-    });
-    say(writer, &taking);
-    match containers::find_image(&image) {
-        Ok(()) => Ok(image),
-        Err(error) => Err(DirectedEvolutionError::NotOnTheMachine {
-            task: task.to_owned(),
-            image,
-            error,
-        }),
-    }
-}
-
-struct Building<'a> {
-    task: &'a str,
-    image: String,
-    time_limit: Duration,
-}
-
-fn build_environment(
-    outputs_directory: &OutputsDirectory,
-    building: Building<'_>,
-    stop: &AtomicBool,
-    writer: &mut dyn Write,
-) -> Result<String, DirectedEvolutionError> {
-    let Building {
-        task,
-        image,
-        time_limit,
-    } = building;
-    let building = Said::Environments(Environments::Building {
-        task,
-        image: &image,
-    });
-    say(writer, &building);
-    match containers::build_environment(outputs_directory, task, &image, time_limit, stop) {
-        Ok(()) => Ok(image),
-        Err(ContainerError::Stopped) => Err(DirectedEvolutionError::Asked),
-        Err(error) => {
-            let not_built = Said::Environments(Environments::NotBuilt {
-                task,
-                error: &error,
-                outputs_directory,
-            });
-            say(writer, &not_built);
-            Err(DirectedEvolutionError::Environment {
-                task: task.to_owned(),
-                error,
-            })
-        }
-    }
-}
-
 pub fn resume(
     path: &Path,
     stop: &AtomicBool,
@@ -374,7 +209,7 @@ pub fn resume(
             };
             say(writer, &continuing);
             let built = Built::by(&settings);
-            let environments = environments(&settings, &outputs_directory, stop, writer)?;
+            let environments = environments::made(&settings, &outputs_directory, stop, writer)?;
             let made = Made {
                 outputs_directory,
                 environments,

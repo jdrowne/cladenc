@@ -1,11 +1,15 @@
-use std::fs;
+use std::fs::{self, Metadata};
 use std::iter;
-use std::path::Path;
+use std::os::unix::fs::{PermissionsExt, symlink};
+use std::path::{Component, Path, PathBuf};
 
+use super::ContainerError;
 use super::container::Up;
 use crate::benchmark::Artifact;
 
 const KEPT: &str = ".";
+const GIVEN: &str = "given-to-the-grader";
+const READ_WRITTEN_AND_RUN: u32 = 0o777;
 
 enum Token {
     AnyRun,
@@ -42,11 +46,7 @@ impl Set {
 
 pub(super) fn keep(up: &Up, artifacts: &[Artifact], kept: &Path) {
     for artifact in artifacts {
-        let place = artifact
-            .destination
-            .split('/')
-            .filter(|part| !part.is_empty())
-            .fold(kept.to_owned(), |place, part| place.join(part));
+        let place = place_of(artifact, kept);
         let _ = place.parent().map(fs::create_dir_all);
         up.copy_what_is_at(&artifact.source, &place);
         leave_out(&place, &artifact.exclude);
@@ -58,6 +58,85 @@ pub(super) fn keep(up: &Up, artifacts: &[Artifact], kept: &Path) {
                 let _ = fs::remove_dir(above);
             });
     }
+}
+
+fn place_of(artifact: &Artifact, kept: &Path) -> PathBuf {
+    artifact
+        .destination
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .fold(kept.to_owned(), |place, part| place.join(part))
+}
+
+pub(super) fn give(
+    up: &Up,
+    artifacts: &[Artifact],
+    kept: &Path,
+    owner: &str,
+) -> Result<(), ContainerError> {
+    let given = kept.with_file_name(GIVEN);
+    let gave = artifacts.iter().try_for_each(|artifact| {
+        remove(&given);
+        match trusted(&place_of(artifact, kept), &given) {
+            Some(true) => up.put(&given, &artifact.path(), owner),
+            Some(false) => up.put_file(&given, &artifact.path(), owner),
+            None => Ok(()),
+        }
+    });
+    remove(&given);
+    gave
+}
+
+fn remove(given: &Path) {
+    let _ = fs::remove_file(given).or_else(|_| fs::remove_dir_all(given));
+}
+
+pub(super) fn trusted(from: &Path, to: &Path) -> Option<bool> {
+    let found = fs::symlink_metadata(from).ok()?;
+    (found.is_dir() || found.is_file()).then(|| {
+        copy_trusted(from, &found, to, 0);
+        found.is_dir()
+    })
+}
+
+fn copy_trusted(from: &Path, found: &Metadata, to: &Path, depth: usize) {
+    if found.is_dir() {
+        let _ = fs::create_dir(to);
+        let entries = fs::read_dir(from)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|entry| entry.metadata().ok().map(|found| (entry, found)));
+        for (entry, found) in entries {
+            let to = to.join(entry.file_name());
+            copy_trusted(&entry.path(), &found, &to, depth + 1);
+        }
+    } else if found.is_file() {
+        let mode = found.permissions().mode() & READ_WRITTEN_AND_RUN;
+        let _ = fs::copy(from, to)
+            .and_then(|_| fs::set_permissions(to, fs::Permissions::from_mode(mode)));
+    } else if let Some(target) = fs::read_link(from)
+        .ok()
+        .filter(|target| stays_inside(target, depth))
+    {
+        let _ = symlink(target, to);
+    }
+}
+
+fn stays_inside(target: &Path, depth: usize) -> bool {
+    depth
+        .checked_sub(1)
+        .and_then(|directory| {
+            target
+                .components()
+                .try_fold(directory, |level, part| match part {
+                    Component::Normal(_) => Some(level + 1),
+                    Component::CurDir => Some(level),
+                    Component::ParentDir => level.checked_sub(1),
+                    Component::RootDir | Component::Prefix(_) => None,
+                })
+        })
+        .is_some()
 }
 
 pub(super) fn leave_out(tree: &Path, exclude: &[String]) {

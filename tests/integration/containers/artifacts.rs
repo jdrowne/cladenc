@@ -47,6 +47,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) 
         Environment {
             image: image.name.clone(),
             configuration,
+            grader: None,
         },
         image,
     )

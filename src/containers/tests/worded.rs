@@ -196,9 +196,10 @@ fn the_instruction_says_where_what_the_health_check_printed_is() {
 fn the_instruction_says_how_the_grader_judged_the_attempt() {
     assert!(containers::INSTRUCTION.contains(
         " Once you had ended or were stopped, the grader ran the tests of the task, which you \
-         are not shown, on \
-         what you left, and wrote its score in logs/verifier/reward.txt, or one score for each \
-         label in logs/verifier/reward.json: the task was completed where every score is 1. "
+         are not shown, on what you left, or, where the task has its grader run in a container \
+         of its own, on nothing but what the directory named artifacts holds, and wrote its \
+         score in logs/verifier/reward.txt, or one score for each label in \
+         logs/verifier/reward.json: the task was completed where every score is 1. "
     ));
 }
 

@@ -50,6 +50,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<
         Environment {
             image,
             configuration,
+            grader: None,
         },
         built,
     )

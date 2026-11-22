@@ -40,9 +40,11 @@ fn the_long_help_of_start_says_what_a_task_may_ask_for_that_cladenc_has_no_way_t
         "A task is refused as well where its task.toml asks for what cladenc has no\nway to \
          give: several steps, as [[steps]]; a GPU, as gpus under environment\nabove 0, or a \
          TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; a\nskills directory, as \
-         skills_dir; or a path of a container other than that of\nthe harness, as service of \
-         an entry under artifacts that is not main. The\nrefusal names the task and what it \
-         asks for."
+         skills_dir; a path of a container other than that of\nthe harness, as service of an \
+         entry under artifacts that is not main; or the\nwhole container of the harness in \
+         the container of the grader, as an entry\nunder artifacts whose path names no file \
+         or directory, where the grader runs\nseparately. The refusal names the task and what \
+         it asks for."
     ));
 }
 

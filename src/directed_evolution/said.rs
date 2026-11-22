@@ -317,6 +317,19 @@ pub(super) enum Environments<'a> {
         error: &'a ContainerError,
         outputs_directory: &'a OutputsDirectory,
     },
+    GraderBuilding {
+        task: &'a str,
+        image: &'a str,
+    },
+    GraderTaking {
+        task: &'a str,
+        image: &'a str,
+    },
+    GraderNotBuilt {
+        task: &'a str,
+        error: &'a ContainerError,
+        outputs_directory: &'a OutputsDirectory,
+    },
 }
 
 impl Display for Environments<'_> {
@@ -361,6 +374,25 @@ impl Display for Environments<'_> {
                 "the build of the environment of task {task} {error}: what Docker printed is kept \
                  in {}",
                 outputs_directory.environment(task).display()
+            ),
+            Self::GraderBuilding { task, image } => write!(
+                formatter,
+                "building the environment of the grader of task {task} as the image {image}"
+            ),
+            Self::GraderTaking { task, image } => write!(
+                formatter,
+                "taking the image {image} as the environment of the grader of task {task}, as \
+                 its task.toml says"
+            ),
+            Self::GraderNotBuilt {
+                task,
+                error,
+                outputs_directory,
+            } => write!(
+                formatter,
+                "the build of the environment of the grader of task {task} {error}: what Docker \
+                 printed is kept in {}",
+                outputs_directory.grader_environment(task).display()
             ),
         }
     }

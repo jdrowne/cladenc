@@ -44,6 +44,7 @@ fn environment(time_limit: u64) -> Environment {
             harness_time_limit: Some(Duration::from_secs(time_limit)),
             ..TaskConfiguration::default()
         },
+        grader: None,
     }
 }
 

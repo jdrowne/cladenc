@@ -142,6 +142,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             grader_time_limit: Duration::from_secs(attempt.grader_time_limit),
             ..TaskConfiguration::default()
         },
+        grader: None,
     };
     let result = containers::run_attempt(
         &outputs_directory,

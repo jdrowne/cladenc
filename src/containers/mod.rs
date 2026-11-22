@@ -24,8 +24,12 @@ use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
-use container::{Container, Mount, Run, Shell, Up};
-pub use image::{Machine, build_environment, build_image, find_image, machine, remove_images};
+use container::{Bringing, Container, Mount, Run, Shell, Up};
+use grader::Grading;
+pub use image::{
+    Machine, build_environment, build_grader_environment, build_image, find_image, machine,
+    remove_images,
+};
 pub use left::remove_left_behind;
 use program::{Ending, FOREVER, Limits, seconds_since};
 
@@ -47,7 +51,9 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     and stderr, and the files it left in logs/verifier, and the directory named health-check \
     holds what the health check of the environment of the task printed the last time it ran, in \
     the files named stdout and stderr. Once you had ended or were stopped, the grader ran the \
-    tests of the task, which you are not shown, on what you left, and wrote its score in \
+    tests of the task, which you are not shown, on what you left, or, where the task has its \
+    grader run in a container of its own, on nothing but what the directory named artifacts \
+    holds, and wrote its score in \
     logs/verifier/reward.txt, or one score for each label in logs/verifier/reward.json: the task \
     was completed where every score is 1. /var/log/cladenc/line holds one directory for each \
     harness you descend from, named by its id, and /var/log/cladenc/children one for each harness \
@@ -87,6 +93,13 @@ pub struct Launch<'a> {
 pub struct Environment {
     pub image: String,
     pub configuration: TaskConfiguration,
+    pub grader: Option<GraderImage>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GraderImage {
+    pub name: String,
+    pub holds_grader: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -353,7 +366,8 @@ impl Attempting<'_> {
         };
         let started = Instant::now();
         let environment = self.attempt.environment;
-        let up = Up::start(outputs_directory, environment, self.running)?;
+        let bringing = Bringing::of_the_task(environment);
+        let up = Up::start(outputs_directory, &bringing, self.running)?;
         if !self.is_healthy(&up, stop)? {
             return Ok(self.not_started(started));
         }
@@ -396,7 +410,13 @@ impl Attempting<'_> {
             &environment.configuration.artifacts,
             &self.running.join(ARTIFACTS),
         );
-        let result = grader::run(outputs_directory, &up, &self.attempt, self.running, stop)?;
+        let grading = Grading {
+            outputs_directory,
+            attempt: &self.attempt,
+            running: self.running,
+            stop,
+        };
+        let result = grading.run(up)?;
         Ok(Attempted {
             result,
             seconds,
@@ -405,14 +425,9 @@ impl Attempting<'_> {
     }
 
     fn is_healthy(&self, up: &Up, stop: &AtomicBool) -> Result<bool, ContainerError> {
-        match &self.attempt.environment.configuration.health_check {
-            Some(health_check) => {
-                let kept = self.running.join(HEALTH_CHECK);
-                let _ = fs::create_dir(&kept);
-                health_check::passes(up, health_check, &kept, stop)
-            }
-            None => Ok(true),
-        }
+        let health_check = self.attempt.environment.configuration.health_check.as_ref();
+        let kept = self.running.join(HEALTH_CHECK);
+        health_check::passes_where_given(up, health_check, &kept, stop)
     }
 
     fn not_started(&self, started: Instant) -> Attempted {

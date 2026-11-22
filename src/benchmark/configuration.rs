@@ -12,8 +12,9 @@ use super::artifacts::{self, Artifact};
 use super::{is_name, valid};
 
 pub(super) const CONFIGURATION: &str = "task.toml";
-const ENVIRONMENT: &str = "environment";
 const VERIFIER: &str = "verifier";
+const SEPARATE: &str = "separate";
+const EVERYTHING: &str = "the whole container of the harness in the container of the grader";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
 const CHECKED_EVERY: Duration = Duration::from_secs(5);
 const CHECK_TIME_LIMIT: Duration = Duration::from_secs(30);
@@ -40,6 +41,64 @@ impl HealthCheck {
     }
 }
 
+struct Keys {
+    table: &'static str,
+    build: &'static str,
+    cpus: &'static str,
+    memory: &'static str,
+    megabytes: &'static str,
+    check_time_limit: &'static str,
+    check_interval: &'static str,
+    check_start_period: &'static str,
+    check_start_interval: &'static str,
+    check_retries: &'static str,
+}
+
+macro_rules! keys {
+    ($table:literal) => {
+        Keys {
+            table: $table,
+            build: concat!($table, ".build_timeout_sec"),
+            cpus: concat!($table, ".cpus"),
+            memory: concat!($table, ".memory"),
+            megabytes: concat!($table, ".memory_mb"),
+            check_time_limit: concat!($table, ".healthcheck.timeout_sec"),
+            check_interval: concat!($table, ".healthcheck.interval_sec"),
+            check_start_period: concat!($table, ".healthcheck.start_period_sec"),
+            check_start_interval: concat!($table, ".healthcheck.start_interval_sec"),
+            check_retries: concat!($table, ".healthcheck.retries"),
+        }
+    };
+}
+
+const OF_THE_TASK: Keys = keys!("environment");
+const OF_THE_GRADER: Keys = keys!("verifier.environment");
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct EnvironmentConfiguration {
+    pub docker_image: Option<String>,
+    pub working_directory: Option<String>,
+    pub variables: Vec<(String, String)>,
+    pub build_time_limit: Duration,
+    pub cpus: Option<f64>,
+    pub memory_megabytes: Option<u64>,
+    pub health_check: Option<HealthCheck>,
+}
+
+impl Default for EnvironmentConfiguration {
+    fn default() -> Self {
+        Self {
+            docker_image: None,
+            working_directory: None,
+            variables: Vec::new(),
+            build_time_limit: TIME_LIMIT_LEFT_OUT,
+            cpus: None,
+            memory_megabytes: None,
+            health_check: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaskConfiguration {
     pub docker_image: Option<String>,
@@ -54,6 +113,7 @@ pub struct TaskConfiguration {
     pub grader_user: Option<String>,
     pub grader_variables: Vec<(String, String)>,
     pub grader_time_limit: Duration,
+    pub grader_environment: Option<EnvironmentConfiguration>,
     pub artifacts: Vec<Artifact>,
 }
 
@@ -72,6 +132,7 @@ impl Default for TaskConfiguration {
             grader_user: None,
             grader_variables: Vec::new(),
             grader_time_limit: TIME_LIMIT_LEFT_OUT,
+            grader_environment: None,
             artifacts: Vec::new(),
         }
     }
@@ -292,33 +353,68 @@ pub(super) fn read_with(
     if shares_and_has_its_own(&written.verifier) {
         return Err(ConfigurationError::SharedAndSeparate);
     }
-    if let Some(what) = needed(&written) {
+    let Written {
+        environment,
+        agent,
+        verifier,
+        steps,
+        artifacts,
+    } = written;
+    let own = verifier
+        .environment
+        .map(|own| own.try_into::<WrittenEnvironment>().unwrap_or_default());
+    let needed = needed(steps.as_ref(), &environment).or_else(|| own.as_ref().and_then(needed_in));
+    if let Some(what) = needed {
         return Err(ConfigurationError::Needs { what });
     }
-    let build = time_limit(
-        "environment.build_timeout_sec",
-        written.environment.build_timeout_sec,
-    )?;
-    let grader = time_limit("verifier.timeout_sec", written.verifier.timeout_sec)?;
-    let memory = megabytes(
-        "environment.memory",
-        written.environment.memory,
-        written.environment.memory_mb,
-    )?;
+    let of_the_task = settings(&OF_THE_TASK, environment, set)?;
+    let grader = time_limit("verifier.timeout_sec", verifier.timeout_sec)?;
+    let grader_environment = match own {
+        Some(own) => Some(settings(&OF_THE_GRADER, own, set)?),
+        None => (verifier.environment_mode.as_deref() == Some(SEPARATE)).then(|| {
+            EnvironmentConfiguration {
+                docker_image: None,
+                ..of_the_task.clone()
+            }
+        }),
+    };
+    let artifacts = artifacts::read(artifacts)?;
+    if grader_environment.is_some() && artifacts.iter().any(|artifact| artifact.path() == "/") {
+        return Err(ConfigurationError::Needs { what: EVERYTHING });
+    }
     Ok(TaskConfiguration {
-        docker_image: given(written.environment.docker_image),
-        working_directory: given(written.environment.workdir),
-        variables: variables(ENVIRONMENT, written.environment.env, set)?,
-        build_time_limit: build.unwrap_or(TIME_LIMIT_LEFT_OUT),
-        cpus: above_0("environment.cpus", written.environment.cpus)?,
-        memory_megabytes: memory,
-        health_check: health_check(written.environment.healthcheck)?,
-        harness_user: given(written.agent.user.map(User::named)),
-        harness_time_limit: time_limit("agent.timeout_sec", written.agent.timeout_sec)?,
-        grader_user: given(written.verifier.user.map(User::named)),
-        grader_variables: variables(VERIFIER, written.verifier.env, set)?,
+        docker_image: of_the_task.docker_image,
+        working_directory: of_the_task.working_directory,
+        variables: of_the_task.variables,
+        build_time_limit: of_the_task.build_time_limit,
+        cpus: of_the_task.cpus,
+        memory_megabytes: of_the_task.memory_megabytes,
+        health_check: of_the_task.health_check,
+        harness_user: given(agent.user.map(User::named)),
+        harness_time_limit: time_limit("agent.timeout_sec", agent.timeout_sec)?,
+        grader_user: given(verifier.user.map(User::named)),
+        grader_variables: variables(VERIFIER, verifier.env, set)?,
         grader_time_limit: grader.unwrap_or(TIME_LIMIT_LEFT_OUT),
-        artifacts: artifacts::read(written.artifacts)?,
+        grader_environment,
+        artifacts,
+    })
+}
+
+fn settings(
+    keys: &Keys,
+    written: WrittenEnvironment,
+    set: &dyn Fn(&str) -> Option<String>,
+) -> Result<EnvironmentConfiguration, ConfigurationError> {
+    let build = time_limit(keys.build, written.build_timeout_sec)?;
+    let memory = megabytes(keys, written.memory, written.memory_mb)?;
+    Ok(EnvironmentConfiguration {
+        docker_image: given(written.docker_image),
+        working_directory: given(written.workdir),
+        variables: variables(keys.table, written.env, set)?,
+        build_time_limit: build.unwrap_or(TIME_LIMIT_LEFT_OUT),
+        cpus: above_0(keys.cpus, written.cpus)?,
+        memory_megabytes: memory,
+        health_check: health_check(keys, written.healthcheck)?,
     })
 }
 
@@ -336,24 +432,21 @@ fn time_limit(
         .transpose()
 }
 
-fn health_check(written: Option<toml::Value>) -> Result<Option<HealthCheck>, ConfigurationError> {
+fn health_check(
+    keys: &Keys,
+    written: Option<toml::Value>,
+) -> Result<Option<HealthCheck>, ConfigurationError> {
     let Some(written) = written
         .and_then(|written| written.try_into::<WrittenHealthCheck>().ok())
         .filter(|written| !written.command.is_empty())
     else {
         return Ok(None);
     };
-    let time_limit = time_limit("environment.healthcheck.timeout_sec", written.timeout_sec)?;
-    let interval = wait("environment.healthcheck.interval_sec", written.interval_sec)?;
-    let start_period = wait(
-        "environment.healthcheck.start_period_sec",
-        written.start_period_sec,
-    )?;
-    let start_interval = wait(
-        "environment.healthcheck.start_interval_sec",
-        written.start_interval_sec,
-    )?;
-    let retries = whole_above_0("environment.healthcheck.retries", written.retries)?;
+    let time_limit = time_limit(keys.check_time_limit, written.timeout_sec)?;
+    let interval = wait(keys.check_interval, written.interval_sec)?;
+    let start_period = wait(keys.check_start_period, written.start_period_sec)?;
+    let start_interval = wait(keys.check_start_interval, written.start_interval_sec)?;
+    let retries = whole_above_0(keys.check_retries, written.retries)?;
     Ok(Some(HealthCheck {
         command: written.command,
         interval: interval.unwrap_or(CHECKED_EVERY),
@@ -390,10 +483,14 @@ fn shares_and_has_its_own(verifier: &WrittenVerifier) -> bool {
     verifier.environment_mode.as_deref() == Some("shared") && verifier.environment.is_some()
 }
 
-fn needed(written: &Written) -> Option<&'static str> {
-    let environment = &written.environment;
+fn needed(steps: Option<&toml::Value>, environment: &WrittenEnvironment) -> Option<&'static str> {
+    holds_some(steps)
+        .then_some("several steps")
+        .or_else(|| needed_in(environment))
+}
+
+fn needed_in(environment: &WrittenEnvironment) -> Option<&'static str> {
     [
-        (holds_some(written.steps.as_ref()), "several steps"),
         (environment.gpus.is_some_and(|gpus| gpus > 0), "a GPU"),
         (environment.tpu.is_some(), "a TPU"),
         (environment.os.as_deref() == Some("windows"), "Windows"),
@@ -428,14 +525,16 @@ fn above_0(key: &'static str, number: Option<f64>) -> Result<Option<f64>, Config
 }
 
 fn megabytes(
-    key: &'static str,
+    keys: &Keys,
     older: Option<toml::Value>,
     newer: Option<i64>,
 ) -> Result<Option<u64>, ConfigurationError> {
-    let older = size(key, older)?;
-    let newer = whole_above_0("environment.memory_mb", newer)?;
+    let older = size(keys.memory, older)?;
+    let newer = whole_above_0(keys.megabytes, newer)?;
     match (older, newer) {
-        (Some(older), Some(newer)) if older != newer => Err(ConfigurationError::TwoSizes { key }),
+        (Some(older), Some(newer)) if older != newer => {
+            Err(ConfigurationError::TwoSizes { key: keys.memory })
+        }
         (older, newer) => Ok(newer.or(older)),
     }
 }

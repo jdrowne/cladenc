@@ -88,6 +88,15 @@ impl OutputsDirectory {
         fs::create_dir_all(&environment).map(|()| environment)
     }
 
+    pub fn grader_environment(&self, task: &str) -> PathBuf {
+        self.environment(task).join("grader")
+    }
+
+    pub fn start_grader_environment(&self, task: &str) -> io::Result<PathBuf> {
+        let environment = self.grader_environment(task);
+        fs::create_dir_all(&environment).map(|()| environment)
+    }
+
     pub fn harness(&self, id: HarnessId) -> PathBuf {
         self.path.join("harnesses").join(id.to_string())
     }

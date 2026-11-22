@@ -24,6 +24,7 @@ mod start {
     mod environment;
     mod experiment;
     mod finished;
+    mod grader;
     mod held_out;
     mod image;
     mod lineage;

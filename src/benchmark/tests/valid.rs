@@ -456,12 +456,12 @@ fn a_grader_said_to_share_the_environment_and_given_its_own_is_refused() {
 
 #[test]
 fn a_grader_said_to_have_a_separate_environment_and_given_one_is_valid() {
-    assert_eq!(
+    assert!(
         read(
             "[verifier]\nenvironment_mode = \"separate\"\n\n[verifier.environment]\ndocker_image \
              = \"debian:stable-slim\"\n"
-        ),
-        left_out()
+        )
+        .is_ok()
     );
 }
 
@@ -475,10 +475,7 @@ fn a_grader_said_to_share_the_environment_and_given_none_is_valid() {
 
 #[test]
 fn a_grader_given_an_environment_and_no_environment_mode_is_valid() {
-    assert_eq!(
-        read("[verifier.environment]\ndocker_image = \"debian:stable-slim\"\n"),
-        left_out()
-    );
+    assert!(read("[verifier.environment]\ndocker_image = \"debian:stable-slim\"\n").is_ok());
 }
 
 #[test]

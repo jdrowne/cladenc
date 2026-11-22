@@ -62,3 +62,47 @@ fn an_environment_whose_directory_cannot_be_made_cannot_be_kept() {
     fs::write(outputs_directory.path().join("environments"), "").unwrap();
     assert!(outputs_directory.start_environment(TASK).is_err());
 }
+
+#[test]
+fn what_is_kept_of_the_environment_of_a_grader_is_in_grader_beside_that_of_its_task() {
+    assert_eq!(
+        OutputsDirectory::at(Path::new("/outputs")).grader_environment(TASK),
+        Path::new("/outputs/environments/benchmark/t1/grader")
+    );
+}
+
+#[test]
+fn starting_the_build_of_the_environment_of_a_grader_returns_the_directory_that_keeps_it() {
+    let (_directory, outputs_directory) = made();
+    assert_eq!(
+        outputs_directory.start_grader_environment(TASK).unwrap(),
+        outputs_directory.grader_environment(TASK)
+    );
+}
+
+#[test]
+fn starting_the_build_of_the_environment_of_a_grader_makes_the_directory_that_keeps_it() {
+    let (_directory, outputs_directory) = made();
+    outputs_directory.start_grader_environment(TASK).unwrap();
+    assert!(outputs_directory.grader_environment(TASK).is_dir());
+}
+
+#[test]
+fn the_build_of_the_environment_of_a_grader_leaves_what_is_kept_of_that_of_its_task() {
+    let (_directory, outputs_directory) = made();
+    outputs_directory.start_environment(TASK).unwrap();
+    fs::write(
+        outputs_directory.environment(TASK).join("stdout"),
+        "built\n",
+    )
+    .unwrap();
+    outputs_directory.start_grader_environment(TASK).unwrap();
+    assert!(outputs_directory.environment(TASK).join("stdout").is_file());
+}
+
+#[test]
+fn an_environment_of_a_grader_whose_directory_cannot_be_made_cannot_be_kept() {
+    let (_directory, outputs_directory) = made();
+    fs::write(outputs_directory.path().join("environments"), "").unwrap();
+    assert!(outputs_directory.start_grader_environment(TASK).is_err());
+}

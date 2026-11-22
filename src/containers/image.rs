@@ -7,7 +7,7 @@ use std::time::Duration;
 use super::ContainerError;
 use super::left;
 use super::program::{self, Ending, LEEWAY, Limits};
-use crate::benchmark::ENVIRONMENT;
+use crate::benchmark::{ENVIRONMENT, TESTS};
 use crate::outputs_directory::OutputsDirectory;
 
 const MACHINE: &str = "{{.NCPU}} {{.MemTotal}}";
@@ -40,17 +40,48 @@ pub fn build_environment(
     time_limit: Duration,
     stop: &AtomicBool,
 ) -> Result<(), ContainerError> {
-    let kept = outputs_directory
+    let context = outputs_directory.task(task).join(ENVIRONMENT);
+    outputs_directory
         .start_environment(task)
-        .map_err(ContainerError::Io)?;
+        .map_err(ContainerError::Io)
+        .and_then(|kept| {
+            let limits = Limits::within(time_limit, stop);
+            build(outputs_directory, [task, image], &context, &kept, limits)
+        })
+}
+
+pub fn build_grader_environment(
+    outputs_directory: &OutputsDirectory,
+    task: &str,
+    image: &str,
+    time_limit: Duration,
+    stop: &AtomicBool,
+) -> Result<(), ContainerError> {
+    let context = outputs_directory.task(task).join(TESTS);
+    outputs_directory
+        .start_grader_environment(task)
+        .map_err(ContainerError::Io)
+        .and_then(|kept| {
+            let limits = Limits::within(time_limit, stop);
+            build(outputs_directory, [task, image], &context, &kept, limits)
+        })
+}
+
+fn build(
+    outputs_directory: &OutputsDirectory,
+    [task, image]: [&str; 2],
+    context: &Path,
+    kept: &Path,
+    limits: Limits<'_>,
+) -> Result<(), ContainerError> {
     let mut build = Command::new("docker");
     build
         .args(["build", "--tag", image, "--label"])
         .arg(format!("cladenc.task={task}"))
         .arg("--label")
         .arg(left::label(outputs_directory))
-        .arg(outputs_directory.task(task).join(ENVIRONMENT));
-    program::run(build, "", &kept, Limits::within(time_limit, stop)).and_then(built)
+        .arg(context);
+    program::run(build, "", kept, limits).and_then(built)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

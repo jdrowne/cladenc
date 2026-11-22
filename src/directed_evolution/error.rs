@@ -34,6 +34,15 @@ pub enum DirectedEvolutionError {
         task: String,
         error: ContainerError,
     },
+    GraderNotOnTheMachine {
+        task: String,
+        image: String,
+        error: io::Error,
+    },
+    GraderEnvironment {
+        task: String,
+        error: ContainerError,
+    },
     Journal(JournalError),
     NotStarted,
     Asked,
@@ -90,6 +99,15 @@ impl Display for DirectedEvolutionError {
             Self::Environment { task, error } => write!(
                 formatter,
                 "the environment of task {task} was not built: its build {error}"
+            ),
+            Self::GraderNotOnTheMachine { task, image, error } => write!(
+                formatter,
+                "the environment of the grader of task {task} is not on the machine: its \
+                 task.toml names the image {image}, and cladenc fetches no image: {error}"
+            ),
+            Self::GraderEnvironment { task, error } => write!(
+                formatter,
+                "the environment of the grader of task {task} was not built: its build {error}"
             ),
             Self::Journal(error) => write!(
                 formatter,

@@ -142,6 +142,31 @@ fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_s
 }
 
 #[test]
+fn an_image_of_a_grader_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
+    assert_eq!(
+        worded(DirectedEvolutionError::GraderNotOnTheMachine {
+            task: "benchmark/t1".to_owned(),
+            image: "grader:3".to_owned(),
+            error: io::Error::other("No such image: grader:3"),
+        }),
+        "the environment of the grader of task benchmark/t1 is not on the machine: its task.toml \
+         names the image grader:3, and cladenc fetches no image: No such image: grader:3"
+    );
+}
+
+#[test]
+fn an_environment_of_a_grader_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
+    assert_eq!(
+        worded(DirectedEvolutionError::GraderEnvironment {
+            task: "benchmark/t1".to_owned(),
+            error: ContainerError::Exit(1),
+        }),
+        "the environment of the grader of task benchmark/t1 was not built: its build exited with \
+         status 1"
+    );
+}
+
+#[test]
 fn a_task_that_asks_for_more_than_the_machine_has_is_worded_with_what_it_asks_and_what_there_is() {
     assert_eq!(
         worded(DirectedEvolutionError::TooLarge {

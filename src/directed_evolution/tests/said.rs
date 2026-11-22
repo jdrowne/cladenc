@@ -1,7 +1,8 @@
 use std::path::Path;
 
 use crate::containers::{ContainerError, HarnessEnding};
-use crate::directed_evolution::{Environments, Said};
+use crate::directed_evolution::Said;
+use crate::directed_evolution::said::Environments;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -405,6 +406,46 @@ fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker
         .to_string(),
         "the build of the environment of task benchmark/t1 exited with status 1: what Docker \
          printed is kept in /outputs/environments/benchmark/t1"
+    );
+}
+
+#[test]
+fn the_environment_of_a_grader_is_said_to_be_being_built_with_the_image_it_is_built_as() {
+    assert_eq!(
+        Said::Environments(Environments::GraderBuilding {
+            task: "benchmark/t1",
+            image: "cladenc-environments-0123456789abcdef:0-grader",
+        })
+        .to_string(),
+        "building the environment of the grader of task benchmark/t1 as the image \
+         cladenc-environments-0123456789abcdef:0-grader"
+    );
+}
+
+#[test]
+fn an_image_that_a_task_names_for_its_grader_is_said_to_be_taken_as_its_environment() {
+    assert_eq!(
+        Said::Environments(Environments::GraderTaking {
+            task: "benchmark/t1",
+            image: "registry.example/graders/parser:3",
+        })
+        .to_string(),
+        "taking the image registry.example/graders/parser:3 as the environment of the grader of \
+         task benchmark/t1, as its task.toml says"
+    );
+}
+
+#[test]
+fn an_environment_of_a_grader_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
+    assert_eq!(
+        Said::Environments(Environments::GraderNotBuilt {
+            task: "benchmark/t1",
+            error: &ContainerError::Exit(1),
+            outputs_directory: &outputs_directory(),
+        })
+        .to_string(),
+        "the build of the environment of the grader of task benchmark/t1 exited with status 1: \
+         what Docker printed is kept in /outputs/environments/benchmark/t1/grader"
     );
 }
 
