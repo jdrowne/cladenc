@@ -601,12 +601,30 @@ fn the_section_of_cladenc_start_says_that_the_environments_it_built_are_removed_
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
+fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
     assert!(readme().contains(
-        "A task may also hold a file named `task.toml`, [Harbor's task \
-         configuration](https://docs.harborframework.com/tasks/configuration), and `cladenc` \
-         obeys what it says of the environment of the task: its image, its working directory, \
-         its users and its variables."
+        "The directory of a task holds its task specification in a file named \
+         `instruction.md`, [Harbor's task \
+         configuration](https://docs.harborframework.com/tasks/configuration) in a file named \
+         `task.toml`, its grader in an executable file named `test.sh` in a directory named \
+         `tests`,"
+    ));
+}
+
+#[test]
+fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
+    assert!(readme().contains(
+        "`cladenc` obeys what the `task.toml` says of the environment of the task: its image, \
+         its working directory, its users and its variables."
+    ));
+}
+
+#[test]
+fn the_flag_of_the_benchmark_says_that_a_task_without_a_valid_task_toml_is_refused() {
+    assert!(readme().contains(
+        "A task that holds no `task.toml` is refused, and so is one whose `task.toml` is not \
+         valid as Harbor's task configuration: `cladenc` checks every setting that Harbor's \
+         documentation names, those it does not obey among them."
     ));
 }
 

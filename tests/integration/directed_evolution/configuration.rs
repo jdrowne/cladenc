@@ -228,6 +228,38 @@ fn a_resumed_directed_evolution_reads_the_task_toml_of_the_copy_of_a_task() {
 }
 
 #[test]
+fn a_resumed_directed_evolution_stops_for_a_task_whose_copy_no_longer_holds_a_task_toml() {
+    let evolved = stopped_and_resumed("", |outputs_directory| {
+        fs::remove_file(kept_task_toml_of_t2(outputs_directory)).unwrap();
+    });
+    assert!(matches!(
+        evolved.found,
+        Err(DirectedEvolutionError::Configuration {
+            task,
+            error: ConfigurationError::Missing,
+        }) if task == "benchmark/t2"
+    ));
+}
+
+#[test]
+fn a_resumed_directed_evolution_stops_for_a_task_whose_task_toml_is_no_longer_valid() {
+    let evolved = stopped_and_resumed("", |outputs_directory| {
+        fs::write(
+            kept_task_toml_of_t2(outputs_directory),
+            "[agent]\nnetwork_mode = \"private\"\n",
+        )
+        .unwrap();
+    });
+    assert!(matches!(
+        evolved.found,
+        Err(DirectedEvolutionError::Configuration {
+            task,
+            error: ConfigurationError::NotValid { line: 2, .. },
+        }) if task == "benchmark/t2"
+    ));
+}
+
+#[test]
 fn a_resumed_directed_evolution_stops_for_an_image_that_is_no_longer_on_the_machine() {
     let evolved = stopped_and_resumed("", |outputs_directory| {
         fs::write(

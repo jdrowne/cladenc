@@ -323,10 +323,10 @@ fn a_refused_value_is_said_with_its_flag_and_what_the_flag_takes() {
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
     assert!(with_no_grader_in_a_task().to_string().starts_with(
         "--benchmark takes the directory of a benchmark, in which every directory is a task that \
-         holds a file of text named instruction.md, a directory named tests with an executable \
-         file named test.sh in it and a directory named environment with a file named \
-         Dockerfile and no Compose file in it, or, in place of the Dockerfile, an image named in \
-         its file named task.toml: /"
+         holds a file of text named instruction.md, a file named task.toml that is valid as the \
+         task configuration of Harbor, a directory named tests with an executable file named \
+         test.sh in it and a directory named environment with a file named Dockerfile and no \
+         Compose file in it, or, in place of the Dockerfile, an image named in its task.toml: /"
     ));
 }
 

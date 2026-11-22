@@ -38,6 +38,11 @@ fn the_task_specification_names_the_task() {
 }
 
 #[test]
+fn the_task_configuration_says_which_form_it_is_written_in_and_nothing_else() {
+    assert_eq!(written_in("task.toml"), "schema_version = \"1.4\"\n");
+}
+
+#[test]
 fn the_workspace_of_the_environment_holds_a_file_of_work_to_do() {
     assert_eq!(written_in("environment/workspace/work.txt"), "to do\n");
 }

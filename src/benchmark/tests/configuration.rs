@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::os::unix::fs::symlink;
 use std::time::Duration;
 
 use tempfile::TempDir;
@@ -57,11 +58,21 @@ fn the_configuration_of_a_task_is_in_its_file_named_task_toml() {
 }
 
 #[test]
-fn a_task_with_no_task_toml_leaves_every_setting_out() {
+fn a_task_with_no_task_toml_is_refused() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(
         configuration::read_with(directory.path(), &set_where_cladenc_runs),
-        Ok(TaskConfiguration::default())
+        Err(ConfigurationError::Missing)
+    );
+}
+
+#[test]
+fn a_task_whose_task_toml_is_a_symbolic_link_to_nothing_is_refused_as_one_with_none() {
+    let directory = test_inputs::temporary_directory();
+    symlink("nowhere", directory.path().join("task.toml")).unwrap();
+    assert_eq!(
+        configuration::read_with(directory.path(), &set_where_cladenc_runs),
+        Err(ConfigurationError::Missing)
     );
 }
 
@@ -150,7 +161,7 @@ fn a_task_that_gives_the_build_of_its_environment_no_time_limit_gives_it_600_sec
 }
 
 #[test]
-fn a_task_with_no_task_toml_gives_the_grader_and_the_build_600_seconds_each() {
+fn the_settings_of_a_task_that_sets_none_give_the_grader_and_the_build_600_seconds_each() {
     let configuration = TaskConfiguration::default();
     assert_eq!(
         (
@@ -375,7 +386,7 @@ fn a_task_that_asks_for_a_tpu_is_refused() {
 
 #[test]
 fn a_task_for_windows_is_refused() {
-    assert_eq!(read("[environment]\nos = \"Windows\"\n"), needs("Windows"));
+    assert_eq!(read("[environment]\nos = \"windows\"\n"), needs("Windows"));
 }
 
 #[test]
@@ -782,6 +793,47 @@ fn a_task_that_names_a_variable_that_is_not_set_where_cladenc_runs_is_refused() 
                 name: "KEY".to_owned(),
                 variable: "CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET".to_owned(),
             },
+        })
+    );
+}
+
+#[test]
+fn a_task_that_holds_no_task_toml_is_refused_with_its_id() {
+    let directory = test_inputs::temporary_directory();
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
+    assert_eq!(
+        benchmark::tasks(&benchmark),
+        Err(BenchmarkError::NoConfiguration {
+            task: "t2".to_owned()
+        })
+    );
+}
+
+#[test]
+fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
+    let directory = test_inputs::temporary_directory();
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
+    fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
+    assert_eq!(
+        benchmark::tasks(&benchmark),
+        Err(BenchmarkError::NoConfiguration {
+            task: "t2".to_owned()
+        })
+    );
+}
+
+#[test]
+fn a_task_with_no_grader_and_no_task_toml_is_refused_for_its_grader() {
+    let directory = test_inputs::temporary_directory();
+    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
+    fs::remove_dir_all(benchmark.join("t2/tests")).unwrap();
+    assert_eq!(
+        benchmark::tasks(&benchmark),
+        Err(BenchmarkError::NoGrader {
+            task: "t2".to_owned()
         })
     );
 }

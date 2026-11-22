@@ -71,6 +71,28 @@ fn a_task_with_no_environment_is_said_with_its_id() {
 }
 
 #[test]
+fn a_task_with_no_task_toml_is_said_with_its_id() {
+    assert_eq!(
+        BenchmarkError::NoConfiguration { task: task() }.to_string(),
+        "task fix-the-parser holds no file named task.toml"
+    );
+}
+
+#[test]
+fn a_task_toml_that_is_not_there_is_said_not_to_be_there() {
+    assert_eq!(ConfigurationError::Missing.to_string(), "is not there");
+}
+
+#[test]
+fn a_grader_said_to_share_an_environment_and_to_have_its_own_is_said_as_both() {
+    assert_eq!(
+        ConfigurationError::SharedAndSeparate.to_string(),
+        "says under verifier that the grader shares the environment of the harness, as \
+         environment_mode, and gives the grader an environment of its own, as environment"
+    );
+}
+
+#[test]
 fn a_task_whose_task_toml_cannot_be_obeyed_is_said_with_its_id_and_why() {
     assert_eq!(
         BenchmarkError::Configuration {

@@ -2,13 +2,13 @@ use std::collections::BTreeMap;
 use std::env;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
-use std::io::{self, ErrorKind};
+use std::io::ErrorKind;
 use std::path::Path;
 use std::time::Duration;
 
 use serde::Deserialize;
 
-use super::is_name;
+use super::{is_name, valid};
 
 pub(super) const CONFIGURATION: &str = "task.toml";
 const ENVIRONMENT: &str = "environment";
@@ -50,6 +50,7 @@ impl Default for TaskConfiguration {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ConfigurationError {
+    Missing,
     Unreadable {
         reason: String,
     },
@@ -57,6 +58,7 @@ pub enum ConfigurationError {
         line: usize,
         reason: String,
     },
+    SharedAndSeparate,
     NotAName {
         table: &'static str,
         name: String,
@@ -90,10 +92,16 @@ pub enum ConfigurationError {
 impl Display for ConfigurationError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Missing => write!(formatter, "is not there"),
             Self::Unreadable { reason } => write!(formatter, "cannot be read: {reason}"),
             Self::NotValid { line, reason } => {
                 write!(formatter, "is not valid at line {line}: {reason}")
             }
+            Self::SharedAndSeparate => write!(
+                formatter,
+                "says under verifier that the grader shares the environment of the harness, as \
+                 environment_mode, and gives the grader an environment of its own, as environment"
+            ),
             Self::NotAName { table, name } => write!(
                 formatter,
                 "names a variable `{name}` under {table}.env, and the name of a variable is made \
@@ -177,6 +185,8 @@ struct WrittenVerifier {
     #[serde(default)]
     env: BTreeMap<String, String>,
     timeout_sec: Option<f64>,
+    environment_mode: Option<String>,
+    environment: Option<toml::Value>,
 }
 
 #[derive(Deserialize)]
@@ -208,14 +218,16 @@ pub(super) fn read_with(
     task: &Path,
     set: &dyn Fn(&str) -> Option<String>,
 ) -> Result<TaskConfiguration, ConfigurationError> {
-    let text =
-        written_in(&task.join(CONFIGURATION)).map_err(|error| ConfigurationError::Unreadable {
-            reason: error.to_string(),
+    let text = written_in(&task.join(CONFIGURATION))?;
+    let written = toml::from_str::<Written>(&text)
+        .and_then(|written| valid::check(&text).map(|()| written))
+        .map_err(|error| ConfigurationError::NotValid {
+            line: line_of(&text, error.span().map_or(0, |span| span.start)),
+            reason: error.message().to_owned(),
         })?;
-    let written: Written = toml::from_str(&text).map_err(|error| ConfigurationError::NotValid {
-        line: line_of(&text, error.span().map_or(0, |span| span.start)),
-        reason: error.message().to_owned(),
-    })?;
+    if shares_and_has_its_own(&written.verifier) {
+        return Err(ConfigurationError::SharedAndSeparate);
+    }
     if let Some(what) = needed(&written) {
         return Err(ConfigurationError::Needs { what });
     }
@@ -258,19 +270,17 @@ fn time_limit(
         .transpose()
 }
 
+fn shares_and_has_its_own(verifier: &WrittenVerifier) -> bool {
+    verifier.environment_mode.as_deref() == Some("shared") && verifier.environment.is_some()
+}
+
 fn needed(written: &Written) -> Option<&'static str> {
     let environment = &written.environment;
     [
         (holds_some(written.steps.as_ref()), "several steps"),
         (environment.gpus.is_some_and(|gpus| gpus > 0), "a GPU"),
         (environment.tpu.is_some(), "a TPU"),
-        (
-            environment
-                .os
-                .as_deref()
-                .is_some_and(|os| os.eq_ignore_ascii_case("windows")),
-            "Windows",
-        ),
+        (environment.os.as_deref() == Some("windows"), "Windows"),
         (holds_some(environment.mcp_servers.as_ref()), "MCP servers"),
         (
             environment
@@ -344,11 +354,13 @@ fn size(
         .ok_or(ConfigurationError::NotASize { key })
 }
 
-fn written_in(file: &Path) -> io::Result<String> {
-    match fs::read_to_string(file) {
-        Err(error) if error.kind() == ErrorKind::NotFound => Ok(String::new()),
-        read => read,
-    }
+fn written_in(file: &Path) -> Result<String, ConfigurationError> {
+    fs::read_to_string(file).map_err(|error| match error.kind() {
+        ErrorKind::NotFound => ConfigurationError::Missing,
+        _ => ConfigurationError::Unreadable {
+            reason: error.to_string(),
+        },
+    })
 }
 
 fn line_of(text: &str, place: usize) -> usize {

@@ -154,6 +154,7 @@ fn the_long_help_of_start_names_what_the_directory_of_a_task_holds() {
     let help = help_of_start(true);
     let held = [
         "  instruction.md  a file of text, the task specification, which says what\n",
+        "  task.toml       a file of text, the task configuration of Harbor, which\n",
         "  tests           a directory that holds test.sh, an executable file, the\n",
         "  environment     a directory that holds a file named Dockerfile, which\n",
     ];
@@ -170,8 +171,16 @@ fn the_long_help_of_start_says_that_the_environment_of_a_task_holds_the_files_th
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_task_that_lacks_one_of_the_three_is_refused() {
-    assert!(help_of_start(true).contains("a task that lacks one of the three,"));
+fn the_long_help_of_start_says_that_a_task_that_lacks_one_of_the_four_is_refused() {
+    assert!(help_of_start(true).contains("a task that lacks one of the four,"));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_the_task_toml_of_a_task_is_for() {
+    assert!(
+        help_of_start(true)
+            .contains("which\n                  says how the task is to be attempted\n  tests  ")
+    );
 }
 
 #[test]

@@ -129,6 +129,43 @@ fn a_task_whose_task_toml_is_not_valid_is_reported_with_the_line_it_fails_at() {
     );
 }
 
+fn started_with_no_task_toml_in_t2() -> (TempDir, Output) {
+    let directory = test_inputs::temporary_directory();
+    let mut cladenc = start(directory.path(), "");
+    fs::remove_file(directory.path().join("benchmark/t2/task.toml")).unwrap();
+    let output = cladenc.output().unwrap();
+    (directory, output)
+}
+
+#[test]
+fn a_task_that_holds_no_task_toml_stops_cladenc_start_with_exit_status_2() {
+    assert_eq!(started_with_no_task_toml_in_t2().1.status.code(), Some(2));
+}
+
+#[test]
+fn a_task_that_holds_no_task_toml_is_reported_with_the_task() {
+    assert!(
+        said(&started_with_no_task_toml_in_t2().1)
+            .ends_with("benchmark: task t2 holds no file named task.toml\n")
+    );
+}
+
+#[test]
+fn a_task_that_holds_no_task_toml_leaves_no_outputs_directory() {
+    let (directory, _output) = started_with_no_task_toml_in_t2();
+    assert!(!directory.path().join("outputs").exists());
+}
+
+#[test]
+fn a_task_whose_task_toml_is_not_valid_in_what_cladenc_does_not_obey_is_reported_with_its_line() {
+    assert!(
+        said(&started("[agent]\nuser = \"worker\"\nnetwork_mode = \"private\"\n").1).ends_with(
+            "benchmark: task t2 holds a task.toml that is not valid at line 3: invalid value: \
+             string \"private\", expected one of no-network, public, allowlist\n"
+        )
+    );
+}
+
 #[test]
 fn a_task_whose_image_is_not_on_the_machine_stops_cladenc_start_with_exit_status_2() {
     assert_eq!(

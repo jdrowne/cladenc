@@ -203,10 +203,11 @@ fn refused_benchmark(reason: String) -> Refused {
     Refused {
         flags: BENCHMARK,
         accepted: "the directory of a benchmark, in which every directory is a task that holds \
-                   a file of text named instruction.md, a directory named tests with an executable \
+                   a file of text named instruction.md, a file named task.toml that is valid as \
+                   the task configuration of Harbor, a directory named tests with an executable \
                    file named test.sh in it and a directory named environment with a file named \
                    Dockerfile and no Compose file in it, or, in place of the Dockerfile, an image \
-                   named in its file named task.toml",
+                   named in its task.toml",
         reason: Some(reason),
     }
 }

@@ -145,6 +145,8 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
         format!("Finish the work of {id}.\n"),
     )
     .expect("the specification can be written");
+    fs::write(task.join("task.toml"), "schema_version = \"1.4\"\n")
+        .expect("the configuration can be written");
     fs::write(task.join("environment/workspace/work.txt"), "to do\n")
         .expect("the file can be written");
     fs::write(

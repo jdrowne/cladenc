@@ -1,4 +1,5 @@
 mod configuration;
+mod valid;
 
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -103,6 +104,9 @@ pub enum BenchmarkError {
     NoGrader {
         task: String,
     },
+    NoConfiguration {
+        task: String,
+    },
     Configuration {
         task: String,
         error: ConfigurationError,
@@ -163,6 +167,9 @@ impl Display for BenchmarkError {
                 "task {task} holds no directory named {TESTS} with an executable file named \
                  {GRADER} in it"
             ),
+            Self::NoConfiguration { task } => {
+                write!(formatter, "task {task} holds no file named {CONFIGURATION}")
+            }
             Self::Configuration { task, error } => {
                 write!(
                     formatter,
@@ -232,6 +239,7 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
     }
     let configuration = match TaskConfiguration::read(directory) {
         Ok(configuration) => configuration,
+        Err(ConfigurationError::Missing) => return Err(BenchmarkError::NoConfiguration { task }),
         Err(error) => return Err(BenchmarkError::Configuration { task, error }),
     };
     if configuration.docker_image.is_none() && !is_environment(directory) {

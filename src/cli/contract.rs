@@ -337,6 +337,8 @@ underscores and hyphens, and the directory holds
 
   instruction.md  a file of text, the task specification, which says what
                   is to be done
+  task.toml       a file of text, the task configuration of Harbor, which
+                  says how the task is to be attempted
   tests           a directory that holds test.sh, an executable file, the
                   grader of the task, and whatever else the grader uses
   environment     a directory that holds a file named Dockerfile, which
@@ -347,7 +349,7 @@ underscores and hyphens, and the directory holds
 as in Harbor's task layout, and may hold more, such as solution, which no
 container is ever given. A file that is in the benchmark and in no task is
 left alone. A benchmark that holds no task is refused, and so is one with
-a task that lacks one of the three, or whose environment directory holds a
+a task that lacks one of the four, or whose environment directory holds a
 Compose file, such as docker-compose.yaml: an environment of more than one
 container cannot be built. A task whose task.toml names an image needs
 neither the Dockerfile nor the environment directory.
@@ -568,8 +570,8 @@ and a task that asks for more CPUs or more memory than that stops the
 directed evolution with exit status 2, when it is started and each time it
 is resumed, with the task named.
 
-A task may hold a file named task.toml, the task configuration of Harbor.
-cladenc obeys what it says of the environment of the task:
+The task.toml of a task is the task configuration of Harbor. cladenc obeys
+what it says of the environment of the task:
 
   docker_image under environment  the image that is the environment, in
                                   place of one built from the Dockerfile
@@ -598,10 +600,9 @@ cladenc obeys what it says of the environment of the task:
                                   given, in megabytes
 
 cladenc obeys nothing else of a task.toml. A setting that is left out, or
-written with nothing between its quotation marks, changes nothing, and
-neither does a task that holds no task.toml. The source code of the
-harness belongs to the user the harness runs as, and /tests and
-/logs/verifier belong to the user the grader runs as.
+written with nothing between its quotation marks, changes nothing. The
+source code of the harness belongs to the user the harness runs as, and
+/tests and /logs/verifier belong to the user the grader runs as.
 
 In the value of a variable, ${NAME} stands for the value that the variable
 NAME has where cladenc runs, and ${NAME:-TEXT} for that value, or for TEXT
@@ -613,12 +614,23 @@ command line: Docker reads them from its standard input, one line for each
 variable, so the name of a variable is made of letters, digits, dots,
 underscores and hyphens, and its value is one line of text.
 
-A task is refused when the directed evolution is started where its
-task.toml is not TOML, gives one of these settings a value of another
-kind, names a variable otherwise, or takes a value from a variable that is
-not set where cladenc runs and gives no text in its place. A time limit
-that is not a number of seconds above 0 is refused in the same way, and so
-are CPUs or megabytes of memory that are not a number above 0.
+A task is refused when the directed evolution is started where it holds no
+task.toml, or where its task.toml is not valid as the task configuration of
+Harbor. A task.toml is not valid where it is not TOML, where it gives a
+setting a value of another kind than the setting takes, or a value that is
+not one of those the setting takes, where a table lacks a key it has to
+hold, such as command under environment.healthcheck, or where it says under
+verifier that the grader shares the environment of the harness, as
+environment_mode, and gives the grader an environment of its own, as
+environment. cladenc checks every setting that Harbor's documentation of the
+task configuration names, those it does not obey among them, and lets
+through a setting that the documentation does not name.
+
+A task is also refused where its task.toml names a variable otherwise, or
+takes a value from a variable that is not set where cladenc runs and gives
+no text in its place. A time limit that is not a number of seconds above 0
+is refused in the same way, and so are CPUs or megabytes of memory that are
+not a number above 0.
 
 A task is refused as well where its task.toml asks for what cladenc has no
 way to give: several steps, as [[steps]]; a GPU, as gpus under environment

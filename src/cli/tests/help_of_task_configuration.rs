@@ -8,10 +8,10 @@ fn long_help_of(sub_command: &str) -> String {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_a_task_may_hold_the_task_configuration_of_harbor() {
+fn the_long_help_of_start_says_that_the_task_toml_of_a_task_is_the_task_configuration_of_harbor() {
     assert!(long_help_of("start").contains(
-        "A task may hold a file named task.toml, the task configuration of Harbor.\ncladenc \
-         obeys what it says of the environment of the task:\n"
+        "The task.toml of a task is the task configuration of Harbor. cladenc obeys\nwhat it \
+         says of the environment of the task:\n"
     ));
 }
 
@@ -48,15 +48,15 @@ fn the_long_help_of_start_says_what_a_task_may_ask_for_that_cladenc_has_no_way_t
 fn the_long_help_of_start_says_that_a_setting_that_is_left_out_changes_nothing() {
     assert!(long_help_of("start").contains(
         "A setting that is left out, or\nwritten with nothing between its quotation marks, \
-         changes nothing, and\nneither does a task that holds no task.toml."
+         changes nothing. The\n"
     ));
 }
 
 #[test]
 fn the_long_help_of_start_says_to_whom_what_cladenc_copies_into_the_container_belongs() {
     assert!(long_help_of("start").contains(
-        "The source code of the\nharness belongs to the user the harness runs as, and /tests \
-         and\n/logs/verifier belong to the user the grader runs as."
+        "The\nsource code of the harness belongs to the user the harness runs as, and\n/tests \
+         and /logs/verifier belong to the user the grader runs as."
     ));
 }
 
@@ -95,12 +95,40 @@ fn the_long_help_of_start_says_that_the_values_are_on_no_command_line() {
 }
 
 #[test]
-fn the_long_help_of_start_says_which_task_toml_has_its_task_refused() {
+fn the_long_help_of_start_says_that_a_task_without_a_valid_task_toml_is_refused() {
     assert!(long_help_of("start").contains(
-        "A task is refused when the directed evolution is started where its\ntask.toml is not \
-         TOML, gives one of these settings a value of another\nkind, names a variable \
-         otherwise, or takes a value from a variable that is\nnot set where cladenc runs and \
-         gives no text in its place."
+        "A task is refused when the directed evolution is started where it holds no\ntask.toml, \
+         or where its task.toml is not valid as the task configuration of\nHarbor."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_makes_a_task_toml_not_valid() {
+    assert!(long_help_of("start").contains(
+        "A task.toml is not valid where it is not TOML, where it gives a\nsetting a value of \
+         another kind than the setting takes, or a value that is\nnot one of those the setting \
+         takes, where a table lacks a key it has to\nhold, such as command under \
+         environment.healthcheck, or where it says under\nverifier that the grader shares the \
+         environment of the harness, as\nenvironment_mode, and gives the grader an environment \
+         of its own, as\nenvironment."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_settings_of_a_task_toml_cladenc_checks() {
+    assert!(long_help_of("start").contains(
+        "cladenc checks every setting that Harbor's documentation of the\ntask configuration \
+         names, those it does not obey among them, and lets\nthrough a setting that the \
+         documentation does not name."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_which_variable_of_a_task_toml_has_its_task_refused() {
+    assert!(long_help_of("start").contains(
+        "A task is also refused where its task.toml names a variable otherwise, or\ntakes a \
+         value from a variable that is not set where cladenc runs and gives\nno text in its \
+         place."
     ));
 }
 
@@ -220,7 +248,7 @@ fn the_long_help_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
 #[test]
 fn the_long_help_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused() {
     assert!(long_help_of("start").contains(
-        "A time limit\nthat is not a number of seconds above 0 is refused in the same way, and"
+        "A time limit that is not a number of seconds above 0\nis refused in the same way, and"
     ));
 }
 
@@ -279,7 +307,7 @@ fn the_long_help_of_start_says_that_a_task_that_asks_for_more_than_the_machine_h
 #[test]
 fn the_long_help_of_start_says_that_cpus_and_memory_that_are_not_above_0_are_refused() {
     assert!(long_help_of("start").contains(
-        "is refused in the same way, and so\nare CPUs or megabytes of memory that are not a \
+        "is refused in the same way, and so are CPUs or megabytes of memory that are\nnot a \
          number above 0."
     ));
 }

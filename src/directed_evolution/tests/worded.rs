@@ -118,6 +118,17 @@ fn a_task_whose_task_toml_cannot_be_obeyed_is_worded_with_its_task_and_why() {
 }
 
 #[test]
+fn a_task_whose_copy_holds_no_task_toml_is_worded_with_its_task() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Configuration {
+            task: "benchmark/t1".to_owned(),
+            error: ConfigurationError::Missing,
+        }),
+        "task benchmark/t1 cannot be attempted: its task.toml is not there"
+    );
+}
+
+#[test]
 fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
     assert_eq!(
         worded(DirectedEvolutionError::NotOnTheMachine {

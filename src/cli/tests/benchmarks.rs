@@ -8,10 +8,11 @@ use crate::journal::Settings;
 use tempfile::TempDir;
 
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
-                     a file of text named instruction.md, a directory named tests with an \
-                     executable file named test.sh in it and a directory named environment with a \
-                     file named Dockerfile and no Compose file in it, or, in place of the \
-                     Dockerfile, an image named in its file named task.toml";
+                     a file of text named instruction.md, a file named task.toml that is valid as \
+                     the task configuration of Harbor, a directory named tests with an executable \
+                     file named test.sh in it and a directory named environment with a file named \
+                     Dockerfile and no Compose file in it, or, in place of the Dockerfile, an \
+                     image named in its task.toml";
 
 fn options(directory: &Path) -> StartOptions {
     StartOptions {
@@ -143,6 +144,39 @@ fn a_benchmark_with_a_task_that_has_no_environment_names_the_task_and_what_it_la
         format!(
             "{}: task t2 holds no directory named environment with a file named Dockerfile in \
              it, and its task.toml names no image in its place",
+            directory.path().join("benchmark").display()
+        )
+    );
+}
+
+#[test]
+fn a_benchmark_with_a_task_that_has_no_task_toml_names_the_task_and_what_it_lacks() {
+    let (directory, reason) = reason_of(|_, benchmarks| {
+        fs::remove_file(benchmarks[0].join("t2/task.toml")).unwrap();
+    });
+    assert_eq!(
+        reason,
+        format!(
+            "{}: task t2 holds no file named task.toml",
+            directory.path().join("benchmark").display()
+        )
+    );
+}
+
+#[test]
+fn a_benchmark_with_a_task_whose_task_toml_is_not_valid_names_the_task_the_line_and_why() {
+    let (directory, reason) = reason_of(|_, benchmarks| {
+        fs::write(
+            benchmarks[0].join("t2/task.toml"),
+            "[environment]\ncpus = 1\n\n[environment.healthcheck]\nretries = 1.5\n",
+        )
+        .unwrap();
+    });
+    assert_eq!(
+        reason,
+        format!(
+            "{}: task t2 holds a task.toml that is not valid at line 5: invalid type: floating \
+             point `1.5`, expected i64",
             directory.path().join("benchmark").display()
         )
     );
