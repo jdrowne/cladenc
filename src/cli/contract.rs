@@ -610,11 +610,11 @@ run.txt in every directory named logs. In a pattern, * stands for any run of
 characters, / among them, ? for any one character, the characters between [
 and ] for any one of them, and a character after \\ for itself.
 
-The container of an attempt holds /logs/artifacts when the harness is
-started: an empty directory that belongs to the user the harness runs as, as
-in Harbor. What the harness left in it is kept as a path that the task lists
-is, as artifacts/logs/artifacts, though the task lists no such path, and
-nothing is kept where the harness left nothing there. A task that lists
+What a harness left in /logs/artifacts is kept as a path that the task lists
+is, as artifacts/logs/artifacts, though the task lists no such path, as in
+Harbor, and nothing is kept where the harness left nothing there. cladenc
+does not make the directory: the container of an attempt holds it only where
+the environment of the task does, or the harness made it. A task that lists
 /logs/artifacts itself, or a path that is kept at the same place, has that
 entry obeyed in its place.
 

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::outputs_directory::holds_only_harness_files;
 
-pub(crate) use artifacts::{Artifact, PUBLISHED};
+pub(crate) use artifacts::Artifact;
 use configuration::CONFIGURATION;
 pub use configuration::{
     CollectCommand, ConfigurationError, EnvironmentConfiguration, HealthCheck, TaskConfiguration,

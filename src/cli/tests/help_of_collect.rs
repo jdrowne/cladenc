@@ -8,19 +8,19 @@ fn long_help_of(sub_command: &str) -> String {
 }
 
 #[test]
-fn the_long_help_of_start_says_that_the_container_of_an_attempt_holds_logs_artifacts() {
+fn the_long_help_of_start_says_where_what_a_harness_left_in_logs_artifacts_is_kept() {
     assert!(long_help_of("start").contains(
-        "The container of an attempt holds /logs/artifacts when the harness is\nstarted: an \
-         empty directory that belongs to the user the harness runs as, as\nin Harbor."
+        "What a harness left in /logs/artifacts is kept as a path that the task lists\nis, as \
+         artifacts/logs/artifacts, though the task lists no such path, as in\nHarbor, and \
+         nothing is kept where the harness left nothing there."
     ));
 }
 
 #[test]
-fn the_long_help_of_start_says_where_what_a_harness_left_in_logs_artifacts_is_kept() {
+fn the_long_help_of_start_says_that_cladenc_does_not_make_logs_artifacts() {
     assert!(long_help_of("start").contains(
-        "What the harness left in it is kept as a path that the task lists\nis, as \
-         artifacts/logs/artifacts, though the task lists no such path, and\nnothing is kept \
-         where the harness left nothing there."
+        "cladenc\ndoes not make the directory: the container of an attempt holds it only \
+         where\nthe environment of the task does, or the harness made it."
     ));
 }
 

@@ -3,7 +3,7 @@ use serde::Deserialize;
 use super::configuration::ConfigurationError;
 
 pub(super) const OF_THE_HARNESS: &str = "main";
-pub(crate) const PUBLISHED: &str = "/logs/artifacts";
+const PUBLISHED: &str = "/logs/artifacts";
 const STEP_BACK: &str = "..";
 
 #[derive(Clone, Debug, Eq, PartialEq)]

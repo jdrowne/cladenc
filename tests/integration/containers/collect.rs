@@ -12,9 +12,9 @@ use test_inputs::Image;
 
 const TASK: &str = "benchmark/t1";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
-const PUBLISH_A_REPORT: &str = "echo found > /logs/artifacts/report.txt";
+const PUBLISH_A_REPORT: &str =
+    "mkdir -p /logs/artifacts && echo found > /logs/artifacts/report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
-const AS_1000: &str = "[agent]\nuser = 1000\n";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const ROWS: &str = "artifacts = [\"/app/rows.txt\"]\n";
 const COPY_THE_REPORT: &str = "[[verifier.collect]]\ncommand = \"cat report.txt > rows.txt\"\n";
@@ -32,7 +32,6 @@ struct Attempt<'a> {
     task_toml: &'a str,
     run_command: &'a str,
     grader: &'a str,
-    steps_of_the_environment: Option<&'a str>,
 }
 
 fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) {
@@ -70,13 +69,6 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     fs::write(benchmark.join("t1/task.toml"), attempt.task_toml).unwrap();
-    if let Some(steps) = attempt.steps_of_the_environment {
-        fs::write(
-            benchmark.join("t1/environment/Dockerfile"),
-            format!("FROM {}\n{steps}", test_inputs::IMAGE),
-        )
-        .unwrap();
-    }
     outputs_directory
         .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
         .unwrap();
@@ -116,7 +108,6 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         task_toml,
         run_command,
         grader: COMPLETE,
-        steps_of_the_environment: None,
     })
 }
 
@@ -158,27 +149,8 @@ fn collecting(commands: &[&str]) -> String {
 }
 
 #[test]
-fn the_harness_finds_an_empty_directory_at_logs_artifacts_when_it_starts() {
-    assert_eq!(
-        kept(
-            &attempted("", "ls -A /logs/artifacts && echo listed"),
-            "stdout"
-        ),
-        "listed\n"
-    );
-}
-
-#[test]
-fn the_directory_at_logs_artifacts_belongs_to_the_user_the_harness_runs_as() {
-    assert_eq!(
-        kept(&attempted(AS_1000, "stat -c %u /logs/artifacts"), "stdout"),
-        "1000\n"
-    );
-}
-
-#[test]
 fn what_a_harness_left_in_logs_artifacts_is_kept_though_the_task_lists_no_path() {
-    let attempted = attempted(AS_1000, PUBLISH_A_REPORT);
+    let attempted = attempted("", PUBLISH_A_REPORT);
     assert_eq!(
         kept(&attempted, "artifacts/logs/artifacts/report.txt"),
         "found\n"
@@ -189,7 +161,7 @@ fn what_a_harness_left_in_logs_artifacts_is_kept_though_the_task_lists_no_path()
 fn what_a_harness_left_in_logs_artifacts_is_kept_beside_the_paths_the_task_lists() {
     let attempted = attempted(
         "artifacts = [\"/app/report.txt\"]\n",
-        "echo found > report.txt; echo noted > /logs/artifacts/notes.txt",
+        "echo found > report.txt; mkdir -p /logs/artifacts; echo noted > /logs/artifacts/notes.txt",
     );
     assert_eq!(
         artifacts_of(&attempted),
@@ -216,30 +188,13 @@ fn a_task_that_lists_logs_artifacts_itself_has_its_own_entry_obeyed_in_its_place
 }
 
 #[test]
-fn the_directory_at_logs_artifacts_is_not_among_the_changes_of_the_harness() {
-    assert_eq!(kept(&attempted("", "true"), "changes"), "");
-}
-
-#[test]
 fn a_grader_that_runs_separately_finds_what_the_harness_left_in_logs_artifacts() {
     let attempted = attempted_as(&Attempt {
         task_toml: SEPARATE,
         run_command: PUBLISH_A_REPORT,
         grader: "cat /logs/artifacts/report.txt",
-        steps_of_the_environment: None,
     });
     assert_eq!(kept(&attempted, "grader/stdout"), "found\n");
-}
-
-#[test]
-fn an_attempt_whose_environment_cannot_hold_logs_artifacts_is_an_error() {
-    let attempted = attempted_as(&Attempt {
-        task_toml: "",
-        run_command: WRITE_A_REPORT,
-        grader: COMPLETE,
-        steps_of_the_environment: Some("RUN touch /logs\nWORKDIR /app\nCOPY workspace .\n"),
-    });
-    assert!(matches!(attempted.result, Err(ContainerError::Io(_))));
 }
 
 #[test]

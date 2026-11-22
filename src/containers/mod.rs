@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
-use crate::benchmark::{PUBLISHED, TaskConfiguration};
+use crate::benchmark::TaskConfiguration;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
 use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
@@ -389,8 +389,7 @@ impl Attempting<'_> {
             &outputs_directory.harness(self.attempt.harness),
             HARNESS,
             run.user,
-        )
-        .and_then(|()| up.make(PUBLISHED, run.user))?;
+        )?;
         let before: BTreeSet<String> = up.changes().into_iter().collect();
         let time_limit = environment.configuration.harness_time_limit;
         let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);
