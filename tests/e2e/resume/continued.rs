@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -28,7 +28,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    start.arg("start").args(options).stderr(Stdio::null());
+    start
+        .arg("start")
+        .args(options)
+        .stderr(fs::File::create(directory.join("printed")).unwrap());
     start
 }
 
@@ -72,7 +75,7 @@ fn stopped_by(signal: Signal) -> TempDir {
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
     let id_file = outputs.join("running/attempt-0-benchmark+t1/stdout");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+    test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap();
     fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();

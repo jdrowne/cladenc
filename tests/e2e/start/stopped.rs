@@ -1,7 +1,7 @@
 use std::fs;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Command, ExitStatus};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -29,7 +29,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    start.arg("start").args(options).stderr(Stdio::null());
+    start
+        .arg("start")
+        .args(options)
+        .stderr(fs::File::create(directory.join("printed")).unwrap());
     start
 }
 
@@ -45,7 +48,7 @@ fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
         .spawn()
         .unwrap();
     let id_file = id_file(&directory);
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+    test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     let status = cladenc.wait().unwrap();
     (directory, status)

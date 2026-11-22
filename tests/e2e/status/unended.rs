@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -27,7 +27,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    start.arg("start").args(options).stderr(Stdio::null());
+    start
+        .arg("start")
+        .args(options)
+        .stderr(fs::File::create(directory.join("printed")).unwrap());
     start
 }
 
@@ -136,7 +139,7 @@ fn status_exits_with_0_on_a_directed_evolution_that_is_still_going() {
     let id_file = directory
         .path()
         .join("outputs/running/attempt-0-benchmark+t1/stdout");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+    test_inputs::wait_for_a_line(&mut going, &id_file, &directory.path().join("printed"));
     let status = status(directory.path(), None).status.code();
     kill(Pid::from_raw(going.id().cast_signed()), Signal::SIGINT).unwrap();
     going.wait().unwrap();

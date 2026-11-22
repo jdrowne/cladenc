@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -35,7 +35,10 @@ fn start(directory: &Path, run_command: &str) -> Command {
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
     let mut start = Command::new(env!("CARGO_BIN_EXE_cladenc"));
-    start.arg("start").args(options).stderr(Stdio::null());
+    start
+        .arg("start")
+        .args(options)
+        .stderr(fs::File::create(directory.join("printed")).unwrap());
     start
 }
 
@@ -61,7 +64,7 @@ fn killed_outright() -> Left {
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
     let written = outputs.join("running/attempt-0-benchmark+t1/stdout");
-    test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&written));
+    test_inputs::wait_for_a_line(&mut cladenc, &written, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     cladenc.wait().unwrap();
     let id_file = directory.path().join("id-of-the-container-left");

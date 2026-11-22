@@ -1,12 +1,16 @@
 use std::fs;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
-use std::process::{self, Command};
+use std::process::{self, Child, Command};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 
 use tempfile::TempDir;
+
+const LOOK: Duration = Duration::from_millis(10);
+const TEN_SECONDS: u32 = 1_000;
+const TWO_MINUTES: u32 = 12_000;
 
 pub const IMAGE: &str = "debian:stable-slim";
 
@@ -193,15 +197,31 @@ pub fn sample(tier: &str, name: &str) -> PathBuf {
         .join(name)
 }
 
-pub fn within_ten_seconds(mut holds: impl FnMut() -> bool) -> bool {
-    (0..1000).any(|_| {
-        thread::sleep(Duration::from_millis(10));
+pub fn within_ten_seconds(holds: impl FnMut() -> bool) -> bool {
+    within(TEN_SECONDS, holds)
+}
+
+fn within(looks: u32, mut holds: impl FnMut() -> bool) -> bool {
+    (0..looks).any(|_| {
+        thread::sleep(LOOK);
         holds()
     })
 }
 
 pub fn line_is_written(file: &Path) -> bool {
     fs::read_to_string(file).is_ok_and(|line| line.ends_with('\n'))
+}
+
+pub fn wait_for_a_line(program: &mut Child, file: &Path, printed: &Path) {
+    within(TWO_MINUTES, || {
+        line_is_written(file) || program.try_wait().is_ok_and(|ended| ended.is_some())
+    });
+    if !line_is_written(file) {
+        let _ = program.kill();
+        let ended = program.wait().expect("the program can be waited for");
+        let printed = fs::read_to_string(printed).unwrap_or_default();
+        panic!("the program wrote no line before it ended with {ended}, and printed:\n{printed}");
+    }
 }
 
 pub fn container_is_gone(id_file: &Path) -> bool {
