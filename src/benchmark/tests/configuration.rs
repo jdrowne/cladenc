@@ -75,7 +75,7 @@ fn a_task_toml_that_holds_only_what_cladenc_does_not_read_leaves_every_setting_o
     assert_eq!(
         says(
             "schema_version = \"1.4\"\n[metadata]\ndifficulty = \"hard\"\n[agent]\nnetwork_mode \
-             = \"public\"\n[environment]\ncpus = 2\n[solution]\nenv = { ANSWER = \"42\" }\n"
+             = \"public\"\n[environment]\ngpus = 0\n[solution]\nenv = { ANSWER = \"42\" }\n"
         ),
         TaskConfiguration::default()
     );
@@ -199,6 +199,214 @@ fn a_time_limit_written_as_text_is_refused() {
         read("[agent]\ntimeout_sec = \"long\"\n"),
         not_valid(2, "invalid type: string \"long\", expected f64")
     );
+}
+
+#[test]
+fn a_task_that_asks_for_no_cpus_and_no_memory_is_given_no_limit_of_either() {
+    let configuration = says("[environment]\nworkdir = \"/app\"\n");
+    assert_eq!(
+        (configuration.cpus, configuration.memory_megabytes),
+        (None, None)
+    );
+}
+
+#[test]
+fn the_cpus_of_a_task_are_read_from_cpus_under_environment() {
+    assert_eq!(says("[environment]\ncpus = 2\n").cpus, Some(2.0));
+}
+
+#[test]
+fn the_cpus_of_a_task_may_be_a_part_of_one() {
+    assert_eq!(says("[environment]\ncpus = 0.5\n").cpus, Some(0.5));
+}
+
+#[test]
+fn the_memory_of_a_task_is_read_in_megabytes_from_memory_mb_under_environment() {
+    assert_eq!(
+        says("[environment]\nmemory_mb = 4096\n").memory_megabytes,
+        Some(4096)
+    );
+}
+
+#[test]
+fn the_memory_of_a_task_is_read_from_the_older_spelling_in_gigabytes() {
+    assert_eq!(
+        says("[environment]\nmemory = '4G'\n").memory_megabytes,
+        Some(4096)
+    );
+}
+
+#[test]
+fn the_older_spelling_of_memory_may_be_in_megabytes() {
+    assert_eq!(
+        says("[environment]\nmemory = '512M'\n").memory_megabytes,
+        Some(512)
+    );
+}
+
+#[test]
+fn the_older_spelling_of_memory_may_be_in_kilobytes() {
+    assert_eq!(
+        says("[environment]\nmemory = '2048K'\n").memory_megabytes,
+        Some(2)
+    );
+}
+
+#[test]
+fn the_older_spelling_of_memory_may_be_in_small_letters_with_spaces_around_it() {
+    assert_eq!(
+        says("[environment]\nmemory = ' 1.5g '\n").memory_megabytes,
+        Some(1536)
+    );
+}
+
+#[test]
+fn the_two_spellings_of_memory_may_both_be_given_where_they_agree() {
+    assert_eq!(
+        says("[environment]\nmemory = '4G'\nmemory_mb = 4096\n").memory_megabytes,
+        Some(4096)
+    );
+}
+
+#[test]
+fn an_older_spelling_of_memory_that_is_not_text_is_left_out() {
+    assert_eq!(says("[environment]\nmemory = 4\n").memory_megabytes, None);
+}
+
+#[test]
+fn two_spellings_of_memory_that_differ_are_refused() {
+    assert_eq!(
+        read("[environment]\nmemory = '4G'\nmemory_mb = 2048\n"),
+        Err(ConfigurationError::TwoSizes {
+            key: "environment.memory"
+        })
+    );
+}
+
+#[test]
+fn an_older_spelling_of_memory_with_no_unit_is_refused() {
+    assert_eq!(
+        read("[environment]\nmemory = '4096'\n"),
+        Err(ConfigurationError::NotASize {
+            key: "environment.memory"
+        })
+    );
+}
+
+#[test]
+fn an_older_spelling_of_memory_that_is_no_number_is_refused() {
+    assert_eq!(
+        read("[environment]\nmemory = 'manyG'\n"),
+        Err(ConfigurationError::NotASize {
+            key: "environment.memory"
+        })
+    );
+}
+
+#[test]
+fn an_older_spelling_of_memory_that_comes_to_no_megabyte_is_refused() {
+    assert_eq!(
+        read("[environment]\nmemory = '100K'\n"),
+        Err(ConfigurationError::NotASize {
+            key: "environment.memory"
+        })
+    );
+}
+
+#[test]
+fn cpus_that_are_not_above_0_are_refused() {
+    assert_eq!(
+        read("[environment]\ncpus = 0\n"),
+        Err(ConfigurationError::NotAbove0 {
+            key: "environment.cpus"
+        })
+    );
+}
+
+#[test]
+fn cpus_without_end_are_refused() {
+    assert_eq!(
+        read("[environment]\ncpus = inf\n"),
+        Err(ConfigurationError::NotAbove0 {
+            key: "environment.cpus"
+        })
+    );
+}
+
+#[test]
+fn memory_that_is_not_above_0_megabytes_is_refused() {
+    assert_eq!(
+        read("[environment]\nmemory_mb = -1\n"),
+        Err(ConfigurationError::NotAbove0 {
+            key: "environment.memory_mb"
+        })
+    );
+}
+
+fn needs(what: &'static str) -> Result<TaskConfiguration, ConfigurationError> {
+    Err(ConfigurationError::Needs { what })
+}
+
+#[test]
+fn a_task_of_several_steps_is_refused() {
+    assert_eq!(
+        read("[[steps]]\nname = \"first\"\n\n[[steps]]\nname = \"second\"\n"),
+        needs("several steps")
+    );
+}
+
+#[test]
+fn a_task_that_asks_for_a_gpu_is_refused() {
+    assert_eq!(read("[environment]\ngpus = 1\n"), needs("a GPU"));
+}
+
+#[test]
+fn a_task_that_asks_for_0_gpus_is_not_refused() {
+    assert!(read("[environment]\ngpus = 0\n").is_ok());
+}
+
+#[test]
+fn a_task_that_asks_for_a_tpu_is_refused() {
+    assert_eq!(
+        read("[environment.tpu]\ntype = \"v6e\"\ntopology = \"2x4\"\n"),
+        needs("a TPU")
+    );
+}
+
+#[test]
+fn a_task_for_windows_is_refused() {
+    assert_eq!(read("[environment]\nos = \"Windows\"\n"), needs("Windows"));
+}
+
+#[test]
+fn a_task_for_linux_is_not_refused() {
+    assert!(read("[environment]\nos = \"linux\"\n").is_ok());
+}
+
+#[test]
+fn a_task_with_mcp_servers_is_refused() {
+    assert_eq!(
+        read("[[environment.mcp_servers]]\nname = \"search\"\nurl = \"http://mcp:8000\"\n"),
+        needs("MCP servers")
+    );
+}
+
+#[test]
+fn a_task_with_an_empty_list_of_mcp_servers_is_not_refused() {
+    assert!(read("[environment]\nmcp_servers = []\n").is_ok());
+}
+
+#[test]
+fn a_task_with_a_skills_directory_is_refused() {
+    assert_eq!(
+        read("[environment]\nskills_dir = \"/skills\"\n"),
+        needs("a skills directory")
+    );
+}
+
+#[test]
+fn a_task_with_an_empty_list_of_steps_is_not_refused() {
+    assert!(read("steps = []\n").is_ok());
 }
 
 #[test]

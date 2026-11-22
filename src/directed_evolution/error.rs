@@ -23,6 +23,13 @@ pub enum DirectedEvolutionError {
         image: String,
         error: io::Error,
     },
+    Machine(io::Error),
+    TooLarge {
+        task: String,
+        key: &'static str,
+        asked: String,
+        has: String,
+    },
     Environment {
         task: String,
         error: ContainerError,
@@ -65,6 +72,19 @@ impl Display for DirectedEvolutionError {
                 formatter,
                 "the environment of task {task} is not on the machine: its task.toml names the \
                  image {image}, and cladenc fetches no image: {error}"
+            ),
+            Self::Machine(error) => {
+                write!(formatter, "what the machine has cannot be told: {error}")
+            }
+            Self::TooLarge {
+                task,
+                key,
+                asked,
+                has,
+            } => write!(
+                formatter,
+                "task {task} asks for more than the machine has: {asked} under {key} in its \
+                 task.toml, where Docker has {has}"
             ),
             Self::Environment { task, error } => write!(
                 formatter,

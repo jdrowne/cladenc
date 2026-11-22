@@ -334,3 +334,36 @@ fn an_environment_whose_build_runs_past_its_time_limit_is_said_to_have_run_past_
             )
     );
 }
+
+#[test]
+fn a_task_that_asks_for_more_cpus_than_the_machine_has_stops_the_directed_evolution() {
+    assert!(matches!(
+        evolved(&[("t2", "[environment]\ncpus = 100000\n")]).found,
+        Err(DirectedEvolutionError::TooLarge { task, key: "cpus", .. }) if task == "benchmark/t2"
+    ));
+}
+
+#[test]
+fn a_task_that_asks_for_more_memory_than_the_machine_has_stops_the_directed_evolution() {
+    assert!(matches!(
+        evolved(&[("t2", "[environment]\nmemory_mb = 100000000\n")]).found,
+        Err(DirectedEvolutionError::TooLarge { task, key: "memory_mb", .. })
+            if task == "benchmark/t2"
+    ));
+}
+
+#[test]
+fn a_task_that_asks_for_more_than_the_machine_has_leaves_the_directed_evolution_no_journal() {
+    let evolved = evolved(&[("t2", "[environment]\ncpus = 100000\n")]);
+    assert!(!journal::path(&outputs_of(&evolved)).exists());
+}
+
+#[test]
+fn a_directed_evolution_whose_tasks_ask_for_what_the_machine_has_runs_to_its_end() {
+    let within = "[environment]\ncpus = 1\nmemory_mb = 512\n";
+    assert!(
+        evolved(&[("t1", within), ("t2", within), ("t3", within)])
+            .found
+            .is_ok()
+    );
+}

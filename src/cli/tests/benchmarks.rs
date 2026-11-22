@@ -168,6 +168,24 @@ fn a_benchmark_with_a_task_whose_task_toml_cannot_be_obeyed_names_the_task_and_w
 }
 
 #[test]
+fn a_benchmark_with_a_task_that_asks_for_a_gpu_names_the_task_and_what_it_asks_for() {
+    let (directory, reason) = reason_of(|_, benchmarks| {
+        fs::write(
+            benchmarks[0].join("t2/task.toml"),
+            "[environment]\ngpus = 1\n",
+        )
+        .unwrap();
+    });
+    assert_eq!(
+        reason,
+        format!(
+            "{}: task t2 holds a task.toml that asks for a GPU, which cladenc has no way to give",
+            directory.path().join("benchmark").display()
+        )
+    );
+}
+
+#[test]
 fn a_benchmark_with_a_task_that_names_an_image_in_its_task_toml_needs_no_dockerfile_for_it() {
     let settings = settings_of(|_, benchmarks| {
         fs::remove_dir_all(benchmarks[0].join("t2/environment")).unwrap();

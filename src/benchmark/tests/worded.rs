@@ -135,6 +135,48 @@ fn a_time_limit_that_is_not_one_is_said_with_its_key() {
 }
 
 #[test]
+fn a_number_that_is_not_above_0_is_said_with_its_key() {
+    assert_eq!(
+        ConfigurationError::NotAbove0 {
+            key: "environment.cpus"
+        }
+        .to_string(),
+        "gives environment.cpus a value that is not a number above 0"
+    );
+}
+
+#[test]
+fn a_size_that_is_not_one_is_said_with_its_key_and_how_a_size_is_written() {
+    assert_eq!(
+        ConfigurationError::NotASize {
+            key: "environment.memory"
+        }
+        .to_string(),
+        "gives environment.memory a value that is not a size of a megabyte or more, written \
+         as a number and one of G, M and K, such as 4G"
+    );
+}
+
+#[test]
+fn two_spellings_of_a_size_that_differ_are_said_with_the_older_key() {
+    assert_eq!(
+        ConfigurationError::TwoSizes {
+            key: "environment.memory"
+        }
+        .to_string(),
+        "gives environment.memory and environment.memory_mb sizes that differ"
+    );
+}
+
+#[test]
+fn what_a_task_needs_and_cladenc_cannot_give_is_said() {
+    assert_eq!(
+        ConfigurationError::Needs { what: "a GPU" }.to_string(),
+        "asks for a GPU, which cladenc has no way to give"
+    );
+}
+
+#[test]
 fn a_variable_whose_value_is_not_one_line_is_said_with_its_table_and_its_name() {
     assert_eq!(
         ConfigurationError::NotOneLine {

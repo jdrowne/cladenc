@@ -12,7 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::benchmark::TaskConfiguration;
-use crate::containers::{self, ContainerError, Environment, Launch};
+use crate::containers::{self, ContainerError, Environment, Launch, Machine};
 use crate::genealogy::HarnessId;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
@@ -153,6 +153,7 @@ fn environments(
 ) -> Result<BTreeMap<String, Environment>, DirectedEvolutionError> {
     let mut environments = BTreeMap::new();
     let mut count_built = 0;
+    let mut machine = None;
     for (task, image) in settings.environments() {
         let configuration =
             TaskConfiguration::read(&outputs_directory.task(&task)).map_err(|error| {
@@ -161,6 +162,7 @@ fn environments(
                     error,
                 }
             })?;
+        fits(&task, &configuration, &mut machine)?;
         let image = match configuration.docker_image.clone() {
             Some(named) => take_image(&task, named, writer)?,
             None => {
@@ -188,6 +190,43 @@ fn environments(
         say(writer, &built);
     }
     Ok(environments)
+}
+
+fn fits(
+    task: &str,
+    configuration: &TaskConfiguration,
+    machine: &mut Option<Machine>,
+) -> Result<(), DirectedEvolutionError> {
+    if configuration.cpus.is_none() && configuration.memory_megabytes.is_none() {
+        return Ok(());
+    }
+    let machine = match machine {
+        Some(machine) => *machine,
+        None => *machine.insert(containers::machine().map_err(DirectedEvolutionError::Machine)?),
+    };
+    let cpus = configuration
+        .cpus
+        .filter(|cpus| *cpus > machine.cpus)
+        .map(|cpus| ("cpus", cpus.to_string(), machine.cpus.to_string()));
+    let memory = configuration
+        .memory_megabytes
+        .filter(|megabytes| *megabytes > machine.memory_megabytes)
+        .map(|megabytes| {
+            (
+                "memory_mb",
+                megabytes.to_string(),
+                machine.memory_megabytes.to_string(),
+            )
+        });
+    match cpus.or(memory) {
+        Some((key, asked, has)) => Err(DirectedEvolutionError::TooLarge {
+            task: task.to_owned(),
+            key,
+            asked,
+            has,
+        }),
+        None => Ok(()),
+    }
 }
 
 fn take_image(

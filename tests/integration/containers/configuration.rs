@@ -285,3 +285,49 @@ fn an_attempt_is_carried_out_in_the_image_the_task_names() {
 fn the_grader_of_a_task_that_names_an_image_runs_in_a_container_of_that_image() {
     assert_eq!(printed_by_the_grader(IN_AN_IMAGE, "pwd"), "/\n");
 }
+
+#[test]
+fn the_harness_is_given_no_more_cpus_than_its_task_asks_for() {
+    assert_eq!(
+        printed_by_the_harness("[environment]\ncpus = 0.5\n", "cat /sys/fs/cgroup/cpu.max"),
+        "50000 100000\n"
+    );
+}
+
+#[test]
+fn the_grader_is_given_no_more_cpus_than_its_task_asks_for() {
+    assert_eq!(
+        printed_by_the_grader("[environment]\ncpus = 2\n", "cat /sys/fs/cgroup/cpu.max"),
+        "200000 100000\n"
+    );
+}
+
+#[test]
+fn the_harness_is_given_no_more_memory_than_its_task_asks_for() {
+    assert_eq!(
+        printed_by_the_harness(
+            "[environment]\nmemory_mb = 256\n",
+            "cat /sys/fs/cgroup/memory.max"
+        ),
+        "268435456\n"
+    );
+}
+
+#[test]
+fn the_grader_is_given_no_more_memory_than_its_task_asks_for_in_the_older_spelling() {
+    assert_eq!(
+        printed_by_the_grader(
+            "[environment]\nmemory = '256M'\n",
+            "cat /sys/fs/cgroup/memory.max"
+        ),
+        "268435456\n"
+    );
+}
+
+#[test]
+fn a_harness_whose_task_asks_for_no_cpus_and_no_memory_is_limited_in_neither() {
+    assert_eq!(
+        printed_by_the_harness("", "cat /sys/fs/cgroup/cpu.max /sys/fs/cgroup/memory.max"),
+        "max 100000\nmax\n"
+    );
+}

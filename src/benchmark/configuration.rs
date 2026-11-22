@@ -15,12 +15,14 @@ const ENVIRONMENT: &str = "environment";
 const VERIFIER: &str = "verifier";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TaskConfiguration {
     pub docker_image: Option<String>,
     pub working_directory: Option<String>,
     pub variables: Vec<(String, String)>,
     pub build_time_limit: Duration,
+    pub cpus: Option<f64>,
+    pub memory_megabytes: Option<u64>,
     pub harness_user: Option<String>,
     pub harness_time_limit: Option<Duration>,
     pub grader_user: Option<String>,
@@ -35,6 +37,8 @@ impl Default for TaskConfiguration {
             working_directory: None,
             variables: Vec::new(),
             build_time_limit: TIME_LIMIT_LEFT_OUT,
+            cpus: None,
+            memory_megabytes: None,
             harness_user: None,
             harness_time_limit: None,
             grader_user: None,
@@ -69,6 +73,18 @@ pub enum ConfigurationError {
     NotATimeLimit {
         key: &'static str,
     },
+    NotAbove0 {
+        key: &'static str,
+    },
+    NotASize {
+        key: &'static str,
+    },
+    TwoSizes {
+        key: &'static str,
+    },
+    Needs {
+        what: &'static str,
+    },
 }
 
 impl Display for ConfigurationError {
@@ -101,6 +117,22 @@ impl Display for ConfigurationError {
                 formatter,
                 "gives {key} a value that is not a number of seconds above 0"
             ),
+            Self::NotAbove0 { key } => write!(
+                formatter,
+                "gives {key} a value that is not a number above 0"
+            ),
+            Self::NotASize { key } => write!(
+                formatter,
+                "gives {key} a value that is not a size of a megabyte or more, written as a \
+                 number and one of G, M and K, such as 4G"
+            ),
+            Self::TwoSizes { key } => {
+                write!(formatter, "gives {key} and {key}_mb sizes that differ")
+            }
+            Self::Needs { what } => write!(
+                formatter,
+                "asks for {what}, which cladenc has no way to give"
+            ),
         }
     }
 }
@@ -113,6 +145,7 @@ struct Written {
     agent: WrittenAgent,
     #[serde(default)]
     verifier: WrittenVerifier,
+    steps: Option<toml::Value>,
 }
 
 #[derive(Default, Deserialize)]
@@ -122,6 +155,14 @@ struct WrittenEnvironment {
     #[serde(default)]
     env: BTreeMap<String, String>,
     build_timeout_sec: Option<f64>,
+    cpus: Option<f64>,
+    memory_mb: Option<i64>,
+    memory: Option<toml::Value>,
+    gpus: Option<i64>,
+    tpu: Option<toml::Value>,
+    os: Option<String>,
+    mcp_servers: Option<toml::Value>,
+    skills_dir: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -175,16 +216,26 @@ pub(super) fn read_with(
         line: line_of(&text, error.span().map_or(0, |span| span.start)),
         reason: error.message().to_owned(),
     })?;
+    if let Some(what) = needed(&written) {
+        return Err(ConfigurationError::Needs { what });
+    }
     let build = time_limit(
         "environment.build_timeout_sec",
         written.environment.build_timeout_sec,
     )?;
     let grader = time_limit("verifier.timeout_sec", written.verifier.timeout_sec)?;
+    let memory = megabytes(
+        "environment.memory",
+        written.environment.memory,
+        written.environment.memory_mb,
+    )?;
     Ok(TaskConfiguration {
         docker_image: given(written.environment.docker_image),
         working_directory: given(written.environment.workdir),
         variables: variables(ENVIRONMENT, written.environment.env, set)?,
         build_time_limit: build.unwrap_or(TIME_LIMIT_LEFT_OUT),
+        cpus: above_0("environment.cpus", written.environment.cpus)?,
+        memory_megabytes: memory,
         harness_user: given(written.agent.user.map(User::named)),
         harness_time_limit: time_limit("agent.timeout_sec", written.agent.timeout_sec)?,
         grader_user: given(written.verifier.user.map(User::named)),
@@ -205,6 +256,92 @@ fn time_limit(
                 .ok_or(ConfigurationError::NotATimeLimit { key })
         })
         .transpose()
+}
+
+fn needed(written: &Written) -> Option<&'static str> {
+    let environment = &written.environment;
+    [
+        (holds_some(written.steps.as_ref()), "several steps"),
+        (environment.gpus.is_some_and(|gpus| gpus > 0), "a GPU"),
+        (environment.tpu.is_some(), "a TPU"),
+        (
+            environment
+                .os
+                .as_deref()
+                .is_some_and(|os| os.eq_ignore_ascii_case("windows")),
+            "Windows",
+        ),
+        (holds_some(environment.mcp_servers.as_ref()), "MCP servers"),
+        (
+            environment
+                .skills_dir
+                .as_deref()
+                .is_some_and(|directory| !directory.is_empty()),
+            "a skills directory",
+        ),
+    ]
+    .into_iter()
+    .find_map(|(needed, what)| needed.then_some(what))
+}
+
+fn holds_some(list: Option<&toml::Value>) -> bool {
+    list.and_then(toml::Value::as_array)
+        .is_some_and(|list| !list.is_empty())
+}
+
+fn above_0(key: &'static str, number: Option<f64>) -> Result<Option<f64>, ConfigurationError> {
+    number
+        .map(|number| {
+            if number.is_finite() && number > 0.0 {
+                Ok(number)
+            } else {
+                Err(ConfigurationError::NotAbove0 { key })
+            }
+        })
+        .transpose()
+}
+
+fn megabytes(
+    key: &'static str,
+    older: Option<toml::Value>,
+    newer: Option<i64>,
+) -> Result<Option<u64>, ConfigurationError> {
+    let older = size(key, older)?;
+    let newer = newer
+        .map(|megabytes| {
+            u64::try_from(megabytes)
+                .ok()
+                .filter(|megabytes| *megabytes > 0)
+                .ok_or(ConfigurationError::NotAbove0 {
+                    key: "environment.memory_mb",
+                })
+        })
+        .transpose()?;
+    match (older, newer) {
+        (Some(older), Some(newer)) if older != newer => Err(ConfigurationError::TwoSizes { key }),
+        (older, newer) => Ok(newer.or(older)),
+    }
+}
+
+fn size(
+    key: &'static str,
+    written: Option<toml::Value>,
+) -> Result<Option<u64>, ConfigurationError> {
+    let Some(toml::Value::String(written)) = written else {
+        return Ok(None);
+    };
+    let written = written.trim().to_uppercase();
+    [('G', 1024.0), ('M', 1.0), ('K', 1.0 / 1024.0)]
+        .into_iter()
+        .find_map(|(unit, megabytes)| {
+            written
+                .strip_suffix(unit)
+                .and_then(|number| number.parse::<f64>().ok())
+                .map(|number| number * megabytes)
+        })
+        .filter(|megabytes| megabytes.is_finite() && *megabytes >= 1.0)
+        .map(|megabytes| Some(megabytes as u64))
+        .ok_or(ConfigurationError::NotASize { key })
 }
 
 fn written_in(file: &Path) -> io::Result<String> {

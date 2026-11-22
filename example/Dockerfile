@@ -1,7 +1,7 @@
 FROM debian:stable-slim
 
 RUN apt-get update \
- && apt-get install --yes --no-install-recommends ca-certificates curl git ripgrep unzip \
+ && apt-get install --yes --no-install-recommends ca-certificates curl git unzip \
  && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL_CACHE_DIR=/var/cache/bun \
@@ -14,6 +14,12 @@ RUN --mount=type=bind,target=/usr/local/src/opencode \
       "https://github.com/oven-sh/bun/releases/download/bun-v$bun/bun-linux-aarch64.zip" \
  && unzip -j /tmp/bun.zip bun-linux-aarch64/bun -d /usr/local/bin \
  && rm /tmp/bun.zip \
+ && ripgrep=$(sed -n 's/.*const VERSION = "\([^"]*\)".*/\1/p' \
+      /usr/local/src/opencode/packages/core/src/ripgrep/binary.ts) \
+ && curl --fail --location --silent --show-error \
+      "https://github.com/BurntSushi/ripgrep/releases/download/$ripgrep/ripgrep-$ripgrep-aarch64-unknown-linux-gnu.tar.gz" \
+    | tar --extract --gzip --no-same-owner --directory /usr/local/bin --strip-components 1 \
+      "ripgrep-$ripgrep-aarch64-unknown-linux-gnu/rg" \
  && mkdir -p /usr/local/share/models.dev \
  && curl --fail --location --silent --show-error --output "$MODELS_DEV_API_JSON" \
       https://models.dev/api.json \

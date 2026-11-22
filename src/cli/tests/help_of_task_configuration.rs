@@ -30,8 +30,18 @@ fn the_long_help_of_start_names_each_setting_of_a_task_toml_that_cladenc_obeys()
 }
 
 #[test]
-fn the_long_help_of_start_says_that_cladenc_reads_nothing_else_of_a_task_toml() {
-    assert!(long_help_of("start").contains("cladenc reads nothing else of a task.toml."));
+fn the_long_help_of_start_says_that_cladenc_obeys_nothing_else_of_a_task_toml() {
+    assert!(long_help_of("start").contains("cladenc obeys nothing else of a task.toml."));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
+    assert!(long_help_of("start").contains(
+        "A task is refused as well where its task.toml asks for what cladenc has no\nway to \
+         give: several steps, as [[steps]]; a GPU, as gpus under environment\nabove 0, or a \
+         TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; or\na skills directory, as \
+         skills_dir. The refusal names the task and what it\nasks for."
+    ));
 }
 
 #[test]
@@ -210,7 +220,7 @@ fn the_long_help_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
 #[test]
 fn the_long_help_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused() {
     assert!(long_help_of("start").contains(
-        "A time limit\nthat is not a number of seconds above 0 is refused in the same way."
+        "A time limit\nthat is not a number of seconds above 0 is refused in the same way, and"
     ));
 }
 
@@ -219,5 +229,57 @@ fn the_long_help_of_start_says_that_an_attempt_keeps_whether_its_harness_was_sto
     assert!(long_help_of("start").contains(
         "  ending         one word: ended, or stopped where the harness ran past\n                 \
          its time limit\n"
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc_obeys() {
+    let help = long_help_of("start");
+    let settings = [
+        "  cpus under environment          the most CPUs the container of an\n",
+        "  memory_mb under environment     the most memory that container is\n",
+    ];
+    assert!(settings.iter().all(|line| help.contains(line)));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_an_attempt_is_given_no_more_than_its_task_asks_for() {
+    assert!(long_help_of("start").contains(
+        "The container of an attempt is given no more CPUs and no more memory than\nits task \
+         asks for, as --cpus and --memory of `docker run`, so the harness\nand the grader have \
+         them between them."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_the_older_spelling_of_the_memory_is_read() {
+    assert!(long_help_of("start").contains(
+        "The older spelling of the memory,\nmemory under environment, a number and one of G, M \
+         and K, such as 4G, is\nread as Harbor reads it, and a task that gives both spellings \
+         with sizes\nthat differ is refused."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_shows_how_docker_is_asked_what_the_machine_has() {
+    assert!(
+        long_help_of("start").contains("\n    docker info --format '{{.NCPU}} {{.MemTotal}}'\n")
+    );
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_task_that_asks_for_more_than_the_machine_has_stops_it() {
+    assert!(long_help_of("start").contains(
+        "and a task that asks for more CPUs or more memory than that stops the\ndirected \
+         evolution with exit status 2, when it is started and each time it\nis resumed, with \
+         the task named."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_cpus_and_memory_that_are_not_above_0_are_refused() {
+    assert!(long_help_of("start").contains(
+        "is refused in the same way, and so\nare CPUs or megabytes of memory that are not a \
+         number above 0."
     ));
 }

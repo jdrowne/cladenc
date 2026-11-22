@@ -10,6 +10,9 @@ use super::program::{self, Ending, LEEWAY, Limits};
 use crate::benchmark::ENVIRONMENT;
 use crate::outputs_directory::OutputsDirectory;
 
+const MACHINE: &str = "{{.NCPU}} {{.MemTotal}}";
+const BYTES_IN_A_MEGABYTE: u64 = 1_048_576;
+
 pub fn build_image(
     outputs_directory: &OutputsDirectory,
     dockerfile: &Path,
@@ -46,6 +49,30 @@ pub fn build_environment(
         .arg(format!("cladenc.task={task}"))
         .arg(outputs_directory.task(task).join(ENVIRONMENT));
     program::run(build, "", &kept, Limits::within(time_limit, stop)).and_then(built)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Machine {
+    pub cpus: f64,
+    pub memory_megabytes: u64,
+}
+
+pub fn machine() -> io::Result<Machine> {
+    let mut info = Command::new("docker");
+    info.args(["info", "--format", MACHINE]);
+    left::printed_by(info).and_then(|printed| {
+        let mut numbers = printed.split_whitespace();
+        let cpus = numbers.next().and_then(|cpus| cpus.parse().ok());
+        let memory = numbers.next().and_then(|bytes| bytes.parse::<u64>().ok());
+        cpus.zip(memory)
+            .map(|(cpus, bytes)| Machine {
+                cpus,
+                memory_megabytes: bytes / BYTES_IN_A_MEGABYTE,
+            })
+            .ok_or_else(|| {
+                io::Error::other("Docker did not say how many CPUs and how much memory it has")
+            })
+    })
 }
 
 pub fn find_image(image: &str) -> io::Result<()> {

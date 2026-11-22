@@ -285,3 +285,62 @@ fn the_timer_of_a_grader_is_given_the_time_limit_its_task_gives_it_and_five_seco
         ["605", "25", "605"]
     );
 }
+
+const TOO_MANY_CPUS: &str = "[environment]\ncpus = 100000\n";
+
+fn said_with_a_docker_that_says_nothing_of_the_machine() -> (Option<i32>, String) {
+    let directory = test_inputs::temporary_directory();
+    let path = format!(
+        "{}:{}",
+        test_inputs::sample("e2e", "fake").display(),
+        env::var("PATH").unwrap()
+    );
+    let output = start(directory.path(), "[environment]\ncpus = 1\n")
+        .env("PATH", path)
+        .env(
+            "CLADENC_TEST_ARGUMENTS_OF_DOCKER",
+            directory.path().join("arguments-of-docker"),
+        )
+        .output()
+        .unwrap();
+    (output.status.code(), said(&output))
+}
+
+#[test]
+fn a_task_that_asks_for_more_cpus_than_the_machine_has_stops_cladenc_start_with_exit_status_2() {
+    assert_eq!(started(TOO_MANY_CPUS).1.status.code(), Some(2));
+}
+
+#[test]
+fn a_task_that_asks_for_more_cpus_than_the_machine_has_is_reported_last_with_what_it_asks_for() {
+    assert!(
+        said(&started(TOO_MANY_CPUS).1)
+            .lines()
+            .last()
+            .unwrap_or_default()
+            .starts_with(
+                "cladenc: task benchmark/t2 asks for more than the machine has: 100000 under \
+                 cpus in its task.toml, where Docker has "
+            )
+    );
+}
+
+#[test]
+fn a_docker_that_does_not_say_what_the_machine_has_stops_cladenc_start_with_exit_status_2() {
+    assert_eq!(
+        said_with_a_docker_that_says_nothing_of_the_machine().0,
+        Some(2)
+    );
+}
+
+#[test]
+fn a_docker_that_does_not_say_what_the_machine_has_is_reported_last() {
+    assert!(
+        said_with_a_docker_that_says_nothing_of_the_machine()
+            .1
+            .ends_with(
+                "cladenc: what the machine has cannot be told: Docker did not say how many CPUs \
+                 and how much memory it has\n"
+            )
+    );
+}

@@ -530,6 +530,20 @@ attempt. Where a task gives its harness no time limit, the container of an
 attempt does not end itself: a cladenc that was killed outright leaves it
 running until `cladenc resume` removes it, or a person does.
 
+The container of an attempt is given no more CPUs and no more memory than
+its task asks for, as --cpus and --memory of `docker run`, so the harness
+and the grader have them between them. A task that asks for neither is
+given what Docker gives any container. The older spelling of the memory,
+memory under environment, a number and one of G, M and K, such as 4G, is
+read as Harbor reads it, and a task that gives both spellings with sizes
+that differ is refused. cladenc asks Docker what the machine has, as
+
+    docker info --format '{{.NCPU}} {{.MemTotal}}'
+
+and a task that asks for more CPUs or more memory than that stops the
+directed evolution with exit status 2, when it is started and each time it
+is resumed, with the task named.
+
 A task may hold a file named task.toml, the task configuration of Harbor.
 cladenc obeys what it says of the environment of the task:
 
@@ -553,8 +567,13 @@ cladenc obeys what it says of the environment of the task:
                                   seconds
   build_timeout_sec under         the time limit of the build of the
   environment                     environment, in seconds
+  cpus under environment          the most CPUs the container of an
+                                  attempt is given, a whole number or a
+                                  part of one
+  memory_mb under environment     the most memory that container is
+                                  given, in megabytes
 
-cladenc reads nothing else of a task.toml. A setting that is left out, or
+cladenc obeys nothing else of a task.toml. A setting that is left out, or
 written with nothing between its quotation marks, changes nothing, and
 neither does a task that holds no task.toml. The source code of the
 harness belongs to the user the harness runs as, and /tests and
@@ -574,7 +593,14 @@ A task is refused when the directed evolution is started where its
 task.toml is not TOML, gives one of these settings a value of another
 kind, names a variable otherwise, or takes a value from a variable that is
 not set where cladenc runs and gives no text in its place. A time limit
-that is not a number of seconds above 0 is refused in the same way.
+that is not a number of seconds above 0 is refused in the same way, and so
+are CPUs or megabytes of memory that are not a number above 0.
+
+A task is refused as well where its task.toml asks for what cladenc has no
+way to give: several steps, as [[steps]]; a GPU, as gpus under environment
+above 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; or
+a skills directory, as skills_dir. The refusal names the task and what it
+asks for.
 
 The grader writes its score in /logs/verifier/reward.txt, a single number,
 or in /logs/verifier/reward.json, an object of labelled numbers, which is

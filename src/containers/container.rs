@@ -112,6 +112,18 @@ impl Up {
                     .iter()
                     .flat_map(|directory| ["--workdir", directory]),
             )
+            .args(
+                configuration
+                    .cpus
+                    .iter()
+                    .flat_map(|cpus| ["--cpus".to_owned(), cpus.to_string()]),
+            )
+            .args(
+                configuration
+                    .memory_megabytes
+                    .iter()
+                    .flat_map(|megabytes| ["--memory".to_owned(), format!("{megabytes}m")]),
+            )
             .args(["--env-file", STANDARD_INPUT])
             .args(["--detach", &environment.image, "sleep"])
             .arg(stays.as_secs().to_string());

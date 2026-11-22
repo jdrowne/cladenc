@@ -555,6 +555,23 @@ fn the_section_of_cladenc_start_says_what_time_limit_the_build_of_an_environment
 }
 
 #[test]
+fn the_section_of_cladenc_start_says_that_an_attempt_is_given_no_more_than_its_task_asks_for() {
+    assert!(what_is_said_of("start").contains(
+        "The container of an attempt is given no more CPUs and no more memory than the task's \
+         `task.toml` asks for, as `cpus` and `memory_mb` under `environment`, and a task that \
+         asks for more of either than Docker has stops the directed evolution with exit status 2."
+    ));
+}
+
+#[test]
+fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
+    assert!(readme().contains(
+        "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
+         TPU, Windows, MCP servers or a skills directory."
+    ));
+}
+
+#[test]
 fn the_flag_of_the_benchmark_says_that_a_task_may_hold_a_task_toml() {
     assert!(readme().contains(
         "A task may also hold a file named `task.toml`, [Harbor's task \

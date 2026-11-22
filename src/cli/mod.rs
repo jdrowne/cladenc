@@ -326,6 +326,8 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
         | DirectedEvolutionError::Image(_)
         | DirectedEvolutionError::Configuration { .. }
         | DirectedEvolutionError::NotOnTheMachine { .. }
+        | DirectedEvolutionError::Machine(_)
+        | DirectedEvolutionError::TooLarge { .. }
         | DirectedEvolutionError::Environment { .. } => 2,
         DirectedEvolutionError::Journal(_)
         | DirectedEvolutionError::Asked

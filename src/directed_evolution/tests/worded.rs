@@ -131,6 +131,30 @@ fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_s
 }
 
 #[test]
+fn a_task_that_asks_for_more_than_the_machine_has_is_worded_with_what_it_asks_and_what_there_is() {
+    assert_eq!(
+        worded(DirectedEvolutionError::TooLarge {
+            task: "benchmark/t1".to_owned(),
+            key: "memory_mb",
+            asked: "8192".to_owned(),
+            has: "3916".to_owned(),
+        }),
+        "task benchmark/t1 asks for more than the machine has: 8192 under memory_mb in its \
+         task.toml, where Docker has 3916"
+    );
+}
+
+#[test]
+fn a_machine_that_cannot_be_told_is_worded_with_why() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Machine(io::Error::other(
+            "Docker did not say"
+        ))),
+        "what the machine has cannot be told: Docker did not say"
+    );
+}
+
+#[test]
 fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
