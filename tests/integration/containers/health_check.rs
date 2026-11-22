@@ -69,6 +69,7 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
     };
     let result = containers::run_attempt(
         &outputs_directory,
@@ -79,6 +80,7 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
             environment: &environment,
         },
         &AtomicBool::new(false),
+        &|_| (),
     );
     Attempted {
         _directory: directory,

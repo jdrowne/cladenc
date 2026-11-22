@@ -30,6 +30,7 @@ pub struct Settings {
     pub max_procreations: u64,
     pub max_concurrent_containers: u64,
     pub procreation_timeout: u64,
+    pub max_grader_health_check_retries: u64,
     pub seed: u64,
 }
 
@@ -56,6 +57,7 @@ impl Settings {
             build_command: self.harness_build_command.as_deref(),
             model: self.model(key),
             procreation_timeout: self.procreation_timeout,
+            max_grader_health_check_retries: self.max_grader_health_check_retries,
         }
     }
 

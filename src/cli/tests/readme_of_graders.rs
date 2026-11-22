@@ -89,3 +89,67 @@ fn the_readme_says_that_what_is_copied_to_a_grader_is_not_trusted() {
          regular file, a directory or a symbolic link."
     ));
 }
+
+#[test]
+fn the_flag_of_the_most_retries_says_what_is_retried_and_that_0_is_taken() {
+    assert!(readme().contains(
+        "| `--max-grader-health-check-retries <COUNT>` | Required | The most times the \
+         container of a grader is brought up again, where its health check does not pass, 0 \
+         or more."
+    ));
+}
+
+#[test]
+fn the_flag_of_the_most_retries_says_how_long_cladenc_waits_before_each_retry() {
+    assert!(readme().contains(
+        "Each retry is a new container, and `cladenc` waits before it: the `interval_sec` of \
+         the health check before the first retry, and twice as long before each retry after \
+         that."
+    ));
+}
+
+#[test]
+fn the_flag_of_the_most_retries_says_what_becomes_of_an_attempt_that_no_grader_judged() {
+    assert!(readme().contains(
+        "Where the health check passes in no container, the directed evolution stops and no \
+         result is recorded for the attempt. |\n"
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_grader_waits_for_the_health_check_of_its_container() {
+    assert!(readme().contains(
+        "Where those settings give a health check, `cladenc` runs it in the container of the \
+         grader, and nothing else is done there until it has passed."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_the_health_check_of_a_grader_is_tried_again_in_a_new_container() {
+    assert!(readme().contains(
+        "Where it does not pass, no grader has judged what the harness left, so `cladenc` \
+         does not record that the harness did not complete the task: it removes the \
+         container, waits, brings up a new container of the grader and runs the health check \
+         there again, as many times as `--max-grader-health-check-retries` gives."
+    ));
+}
+
+#[test]
+fn the_readme_says_how_long_cladenc_waits_before_a_retry_and_that_it_says_each() {
+    assert!(readme().contains(
+        "It waits the `interval_sec` of the health check before the first retry, or 5 \
+         seconds where the task gives none, and twice as long before each retry after that, \
+         and says each retry on standard error."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_grader_that_never_ran_stops_the_directed_evolution() {
+    assert!(readme().contains(
+        "Where the health check passes in no container, the directed evolution stops with \
+         exit status 1 and no result is recorded for the attempt: `cladenc` names the \
+         harness, the task, the number of tries and the directory that holds what the health \
+         check printed the last time it ran, and `cladenc resume` carries out the attempt \
+         again."
+    ));
+}

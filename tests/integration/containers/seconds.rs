@@ -21,6 +21,7 @@ fn launch<'a>(run_command: &'a str, build_command: Option<&'a str>, time_limit: 
             key: None,
         },
         procreation_timeout: time_limit,
+        max_grader_health_check_retries: 0,
     }
 }
 
@@ -59,6 +60,7 @@ fn attempted(run_command: &str, grader: &str, time_limit: u64) -> containers::At
             environment: &environment(time_limit),
         },
         &AtomicBool::new(false),
+        &|_| (),
     )
     .unwrap()
 }

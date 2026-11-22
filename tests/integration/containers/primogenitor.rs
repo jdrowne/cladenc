@@ -30,6 +30,7 @@ fn built_from(image: &str, build_command: Option<&str>, time_limit: u64, stop: b
         build_command,
         model: MODEL,
         procreation_timeout: time_limit,
+        max_grader_health_check_retries: 0,
     };
     let stop = AtomicBool::new(stop);
     let result = containers::build_primogenitor(&outputs_directory, &launch, &stop);

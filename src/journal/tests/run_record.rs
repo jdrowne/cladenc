@@ -29,6 +29,7 @@ fn settings() -> Settings {
         max_procreations: 800,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
+        max_grader_health_check_retries: 3,
         selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,
@@ -80,8 +81,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_27() {
-    assert_eq!(journal::FORMAT, 27);
+fn the_format_of_the_journal_is_28() {
+    assert_eq!(journal::FORMAT, 28);
 }
 
 #[test]
@@ -89,7 +90,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":27,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":28,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
@@ -99,7 +100,7 @@ fn the_run_record_is_written_key_for_key() {
             r#""corroboration_tasks_percentage":25.0,"#,
             r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#,
             r#""max_concurrent_containers":8,"#,
-            r#""procreation_timeout":3600,"seed":7}"#
+            r#""procreation_timeout":3600,"max_grader_health_check_retries":3,"seed":7}"#
         )
     );
 }
@@ -326,6 +327,7 @@ fn the_settings_give_how_a_harness_is_built_and_run() {
                 key: None,
             },
             procreation_timeout: 3600,
+            max_grader_health_check_retries: 3,
         }
     );
 }
@@ -337,6 +339,24 @@ fn the_settings_give_how_long_a_procreation_may_take() {
         ..settings()
     };
     assert_eq!(settings.launch(None).procreation_timeout, 1800);
+}
+
+#[test]
+fn the_settings_give_the_most_retries_of_the_health_check_of_a_grader() {
+    let settings = Settings {
+        max_grader_health_check_retries: 5,
+        ..settings()
+    };
+    assert_eq!(settings.launch(None).max_grader_health_check_retries, 5);
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_grader_being_0_survives_being_written_and_read_back() {
+    let never_retried = run(Settings {
+        max_grader_health_check_retries: 0,
+        ..settings()
+    });
+    assert_eq!(read_back(&never_retried), never_retried);
 }
 
 #[test]

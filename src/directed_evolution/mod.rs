@@ -18,7 +18,7 @@ use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::outputs_directory::OutputsDirectory;
 
-use action::Ended;
+use action::Told;
 use environments::Built;
 pub use error::DirectedEvolutionError;
 use progress::Progress;
@@ -37,7 +37,7 @@ struct Shared<'a> {
     environments: BTreeMap<String, Environment>,
     outputs_directory: OutputsDirectory,
     halt: AtomicBool,
-    sender: Sender<Ended>,
+    sender: Sender<Told>,
 }
 
 struct Made {
@@ -273,8 +273,8 @@ fn carry_on(
             if progress.running() == 0 {
                 break;
             }
-            if let Ok(ended) = receiver.recv_timeout(WAIT) {
-                progress.end(ended, &shared.outputs_directory);
+            if let Ok(told) = receiver.recv_timeout(WAIT) {
+                progress.hear(told, &shared.outputs_directory);
             }
             if progress.halted(stop) {
                 progress.stopping();

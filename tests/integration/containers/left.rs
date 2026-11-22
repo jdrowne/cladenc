@@ -80,6 +80,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             key: None,
         },
         procreation_timeout: 60,
+        max_grader_health_check_retries: 0,
     };
     let id_file = outputs_directory
         .running_attempt(0, "benchmark/t1")
@@ -101,7 +102,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             task: "benchmark/t1",
             environment: &environment(),
         };
-        let _ = containers::run_attempt(&outputs_directory, &launch, attempt, &stop);
+        let _ = containers::run_attempt(&outputs_directory, &launch, attempt, &stop, &|_| ());
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })

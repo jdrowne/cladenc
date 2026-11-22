@@ -135,6 +135,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             key: attempt.key,
         },
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
     let environment = containers::Environment {
@@ -155,6 +156,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             environment: &environment,
         },
         &stop,
+        &|_| (),
     );
     Attempted {
         _directory: directory,

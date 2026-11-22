@@ -1,10 +1,19 @@
 use std::io;
 
 use super::Shared;
-use crate::containers::{self, Attempt, Attempted, ContainerError, Creation};
+use crate::containers::{self, Attempt, Attempted, ContainerError, Creation, Retry};
 use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
+
+pub(super) enum Told {
+    Ended(Ended),
+    Retrying {
+        harness: HarnessId,
+        task: String,
+        retry: Retry,
+    },
+}
 
 pub(super) enum Ended {
     Procreated {
@@ -83,7 +92,20 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                     task: &task,
                     environment: &environment,
                 };
-                containers::run_attempt(outputs_directory, &shared.launch, attempt, &shared.halt)
+                let retrying = |retry: Retry| {
+                    let _ = shared.sender.send(Told::Retrying {
+                        harness,
+                        task: task.clone(),
+                        retry,
+                    });
+                };
+                containers::run_attempt(
+                    outputs_directory,
+                    &shared.launch,
+                    attempt,
+                    &shared.halt,
+                    &retrying,
+                )
             })
             .map(|attempted| Ended::Attempted {
                 harness,

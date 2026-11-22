@@ -234,3 +234,31 @@ fn a_build_that_left_what_a_harness_cannot_hold_is_worded() {
 fn a_program_ended_by_a_signal_is_worded() {
     assert_eq!(worded(ContainerError::Signal(9)), "was ended by signal 9");
 }
+
+#[test]
+fn a_grader_that_was_never_run_is_worded_with_the_tries_and_where_the_health_check_is_kept() {
+    assert_eq!(
+        worded(ContainerError::GraderHealthCheck {
+            tries: 4,
+            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/grader/health-check"),
+        }),
+        "was not graded: the health check of the container of its grader did not pass in 4 \
+         tries, so the grader was not run, and \
+         /outputs/running/attempt-3-parsing+t1/grader/health-check holds what the health check \
+         printed the last time it ran"
+    );
+}
+
+#[test]
+fn one_try_of_the_health_check_of_a_grader_is_not_worded_as_several() {
+    assert!(
+        worded(ContainerError::GraderHealthCheck {
+            tries: 1,
+            kept: PathBuf::from("/kept"),
+        })
+        .starts_with(
+            "was not graded: the health check of the container of its grader did not pass in 1 \
+             try, so the grader was not run, "
+        )
+    );
+}

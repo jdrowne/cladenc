@@ -18,7 +18,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::benchmark::TaskConfiguration;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
@@ -93,6 +93,7 @@ pub struct Launch<'a> {
     pub build_command: Option<&'a str>,
     pub model: Model<'a>,
     pub procreation_timeout: u64,
+    pub max_grader_health_check_retries: u64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -128,6 +129,13 @@ pub enum HarnessEnding {
     NotStarted,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Retry {
+    pub number: u64,
+    pub most: u64,
+    pub wait: Duration,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Attempted {
     pub result: AttemptResult,
@@ -144,6 +152,7 @@ pub enum ContainerError {
     Signal(i32),
     TimeLimit,
     OtherFiles,
+    GraderHealthCheck { tries: u64, kept: PathBuf },
 }
 
 impl Display for ContainerError {
@@ -163,6 +172,14 @@ impl Display for ContainerError {
             Self::OtherFiles => write!(
                 formatter,
                 "left something that is not a regular file, a directory or a symbolic link"
+            ),
+            Self::GraderHealthCheck { tries, kept } => write!(
+                formatter,
+                "was not graded: the health check of the container of its grader did not pass \
+                 in {tries} {}, so the grader was not run, and {} holds what the health check \
+                 printed the last time it ran",
+                if *tries == 1 { "try" } else { "tries" },
+                kept.display()
             ),
         }
     }
@@ -328,6 +345,7 @@ pub fn run_attempt(
     launch: &Launch<'_>,
     attempt: Attempt<'_>,
     stop: &AtomicBool,
+    retrying: &dyn Fn(Retry),
 ) -> Result<Attempted, ContainerError> {
     let running = outputs_directory.running_attempt(attempt.harness, attempt.task);
     let specification = outputs_directory
@@ -339,7 +357,7 @@ pub fn run_attempt(
         running: &running,
         specification: &specification,
     };
-    let attempted = attempting.run(outputs_directory, launch, stop)?;
+    let attempted = attempting.run(outputs_directory, launch, stop, retrying)?;
     outputs_directory
         .end_attempt(attempt.harness, attempt.task, attempted.result)
         .map(|()| attempted)
@@ -358,6 +376,7 @@ impl Attempting<'_> {
         outputs_directory: &OutputsDirectory,
         launch: &Launch<'_>,
         stop: &AtomicBool,
+        retrying: &dyn Fn(Retry),
     ) -> Result<Attempted, ContainerError> {
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
@@ -428,6 +447,8 @@ impl Attempting<'_> {
             attempt: &self.attempt,
             running: self.running,
             stop,
+            max_retries: launch.max_grader_health_check_retries,
+            retrying,
         };
         let result = grading.run(up)?;
         Ok(Attempted {

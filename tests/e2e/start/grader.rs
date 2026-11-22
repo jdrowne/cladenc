@@ -16,8 +16,20 @@ const WRITE_A_REPORT: &str = "echo found > report.txt";
 const READ_THE_REPORT: &str = "cat /app/report.txt; grep -q found /app/report.txt && echo 1 > \
                                /logs/verifier/reward.txt";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
+const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
+                           1\"\ninterval_sec = 0\nretries = 1\n";
+const READY: &str = "[verifier.environment.healthcheck]\ncommand = \"true\"\n";
 
 fn start(directory: &Path, run_command: &str, task_toml_of_t2: &str) -> Command {
+    start_retrying(directory, run_command, task_toml_of_t2, "0")
+}
+
+fn start_retrying(
+    directory: &Path,
+    run_command: &str,
+    task_toml_of_t2: &str,
+    max_retries: &str,
+) -> Command {
     let options = [
         ("--primogenitor", test_inputs::primogenitor(directory)),
         ("--model", test_inputs::MODEL.into()),
@@ -32,6 +44,7 @@ fn start(directory: &Path, run_command: &str, task_toml_of_t2: &str) -> Command 
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
+        ("--max-grader-health-check-retries", max_retries.into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]
@@ -70,6 +83,25 @@ fn graded_on_its_report() -> TempDir {
     test_inputs::grader(directory.path(), "t2", READ_THE_REPORT);
     start.output().unwrap();
     directory
+}
+
+fn with_a_grader_that_is_never_ready() -> (TempDir, Output) {
+    let directory = test_inputs::temporary_directory();
+    let output = start_retrying(directory.path(), "exit 0", NEVER_READY, "2")
+        .output()
+        .unwrap();
+    (directory, output)
+}
+
+fn resumed_once_the_grader_is_ready() -> Output {
+    let (directory, _) = with_a_grader_that_is_never_ready();
+    let outputs = directory.path().join("outputs");
+    fs::write(outputs.join("benchmarks/benchmark/t2/task.toml"), READY).unwrap();
+    Command::new(env!("CARGO_BIN_EXE_cladenc"))
+        .arg("resume")
+        .arg(format!("--outputs-dir={}", outputs.display()))
+        .output()
+        .unwrap()
 }
 
 fn kept_of_the_attempt_at_t2(directory: &TempDir, file: &str) -> String {
@@ -318,4 +350,63 @@ fn the_container_of_a_grader_stays_for_the_time_limit_of_the_grader_and_ten_minu
         containers_of_t2(&arguments)[1].last().map(String::as_str),
         Some("620")
     );
+}
+
+#[test]
+fn a_grader_that_is_never_ready_stops_cladenc_start_with_exit_status_1() {
+    assert_eq!(with_a_grader_that_is_never_ready().1.status.code(), Some(1));
+}
+
+#[test]
+fn a_grader_that_is_never_ready_is_reported_last_with_all_that_says_what_happened() {
+    let (directory, output) = with_a_grader_that_is_never_ready();
+    assert_eq!(
+        said_last(&output),
+        format!(
+            "cladenc: the directed evolution stopped before its end: the attempt of harness 0 \
+             on task benchmark/t2 was not graded: the health check of the container of its \
+             grader did not pass in 3 tries, so the grader was not run, and \
+             {}/running/attempt-0-benchmark+t2/grader/health-check holds what the health check \
+             printed the last time it ran",
+            directory.path().join("outputs").display()
+        )
+    );
+}
+
+#[test]
+fn cladenc_start_says_each_retry_of_the_health_check_of_a_grader() {
+    let said = said(&with_a_grader_that_is_never_ready().1);
+    let retries = [
+        " in a new container after 0 seconds, retry 1 of 2\n",
+        " in a new container after 0 seconds, retry 2 of 2\n",
+    ]
+    .map(|retry| said.contains(retry));
+    assert_eq!(retries, [true, true]);
+}
+
+#[test]
+fn cladenc_start_keeps_no_result_of_an_attempt_whose_grader_was_never_run() {
+    let (directory, _) = with_a_grader_that_is_never_ready();
+    let kept = ["attempts", "holdout"].map(|kept| {
+        directory
+            .path()
+            .join("outputs")
+            .join(kept)
+            .join("0/benchmark/t2")
+            .exists()
+    });
+    assert_eq!(kept, [false, false]);
+}
+
+#[test]
+fn cladenc_resume_carries_out_again_an_attempt_whose_grader_was_never_run() {
+    assert!(
+        said(&resumed_once_the_grader_is_ready())
+            .contains("cladenc: started again the attempt of harness 0 on task benchmark/t2\n")
+    );
+}
+
+#[test]
+fn cladenc_resume_ends_a_directed_evolution_whose_grader_is_ready_at_last_with_exit_status_0() {
+    assert_eq!(resumed_once_the_grader_is_ready().status.code(), Some(0));
 }

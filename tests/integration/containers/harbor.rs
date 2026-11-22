@@ -66,6 +66,7 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
     };
     let environment = containers::Environment {
         image: image.name.clone(),
@@ -85,6 +86,7 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
             environment: &environment,
         },
         &stop,
+        &|_| (),
     );
     Attempted {
         _directory: directory,

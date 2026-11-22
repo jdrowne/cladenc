@@ -117,11 +117,63 @@ fn the_long_help_of_start_says_that_the_container_of_the_harness_is_removed_befo
 }
 
 #[test]
-fn the_long_help_of_start_says_what_a_health_check_of_a_grader_that_does_not_pass_means() {
+fn the_long_help_of_start_says_that_a_grader_waits_for_the_health_check_of_its_container() {
     assert!(long_help_of("start").contains(
         "Where the settings of\nthe grader give a health check, cladenc runs it there as it \
-         runs that of the\ntask: where it does not pass, the grader is not run, and the \
-         harness did not\ncomplete the task."
+         runs that of the\ntask, and nothing else is done in the container until the health \
+         check has\npassed."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_grader_that_never_ran_judged_nothing() {
+    assert!(long_help_of("start").contains(
+        "Where the health check of the container of the grader does not pass, no\ngrader \
+         has judged what the harness left, so cladenc does not record that the\nharness did \
+         not complete the task."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_the_health_check_of_a_grader_is_tried_again_in_a_new_container()
+{
+    assert!(long_help_of("start").contains(
+        "It removes the container, waits, brings\nup a new container of the grader and runs \
+         the health check there again, as\nmany times as --max-grader-health-check-retries \
+         gives."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_how_long_cladenc_waits_before_each_retry() {
+    assert!(long_help_of("start").contains(
+        "Before the first\nretry it waits interval_sec of the health check, or 5 seconds \
+         where the task\ngives none, and before each retry after that twice as long as \
+         before the\nlast: 5 seconds, then 10, then 20."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_each_retry_is_said() {
+    assert!(long_help_of("start").contains(" It says each retry on standard error.\n"));
+}
+
+#[test]
+fn the_long_help_of_start_says_that_a_grader_that_never_ran_stops_the_directed_evolution() {
+    assert!(long_help_of("start").contains(
+        "Where the health check passes in no container, the directed evolution stops\nwith \
+         exit status 1, and no result is recorded for the attempt."
+    ));
+}
+
+#[test]
+fn the_long_help_of_start_says_what_cladenc_names_when_a_grader_never_ran() {
+    assert!(long_help_of("start").contains(
+        "cladenc then\nnames the harness and the task, says that the health check of the \
+         container\nof the grader did not pass and in how many tries, and names the \
+         directory\nthat holds what the health check printed the last time it ran. \
+         That\ndirectory is under running in the outputs directory, and stays there \
+         until\n`cladenc resume` carries out the attempt again.\n"
     ));
 }
 

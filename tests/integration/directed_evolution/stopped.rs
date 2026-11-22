@@ -25,6 +25,7 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         max_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 60,
+        max_grader_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
         holdout_tasks: Vec::new(),
         corroboration_tasks_percentage: 25.0,

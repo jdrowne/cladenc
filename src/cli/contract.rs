@@ -695,12 +695,28 @@ Once the harness has ended or was stopped, and the paths under artifacts are
 kept, cladenc removes the container of the harness and brings up that of the
 grader, so that an attempt is one container at a time. Where the settings of
 the grader give a health check, cladenc runs it there as it runs that of the
-task: where it does not pass, the grader is not run, and the harness did not
-complete the task. /logs is then made the symbolic link that it is in the
+task, and nothing else is done in the container until the health check has
+passed. /logs is then made the symbolic link that it is in the
 container of the harness, and each path that was kept is copied to the same
 path in the container of the grader, the path of its entry and not
 destination, without what exclude left out. A directory takes the place of
 what the image holds at that path.
+
+Where the health check of the container of the grader does not pass, no
+grader has judged what the harness left, so cladenc does not record that the
+harness did not complete the task. It removes the container, waits, brings
+up a new container of the grader and runs the health check there again, as
+many times as --max-grader-health-check-retries gives. Before the first
+retry it waits interval_sec of the health check, or 5 seconds where the task
+gives none, and before each retry after that twice as long as before the
+last: 5 seconds, then 10, then 20. It says each retry on standard error.
+Where the health check passes in no container, the directed evolution stops
+with exit status 1, and no result is recorded for the attempt. cladenc then
+names the harness and the task, says that the health check of the container
+of the grader did not pass and in how many tries, and names the directory
+that holds what the health check printed the last time it ran. That
+directory is under running in the outputs directory, and stays there until
+`cladenc resume` carries out the attempt again.
 
 What is copied in is not trusted. No file keeps a setuid or a setgid bit. A
 file that is not a regular file, a directory or a symbolic link is left out,
@@ -840,8 +856,11 @@ How an attempt ends decides its result:
   label of reward.json
   any other score, a file that     the harness did not complete the task
   cannot be read, or no score
-  a health check that does not     the harness is not started, and did not
-  pass                             complete the task
+  a health check of the task that  the harness is not started, and did not
+  does not pass                    complete the task
+  a health check of the container  no result is recorded: the directed
+  of the grader that does not      evolution stops, and `cladenc resume`
+  pass in any of its tries         carries out the attempt again
   exit status 125 of either step   Docker did not start the container: the
   or of the health check           directed evolution stops, and `cladenc
                                    resume` carries out the attempt again

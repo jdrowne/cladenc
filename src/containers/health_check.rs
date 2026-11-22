@@ -4,9 +4,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::ContainerError;
 use super::container::{Run, Shell, Up};
 use super::program::{Ending, FOREVER, LOOK, Limits};
+use super::{ContainerError, Retry};
 use crate::benchmark::HealthCheck;
 
 pub(super) fn passes_where_given(
@@ -64,6 +64,35 @@ pub(super) fn passes_with(
             health_check.interval
         };
         wait_for(wait, stop)?;
+    }
+}
+
+pub(super) struct Backoff<'a> {
+    pub(super) first_wait: Duration,
+    pub(super) max_retries: u64,
+    pub(super) stop: &'a AtomicBool,
+}
+
+pub(super) fn retried<T>(
+    backoff: &Backoff<'_>,
+    retrying: &dyn Fn(Retry),
+    mut tried: impl FnMut() -> Result<Option<T>, ContainerError>,
+) -> Result<Option<T>, ContainerError> {
+    let mut wait = backoff.first_wait;
+    let mut retries = 0;
+    loop {
+        let passed = tried()?;
+        if passed.is_some() || retries >= backoff.max_retries {
+            return Ok(passed);
+        }
+        retries += 1;
+        retrying(Retry {
+            number: retries,
+            most: backoff.max_retries,
+            wait,
+        });
+        wait_for(wait, backoff.stop)?;
+        wait = wait.saturating_mul(2);
     }
 }
 

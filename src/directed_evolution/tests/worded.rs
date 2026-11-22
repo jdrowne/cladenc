@@ -274,3 +274,24 @@ fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_har
          exited with status 2"
     );
 }
+
+#[test]
+fn a_directed_evolution_that_a_grader_s_health_check_stopped_says_precisely_what_happened() {
+    assert_eq!(
+        worded(DirectedEvolutionError::Action {
+            action: Started::Attempt {
+                harness: 3,
+                task: "parsing/t1".to_owned()
+            },
+            error: ContainerError::GraderHealthCheck {
+                tries: 4,
+                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/grader/health-check"),
+            }
+        }),
+        "the directed evolution stopped before its end: the attempt of harness 3 on task \
+         parsing/t1 was not graded: the health check of the container of its grader did not \
+         pass in 4 tries, so the grader was not run, and \
+         /outputs/running/attempt-3-parsing+t1/grader/health-check holds what the health check \
+         printed the last time it ran"
+    );
+}

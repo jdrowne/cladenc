@@ -30,6 +30,7 @@ fn launch(run_command: &str) -> Launch<'_> {
             key: None,
         },
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
     }
 }
 
@@ -72,6 +73,7 @@ fn attempted(
             environment: &environment(),
         },
         &AtomicBool::new(false),
+        &|_| (),
     );
     (directory, outputs_directory, result)
 }

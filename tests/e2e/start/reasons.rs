@@ -17,6 +17,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "60".into()),
+        ("--max-grader-health-check-retries", "0".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
     ]

@@ -29,6 +29,7 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         max_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,
     };

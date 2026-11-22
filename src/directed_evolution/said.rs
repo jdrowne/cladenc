@@ -1,8 +1,9 @@
 use std::fmt::{self, Display, Formatter};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
-use crate::containers::{ContainerError, HarnessEnding};
+use crate::containers::{ContainerError, HarnessEnding, Retry};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -79,6 +80,7 @@ pub(super) enum Said<'a> {
         ending: HarnessEnding,
         outputs_directory: &'a OutputsDirectory,
     },
+    Retrying(Retrying<'a>),
     Failed {
         action: &'a Started,
         error: &'a ContainerError,
@@ -268,6 +270,7 @@ impl Display for Said<'_> {
                     outputs_directory.attempt(*harness, task).display()
                 )
             }
+            Self::Retrying(said) => said.fmt(formatter),
             Self::Failed { action, error } => write!(formatter, "{action} {error}"),
             Self::Stopping { asked, running } => {
                 let why = if *asked {
@@ -395,6 +398,30 @@ impl Display for Environments<'_> {
                 outputs_directory.grader_environment(task).display()
             ),
         }
+    }
+}
+
+pub(super) struct Retrying<'a> {
+    pub(super) harness: HarnessId,
+    pub(super) task: &'a str,
+    pub(super) retry: Retry,
+}
+
+impl Display for Retrying<'_> {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        let Retry { number, most, wait } = self.retry;
+        let wait = if wait == Duration::from_secs(1) {
+            "1 second".to_owned()
+        } else {
+            format!("{} seconds", wait.as_secs_f64())
+        };
+        write!(
+            formatter,
+            "the attempt of harness {} on task {} is not graded yet: the health check of the \
+             container of its grader did not pass, and cladenc tries again in a new container \
+             after {wait}, retry {number} of {most}",
+            self.harness, self.task
+        )
     }
 }
 

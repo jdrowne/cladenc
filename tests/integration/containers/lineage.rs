@@ -23,6 +23,7 @@ fn launch(run_command: &str) -> Launch<'_> {
             key: None,
         },
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
     }
 }
 

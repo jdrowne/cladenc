@@ -31,6 +31,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         max_procreations: 1,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
+        max_grader_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
         holdout_tasks: vec!["benchmark/t1".to_owned()],
         corroboration_tasks_percentage: 25.0,

@@ -3,8 +3,8 @@ use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::Scope;
 
-use super::action::{Ended, carry_out};
-use super::said::say;
+use super::action::{Ended, Told, carry_out};
+use super::said::{Retrying, say};
 use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
 use crate::containers::{Attempted, ContainerError, Creation};
@@ -126,13 +126,30 @@ impl<'a> Progress<'a> {
                 },
             );
             scope.spawn(move || {
-                let _ = shared.sender.send(carry_out(shared, action, again));
+                let _ = shared
+                    .sender
+                    .send(Told::Ended(carry_out(shared, action, again)));
             })
         });
         self.running += u64::from(recorded);
     }
 
-    pub(super) fn end(&mut self, ended: Ended, outputs_directory: &OutputsDirectory) {
+    pub(super) fn hear(&mut self, told: Told, outputs_directory: &OutputsDirectory) {
+        match told {
+            Told::Ended(ended) => self.end(ended, outputs_directory),
+            Told::Retrying {
+                harness,
+                task,
+                retry,
+            } => self.say(&Said::Retrying(Retrying {
+                harness,
+                task: &task,
+                retry,
+            })),
+        }
+    }
+
+    fn end(&mut self, ended: Ended, outputs_directory: &OutputsDirectory) {
         self.running -= 1;
         match ended {
             Ended::Procreated {

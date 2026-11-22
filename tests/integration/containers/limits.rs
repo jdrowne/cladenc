@@ -63,6 +63,7 @@ fn launch(run_command: &str) -> Launch<'_> {
         build_command: None,
         model: MODEL,
         procreation_timeout: 60,
+        max_grader_health_check_retries: 0,
     }
 }
 
@@ -92,7 +93,13 @@ fn timed_out() -> Attempted {
         grader: None,
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_attempt(&outputs_directory, &launch, attempt(&environment), &stop);
+    let result = containers::run_attempt(
+        &outputs_directory,
+        &launch,
+        attempt(&environment),
+        &stop,
+        &|_| (),
+    );
     (directory, outputs_directory, result)
 }
 
@@ -103,7 +110,13 @@ fn stopped_while_its_harness_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), stop)
+        containers::run_attempt(
+            &outputs_directory,
+            &launch,
+            attempt(&environment()),
+            stop,
+            &|_| (),
+        )
     });
     (directory, outputs_directory, result)
 }
@@ -120,7 +133,13 @@ fn stopped_while_its_grader_runs() -> Attempted {
         .running_attempt(0, "benchmark/t1")
         .join("grader/stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(&outputs_directory, &launch, attempt(&environment()), stop)
+        containers::run_attempt(
+            &outputs_directory,
+            &launch,
+            attempt(&environment()),
+            stop,
+            &|_| (),
+        )
     });
     (directory, outputs_directory, result)
 }
@@ -195,7 +214,8 @@ fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
             &outputs_directory,
             &launch("sleep 300"),
             attempt(&environment()),
-            &stop
+            &stop,
+            &|_| ()
         ),
         Err(ContainerError::Stopped)
     ));

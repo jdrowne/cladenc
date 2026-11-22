@@ -1,8 +1,9 @@
 use std::path::Path;
+use std::time::Duration;
 
-use crate::containers::{ContainerError, HarnessEnding};
+use crate::containers::{ContainerError, HarnessEnding, Retry};
 use crate::directed_evolution::Said;
-use crate::directed_evolution::said::Environments;
+use crate::directed_evolution::said::{Environments, Retrying};
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -698,5 +699,62 @@ fn the_end_of_a_directed_evolution_is_said_with_its_best_harness_and_where_it_is
         .to_string(),
         "the directed evolution finished with 800 attempts started and 31 harnesses: its best \
          harness is harness 12, kept in /outputs/harnesses/12"
+    );
+}
+
+fn retrying_after(wait: Duration) -> String {
+    Said::Retrying(Retrying {
+        harness: 3,
+        task: "parsing/fix-the-parser",
+        retry: Retry {
+            number: 2,
+            most: 5,
+            wait,
+        },
+    })
+    .to_string()
+}
+
+#[test]
+fn a_retry_of_the_health_check_of_a_grader_is_said_with_its_attempt_its_wait_and_its_number() {
+    assert_eq!(
+        retrying_after(Duration::from_secs(10)),
+        "the attempt of harness 3 on task parsing/fix-the-parser is not graded yet: the health \
+         check of the container of its grader did not pass, and cladenc tries again in a new \
+         container after 10 seconds, retry 2 of 5"
+    );
+}
+
+#[test]
+fn a_wait_of_1_second_before_a_retry_is_not_said_as_several() {
+    assert!(
+        retrying_after(Duration::from_secs(1))
+            .ends_with(" in a new container after 1 second, retry 2 of 5")
+    );
+}
+
+#[test]
+fn a_wait_of_a_part_of_a_second_before_a_retry_is_said_with_the_part() {
+    assert!(
+        retrying_after(Duration::from_millis(200))
+            .ends_with(" in a new container after 0.2 seconds, retry 2 of 5")
+    );
+}
+
+#[test]
+fn a_grader_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
+    assert_eq!(
+        Said::Failed {
+            action: &attempt(),
+            error: &ContainerError::GraderHealthCheck {
+                tries: 1,
+                kept: "/outputs/running/attempt-3-fix-the-parser/grader/health-check".into(),
+            },
+        }
+        .to_string(),
+        "the attempt of harness 3 on task fix-the-parser was not graded: the health check of \
+         the container of its grader did not pass in 1 try, so the grader was not run, and \
+         /outputs/running/attempt-3-fix-the-parser/grader/health-check holds what the health \
+         check printed the last time it ran"
     );
 }
