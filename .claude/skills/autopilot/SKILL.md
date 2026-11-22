@@ -17,7 +17,7 @@ Fetch `CronCreate`, `CronList` and `CronDelete` with `ToolSearch` first.
 
 ## Reminders
 
-A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". Two rules are both: the wait for CI, and that no test runs on the Mac. Each is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session against it: back to work while a run is going, or to running a test on the Mac to check the work it took. They are the two reminders of the form `reminders-only`, per "Reminders only".
+A rule is a reminder only when it tells the session what to do next at the moment it fires: to wait while a CI run is going, which work to take, to keep going, how to hand an issue over instead of stopping, and to end the autopilot when nothing is left. Every other rule the work is done under holds whether or not the autopilot is running, so it is a memory, listed under "Rules that are memories". Two rules are both: the wait for CI, and that no test runs locally. Each is a memory, since it holds with the autopilot stopped, and a reminder, since without it the other reminders would draw the session against it: back to work while a run is going, or to running a test locally to check the work it took. They are the two reminders of the form `reminders-only`, per "Reminders only".
 
 Before a reminder is added, the test is whether its rule would still hold with the autopilot stopped. When it would, the rule is written as a memory and given a row in "Rules that are memories", and it is a reminder as well only when a reminder that fires would otherwise lead the session against it, as with the wait for CI and with the tests that run in CI alone.
 
@@ -48,7 +48,7 @@ The other four:
 | `7,22,37,52 * * * *` | `REMINDER: When the listing names no issue that can be taken, end the autopilot: CronDelete every job that CronList returns.` |
 | `9,24,39,54 * * * *` | `REMINDER: Continue autonomously: while an open issue can be taken, do not stop to ask or to report.` |
 | `11,26,41,56 * * * *` | `REMINDER: When an issue you are working on cannot go on without a person's answer, hand it to a person by labelling it 'needs decision'.` |
-| `13,28,43,58 * * * *` | `REMINDER: Run no test on the Mac, of the unit, integration or end-to-end tier: push the tests with their code and let CI run them.` |
+| `13,28,43,58 * * * *` | `REMINDER: Run no test locally, of the unit, integration or end-to-end tier: push the tests with their code and let CI run them.` |
 
 In a prompt, `<number>` stands for the issue being checked, and `gh api` fills in `{owner}` and `{repo}` from the repository the session runs in.
 
@@ -90,7 +90,7 @@ Each file is under `.claude/memories/`.
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | The code is written to pass the checks of the release workflow. | `the-checks-the-code-faces.md` |
-| No test runs on the Mac: before a push only `cargo fmt --all` and a compile check run there, and every test and every other check is left to CI. | `only-quick-checks-run-before-a-push.md` |
+| No test runs locally and no change is compiled locally to check it: before a push only `cargo fmt --all` runs locally, and whether the code compiles, every test and every other check are left to CI. | `only-quick-checks-run-before-a-push.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
 | A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
 | A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
@@ -137,7 +137,7 @@ The autopilot ends itself, per "Ending itself", once no open issue that carries 
 
 ## Reminders only
 
-`start reminders-only` schedules only the reminders whose rules hold during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`, and the reminder that no test runs on the Mac, on `13,28,43,58 * * * *`. The other four drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the four left out: "Stop" clears it.
+`start reminders-only` schedules only the reminders whose rules hold during any work, with the loop or without it: the wait for CI, on `1,16,31,46 * * * *`, and the reminder that no test runs locally, on `13,28,43,58 * * * *`. The other four drive the loop through the issues, so they are left out. The form takes no `--skip-label`, runs no listing, takes no issue, and never ends itself, since the reminder that ends the autopilot is one of the four left out: "Stop" clears it.
 
 1. Call `CronList`, and `CronDelete` each job whose prompt begins `REMINDER:` and is neither one of the six reminders of "Start" nor the reminder that takes work of "By label", whatever its label, each on its own cron.
 2. `CronCreate` each of the two reminders with `recurring: true` unless it is already scheduled.
