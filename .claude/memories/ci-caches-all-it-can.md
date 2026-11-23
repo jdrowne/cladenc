@@ -20,4 +20,4 @@ Each job in `.github/workflows/` restores from the GitHub Actions cache whatever
 - A job that installs with pip or npm restores `~/.cache/pip` or `~/.npm`, keyed on the job's name and the hash of its workflow file, with the job's name alone as the fallback key.
 - Every Docker image a job of `release.yml` runs is listed in `IMAGES` at the top of the file. `cache-images` saves them to the cache under a key made from their digests, and a job that runs one waits for `cache-images` and loads `images.tar` instead of pulling.
 - Key a cache on what it holds, such as a digest or a file's hash, rather than on a commit, so a run that changes nothing reuses it. GitHub keeps 10 GB of caches for the repository and evicts the least recently used past that.
-- A job that waits for no other job and is not a build is named in the `needs` of `release`, `cache-images` among them, per [[the-checks-the-code-faces]].
+- A job that waits for no other job and is not a build is named in the `needs` of `release`, `cache-images` among them.

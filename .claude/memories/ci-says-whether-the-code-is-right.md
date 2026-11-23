@@ -21,17 +21,17 @@ Three things are not goals, and none of them is weighed against getting the code
 **Why:** The user said so on 2026-11-22, while #151 and #153 were being solved, in three steps:
 
 - The session had spent two hours reading and tracing code that nothing local compiles, so as to push only what would pass, and had pushed nothing. The user asked why it did not push and let CI show what was wrong. The push that followed compiled at once, and its run found one block nested too deep for clippy and 4 failing tests out of 2,612.
-- The session then gave, as the reason [[the-checks-the-code-faces]] listed every check, that code is to pass the checks from the moment it is written. The user answered that they had never asked for that, that it is not what the session is to work toward, that every tool at hand is to be used to reach the goal, CI among them, and that they do not expect code to be written right in one go.
+- The session then gave, as the reason a memory of its own listed every check of the workflow, that code is to pass the checks from the moment it is written. The user answered that they had never asked for that, that it is not what the session is to work toward, that every tool at hand is to be used to reach the goal, CI among them, and that they do not expect code to be written right in one go.
 - The session had also counted the 13 minutes of a failed run as a cost. The user answered that how long it takes does not matter: what matters most is that `cladenc` is accurate.
 
-That code is written to pass the checks from the start was a session's wording in that memory, never the user's, and it is taken out.
+That code is written to pass the checks from the start was a session's wording in that memory, never the user's. The memory itself is gone, per [[what-the-repository-says-is-read-there]].
 
 **How to apply:**
 
 - Push once the change is complete as far as reading it shows and the checks of [[only-quick-checks-run-before-a-push]] pass. The run says what is wrong, and what it finds is fixed in the next commit, per [[a-failed-run-is-fixed-before-other-work]].
 - Do not trace by hand what a compiler or a test would say in order to be spared a run.
 - Time and the count of runs are never given as a reason: not for a test left out, not for a narrower fix, not for doing other than a rule such as [[the-work-waits-for-ci]] says.
-- What the checks are is read in `.github/workflows/release.yml`, not in a memory.
+- What the checks are is read in `.github/workflows/release.yml` and `etc/clippy/clippy.toml`, not in a memory, per [[what-the-repository-says-is-read-there]].
 
 What is mine, and not the user's:
 

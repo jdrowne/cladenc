@@ -31,5 +31,5 @@ Three things are kept apart from Rust's conventions:
 
 - A new unit test goes in a file of `src/<module>/tests/`, and a new file there is added to that directory's `mod.rs`. A module that gets its first unit test gets the directory, its `mod.rs`, and the declaration at the foot of `src/<module>/mod.rs`.
 - The three tiers are run as `cargo test --lib` for the unit tier, `--test integration` and `--test e2e`. No test target is named `unit`.
-- With the unit tests inside it, Cargo builds the library twice, and the coverage tool counts a function by the better of its two builds unless it is told otherwise. The job `assert-coverage` adds the two builds up, per [[the-checks-the-code-faces]].
+- With the unit tests inside it, Cargo builds the library twice, and the coverage tool counts a function by the better of its two builds unless it is told otherwise. The job `assert-coverage` of `.github/workflows/release.yml` adds the two builds up.
 - Nothing is `pub` for the unit tests, since they are inside the library, per [[an-item-is-as-private-as-its-uses-allow]].
