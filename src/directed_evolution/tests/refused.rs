@@ -45,7 +45,7 @@ fn a_directed_evolution_whose_file_of_the_key_holds_no_key_makes_no_outputs_dire
     let directory = Memory::default();
     let settings = with_a_file_of_the_key_that_holds_no_key(&directory);
     let _refused = started(&directory, &settings, &directory.path().join("outputs"));
-    assert!(!directory.exists(&directory.path().join("outputs")));
+    assert!(!directory.exists(directory.path().join("outputs")));
 }
 
 #[test]

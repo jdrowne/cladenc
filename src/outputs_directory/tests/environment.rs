@@ -28,7 +28,7 @@ fn what_is_kept_of_the_environment_of_a_task_is_under_environments_in_the_output
 #[test]
 fn a_new_outputs_directory_keeps_nothing_of_an_environment() {
     let (directory, outputs_directory) = made();
-    assert!(!directory.exists(&outputs_directory.path().join("environments")));
+    assert!(!directory.exists(outputs_directory.path().join("environments")));
 }
 
 #[test]
@@ -44,7 +44,7 @@ fn starting_the_build_of_an_environment_returns_the_directory_that_keeps_it() {
 fn starting_the_build_of_an_environment_makes_the_directory_that_keeps_it() {
     let (directory, outputs_directory) = made();
     outputs_directory.start_environment(TASK).unwrap();
-    assert!(directory.is_dir(&outputs_directory.environment(TASK)));
+    assert!(directory.is_dir(outputs_directory.environment(TASK)));
 }
 
 #[test]
@@ -91,7 +91,7 @@ fn starting_the_build_of_the_environment_of_a_grader_returns_the_directory_that_
 fn starting_the_build_of_the_environment_of_a_grader_makes_the_directory_that_keeps_it() {
     let (directory, outputs_directory) = made();
     outputs_directory.start_grader_environment(TASK).unwrap();
-    assert!(directory.is_dir(&outputs_directory.grader_environment(TASK)));
+    assert!(directory.is_dir(outputs_directory.grader_environment(TASK)));
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn the_build_of_the_environment_of_a_grader_leaves_what_is_kept_of_that_of_its_t
         )
         .unwrap();
     outputs_directory.start_grader_environment(TASK).unwrap();
-    assert!(directory.is_file(&outputs_directory.environment(TASK).join("stdout")));
+    assert!(directory.is_file(outputs_directory.environment(TASK).join("stdout")));
 }
 
 #[test]

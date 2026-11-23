@@ -255,13 +255,13 @@ fn a_symbolic_link_that_a_pattern_matches_is_left_out() {
 #[test]
 fn what_a_symbolic_link_that_is_left_out_leads_to_is_not_removed() {
     let (directory, _left) = linked_to_a_directory_apart(&["link"]);
-    assert!(directory.is_file(&directory.path().join("apart/draft.tmp")));
+    assert!(directory.is_file(directory.path().join("apart/draft.tmp")));
 }
 
 #[test]
 fn nothing_is_left_out_of_a_directory_that_a_symbolic_link_leads_to() {
     let (directory, _left) = linked_to_a_directory_apart(&["*.tmp"]);
-    assert!(directory.is_file(&directory.path().join("apart/draft.tmp")));
+    assert!(directory.is_file(directory.path().join("apart/draft.tmp")));
 }
 
 #[test]

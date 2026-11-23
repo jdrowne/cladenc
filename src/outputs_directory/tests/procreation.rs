@@ -179,7 +179,7 @@ fn a_procreation_that_timed_out_records_the_word_timed_out() {
 #[test]
 fn a_procreation_that_created_its_child_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert!(!directory.exists(&outputs_directory.running_procreation(1)));
+    assert!(!directory.exists(outputs_directory.running_procreation(1)));
 }
 
 #[test]
@@ -196,7 +196,7 @@ fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses()
 #[test]
 fn a_procreation_that_failed_leaves_no_directory_for_the_attempts_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(&outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.attempts(1)));
 }
 
 #[test]
@@ -222,25 +222,25 @@ fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesse
 #[test]
 fn a_procreation_that_timed_out_leaves_no_directory_for_the_attempts_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
-    assert!(!directory.exists(&outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.attempts(1)));
 }
 
 #[test]
 fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
-    assert!(directory.is_file(&outputs_directory.harness(1).join("harness.sh")));
+    assert!(directory.is_file(outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
 fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_attempts() {
     let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
-    assert!(!directory.exists(&outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.attempts(1)));
 }
 
 #[test]
 fn a_procreation_that_failed_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(&outputs_directory.running_procreation(1)));
+    assert!(!directory.exists(outputs_directory.running_procreation(1)));
 }
 
 #[test]
@@ -254,11 +254,11 @@ fn a_procreation_recorded_as_unchanged_records_the_word_unchanged() {
 #[test]
 fn a_procreation_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(directory.is_file(&outputs_directory.harness(1).join("harness.sh")));
+    assert!(directory.is_file(outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
 fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_attempts_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(!directory.exists(&outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.attempts(1)));
 }

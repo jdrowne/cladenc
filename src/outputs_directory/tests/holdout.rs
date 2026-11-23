@@ -169,13 +169,13 @@ fn the_attempts_at_the_holdout_tasks_are_kept_apart_by_benchmark_and_task() {
 #[test]
 fn discarding_an_attempt_at_a_holdout_task_that_ended_leaves_no_directory_of_the_attempt() {
     let (directory, outputs_directory) = with_the_attempt_at_the_holdout_task_discarded();
-    assert!(!directory.exists(&outputs_directory.path().join("holdout/0/benchmark/t2")));
+    assert!(!directory.exists(outputs_directory.path().join("holdout/0/benchmark/t2")));
 }
 
 #[test]
 fn discarding_an_attempt_at_a_holdout_task_leaves_the_attempts_that_are_not_held_out() {
     let (directory, outputs_directory) = with_the_attempt_at_the_holdout_task_discarded();
-    assert!(directory.is_file(&outputs_directory.attempt(0, SHOWN).join("result")));
+    assert!(directory.is_file(outputs_directory.attempt(0, SHOWN).join("result")));
 }
 
 #[test]

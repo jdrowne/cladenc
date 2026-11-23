@@ -35,7 +35,7 @@ fn what_is_kept_of_the_image_of_a_directed_evolution_is_in_image_in_the_outputs_
 #[test]
 fn a_new_outputs_directory_keeps_nothing_of_an_image() {
     let (directory, outputs_directory) = made();
-    assert!(!directory.exists(&outputs_directory.image()));
+    assert!(!directory.exists(outputs_directory.image()));
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn the_copy_of_a_dockerfile_is_no_link_to_the_one_that_was_given() {
     directory
         .remove_file(directory.path().join("Dockerfile"))
         .unwrap();
-    assert!(directory.is_file(&outputs_directory.image().join("Dockerfile")));
+    assert!(directory.is_file(outputs_directory.image().join("Dockerfile")));
 }
 
 #[test]

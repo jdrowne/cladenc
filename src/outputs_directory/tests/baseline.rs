@@ -156,13 +156,13 @@ fn a_singleton_control_group_harness_that_was_created_is_given_a_directory_for_i
 #[test]
 fn a_singleton_control_group_harness_that_was_not_created_is_given_no_directory_for_attempts() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(&outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.attempts(3)));
 }
 
 #[test]
 fn the_source_code_of_a_singleton_control_group_harness_that_was_not_created_is_kept() {
     let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
-    assert!(directory.exists(&outputs_directory.harness(3).join("new.txt")));
+    assert!(directory.exists(outputs_directory.harness(3).join("new.txt")));
 }
 
 #[test]
@@ -195,7 +195,7 @@ fn an_ended_baseline_records_how_the_creation_ended() {
 #[test]
 fn an_ended_baseline_is_no_longer_running() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert!(!directory.exists(&outputs_directory.running_baseline(3)));
+    assert!(!directory.exists(outputs_directory.running_baseline(3)));
 }
 
 #[test]
@@ -214,7 +214,7 @@ fn a_singleton_control_group_harness_is_not_one_of_the_children_of_the_progenito
 fn discarding_a_baseline_that_is_running_leaves_nothing_running() {
     let (directory, outputs_directory) = started();
     outputs_directory.discard_baseline(3).unwrap();
-    assert!(!directory.exists(&outputs_directory.running_baseline(3)));
+    assert!(!directory.exists(outputs_directory.running_baseline(3)));
 }
 
 #[test]
@@ -227,25 +227,25 @@ fn a_discarded_baseline_can_be_started_again() {
 #[test]
 fn discarding_a_baseline_that_ended_removes_the_singleton_control_group_harness() {
     let (directory, outputs_directory) = discarded_after_it_ended();
-    assert!(!directory.exists(&outputs_directory.harness(3)));
+    assert!(!directory.exists(outputs_directory.harness(3)));
 }
 
 #[test]
 fn discarding_a_baseline_that_ended_removes_what_was_kept_of_it() {
     let (directory, outputs_directory) = discarded_after_it_ended();
-    assert!(!directory.exists(&outputs_directory.baseline(3)));
+    assert!(!directory.exists(outputs_directory.baseline(3)));
 }
 
 #[test]
 fn discarding_a_baseline_that_ended_removes_the_directory_of_the_attempts() {
     let (directory, outputs_directory) = discarded_after_it_ended();
-    assert!(!directory.exists(&outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.attempts(3)));
 }
 
 #[test]
 fn discarding_a_baseline_leaves_the_progenitor_s_child_of_its_experiment() {
     let (directory, outputs_directory) = discarded_after_it_ended();
-    assert!(directory.exists(&outputs_directory.harness(1)));
+    assert!(directory.exists(outputs_directory.harness(1)));
 }
 
 #[test]
@@ -259,5 +259,5 @@ fn a_baseline_recorded_as_unchanged_records_the_word_unchanged() {
 #[test]
 fn a_baseline_recorded_as_unchanged_leaves_no_directory_for_attempts() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(!directory.exists(&outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.attempts(3)));
 }

@@ -32,9 +32,9 @@ fn what_a_procreation_left_is_discarded_before_it_is_carried_out_again() {
     action::discard(&outputs_directory, &procreation).unwrap();
     assert_eq!(
         [
-            directory.exists(&outputs_directory.harness(1)),
-            directory.exists(&outputs_directory.procreation(1)),
-            directory.exists(&outputs_directory.attempts(1)),
+            directory.exists(outputs_directory.harness(1)),
+            directory.exists(outputs_directory.procreation(1)),
+            directory.exists(outputs_directory.attempts(1)),
         ],
         [false, false, false]
     );
@@ -50,7 +50,7 @@ fn what_a_baseline_left_is_discarded_before_it_is_carried_out_again() {
         progenitor: 0,
     };
     action::discard(&outputs_directory, &baseline).unwrap();
-    assert!(!directory.exists(&outputs_directory.running_baseline(2)));
+    assert!(!directory.exists(outputs_directory.running_baseline(2)));
 }
 
 #[test]
@@ -64,7 +64,7 @@ fn what_an_attempt_left_is_discarded_before_it_is_carried_out_again() {
         task: TASK.to_owned(),
     };
     action::discard(&outputs_directory, &attempt).unwrap();
-    assert!(!directory.exists(&outputs_directory.running_attempt(0, TASK)));
+    assert!(!directory.exists(outputs_directory.running_attempt(0, TASK)));
 }
 
 #[test]
@@ -78,8 +78,8 @@ fn the_harness_that_procreated_is_kept_when_what_its_procreation_left_is_discard
     action::discard(&outputs_directory, &procreation).unwrap();
     assert_eq!(
         [
-            directory.exists(&outputs_directory.running_procreation(1)),
-            directory.exists(&outputs_directory.harness(0)),
+            directory.exists(outputs_directory.running_procreation(1)),
+            directory.exists(outputs_directory.harness(0)),
         ],
         [false, true]
     );

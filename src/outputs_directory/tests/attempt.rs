@@ -119,7 +119,7 @@ fn an_attempt_of_a_harness_the_outputs_directory_does_not_hold_cannot_be_started
 fn an_attempt_of_a_harness_the_outputs_directory_does_not_hold_leaves_nothing_running() {
     let (directory, outputs_directory) = made();
     let _ = outputs_directory.start_attempt(7, "benchmark/t1");
-    assert!(!directory.exists(&outputs_directory.running_attempt(7, "benchmark/t1")));
+    assert!(!directory.exists(outputs_directory.running_attempt(7, "benchmark/t1")));
 }
 
 #[test]
@@ -149,7 +149,7 @@ fn a_harness_whose_attempt_timed_out_leaves_the_word_timed_out_as_its_result() {
 #[test]
 fn an_ended_attempt_keeps_no_copy_of_its_harness() {
     let (directory, outputs_directory) = ended(AttemptResult::Completed);
-    assert!(!directory.exists(&outputs_directory.attempt(0, "benchmark/t1").join("harness")));
+    assert!(!directory.exists(outputs_directory.attempt(0, "benchmark/t1").join("harness")));
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn an_ended_attempt_keeps_the_specification_of_its_task() {
     let (directory, outputs_directory) = ended(AttemptResult::Completed);
     assert!(
         directory.is_file(
-            &outputs_directory
+            outputs_directory
                 .attempt(0, "benchmark/t1")
                 .join("specification")
         )
@@ -190,7 +190,7 @@ fn an_ended_attempt_keeps_the_specification_of_its_task() {
 #[test]
 fn an_ended_attempt_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(AttemptResult::Completed);
-    assert!(!directory.exists(&outputs_directory.running_attempt(0, "benchmark/t1")));
+    assert!(!directory.exists(outputs_directory.running_attempt(0, "benchmark/t1")));
 }
 
 #[test]

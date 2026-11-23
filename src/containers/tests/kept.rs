@@ -60,8 +60,8 @@ fn a_directory_above_a_place_that_holds_something_stays_when_the_empty_one_under
     artifacts::remove_above_where_empty(&directory, &kept.join("app/reports/latest"), &kept);
     assert_eq!(
         (
-            directory.exists(&kept.join("app/reports")),
-            directory.exists(&kept.join("app"))
+            directory.exists(kept.join("app/reports")),
+            directory.exists(kept.join("app"))
         ),
         (false, true)
     );

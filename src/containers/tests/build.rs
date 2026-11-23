@@ -49,5 +49,5 @@ fn with_no_build_command_the_primogenitor_is_taken_as_built() {
 #[test]
 fn with_no_build_command_nothing_is_kept_under_builds() {
     let (directory, outputs_directory, _result) = built_with_no_build_command();
-    assert!(!directory.exists(&outputs_directory.build(0)));
+    assert!(!directory.exists(outputs_directory.build(0)));
 }

@@ -25,7 +25,7 @@ fn the_directory_of_a_build_is_named_after_its_harness_under_builds() {
 #[test]
 fn a_new_outputs_directory_holds_no_builds() {
     let (directory, _outputs_directory) = made();
-    assert!(!directory.exists(&directory.path().join("outputs/builds")));
+    assert!(!directory.exists(directory.path().join("outputs/builds")));
 }
 
 #[test]

@@ -553,6 +553,27 @@ fn a_path_the_task_names_to_be_kept_is_copied_out_before_the_published_place_for
 }
 
 #[test]
+fn the_published_place_for_artifacts_that_the_task_names_to_be_kept_is_copied_out_once() {
+    let configuration = TaskConfiguration {
+        artifacts: vec![Artifact {
+            source: "/logs/artifacts".to_owned(),
+            destination: "published".to_owned(),
+            exclude: Vec::new(),
+        }],
+        ..TaskConfiguration::default()
+    };
+    let tried = attempted_with(Double::default(), configuration);
+    assert_eq!(
+        tried
+            .commands()
+            .iter()
+            .filter(|command| command.starts_with("docker cp --follow-link NAME:/logs/artifacts "))
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn an_attempt_whose_container_docker_does_not_bring_up_names_the_file_that_holds_what_it_said() {
     let tried = attempted_by(Double::default().answering(&["--detach"], &[Answer::Exited(1)]));
     let said = tried.running().join("stderr");
