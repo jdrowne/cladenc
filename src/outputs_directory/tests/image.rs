@@ -61,7 +61,7 @@ fn starting_the_build_of_an_image_keeps_a_copy_of_its_dockerfile() {
 
 #[test]
 fn starting_the_build_of_an_image_makes_a_build_context_that_holds_nothing() {
-    let (directory, outputsdirectory) = started();
+    let (directory, outputs_directory) = started();
     assert_eq!(
         directory
             .names_in(outputs_directory.image().join("context"))
