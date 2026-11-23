@@ -102,12 +102,19 @@ impl Double {
     }
 
     pub(crate) fn changing(self) -> Self {
-        self.doing(&["run"], |asked| {
+        self.changing_when(|_| true)
+    }
+
+    pub(crate) fn changing_when(
+        self,
+        changes: impl Fn(&Asked) -> bool + Send + Sync + 'static,
+    ) -> Self {
+        self.doing(&["run"], move |asked| {
             let made = asked
                 .arguments
                 .iter()
                 .find_map(|argument| argument.strip_suffix(MADE));
-            if let Some(made) = made {
+            if let Some(made) = made.filter(|_| changes(asked)) {
                 let change = asked.kept.to_string_lossy().into_owned();
                 fs::write(Path::new(made).join("changed"), change).unwrap();
             }
@@ -122,13 +129,7 @@ impl Double {
                 .any(|argument| argument.ends_with(VERIFIER));
             let to = asked.arguments.last().map(PathBuf::from);
             if let Some(to) = to.filter(|_| from_the_verifier) {
-                let attempt = to
-                    .ancestors()
-                    .nth(3)
-                    .and_then(Path::file_name)
-                    .map(|name| name.to_string_lossy().into_owned())
-                    .unwrap_or_default();
-                let reward = if completes(&attempt) { "1" } else { "0" };
+                let reward = reward(completes(&attempt_of(&to)));
                 fs::write(to.join("reward.txt"), reward).unwrap();
             }
         })
@@ -200,6 +201,18 @@ impl Docker for Double {
             Some(_) => Err(io::Error::other("the command did not succeed")),
         }
     }
+}
+
+fn attempt_of(to: &Path) -> String {
+    to.ancestors()
+        .nth(3)
+        .and_then(Path::file_name)
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+fn reward(completed: bool) -> &'static str {
+    if completed { "1" } else { "0" }
 }
 
 fn owned(needles: &[&str]) -> Vec<String> {

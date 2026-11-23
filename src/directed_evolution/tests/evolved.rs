@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::containers::tests::double::Double;
 use crate::directed_evolution::tests::given::{self, Evolved};
@@ -10,12 +11,32 @@ const IMAGES_REMOVED: &str = "docker image rm --force \
                               cladenc-environments-0123456789abcdef:1-grader \
                               cladenc-environments-0123456789abcdef:1";
 
+const SHOWN_THE_PRIMOGENITOR: &str = "/attempts/0:/var/log/cladenc/attempts:ro";
+const EXPERIMENT: &str = "the singleton control group harness, by the primogenitor from the \
+                          source code of harness 1";
+
 fn evolved() -> Evolved {
     given::started(Double::default(), given::unchanged)
 }
 
 fn changing() -> Evolved {
     given::started(Double::default().changing(), given::unchanged)
+}
+
+fn with_three_procreations(_: &Path, settings: &mut Settings) {
+    settings.max_procreations = 3;
+}
+
+fn experimented() -> Evolved {
+    let procreated = AtomicBool::new(false);
+    let docker = Double::default().changing_when(move |asked| {
+        let by_the_primogenitor = asked
+            .arguments
+            .iter()
+            .any(|argument| argument.ends_with(SHOWN_THE_PRIMOGENITOR));
+        !(by_the_primogenitor && procreated.swap(true, Ordering::SeqCst))
+    });
+    given::started(docker, with_three_procreations)
 }
 
 fn with_a_selection_task(_: &Path, settings: &mut Settings) {
@@ -53,9 +74,12 @@ fn a_procreation_starts_once_the_primogenitor_attempted_every_task() {
 }
 
 #[test]
-fn a_progenitor_that_leaves_its_copy_unchanged_makes_no_harness() {
+fn a_progenitor_that_leaves_its_copy_unchanged_creates_no_harness() {
     let said = evolved().said;
-    assert!(said.contains("and 1 harness: its best harness is harness 0"));
+    assert!(said.contains(
+        "the procreation of harness 1 by harness 0 left the copy of the source code of harness 0 \
+         unchanged, and created no harness"
+    ));
 }
 
 #[test]
@@ -65,22 +89,31 @@ fn the_images_of_the_environments_are_removed_once_the_directed_evolution_ends()
 }
 
 #[test]
-fn a_copy_that_its_progenitor_changes_becomes_a_harness_with_a_singleton_control_group_harness() {
+fn a_copy_that_its_progenitor_changes_becomes_a_harness() {
     let said = changing().said;
-    assert!(
-        said.contains("started the creation of harness 2, the singleton control group harness")
-    );
+    assert!(said.contains("the procreation of harness 1 by harness 0 created harness 1, kept in"));
 }
 
 #[test]
-fn a_child_and_its_singleton_control_group_harness_attempt_every_task_as_well() {
-    assert_eq!(changing().count_of("--detach"), 6);
+fn a_child_attempts_every_task_as_well() {
+    assert_eq!(changing().count_of("--detach"), 4);
 }
 
 #[test]
-fn a_directed_evolution_ends_with_each_harness_that_was_made() {
+fn a_directed_evolution_ends_with_the_count_of_its_harnesses() {
     let said = changing().said;
-    assert!(said.contains("and 3 harnesses: its best harness is harness 0"));
+    assert!(said.contains("and 2 harnesses: its best harness is harness 0"));
+}
+
+#[test]
+fn an_experiment_starts_when_a_harness_other_than_the_primogenitor_procreates() {
+    assert!(experimented().said.contains(EXPERIMENT));
+}
+
+#[test]
+fn the_singleton_control_group_harness_of_an_experiment_is_kept_among_the_harnesses() {
+    let said = experimented().said;
+    assert!(said.contains(&format!("{EXPERIMENT} created harness")));
 }
 
 #[test]

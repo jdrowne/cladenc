@@ -98,6 +98,146 @@ jobs:
             --fail-under-functions 100 \
             --fail-under-lines 100 \
             --fail-under-regions 100
+  assert-coverage-of-the-unit-tier:
+    needs: unit-test-coverage
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install the toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.9.1
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Restore what pip fetched before
+        uses: actions/cache@v6
+        with:
+          key: >-
+            pip-${{ github.job }}-${{
+            hashFiles('.github/workflows/release.yml') }}
+          path: ~/.cache/pip
+          restore-keys: pip-${{ github.job }}-
+      - name: Install dependencies
+        run: pip install tree-sitter==0.26.1 tree-sitter-rust==0.24.2
+      - name: Take the instrumented build
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-build
+      - name: Take the profiles of the unit tier
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-unit
+      - name: Assert that the unit tier alone reaches its functions
+        run: |
+          tar -xPf coverage.tar
+          tar -xPf profiles-unit.tar
+          source coverage.env
+          cargo llvm-cov report --json \
+            --ignore-filename-regex '(^|/)tests/' > coverage.json
+          python - <<'UNIT'
+          import json
+          import os
+          import subprocess
+          import sys
+          import tree_sitter_rust
+          from tree_sitter import Language, Parser
+          FILE_SYSTEM = {"File", "OpenOptions", "fs"}
+          ASKED = {
+              "canonicalize", "exists", "is_dir", "is_file", "is_symlink",
+              "metadata", "read_dir", "read_link", "set_len",
+              "set_permissions", "symlink_metadata", "sync_all",
+              "sync_data", "try_exists",
+          }
+          PROGRAM = {"kill", "output", "spawn", "status", "try_wait", "wait"}
+          CALLED = {"killpg", "symlink"}
+          def within(root, whole):
+              nodes = [root]
+              while nodes:
+                  node = nodes.pop()
+                  yield node
+                  for child in reversed(node.named_children):
+                      if whole or child.type != "function_item":
+                          nodes.append(child)
+          def calls(node):
+              if node.type == "scoped_identifier":
+                  path = node.child_by_field_name("path")
+                  last = path.text.decode().split("::")[-1] if path else ""
+                  return last in FILE_SYSTEM
+              if node.type != "call_expression":
+                  return False
+              called = node.child_by_field_name("function")
+              if called.type == "identifier":
+                  return called.text.decode() in CALLED
+              if called.type != "field_expression":
+                  return False
+              method = called.child_by_field_name("field").text.decode()
+              given = node.child_by_field_name("arguments").named_child_count
+              return method in ASKED or method in PROGRAM and not given
+          def span(node):
+              first = (node.start_point[0] + 1, node.start_point[1] + 1)
+              last = (node.end_point[0] + 1, node.end_point[1] + 1)
+              return first, last
+          def regions(function, segments):
+              first, last = span(function)
+              nested = [
+                  span(node)
+                  for node in within(function, True)
+                  if node.type == "function_item" and node.id != function.id
+              ]
+              for line, column, count, counted, entered, gap in segments:
+                  place = (line, column)
+                  apart = any(start <= place <= end for start, end in nested)
+                  if first <= place <= last and not apart and counted:
+                      yield line, column, entered and not gap and not count
+          parser = Parser(Language(tree_sitter_rust.language()))
+          with open("coverage.json") as report:
+              files = json.load(report)["data"][0]["files"]
+          reported = {
+              os.path.relpath(file["filename"]): file["segments"]
+              for file in files
+          }
+          listed = subprocess.run(
+              ["git", "ls-files", "-z", "src/*.rs"],
+              capture_output=True, check=True, text=True,
+          ).stdout.split("\0")
+          missed = not files
+          if missed:
+              print("::error::the report lists no file")
+          for path in filter(None, listed):
+              if "/tests/" in path or path == "src/main.rs":
+                  continue
+              with open(path, "rb") as source:
+                  tree = parser.parse(source.read())
+              if tree.root_node.has_error:
+                  print(f"::error file={path}::{path} could not be parsed")
+                  missed = True
+              for node in within(tree.root_node, True):
+                  if node.type != "function_item":
+                      continue
+                  if any(calls(inner) for inner in within(node, False)):
+                      continue
+                  name = node.child_by_field_name("name").text.decode()
+                  found = list(regions(node, reported.get(path, [])))
+                  if not found:
+                      where = f"file={path},line={node.start_point[0] + 1}"
+                      said = f"the report has no region of {name}"
+                      print(f"::error {where}::{said}")
+                      missed = True
+                  for line, column, unreached in found:
+                      if unreached:
+                          where = f"file={path},line={line},col={column}"
+                          said = f"no unit test reaches this region of {name}"
+                          print(f"::error {where}::{said}")
+                          missed = True
+          sys.exit(missed)
+          UNIT
   assert-no-comments:
     runs-on: ubuntu-latest
     steps:
@@ -595,6 +735,7 @@ jobs:
     needs:
       - assert-coverage
       - assert-coverage-of-test-inputs
+      - assert-coverage-of-the-unit-tier
       - assert-no-comments
       - assert-no-empty-test-files
       - assert-no-inline-directives
