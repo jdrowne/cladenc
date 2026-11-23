@@ -3,7 +3,7 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Environment, Launch};
+use cladenc::containers::{self, ContainerError, Environment, Host, Launch, Program};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -32,7 +32,10 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<
     let built = configuration.docker_image.is_none().then(|| {
         let image = test_inputs::image();
         containers::build_environment(
-            outputs_directory,
+            Host {
+                docker: &Program,
+                outputs_directory,
+            },
             TASK,
             &image.name,
             configuration.build_time_limit,
@@ -82,7 +85,10 @@ fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
         max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch,
         containers::Attempt {
             harness: 0,

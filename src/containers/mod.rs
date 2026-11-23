@@ -2,6 +2,7 @@ mod artifacts;
 mod build;
 mod collect;
 mod container;
+mod docker;
 mod grader;
 mod harbor;
 mod health_check;
@@ -23,10 +24,11 @@ use std::time::{Duration, Instant};
 use crate::benchmark::TaskConfiguration;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
-use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files, same_tree};
+use crate::outputs_directory::{holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
 use container::{Bringing, Container, Mount, Run, Shell, Up};
+pub use docker::{Docker, Host};
 use grader::Grading;
 use health_check::Backoff;
 pub use image::{
@@ -34,6 +36,7 @@ pub use image::{
     remove_images,
 };
 pub use left::remove_left_behind;
+pub use program::Program;
 use program::{Ending, FOREVER, Limits, seconds_since};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
@@ -203,12 +206,13 @@ impl Display for ContainerError {
 impl Error for ContainerError {}
 
 pub fn run_procreation(
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     launch: &Launch<'_>,
     child: HarnessId,
     progenitor: HarnessId,
     stop: &AtomicBool,
 ) -> Result<Creation, ContainerError> {
+    let outputs_directory = host.outputs_directory;
     outputs_directory
         .start_procreation(child, progenitor)
         .map_err(ContainerError::Io)?;
@@ -226,7 +230,7 @@ pub fn run_procreation(
         attempts: &attempts,
         shown: &shown,
     };
-    let creation = changing.run(outputs_directory, launch, stop)?;
+    let creation = changing.run(host, launch, stop)?;
     outputs_directory
         .end_procreation(child, progenitor, creation.outcome)
         .map(|()| creation)
@@ -234,12 +238,13 @@ pub fn run_procreation(
 }
 
 pub fn run_baseline(
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     launch: &Launch<'_>,
     harness: HarnessId,
     experiment: Experiment,
     stop: &AtomicBool,
 ) -> Result<Creation, ContainerError> {
+    let outputs_directory = host.outputs_directory;
     outputs_directory
         .start_baseline(harness, experiment.progenitor)
         .map_err(ContainerError::Io)?;
@@ -261,7 +266,7 @@ pub fn run_baseline(
         attempts: &attempts,
         shown: &shown,
     };
-    let creation = changing.run(outputs_directory, launch, stop)?;
+    let creation = changing.run(host, launch, stop)?;
     outputs_directory
         .end_baseline(harness, experiment, creation.outcome)
         .map(|()| creation)
@@ -281,7 +286,7 @@ struct Changing<'a> {
 impl Changing<'_> {
     fn run(
         &self,
-        outputs_directory: &OutputsDirectory,
+        host: Host<'_>,
         launch: &Launch<'_>,
         stop: &AtomicBool,
     ) -> Result<Creation, ContainerError> {
@@ -318,7 +323,7 @@ impl Changing<'_> {
         .chain(launch.model.environment())
         .collect();
         let container = Container {
-            outputs_directory,
+            host,
             image: launch.image,
             mounts: &mounts,
             working_directory: WORK,
@@ -331,7 +336,7 @@ impl Changing<'_> {
         let ending = container.run(&shell, self.running, limits)?;
         let seconds = seconds_since(started);
         let outcome = match ending {
-            Ending::Exited(0) => self.made_of_what_was_left(outputs_directory, launch, limits)?,
+            Ending::Exited(0) => self.made_of_what_was_left(host, launch, limits)?,
             Ending::Exited(_) => CreationOutcome::Failed,
             Ending::TimedOut => CreationOutcome::TimedOut,
         };
@@ -340,43 +345,56 @@ impl Changing<'_> {
 
     fn made_of_what_was_left(
         &self,
-        outputs_directory: &OutputsDirectory,
+        host: Host<'_>,
         launch: &Launch<'_>,
         limits: Limits<'_>,
     ) -> Result<CreationOutcome, ContainerError> {
-        let copied = outputs_directory.harness(self.copied_from);
+        let copied = host.outputs_directory.harness(self.copied_from);
         if !holds_only_harness_files(self.made).unwrap_or(false) {
             Ok(CreationOutcome::Failed)
         } else if same_tree(self.made, &copied).unwrap_or(false) {
             Ok(CreationOutcome::Unchanged)
         } else {
-            build::build_child(outputs_directory, launch, self.harness, self.made, limits)
+            build::build_child(host, launch, self.harness, self.made, limits)
         }
     }
 }
 
 pub fn run_attempt(
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     launch: &Launch<'_>,
     attempt: Attempt<'_>,
     stop: &AtomicBool,
     retrying: &dyn Fn(Retry),
 ) -> Result<Attempted, ContainerError> {
+    let outputs_directory = host.outputs_directory;
     let running = outputs_directory.running_attempt(attempt.harness, attempt.task);
     let specification = outputs_directory
         .start_attempt(attempt.harness, attempt.task)
-        .and_then(|()| fs::read_to_string(running.join("specification")))
+        .and_then(|()| read_specification(&running))
         .map_err(ContainerError::Io)?;
     let attempting = Attempting {
         attempt,
         running: &running,
         specification: &specification,
     };
-    let attempted = attempting.run(outputs_directory, launch, stop, retrying)?;
+    let attempted = attempting.run(host, launch, stop, retrying)?;
     outputs_directory
         .end_attempt(attempt.harness, attempt.task, attempted.result)
         .map(|()| attempted)
         .map_err(ContainerError::Io)
+}
+
+fn read_specification(running: &Path) -> io::Result<String> {
+    fs::read_to_string(running.join("specification"))
+}
+
+fn keep(file: &Path, text: &str) {
+    let _ = fs::write(file, text);
+}
+
+fn make_directory(directory: &Path) {
+    let _ = fs::create_dir_all(directory);
 }
 
 struct Attempting<'a> {
@@ -388,7 +406,7 @@ struct Attempting<'a> {
 impl Attempting<'_> {
     fn run(
         &self,
-        outputs_directory: &OutputsDirectory,
+        host: Host<'_>,
         launch: &Launch<'_>,
         stop: &AtomicBool,
         retrying: &dyn Fn(Retry),
@@ -405,7 +423,7 @@ impl Attempting<'_> {
             environment: &environment,
         };
         let environment = self.attempt.environment;
-        let (up, started) = self.brought_up(outputs_directory, launch, stop, retrying)?;
+        let (up, started) = self.brought_up(host, launch, stop, retrying)?;
         let run = Run {
             shell: &shell,
             user: environment
@@ -416,7 +434,7 @@ impl Attempting<'_> {
             variables: &[],
         };
         up.put(
-            &outputs_directory.harness(self.attempt.harness),
+            &host.outputs_directory.harness(self.attempt.harness),
             HARNESS,
             run.user,
         )
@@ -432,14 +450,14 @@ impl Attempting<'_> {
         } else {
             (HarnessEnding::Ended, "ended\n")
         };
-        let _ = fs::write(self.running.join("ending"), word);
+        keep(&self.running.join("ending"), word);
         let changes: String = up
             .changes()
             .into_iter()
             .filter(|change| !before.contains(change))
             .map(|change| change + "\n")
             .collect();
-        let _ = fs::write(self.running.join("changes"), changes);
+        keep(&self.running.join("changes"), &changes);
         up.keep_work(&self.running.join("work"));
         collect::run(
             &up,
@@ -453,7 +471,7 @@ impl Attempting<'_> {
             &self.running.join(ARTIFACTS),
         );
         let grading = Grading {
-            outputs_directory,
+            host,
             attempt: &self.attempt,
             running: self.running,
             stop,
@@ -468,13 +486,13 @@ impl Attempting<'_> {
         })
     }
 
-    fn brought_up(
+    fn brought_up<'b>(
         &self,
-        outputs_directory: &OutputsDirectory,
+        host: Host<'b>,
         launch: &Launch<'_>,
         stop: &AtomicBool,
         retrying: &dyn Fn(Retry),
-    ) -> Result<(Up, Instant), ContainerError> {
+    ) -> Result<(Up<'b>, Instant), ContainerError> {
         let bringing = Bringing::of_the_task(self.attempt.environment);
         let health_check = self.attempt.environment.configuration.health_check.as_ref();
         let kept = self.running.join(HEALTH_CHECK);
@@ -486,7 +504,7 @@ impl Attempting<'_> {
         };
         let healthy = health_check::retried(&backoff, retrying, || {
             let started = Instant::now();
-            let up = Up::start(outputs_directory, &bringing, self.running)?;
+            let up = Up::start(host, &bringing, self.running)?;
             health_check::passes_where_given(&up, health_check, &kept, stop)
                 .map(|passes| passes.then_some((up, started)))
         })?;
@@ -498,4 +516,4 @@ impl Attempting<'_> {
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

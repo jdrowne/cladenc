@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -60,7 +61,8 @@ fn evolved() -> (TempDir, Vec<String>) {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
+    directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
+        .unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -70,9 +72,15 @@ fn best_harness_of_a_directed_evolution_whose_child_is_made_by(run_command: &str
     let settings = settings(directory.path(), run_command);
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
-        .unwrap()
-        .best_harness
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    )
+    .unwrap()
+    .best_harness
 }
 
 fn given_to_the_makers_of_two_children() -> [String; 2] {
@@ -81,7 +89,14 @@ fn given_to_the_makers_of_two_children() -> [String; 2] {
     settings.max_procreations = 2;
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    )
+    .unwrap();
     ["1", "2"].map(|child| {
         fs::read_to_string(
             outputs_directory
@@ -102,9 +117,15 @@ fn stopped_at_a_holdout_task_and_resumed() -> TempDir {
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t4");
-    let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _ = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t4");
-    directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 

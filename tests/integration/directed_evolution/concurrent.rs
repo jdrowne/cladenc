@@ -3,6 +3,7 @@ use std::io;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Record, Settings};
 
@@ -40,6 +41,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     change(&mut settings);
     let outputs_directory = directory.path().join("outputs");
     directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),

@@ -6,9 +6,8 @@ use std::time::Duration;
 use super::DirectedEvolutionError;
 use super::said::{Environments, Said, say};
 use crate::benchmark::{self, EnvironmentConfiguration, TaskConfiguration};
-use crate::containers::{self, ContainerError, Environment, GraderImage, Machine};
+use crate::containers::{self, ContainerError, Docker, Environment, GraderImage, Host, Machine};
 use crate::journal::Settings;
-use crate::outputs_directory::OutputsDirectory;
 
 const OF_THE_GRADER: &str = "-grader";
 const OF_THE_TASK: [&str; 2] = ["cpus", "memory_mb"];
@@ -17,13 +16,15 @@ const OF_ITS_GRADER: [&str; 2] = [
     "verifier.environment.memory_mb",
 ];
 
-pub(super) struct Built {
+pub(super) struct Built<'a> {
+    docker: &'a dyn Docker,
     images: Vec<String>,
 }
 
-impl Built {
-    pub(super) fn by(settings: &Settings) -> Self {
+impl<'a> Built<'a> {
+    pub(super) fn by(docker: &'a dyn Docker, settings: &Settings) -> Self {
         Self {
+            docker,
             images: settings
                 .environments()
                 .into_iter()
@@ -33,9 +34,9 @@ impl Built {
     }
 }
 
-impl Drop for Built {
+impl Drop for Built<'_> {
     fn drop(&mut self) {
-        containers::remove_images(&self.images);
+        containers::remove_images(self.docker, &self.images);
     }
 }
 
@@ -50,7 +51,7 @@ pub(super) enum Whose {
 }
 
 pub(super) struct Making<'a> {
-    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) host: Host<'a>,
     pub(super) stop: &'a AtomicBool,
     pub(super) writer: &'a mut dyn Write,
     pub(super) machine: Option<Machine>,
@@ -58,12 +59,13 @@ pub(super) struct Making<'a> {
 
 pub(super) fn made(
     settings: &Settings,
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<BTreeMap<String, Environment>, DirectedEvolutionError> {
+    let outputs_directory = host.outputs_directory;
     let mut making = Making {
-        outputs_directory,
+        host,
         stop,
         writer,
         machine: None,
@@ -131,9 +133,9 @@ impl Making<'_> {
         }
         let machine = match self.machine {
             Some(machine) => machine,
-            None => *self
-                .machine
-                .insert(containers::machine().map_err(DirectedEvolutionError::Machine)?),
+            None => *self.machine.insert(
+                containers::machine(self.host.docker).map_err(DirectedEvolutionError::Machine)?,
+            ),
         };
         let has = [machine.cpus, machine.memory_megabytes as f64];
         let too_large = keys
@@ -174,7 +176,7 @@ impl Making<'_> {
         };
         say(self.writer, &Said::Environments(taking));
         let task = task.to_owned();
-        match (containers::find_image(&image), whose) {
+        match (containers::find_image(self.host.docker, &image), whose) {
             (Ok(()), _) => Ok(image),
             (Err(error), Whose::TheTask) => {
                 Err(DirectedEvolutionError::NotOnTheMachine { task, image, error })
@@ -203,22 +205,14 @@ impl Making<'_> {
             },
         };
         say(self.writer, &Said::Environments(building));
-        let outputs_directory = self.outputs_directory;
+        let host = self.host;
         let built = match whose {
-            Whose::TheTask => containers::build_environment(
-                outputs_directory,
-                task,
-                &image,
-                time_limit,
-                self.stop,
-            ),
-            Whose::TheGrader => containers::build_grader_environment(
-                outputs_directory,
-                task,
-                &image,
-                time_limit,
-                self.stop,
-            ),
+            Whose::TheTask => {
+                containers::build_environment(host, task, &image, time_limit, self.stop)
+            }
+            Whose::TheGrader => {
+                containers::build_grader_environment(host, task, &image, time_limit, self.stop)
+            }
         };
         match built {
             Ok(()) => Ok(image),
@@ -233,7 +227,7 @@ impl Making<'_> {
         task: &str,
         error: ContainerError,
     ) -> DirectedEvolutionError {
-        let outputs_directory = self.outputs_directory;
+        let outputs_directory = self.host.outputs_directory;
         let not_built = match whose {
             Whose::TheTask => Environments::NotBuilt {
                 task,
@@ -268,7 +262,7 @@ impl Making<'_> {
                     name,
                     holds_grader: true,
                 })
-        } else if benchmark::holds_grader_dockerfile(&self.outputs_directory.task(task)) {
+        } else if benchmark::holds_grader_dockerfile(&self.host.outputs_directory.task(task)) {
             self.build(
                 Whose::TheGrader,
                 task,

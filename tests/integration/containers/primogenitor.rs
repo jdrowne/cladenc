@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::containers::{self, ContainerError, Launch};
+use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -34,7 +34,14 @@ fn built_from(image: &str, build_command: &str, time_limit: u64, stop: bool) -> 
         max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(stop);
-    let result = containers::build_primogenitor(&outputs_directory, &launch, &stop);
+    let result = containers::build_primogenitor(
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
+        &launch,
+        &stop,
+    );
     (directory, outputs_directory, result)
 }
 

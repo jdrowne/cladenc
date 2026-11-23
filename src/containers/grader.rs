@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use super::container::{Bringing, Run, Shell, Up};
+use super::docker::Host;
 use super::health_check::{self, Backoff};
 use super::program::{Ending, Limits};
 use super::{
@@ -11,7 +12,6 @@ use super::{
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::AttemptResult;
-use crate::outputs_directory::OutputsDirectory;
 
 const GRADER: Shell<'static> = Shell {
     command: harbor::GRADER,
@@ -19,7 +19,7 @@ const GRADER: Shell<'static> = Shell {
 };
 
 pub(super) struct Grading<'a> {
-    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) host: Host<'a>,
     pub(super) attempt: &'a Attempt<'a>,
     pub(super) running: &'a Path,
     pub(super) stop: &'a AtomicBool,
@@ -27,8 +27,8 @@ pub(super) struct Grading<'a> {
     pub(super) retrying: &'a dyn Fn(Retry),
 }
 
-impl Grading<'_> {
-    pub(super) fn run(&self, up: Up) -> Result<AttemptResult, ContainerError> {
+impl<'a> Grading<'a> {
+    pub(super) fn run(&self, up: Up<'_>) -> Result<AttemptResult, ContainerError> {
         match &self.attempt.environment.grader {
             None => self.run_in(&up, true),
             Some(image) => {
@@ -48,7 +48,7 @@ impl Grading<'_> {
         self.run_in(&up, !image.holds_grader)
     }
 
-    fn brought_up(&self, image: &GraderImage) -> Result<Up, ContainerError> {
+    fn brought_up(&self, image: &GraderImage) -> Result<Up<'a>, ContainerError> {
         let configuration = &self.attempt.environment.configuration;
         let grader = self.running.join("grader");
         let bringing = Bringing::of_the_grader(&image.name, configuration);
@@ -64,7 +64,7 @@ impl Grading<'_> {
             stop: self.stop,
         };
         let healthy = health_check::retried(&backoff, self.retrying, || {
-            let up = Up::start(self.outputs_directory, &bringing, &grader)?;
+            let up = Up::start(self.host, &bringing, &grader)?;
             health_check::passes_where_given(&up, health_check, &kept, self.stop)
                 .map(|passes| passes.then_some(up))
         })?;
@@ -74,12 +74,16 @@ impl Grading<'_> {
         })
     }
 
-    fn run_in(&self, up: &Up, tests_are_given: bool) -> Result<AttemptResult, ContainerError> {
+    fn run_in(&self, up: &Up<'_>, tests_are_given: bool) -> Result<AttemptResult, ContainerError> {
         let configuration = &self.attempt.environment.configuration;
         let limits = Limits::within(configuration.grader_time_limit, self.stop);
         let grader = self.running.join("grader");
         let verifier = grader.join("logs/verifier");
-        let tests = self.outputs_directory.task(self.attempt.task).join(TESTS);
+        let tests = self
+            .host
+            .outputs_directory
+            .task(self.attempt.task)
+            .join(TESTS);
         let run = Run {
             shell: &GRADER,
             user: configuration.grader_user.as_deref().unwrap_or(up.user()),

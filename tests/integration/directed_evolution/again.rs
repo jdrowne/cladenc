@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Journal, Record, Settings};
 use cladenc::outputs_directory::OutputsDirectory;
@@ -48,13 +49,19 @@ fn resumed_after_a_stop_at(solved: u64, task: Option<&str>, leftover: &str) -> T
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     fs::write(outputs_directory.join("running").join(leftover), "left\n").unwrap();
     test_inputs::end_with_125_no_more(&outputs_directory);
     if let Some(task) = task {
         test_inputs::end_with_125_on_no_more(&outputs_directory, task);
     }
-    directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 
@@ -161,7 +168,9 @@ fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let outputs_directory = with_one_attempt_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
-        scope.spawn(|| directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()));
+        scope.spawn(|| {
+            directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink())
+        });
         let started = test_inputs::within_ten_seconds(|| records(&outputs_directory) > 2);
         stop.store(true, Ordering::SeqCst);
         started

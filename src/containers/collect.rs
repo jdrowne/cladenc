@@ -1,14 +1,13 @@
-use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use super::ContainerError;
 use super::container::{Run, Shell, Up};
 use super::program::Limits;
+use super::{ContainerError, make_directory};
 use crate::benchmark::CollectCommand;
 
 pub(super) fn run(
-    up: &Up,
+    up: &Up<'_>,
     commands: &[CollectCommand],
     kept: &Path,
     stop: &AtomicBool,
@@ -18,7 +17,7 @@ pub(super) fn run(
         .enumerate()
         .try_for_each(|(place, command)| {
             let kept = kept.join((place + 1).to_string());
-            let _ = fs::create_dir_all(&kept);
+            make_directory(&kept);
             let shell = Shell {
                 command: &command.command,
                 environment: &[],

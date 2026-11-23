@@ -7,6 +7,7 @@ use std::sync::atomic::AtomicBool;
 use clap::builder::NonEmptyStringValueParser;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
+use crate::containers::Docker;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::report::{self, Report};
 
@@ -224,10 +225,16 @@ pub struct StatusOptions {
     outputs_dir: PathBuf,
 }
 
-pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
+pub fn execute(
+    docker: &dyn Docker,
+    cli: &Cli,
+    stop: &AtomicBool,
+    output: &mut dyn Write,
+    errors: &mut dyn Write,
+) -> u8 {
     let printed = match &cli.command {
-        Command::Start(options) => start(options, stop, errors),
-        Command::Resume(options) => resume(options, stop, errors),
+        Command::Start(options) => start(docker, options, stop, errors),
+        Command::Resume(options) => resume(docker, options, stop, errors),
         Command::Report(options) => read(&options.outputs_dir)
             .and_then(ended)
             .map(|report| shown(&report, options.json)),
@@ -248,6 +255,7 @@ pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mu
 }
 
 fn start(
+    docker: &dyn Docker,
     options: &StartOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
@@ -256,18 +264,19 @@ fn start(
         .settings()
         .map_err(|refused| (2, refused.to_string()))?;
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::start(&settings, &outputs_directory, stop, writer)
+    directed_evolution::start(docker, &settings, &outputs_directory, stop, writer)
         .map_err(stopped)
         .and_then(|found| finished(&outputs_directory, &found, writer))
 }
 
 fn resume(
+    docker: &dyn Docker,
     options: &ResumeOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<String, (u8, String)> {
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::resume(&outputs_directory, stop, writer)
+    directed_evolution::resume(docker, &outputs_directory, stop, writer)
         .map_err(stopped)
         .and_then(|found| finished(&outputs_directory, &found, writer))
 }

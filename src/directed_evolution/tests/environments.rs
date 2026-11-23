@@ -1,7 +1,8 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use crate::containers::ContainerError;
+use crate::containers::tests::double::Double;
+use crate::containers::{ContainerError, Host};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::environments::{self, Making, Whose};
 use crate::outputs_directory::OutputsDirectory;
@@ -12,8 +13,12 @@ fn not_built(whose: Whose) -> (DirectedEvolutionError, String) {
     let outputs_directory = OutputsDirectory::at(Path::new("/outputs"));
     let stop = AtomicBool::new(false);
     let mut written: Vec<u8> = Vec::new();
+    let docker = Double::default();
     let mut making = Making {
-        outputs_directory: &outputs_directory,
+        host: Host {
+            docker: &docker,
+            outputs_directory: &outputs_directory,
+        },
         stop: &stop,
         writer: &mut written,
         machine: None,

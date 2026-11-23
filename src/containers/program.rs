@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{self, Write};
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
@@ -11,6 +11,7 @@ use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
 
 use super::ContainerError;
+use super::docker::Docker;
 
 pub(super) const LOOK: Duration = Duration::from_millis(20);
 
@@ -22,13 +23,13 @@ pub(super) fn seconds_since(started: Instant) -> f64 {
     (started.elapsed().as_secs_f64() * 1000.0).round() / 1000.0
 }
 
-pub(super) enum Ending {
+pub enum Ending {
     Exited(i32),
     TimedOut,
 }
 
 #[derive(Clone, Copy)]
-pub(super) struct Limits<'a> {
+pub struct Limits<'a> {
     pub(super) deadline: Instant,
     stop: &'a AtomicBool,
 }
@@ -46,48 +47,90 @@ impl<'a> Limits<'a> {
     }
 }
 
-pub(super) fn run(
-    mut command: Command,
-    input: &str,
-    running: &Path,
-    limits: Limits<'_>,
-) -> Result<Ending, ContainerError> {
-    let mut program = File::create(running.join("stdout"))
-        .and_then(|stdout| File::create(running.join("stderr")).map(|stderr| (stdout, stderr)))
-        .and_then(|(stdout, stderr)| {
-            command
-                .stdin(Stdio::piped())
-                .stdout(stdout)
-                .stderr(stderr)
-                .process_group(0)
-                .spawn()
-        })
-        .map_err(ContainerError::Io)?;
-    give(&mut program, input);
-    loop {
-        if let Some(status) = program.try_wait().ok().flatten() {
-            return status
-                .code()
-                .map(Ending::Exited)
-                .ok_or_else(|| ContainerError::Signal(status.signal().unwrap_or_default()));
-        }
-        if limits.stop.load(Ordering::SeqCst) {
-            kill(&mut program);
-            return Err(ContainerError::Stopped);
-        }
-        if Instant::now() >= limits.deadline {
-            kill(&mut program);
-            return Ok(Ending::TimedOut);
-        }
-        thread::sleep(LOOK);
-    }
-}
+pub struct Program;
 
-pub(super) fn give(program: &mut Child, input: &str) {
-    let _ = program
-        .stdin
-        .take()
-        .map(|mut standard_input| standard_input.write_all(input.as_bytes()));
+impl Docker for Program {
+    fn run(
+        &self,
+        mut command: Command,
+        input: &str,
+        running: &Path,
+        limits: Limits<'_>,
+    ) -> Result<Ending, ContainerError> {
+        let mut program = File::create(running.join("stdout"))
+            .and_then(|stdout| File::create(running.join("stderr")).map(|stderr| (stdout, stderr)))
+            .and_then(|(stdout, stderr)| {
+                command
+                    .stdin(Stdio::piped())
+                    .stdout(stdout)
+                    .stderr(stderr)
+                    .process_group(0)
+                    .spawn()
+            })
+            .map_err(ContainerError::Io)?;
+        let _ = program
+            .stdin
+            .take()
+            .map(|mut standard_input| standard_input.write_all(input.as_bytes()));
+        loop {
+            if let Some(status) = program.try_wait().ok().flatten() {
+                return status
+                    .code()
+                    .map(Ending::Exited)
+                    .ok_or_else(|| ContainerError::Signal(status.signal().unwrap_or_default()));
+            }
+            if limits.stop.load(Ordering::SeqCst) {
+                kill(&mut program);
+                return Err(ContainerError::Stopped);
+            }
+            if Instant::now() >= limits.deadline {
+                kill(&mut program);
+                return Ok(Ending::TimedOut);
+            }
+            thread::sleep(LOOK);
+        }
+    }
+
+    fn detach(
+        &self,
+        mut command: Command,
+        input: &str,
+        said: &Path,
+    ) -> Result<Ending, ContainerError> {
+        let mut program = File::create(said)
+            .and_then(|stderr| {
+                command
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::null())
+                    .stderr(stderr)
+                    .spawn()
+            })
+            .map_err(ContainerError::Io)?;
+        let _ = program
+            .stdin
+            .take()
+            .map(|mut standard_input| standard_input.write_all(input.as_bytes()));
+        program
+            .wait()
+            .map_err(ContainerError::Io)
+            .and_then(|status| {
+                status
+                    .code()
+                    .map(Ending::Exited)
+                    .ok_or_else(|| ContainerError::Signal(status.signal().unwrap_or_default()))
+            })
+    }
+
+    fn print(&self, mut command: Command) -> io::Result<String> {
+        let output = command.stdin(Stdio::null()).output()?;
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+        } else {
+            Err(io::Error::other(
+                String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+            ))
+        }
+    }
 }
 
 fn kill(program: &mut Child) {

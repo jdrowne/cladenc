@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::cli::{self, Cli, Command, StartOptions};
+use crate::containers::tests::double::Double;
 
 struct Ran {
     status: u8,
@@ -40,7 +41,13 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     let cli = Cli {
         command: Command::Start(Box::new(options)),
     };
-    let status = cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut errors);
+    let status = cli::execute(
+        &Double::default(),
+        &cli,
+        &AtomicBool::new(false),
+        &mut output,
+        &mut errors,
+    );
     Ran {
         status,
         output: String::from_utf8(output).unwrap(),
@@ -76,6 +83,17 @@ fn in_an_outputs_directory_that_exists(directory: &Path, options: &mut StartOpti
 
 fn in_an_outputs_directory_with_a_colon_in_its_path(directory: &Path, options: &mut StartOptions) {
     options.outputs_dir = directory.join("first:second");
+}
+
+#[test]
+fn a_directed_evolution_that_finishes_prints_where_its_best_harness_is_kept() {
+    let finished = ran(|_, _| {});
+    assert!(finished.output.ends_with("/outputs/harnesses/0\n"));
+}
+
+#[test]
+fn a_directed_evolution_that_finishes_exits_with_zero() {
+    assert_eq!(ran(|_, _| {}).status, 0);
 }
 
 #[test]

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::ContainerError;
+use cladenc::containers::{ContainerError, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -47,6 +47,7 @@ fn evolved_with_its_stop_flag_at(build_command: &str, stop: bool) -> Evolved {
     let settings = settings(directory.path(), build_command);
     let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(stop),
@@ -65,9 +66,15 @@ fn resumed_after_its_primogenitor_did_not_build() -> Evolved {
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     fs::write(settings.primogenitor.join("do-not-build"), "").unwrap();
-    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     fs::remove_file(outputs_directory.join("harnesses/0/do-not-build")).unwrap();
-    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
@@ -77,9 +84,15 @@ fn resumed_after_an_attempt_stopped_it() -> Evolved {
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t1");
-    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _stopped = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t1");
-    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink());
     (directory, resumed)
 }
 
@@ -94,7 +107,13 @@ fn stopped_while_its_primogenitor_is_built() -> Evolved {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink())
+        directed_evolution::start(
+            &Program,
+            &settings,
+            &outputs_directory,
+            &stop,
+            &mut io::sink(),
+        )
     });
     (directory, found)
 }
@@ -105,7 +124,8 @@ fn said_by_a_directed_evolution_built_with(build_command: &str) -> (TempDir, Str
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _found = directed_evolution::start(&settings, &outputs_directory, &stop, &mut written);
+    let _found =
+        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written);
     (directory, String::from_utf8(written).unwrap())
 }
 

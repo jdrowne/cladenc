@@ -2,8 +2,8 @@ use std::process::Command;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use crate::containers::ContainerError;
 use crate::containers::program::{self, Ending, Limits};
+use crate::containers::{ContainerError, Docker, Program};
 
 fn asleep() -> Command {
     let mut asleep = Command::new("sh");
@@ -17,7 +17,7 @@ fn a_program_that_a_signal_ends_is_said_to_be_ended_by_that_signal() {
     let stop = AtomicBool::new(false);
     let mut killed = Command::new("sh");
     killed.args(["-c", "kill -s KILL $$"]);
-    let ended = program::run(
+    let ended = Program.run(
         killed,
         "",
         directory.path(),
@@ -30,7 +30,7 @@ fn a_program_that_a_signal_ends_is_said_to_be_ended_by_that_signal() {
 fn a_program_still_running_once_a_stop_is_asked_for_is_ended_and_said_to_be_stopped() {
     let directory = test_inputs::temporary_directory();
     let stop = AtomicBool::new(true);
-    let ended = program::run(
+    let ended = Program.run(
         asleep(),
         "",
         directory.path(),
@@ -43,7 +43,7 @@ fn a_program_still_running_once_a_stop_is_asked_for_is_ended_and_said_to_be_stop
 fn a_program_still_running_past_its_time_limit_is_ended_and_said_to_have_timed_out() {
     let directory = test_inputs::temporary_directory();
     let stop = AtomicBool::new(false);
-    let ended = program::run(
+    let ended = Program.run(
         asleep(),
         "",
         directory.path(),

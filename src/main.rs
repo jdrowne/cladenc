@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::cli::{self, Cli, Command};
+use cladenc::containers::Program;
 use clap::Parser;
 use signal_hook::consts::{SIGHUP, SIGINT, SIGQUIT, SIGTERM};
 use signal_hook::flag;
@@ -18,6 +19,7 @@ fn main() -> ExitCode {
         }
     }
     ExitCode::from(cli::execute(
+        &Program,
         &cli,
         &stop,
         &mut io::stdout(),

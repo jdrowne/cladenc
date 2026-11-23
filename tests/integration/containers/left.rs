@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, Environment, Launch};
+use cladenc::containers::{self, Attempt, Environment, Host, Launch, Program};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -58,7 +58,10 @@ fn left_by_a_directed_evolution_in(outputs: &str) -> Left {
 }
 
 fn removed_from(left: &Left, outputs: &str) -> io::Result<u64> {
-    containers::remove_left_behind(&OutputsDirectory::at(&left.directory.path().join(outputs)))
+    containers::remove_left_behind(Host {
+        docker: &Program,
+        outputs_directory: &OutputsDirectory::at(&left.directory.path().join(outputs)),
+    })
 }
 
 fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution() -> bool {
@@ -103,7 +106,16 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             task: "benchmark/t1",
             environment: &environment(),
         };
-        let _ = containers::run_attempt(&outputs_directory, &launch, attempt, &stop, &|_| ());
+        let _ = containers::run_attempt(
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory,
+            },
+            &launch,
+            attempt,
+            &stop,
+            &|_| (),
+        );
         let id = fs::read_to_string(&id_file).unwrap();
         listed.join().unwrap().starts_with(id.trim())
     })
@@ -126,7 +138,11 @@ fn the_number_of_containers_removed_is_returned() {
 fn a_directed_evolution_that_left_no_container_has_none_removed() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(
-        containers::remove_left_behind(&OutputsDirectory::at(directory.path())).ok(),
+        containers::remove_left_behind(Host {
+            docker: &Program,
+            outputs_directory: &OutputsDirectory::at(directory.path())
+        })
+        .ok(),
         Some(0)
     );
 }
@@ -135,8 +151,11 @@ fn a_directed_evolution_that_left_no_container_has_none_removed() {
 fn an_outputs_directory_that_is_not_there_has_no_container_removed() {
     let directory = test_inputs::temporary_directory();
     assert_eq!(
-        containers::remove_left_behind(&OutputsDirectory::at(&directory.path().join("missing")))
-            .ok(),
+        containers::remove_left_behind(Host {
+            docker: &Program,
+            outputs_directory: &OutputsDirectory::at(&directory.path().join("missing"))
+        })
+        .ok(),
         Some(0)
     );
 }

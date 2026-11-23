@@ -2,7 +2,7 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Launch};
+use cladenc::containers::{self, Host, Launch, Program};
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -81,7 +81,10 @@ fn family() -> (TempDir, OutputsDirectory) {
 fn made_by(progenitor: u64, run_command: &str) -> (TempDir, OutputsDirectory) {
     let (directory, outputs_directory) = family();
     let _ = containers::run_procreation(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(run_command),
         4,
         progenitor,

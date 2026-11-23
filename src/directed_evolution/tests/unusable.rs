@@ -4,11 +4,17 @@ use std::sync::atomic::AtomicBool;
 
 use tempfile::TempDir;
 
+use crate::containers::tests::double::Double;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::journal::{self, Journal, JournalError};
 
 fn resumed(directory: &TempDir) -> Result<Found, DirectedEvolutionError> {
-    directed_evolution::resume(directory.path(), &AtomicBool::new(false), &mut io::sink())
+    directed_evolution::resume(
+        &Double::default(),
+        directory.path(),
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
 }
 
 fn holding(journal: &str) -> TempDir {
@@ -22,7 +28,12 @@ fn an_outputs_directory_that_does_not_exist_cannot_be_resumed() {
     let directory = test_inputs::temporary_directory();
     let missing = directory.path().join("missing");
     assert!(matches!(
-        directed_evolution::resume(&missing, &AtomicBool::new(false), &mut io::sink()),
+        directed_evolution::resume(
+            &Double::default(),
+            &missing,
+            &AtomicBool::new(false),
+            &mut io::sink()
+        ),
         Err(DirectedEvolutionError::Unusable(JournalError::Io(_)))
     ));
 }

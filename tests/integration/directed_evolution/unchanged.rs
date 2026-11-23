@@ -5,6 +5,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::cli::{self, Cli};
+use cladenc::containers::Program;
 use cladenc::directed_evolution::{self, Found};
 use cladenc::genealogy::CreationOutcome;
 use cladenc::journal::{self, Record, Settings};
@@ -64,7 +65,8 @@ fn evolved_by(run_command: &str) -> Evolved {
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
     let found =
-        directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
+        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
+            .unwrap();
     let said = String::from_utf8(written).unwrap();
     Evolved {
         directory,
@@ -114,7 +116,13 @@ fn reported(evolved: &Evolved) -> Value {
     let outputs_dir = format!("--outputs-dir={}", outputs_of(evolved));
     let cli = Cli::try_parse_from(["cladenc", "report", "--json", outputs_dir.as_str()]).unwrap();
     let mut output = Vec::new();
-    cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut io::sink());
+    cli::execute(
+        &Program,
+        &cli,
+        &AtomicBool::new(false),
+        &mut output,
+        &mut io::sink(),
+    );
     serde_json::from_slice(&output).unwrap()
 }
 

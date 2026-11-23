@@ -5,9 +5,10 @@ use std::time::Duration;
 use tempfile::TempDir;
 
 use crate::benchmark::Benchmark;
-use crate::containers::ContainerError;
 use crate::containers::image;
 use crate::containers::program::Ending;
+use crate::containers::tests::double::Double;
+use crate::containers::{ContainerError, Host};
 use crate::outputs_directory::OutputsDirectory;
 
 const TASK: &str = "benchmark/t1";
@@ -33,7 +34,10 @@ fn with_a_file_where_the_environments_are_kept() -> (TempDir, OutputsDirectory) 
 fn an_environment_whose_directory_in_the_outputs_directory_cannot_be_made_is_not_built() {
     let (_directory, outputs_directory) = with_a_file_where_the_environments_are_kept();
     let result = image::build_environment(
-        &outputs_directory,
+        Host {
+            docker: &Double::default(),
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         NAME,
         Duration::from_secs(600),
@@ -46,7 +50,10 @@ fn an_environment_whose_directory_in_the_outputs_directory_cannot_be_made_is_not
 fn an_environment_of_a_grader_whose_directory_cannot_be_made_is_not_built() {
     let (_directory, outputs_directory) = with_a_file_where_the_environments_are_kept();
     let result = image::build_grader_environment(
-        &outputs_directory,
+        Host {
+            docker: &Double::default(),
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         NAME,
         Duration::from_secs(600),
@@ -59,7 +66,10 @@ fn an_environment_of_a_grader_whose_directory_cannot_be_made_is_not_built() {
 fn a_dockerfile_that_is_gone_is_not_built() {
     let (directory, outputs_directory) = made();
     let result = image::build_image(
-        &outputs_directory,
+        Host {
+            docker: &Double::default(),
+            outputs_directory: &outputs_directory,
+        },
         &directory.path().join("missing"),
         NAME,
         60,

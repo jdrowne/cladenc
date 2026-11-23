@@ -2,40 +2,14 @@ use std::io;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use crate::benchmark::Benchmark;
+use crate::containers::tests::double::Double;
+use crate::directed_evolution::tests::given::settings;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::journal::Settings;
 
-fn settings(directory: &Path) -> Settings {
-    Settings {
-        primogenitor: test_inputs::primogenitor(directory),
-        model: test_inputs::MODEL.to_owned(),
-        model_url: test_inputs::MODEL_URL.to_owned(),
-        model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(directory, &["t1", "t2"])).unwrap(),
-        ],
-        docker_image: test_inputs::IMAGE.to_owned(),
-        dockerfile: None,
-        docker_build_timeout: None,
-        harness_build_command: None,
-        harness_run_command: "run a harness".to_owned(),
-        max_procreations: 1,
-        max_concurrent_containers: 1,
-        procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
-        max_task_health_check_retries: 0,
-        selection_tasks_percentage: 25.0,
-        holdout_tasks: Vec::new(),
-        corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: Vec::new(),
-        environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
-        seed: 7,
-    }
-}
-
 fn started(settings: &Settings, outputs_directory: &Path) -> Result<Found, DirectedEvolutionError> {
     directed_evolution::start(
+        &Double::default(),
         settings,
         outputs_directory,
         &AtomicBool::new(false),

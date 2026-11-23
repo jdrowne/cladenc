@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::ContainerError;
+use cladenc::containers::{ContainerError, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;
@@ -50,6 +50,7 @@ fn with_a_task_that_is_never_ready() -> Evolved {
     fs::write(benchmark.join("t2/task.toml"), NEVER_READY).unwrap();
     let mut written = Vec::new();
     let found = directed_evolution::start(
+        &Program,
         &settings(directory.path(), &benchmark),
         &directory.path().join("outputs"),
         &AtomicBool::new(false),
@@ -67,7 +68,8 @@ fn resumed_once_the_task_is_ready() -> Evolved {
     let outputs = evolved.directory.path().join("outputs");
     fs::write(outputs.join("benchmarks/benchmark/t2/task.toml"), READY).unwrap();
     let mut written = Vec::new();
-    evolved.found = directed_evolution::resume(&outputs, &AtomicBool::new(false), &mut written);
+    evolved.found =
+        directed_evolution::resume(&Program, &outputs, &AtomicBool::new(false), &mut written);
     evolved.said = String::from_utf8(written).unwrap();
     evolved
 }

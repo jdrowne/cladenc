@@ -3,7 +3,8 @@ use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
 
 use crate::containers::build;
-use crate::containers::{ContainerError, Launch};
+use crate::containers::tests::double::Double;
+use crate::containers::{ContainerError, Host, Launch};
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -27,7 +28,12 @@ fn built_with_no_build_command() -> Built {
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let result = build::build_primogenitor(&outputs_directory, &launch, &AtomicBool::new(false));
+    let docker = Double::default();
+    let host = Host {
+        docker: &docker,
+        outputs_directory: &outputs_directory,
+    };
+    let result = build::build_primogenitor(host, &launch, &AtomicBool::new(false));
     (directory, outputs_directory, result)
 }
 

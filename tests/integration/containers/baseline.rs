@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, ContainerError, Creation, Launch};
+use cladenc::containers::{self, ContainerError, Creation, Host, Launch, Program};
 use cladenc::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -90,7 +90,10 @@ type Established = (TempDir, OutputsDirectory, Result<Creation, ContainerError>)
 fn established_in(image: &str, run_command: &str, build_command: Option<&str>) -> Established {
     let (directory, outputs_directory) = family();
     let result = containers::run_baseline(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(image, run_command, build_command),
         5,
         EXPERIMENT,

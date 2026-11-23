@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::ContainerError;
+use cladenc::containers::{ContainerError, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;
@@ -56,21 +56,27 @@ fn stopped_at(solved: u64, task: Option<&str>, resumes_while_stopped: usize) -> 
     fs::create_dir(directory.path().join("unbroken")).unwrap();
     fs::create_dir(directory.path().join("stopped")).unwrap();
     let unbroken = directory.path().join("unbroken/outputs");
-    let unbroken = directed_evolution::start(&settings, &unbroken, &stop, &mut io::sink()).unwrap();
+    let unbroken =
+        directed_evolution::start(&Program, &settings, &unbroken, &stop, &mut io::sink()).unwrap();
     test_inputs::end_with_125_at(&settings.primogenitor, solved);
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let mut stopped =
-        directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let mut stopped = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     for _ in 0..resumes_while_stopped {
-        stopped = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
+        stopped = directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink());
     }
     test_inputs::end_with_125_no_more(&outputs_directory);
     if let Some(task) = task {
         test_inputs::end_with_125_on_no_more(&outputs_directory, task);
     }
-    let resumed = directed_evolution::resume(&outputs_directory, &stop, &mut io::sink());
+    let resumed = directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink());
     DirectedEvolutions {
         directory,
         unbroken,
@@ -188,9 +194,10 @@ fn said_when_stopped_at_t3_and_when_resumed() -> (TempDir, Vec<String>, Vec<Stri
     let mut stopped = Vec::new();
     let mut resumed = Vec::new();
     test_inputs::end_with_125_on(directory.path(), "t3");
-    let _stopped = directed_evolution::start(&settings, &outputs_directory, &stop, &mut stopped);
+    let _stopped =
+        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut stopped);
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t3");
-    directed_evolution::resume(&outputs_directory, &stop, &mut resumed).unwrap();
+    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut resumed).unwrap();
     (directory, lines_of(stopped), lines_of(resumed))
 }
 
@@ -251,12 +258,19 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
     let stop = AtomicBool::new(false);
     let outputs_directory = directory.path().join("outputs");
     let journal = journal::path(&outputs_directory);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    )
+    .unwrap();
     let whole = fs::read_to_string(&journal).unwrap();
     let kept = whole.lines().count() - 2;
     let cut: String = whole.split_inclusive('\n').take(kept).collect();
     fs::write(&journal, cut).unwrap();
-    directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink()).unwrap();
     assert_eq!(
         test_inputs::without_seconds(&fs::read_to_string(&journal).unwrap()),
         test_inputs::without_seconds(&whole)
@@ -270,8 +284,16 @@ fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given
     let stop = AtomicBool::new(false);
     let outputs_directory = directory.path().join("outputs");
     test_inputs::end_with_125_at(&settings.primogenitor, 0);
-    let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _ = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     test_inputs::end_with_125_no_more(&outputs_directory);
     fs::remove_dir_all(&settings.benchmarks[0].directory).unwrap();
-    assert!(directed_evolution::resume(&outputs_directory, &stop, &mut io::sink()).is_ok());
+    assert!(
+        directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink()).is_ok()
+    );
 }

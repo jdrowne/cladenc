@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -51,6 +52,7 @@ fn evolved_with(key: &str, stopped: bool) -> (Keyed, Result<Found, DirectedEvolu
         test_inputs::end_with_125_on(directory.path(), "t1");
     }
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -69,6 +71,7 @@ fn evolved_with(key: &str, stopped: bool) -> (Keyed, Result<Found, DirectedEvolu
 
 fn resumed(keyed: &Keyed) -> Result<Found, DirectedEvolutionError> {
     directed_evolution::resume(
+        &Program,
         &keyed.outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),

@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, Attempt, ContainerError, Environment, Launch};
+use cladenc::containers::{self, Attempt, ContainerError, Environment, Host, Launch, Program};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -95,7 +95,10 @@ fn timed_out() -> Attempted {
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_attempt(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch,
         attempt(&environment),
         &stop,
@@ -112,7 +115,10 @@ fn stopped_while_its_harness_runs() -> Attempted {
         .join("stdout");
     let result = stopped_once_written(&id_file, |stop| {
         containers::run_attempt(
-            &outputs_directory,
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory,
+            },
             &launch,
             attempt(&environment()),
             stop,
@@ -135,7 +141,10 @@ fn stopped_while_its_grader_runs() -> Attempted {
         .join("grader/stdout");
     let result = stopped_once_written(&id_file, |stop| {
         containers::run_attempt(
-            &outputs_directory,
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory,
+            },
             &launch,
             attempt(&environment()),
             stop,
@@ -150,7 +159,16 @@ fn procreation_stopped_while_running() -> Procreated {
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
     let id_file = outputs_directory.running_procreation(1).join("child/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_procreation(&outputs_directory, &launch, 1, 0, stop)
+        containers::run_procreation(
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory,
+            },
+            &launch,
+            1,
+            0,
+            stop,
+        )
     });
     (directory, outputs_directory, result)
 }
@@ -212,7 +230,10 @@ fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let stop = AtomicBool::new(true);
     assert!(matches!(
         containers::run_attempt(
-            &outputs_directory,
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory
+            },
             &launch("sleep 300"),
             attempt(&environment()),
             &stop,
@@ -227,7 +248,16 @@ fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
     let (_directory, outputs_directory) = made();
     let stop = AtomicBool::new(true);
     assert!(matches!(
-        containers::run_procreation(&outputs_directory, &launch("sleep 300"), 1, 0, &stop),
+        containers::run_procreation(
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory
+            },
+            &launch("sleep 300"),
+            1,
+            0,
+            &stop
+        ),
         Err(ContainerError::Stopped)
     ));
 }

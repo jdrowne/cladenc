@@ -2,7 +2,7 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, ContainerError, Environment, Launch};
+use cladenc::containers::{self, Attempt, ContainerError, Environment, Host, Launch, Program};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -66,7 +66,10 @@ fn attempted(
 ) {
     let (directory, outputs_directory) = made();
     let result = containers::run_attempt(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(run_command),
         Attempt {
             harness: 0,
@@ -93,7 +96,10 @@ fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
             .unwrap();
     }
     let _ = containers::run_procreation(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(run_command),
         1,
         0,

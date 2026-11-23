@@ -2,10 +2,11 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use super::container::{Container, Mount, Shell};
+use super::docker::Host;
 use super::program::{Ending, Limits};
 use super::{ContainerError, HARNESS, Launch};
 use crate::genealogy::{CreationOutcome, HarnessId};
-use crate::outputs_directory::{OutputsDirectory, holds_only_harness_files};
+use crate::outputs_directory::holds_only_harness_files;
 
 struct Build<'a> {
     image: &'a str,
@@ -15,14 +16,14 @@ struct Build<'a> {
 }
 
 pub fn build_primogenitor(
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     launch: &Launch<'_>,
     stop: &AtomicBool,
 ) -> Result<(), ContainerError> {
     let Some(command) = launch.build_command else {
         return Ok(());
     };
-    let source = outputs_directory.harness(0);
+    let source = host.outputs_directory.harness(0);
     let build = Build {
         image: launch.image,
         command,
@@ -30,7 +31,7 @@ pub fn build_primogenitor(
         source: &source,
     };
     let limits = Limits::starting_now(launch.procreation_timeout, stop);
-    match build.run(outputs_directory, limits)? {
+    match build.run(host, limits)? {
         Ending::Exited(0) if holds_only_harness_files(&source).unwrap_or(false) => Ok(()),
         Ending::Exited(0) => Err(ContainerError::OtherFiles),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
@@ -39,7 +40,7 @@ pub fn build_primogenitor(
 }
 
 pub(super) fn build_child(
-    outputs_directory: &OutputsDirectory,
+    host: Host<'_>,
     launch: &Launch<'_>,
     child: HarnessId,
     source: &Path,
@@ -54,7 +55,7 @@ pub(super) fn build_child(
         harness: child,
         source,
     };
-    Ok(match build.run(outputs_directory, limits)? {
+    Ok(match build.run(host, limits)? {
         Ending::Exited(0) if holds_only_harness_files(source).unwrap_or(false) => {
             CreationOutcome::Created
         }
@@ -64,16 +65,13 @@ pub(super) fn build_child(
 }
 
 impl Build<'_> {
-    fn run(
-        &self,
-        outputs_directory: &OutputsDirectory,
-        limits: Limits<'_>,
-    ) -> Result<Ending, ContainerError> {
-        let kept = outputs_directory
+    fn run(&self, host: Host<'_>, limits: Limits<'_>) -> Result<Ending, ContainerError> {
+        let kept = host
+            .outputs_directory
             .start_build(self.harness)
             .map_err(ContainerError::Io)?;
         let container = Container {
-            outputs_directory,
+            host,
             image: self.image,
             mounts: &[Mount {
                 from: self.source,

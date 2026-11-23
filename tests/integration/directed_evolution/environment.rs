@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::ContainerError;
+use cladenc::containers::{ContainerError, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -57,7 +57,8 @@ fn evolved_with_t2_built_from(steps: &str) -> Evolved {
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
     let outputs_directory = directory.path().join("outputs");
-    let found = directed_evolution::start(&settings, &outputs_directory, &stop, &mut written);
+    let found =
+        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written);
     Evolved {
         directory,
         settings,
@@ -91,7 +92,7 @@ fn stopped_while_t2_is_built() -> Evolved {
             test_inputs::within_ten_seconds(|| printed.exists());
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(&settings, &outputs_directory, &stop, &mut written)
+        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
     });
     Evolved {
         directory,
@@ -110,12 +111,22 @@ fn stopped_and_resumed_with_its_stop_flag_at(
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_on(directory.path(), "t2");
-    let _ = directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink());
+    let _ = directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    );
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t2");
     change(&outputs_directory);
     let mut written = Vec::new();
-    let found =
-        directed_evolution::resume(&outputs_directory, &AtomicBool::new(stopping), &mut written);
+    let found = directed_evolution::resume(
+        &Program,
+        &outputs_directory,
+        &AtomicBool::new(stopping),
+        &mut written,
+    );
     Evolved {
         directory,
         settings,
@@ -321,6 +332,7 @@ fn a_directed_evolution_that_stopped_at_an_attempt_leaves_no_environment_on_the_
     let settings = settings(directory.path());
     test_inputs::end_with_125_on(directory.path(), "t2");
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &directory.path().join("outputs"),
         &AtomicBool::new(false),

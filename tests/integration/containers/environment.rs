@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, ContainerError};
+use cladenc::containers::{self, ContainerError, Host, Program};
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -47,7 +47,10 @@ fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
     let image = test_inputs::image();
     let stop = AtomicBool::new(stop);
     let result = containers::build_environment(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         &image.name,
         Duration::from_secs(time_limit),
@@ -182,7 +185,10 @@ fn grader_built(steps: &str) -> Built {
     .unwrap();
     let image = test_inputs::image();
     let result = containers::build_grader_environment(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         &image.name,
         Duration::from_secs(600),

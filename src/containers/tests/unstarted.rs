@@ -4,7 +4,8 @@ use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
 
 use crate::benchmark::Benchmark;
-use crate::containers::{self, Attempt, ContainerError, Environment, Launch};
+use crate::containers::tests::double::Double;
+use crate::containers::{self, Attempt, ContainerError, Environment, Host, Launch};
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
@@ -33,11 +34,23 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
+fn host<'a>(docker: &'a Double, outputs_directory: &'a OutputsDirectory) -> Host<'a> {
+    Host {
+        docker,
+        outputs_directory,
+    }
+}
+
 #[test]
 fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
     let (_directory, outputs_directory) = made();
-    let result =
-        containers::run_procreation(&outputs_directory, &LAUNCH, 1, 9, &AtomicBool::new(false));
+    let result = containers::run_procreation(
+        host(&Double::default(), &outputs_directory),
+        &LAUNCH,
+        1,
+        9,
+        &AtomicBool::new(false),
+    );
     assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
@@ -50,7 +63,7 @@ fn a_baseline_that_cannot_be_started_in_the_outputs_directory_is_not_carried_out
         .unwrap();
     fs::create_dir(outputs_directory.running_baseline(5)).unwrap();
     let result = containers::run_baseline(
-        &outputs_directory,
+        host(&Double::default(), &outputs_directory),
         &LAUNCH,
         5,
         Experiment {
@@ -70,7 +83,7 @@ fn an_attempt_of_a_harness_that_is_not_there_is_an_error() {
         ..Environment::default()
     };
     let result = containers::run_attempt(
-        &outputs_directory,
+        host(&Double::default(), &outputs_directory),
         &LAUNCH,
         Attempt {
             harness: 9,

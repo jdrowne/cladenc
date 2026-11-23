@@ -6,7 +6,7 @@ use std::sync::atomic::AtomicBool;
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, ContainerError, Launch};
+use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -48,7 +48,16 @@ fn started_from(
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    containers::run_procreation(outputs_directory, &launch, 1, 0, &AtomicBool::new(false))
+    containers::run_procreation(
+        Host {
+            docker: &Program,
+            outputs_directory,
+        },
+        &launch,
+        1,
+        0,
+        &AtomicBool::new(false),
+    )
 }
 
 fn procreated_within(run_command: &str, time_limit: u64) -> Procreated {
@@ -96,7 +105,16 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let _ = containers::run_procreation(&outputs_directory, &launch, 1, 0, &AtomicBool::new(false));
+    let _ = containers::run_procreation(
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
+        &launch,
+        1,
+        0,
+        &AtomicBool::new(false),
+    );
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 

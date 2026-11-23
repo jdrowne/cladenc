@@ -4,6 +4,7 @@ use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::cli::{self, Cli, Command, ReportOptions};
+use crate::containers::tests::double::Double;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
 use crate::report;
@@ -27,7 +28,13 @@ fn ran(outputs_dir: PathBuf, json: bool) -> Ran {
     };
     let mut output = Vec::new();
     let mut errors = Vec::new();
-    let status = cli::execute(&cli, &AtomicBool::new(false), &mut output, &mut errors);
+    let status = cli::execute(
+        &Double::default(),
+        &cli,
+        &AtomicBool::new(false),
+        &mut output,
+        &mut errors,
+    );
     Ran {
         status,
         output: String::from_utf8(output).unwrap(),

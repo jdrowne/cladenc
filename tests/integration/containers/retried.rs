@@ -10,7 +10,9 @@ use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, Checked, ContainerError, Environment, Launch, Retry};
+use cladenc::containers::{
+    self, Checked, ContainerError, Environment, Host, Launch, Program, Retry,
+};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -63,7 +65,10 @@ fn prepared(task_toml: &str) -> Prepared {
     let configuration = TaskConfiguration::read(&outputs_directory.task(TASK)).unwrap();
     let built = test_inputs::image();
     containers::build_environment(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         &built.name,
         configuration.build_time_limit,
@@ -123,7 +128,10 @@ fn retried_as(task_toml: &str, most: &Most) -> Retried {
     let printed_before_each_retry = RefCell::new(Vec::new());
     let containers_at_each_retry = RefCell::new(Vec::new());
     let result = containers::run_attempt(
-        &prepared.outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &prepared.outputs_directory,
+        },
         &launch,
         containers::Attempt {
             harness: 0,

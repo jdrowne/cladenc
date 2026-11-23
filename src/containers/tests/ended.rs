@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Command;
 
-use crate::containers::ContainerError;
 use crate::containers::container;
 use crate::containers::program::Ending;
+use crate::containers::{ContainerError, Docker, Program};
 
 const RUNNING: &str = "/outputs/running/attempt-3-benchmark+t1";
 
@@ -15,12 +15,11 @@ fn started(ended: Result<Ending, ContainerError>) -> Result<Ending, ContainerErr
     container::started(ended, Path::new(RUNNING))
 }
 
-fn sh(script: &str) -> Child {
-    Command::new("sh")
-        .args(["-c", script])
-        .stdin(Stdio::piped())
-        .spawn()
-        .unwrap()
+fn detached(script: &str, input: &str) -> Result<Ending, ContainerError> {
+    let directory = test_inputs::temporary_directory();
+    let mut command = Command::new("sh");
+    command.args(["-c", script]);
+    Program.detach(command, input, &directory.path().join("stderr"))
 }
 
 #[test]
@@ -56,34 +55,40 @@ fn a_container_that_was_stopped_is_not_said_to_be_one_that_docker_did_not_start(
 }
 
 #[test]
-fn a_command_that_leaves_its_container_running_and_exits_with_zero_has_brought_it_up() {
-    assert!(matches!(
-        container::detached(sh("exit 0"), "", said()),
-        Ok(())
-    ));
+fn a_command_that_leaves_its_container_running_is_said_to_have_exited_with_zero() {
+    assert!(matches!(detached("exit 0", ""), Ok(Ending::Exited(0))));
 }
 
 #[test]
-fn a_command_that_leaves_no_container_running_is_an_error_that_names_what_docker_said() {
-    assert!(matches!(
-        container::detached(sh("exit 3"), "", said()),
-        Err(ContainerError::Docker(kept)) if kept == said()
-    ));
+fn a_command_that_leaves_no_container_running_is_said_to_have_exited_with_its_status() {
+    assert!(matches!(detached("exit 3", ""), Ok(Ending::Exited(3))));
 }
 
 #[test]
 fn a_command_that_a_signal_ends_before_its_container_runs_is_said_to_be_ended_by_that_signal() {
     assert!(matches!(
-        container::detached(sh("kill -s KILL $$"), "", said()),
+        detached("kill -s KILL $$", ""),
         Err(ContainerError::Signal(9))
     ));
 }
 
 #[test]
 fn a_command_that_leaves_its_container_running_reads_what_it_is_given_on_its_standard_input() {
-    let read = sh(r#"read line; test "$line" = "MODE=strict""#);
     assert!(matches!(
-        container::detached(read, "MODE=strict\n", said()),
-        Ok(())
+        detached(
+            r#"read line; test "$line" = "MODE=strict""#,
+            "MODE=strict\n"
+        ),
+        Ok(Ending::Exited(0))
+    ));
+}
+
+#[test]
+fn a_command_with_no_file_to_keep_what_it_says_is_not_started() {
+    let directory = test_inputs::temporary_directory();
+    let said = directory.path().join("missing").join("stderr");
+    assert!(matches!(
+        Program.detach(Command::new("sh"), "", &said),
+        Err(ContainerError::Io(_))
     ));
 }

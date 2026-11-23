@@ -7,6 +7,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Record, Settings};
 use tempfile::TempDir;
@@ -66,6 +67,7 @@ fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, Direct
     change(&mut settings);
     let outputs_directory = directory.path().join("outputs");
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -81,7 +83,8 @@ fn said_over_one_task() -> (TempDir, Vec<String>) {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
+    directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
+        .unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -150,9 +153,22 @@ fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_th
     settings.max_procreations = 3;
     let first = directory.path().join("first");
     let second = directory.path().join("second");
-    directed_evolution::start(&settings, &first, &AtomicBool::new(false), &mut io::sink()).unwrap();
-    directed_evolution::start(&settings, &second, &AtomicBool::new(false), &mut io::sink())
-        .unwrap();
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &first,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
+    .unwrap();
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &second,
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    )
+    .unwrap();
     assert_eq!(
         test_inputs::without_seconds(&fs::read_to_string(journal::path(&first)).unwrap()),
         test_inputs::without_seconds(&fs::read_to_string(journal::path(&second)).unwrap())
@@ -165,6 +181,7 @@ fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings(
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
     directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),

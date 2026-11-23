@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::containers::{self, ContainerError};
+use cladenc::containers::{self, ContainerError, Host, Program};
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -29,7 +29,10 @@ fn built_within(steps: &str, time_limit: u64, stop: bool) -> Built {
     let image = test_inputs::image();
     let stop = AtomicBool::new(stop);
     let result = containers::build_image(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &dockerfile,
         &image.name,
         time_limit,

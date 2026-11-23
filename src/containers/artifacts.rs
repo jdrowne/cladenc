@@ -44,7 +44,7 @@ impl Set {
     }
 }
 
-pub(super) fn keep(up: &Up, artifacts: &[Artifact], kept: &Path) {
+pub(super) fn keep(up: &Up<'_>, artifacts: &[Artifact], kept: &Path) {
     for artifact in artifacts {
         let place = keep_one(up, artifact, kept);
         remove_above_where_empty(&place, kept);
@@ -56,7 +56,7 @@ pub(super) fn keep(up: &Up, artifacts: &[Artifact], kept: &Path) {
     }
 }
 
-fn keep_one(up: &Up, artifact: &Artifact, kept: &Path) -> PathBuf {
+fn keep_one(up: &Up<'_>, artifact: &Artifact, kept: &Path) -> PathBuf {
     let place = place_of(artifact, kept);
     let _ = place.parent().map(fs::create_dir_all);
     up.copy_what_is_at(&artifact.source, &place);
@@ -83,7 +83,7 @@ pub(super) fn place_of(artifact: &Artifact, kept: &Path) -> PathBuf {
 }
 
 pub(super) fn give(
-    up: &Up,
+    up: &Up<'_>,
     artifacts: &[Artifact],
     kept: &Path,
     owner: &str,

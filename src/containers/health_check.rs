@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -6,23 +5,23 @@ use std::time::{Duration, Instant};
 
 use super::container::{Run, Shell, Up};
 use super::program::{Ending, FOREVER, LOOK, Limits};
-use super::{Checked, ContainerError, Retry};
+use super::{Checked, ContainerError, Retry, make_directory};
 use crate::benchmark::HealthCheck;
 
 pub(super) fn passes_where_given(
-    up: &Up,
+    up: &Up<'_>,
     health_check: Option<&HealthCheck>,
     kept: &Path,
     stop: &AtomicBool,
 ) -> Result<bool, ContainerError> {
     health_check.map_or(Ok(true), |health_check| {
-        let _ = fs::create_dir(kept);
+        make_directory(kept);
         passes(up, health_check, kept, stop)
     })
 }
 
 fn passes(
-    up: &Up,
+    up: &Up<'_>,
     health_check: &HealthCheck,
     kept: &Path,
     stop: &AtomicBool,

@@ -1,9 +1,8 @@
 use std::time::Duration;
 
 use crate::benchmark::{EnvironmentConfiguration, HealthCheck, TaskConfiguration};
-use crate::containers::container::{self, Bringing, Up};
-use crate::containers::{ContainerError, Environment};
-use crate::outputs_directory::OutputsDirectory;
+use crate::containers::Environment;
+use crate::containers::container::{self, Bringing};
 
 const IMAGE_OF_THE_GRADER: &str = "registry.example/graders/parser:3";
 
@@ -36,21 +35,6 @@ fn with_a_grader_of_its_own() -> TaskConfiguration {
         }),
         ..TaskConfiguration::default()
     }
-}
-
-#[test]
-fn a_container_with_no_directory_to_keep_what_docker_says_is_not_started() {
-    let directory = test_inputs::temporary_directory();
-    let environment = Environment {
-        image: test_inputs::IMAGE.to_owned(),
-        ..Environment::default()
-    };
-    let started = Up::start(
-        &OutputsDirectory::at(directory.path()),
-        &Bringing::of_the_task(&environment),
-        &directory.path().join("missing"),
-    );
-    assert!(matches!(started, Err(ContainerError::Io(_))));
 }
 
 #[test]

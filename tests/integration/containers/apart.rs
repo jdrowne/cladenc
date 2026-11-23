@@ -10,7 +10,9 @@ use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, Checked, ContainerError, Environment, GraderImage, Launch, Retry};
+use cladenc::containers::{
+    self, Checked, ContainerError, Environment, GraderImage, Host, Launch, Program, Retry,
+};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -85,7 +87,10 @@ fn image_of_the_grader(
             )
             .unwrap();
             containers::build_grader_environment(
-                outputs_directory,
+                Host {
+                    docker: &Program,
+                    outputs_directory,
+                },
                 TASK,
                 &image.name,
                 Duration::from_secs(600),
@@ -117,7 +122,10 @@ fn prepared(attempt: &Attempt<'_>) -> Prepared {
     let configuration = TaskConfiguration::read(&outputs_directory.task(TASK)).unwrap();
     let image = test_inputs::image();
     containers::build_environment(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         &image.name,
         configuration.build_time_limit,
@@ -171,7 +179,10 @@ fn carried_out_with(
         max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
-        &prepared.outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &prepared.outputs_directory,
+        },
         &launch,
         containers::Attempt {
             harness: 0,

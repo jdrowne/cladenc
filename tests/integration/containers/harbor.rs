@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Launch};
+use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -49,7 +49,10 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
     let image = test_inputs::image();
     let stop = AtomicBool::new(false);
     containers::build_environment(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         TASK,
         &image.name,
         Duration::from_secs(600),
@@ -79,7 +82,10 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
         grader: None,
     };
     let result = containers::run_attempt(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch,
         containers::Attempt {
             harness: 0,

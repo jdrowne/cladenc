@@ -1,7 +1,7 @@
 use std::io;
 
 use super::Shared;
-use crate::containers::{self, Attempt, Attempted, ContainerError, Creation, Retry};
+use crate::containers::{self, Attempt, Attempted, ContainerError, Creation, Host, Retry};
 use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -40,6 +40,10 @@ pub(super) enum Ended {
 
 pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> Ended {
     let outputs_directory = &shared.outputs_directory;
+    let host = Host {
+        docker: shared.docker,
+        outputs_directory,
+    };
     let cleared = if again {
         discard(outputs_directory, &action)
     } else {
@@ -49,13 +53,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     let result = match action.clone() {
         Started::Procreation { child, progenitor } => cleared
             .and_then(|()| {
-                containers::run_procreation(
-                    outputs_directory,
-                    &shared.launch,
-                    child,
-                    progenitor,
-                    &shared.halt,
-                )
+                containers::run_procreation(host, &shared.launch, child, progenitor, &shared.halt)
             })
             .map(|creation| Ended::Procreated {
                 child,
@@ -71,7 +69,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
             cleared
                 .and_then(|()| {
                     containers::run_baseline(
-                        outputs_directory,
+                        host,
                         &shared.launch,
                         harness,
                         experiment,
@@ -99,13 +97,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                         retry,
                     });
                 };
-                containers::run_attempt(
-                    outputs_directory,
-                    &shared.launch,
-                    attempt,
-                    &shared.halt,
-                    &retrying,
-                )
+                containers::run_attempt(host, &shared.launch, attempt, &shared.halt, &retrying)
             })
             .map(|attempted| Ended::Attempted {
                 harness,

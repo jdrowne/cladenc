@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
+use cladenc::containers::Program;
 use cladenc::directed_evolution;
 use cladenc::journal::{self, Settings};
 use cladenc::report;
@@ -50,7 +51,14 @@ fn evolved() -> TempDir {
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
+    directed_evolution::start(
+        &Program,
+        &settings,
+        &outputs_directory,
+        &stop,
+        &mut io::sink(),
+    )
+    .unwrap();
     directory
 }
 

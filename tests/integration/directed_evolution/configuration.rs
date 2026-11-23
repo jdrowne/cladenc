@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, ConfigurationError};
-use cladenc::containers::ContainerError;
+use cladenc::containers::{ContainerError, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
@@ -58,6 +58,7 @@ fn evolved(task_tomls: &[(&str, &str)]) -> Evolved {
     let settings = settings(directory.path(), task_tomls);
     let mut written = Vec::new();
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &directory.path().join("outputs"),
         &AtomicBool::new(false),
@@ -80,6 +81,7 @@ fn stopped_and_resumed(task_toml_of_t2: &str, change: impl FnOnce(&Path)) -> Evo
     let outputs_directory = directory.path().join("outputs");
     test_inputs::end_with_125_on(directory.path(), "t3");
     let _ = directed_evolution::start(
+        &Program,
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -88,8 +90,12 @@ fn stopped_and_resumed(task_toml_of_t2: &str, change: impl FnOnce(&Path)) -> Evo
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t3");
     change(&outputs_directory);
     let mut written = Vec::new();
-    let found =
-        directed_evolution::resume(&outputs_directory, &AtomicBool::new(false), &mut written);
+    let found = directed_evolution::resume(
+        &Program,
+        &outputs_directory,
+        &AtomicBool::new(false),
+        &mut written,
+    );
     Evolved {
         directory,
         found,
@@ -288,6 +294,7 @@ fn with_a_time_limit_of_2_seconds_for_every_harness() -> Evolved {
     };
     let mut written = Vec::new();
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &directory.path().join("outputs"),
         &AtomicBool::new(false),
@@ -313,6 +320,7 @@ fn with_an_environment_of_t2_that_builds_for_too_long() -> Evolved {
     .unwrap();
     let mut written = Vec::new();
     let found = directed_evolution::start(
+        &Program,
         &settings,
         &directory.path().join("outputs"),
         &AtomicBool::new(false),

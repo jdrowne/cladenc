@@ -1,15 +1,14 @@
 use std::ffi::OsString;
 use std::fmt::Write;
-use std::fs::File;
-use std::os::unix::process::ExitStatusExt;
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::path::Path;
+use std::process::Command;
 use std::time::{Duration, Instant};
 
 use nix::unistd::{Gid, Uid};
 
+use super::docker::{Docker, Host};
 use super::left;
-use super::program::{self, Ending, FOREVER, LEEWAY, Limits};
+use super::program::{Ending, FOREVER, LEEWAY, Limits};
 use super::{ContainerError, Environment};
 use crate::benchmark::{HealthCheck, TaskConfiguration};
 use crate::outputs_directory::{OutputsDirectory, make_removable};
@@ -39,7 +38,7 @@ pub(super) struct Shell<'a> {
 }
 
 pub(super) struct Container<'a> {
-    pub(super) outputs_directory: &'a OutputsDirectory,
+    pub(super) host: Host<'a>,
     pub(super) image: &'a str,
     pub(super) mounts: &'a [Mount<'a>],
     pub(super) working_directory: &'a str,
@@ -60,7 +59,8 @@ pub(super) struct Bringing<'a> {
     pub(super) stays: Duration,
 }
 
-pub(super) struct Up {
+pub(super) struct Up<'a> {
+    docker: &'a dyn Docker,
     name: String,
     user: String,
     working_directory: String,
@@ -120,15 +120,15 @@ impl Container<'_> {
         shell.given_to(&mut docker);
         docker.arg(self.image);
         shell.timed(&mut docker, limits);
-        let ended = program::run(docker, "", running, limits);
+        let ended = self.host.docker.run(docker, "", running, limits);
         if matches!(ended, Ok(Ending::TimedOut) | Err(ContainerError::Stopped)) {
-            remove(&name);
+            remove(self.host.docker, &name);
         }
         started(ended, running)
     }
 
     pub(super) fn docker_run(&self, name: &str) -> Command {
-        let mut docker = docker_run(self.outputs_directory, name);
+        let mut docker = docker_run(self.host.outputs_directory, name);
         docker
             .arg("--user")
             .arg(format!("{}:{}", Uid::effective(), Gid::effective()))
@@ -140,14 +140,14 @@ impl Container<'_> {
     }
 }
 
-impl Up {
+impl<'a> Up<'a> {
     pub(super) fn start(
-        outputs_directory: &OutputsDirectory,
+        host: Host<'a>,
         bringing: &Bringing<'_>,
         running: &Path,
     ) -> Result<Self, ContainerError> {
         let name = named();
-        let mut docker = docker_run(outputs_directory, &name);
+        let mut docker = docker_run(host.outputs_directory, &name);
         docker
             .args(
                 bringing
@@ -171,24 +171,22 @@ impl Up {
             .args(["--detach", bringing.image, "sleep"])
             .arg(bringing.stays.as_secs().to_string());
         let said = running.join("stderr");
-        let run = File::create(&said)
-            .and_then(|stderr| {
-                docker
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::null())
-                    .stderr(stderr)
-                    .spawn()
-            })
-            .map_err(ContainerError::Io)?;
         let mut up = Self {
+            docker: host.docker,
             name,
             user: String::new(),
             working_directory: String::new(),
         };
-        detached(run, &file_of(bringing.variables), said)?;
+        let detached = host
+            .docker
+            .detach(docker, &file_of(bringing.variables), &said)?;
+        if !matches!(detached, Ending::Exited(0)) {
+            return Err(ContainerError::Docker(said));
+        }
         let mut inspect = Command::new("docker");
         inspect.args(["inspect", "--format", SETTINGS, &up.name]);
-        left::printed_by(inspect)
+        host.docker
+            .print(inspect)
             .map(move |printed| {
                 let mut lines = printed.lines();
                 let user = lines.next().unwrap_or_default();
@@ -215,7 +213,9 @@ impl Up {
         run.shell.given_to(&mut docker);
         docker.args(["--user", run.user, &self.name]);
         run.shell.timed(&mut docker, limits);
-        let ended = program::run(docker, &file_of(run.variables), running, limits);
+        let ended = self
+            .docker
+            .run(docker, &file_of(run.variables), running, limits);
         started(ended, running)
     }
 
@@ -244,7 +244,7 @@ impl Up {
         owned.args(["chown", "-R", owner, to]);
         [emptied, copied, owned]
             .into_iter()
-            .try_for_each(|docker| left::printed_by(docker).map(drop))
+            .try_for_each(|docker| self.docker.print(docker).map(drop))
             .map_err(ContainerError::Io)
     }
 
@@ -255,7 +255,8 @@ impl Up {
     ) -> Result<(), ContainerError> {
         let mut docker = self.as_root();
         docker.args(["sh", "-c", script, "sh"]).args(arguments);
-        left::printed_by(docker)
+        self.docker
+            .print(docker)
             .map(drop)
             .map_err(ContainerError::Io)
     }
@@ -263,13 +264,14 @@ impl Up {
     pub(super) fn end_everything(&self) {
         let mut docker = self.as_root();
         docker.args(["sh", "-c", END_EVERYTHING]);
-        let _ = left::printed_by(docker);
+        let _ = self.docker.print(docker);
     }
 
     pub(super) fn changes(&self) -> Vec<String> {
         let mut docker = Command::new("docker");
         docker.args(["diff", &self.name]);
-        left::printed_by(docker)
+        self.docker
+            .print(docker)
             .unwrap_or_default()
             .lines()
             .map(str::to_owned)
@@ -297,7 +299,7 @@ impl Up {
             .args(flags)
             .arg(format!("{}:{from}", self.name))
             .arg(to);
-        let _ = left::printed_by(docker);
+        let _ = self.docker.print(docker);
         make_removable(to);
     }
 
@@ -308,9 +310,9 @@ impl Up {
     }
 }
 
-impl Drop for Up {
+impl Drop for Up<'_> {
     fn drop(&mut self) {
-        remove(&self.name);
+        remove(self.docker, &self.name);
     }
 }
 
@@ -358,17 +360,6 @@ pub(super) fn file_of(variables: &[(String, String)]) -> String {
         })
 }
 
-pub(super) fn detached(mut run: Child, input: &str, said: PathBuf) -> Result<(), ContainerError> {
-    program::give(&mut run, input);
-    run.wait()
-        .map_err(ContainerError::Io)
-        .and_then(|status| match status.code() {
-            Some(0) => Ok(()),
-            Some(_) => Err(ContainerError::Docker(said)),
-            None => Err(ContainerError::Signal(status.signal().unwrap_or_default())),
-        })
-}
-
 fn named() -> String {
     format!("cladenc-{:016x}", rand::random::<u64>())
 }
@@ -388,11 +379,8 @@ pub(super) fn seconds_of_the_timer(deadline: Instant) -> u64 {
     left.as_secs() + u64::from(left.subsec_nanos() > 0) + LEEWAY
 }
 
-fn remove(name: &str) {
-    let _ = Command::new("docker")
-        .args(["rm", "--force", name])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+fn remove(docker: &dyn Docker, name: &str) {
+    let mut remove = Command::new("docker");
+    remove.args(["rm", "--force", name]);
+    let _ = docker.print(remove);
 }

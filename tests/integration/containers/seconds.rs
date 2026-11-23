@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, Attempt, Environment, Launch};
+use cladenc::containers::{self, Attempt, Environment, Host, Launch, Program};
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -53,7 +53,10 @@ fn environment(time_limit: u64) -> Environment {
 fn attempted(run_command: &str, grader: &str, time_limit: u64) -> containers::Attempted {
     let (_directory, outputs_directory) = made(grader);
     containers::run_attempt(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(run_command, None, time_limit),
         Attempt {
             harness: 0,
@@ -69,7 +72,10 @@ fn attempted(run_command: &str, grader: &str, time_limit: u64) -> containers::At
 fn procreated(run_command: &str, build_command: Option<&str>) -> containers::Creation {
     let (_directory, outputs_directory) = made("exit 0");
     containers::run_procreation(
-        &outputs_directory,
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
         &launch(run_command, build_command, 60),
         1,
         0,

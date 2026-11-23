@@ -1,8 +1,16 @@
+mod built;
 mod discarded;
 mod environments;
+mod evolved;
+mod failed;
+mod given;
 mod heard;
 mod holdout;
+mod imaged;
+mod made;
 mod refused;
+mod resumed;
+mod retried;
 mod said;
 mod taken;
 mod unstarted;
