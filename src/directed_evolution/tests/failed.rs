@@ -19,7 +19,7 @@ fn stopped() -> Evolved {
     let stop = Arc::new(AtomicBool::new(false));
     let asked = Arc::clone(&stop);
     let docker = Double::default()
-        .answering(&HARNESS, &[Answer::Stopped])
+        .answering(&HARNESS, &[Answer::UntilStopped])
         .doing(&HARNESS, move |_| asked.store(true, Ordering::SeqCst));
     given::started_until(docker, given::unchanged, &stop)
 }

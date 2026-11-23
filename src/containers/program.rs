@@ -45,6 +45,10 @@ impl<'a> Limits<'a> {
             stop,
         }
     }
+
+    pub(super) fn stopped(&self) -> bool {
+        self.stop.load(Ordering::SeqCst)
+    }
 }
 
 pub struct Program;
@@ -79,7 +83,7 @@ impl Docker for Program {
                     .map(Ending::Exited)
                     .ok_or_else(|| ContainerError::Signal(status.signal().unwrap_or_default()));
             }
-            if limits.stop.load(Ordering::SeqCst) {
+            if limits.stopped() {
                 kill(&mut program);
                 return Err(ContainerError::Stopped);
             }

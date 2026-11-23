@@ -4,6 +4,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
+use std::thread;
 
 use crate::containers::program::{Ending, Limits};
 use crate::containers::{ContainerError, Docker};
@@ -25,6 +26,7 @@ pub(crate) enum Answer {
     Exited(i32),
     TimedOut,
     Stopped,
+    UntilStopped,
     Signal(i32),
     Refused(&'static str),
     Printed(&'static str),
@@ -184,9 +186,13 @@ impl Docker for Double {
         command: Command,
         input: &str,
         running: &Path,
-        _limits: Limits<'_>,
+        limits: Limits<'_>,
     ) -> Result<Ending, ContainerError> {
-        ended(self.answer(&command, input, running))
+        let answer = self.answer(&command, input, running);
+        while matches!(answer, Some(Answer::UntilStopped)) && !limits.stopped() {
+            thread::yield_now();
+        }
+        ended(answer)
     }
 
     fn detach(&self, command: Command, input: &str, said: &Path) -> Result<Ending, ContainerError> {
@@ -224,7 +230,7 @@ fn ended(answer: Option<Answer>) -> Result<Ending, ContainerError> {
         None | Some(Answer::Printed(_)) => Ok(Ending::Exited(0)),
         Some(Answer::Exited(status)) => Ok(Ending::Exited(status)),
         Some(Answer::TimedOut) => Ok(Ending::TimedOut),
-        Some(Answer::Stopped) => Err(ContainerError::Stopped),
+        Some(Answer::Stopped | Answer::UntilStopped) => Err(ContainerError::Stopped),
         Some(Answer::Signal(signal)) => Err(ContainerError::Signal(signal)),
         Some(Answer::Refused(reason)) => Err(ContainerError::Io(io::Error::other(reason))),
     }
