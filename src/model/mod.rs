@@ -1,5 +1,6 @@
-use std::fs;
 use std::path::Path;
+
+use crate::file_system::FileSystem;
 
 const NAME: &str = "CLADENC_MODEL";
 const URL: &str = "CLADENC_MODEL_URL";
@@ -20,8 +21,8 @@ impl<'a> Model<'a> {
     }
 }
 
-pub(crate) fn read_key(file: &Path) -> Option<String> {
-    let text = fs::read_to_string(file).ok()?;
+pub(crate) fn read_key(files: &dyn FileSystem, file: &Path) -> Option<String> {
+    let text = files.read_text(file).ok()?;
     let mut lines = text.lines();
     lines
         .next()

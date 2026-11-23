@@ -4,8 +4,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution;
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings};
 use cladenc::report;
 use tempfile::TempDir;
@@ -25,7 +24,11 @@ fn settings(directory: &Path) -> Settings {
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(directory, &["t1", "t2", "t3"])).unwrap(),
+            Benchmark::read(
+                &Disk,
+                &test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            )
+            .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -51,14 +54,7 @@ fn evolved() -> TempDir {
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
-    directed_evolution::start(
-        &Program,
-        &settings,
-        &outputs_directory,
-        &stop,
-        &mut io::sink(),
-    )
-    .unwrap();
+    crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 
@@ -170,7 +166,7 @@ fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_an_att
 #[test]
 fn the_report_of_such_a_directed_evolution_counts_the_tasks_one_harness_at_least_completed() {
     let directory = evolved();
-    let report = report::read(&directory.path().join("outputs")).unwrap();
+    let report = report::read(&Disk, &directory.path().join("outputs")).unwrap();
     assert_eq!(
         (
             report.selection_tasks_completed_by_any,

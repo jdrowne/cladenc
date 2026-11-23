@@ -1,8 +1,5 @@
-use std::fs;
-use std::path::Path;
-
 fn readme() -> String {
-    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md")).unwrap()
+    test_inputs::README.to_owned()
 }
 
 #[test]

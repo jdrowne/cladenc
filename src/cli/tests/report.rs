@@ -1,16 +1,15 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::cli::{self, Cli, Command, ReportOptions};
 use crate::containers::tests::double::Double;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
 use crate::report;
 use clap::Parser;
 use clap::error::ErrorKind;
-use tempfile::TempDir;
 
 struct Ran {
     status: u8,
@@ -22,14 +21,14 @@ fn parsed(options: &[&str]) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(["cladenc", "report"].iter().chain(options).copied())
 }
 
-fn ran(outputs_dir: PathBuf, json: bool) -> Ran {
+fn ran(files: &Memory, outputs_dir: PathBuf, json: bool) -> Ran {
     let cli = Cli {
         command: Command::Report(ReportOptions { outputs_dir, json }),
     };
     let mut output = Vec::new();
     let mut errors = Vec::new();
     let status = cli::execute(
-        &Double::default(),
+        Double::default().on(files).outside(),
         &cli,
         &AtomicBool::new(false),
         &mut output,
@@ -91,29 +90,44 @@ fn ended() -> Vec<Record> {
     records
 }
 
-fn outputs_directory_of(records: &[Record]) -> TempDir {
-    let outputs_directory = test_inputs::temporary_directory();
+fn outputs_directory_of(records: &[Record]) -> Memory {
+    let outputs_directory = Memory::default();
     let lines: String = records
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
-    fs::write(journal::path(outputs_directory.path()), lines).unwrap();
+    outputs_directory
+        .write(journal::path(outputs_directory.path()), lines)
+        .unwrap();
     outputs_directory
 }
 
 fn reported(json: bool) -> (Ran, String) {
     let outputs_directory = outputs_directory_of(&ended());
-    let object = report::read(outputs_directory.path()).unwrap().json();
-    (ran(outputs_directory.path().to_owned(), json), object)
+    let object = report::read(&outputs_directory, outputs_directory.path())
+        .unwrap()
+        .json();
+    (
+        ran(
+            &outputs_directory,
+            outputs_directory.path().to_owned(),
+            json,
+        ),
+        object,
+    )
 }
 
 fn reported_before_the_end() -> Ran {
     let outputs_directory = outputs_directory_of(&started());
-    ran(outputs_directory.path().to_owned(), false)
+    ran(
+        &outputs_directory,
+        outputs_directory.path().to_owned(),
+        false,
+    )
 }
 
 fn missing() -> PathBuf {
-    test_inputs::temporary_directory().path().join("missing")
+    Memory::default().path().join("missing")
 }
 
 #[test]
@@ -218,13 +232,13 @@ fn a_directed_evolution_that_has_not_ended_prints_nothing_on_standard_output() {
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_gives_exit_status_2() {
-    assert_eq!(ran(missing(), false).status, 2);
+    assert_eq!(ran(&Memory::default(), missing(), false).status, 2);
 }
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_is_reported_on_standard_error() {
     assert!(
-        ran(missing(), false)
+        ran(&Memory::default(), missing(), false)
             .errors
             .starts_with("cladenc: the outputs directory cannot be used: ")
     );
@@ -233,17 +247,17 @@ fn an_outputs_directory_that_does_not_exist_is_reported_on_standard_error() {
 #[test]
 fn an_outputs_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
     assert_eq!(
-        ran(missing(), false).errors,
+        ran(&Memory::default(), missing(), false).errors,
         "cladenc: the outputs directory cannot be used: No such file or directory (os error 2)\n"
     );
 }
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_prints_nothing_on_standard_output() {
-    assert_eq!(ran(missing(), false).output, "");
+    assert_eq!(ran(&Memory::default(), missing(), false).output, "");
 }
 
 #[test]
 fn an_outputs_directory_with_no_path_gives_exit_status_2() {
-    assert_eq!(ran(PathBuf::new(), false).status, 2);
+    assert_eq!(ran(&Memory::default(), PathBuf::new(), false).status, 2);
 }

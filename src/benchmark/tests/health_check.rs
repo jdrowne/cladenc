@@ -1,15 +1,17 @@
-use std::fs;
 use std::time::Duration;
 
 use crate::benchmark::HealthCheck;
 use crate::benchmark::configuration::{self, ConfigurationError};
+use crate::file_system::tests::double::Memory;
 
 const CHECKED: &str = "[environment.healthcheck]\ncommand = \"test -e /ready\"\n";
 
 fn read(written: &str) -> Result<Option<HealthCheck>, ConfigurationError> {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
-    configuration::read_with(directory.path(), &|_| None)
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
+    configuration::read_with(&directory, directory.path(), &|_| None)
         .map(|configuration| configuration.health_check)
 }
 

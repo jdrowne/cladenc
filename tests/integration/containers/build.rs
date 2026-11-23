@@ -26,8 +26,12 @@ type Procreated = (
 fn made() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        crate::real::disk(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     (directory, outputs_directory)
 }
 

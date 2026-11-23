@@ -7,6 +7,7 @@ use std::thread;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Host, Launch, Program};
+use cladenc::file_system::Disk;
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -28,8 +29,12 @@ type Procreated = (
 fn made_at(name: &str) -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join(name), &primogenitor).unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        crate::real::disk(),
+        &directory.path().join(name),
+        &primogenitor,
+    )
+    .unwrap();
     (directory, outputs_directory)
 }
 
@@ -210,7 +215,7 @@ fn a_harness_can_read_the_ended_attempts_of_its_progenitor_and_none_still_runnin
     let (directory, outputs_directory) = made_at("outputs");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
+        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     outputs_directory.start_attempt(0, "benchmark/t1").unwrap();
     outputs_directory

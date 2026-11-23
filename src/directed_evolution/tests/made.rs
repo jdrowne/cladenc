@@ -1,10 +1,8 @@
-use std::fs;
-use std::path::Path;
-
 use crate::containers::ContainerError;
 use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const ENVIRONMENTS_BUILT: [&str; 2] = [
@@ -28,24 +26,25 @@ const TWO_CPUS: &str = "[environment]\ncpus = 2\n";
 const GRADER_GIVEN: &str = "[verifier.environment]\ndocker_image = \"a-grader:given\"\n";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 
-fn of_t1(configuration: &'static str) -> impl FnOnce(&Path, &mut Settings) {
+fn of_t1(configuration: &'static str) -> impl FnOnce(&Memory, &mut Settings) {
     move |directory, _| given::configured(directory, "t1", configuration)
 }
 
-fn of_each_task(configuration: &'static str) -> impl FnOnce(&Path, &mut Settings) {
+fn of_each_task(configuration: &'static str) -> impl FnOnce(&Memory, &mut Settings) {
     move |directory, _| {
         given::configured(directory, "t1", configuration);
         given::configured(directory, "t2", configuration);
     }
 }
 
-fn with_a_dockerfile_of_the_grader(directory: &Path, _: &mut Settings) {
+fn with_a_dockerfile_of_the_grader(directory: &Memory, _: &mut Settings) {
     given::configured(directory, "t1", SEPARATE);
-    fs::write(
-        directory.join("benchmark/t1/tests/Dockerfile"),
-        "FROM scratch\n",
-    )
-    .unwrap();
+    directory
+        .write(
+            directory.path().join("benchmark/t1/tests/Dockerfile"),
+            "FROM scratch\n",
+        )
+        .unwrap();
 }
 
 fn made() -> Evolved {

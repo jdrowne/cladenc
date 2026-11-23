@@ -1,32 +1,40 @@
-use std::fs;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
-
-use tempfile::TempDir;
 
 use crate::benchmark::Benchmark;
 use crate::containers::image;
 use crate::containers::program::Ending;
 use crate::containers::tests::double::Double;
 use crate::containers::{ContainerError, Host};
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const TASK: &str = "benchmark/t1";
 const NAME: &str = "cladenc-environments-0123456789abcdef:never-built";
 
-fn made() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let benchmark = Benchmark::read(&test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+fn made() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let benchmark = Benchmark::read(
+        &directory,
+        &test_inputs::benchmark_in(&directory, directory.path(), &["t1"]),
+    )
+    .unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     outputs_directory.copy_benchmark(&benchmark).unwrap();
     (directory, outputs_directory)
 }
 
-fn with_a_file_where_the_environments_are_kept() -> (TempDir, OutputsDirectory) {
+fn with_a_file_where_the_environments_are_kept() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    fs::write(outputs_directory.path().join("environments"), "").unwrap();
+    directory
+        .write(outputs_directory.path().join("environments"), "")
+        .unwrap();
     (directory, outputs_directory)
 }
 

@@ -1,13 +1,14 @@
-use std::fs;
 use std::io;
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::containers::program::{Ending, Limits};
-use crate::containers::{ContainerError, Docker};
+use crate::containers::{ContainerError, Docker, Outside};
+use crate::file_system::FileSystem;
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const MADE: &str = ":/var/opt/cladenc/work";
@@ -38,13 +39,27 @@ struct Rule {
     given: usize,
 }
 
-type Effect = Box<dyn Fn(&Asked) + Send + Sync>;
+type Effect = Box<dyn Fn(&Memory, &Asked) + Send + Sync>;
 
-#[derive(Default)]
 pub(crate) struct Double {
     asked: Mutex<Vec<Asked>>,
     rules: Mutex<Vec<Rule>>,
     effects: Vec<(Vec<String>, Effect)>,
+    files: Memory,
+    shared: Arc<dyn FileSystem>,
+}
+
+impl Default for Double {
+    fn default() -> Self {
+        let files = Memory::default();
+        Self {
+            asked: Mutex::default(),
+            rules: Mutex::default(),
+            effects: Vec::new(),
+            shared: files.shared(),
+            files,
+        }
+    }
 }
 
 impl Asked {
@@ -85,6 +100,19 @@ impl Asked {
 }
 
 impl Double {
+    pub(crate) fn on(mut self, files: &Memory) -> Self {
+        self.shared = files.shared();
+        self.files = files.clone();
+        self
+    }
+
+    pub(crate) fn outside(&self) -> Outside<'_> {
+        Outside {
+            docker: self,
+            files: &self.shared,
+        }
+    }
+
     pub(crate) fn answering(self, needles: &[&str], answers: &[Answer]) -> Self {
         self.rules.lock().unwrap().push(Rule {
             needles: owned(needles),
@@ -97,7 +125,7 @@ impl Double {
     pub(crate) fn doing(
         mut self,
         needles: &[&str],
-        effect: impl Fn(&Asked) + Send + Sync + 'static,
+        effect: impl Fn(&Memory, &Asked) + Send + Sync + 'static,
     ) -> Self {
         self.effects.push((owned(needles), Box::new(effect)));
         self
@@ -111,20 +139,22 @@ impl Double {
         self,
         changes: impl Fn(&Asked) -> bool + Send + Sync + 'static,
     ) -> Self {
-        self.doing(&["run"], move |asked| {
+        self.doing(&["run"], move |files, asked| {
             let made = asked
                 .arguments
                 .iter()
                 .find_map(|argument| argument.strip_suffix(MADE));
             if let Some(made) = made.filter(|_| changes(asked)) {
                 let change = asked.kept.to_string_lossy().into_owned();
-                fs::write(Path::new(made).join("changed"), change).unwrap();
+                files
+                    .write(Path::new(made).join("changed"), change)
+                    .unwrap();
             }
         })
     }
 
     pub(crate) fn grading(self, completes: impl Fn(&str) -> bool + Send + Sync + 'static) -> Self {
-        self.doing(&["cp"], move |asked| {
+        self.doing(&["cp"], move |files, asked| {
             let from_the_verifier = asked
                 .arguments
                 .iter()
@@ -132,7 +162,7 @@ impl Double {
             let to = asked.arguments.last().map(PathBuf::from);
             if let Some(to) = to.filter(|_| from_the_verifier) {
                 let reward = reward(completes(&attempt_of(&to)));
-                fs::write(to.join("reward.txt"), reward).unwrap();
+                files.write(to.join("reward.txt"), reward).unwrap();
             }
         })
     }
@@ -143,7 +173,10 @@ impl Double {
 
     pub(crate) fn commands(&self, outputs_directory: &OutputsDirectory) -> Vec<String> {
         let path = outputs_directory.path();
-        let resolved = fs::canonicalize(path).unwrap_or_else(|_| path.to_owned());
+        let resolved = self
+            .files
+            .resolved(path)
+            .unwrap_or_else(|_| path.to_owned());
         let asked = self.asked();
         let names: Vec<&String> = asked.iter().filter_map(Asked::name).collect();
         asked
@@ -167,7 +200,7 @@ impl Double {
         self.effects
             .iter()
             .filter(|(needles, _)| asked.fits(needles))
-            .for_each(|(_, effect)| effect(&asked));
+            .for_each(|(_, effect)| effect(&self.files, &asked));
         let mut rules = self.rules.lock().unwrap();
         rules
             .iter_mut()

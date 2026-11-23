@@ -7,8 +7,8 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Record, Settings};
 use tempfile::TempDir;
 
@@ -19,10 +19,10 @@ fn settings(directory: &Path) -> Settings {
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(
-                directory,
-                &["t1", "t2", "t3", "t4", "t5"],
-            ))
+            Benchmark::read(
+                &Disk,
+                &test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
+            )
             .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
@@ -58,7 +58,7 @@ fn over_two_benchmarks(settings: &mut Settings) {
     let refactoring = test_inputs::benchmark_named(directory, "refactoring", &["t1", "t2"]);
     settings
         .benchmarks
-        .push(Benchmark::read(&refactoring).unwrap());
+        .push(Benchmark::read(&Disk, &refactoring).unwrap());
 }
 
 fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, DirectedEvolutionError>) {
@@ -66,8 +66,7 @@ fn evolved(change: impl FnOnce(&mut Settings)) -> (TempDir, Result<Found, Direct
     let mut settings = settings(directory.path());
     change(&mut settings);
     let outputs_directory = directory.path().join("outputs");
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -83,8 +82,7 @@ fn said_over_one_task() -> (TempDir, Vec<String>) {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
-        .unwrap();
+    crate::real::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -153,22 +151,8 @@ fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_th
     settings.max_procreations = 3;
     let first = directory.path().join("first");
     let second = directory.path().join("second");
-    directed_evolution::start(
-        &Program,
-        &settings,
-        &first,
-        &AtomicBool::new(false),
-        &mut io::sink(),
-    )
-    .unwrap();
-    directed_evolution::start(
-        &Program,
-        &settings,
-        &second,
-        &AtomicBool::new(false),
-        &mut io::sink(),
-    )
-    .unwrap();
+    crate::real::start(&settings, &first, &AtomicBool::new(false), &mut io::sink()).unwrap();
+    crate::real::start(&settings, &second, &AtomicBool::new(false), &mut io::sink()).unwrap();
     assert_eq!(
         test_inputs::without_seconds(&fs::read_to_string(journal::path(&first)).unwrap()),
         test_inputs::without_seconds(&fs::read_to_string(journal::path(&second)).unwrap())
@@ -180,8 +164,7 @@ fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings(
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
-    directed_evolution::start(
-        &Program,
+    crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),

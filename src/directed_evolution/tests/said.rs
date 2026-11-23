@@ -4,12 +4,13 @@ use std::time::Duration;
 use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::said::{Environments, Retrying};
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
 fn outputs_directory() -> OutputsDirectory {
-    OutputsDirectory::at(Path::new("/outputs"))
+    OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
 }
 
 fn procreation() -> Started {

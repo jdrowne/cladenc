@@ -1,20 +1,23 @@
 use std::sync::atomic::AtomicBool;
 
-use tempfile::TempDir;
-
 use crate::containers::build;
 use crate::containers::tests::double::Double;
 use crate::containers::{ContainerError, Host, Launch};
+use crate::file_system::tests::double::Memory;
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
 
-type Built = (TempDir, OutputsDirectory, Result<(), ContainerError>);
+type Built = (Memory, OutputsDirectory, Result<(), ContainerError>);
 
 fn built_with_no_build_command() -> Built {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command: "exit 0",
@@ -45,6 +48,6 @@ fn with_no_build_command_the_primogenitor_is_taken_as_built() {
 
 #[test]
 fn with_no_build_command_nothing_is_kept_under_builds() {
-    let (_directory, outputs_directory, _result) = built_with_no_build_command();
-    assert!(!outputs_directory.build(0).exists());
+    let (directory, outputs_directory, _result) = built_with_no_build_command();
+    assert!(!directory.exists(&outputs_directory.build(0)));
 }

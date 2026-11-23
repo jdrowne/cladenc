@@ -7,6 +7,7 @@ use std::path::Path;
 
 use serde::Serialize;
 
+use crate::file_system::FileSystem;
 use crate::genealogy::{Experiment, Genealogy, Harness, HarnessId, HarnessState};
 use crate::holdout::TaskSet;
 use crate::journal::{self, JournalError, Seconds, Settings};
@@ -76,8 +77,8 @@ struct HarnessReport {
     procreation_seconds: Option<f64>,
 }
 
-pub fn read(outputs_directory: &Path) -> Result<Report, JournalError> {
-    journal::read(outputs_directory).map(|state| {
+pub fn read(files: &dyn FileSystem, outputs_directory: &Path) -> Result<Report, JournalError> {
+    journal::read(files, outputs_directory).map(|state| {
         Report::of(
             &state.settings,
             &state.genealogy,

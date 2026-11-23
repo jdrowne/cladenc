@@ -1,3 +1,7 @@
+mod cli {
+    mod manual_pages;
+}
+
 mod containers {
     mod apart;
     mod artifacts;
@@ -6,6 +10,7 @@ mod containers {
     mod build;
     mod collect;
     mod configuration;
+    mod detached;
     mod environment;
     mod harbor;
     mod health_check;
@@ -15,7 +20,9 @@ mod containers {
     mod limits;
     mod lineage;
     mod primogenitor;
+    mod printed;
     mod procreation;
+    mod ran;
     mod retried;
     mod seconds;
 }
@@ -39,3 +46,14 @@ mod directed_evolution {
     mod stopped;
     mod unchanged;
 }
+
+mod file_system {
+    mod found;
+    mod moved;
+    mod opened;
+    mod read;
+    mod removed;
+    mod written;
+}
+
+mod real;

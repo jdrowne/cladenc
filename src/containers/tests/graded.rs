@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -50,25 +49,25 @@ fn result_of(tried: &Tried) -> Option<AttemptResult> {
 }
 
 fn leaving_a_directory() -> Double {
-    Double::default().doing(&COPIED, |asked| {
+    Double::default().doing(&COPIED, |directory, asked| {
         let left = asked
             .arguments
             .last()
             .map(PathBuf::from)
             .unwrap_or_default();
-        fs::create_dir(&left).unwrap();
-        fs::write(left.join("made.txt"), "made\n").unwrap();
+        directory.create_dir(&left).unwrap();
+        directory.write(left.join("made.txt"), "made\n").unwrap();
     })
 }
 
 fn leaving_a_file() -> Double {
-    Double::default().doing(&COPIED, |asked| {
+    Double::default().doing(&COPIED, |directory, asked| {
         let left = asked
             .arguments
             .last()
             .map(PathBuf::from)
             .unwrap_or_default();
-        fs::write(left, "made\n").unwrap();
+        directory.write(left, "made\n").unwrap();
     })
 }
 
@@ -254,7 +253,7 @@ fn what_is_given_to_the_grader_is_owned_by_the_user_the_task_names_for_the_grade
 fn the_copy_that_is_given_to_the_grader_is_not_kept_with_the_attempt() {
     let tried = graded_apart(leaving_a_directory());
     let attempt = tried.outputs_directory.attempt(0, TASK);
-    assert!(!attempt.join("given-to-the-grader").exists());
+    assert!(!tried.directory.exists(attempt.join("given-to-the-grader")));
 }
 
 #[test]

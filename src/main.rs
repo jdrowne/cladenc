@@ -4,7 +4,8 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::cli::{self, Cli, Command};
-use cladenc::containers::Program;
+use cladenc::containers::{Outside, Program};
+use cladenc::file_system::{Disk, FileSystem};
 use clap::Parser;
 use signal_hook::consts::{SIGHUP, SIGINT, SIGQUIT, SIGTERM};
 use signal_hook::flag;
@@ -18,8 +19,13 @@ fn main() -> ExitCode {
             flag::register(signal, Arc::clone(&stop)).expect("a signal can be listened for");
         }
     }
+    let files: Arc<dyn FileSystem> = Arc::new(Disk);
+    let outside = Outside {
+        docker: &Program,
+        files: &files,
+    };
     ExitCode::from(cli::execute(
-        &Program,
+        outside,
         &cli,
         &stop,
         &mut io::stdout(),

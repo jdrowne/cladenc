@@ -4,8 +4,9 @@ use std::process::Command;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{ContainerError, Program};
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;
 
@@ -30,7 +31,7 @@ fn settings(directory: &Path, benchmark: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(benchmark).unwrap()],
+        benchmarks: vec![Benchmark::read(&Disk, benchmark).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -74,8 +75,7 @@ fn evolved_retrying(
         ..settings(directory.path(), &benchmark)
     };
     let mut written = Vec::new();
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings,
         &directory.path().join("outputs"),
         &AtomicBool::new(false),
@@ -113,8 +113,7 @@ fn resumed_once_the_grader_is_ready() -> Evolved {
     let outputs = evolved.directory.path().join("outputs");
     fs::write(outputs.join("benchmarks/benchmark/t2/task.toml"), READY).unwrap();
     let mut written = Vec::new();
-    evolved.found =
-        directed_evolution::resume(&Program, &outputs, &AtomicBool::new(false), &mut written);
+    evolved.found = crate::real::resume(&outputs, &AtomicBool::new(false), &mut written);
     evolved.said = String::from_utf8(written).unwrap();
     evolved
 }

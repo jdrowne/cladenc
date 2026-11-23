@@ -1,8 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use crate::cli::{self, Cli, Command, StartOptions};
 use crate::containers::tests::double::Double;
+use crate::file_system::tests::double::Memory;
 
 struct Ran {
     status: u8,
@@ -10,14 +11,15 @@ struct Ran {
     errors: String,
 }
 
-fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
-    let directory = test_inputs::temporary_directory();
+fn ran(change: impl FnOnce(&Memory, &mut StartOptions)) -> Ran {
+    let directory = Memory::default();
     let mut options = StartOptions {
-        primogenitor: test_inputs::primogenitor(directory.path()),
+        primogenitor: test_inputs::primogenitor_in(&directory, directory.path()),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: vec![test_inputs::benchmark(
+        benchmark: vec![test_inputs::benchmark_in(
+            &directory,
             directory.path(),
             &["t1", "t2", "t3"],
         )],
@@ -35,14 +37,14 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,
     };
-    change(directory.path(), &mut options);
+    change(&directory, &mut options);
     let mut output = Vec::new();
     let mut errors = Vec::new();
     let cli = Cli {
         command: Command::Start(Box::new(options)),
     };
     let status = cli::execute(
-        &Double::default(),
+        Double::default().on(&directory).outside(),
         &cli,
         &AtomicBool::new(false),
         &mut output,
@@ -55,34 +57,37 @@ fn ran(change: impl FnOnce(&Path, &mut StartOptions)) -> Ran {
     }
 }
 
-fn with_a_missing_benchmark(directory: &Path, options: &mut StartOptions) {
-    options.benchmark = vec![directory.join("missing")];
+fn with_a_missing_benchmark(directory: &Memory, options: &mut StartOptions) {
+    options.benchmark = vec![directory.path().join("missing")];
 }
 
-fn with_a_missing_file_of_the_key(directory: &Path, options: &mut StartOptions) {
-    options.model_key_file = Some(directory.join("missing"));
+fn with_a_missing_file_of_the_key(directory: &Memory, options: &mut StartOptions) {
+    options.model_key_file = Some(directory.path().join("missing"));
 }
 
-fn with_a_missing_dockerfile(directory: &Path, options: &mut StartOptions) {
+fn with_a_missing_dockerfile(directory: &Memory, options: &mut StartOptions) {
     options.procreation_docker_image = None;
-    options.procreation_dockerfile = Some(directory.join("missing"));
+    options.procreation_dockerfile = Some(directory.path().join("missing"));
     options.procreation_docker_image_build_timeout = Some(600);
 }
 
-fn with_a_percentage_that_leaves_no_selection_task(_: &Path, options: &mut StartOptions) {
+fn with_a_percentage_that_leaves_no_selection_task(_: &Memory, options: &mut StartOptions) {
     options.selection_tasks_percentage = 10.0;
 }
 
-fn with_a_percentage_that_leaves_no_corroboration_task(_: &Path, options: &mut StartOptions) {
+fn with_a_percentage_that_leaves_no_corroboration_task(_: &Memory, options: &mut StartOptions) {
     options.corroboration_tasks_percentage = 10.0;
 }
 
-fn in_an_outputs_directory_that_exists(directory: &Path, options: &mut StartOptions) {
-    options.outputs_dir = directory.to_owned();
+fn in_an_outputs_directory_that_exists(directory: &Memory, options: &mut StartOptions) {
+    options.outputs_dir = directory.path().to_owned();
 }
 
-fn in_an_outputs_directory_with_a_colon_in_its_path(directory: &Path, options: &mut StartOptions) {
-    options.outputs_dir = directory.join("first:second");
+fn in_an_outputs_directory_with_a_colon_in_its_path(
+    directory: &Memory,
+    options: &mut StartOptions,
+) {
+    options.outputs_dir = directory.path().join("first:second");
 }
 
 #[test]

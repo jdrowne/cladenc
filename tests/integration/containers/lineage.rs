@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, Host, Launch, Program};
+use cladenc::file_system::Disk;
 use cladenc::genealogy::{AttemptResult, CreationOutcome};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -59,13 +60,16 @@ fn procreated(
 fn family() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor)
-            .unwrap()
-            .holding_out(&["benchmark/t2".to_owned()]);
+    let outputs_directory = OutputsDirectory::create(
+        crate::real::disk(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap()
+    .holding_out(&["benchmark/t2".to_owned()]);
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
+        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     attempted(&outputs_directory, 0);
     procreated(&outputs_directory, 1, 0, CreationOutcome::Created);

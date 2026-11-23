@@ -1,4 +1,3 @@
-use std::fs;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, CollectCommand, TaskConfiguration};
@@ -44,7 +43,10 @@ fn ending_of(tried: &Tried) -> Option<HarnessEnding> {
 }
 
 fn kept(tried: &Tried, file: &str) -> Option<String> {
-    fs::read_to_string(tried.outputs_directory.attempt(0, TASK).join(file)).ok()
+    tried
+        .directory
+        .read_to_string(tried.outputs_directory.attempt(0, TASK).join(file))
+        .ok()
 }
 
 fn last_word_of(command: &str) -> Option<&str> {
@@ -239,7 +241,7 @@ fn the_result_of_an_attempt_is_kept_with_it() {
 #[test]
 fn an_attempt_that_has_ended_is_no_longer_among_the_running_ones() {
     let tried = attempted_by(Double::default());
-    assert!(!tried.running().exists());
+    assert!(!tried.directory.exists(tried.running()));
 }
 
 #[test]
@@ -572,7 +574,7 @@ fn the_container_of_an_attempt_that_is_not_carried_out_is_removed() {
 #[test]
 fn an_attempt_that_is_not_carried_out_stays_among_the_running_ones() {
     let tried = attempted_by(Double::default().answering(&["cp"], &[REFUSED]));
-    assert!(tried.running().is_dir());
+    assert!(tried.directory.is_dir(tried.running()));
 }
 
 #[test]

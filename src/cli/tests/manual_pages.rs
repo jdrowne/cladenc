@@ -1,6 +1,4 @@
-use std::fs;
 use std::iter;
-use std::path::Path;
 
 use crate::cli::Cli;
 use clap::{Arg, ArgAction, Command, CommandFactory};
@@ -89,24 +87,7 @@ fn synopsis_of(page: &str) -> Vec<String> {
 }
 
 fn package() -> String {
-    let package = Path::new(env!("CARGO_MANIFEST_DIR")).join("etc/nfpm/nfpm.yaml");
-    fs::read_to_string(package).unwrap()
-}
-
-#[test]
-fn the_manual_has_a_page_for_cladenc_and_for_every_sub_command_and_no_other() {
-    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/man/man1");
-    let mut written: Vec<String> = fs::read_dir(directory)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-        .collect();
-    written.sort();
-    let mut expected: Vec<String> = commands()
-        .iter()
-        .map(|(page, _)| format!("{page}.1"))
-        .collect();
-    expected.sort();
-    assert_eq!(written, expected);
+    test_inputs::PACKAGE.to_owned()
 }
 
 #[test]

@@ -5,12 +5,13 @@ use crate::containers::tests::double::Double;
 use crate::containers::{ContainerError, Host};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::environments::{self, Making, Whose};
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const TASK: &str = "benchmark/t1";
 
 fn not_built(whose: Whose) -> (DirectedEvolutionError, String) {
-    let outputs_directory = OutputsDirectory::at(Path::new("/outputs"));
+    let outputs_directory = OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"));
     let stop = AtomicBool::new(false);
     let mut written: Vec<u8> = Vec::new();
     let docker = Double::default();

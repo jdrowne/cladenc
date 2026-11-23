@@ -5,8 +5,9 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::cli::{self, Cli};
-use cladenc::containers::{ContainerError, Program};
+use cladenc::containers::ContainerError;
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Record, Settings, Started};
 use clap::Parser;
 use serde_json::Value;
@@ -36,7 +37,11 @@ fn settings(directory: &Path) -> Settings {
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(directory, &["t1", "t2", "t3"])).unwrap(),
+            Benchmark::read(
+                &Disk,
+                &test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            )
+            .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -63,8 +68,7 @@ fn evolved() -> (TempDir, Vec<String>) {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
-        .unwrap();
+    crate::real::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     (directory, said.lines().map(str::to_owned).collect())
 }
@@ -104,13 +108,7 @@ fn reported(directory: &TempDir) -> Value {
     );
     let cli = Cli::try_parse_from(["cladenc", "report", "--json", outputs_dir.as_str()]).unwrap();
     let mut output = Vec::new();
-    cli::execute(
-        &Program,
-        &cli,
-        &AtomicBool::new(false),
-        &mut output,
-        &mut io::sink(),
-    );
+    crate::real::execute(&cli, &AtomicBool::new(false), &mut output, &mut io::sink());
     serde_json::from_slice(&output).unwrap()
 }
 
@@ -128,18 +126,12 @@ fn stopped_at_its_baseline_and_resumed() -> DirectedEvolutions {
     fs::create_dir(directory.path().join("stopped")).unwrap();
     let unbroken = directory.path().join("unbroken/outputs");
     let outputs_directory = directory.path().join("stopped/outputs");
-    directed_evolution::start(&Program, &settings, &unbroken, &stop, &mut io::sink()).unwrap();
+    crate::real::start(&settings, &unbroken, &stop, &mut io::sink()).unwrap();
     test_inputs::end_with_125_at(&settings.primogenitor, 0);
-    let stopped = directed_evolution::start(
-        &Program,
-        &settings,
-        &outputs_directory,
-        &stop,
-        &mut io::sink(),
-    );
+    let stopped = crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&outputs_directory);
     let mut written = Vec::new();
-    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut written).unwrap();
+    crate::real::resume(&outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     DirectedEvolutions {
         directory,

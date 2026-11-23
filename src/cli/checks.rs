@@ -1,9 +1,9 @@
 use std::fmt::{self, Display, Formatter};
-use std::fs;
 use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
 use crate::benchmark::{self, Benchmark, BenchmarkError};
+use crate::file_system::{FileSystem, Kind};
 use crate::holdout::{self, Drawn, HoldoutError, Percentages};
 use crate::journal::Settings;
 use crate::model;
@@ -45,8 +45,8 @@ impl Display for Refused {
 }
 
 impl StartOptions {
-    pub(super) fn settings(&self) -> Result<Settings, Refused> {
-        let benchmarks = benchmarks(&self.benchmark)?;
+    pub(super) fn settings(&self, files: &dyn FileSystem) -> Result<Settings, Refused> {
+        let benchmarks = benchmarks(files, &self.benchmark)?;
         let seed = rand::random();
         let drawn = drawn(
             &benchmarks,
@@ -57,13 +57,13 @@ impl StartOptions {
             seed,
         )?;
         Ok(Settings {
-            primogenitor: primogenitor(&self.primogenitor)?,
+            primogenitor: primogenitor(files, &self.primogenitor)?,
             model: self.model.clone(),
             model_url: self.model_url.clone(),
             model_key_file: self
                 .model_key_file
                 .as_deref()
-                .map(model_key_file)
+                .map(|given| model_key_file(files, given))
                 .transpose()?,
             docker_image: self
                 .procreation_docker_image
@@ -72,7 +72,7 @@ impl StartOptions {
             dockerfile: self
                 .procreation_dockerfile
                 .as_deref()
-                .map(dockerfile)
+                .map(|given| dockerfile(files, given))
                 .transpose()?,
             docker_build_timeout: self.procreation_docker_image_build_timeout,
             environment_image_repository: environment_image_repository(),
@@ -135,13 +135,14 @@ fn refused_for(error: &HoldoutError) -> (&'static [&'static str], &'static str) 
     }
 }
 
-fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {
-    fs::canonicalize(given)
+fn primogenitor(files: &dyn FileSystem, given: &Path) -> Result<PathBuf, Refused> {
+    files
+        .resolved(given)
         .ok()
         .filter(|directory| {
             directory.to_str().is_some()
-                && directory.is_dir()
-                && holds_only_harness_files(directory).unwrap_or(false)
+                && leads_to(files, directory, Kind::Directory)
+                && holds_only_harness_files(files, directory).unwrap_or(false)
         })
         .ok_or(Refused {
             flags: &["--primogenitor"],
@@ -151,10 +152,14 @@ fn primogenitor(given: &Path) -> Result<PathBuf, Refused> {
         })
 }
 
-fn model_key_file(given: &Path) -> Result<PathBuf, Refused> {
+fn leads_to(files: &dyn FileSystem, path: &Path, kind: Kind) -> bool {
+    files.followed(path).is_ok_and(|found| found.kind == kind)
+}
+
+fn model_key_file(files: &dyn FileSystem, given: &Path) -> Result<PathBuf, Refused> {
     path::absolute(given)
         .ok()
-        .filter(|file| file.to_str().is_some() && model::read_key(file).is_some())
+        .filter(|file| file.to_str().is_some() && model::read_key(files, file).is_some())
         .ok_or(Refused {
             flags: &["--model-key-file"],
             accepted: "a file that holds a key on one line and nothing else",
@@ -170,10 +175,11 @@ fn environment_image_repository() -> String {
     format!("cladenc-environments-{:016x}", rand::random::<u64>())
 }
 
-fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
-    fs::canonicalize(given)
+fn dockerfile(files: &dyn FileSystem, given: &Path) -> Result<PathBuf, Refused> {
+    files
+        .resolved(given)
         .ok()
-        .filter(|file| file.to_str().is_some() && file.is_file())
+        .filter(|file| file.to_str().is_some() && leads_to(files, file, Kind::File))
         .ok_or(Refused {
             flags: &["--procreation-dockerfile"],
             accepted: "an existing file",
@@ -181,10 +187,10 @@ fn dockerfile(given: &Path) -> Result<PathBuf, Refused> {
         })
 }
 
-fn benchmarks(given: &[PathBuf]) -> Result<Vec<Benchmark>, Refused> {
+fn benchmarks(files: &dyn FileSystem, given: &[PathBuf]) -> Result<Vec<Benchmark>, Refused> {
     let mut benchmarks = given
         .iter()
-        .map(|given| benchmark(given))
+        .map(|given| benchmark(files, given))
         .collect::<Result<Vec<Benchmark>, Refused>>()?;
     benchmarks.sort_by_key(Benchmark::name);
     benchmark::told_apart(&benchmarks)
@@ -192,12 +198,13 @@ fn benchmarks(given: &[PathBuf]) -> Result<Vec<Benchmark>, Refused> {
         .map_err(|error| refused_benchmark(error.to_string()))
 }
 
-fn benchmark(given: &Path) -> Result<Benchmark, Refused> {
-    fs::canonicalize(given)
+fn benchmark(files: &dyn FileSystem, given: &Path) -> Result<Benchmark, Refused> {
+    files
+        .resolved(given)
         .ok()
         .filter(|directory| directory.to_str().is_some())
         .ok_or(BenchmarkError::NotADirectory)
-        .and_then(|directory| Benchmark::read(&directory))
+        .and_then(|directory| Benchmark::read(files, &directory))
         .map_err(|error| refused_benchmark(format!("{}: {error}", given.display())))
 }
 

@@ -1,16 +1,14 @@
 use std::cell::RefCell;
-use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
-
-use tempfile::TempDir;
 
 use crate::benchmark::{Benchmark, HealthCheck, TaskConfiguration};
 use crate::containers::tests::double::Double;
 use crate::containers::{
     self, Attempt, Attempted, ContainerError, Environment, Host, Launch, Retry,
 };
+use crate::file_system::tests::double::Memory;
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -47,7 +45,7 @@ pub(super) const LAUNCH: Launch<'static> = Launch {
 };
 
 pub(super) struct Tried {
-    _directory: TempDir,
+    pub(super) directory: Memory,
     pub(super) outputs_directory: OutputsDirectory,
     pub(super) docker: Double,
     pub(super) result: Result<Attempted, ContainerError>,
@@ -64,12 +62,17 @@ impl Tried {
     }
 }
 
-pub(super) fn made() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let benchmark = Benchmark::read(&test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+pub(super) fn made() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
+    let benchmark = Benchmark::read(&directory, &benchmark).unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     outputs_directory.copy_benchmark(&benchmark).unwrap();
     (directory, outputs_directory)
 }
@@ -95,13 +98,13 @@ pub(super) fn leaving_a_socket(
     needles: &[&str],
     mounted_at: &'static str,
 ) -> Double {
-    docker.doing(needles, move |asked| {
+    docker.doing(needles, move |files, asked| {
         let mounted = asked
             .arguments
             .iter()
             .find_map(|argument| argument.strip_suffix(mounted_at));
         if let Some(mounted) = mounted {
-            let _socket = UnixListener::bind(Path::new(mounted).join("socket")).unwrap();
+            files.socket(Path::new(mounted).join("socket")).unwrap();
         }
     })
 }
@@ -136,6 +139,7 @@ pub(super) fn attempted_until(
     stop: &AtomicBool,
 ) -> Tried {
     let (directory, outputs_directory) = made();
+    let docker = docker.on(&directory);
     let retries = RefCell::new(Vec::new());
     let attempt = Attempt {
         harness: 0,
@@ -150,7 +154,7 @@ pub(super) fn attempted_until(
         &|retry| retries.borrow_mut().push(retry),
     );
     Tried {
-        _directory: directory,
+        directory,
         outputs_directory,
         docker,
         result,

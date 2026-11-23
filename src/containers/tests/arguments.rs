@@ -9,6 +9,7 @@ use crate::containers::Host;
 use crate::containers::container::{self, Container, Mount, Shell};
 use crate::containers::program::Limits;
 use crate::containers::tests::double::Double;
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const NAME: &str = "cladenc-0123456789abcdef";
@@ -42,7 +43,7 @@ fn arguments(command: &Command) -> Vec<String> {
 }
 
 fn run_with(mounts: &[Mount<'_>]) -> Vec<String> {
-    let outputs_directory = OutputsDirectory::at(Path::new("/outputs"));
+    let outputs_directory = OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"));
     let docker = Double::default();
     let container = Container {
         host: Host {

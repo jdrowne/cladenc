@@ -1,16 +1,15 @@
-use std::path::Path;
-
 use crate::containers::ContainerError;
 use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const IMAGE_BUILT: &str = "timeout -s KILL 35 docker build --tag debian:stable-slim --file \
                            OUTPUTS/image/Dockerfile OUTPUTS/image/context";
 
-fn with_a_dockerfile(directory: &Path, settings: &mut Settings) {
-    settings.dockerfile = Some(test_inputs::dockerfile(directory, ""));
+fn with_a_dockerfile(directory: &Memory, settings: &mut Settings) {
+    settings.dockerfile = Some(test_inputs::dockerfile_in(directory, directory.path(), ""));
     settings.docker_build_timeout = Some(30);
 }
 

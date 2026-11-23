@@ -14,7 +14,6 @@ mod image;
 mod images;
 mod kept;
 mod left;
-mod printed;
 mod procreated;
 mod program;
 mod retried;

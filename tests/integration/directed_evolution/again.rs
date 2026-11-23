@@ -5,8 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution;
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Journal, Record, Settings};
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -17,7 +16,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
+        benchmarks: vec![
+            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -49,19 +50,13 @@ fn resumed_after_a_stop_at(solved: u64, task: Option<&str>, leftover: &str) -> T
     if let Some(task) = task {
         test_inputs::end_with_125_on(directory.path(), task);
     }
-    let _stopped = directed_evolution::start(
-        &Program,
-        &settings,
-        &outputs_directory,
-        &stop,
-        &mut io::sink(),
-    );
+    let _stopped = crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink());
     fs::write(outputs_directory.join("running").join(leftover), "left\n").unwrap();
     test_inputs::end_with_125_no_more(&outputs_directory);
     if let Some(task) = task {
         test_inputs::end_with_125_on_no_more(&outputs_directory, task);
     }
-    directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink()).unwrap();
+    crate::real::resume(&outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
 }
 
@@ -79,11 +74,15 @@ fn with_one_attempt_left_running(directory: &Path) -> PathBuf {
     test_inputs::task(&settings.benchmarks[0].directory, "t2");
     settings.benchmarks[0].tasks.push("t2".to_owned());
     let outputs_directory = directory.join("outputs");
-    OutputsDirectory::create(&outputs_directory, &settings.primogenitor)
-        .unwrap()
-        .copy_benchmark(&settings.benchmarks[0])
-        .unwrap();
-    let mut journal = Journal::open(&outputs_directory).unwrap();
+    OutputsDirectory::create(
+        crate::real::disk(),
+        &outputs_directory,
+        &settings.primogenitor,
+    )
+    .unwrap()
+    .copy_benchmark(&settings.benchmarks[0])
+    .unwrap();
+    let mut journal = Journal::open(&Disk, &outputs_directory).unwrap();
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
@@ -168,9 +167,7 @@ fn a_new_action_starts_while_an_action_that_runs_again_is_still_running() {
     let outputs_directory = with_one_attempt_left_running(directory.path());
     let stop = AtomicBool::new(false);
     let started = thread::scope(|scope| {
-        scope.spawn(|| {
-            directed_evolution::resume(&Program, &outputs_directory, &stop, &mut io::sink())
-        });
+        scope.spawn(|| crate::real::resume(&outputs_directory, &stop, &mut io::sink()));
         let started = test_inputs::within_ten_seconds(|| records(&outputs_directory) > 2);
         stop.store(true, Ordering::SeqCst);
         started

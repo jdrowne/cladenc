@@ -1,77 +1,89 @@
-use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::outputs_directory::OutputsDirectory;
-use tempfile::TempDir;
 
-fn started() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+fn started() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     outputs_directory.start_procreation(1, 0).unwrap();
     (directory, outputs_directory)
 }
 
-fn ended(outcome: CreationOutcome) -> (TempDir, OutputsDirectory) {
+fn ended(outcome: CreationOutcome) -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = started();
-    fs::write(
-        outputs_directory
-            .running_procreation(1)
-            .join("child/new.txt"),
-        "new",
-    )
-    .unwrap();
+    directory
+        .write(
+            outputs_directory
+                .running_procreation(1)
+                .join("child/new.txt"),
+            "new",
+        )
+        .unwrap();
     outputs_directory.end_procreation(1, 0, outcome).unwrap();
     (directory, outputs_directory)
 }
 
-fn entries(directory: PathBuf) -> usize {
-    fs::read_dir(directory).unwrap().count()
+fn entries(files: &Memory, path: PathBuf) -> usize {
+    files.names_in(path).len()
 }
 
-fn names_in(directory: PathBuf) -> Vec<String> {
-    let mut names: Vec<String> = fs::read_dir(directory)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-        .collect();
-    names.sort();
-    names
+fn names_in(files: &Memory, path: PathBuf) -> Vec<String> {
+    files.names_in(path)
 }
 
 fn recorded(outcome: CreationOutcome, file: &str) -> String {
-    let (_directory, outputs_directory) = ended(outcome);
-    fs::read_to_string(outputs_directory.procreation(1).join(file)).unwrap()
+    let (directory, outputs_directory) = ended(outcome);
+    directory
+        .read_to_string(outputs_directory.procreation(1).join(file))
+        .unwrap()
 }
 
-fn harness_script(harness: PathBuf) -> String {
-    fs::read_to_string(harness.join("harness.sh")).unwrap()
+fn harness_script(directory: &Memory, harness: PathBuf) -> String {
+    directory
+        .read_to_string(harness.join("harness.sh"))
+        .unwrap()
 }
 
 #[test]
 fn a_started_procreation_holds_a_copy_of_its_progenitor_to_run() {
-    let (_directory, outputs_directory) = started();
+    let (directory, outputs_directory) = started();
     assert_eq!(
-        harness_script(outputs_directory.running_procreation(1).join("progenitor")),
-        harness_script(outputs_directory.harness(0))
+        harness_script(
+            &directory,
+            outputs_directory.running_procreation(1).join("progenitor")
+        ),
+        harness_script(&directory, outputs_directory.harness(0))
     );
 }
 
 #[test]
 fn a_started_procreation_holds_a_copy_of_its_progenitor_to_modify() {
-    let (_directory, outputs_directory) = started();
+    let (directory, outputs_directory) = started();
     assert_eq!(
-        harness_script(outputs_directory.running_procreation(1).join("child")),
-        harness_script(outputs_directory.harness(0))
+        harness_script(
+            &directory,
+            outputs_directory.running_procreation(1).join("child")
+        ),
+        harness_script(&directory, outputs_directory.harness(0))
     );
 }
 
 #[test]
 fn a_started_procreation_holds_its_two_copies_and_nothing_else() {
-    let (_directory, outputs_directory) = started();
-    assert_eq!(entries(outputs_directory.running_procreation(1)), 2);
+    let (directory, outputs_directory) = started();
+    assert_eq!(
+        entries(&directory, outputs_directory.running_procreation(1)),
+        2
+    );
 }
 
 #[test]
@@ -83,50 +95,52 @@ fn a_procreation_cannot_be_started_twice() {
 
 #[test]
 fn writing_into_the_progenitor_of_a_started_procreation_leaves_the_harness_unchanged() {
-    let (_directory, outputs_directory) = started();
+    let (directory, outputs_directory) = started();
     let copy = outputs_directory
         .running_procreation(1)
         .join("progenitor/harness.sh");
-    fs::write(copy, "changed").unwrap();
+    directory.write(copy, "changed").unwrap();
     assert_eq!(
-        harness_script(outputs_directory.harness(0)),
+        harness_script(&directory, outputs_directory.harness(0)),
         "#!/bin/sh\necho harness\n"
     );
 }
 
 #[test]
 fn writing_into_the_child_of_a_started_procreation_leaves_the_harness_unchanged() {
-    let (_directory, outputs_directory) = started();
+    let (directory, outputs_directory) = started();
     let copy = outputs_directory
         .running_procreation(1)
         .join("child/harness.sh");
-    fs::write(copy, "changed").unwrap();
+    directory.write(copy, "changed").unwrap();
     assert_eq!(
-        harness_script(outputs_directory.harness(0)),
+        harness_script(&directory, outputs_directory.harness(0)),
         "#!/bin/sh\necho harness\n"
     );
 }
 
 #[test]
 fn a_procreation_that_created_its_child_leaves_the_files_of_the_child_as_its_harness() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Created);
+    let (directory, outputs_directory) = ended(CreationOutcome::Created);
     assert_eq!(
-        fs::read_to_string(outputs_directory.harness(1).join("new.txt")).unwrap(),
+        directory
+            .read_to_string(outputs_directory.harness(1).join("new.txt"))
+            .unwrap(),
         "new"
     );
 }
 
 #[test]
 fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_attempts() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert_eq!(entries(outputs_directory.attempts(1)), 0);
+    let (directory, outputs_directory) = ended(CreationOutcome::Created);
+    assert_eq!(entries(&directory, outputs_directory.attempts(1)), 0);
 }
 
 #[test]
 fn a_procreation_that_created_its_child_keeps_its_record_and_neither_copy_in_its_directory() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Created);
+    let (directory, outputs_directory) = ended(CreationOutcome::Created);
     assert_eq!(
-        names_in(outputs_directory.procreation(1)),
+        names_in(&directory, outputs_directory.procreation(1)),
         ["outcome", "progenitor"]
     );
 }
@@ -164,65 +178,69 @@ fn a_procreation_that_timed_out_records_the_word_timed_out() {
 
 #[test]
 fn a_procreation_that_created_its_child_leaves_nothing_running() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert!(!outputs_directory.running_procreation(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::Created);
+    assert!(!directory.exists(&outputs_directory.running_procreation(1)));
 }
 
 #[test]
 fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Failed);
+    let (directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert_eq!(
-        fs::read_to_string(outputs_directory.harness(1).join("new.txt")).unwrap(),
+        directory
+            .read_to_string(outputs_directory.harness(1).join("new.txt"))
+            .unwrap(),
         "new"
     );
 }
 
 #[test]
 fn a_procreation_that_failed_leaves_no_directory_for_the_attempts_of_its_child() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!outputs_directory.attempts(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::Failed);
+    assert!(!directory.exists(&outputs_directory.attempts(1)));
 }
 
 #[test]
 fn a_procreation_that_failed_keeps_its_record_and_neither_copy_in_its_directory() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Failed);
+    let (directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert_eq!(
-        names_in(outputs_directory.procreation(1)),
+        names_in(&directory, outputs_directory.procreation(1)),
         ["outcome", "progenitor"]
     );
 }
 
 #[test]
 fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesses() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::TimedOut);
+    let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
     assert_eq!(
-        fs::read_to_string(outputs_directory.harness(1).join("new.txt")).unwrap(),
+        directory
+            .read_to_string(outputs_directory.harness(1).join("new.txt"))
+            .unwrap(),
         "new"
     );
 }
 
 #[test]
 fn a_procreation_that_timed_out_leaves_no_directory_for_the_attempts_of_its_child() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::TimedOut);
-    assert!(!outputs_directory.attempts(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
+    assert!(!directory.exists(&outputs_directory.attempts(1)));
 }
 
 #[test]
 fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_the_harnesses() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
-    assert!(outputs_directory.harness(1).join("harness.sh").is_file());
+    let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
+    assert!(directory.is_file(&outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
 fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_attempts() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
-    assert!(!outputs_directory.attempts(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
+    assert!(!directory.exists(&outputs_directory.attempts(1)));
 }
 
 #[test]
 fn a_procreation_that_failed_leaves_nothing_running() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!outputs_directory.running_procreation(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::Failed);
+    assert!(!directory.exists(&outputs_directory.running_procreation(1)));
 }
 
 #[test]
@@ -235,12 +253,12 @@ fn a_procreation_recorded_as_unchanged_records_the_word_unchanged() {
 
 #[test]
 fn a_procreation_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_harnesses() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(outputs_directory.harness(1).join("harness.sh").is_file());
+    let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
+    assert!(directory.is_file(&outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
 fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_attempts_of_its_child() {
-    let (_directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(!outputs_directory.attempts(1).exists());
+    let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
+    assert!(!directory.exists(&outputs_directory.attempts(1)));
 }

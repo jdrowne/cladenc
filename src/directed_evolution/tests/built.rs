@@ -1,14 +1,13 @@
-use std::path::Path;
-
 use crate::containers::ContainerError;
 use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const BUILD: [&str; 2] = ["run", "make"];
 
-fn with_a_build_command(_: &Path, settings: &mut Settings) {
+fn with_a_build_command(_: &Memory, settings: &mut Settings) {
     settings.harness_build_command = Some("make".to_owned());
 }
 

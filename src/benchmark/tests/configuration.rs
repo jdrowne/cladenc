@@ -1,16 +1,15 @@
 use std::env;
-use std::fs;
-use std::os::unix::fs::symlink;
 use std::time::Duration;
-
-use tempfile::TempDir;
 
 use crate::benchmark::configuration::{self, CONFIGURATION, ConfigurationError};
 use crate::benchmark::{self, BenchmarkError, TaskConfiguration};
+use crate::file_system::tests::double::Memory;
 
-fn task_that_says(written: &str) -> TempDir {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
+fn task_that_says(written: &str) -> Memory {
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
     directory
 }
 
@@ -24,7 +23,8 @@ fn set_where_cladenc_runs(variable: &str) -> Option<String> {
 }
 
 fn read(written: &str) -> Result<TaskConfiguration, ConfigurationError> {
-    configuration::read_with(task_that_says(written).path(), &set_where_cladenc_runs)
+    let directory = task_that_says(written);
+    configuration::read_with(&directory, directory.path(), &set_where_cladenc_runs)
 }
 
 fn says(written: &str) -> TaskConfiguration {
@@ -46,10 +46,12 @@ fn not_valid(line: usize, reason: &str) -> Result<TaskConfiguration, Configurati
 }
 
 fn refused_for_its_task_toml(written: &str) -> Result<Vec<String>, BenchmarkError> {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::write(benchmark.join("t2/task.toml"), written).unwrap();
-    benchmark::tasks(&benchmark)
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .write(benchmark.join("t2/task.toml"), written)
+        .unwrap();
+    benchmark::tasks(&directory, &benchmark)
 }
 
 #[test]
@@ -59,19 +61,21 @@ fn the_configuration_of_a_task_is_in_its_file_named_task_toml() {
 
 #[test]
 fn a_task_with_no_task_toml_is_refused() {
-    let directory = test_inputs::temporary_directory();
+    let directory = Memory::default();
     assert_eq!(
-        configuration::read_with(directory.path(), &set_where_cladenc_runs),
+        configuration::read_with(&directory, directory.path(), &set_where_cladenc_runs),
         Err(ConfigurationError::Missing)
     );
 }
 
 #[test]
 fn a_task_whose_task_toml_is_a_symbolic_link_to_nothing_is_refused_as_one_with_none() {
-    let directory = test_inputs::temporary_directory();
-    symlink("nowhere", directory.path().join("task.toml")).unwrap();
+    let directory = Memory::default();
+    directory
+        .symlink("nowhere", directory.path().join("task.toml"))
+        .unwrap();
     assert_eq!(
-        configuration::read_with(directory.path(), &set_where_cladenc_runs),
+        configuration::read_with(&directory, directory.path(), &set_where_cladenc_runs),
         Err(ConfigurationError::Missing)
     );
 }
@@ -739,20 +743,24 @@ fn a_user_given_as_a_number_below_0_is_refused() {
 
 #[test]
 fn a_task_toml_that_is_a_directory_is_refused() {
-    let directory = test_inputs::temporary_directory();
-    fs::create_dir(directory.path().join("task.toml")).unwrap();
+    let directory = Memory::default();
+    directory
+        .create_dir(directory.path().join("task.toml"))
+        .unwrap();
     assert!(matches!(
-        configuration::read_with(directory.path(), &set_where_cladenc_runs),
+        configuration::read_with(&directory, directory.path(), &set_where_cladenc_runs),
         Err(ConfigurationError::Unreadable { .. })
     ));
 }
 
 #[test]
 fn a_task_toml_that_is_not_text_is_refused() {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), [0xff, 0xfe]).unwrap();
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), [0xff, 0xfe])
+        .unwrap();
     assert!(matches!(
-        configuration::read_with(directory.path(), &set_where_cladenc_runs),
+        configuration::read_with(&directory, directory.path(), &set_where_cladenc_runs),
         Err(ConfigurationError::Unreadable { .. })
     ));
 }
@@ -761,7 +769,7 @@ fn a_task_toml_that_is_not_text_is_refused() {
 fn a_task_reads_the_variables_that_are_set_where_cladenc_runs() {
     let task = task_that_says("[environment.env]\nSEARCHED = \"${PATH}\"\n");
     assert_eq!(
-        TaskConfiguration::read(task.path()).map(|configuration| configuration.variables),
+        TaskConfiguration::read(&task, task.path()).map(|configuration| configuration.variables),
         Ok(variables(&[("SEARCHED", &env::var("PATH").unwrap())]))
     );
 }
@@ -799,11 +807,13 @@ fn a_task_that_names_a_variable_that_is_not_set_where_cladenc_runs_is_refused() 
 
 #[test]
 fn a_task_that_holds_no_task_toml_is_refused_with_its_id() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_file(benchmark.join("t2/task.toml"))
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::NoConfiguration {
             task: "t2".to_owned()
         })
@@ -812,12 +822,16 @@ fn a_task_that_holds_no_task_toml_is_refused_with_its_id() {
 
 #[test]
 fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
-    fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_file(benchmark.join("t2/task.toml"))
+        .unwrap();
+    directory
+        .remove_dir_all(benchmark.join("t2/environment"))
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::NoConfiguration {
             task: "t2".to_owned()
         })
@@ -826,12 +840,16 @@ fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
 
 #[test]
 fn a_task_with_no_grader_and_no_task_toml_is_refused_for_its_grader() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_file(benchmark.join("t2/task.toml")).unwrap();
-    fs::remove_dir_all(benchmark.join("t2/tests")).unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_file(benchmark.join("t2/task.toml"))
+        .unwrap();
+    directory
+        .remove_dir_all(benchmark.join("t2/tests"))
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::NoGrader {
             task: "t2".to_owned()
         })
@@ -840,32 +858,38 @@ fn a_task_with_no_grader_and_no_task_toml_is_refused_for_its_grader() {
 
 #[test]
 fn a_task_whose_task_toml_names_an_image_needs_no_directory_named_environment() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
-    fs::write(
-        benchmark.join("t2/task.toml"),
-        "[environment]\ndocker_image = \"debian:stable-slim\"\n",
-    )
-    .unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_dir_all(benchmark.join("t2/environment"))
+        .unwrap();
+    directory
+        .write(
+            benchmark.join("t2/task.toml"),
+            "[environment]\ndocker_image = \"debian:stable-slim\"\n",
+        )
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }
 
 #[test]
 fn a_task_whose_task_toml_names_no_image_still_needs_a_dockerfile() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_dir_all(benchmark.join("t2/environment")).unwrap();
-    fs::write(
-        benchmark.join("t2/task.toml"),
-        "[environment]\nworkdir = \"/app\"\n",
-    )
-    .unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_dir_all(benchmark.join("t2/environment"))
+        .unwrap();
+    directory
+        .write(
+            benchmark.join("t2/task.toml"),
+            "[environment]\nworkdir = \"/app\"\n",
+        )
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::NoEnvironment {
             task: "t2".to_owned()
         })
@@ -874,20 +898,22 @@ fn a_task_whose_task_toml_names_no_image_still_needs_a_dockerfile() {
 
 #[test]
 fn a_task_whose_task_toml_names_an_image_is_still_refused_for_a_compose_file() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::write(
-        benchmark.join("t2/environment/compose.yaml"),
-        "services: {}\n",
-    )
-    .unwrap();
-    fs::write(
-        benchmark.join("t2/task.toml"),
-        "[environment]\ndocker_image = \"debian:stable-slim\"\n",
-    )
-    .unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .write(
+            benchmark.join("t2/environment/compose.yaml"),
+            "services: {}\n",
+        )
+        .unwrap();
+    directory
+        .write(
+            benchmark.join("t2/task.toml"),
+            "[environment]\ndocker_image = \"debian:stable-slim\"\n",
+        )
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::ManyContainers {
             task: "t2".to_owned()
         })
@@ -896,12 +922,16 @@ fn a_task_whose_task_toml_names_an_image_is_still_refused_for_a_compose_file() {
 
 #[test]
 fn a_task_with_no_grader_and_a_task_toml_that_cannot_be_obeyed_is_refused_for_its_grader() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::remove_dir_all(benchmark.join("t2/tests")).unwrap();
-    fs::write(benchmark.join("t2/task.toml"), "[environment\n").unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .remove_dir_all(benchmark.join("t2/tests"))
+        .unwrap();
+    directory
+        .write(benchmark.join("t2/task.toml"), "[environment\n")
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::NoGrader {
             task: "t2".to_owned()
         })

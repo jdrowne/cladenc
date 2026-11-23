@@ -3,8 +3,7 @@ use std::io;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution;
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Record, Settings};
 
 fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
@@ -15,10 +14,10 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(
-                directory.path(),
-                &["t1", "t2", "t3", "t4", "t5"],
-            ))
+            Benchmark::read(
+                &Disk,
+                &test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4", "t5"]),
+            )
             .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
@@ -40,8 +39,7 @@ fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
     };
     change(&mut settings);
     let outputs_directory = directory.path().join("outputs");
-    directed_evolution::start(
-        &Program,
+    crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),

@@ -1,11 +1,10 @@
 use std::ffi::OsStr;
-use std::fs;
-use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::Genealogy;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, JournalError, Record, Settings};
@@ -286,25 +285,32 @@ fn the_settings_and_a_key_give_the_model_a_harness_is_told() {
 
 #[test]
 fn settings_that_name_no_file_of_a_key_have_no_key() {
-    assert_eq!(settings().model_key(), Ok(None));
+    assert_eq!(settings().model_key(&Memory::default()), Ok(None));
 }
 
 #[test]
 fn settings_that_name_a_file_of_a_key_have_the_key_the_file_holds() {
-    let directory = test_inputs::temporary_directory();
+    let directory = Memory::default();
     let settings = Settings {
-        model_key_file: Some(test_inputs::model_key_file(
+        model_key_file: Some(test_inputs::model_key_file_in(
+            &directory,
             directory.path(),
             "a-made-up-key\n",
         )),
         ..settings()
     };
-    assert_eq!(settings.model_key(), Ok(Some("a-made-up-key".to_owned())));
+    assert_eq!(
+        settings.model_key(&directory),
+        Ok(Some("a-made-up-key".to_owned()))
+    );
 }
 
 #[test]
 fn settings_whose_file_of_a_key_holds_no_key_give_the_file() {
-    assert_eq!(keyed().model_key(), Err(PathBuf::from("/abs/keys/model")));
+    assert_eq!(
+        keyed().model_key(&Memory::default()),
+        Err(PathBuf::from("/abs/keys/model"))
+    );
 }
 
 #[test]
@@ -496,8 +502,8 @@ fn a_run_record_holding_a_path_that_is_not_utf8_has_no_line() {
 
 #[test]
 fn a_record_that_cannot_be_written_gives_an_error() {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(outputs_directory.path()).unwrap();
+    let directory = Memory::default();
+    let mut journal = Journal::open(&directory, directory.path()).unwrap();
     assert!(matches!(
         journal.append(&with_a_path_that_is_not_utf8()),
         Err(JournalError::Io(_))
@@ -506,11 +512,13 @@ fn a_record_that_cannot_be_written_gives_an_error() {
 
 #[test]
 fn a_record_that_cannot_be_written_appends_nothing() {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(outputs_directory.path()).unwrap();
+    let directory = Memory::default();
+    let mut journal = Journal::open(&directory, directory.path()).unwrap();
     let _ = journal.append(&with_a_path_that_is_not_utf8());
     assert_eq!(
-        fs::read_to_string(journal::path(outputs_directory.path())).unwrap(),
+        directory
+            .read_to_string(journal::path(directory.path()))
+            .unwrap(),
         ""
     );
 }

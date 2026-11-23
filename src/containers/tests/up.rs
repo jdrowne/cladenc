@@ -7,6 +7,7 @@ use crate::containers::container::{Bringing, Run, Shell, Up};
 use crate::containers::program::{Ending, Limits};
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{self, EMPTIED, TIMER};
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const RUNNING: &str = "/running";
@@ -35,7 +36,7 @@ const SHELL: Shell<'static> = Shell {
 };
 
 fn outputs() -> OutputsDirectory {
-    OutputsDirectory::at(Path::new("/outputs"))
+    OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
 }
 
 fn start<'a>(

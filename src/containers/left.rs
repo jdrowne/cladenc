@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-use std::fs;
 use std::io;
 use std::process::Command;
 
@@ -9,7 +8,8 @@ use crate::outputs_directory::OutputsDirectory;
 pub(super) fn label(outputs_directory: &OutputsDirectory) -> OsString {
     let path = outputs_directory.path();
     let mut label = OsString::from("cladenc.directed-evolution=");
-    label.push(fs::canonicalize(path).as_deref().unwrap_or(path));
+    let resolved = outputs_directory.files().resolved(path);
+    label.push(resolved.as_deref().unwrap_or(path));
     label
 }
 

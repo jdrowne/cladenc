@@ -13,7 +13,8 @@ struct Removed {
 }
 
 fn removed_by(docker: Double) -> Removed {
-    let (_directory, outputs_directory) = given::made();
+    let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::remove_left_behind(given::host(&docker, &outputs_directory));
     Removed {
         commands: docker.commands(&outputs_directory),

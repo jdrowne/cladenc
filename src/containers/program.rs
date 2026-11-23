@@ -35,7 +35,7 @@ pub struct Limits<'a> {
 }
 
 impl<'a> Limits<'a> {
-    pub(super) fn starting_now(time_limit: u64, stop: &'a AtomicBool) -> Self {
+    pub fn starting_now(time_limit: u64, stop: &'a AtomicBool) -> Self {
         Self::within(Duration::from_secs(time_limit), stop)
     }
 

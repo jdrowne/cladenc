@@ -5,8 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{ContainerError, Program};
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -26,7 +27,9 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
+        benchmarks: vec![
+            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
+        ],
         docker_image: image.name.clone(),
         dockerfile: Some(test_inputs::dockerfile(directory, steps)),
         docker_build_timeout: Some(60),
@@ -53,8 +56,7 @@ fn evolved(steps: &str) -> Evolved {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let found =
-        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written);
+    let found = crate::real::start(&settings, &outputs_directory, &stop, &mut written);
     Evolved {
         directory,
         image,
@@ -76,17 +78,11 @@ fn stopped_and_resumed_with_its_dockerfile_gone() -> Evolved {
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     test_inputs::end_with_125_at(&settings.primogenitor, 0);
-    let _ = directed_evolution::start(
-        &Program,
-        &settings,
-        &outputs_directory,
-        &stop,
-        &mut io::sink(),
-    );
+    let _ = crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink());
     test_inputs::end_with_125_no_more(&outputs_directory);
     fs::remove_file(directory.path().join("Dockerfile")).unwrap();
     let mut written = Vec::new();
-    let found = directed_evolution::resume(&Program, &outputs_directory, &stop, &mut written);
+    let found = crate::real::resume(&outputs_directory, &stop, &mut written);
     Evolved {
         directory,
         image,
@@ -232,13 +228,7 @@ fn a_directed_evolution_asked_to_stop_while_its_image_is_built_was_never_started
             test_inputs::within_ten_seconds(|| printed.exists());
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(
-            &Program,
-            &settings,
-            &outputs_directory,
-            &stop,
-            &mut io::sink(),
-        )
+        crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink())
     });
     assert!(matches!(found, Err(DirectedEvolutionError::NotStarted)));
 }

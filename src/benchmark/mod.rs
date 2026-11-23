@@ -4,13 +4,11 @@ mod valid;
 
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::fs;
-use std::io;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::file_system::{FileSystem, Kind};
 use crate::outputs_directory::holds_only_harness_files;
 
 pub(crate) use artifacts::Artifact;
@@ -38,10 +36,10 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-    pub fn read(directory: &Path) -> Result<Self, BenchmarkError> {
+    pub fn read(files: &dyn FileSystem, directory: &Path) -> Result<Self, BenchmarkError> {
         let benchmark = Self {
             directory: directory.to_owned(),
-            tasks: tasks(directory)?,
+            tasks: tasks(files, directory)?,
         };
         if is_name(&benchmark.name()) {
             Ok(benchmark)
@@ -210,17 +208,16 @@ impl Display for BenchmarkError {
 
 impl Error for BenchmarkError {}
 
-fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
-    let mut directories = fs::read_dir(benchmark)
-        .and_then(|entries| {
-            entries
-                .map(|entry| entry.map(|entry| entry.path()))
-                .collect::<io::Result<Vec<PathBuf>>>()
-        })
-        .map_err(|_| BenchmarkError::NotADirectory)?;
-    directories.retain(|entry| entry.is_dir());
+fn tasks(files: &dyn FileSystem, benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
+    let mut directories: Vec<PathBuf> = files
+        .list(benchmark)
+        .map_err(|_| BenchmarkError::NotADirectory)?
+        .iter()
+        .map(|name| benchmark.join(name))
+        .filter(|entry| leads_to_a_directory(files, entry))
+        .collect();
     directories.sort();
-    if is_specification(&benchmark.join(SPECIFICATION)) && is_grader(benchmark) {
+    if is_specification(files, &benchmark.join(SPECIFICATION)) && is_grader(files, benchmark) {
         return Err(BenchmarkError::OneTask);
     }
     if directories.is_empty() {
@@ -228,8 +225,14 @@ fn tasks(benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
     }
     directories
         .iter()
-        .map(|directory| task(directory))
+        .map(|directory| task(files, directory))
         .collect()
+}
+
+fn leads_to_a_directory(files: &dyn FileSystem, path: &Path) -> bool {
+    files
+        .followed(path)
+        .is_ok_and(|found| found.kind == Kind::Directory)
 }
 
 fn name_of(directory: &Path) -> String {
@@ -239,19 +242,19 @@ fn name_of(directory: &Path) -> String {
         .unwrap_or_default()
 }
 
-fn task(directory: &Path) -> Result<String, BenchmarkError> {
+fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, BenchmarkError> {
     let task = name_of(directory);
     if !is_name(&task) {
         return Err(BenchmarkError::NotAnId { directory: task });
     }
-    if !is_specification(&directory.join(SPECIFICATION)) {
+    if !is_specification(files, &directory.join(SPECIFICATION)) {
         return Err(BenchmarkError::NoSpecification { task });
     }
-    let configuration = TaskConfiguration::read(directory);
+    let configuration = TaskConfiguration::read(files, directory);
     let in_an_image = configuration
         .as_ref()
-        .is_ok_and(|configuration| grader_is_in_an_image(configuration, directory));
-    if !in_an_image && !is_grader(directory) {
+        .is_ok_and(|configuration| grader_is_in_an_image(files, configuration, directory));
+    if !in_an_image && !is_grader(files, directory) {
         return Err(BenchmarkError::NoGrader { task });
     }
     let configuration = match configuration {
@@ -259,16 +262,18 @@ fn task(directory: &Path) -> Result<String, BenchmarkError> {
         Err(ConfigurationError::Missing) => return Err(BenchmarkError::NoConfiguration { task }),
         Err(error) => return Err(BenchmarkError::Configuration { task, error }),
     };
-    if configuration.docker_image.is_none() && !is_environment(directory) {
+    if configuration.docker_image.is_none() && !is_environment(files, directory) {
         return Err(BenchmarkError::NoEnvironment { task });
     }
-    if holds_compose_file(&directory.join(ENVIRONMENT)) {
+    if holds_compose_file(files, &directory.join(ENVIRONMENT)) {
         return Err(BenchmarkError::ManyContainers { task });
     }
-    if configuration.grader_environment.is_some() && holds_compose_file(&directory.join(TESTS)) {
+    if configuration.grader_environment.is_some()
+        && holds_compose_file(files, &directory.join(TESTS))
+    {
         return Err(BenchmarkError::ManyGraderContainers { task });
     }
-    if !can_be_copied(directory) {
+    if !can_be_copied(files, directory) {
         return Err(BenchmarkError::OtherFiles { task });
     }
     Ok(task)
@@ -281,56 +286,61 @@ fn is_name(name: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
 }
 
-fn is_specification(file: &Path) -> bool {
-    fs::symlink_metadata(file).is_ok_and(|specification| specification.is_file())
-        && fs::read_to_string(file)
+fn is_specification(files: &dyn FileSystem, file: &Path) -> bool {
+    is_a(files, file, Kind::File)
+        && files
+            .read_text(file)
             .is_ok_and(|text| !text.trim().is_empty() && !text.contains('\0'))
 }
 
-fn is_directory(directory: &Path) -> bool {
-    fs::symlink_metadata(directory).is_ok_and(|files| files.is_dir())
+fn is_a(files: &dyn FileSystem, path: &Path, kind: Kind) -> bool {
+    files.found(path).is_ok_and(|found| found.kind == kind)
 }
 
-fn is_grader(task: &Path) -> bool {
+fn is_grader(files: &dyn FileSystem, task: &Path) -> bool {
     let tests = task.join(TESTS);
-    is_directory(&tests) && is_program(&tests.join(GRADER))
+    is_a(files, &tests, Kind::Directory) && is_program(files, &tests.join(GRADER))
 }
 
-fn is_environment(task: &Path) -> bool {
-    holds_dockerfile(&task.join(ENVIRONMENT))
+fn is_environment(files: &dyn FileSystem, task: &Path) -> bool {
+    holds_dockerfile(files, &task.join(ENVIRONMENT))
 }
 
-pub(crate) fn holds_grader_dockerfile(task: &Path) -> bool {
-    holds_dockerfile(&task.join(TESTS))
+pub(crate) fn holds_grader_dockerfile(files: &dyn FileSystem, task: &Path) -> bool {
+    holds_dockerfile(files, &task.join(TESTS))
 }
 
-fn holds_dockerfile(directory: &Path) -> bool {
-    is_directory(directory)
-        && fs::symlink_metadata(directory.join(DOCKERFILE))
-            .is_ok_and(|dockerfile| dockerfile.is_file())
+fn holds_dockerfile(files: &dyn FileSystem, directory: &Path) -> bool {
+    is_a(files, directory, Kind::Directory) && is_a(files, &directory.join(DOCKERFILE), Kind::File)
 }
 
-fn grader_is_in_an_image(configuration: &TaskConfiguration, task: &Path) -> bool {
+fn grader_is_in_an_image(
+    files: &dyn FileSystem,
+    configuration: &TaskConfiguration,
+    task: &Path,
+) -> bool {
     configuration
         .grader_environment
         .as_ref()
-        .is_some_and(|own| own.docker_image.is_some() || holds_grader_dockerfile(task))
+        .is_some_and(|own| own.docker_image.is_some() || holds_grader_dockerfile(files, task))
 }
 
-fn holds_compose_file(directory: &Path) -> bool {
+fn holds_compose_file(files: &dyn FileSystem, directory: &Path) -> bool {
     COMPOSE_FILES
         .iter()
-        .any(|file| fs::symlink_metadata(directory.join(file)).is_ok())
+        .any(|file| files.found(&directory.join(file)).is_ok())
 }
 
-fn is_program(file: &Path) -> bool {
-    fs::symlink_metadata(file)
-        .is_ok_and(|grader| grader.is_file() && grader.permissions().mode() & 0o111 != 0)
+fn is_program(files: &dyn FileSystem, file: &Path) -> bool {
+    files
+        .found(file)
+        .is_ok_and(|grader| grader.kind == Kind::File && grader.mode & 0o111 != 0)
 }
 
-fn can_be_copied(task: &Path) -> bool {
-    fs::canonicalize(task)
-        .and_then(|resolved| holds_only_harness_files(&resolved))
+fn can_be_copied(files: &dyn FileSystem, task: &Path) -> bool {
+    files
+        .resolved(task)
+        .and_then(|resolved| holds_only_harness_files(files, &resolved))
         .unwrap_or(false)
 }
 

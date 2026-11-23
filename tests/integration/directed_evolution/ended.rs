@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution::{self, Found};
+use cladenc::directed_evolution::Found;
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
 
@@ -15,7 +15,9 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
+        benchmarks: vec![
+            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -39,8 +41,7 @@ fn ended() -> (TempDir, PathBuf, Found) {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -54,13 +55,7 @@ fn ended() -> (TempDir, PathBuf, Found) {
 fn resuming_a_directed_evolution_that_ended_returns_what_the_directed_evolution_returned() {
     let (_directory, outputs_directory, found) = ended();
     assert_eq!(
-        directed_evolution::resume(
-            &Program,
-            &outputs_directory,
-            &AtomicBool::new(false),
-            &mut io::sink()
-        )
-        .unwrap(),
+        crate::real::resume(&outputs_directory, &AtomicBool::new(false), &mut io::sink()).unwrap(),
         found
     );
 }
@@ -69,13 +64,7 @@ fn resuming_a_directed_evolution_that_ended_returns_what_the_directed_evolution_
 fn resuming_a_directed_evolution_that_ended_leaves_its_journal_unchanged() {
     let (_directory, outputs_directory, _found) = ended();
     let journal = fs::read(journal::path(&outputs_directory)).unwrap();
-    directed_evolution::resume(
-        &Program,
-        &outputs_directory,
-        &AtomicBool::new(false),
-        &mut io::sink(),
-    )
-    .unwrap();
+    crate::real::resume(&outputs_directory, &AtomicBool::new(false), &mut io::sink()).unwrap();
     assert_eq!(
         fs::read(journal::path(&outputs_directory)).unwrap(),
         journal
@@ -86,13 +75,7 @@ fn resuming_a_directed_evolution_that_ended_leaves_its_journal_unchanged() {
 fn resuming_a_directed_evolution_that_ended_says_that_it_had_finished_and_nothing_else() {
     let (_directory, outputs_directory, found) = ended();
     let mut written = Vec::new();
-    directed_evolution::resume(
-        &Program,
-        &outputs_directory,
-        &AtomicBool::new(false),
-        &mut written,
-    )
-    .unwrap();
+    crate::real::resume(&outputs_directory, &AtomicBool::new(false), &mut written).unwrap();
     assert_eq!(
         String::from_utf8(written).unwrap(),
         format!(
@@ -108,13 +91,7 @@ fn resuming_a_directed_evolution_that_ended_says_that_it_had_finished_and_nothin
 fn resuming_a_directed_evolution_that_ended_returns_it_even_when_asked_to_stop() {
     let (_directory, outputs_directory, found) = ended();
     assert_eq!(
-        directed_evolution::resume(
-            &Program,
-            &outputs_directory,
-            &AtomicBool::new(true),
-            &mut io::sink()
-        )
-        .unwrap(),
+        crate::real::resume(&outputs_directory, &AtomicBool::new(true), &mut io::sink()).unwrap(),
         found
     );
 }

@@ -74,12 +74,11 @@ pub(super) fn made(
     let mut count_built = 0;
     for (task, image) in settings.environments() {
         let configuration =
-            TaskConfiguration::read(&outputs_directory.task(&task)).map_err(|error| {
-                DirectedEvolutionError::Configuration {
+            TaskConfiguration::read(outputs_directory.files(), &outputs_directory.task(&task))
+                .map_err(|error| DirectedEvolutionError::Configuration {
                     task: task.clone(),
                     error,
-                }
-            })?;
+                })?;
         let asked = [
             configuration.cpus,
             megabytes(configuration.memory_megabytes),
@@ -262,7 +261,10 @@ impl Making<'_> {
                     name,
                     holds_grader: true,
                 })
-        } else if benchmark::holds_grader_dockerfile(&self.host.outputs_directory.task(task)) {
+        } else if benchmark::holds_grader_dockerfile(
+            self.host.outputs_directory.files(),
+            &self.host.outputs_directory.task(task),
+        ) {
             self.build(
                 Whose::TheGrader,
                 task,

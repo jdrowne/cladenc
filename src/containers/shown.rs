@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::file_system::Kind;
 use crate::genealogy::HarnessId;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -30,6 +31,11 @@ pub(super) fn to(
             ]
             .map(|(kept, name)| (kept, format!("{relation}/{harness}/{name}")))
         })
-        .filter(|(kept, _)| kept.is_dir())
+        .filter(|(kept, _)| {
+            outputs_directory
+                .files()
+                .followed(kept)
+                .is_ok_and(|found| found.kind == Kind::Directory)
+        })
         .collect()
 }

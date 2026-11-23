@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, Attempt, ContainerError, Environment, Host, Launch, Program};
+use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -47,11 +48,15 @@ fn attempt(environment: &Environment) -> Attempt<'_> {
 fn made() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        crate::real::disk(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
+        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }

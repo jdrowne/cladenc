@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, HarnessEnding, Host, Launch, Program};
+use cladenc::file_system::Disk;
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -114,10 +115,11 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
-    let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
+    let outputs_directory =
+        OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
+        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     test_inputs::kept_grader(&path, "t1", attempt.grader);
     if attempt.unreadable_in_the_harness {

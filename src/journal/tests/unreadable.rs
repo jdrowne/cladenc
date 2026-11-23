@@ -1,5 +1,4 @@
-use std::fs;
-
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::GenealogyError;
 use crate::journal::{self, JournalError};
 
@@ -111,9 +110,11 @@ fn run_that_builds() -> String {
 }
 
 fn error_of_text(text: &str) -> JournalError {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    fs::write(journal::path(outputs_directory.path()), text).unwrap();
-    journal::read(outputs_directory.path()).unwrap_err()
+    let directory = Memory::default();
+    directory
+        .write(journal::path(directory.path()), text)
+        .unwrap();
+    journal::read(&directory, directory.path()).unwrap_err()
 }
 
 fn error_of(lines: &[&str]) -> JournalError {
@@ -127,9 +128,9 @@ fn error_of(lines: &[&str]) -> JournalError {
 
 #[test]
 fn a_journal_whose_file_is_missing_cannot_be_read() {
-    let outputs_directory = tempfile::tempdir().unwrap();
+    let directory = Memory::default();
     assert!(matches!(
-        journal::read(outputs_directory.path()),
+        journal::read(&directory, directory.path()),
         Err(JournalError::Io(_))
     ));
 }

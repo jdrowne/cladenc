@@ -1,8 +1,8 @@
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::containers::tests::double::Double;
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const IMAGES_REMOVED: &str = "docker image rm --force \
@@ -23,7 +23,7 @@ fn changing() -> Evolved {
     given::started(Double::default().changing(), given::unchanged)
 }
 
-fn with_three_procreations(_: &Path, settings: &mut Settings) {
+fn with_three_procreations(_: &Memory, settings: &mut Settings) {
     settings.max_procreations = 3;
 }
 
@@ -39,7 +39,7 @@ fn experimented() -> Evolved {
     given::started(docker, with_three_procreations)
 }
 
-fn with_a_selection_task(_: &Path, settings: &mut Settings) {
+fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
     settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
 }
 

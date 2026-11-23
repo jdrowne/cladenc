@@ -1,16 +1,15 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::cli::{self, Cli, Command, ResumeOptions};
 use crate::containers::tests::double::Double;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
 use crate::report;
 use clap::Parser;
 use clap::error::ErrorKind;
-use tempfile::TempDir;
 
 struct Ran {
     status: u8,
@@ -22,14 +21,14 @@ fn parsed(options: &[&str]) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(["cladenc", "resume"].iter().chain(options).copied())
 }
 
-fn ran(outputs_dir: PathBuf) -> Ran {
+fn ran(files: &Memory, outputs_dir: PathBuf) -> Ran {
     let cli = Cli {
         command: Command::Resume(ResumeOptions { outputs_dir }),
     };
     let mut output = Vec::new();
     let mut errors = Vec::new();
     let status = cli::execute(
-        &Double::default(),
+        Double::default().on(files).outside(),
         &cli,
         &AtomicBool::new(false),
         &mut output,
@@ -43,13 +42,13 @@ fn ran(outputs_dir: PathBuf) -> Ran {
 }
 
 fn missing() -> PathBuf {
-    test_inputs::temporary_directory().path().join("missing")
+    Memory::default().path().join("missing")
 }
 
 #[test]
 fn an_outputs_directory_with_a_colon_in_its_path_is_refused_before_it_is_looked_at() {
     assert!(
-        ran(PathBuf::from("/first:second"))
+        ran(&Memory::default(), PathBuf::from("/first:second"))
             .errors
             .starts_with("cladenc: --outputs-dir takes a path that holds no colon")
     );
@@ -83,13 +82,13 @@ fn quiet_is_no_flag_of_resume() {
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_gives_exit_status_2() {
-    assert_eq!(ran(missing()).status, 2);
+    assert_eq!(ran(&Memory::default(), missing()).status, 2);
 }
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_is_reported_on_standard_error() {
     assert!(
-        ran(missing())
+        ran(&Memory::default(), missing())
             .errors
             .starts_with("cladenc: the outputs directory cannot be used: ")
     );
@@ -98,23 +97,23 @@ fn an_outputs_directory_that_does_not_exist_is_reported_on_standard_error() {
 #[test]
 fn an_outputs_directory_that_does_not_exist_is_reported_with_the_system_s_reason() {
     assert_eq!(
-        ran(missing()).errors,
+        ran(&Memory::default(), missing()).errors,
         "cladenc: the outputs directory cannot be used: No such file or directory (os error 2)\n"
     );
 }
 
 #[test]
 fn an_outputs_directory_that_does_not_exist_prints_nothing_on_standard_output() {
-    assert_eq!(ran(missing()).output, "");
+    assert_eq!(ran(&Memory::default(), missing()).output, "");
 }
 
 #[test]
 fn an_outputs_directory_with_no_path_gives_exit_status_2() {
-    assert_eq!(ran(PathBuf::new()).status, 2);
+    assert_eq!(ran(&Memory::default(), PathBuf::new()).status, 2);
 }
 
-fn ended() -> TempDir {
-    let outputs_directory = test_inputs::temporary_directory();
+fn ended() -> Memory {
+    let outputs_directory = Memory::default();
     let records = [
         Record::Run {
             format: journal::FORMAT,
@@ -160,11 +159,13 @@ fn ended() -> TempDir {
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
-    fs::write(journal::path(outputs_directory.path()), lines).unwrap();
+    outputs_directory
+        .write(journal::path(outputs_directory.path()), lines)
+        .unwrap();
     outputs_directory
 }
 
-fn best_harness_of(outputs_directory: &TempDir) -> String {
+fn best_harness_of(outputs_directory: &Memory) -> String {
     outputs_directory
         .path()
         .join("harnesses/0")
@@ -175,14 +176,17 @@ fn best_harness_of(outputs_directory: &TempDir) -> String {
 #[test]
 fn resuming_a_directed_evolution_that_had_ended_gives_exit_status_0() {
     let outputs_directory = ended();
-    assert_eq!(ran(outputs_directory.path().to_owned()).status, 0);
+    assert_eq!(
+        ran(&outputs_directory, outputs_directory.path().to_owned()).status,
+        0
+    );
 }
 
 #[test]
 fn resuming_a_directed_evolution_that_had_ended_prints_only_the_directory_of_its_best_harness() {
     let outputs_directory = ended();
     assert_eq!(
-        ran(outputs_directory.path().to_owned()).output,
+        ran(&outputs_directory, outputs_directory.path().to_owned()).output,
         format!("{}\n", best_harness_of(&outputs_directory))
     );
 }
@@ -192,7 +196,7 @@ fn resuming_a_directed_evolution_that_had_ended_says_first_on_standard_error_tha
 {
     let outputs_directory = ended();
     assert_eq!(
-        ran(outputs_directory.path().to_owned())
+        ran(&outputs_directory, outputs_directory.path().to_owned())
             .errors
             .lines()
             .next(),
@@ -210,10 +214,14 @@ fn resuming_a_directed_evolution_that_had_ended_says_first_on_standard_error_tha
 #[test]
 fn resuming_a_directed_evolution_that_had_ended_prints_the_report_after_that_line() {
     let outputs_directory = ended();
-    let errors = ran(outputs_directory.path().to_owned()).errors;
+    let errors = ran(&outputs_directory, outputs_directory.path().to_owned()).errors;
     assert_eq!(
         errors.split_once('\n').map(|(_, report)| report.to_owned()),
-        Some(report::read(outputs_directory.path()).unwrap().table())
+        Some(
+            report::read(&outputs_directory, outputs_directory.path())
+                .unwrap()
+                .table()
+        )
     );
 }
 
@@ -221,7 +229,7 @@ fn resuming_a_directed_evolution_that_had_ended_prints_the_report_after_that_lin
 fn the_report_that_resume_prints_names_the_best_harness() {
     let outputs_directory = ended();
     assert_eq!(
-        ran(outputs_directory.path().to_owned())
+        ran(&outputs_directory, outputs_directory.path().to_owned())
             .errors
             .lines()
             .nth(2),
@@ -231,5 +239,5 @@ fn the_report_that_resume_prints_names_the_best_harness() {
 
 #[test]
 fn a_directed_evolution_that_cannot_be_resumed_prints_no_report() {
-    assert_eq!(ran(missing()).errors.lines().count(), 1);
+    assert_eq!(ran(&Memory::default(), missing()).errors.lines().count(), 1);
 }

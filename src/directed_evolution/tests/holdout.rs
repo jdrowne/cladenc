@@ -1,20 +1,19 @@
-use std::path::Path;
-
 use crate::benchmark::Benchmark;
 use crate::directed_evolution;
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
-fn settings(directory: &Path) -> Settings {
+fn settings(directory: &Memory) -> Settings {
     Settings {
-        primogenitor: test_inputs::primogenitor(directory),
+        primogenitor: test_inputs::primogenitor_in(directory, directory.path()),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(
+            Benchmark::read(
                 directory,
-                &["t1", "t2", "t3", "t4"],
-            ))
+                &test_inputs::benchmark_in(directory, directory.path(), &["t1", "t2", "t3", "t4"]),
+            )
             .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
@@ -48,8 +47,8 @@ fn said(settings: &Settings) -> String {
 
 #[test]
 fn the_holdout_of_a_benchmark_is_said_with_its_selection_and_its_corroboration_tasks_counted() {
-    let directory = test_inputs::temporary_directory();
-    let settings = settings(directory.path());
+    let directory = Memory::default();
+    let settings = settings(&directory);
     assert_eq!(
         said(&settings),
         format!(
@@ -62,10 +61,12 @@ fn the_holdout_of_a_benchmark_is_said_with_its_selection_and_its_corroboration_t
 
 #[test]
 fn the_holdout_is_said_for_each_benchmark_in_turn_one_with_no_holdout_task_among_them() {
-    let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path());
-    let other = test_inputs::benchmark_named(directory.path(), "other", &["t1"]);
-    settings.benchmarks.push(Benchmark::read(&other).unwrap());
+    let directory = Memory::default();
+    let mut settings = settings(&directory);
+    let other = test_inputs::benchmark_named_in(&directory, directory.path(), "other", &["t1"]);
+    settings
+        .benchmarks
+        .push(Benchmark::read(&directory, &other).unwrap());
     let written = said(&settings);
     let of_the_other = format!(
         "cladenc: holding out 0 of the 1 task of the benchmark {} from every progenitor: 0 \

@@ -1,11 +1,9 @@
-use std::fs;
 use std::sync::atomic::AtomicBool;
-
-use tempfile::TempDir;
 
 use crate::benchmark::Benchmark;
 use crate::containers::tests::double::Double;
 use crate::containers::{self, Attempt, ContainerError, Environment, Host, Launch};
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
@@ -24,12 +22,20 @@ const LAUNCH: Launch<'static> = Launch {
     max_task_health_check_retries: 0,
 };
 
-fn made() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let benchmark = Benchmark::read(&test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+fn made() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let benchmark = Benchmark::read(
+        &directory,
+        &test_inputs::benchmark_in(&directory, directory.path(), &["t1"]),
+    )
+    .unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     outputs_directory.copy_benchmark(&benchmark).unwrap();
     (directory, outputs_directory)
 }
@@ -56,12 +62,14 @@ fn a_procreation_of_a_harness_that_is_not_there_is_an_error() {
 
 #[test]
 fn a_baseline_that_cannot_be_started_in_the_outputs_directory_is_not_carried_out() {
-    let (_directory, outputs_directory) = made();
+    let (directory, outputs_directory) = made();
     outputs_directory.start_procreation(1, 0).unwrap();
     outputs_directory
         .end_procreation(1, 0, CreationOutcome::Created)
         .unwrap();
-    fs::create_dir(outputs_directory.running_baseline(5)).unwrap();
+    directory
+        .create_dir(outputs_directory.running_baseline(5))
+        .unwrap();
     let result = containers::run_baseline(
         host(&Double::default(), &outputs_directory),
         &LAUNCH,

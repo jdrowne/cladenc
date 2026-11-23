@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::{Benchmark, BenchmarkError};
+use crate::file_system::tests::double::Memory;
 
 fn parsing() -> Benchmark {
     Benchmark {
@@ -10,17 +11,17 @@ fn parsing() -> Benchmark {
 }
 
 fn read_in_a_directory_named(name: &str) -> Result<String, BenchmarkError> {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark_named(directory.path(), name, &["t1"]);
-    Benchmark::read(&benchmark).map(|benchmark| benchmark.name())
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_named_in(&directory, directory.path(), name, &["t1"]);
+    Benchmark::read(&directory, &benchmark).map(|benchmark| benchmark.name())
 }
 
 #[test]
 fn reading_a_benchmark_gives_its_directory_and_the_ids_of_its_tasks_in_order() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t2", "t1"]);
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t2", "t1"]);
     assert_eq!(
-        Benchmark::read(&benchmark),
+        Benchmark::read(&directory, &benchmark),
         Ok(Benchmark {
             directory: benchmark,
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
@@ -58,10 +59,10 @@ fn a_benchmark_in_a_directory_with_a_space_in_its_name_is_refused() {
 
 #[test]
 fn a_benchmark_given_by_a_path_that_ends_in_no_name_is_refused() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
     assert_eq!(
-        Benchmark::read(&benchmark.join("t1/..")),
+        Benchmark::read(&directory, &benchmark.join("t1/..")),
         Err(BenchmarkError::NotNamed {
             directory: String::new()
         })
@@ -70,9 +71,9 @@ fn a_benchmark_given_by_a_path_that_ends_in_no_name_is_refused() {
 
 #[test]
 fn what_is_not_a_benchmark_is_refused_for_that_and_not_for_its_name() {
-    let directory = test_inputs::temporary_directory();
+    let directory = Memory::default();
     assert_eq!(
-        Benchmark::read(&directory.path().join("my benchmark")),
+        Benchmark::read(&directory, &directory.path().join("my benchmark")),
         Err(BenchmarkError::NotADirectory)
     );
 }

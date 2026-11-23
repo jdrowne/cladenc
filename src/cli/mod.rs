@@ -7,8 +7,9 @@ use std::sync::atomic::AtomicBool;
 use clap::builder::NonEmptyStringValueParser;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
-use crate::containers::Docker;
+use crate::containers::Outside;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
+use crate::file_system::FileSystem;
 use crate::report::{self, Report};
 
 const HAS_NOT_ENDED: &str = "the directed evolution has not ended: call `cladenc status` to read \
@@ -226,19 +227,20 @@ pub struct StatusOptions {
 }
 
 pub fn execute(
-    docker: &dyn Docker,
+    outside: Outside<'_>,
     cli: &Cli,
     stop: &AtomicBool,
     output: &mut dyn Write,
     errors: &mut dyn Write,
 ) -> u8 {
+    let files = outside.files.as_ref();
     let printed = match &cli.command {
-        Command::Start(options) => start(docker, options, stop, errors),
-        Command::Resume(options) => resume(docker, options, stop, errors),
-        Command::Report(options) => read(&options.outputs_dir)
+        Command::Start(options) => start(outside, options, stop, errors),
+        Command::Resume(options) => resume(outside, options, stop, errors),
+        Command::Report(options) => read(files, &options.outputs_dir)
             .and_then(ended)
             .map(|report| shown(&report, options.json)),
-        Command::Status(options) => read(&options.outputs_dir)
+        Command::Status(options) => read(files, &options.outputs_dir)
             .and_then(not_ended)
             .map(|report| shown(&report, options.json)),
     };
@@ -255,46 +257,51 @@ pub fn execute(
 }
 
 fn start(
-    docker: &dyn Docker,
+    outside: Outside<'_>,
     options: &StartOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<String, (u8, String)> {
+    let files = outside.files.as_ref();
     let settings = options
-        .settings()
+        .settings(files)
         .map_err(|refused| (2, refused.to_string()))?;
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::start(docker, &settings, &outputs_directory, stop, writer)
+    directed_evolution::start(outside, &settings, &outputs_directory, stop, writer)
         .map_err(stopped)
-        .and_then(|found| finished(&outputs_directory, &found, writer))
+        .and_then(|found| finished(files, &outputs_directory, &found, writer))
 }
 
 fn resume(
-    docker: &dyn Docker,
+    outside: Outside<'_>,
     options: &ResumeOptions,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<String, (u8, String)> {
+    let files = outside.files.as_ref();
     let outputs_directory = mountable(&options.outputs_dir)?;
-    directed_evolution::resume(docker, &outputs_directory, stop, writer)
+    directed_evolution::resume(outside, &outputs_directory, stop, writer)
         .map_err(stopped)
-        .and_then(|found| finished(&outputs_directory, &found, writer))
+        .and_then(|found| finished(files, &outputs_directory, &found, writer))
 }
 
 fn finished(
+    files: &dyn FileSystem,
     outputs_directory: &Path,
     found: &Found,
     writer: &mut dyn Write,
 ) -> Result<String, (u8, String)> {
-    read(outputs_directory).and_then(ended).map(|report| {
-        let _ = write!(writer, "{}", report.table());
-        format!("{}\n", found.directory.display())
-    })
+    read(files, outputs_directory)
+        .and_then(ended)
+        .map(|report| {
+            let _ = write!(writer, "{}", report.table());
+            format!("{}\n", found.directory.display())
+        })
 }
 
-fn read(outputs_dir: &Path) -> Result<Report, (u8, String)> {
+fn read(files: &dyn FileSystem, outputs_dir: &Path) -> Result<Report, (u8, String)> {
     absolute(outputs_dir).and_then(|outputs_directory| {
-        report::read(&outputs_directory)
+        report::read(files, &outputs_directory)
             .map_err(|error| stopped(DirectedEvolutionError::Unusable(error)))
     })
 }

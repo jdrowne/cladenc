@@ -1,14 +1,15 @@
-use std::fs;
-
 use crate::benchmark::Artifact;
 use crate::benchmark::configuration::{self, ConfigurationError};
+use crate::file_system::tests::double::Memory;
 
 const A_DIRECTORY: &str = "[[artifacts]]\nsource = \"/app/out\"\n";
 
 fn read(written: &str) -> Result<Vec<Artifact>, ConfigurationError> {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
-    configuration::read_with(directory.path(), &|_| None)
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
+    configuration::read_with(&directory, directory.path(), &|_| None)
         .map(|configuration| configuration.artifacts)
 }
 

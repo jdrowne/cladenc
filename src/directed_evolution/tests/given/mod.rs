@@ -1,29 +1,27 @@
-use std::fs;
-use std::path::Path;
 use std::sync::atomic::AtomicBool;
-
-use tempfile::TempDir;
 
 use crate::benchmark::Benchmark;
 use crate::containers::tests::double::Double;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 use crate::outputs_directory::OutputsDirectory;
 
 pub(super) struct Evolved {
-    directory: TempDir,
+    directory: Memory,
     docker: Double,
     pub(super) result: Result<Found, DirectedEvolutionError>,
     pub(super) said: String,
 }
 
 impl Evolved {
-    pub(super) fn directory(&self) -> &Path {
-        self.directory.path()
+    pub(super) fn files(&self) -> &Memory {
+        &self.directory
     }
 
     pub(super) fn commands(&self) -> Vec<String> {
-        let outputs_directory = OutputsDirectory::at(&self.directory.path().join("outputs"));
+        let outputs = self.directory.path().join("outputs");
+        let outputs_directory = OutputsDirectory::at(self.directory.shared(), &outputs);
         self.docker.commands(&outputs_directory)
     }
 
@@ -35,14 +33,18 @@ impl Evolved {
     }
 }
 
-pub(super) fn settings(directory: &Path) -> Settings {
+pub(super) fn settings(directory: &Memory) -> Settings {
     Settings {
-        primogenitor: test_inputs::primogenitor(directory),
+        primogenitor: test_inputs::primogenitor_in(directory, directory.path()),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(directory, &["t1", "t2"])).unwrap(),
+            Benchmark::read(
+                directory,
+                &test_inputs::benchmark_in(directory, directory.path(), &["t1", "t2"]),
+            )
+            .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -63,32 +65,34 @@ pub(super) fn settings(directory: &Path) -> Settings {
     }
 }
 
-pub(super) fn configured(directory: &Path, task: &str, configuration: &str) {
+pub(super) fn configured(directory: &Memory, task: &str, configuration: &str) {
     let written = format!("schema_version = \"1.4\"\n{configuration}");
-    fs::write(
-        directory.join("benchmark").join(task).join("task.toml"),
-        written,
-    )
-    .unwrap();
+    let file = directory
+        .path()
+        .join("benchmark")
+        .join(task)
+        .join("task.toml");
+    directory.write(file, written).unwrap();
 }
 
-pub(super) fn unchanged(_: &Path, _: &mut Settings) {}
+pub(super) fn unchanged(_: &Memory, _: &mut Settings) {}
 
-pub(super) fn started(docker: Double, change: impl FnOnce(&Path, &mut Settings)) -> Evolved {
+pub(super) fn started(docker: Double, change: impl FnOnce(&Memory, &mut Settings)) -> Evolved {
     started_until(docker, change, &AtomicBool::new(false))
 }
 
 pub(super) fn started_until(
     docker: Double,
-    change: impl FnOnce(&Path, &mut Settings),
+    change: impl FnOnce(&Memory, &mut Settings),
     stop: &AtomicBool,
 ) -> Evolved {
-    let directory = test_inputs::temporary_directory();
-    let mut settings = settings(directory.path());
-    change(directory.path(), &mut settings);
+    let directory = Memory::default();
+    let docker = docker.on(&directory);
+    let mut settings = settings(&directory);
+    change(&directory, &mut settings);
     let mut said = Vec::new();
     let result = directed_evolution::start(
-        &docker,
+        docker.outside(),
         &settings,
         &directory.path().join("outputs"),
         stop,
@@ -103,9 +107,10 @@ pub(super) fn started_until(
 }
 
 pub(super) fn resumed(evolved: Evolved, docker: Double) -> Evolved {
+    let docker = docker.on(&evolved.directory);
     let mut said = Vec::new();
     let result = directed_evolution::resume(
-        &docker,
+        docker.outside(),
         &evolved.directory.path().join("outputs"),
         &AtomicBool::new(false),
         &mut said,

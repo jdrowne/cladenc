@@ -1,12 +1,11 @@
-use std::fs;
-
+use crate::file_system::tests::double::Memory;
 use crate::model;
 
 fn key_in(text: &[u8]) -> Option<String> {
-    let directory = test_inputs::temporary_directory();
+    let directory = Memory::default();
     let file = directory.path().join("model-key");
-    fs::write(&file, text).unwrap();
-    model::read_key(&file)
+    directory.write(&file, text).unwrap();
+    model::read_key(&directory, &file)
 }
 
 #[test]
@@ -34,14 +33,17 @@ fn a_space_in_the_line_is_part_of_the_key() {
 
 #[test]
 fn a_file_that_does_not_exist_holds_no_key() {
-    let directory = test_inputs::temporary_directory();
-    assert_eq!(model::read_key(&directory.path().join("missing")), None);
+    let directory = Memory::default();
+    assert_eq!(
+        model::read_key(&directory, &directory.path().join("missing")),
+        None
+    );
 }
 
 #[test]
 fn a_directory_holds_no_key() {
-    let directory = test_inputs::temporary_directory();
-    assert_eq!(model::read_key(directory.path()), None);
+    let directory = Memory::default();
+    assert_eq!(model::read_key(&directory, directory.path()), None);
 }
 
 #[test]

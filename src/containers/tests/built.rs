@@ -1,12 +1,11 @@
-use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use nix::unistd::{Gid, Uid};
-use tempfile::TempDir;
 
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{self, LAUNCH, TIMER};
 use crate::containers::{self, ContainerError, Launch};
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const BUILT: Launch<'static> = Launch {
@@ -17,7 +16,7 @@ const BUILT: Launch<'static> = Launch {
 const HARNESS: &str = ":/var/opt/cladenc/harness";
 
 struct Built {
-    _directory: TempDir,
+    _directory: Memory,
     outputs_directory: OutputsDirectory,
     docker: Double,
     result: Result<(), ContainerError>,
@@ -25,6 +24,7 @@ struct Built {
 
 fn built_by(docker: Double) -> Built {
     let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::build_primogenitor(
         given::host(&docker, &outputs_directory),
         &BUILT,
@@ -166,9 +166,12 @@ fn a_build_that_docker_cannot_be_asked_for_is_not_carried_out() {
 
 #[test]
 fn a_build_whose_directory_cannot_be_made_is_not_carried_out() {
-    let (_directory, outputs_directory) = given::made();
-    fs::write(outputs_directory.path().join("builds"), "").unwrap();
+    let (directory, outputs_directory) = given::made();
+    directory
+        .write(outputs_directory.path().join("builds"), "")
+        .unwrap();
     let docker = Double::default();
+    let docker = docker.on(&directory);
     let built = containers::build_primogenitor(
         given::host(&docker, &outputs_directory),
         &BUILT,

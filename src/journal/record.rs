@@ -6,6 +6,7 @@ use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
+use crate::file_system::FileSystem;
 use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
 use crate::holdout::TaskSet;
 use crate::model::{self, Model};
@@ -36,10 +37,10 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub(crate) fn model_key(&self) -> Result<Option<String>, PathBuf> {
+    pub(crate) fn model_key(&self, files: &dyn FileSystem) -> Result<Option<String>, PathBuf> {
         self.model_key_file
             .as_ref()
-            .map(|file| model::read_key(file).ok_or_else(|| file.clone()))
+            .map(|file| model::read_key(files, file).ok_or_else(|| file.clone()))
             .transpose()
     }
 

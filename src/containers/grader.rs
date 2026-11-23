@@ -101,7 +101,9 @@ impl<'a> Grading<'a> {
                 up.copy_out_of(harbor::VERIFIER, &verifier);
                 match ending {
                     Ending::TimedOut => AttemptResult::TimedOut,
-                    Ending::Exited(_) if reward::completed(&verifier) => AttemptResult::Completed,
+                    Ending::Exited(_) if reward::completed(up.files(), &verifier) => {
+                        AttemptResult::Completed
+                    }
                     Ending::Exited(_) => AttemptResult::NotCompleted,
                 }
             })

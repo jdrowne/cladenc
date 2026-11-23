@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::Program;
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings};
 use tempfile::TempDir;
 
@@ -21,7 +21,9 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: Some(key_file.to_owned()),
-        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
+        benchmarks: vec![
+            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -51,8 +53,7 @@ fn evolved_with(key: &str, stopped: bool) -> (Keyed, Result<Found, DirectedEvolu
     if stopped {
         test_inputs::end_with_125_on(directory.path(), "t1");
     }
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -70,8 +71,7 @@ fn evolved_with(key: &str, stopped: bool) -> (Keyed, Result<Found, DirectedEvolu
 }
 
 fn resumed(keyed: &Keyed) -> Result<Found, DirectedEvolutionError> {
-    directed_evolution::resume(
-        &Program,
+    crate::real::resume(
         &keyed.outputs_directory,
         &AtomicBool::new(false),
         &mut io::sink(),

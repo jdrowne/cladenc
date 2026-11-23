@@ -1,10 +1,10 @@
 use std::fmt::{self, Display, Formatter};
-use std::fs;
 use std::path::Path;
 
 use serde::Deserialize;
 
 use super::{FORMAT, JournalError, Record, Settings, path, whole_lines};
+use crate::file_system::FileSystem;
 use crate::genealogy::{Experiment, Genealogy, HarnessId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -69,8 +69,13 @@ pub(crate) struct State {
     pub(crate) seconds: Vec<Seconds>,
 }
 
-pub(crate) fn read(outputs_directory: &Path) -> Result<State, JournalError> {
-    let contents = fs::read(path(outputs_directory)).map_err(JournalError::Io)?;
+pub(crate) fn read(
+    files: &dyn FileSystem,
+    outputs_directory: &Path,
+) -> Result<State, JournalError> {
+    let contents = files
+        .read(&path(outputs_directory))
+        .map_err(JournalError::Io)?;
     let lines = || whole_lines(&contents).split_inclusive(|byte| *byte == b'\n');
     if let Some(First::Run { format }) = lines()
         .next()

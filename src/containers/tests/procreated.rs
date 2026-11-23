@@ -1,12 +1,11 @@
-use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use nix::unistd::{Gid, Uid};
-use tempfile::TempDir;
 
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{self, LAUNCH, TIMER};
 use crate::containers::{self, ContainerError, Creation, INSTRUCTION, Launch};
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
@@ -34,7 +33,7 @@ const EXPERIMENT: Experiment = Experiment {
 };
 
 struct Procreated {
-    _directory: TempDir,
+    directory: Memory,
     outputs_directory: OutputsDirectory,
     docker: Double,
     result: Result<Creation, ContainerError>,
@@ -52,6 +51,7 @@ impl Procreated {
 
 fn procreated_by(docker: Double, launch: &Launch<'_>) -> Procreated {
     let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::run_procreation(
         given::host(&docker, &outputs_directory),
         launch,
@@ -60,7 +60,7 @@ fn procreated_by(docker: Double, launch: &Launch<'_>) -> Procreated {
         &AtomicBool::new(false),
     );
     Procreated {
-        _directory: directory,
+        directory,
         outputs_directory,
         docker,
         result,
@@ -69,6 +69,7 @@ fn procreated_by(docker: Double, launch: &Launch<'_>) -> Procreated {
 
 fn control_made_by(docker: Double) -> Procreated {
     let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::run_baseline(
         given::host(&docker, &outputs_directory),
         &LAUNCH,
@@ -77,7 +78,7 @@ fn control_made_by(docker: Double) -> Procreated {
         &AtomicBool::new(false),
     );
     Procreated {
-        _directory: directory,
+        directory,
         outputs_directory,
         docker,
         result,
@@ -154,10 +155,8 @@ fn the_copy_that_a_progenitor_changed_becomes_the_child() {
     let procreated = procreated_by(Double::default().changing(), &LAUNCH);
     assert!(
         procreated
-            .outputs_directory
-            .harness(1)
-            .join("changed")
-            .is_file()
+            .directory
+            .is_file(procreated.outputs_directory.harness(1).join("changed"))
     );
 }
 
@@ -165,7 +164,10 @@ fn the_copy_that_a_progenitor_changed_becomes_the_child() {
 fn the_outcome_of_a_procreation_is_kept_with_what_its_progenitor_printed() {
     let procreated = procreated_by(Double::default().changing(), &LAUNCH);
     let outcome = procreated.outputs_directory.procreation(1).join("outcome");
-    assert_eq!(fs::read_to_string(outcome).unwrap(), "created\n");
+    assert_eq!(
+        procreated.directory.read_to_string(outcome).unwrap(),
+        "created\n"
+    );
 }
 
 #[test]
@@ -298,8 +300,9 @@ fn a_procreation_that_is_stopped_while_its_child_is_built_was_stopped() {
 
 #[test]
 fn a_progenitor_is_shown_the_source_code_and_the_attempts_of_each_harness_it_descends_from() {
-    let (_directory, outputs_directory) = given::made();
+    let (directory, outputs_directory) = given::made();
     let docker = Double::default().changing();
+    let docker = docker.on(&directory);
     let host = given::host(&docker, &outputs_directory);
     let stop = AtomicBool::new(false);
     containers::run_procreation(host, &LAUNCH, 1, 0, &stop).unwrap();
@@ -331,8 +334,9 @@ fn the_singleton_control_group_harness_is_created_from_a_copy_of_the_source_of_t
 
 #[test]
 fn the_primogenitor_is_shown_each_child_its_progenitor_made_before_that_of_the_experiment() {
-    let (_directory, outputs_directory) = given::made();
+    let (directory, outputs_directory) = given::made();
     let docker = Double::default().changing();
+    let docker = docker.on(&directory);
     let host = given::host(&docker, &outputs_directory);
     let stop = AtomicBool::new(false);
     containers::run_procreation(host, &LAUNCH, 1, 0, &stop).unwrap();
@@ -372,7 +376,7 @@ fn a_primogenitor_that_changes_the_copy_has_created_the_singleton_control_group_
 fn the_experiment_of_a_baseline_is_kept_with_what_the_primogenitor_printed() {
     let made = control_made_by(Double::default().changing());
     let child = made.outputs_directory.baseline(2).join("child");
-    assert_eq!(fs::read_to_string(child).unwrap(), "1\n");
+    assert_eq!(made.directory.read_to_string(child).unwrap(), "1\n");
 }
 
 #[test]

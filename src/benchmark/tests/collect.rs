@@ -1,16 +1,18 @@
-use std::fs;
 use std::time::Duration;
 
 use crate::benchmark::configuration::{self, ConfigurationError};
 use crate::benchmark::{CollectCommand, TaskConfiguration};
+use crate::file_system::tests::double::Memory;
 
 const SNAPSHOT: &str = "[[verifier.collect]]\ncommand = \"pg_dump app > /tmp/rows.sql\"\n";
 const ELSEWHERE: &str = "a command in a container other than that of the harness";
 
 fn read(written: &str) -> Result<TaskConfiguration, ConfigurationError> {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
-    configuration::read_with(directory.path(), &|_| None)
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
+    configuration::read_with(&directory, directory.path(), &|_| None)
 }
 
 fn commands(written: &str) -> Vec<CollectCommand> {

@@ -4,6 +4,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, Environment, GraderImage, Host, Launch, Program};
+use cladenc::file_system::Disk;
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -32,7 +33,7 @@ struct Attempt<'a> {
 }
 
 fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) {
-    let configuration = TaskConfiguration::read(&outputs_directory.task(TASK)).unwrap();
+    let configuration = TaskConfiguration::read(&Disk, &outputs_directory.task(TASK)).unwrap();
     let image = test_inputs::image();
     containers::build_environment(
         Host {
@@ -66,11 +67,12 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
-    let outputs_directory = OutputsDirectory::create(&path, &primogenitor).unwrap();
+    let outputs_directory =
+        OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
     fs::write(benchmark.join("t1/task.toml"), attempt.task_toml).unwrap();
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&benchmark).unwrap())
+        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     test_inputs::kept_grader(&path, "t1", attempt.grader);
     let (environment, built) = environment_of(&outputs_directory);

@@ -1,8 +1,7 @@
-use std::fs;
 use std::path::Path;
 
+use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Journal, JournalError, Record};
-use tempfile::TempDir;
 
 const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}"#;
 const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
@@ -14,18 +13,22 @@ fn started(child: u64) -> Record {
     }
 }
 
-fn holding(text: &str) -> TempDir {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    fs::write(journal::path(outputs_directory.path()), text).unwrap();
-    outputs_directory
+fn holding(text: &str) -> Memory {
+    let directory = Memory::default();
+    directory
+        .write(journal::path(directory.path()), text)
+        .unwrap();
+    directory
 }
 
-fn after_appending(outputs_directory: &TempDir, record: &Record) -> String {
-    Journal::open(outputs_directory.path())
+fn after_appending(directory: &Memory, record: &Record) -> String {
+    Journal::open(directory, directory.path())
         .unwrap()
         .append(record)
         .unwrap();
-    fs::read_to_string(journal::path(outputs_directory.path())).unwrap()
+    directory
+        .read_to_string(journal::path(directory.path()))
+        .unwrap()
 }
 
 #[test]
@@ -38,16 +41,16 @@ fn the_journal_is_journal_jsonl_in_the_outputs_directory() {
 
 #[test]
 fn opening_a_journal_that_does_not_exist_creates_its_file() {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let _journal = Journal::open(outputs_directory.path()).unwrap();
-    assert!(journal::path(outputs_directory.path()).is_file());
+    let directory = Memory::default();
+    let _journal = Journal::open(&directory, directory.path()).unwrap();
+    assert!(directory.is_file(journal::path(directory.path())));
 }
 
 #[test]
 fn a_journal_cannot_be_opened_in_a_directory_that_does_not_exist() {
-    let outputs_directory = tempfile::tempdir().unwrap();
+    let directory = Memory::default();
     assert!(matches!(
-        Journal::open(&outputs_directory.path().join("missing")),
+        Journal::open(&directory, &directory.path().join("missing")),
         Err(JournalError::Io(_))
     ));
 }
@@ -70,12 +73,14 @@ fn a_record_is_appended_after_the_records_the_journal_holds() {
 
 #[test]
 fn two_records_appended_to_one_journal_are_kept_in_their_order() {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(outputs_directory.path()).unwrap();
+    let directory = Memory::default();
+    let mut journal = Journal::open(&directory, directory.path()).unwrap();
     journal.append(&started(1)).unwrap();
     journal.append(&started(2)).unwrap();
     assert_eq!(
-        fs::read_to_string(journal::path(outputs_directory.path())).unwrap(),
+        directory
+            .read_to_string(journal::path(directory.path()))
+            .unwrap(),
         format!("{FIRST}\n{SECOND}\n")
     );
 }

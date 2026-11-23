@@ -15,7 +15,7 @@ pub(super) fn passes_where_given(
     stop: &AtomicBool,
 ) -> Result<bool, ContainerError> {
     health_check.map_or(Ok(true), |health_check| {
-        make_directory(kept);
+        make_directory(up.files(), kept);
         passes(up, health_check, kept, stop)
     })
 }

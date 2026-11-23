@@ -3,8 +3,9 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{ContainerError, Program};
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;
 
@@ -24,7 +25,7 @@ fn settings(directory: &Path, benchmark: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(benchmark).unwrap()],
+        benchmarks: vec![Benchmark::read(&Disk, benchmark).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -49,8 +50,7 @@ fn with_a_task_that_is_never_ready() -> Evolved {
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]);
     fs::write(benchmark.join("t2/task.toml"), NEVER_READY).unwrap();
     let mut written = Vec::new();
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings(directory.path(), &benchmark),
         &directory.path().join("outputs"),
         &AtomicBool::new(false),
@@ -68,8 +68,7 @@ fn resumed_once_the_task_is_ready() -> Evolved {
     let outputs = evolved.directory.path().join("outputs");
     fs::write(outputs.join("benchmarks/benchmark/t2/task.toml"), READY).unwrap();
     let mut written = Vec::new();
-    evolved.found =
-        directed_evolution::resume(&Program, &outputs, &AtomicBool::new(false), &mut written);
+    evolved.found = crate::real::resume(&outputs, &AtomicBool::new(false), &mut written);
     evolved.said = String::from_utf8(written).unwrap();
     evolved
 }

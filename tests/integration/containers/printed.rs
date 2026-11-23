@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::containers::{Docker, Program};
+use cladenc::containers::{Docker, Program};
 
 fn sh(script: &str) -> Command {
     let mut command = Command::new("sh");
@@ -24,4 +24,10 @@ fn a_command_that_fails_is_an_error_of_what_it_said_went_wrong_and_not_of_what_i
 fn a_command_whose_program_cannot_be_started_is_an_error() {
     let missing = Program.print(Command::new("/no/such/program"));
     assert!(missing.is_err());
+}
+
+#[test]
+fn a_command_is_given_nothing_on_its_standard_input() {
+    let read = Program.print(sh("cat; echo end"));
+    assert_eq!(read.unwrap(), "end\n");
 }

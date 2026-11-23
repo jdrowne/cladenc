@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Host, Program};
+use cladenc::file_system::Disk;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -24,9 +25,14 @@ struct Built {
 fn made() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let benchmark = Benchmark::read(&test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+    let benchmark =
+        Benchmark::read(&Disk, &test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
+    let outputs_directory = OutputsDirectory::create(
+        crate::real::disk(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     outputs_directory.copy_benchmark(&benchmark).unwrap();
     (directory, outputs_directory)
 }

@@ -1,9 +1,9 @@
-use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
 use crate::benchmark::configuration::{self, ConfigurationError};
 use crate::benchmark::{self, BenchmarkError, EnvironmentConfiguration, TaskConfiguration};
+use crate::file_system::tests::double::Memory;
 
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const OWN: &str = "[verifier.environment]\n";
@@ -13,9 +13,11 @@ const NAMED: &str =
 const EVERYTHING: &str = "the whole container of the harness in the container of the grader";
 
 fn read(written: &str) -> Result<TaskConfiguration, ConfigurationError> {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
-    configuration::read_with(directory.path(), &|variable| {
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
+    configuration::read_with(&directory, directory.path(), &|variable| {
         (variable == "TOKEN").then(|| "a-made-up-token".to_owned())
     })
 }
@@ -32,11 +34,13 @@ fn refused(written: &str) -> Option<ConfigurationError> {
     read(written).err()
 }
 
-fn tasks_with_t2_changed(change: impl FnOnce(&Path)) -> Result<Vec<String>, BenchmarkError> {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    change(&benchmark.join("t2"));
-    benchmark::tasks(&benchmark)
+fn tasks_with_t2_changed(
+    change: impl FnOnce(&Memory, &Path),
+) -> Result<Vec<String>, BenchmarkError> {
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    change(&directory, &benchmark.join("t2"));
+    benchmark::tasks(&directory, &benchmark)
 }
 
 fn both_tasks() -> Result<Vec<String>, BenchmarkError> {
@@ -409,9 +413,9 @@ fn the_path_of_an_entry_under_artifacts_begins_at_the_top_and_holds_no_empty_par
 #[test]
 fn a_task_whose_grader_is_in_an_image_it_names_needs_no_directory_named_tests() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::remove_dir_all(task.join("tests")).unwrap();
-            fs::write(task.join("task.toml"), NAMED).unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory.remove_dir_all(task.join("tests")).unwrap();
+            directory.write(task.join("task.toml"), NAMED).unwrap();
         }),
         both_tasks()
     );
@@ -420,10 +424,12 @@ fn a_task_whose_grader_is_in_an_image_it_names_needs_no_directory_named_tests() 
 #[test]
 fn a_task_whose_grader_is_in_an_image_built_from_its_tests_needs_no_test_sh() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::remove_file(task.join("tests/test.sh")).unwrap();
-            fs::write(task.join("tests/Dockerfile"), "FROM scratch\n").unwrap();
-            fs::write(task.join("task.toml"), SEPARATE).unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory.remove_file(task.join("tests/test.sh")).unwrap();
+            directory
+                .write(task.join("tests/Dockerfile"), "FROM scratch\n")
+                .unwrap();
+            directory.write(task.join("task.toml"), SEPARATE).unwrap();
         }),
         both_tasks()
     );
@@ -432,9 +438,9 @@ fn a_task_whose_grader_is_in_an_image_built_from_its_tests_needs_no_test_sh() {
 #[test]
 fn a_task_whose_grader_runs_in_a_copy_of_its_environment_still_needs_its_test_sh() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::remove_file(task.join("tests/test.sh")).unwrap();
-            fs::write(task.join("task.toml"), SEPARATE).unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory.remove_file(task.join("tests/test.sh")).unwrap();
+            directory.write(task.join("task.toml"), SEPARATE).unwrap();
         }),
         Err(BenchmarkError::NoGrader {
             task: "t2".to_owned()
@@ -445,9 +451,11 @@ fn a_task_whose_grader_runs_in_a_copy_of_its_environment_still_needs_its_test_sh
 #[test]
 fn a_dockerfile_in_the_tests_of_a_task_whose_grader_shares_the_environment_is_no_grader() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::remove_file(task.join("tests/test.sh")).unwrap();
-            fs::write(task.join("tests/Dockerfile"), "FROM scratch\n").unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory.remove_file(task.join("tests/test.sh")).unwrap();
+            directory
+                .write(task.join("tests/Dockerfile"), "FROM scratch\n")
+                .unwrap();
         }),
         Err(BenchmarkError::NoGrader {
             task: "t2".to_owned()
@@ -458,9 +466,11 @@ fn a_dockerfile_in_the_tests_of_a_task_whose_grader_shares_the_environment_is_no
 #[test]
 fn a_task_whose_grader_runs_separately_is_refused_for_a_compose_file_in_its_tests() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::write(task.join("tests/docker-compose.yaml"), "services: {}\n").unwrap();
-            fs::write(task.join("task.toml"), SEPARATE).unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory
+                .write(task.join("tests/docker-compose.yaml"), "services: {}\n")
+                .unwrap();
+            directory.write(task.join("task.toml"), SEPARATE).unwrap();
         }),
         Err(BenchmarkError::ManyGraderContainers {
             task: "t2".to_owned()
@@ -471,9 +481,11 @@ fn a_task_whose_grader_runs_separately_is_refused_for_a_compose_file_in_its_test
 #[test]
 fn a_task_that_names_the_image_of_its_grader_is_still_refused_for_a_compose_file_in_its_tests() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::write(task.join("tests/compose.yml"), "services: {}\n").unwrap();
-            fs::write(task.join("task.toml"), NAMED).unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory
+                .write(task.join("tests/compose.yml"), "services: {}\n")
+                .unwrap();
+            directory.write(task.join("task.toml"), NAMED).unwrap();
         }),
         Err(BenchmarkError::ManyGraderContainers {
             task: "t2".to_owned()
@@ -484,8 +496,10 @@ fn a_task_that_names_the_image_of_its_grader_is_still_refused_for_a_compose_file
 #[test]
 fn a_compose_file_in_the_tests_of_a_task_whose_grader_shares_the_environment_is_let_through() {
     assert_eq!(
-        tasks_with_t2_changed(|task| {
-            fs::write(task.join("tests/docker-compose.yaml"), "services: {}\n").unwrap();
+        tasks_with_t2_changed(|directory, task| {
+            directory
+                .write(task.join("tests/docker-compose.yaml"), "services: {}\n")
+                .unwrap();
         }),
         both_tasks()
     );

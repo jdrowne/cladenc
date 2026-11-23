@@ -11,6 +11,7 @@ use super::left;
 use super::program::{Ending, FOREVER, LEEWAY, Limits};
 use super::{ContainerError, Environment};
 use crate::benchmark::{HealthCheck, TaskConfiguration};
+use crate::file_system::FileSystem;
 use crate::outputs_directory::{OutputsDirectory, make_removable};
 
 const NOT_STARTED: i32 = 125;
@@ -61,6 +62,7 @@ pub(super) struct Bringing<'a> {
 
 pub(super) struct Up<'a> {
     docker: &'a dyn Docker,
+    files: &'a dyn FileSystem,
     name: String,
     user: String,
     working_directory: String,
@@ -173,6 +175,7 @@ impl<'a> Up<'a> {
         let said = running.join("stderr");
         let mut up = Self {
             docker: host.docker,
+            files: host.outputs_directory.files(),
             name,
             user: String::new(),
             working_directory: String::new(),
@@ -200,6 +203,10 @@ impl<'a> Up<'a> {
 
     pub(super) fn user(&self) -> &str {
         &self.user
+    }
+
+    pub(super) fn files(&self) -> &'a dyn FileSystem {
+        self.files
     }
 
     pub(super) fn run(
@@ -300,7 +307,7 @@ impl<'a> Up<'a> {
             .arg(format!("{}:{from}", self.name))
             .arg(to);
         let _ = self.docker.print(docker);
-        make_removable(to);
+        make_removable(self.files, to);
     }
 
     fn as_root(&self) -> Command {

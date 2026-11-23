@@ -1,16 +1,19 @@
 use std::path::PathBuf;
 
-use tempfile::TempDir;
-
 use crate::containers::shown;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, HarnessId};
 use crate::outputs_directory::OutputsDirectory;
 
-fn made() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+fn made() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     (directory, outputs_directory)
 }
 
@@ -28,7 +31,7 @@ fn procreate(
         .unwrap();
 }
 
-fn with_three_generations() -> (TempDir, OutputsDirectory) {
+fn with_three_generations() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     procreate(&outputs_directory, 1, 0, CreationOutcome::Created);
     procreate(&outputs_directory, 2, 1, CreationOutcome::Created);

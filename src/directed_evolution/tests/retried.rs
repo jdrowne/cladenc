@@ -1,13 +1,12 @@
-use std::path::Path;
-
 use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const CHECKED: &str = "[environment.healthcheck]\ncommand = \"test -e /ready\"\ninterval_sec = \
                        0.0\nretries = 1\n";
 
-fn with_a_health_check(directory: &Path, settings: &mut Settings) {
+fn with_a_health_check(directory: &Memory, settings: &mut Settings) {
     settings.max_task_health_check_retries = 1;
     given::configured(directory, "t1", CHECKED);
 }

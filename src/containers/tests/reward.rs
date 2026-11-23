@@ -1,14 +1,12 @@
-use std::fs;
-use std::os::unix::fs::symlink;
-
 use crate::containers::reward;
+use crate::file_system::tests::double::Memory;
 
 fn completed_on(files: &[(&str, &str)]) -> bool {
-    let directory = test_inputs::temporary_directory();
+    let directory = Memory::default();
     for (name, text) in files {
-        fs::write(directory.path().join(name), text).unwrap();
+        directory.write(directory.path().join(name), text).unwrap();
     }
-    reward::completed(directory.path())
+    reward::completed(&directory, directory.path())
 }
 
 #[test]
@@ -48,17 +46,23 @@ fn a_grader_that_left_no_score_did_not_complete_the_task() {
 
 #[test]
 fn a_reward_txt_that_is_a_directory_is_not_completed() {
-    let directory = test_inputs::temporary_directory();
-    fs::create_dir(directory.path().join("reward.txt")).unwrap();
-    assert!(!reward::completed(directory.path()));
+    let directory = Memory::default();
+    directory
+        .create_dir(directory.path().join("reward.txt"))
+        .unwrap();
+    assert!(!reward::completed(&directory, directory.path()));
 }
 
 #[test]
 fn a_reward_txt_that_is_a_symbolic_link_to_a_score_of_1_is_not_completed() {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("score"), "1\n").unwrap();
-    symlink("score", directory.path().join("reward.txt")).unwrap();
-    assert!(!reward::completed(directory.path()));
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("score"), "1\n")
+        .unwrap();
+    directory
+        .symlink("score", directory.path().join("reward.txt"))
+        .unwrap();
+    assert!(!reward::completed(&directory, directory.path()));
 }
 
 #[test]
@@ -115,9 +119,15 @@ fn a_reward_json_that_cannot_be_read_is_not_made_up_for_by_a_reward_txt_that_sco
 
 #[test]
 fn a_reward_json_that_is_a_symbolic_link_is_not_made_up_for_by_a_reward_txt() {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("reward.txt"), "1\n").unwrap();
-    fs::write(directory.path().join("scores"), r#"{"tests": 1}"#).unwrap();
-    symlink("scores", directory.path().join("reward.json")).unwrap();
-    assert!(!reward::completed(directory.path()));
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("reward.txt"), "1\n")
+        .unwrap();
+    directory
+        .write(directory.path().join("scores"), r#"{"tests": 1}"#)
+        .unwrap();
+    directory
+        .symlink("scores", directory.path().join("reward.json"))
+        .unwrap();
+    assert!(!reward::completed(&directory, directory.path()));
 }

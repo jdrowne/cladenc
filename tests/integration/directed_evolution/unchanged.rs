@@ -5,8 +5,8 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::cli::{self, Cli};
-use cladenc::containers::Program;
-use cladenc::directed_evolution::{self, Found};
+use cladenc::directed_evolution::Found;
+use cladenc::file_system::Disk;
 use cladenc::genealogy::CreationOutcome;
 use cladenc::journal::{self, Record, Settings};
 use clap::Parser;
@@ -37,7 +37,11 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
         benchmarks: vec![
-            Benchmark::read(&test_inputs::benchmark(directory, &["t1", "t2", "t3"])).unwrap(),
+            Benchmark::read(
+                &Disk,
+                &test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            )
+            .unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -64,9 +68,7 @@ fn evolved_by(run_command: &str) -> Evolved {
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let found =
-        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
-            .unwrap();
+    let found = crate::real::start(&settings, &outputs_directory, &stop, &mut written).unwrap();
     let said = String::from_utf8(written).unwrap();
     Evolved {
         directory,
@@ -116,13 +118,7 @@ fn reported(evolved: &Evolved) -> Value {
     let outputs_dir = format!("--outputs-dir={}", outputs_of(evolved));
     let cli = Cli::try_parse_from(["cladenc", "report", "--json", outputs_dir.as_str()]).unwrap();
     let mut output = Vec::new();
-    cli::execute(
-        &Program,
-        &cli,
-        &AtomicBool::new(false),
-        &mut output,
-        &mut io::sink(),
-    );
+    crate::real::execute(&cli, &AtomicBool::new(false), &mut output, &mut io::sink());
     serde_json::from_slice(&output).unwrap()
 }
 

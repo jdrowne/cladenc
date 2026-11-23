@@ -1,10 +1,8 @@
-use std::fs;
-use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
-use tempfile::TempDir;
-
 use crate::containers::artifacts;
+use crate::file_system::tests::double::Memory;
+use crate::file_system::{FileSystem, Kind};
 
 const FILES: [&str; 6] = [
     "notes.txt",
@@ -15,32 +13,32 @@ const FILES: [&str; 6] = [
     "cache/entry",
 ];
 
-fn tree_of(files: &[&str]) -> (TempDir, PathBuf) {
-    let directory = test_inputs::temporary_directory();
+fn tree_of(files: &[&str]) -> (Memory, PathBuf) {
+    let directory = Memory::default();
     let tree = directory.path().join("kept");
-    fs::create_dir(&tree).unwrap();
+    directory.create_dir(&tree).unwrap();
     for file in files {
         let file = tree.join(file);
-        fs::create_dir_all(file.parent().unwrap()).unwrap();
-        fs::write(file, "").unwrap();
+        directory.create_dir_all(file.parent().unwrap()).unwrap();
+        directory.write(file, "").unwrap();
     }
     (directory, tree)
 }
 
-fn listed(directory: &Path, below: &str, found: &mut Vec<String>) {
-    for entry in fs::read_dir(directory).unwrap() {
-        let entry = entry.unwrap();
-        let path = format!("{below}{}", entry.file_name().to_string_lossy());
-        if entry.file_type().unwrap().is_dir() {
-            listed(&entry.path(), &format!("{path}/"), found);
+fn listed(files: &Memory, tree: &Path, below: &str, found: &mut Vec<String>) {
+    for name in files.names_in(tree) {
+        let path = format!("{below}{name}");
+        let entry = tree.join(&name);
+        if files.found(&entry).unwrap().kind == Kind::Directory {
+            listed(files, &entry, &format!("{path}/"), found);
         }
         found.push(path);
     }
 }
 
-fn everything_in(tree: &Path) -> Vec<String> {
+fn everything_in(files: &Memory, tree: &Path) -> Vec<String> {
     let mut found = Vec::new();
-    listed(tree, "", &mut found);
+    listed(files, tree, "", &mut found);
     found.sort();
     found
 }
@@ -53,19 +51,19 @@ fn patterns(exclude: &[&str]) -> Vec<String> {
 }
 
 fn left_of(files: &[&str], exclude: &[&str]) -> Vec<String> {
-    let (_directory, tree) = tree_of(files);
-    artifacts::leave_out(&tree, &patterns(exclude));
-    everything_in(&tree)
+    let (directory, tree) = tree_of(files);
+    artifacts::leave_out(&directory, &tree, &patterns(exclude));
+    everything_in(&directory, &tree)
 }
 
-fn linked_to_a_directory_apart(exclude: &[&str]) -> (TempDir, Vec<String>) {
+fn linked_to_a_directory_apart(exclude: &[&str]) -> (Memory, Vec<String>) {
     let (directory, tree) = tree_of(&["notes.txt"]);
     let apart = directory.path().join("apart");
-    fs::create_dir(&apart).unwrap();
-    fs::write(apart.join("draft.tmp"), "").unwrap();
-    symlink(&apart, tree.join("link")).unwrap();
-    artifacts::leave_out(&tree, &patterns(exclude));
-    let left = everything_in(&tree);
+    directory.create_dir(&apart).unwrap();
+    directory.write(apart.join("draft.tmp"), "").unwrap();
+    directory.symlink(&apart, tree.join("link")).unwrap();
+    artifacts::leave_out(&directory, &tree, &patterns(exclude));
+    let left = everything_in(&directory, &tree);
     (directory, left)
 }
 
@@ -242,11 +240,11 @@ fn a_pattern_that_matches_the_directory_itself_leaves_it_empty() {
 
 #[test]
 fn a_file_that_is_kept_alone_is_left_as_it_is() {
-    let (_directory, tree) = tree_of(&[]);
+    let (directory, tree) = tree_of(&[]);
     let file = tree.join("report.json");
-    fs::write(&file, "{}").unwrap();
-    artifacts::leave_out(&file, &patterns(&["*"]));
-    assert!(file.is_file());
+    directory.write(&file, "{}").unwrap();
+    artifacts::leave_out(&directory, &file, &patterns(&["*"]));
+    assert!(directory.is_file(&file));
 }
 
 #[test]
@@ -257,20 +255,20 @@ fn a_symbolic_link_that_a_pattern_matches_is_left_out() {
 #[test]
 fn what_a_symbolic_link_that_is_left_out_leads_to_is_not_removed() {
     let (directory, _left) = linked_to_a_directory_apart(&["link"]);
-    assert!(directory.path().join("apart/draft.tmp").is_file());
+    assert!(directory.is_file(&directory.path().join("apart/draft.tmp")));
 }
 
 #[test]
 fn nothing_is_left_out_of_a_directory_that_a_symbolic_link_leads_to() {
     let (directory, _left) = linked_to_a_directory_apart(&["*.tmp"]);
-    assert!(directory.path().join("apart/draft.tmp").is_file());
+    assert!(directory.is_file(&directory.path().join("apart/draft.tmp")));
 }
 
 #[test]
 fn nothing_is_left_out_of_a_directory_that_is_kept_as_a_symbolic_link() {
     let (directory, tree) = tree_of(&["draft.tmp"]);
     let link = directory.path().join("link");
-    symlink(&tree, &link).unwrap();
-    artifacts::leave_out(&link, &patterns(&["*"]));
-    assert_eq!(everything_in(&tree), ["draft.tmp"]);
+    directory.symlink(&tree, &link).unwrap();
+    artifacts::leave_out(&directory, &link, &patterns(&["*"]));
+    assert_eq!(everything_in(&directory, &tree), ["draft.tmp"]);
 }

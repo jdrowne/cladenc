@@ -17,7 +17,7 @@ pub(super) fn run(
         .enumerate()
         .try_for_each(|(place, command)| {
             let kept = kept.join((place + 1).to_string());
-            make_directory(&kept);
+            make_directory(up.files(), &kept);
             let shell = Shell {
                 command: &command.command,
                 environment: &[],

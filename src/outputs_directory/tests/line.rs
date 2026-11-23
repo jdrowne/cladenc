@@ -1,15 +1,18 @@
-use std::fs;
 use std::path::Path;
 
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::outputs_directory::OutputsDirectory;
-use tempfile::TempDir;
 
-fn made() -> (TempDir, OutputsDirectory) {
-    let directory = test_inputs::temporary_directory();
-    let primogenitor = test_inputs::primogenitor(directory.path());
-    let outputs_directory =
-        OutputsDirectory::create(&directory.path().join("outputs"), &primogenitor).unwrap();
+fn made() -> (Memory, OutputsDirectory) {
+    let directory = Memory::default();
+    let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
+    let outputs_directory = OutputsDirectory::create(
+        directory.shared(),
+        &directory.path().join("outputs"),
+        &primogenitor,
+    )
+    .unwrap();
     (directory, outputs_directory)
 }
 
@@ -27,7 +30,7 @@ fn procreated(
         .unwrap();
 }
 
-fn family() -> (TempDir, OutputsDirectory) {
+fn family() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
     procreated(&outputs_directory, 2, 1, CreationOutcome::Created);
@@ -37,7 +40,7 @@ fn family() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn with_eleven_children_of_the_primogenitor() -> (TempDir, OutputsDirectory) {
+fn with_eleven_children_of_the_primogenitor() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     for child in 1..=11 {
         procreated(&outputs_directory, child, 0, CreationOutcome::Created);
@@ -45,9 +48,11 @@ fn with_eleven_children_of_the_primogenitor() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn with_two_records_that_name_each_other() -> (TempDir, OutputsDirectory) {
+fn with_two_records_that_name_each_other() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = family();
-    fs::write(outputs_directory.procreation(1).join("progenitor"), "2\n").unwrap();
+    directory
+        .write(outputs_directory.procreation(1).join("progenitor"), "2\n")
+        .unwrap();
     (directory, outputs_directory)
 }
 
@@ -77,12 +82,13 @@ fn a_child_whose_procreation_has_not_ended_has_no_progenitor_on_record() {
 
 #[test]
 fn a_record_that_does_not_hold_an_id_names_no_progenitor() {
-    let (_directory, outputs_directory) = family();
-    fs::write(
-        outputs_directory.procreation(1).join("progenitor"),
-        "none\n",
-    )
-    .unwrap();
+    let (directory, outputs_directory) = family();
+    directory
+        .write(
+            outputs_directory.procreation(1).join("progenitor"),
+            "none\n",
+        )
+        .unwrap();
     assert_eq!(outputs_directory.progenitor_of(1), None);
 }
 
@@ -139,15 +145,18 @@ fn the_children_of_a_harness_are_in_the_order_of_their_ids_and_not_of_their_name
 
 #[test]
 fn what_is_kept_beside_the_procreations_under_a_name_that_is_no_id_is_no_child() {
-    let (_directory, outputs_directory) = family();
-    fs::create_dir(outputs_directory.path().join("procreations/notes")).unwrap();
+    let (directory, outputs_directory) = family();
+    directory
+        .create_dir(outputs_directory.path().join("procreations/notes"))
+        .unwrap();
     assert_eq!(outputs_directory.children_of(0), [1, 3]);
 }
 
 #[test]
 fn an_outputs_directory_that_is_not_there_has_no_children_to_list() {
     assert_eq!(
-        OutputsDirectory::at(Path::new("/nowhere/outputs")).children_of(0),
+        OutputsDirectory::at(Memory::default().shared(), Path::new("/nowhere/outputs"))
+            .children_of(0),
         Vec::<u64>::new()
     );
 }

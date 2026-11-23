@@ -5,8 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{ContainerError, Program};
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::containers::ContainerError;
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
+use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;
 
@@ -16,7 +17,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&test_inputs::benchmark(directory, &["t1"])).unwrap()],
+        benchmarks: vec![
+            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
+        ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -42,8 +45,7 @@ fn stopped_at_its_first_attempt() -> (TempDir, Result<Found, DirectedEvolutionEr
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), "exit 125");
     let outputs_directory = directory.path().join("outputs");
-    let found = directed_evolution::start(
-        &Program,
+    let found = crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -64,7 +66,7 @@ fn stopped_by_its_flag() -> (TempDir, Result<Found, DirectedEvolutionError>, Str
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written)
+        crate::real::start(&settings, &outputs_directory, &stop, &mut written)
     });
     (directory, found, String::from_utf8(written).unwrap())
 }
@@ -89,8 +91,7 @@ fn evolved_by(run_command: &str) -> Result<Found, DirectedEvolutionError> {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path(), run_command);
     let outputs_directory = directory.path().join("outputs");
-    directed_evolution::start(
-        &Program,
+    crate::real::start(
         &settings,
         &outputs_directory,
         &AtomicBool::new(false),
@@ -194,8 +195,7 @@ fn a_directed_evolution_a_container_stopped_says_what_docker_did_when_it_happens
     let outputs_directory = directory.path().join("outputs");
     let mut written = Vec::new();
     let stop = AtomicBool::new(false);
-    let _stopped =
-        directed_evolution::start(&Program, &settings, &outputs_directory, &stop, &mut written);
+    let _stopped = crate::real::start(&settings, &outputs_directory, &stop, &mut written);
     assert!(String::from_utf8(written).unwrap().contains(
         "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker \
          did not start its container"

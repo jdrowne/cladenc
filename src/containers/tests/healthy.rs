@@ -175,7 +175,7 @@ fn a_task_whose_health_check_passes_once_it_is_brought_up_again_is_attempted() {
 fn an_attempt_that_is_stopped_before_its_task_is_brought_up_again_was_stopped() {
     let stop = Arc::new(AtomicBool::new(false));
     let asked = Arc::clone(&stop);
-    let docker = never_healthy().doing(&CHECK, move |_| asked.store(true, Ordering::SeqCst));
+    let docker = never_healthy().doing(&CHECK, move |_, _| asked.store(true, Ordering::SeqCst));
     let environment = given::environment(with(given::checked(1)));
     let tried = given::attempted_until(docker, &RETRIED, &environment, &stop);
     assert!(matches!(tried.result, Err(ContainerError::Stopped)));

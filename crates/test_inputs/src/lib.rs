@@ -21,6 +21,30 @@ const ROFF_ESCAPES: [(&str, &str); 6] = [
     ("\\e", "\\"),
 ];
 
+const MANUAL_PAGES: [(&str, &str); 5] = [
+    ("cladenc", include_str!("../../../docs/man/man1/cladenc.1")),
+    (
+        "cladenc-report",
+        include_str!("../../../docs/man/man1/cladenc-report.1"),
+    ),
+    (
+        "cladenc-resume",
+        include_str!("../../../docs/man/man1/cladenc-resume.1"),
+    ),
+    (
+        "cladenc-start",
+        include_str!("../../../docs/man/man1/cladenc-start.1"),
+    ),
+    (
+        "cladenc-status",
+        include_str!("../../../docs/man/man1/cladenc-status.1"),
+    ),
+];
+
+pub const README: &str = include_str!("../../../README.md");
+
+pub const PACKAGE: &str = include_str!("../../../etc/nfpm/nfpm.yaml");
+
 pub const IMAGE: &str = "debian:stable-slim";
 
 pub const MODEL: &str = "a-model";
@@ -70,6 +94,37 @@ pub struct Image {
     pub name: String,
 }
 
+pub trait Files {
+    fn make_directories(&self, directory: &Path);
+
+    fn write(&self, file: &Path, text: &str);
+
+    fn set_mode(&self, file: &Path, mode: u32);
+
+    fn link(&self, target: &str, link: &Path);
+}
+
+pub struct Disk;
+
+impl Files for Disk {
+    fn make_directories(&self, directory: &Path) {
+        fs::create_dir_all(directory).expect("the directory can be made");
+    }
+
+    fn write(&self, file: &Path, text: &str) {
+        fs::write(file, text).expect("the file can be written");
+    }
+
+    fn set_mode(&self, file: &Path, mode: u32) {
+        fs::set_permissions(file, fs::Permissions::from_mode(mode))
+            .expect("the file can be given its permission bits");
+    }
+
+    fn link(&self, target: &str, link: &Path) {
+        symlink(target, link).expect("the symbolic link can be made");
+    }
+}
+
 impl Drop for Image {
     fn drop(&mut self) {
         let _ = Command::new("docker")
@@ -99,8 +154,12 @@ pub fn environment_image_repository() -> String {
 }
 
 pub fn dockerfile(directory: &Path, steps: &str) -> PathBuf {
+    dockerfile_in(&Disk, directory, steps)
+}
+
+pub fn dockerfile_in(files: &dyn Files, directory: &Path, steps: &str) -> PathBuf {
     let file = directory.join("Dockerfile");
-    fs::write(&file, format!("FROM {IMAGE}\n{steps}")).expect("the Dockerfile can be written");
+    files.write(&file, &format!("FROM {IMAGE}\n{steps}"));
     file
 }
 
@@ -117,61 +176,76 @@ pub fn temporary_directory() -> TempDir {
 }
 
 pub fn primogenitor(directory: &Path) -> PathBuf {
+    primogenitor_in(&Disk, directory)
+}
+
+pub fn primogenitor_in(files: &dyn Files, directory: &Path) -> PathBuf {
     let primogenitor = directory.join("primogenitor");
     let script = primogenitor.join("harness.sh");
-    fs::create_dir_all(primogenitor.join("prompts")).expect("the primogenitor can be made");
-    fs::write(&script, "#!/bin/sh\necho harness\n").expect("the script can be written");
-    fs::set_permissions(&script, fs::Permissions::from_mode(0o750))
-        .expect("the script can be given its permission bits");
-    fs::write(primogenitor.join("prompts/system.txt"), "Solve the task.\n")
-        .expect("the prompt can be written");
-    symlink("prompts/system.txt", primogenitor.join("prompt.txt"))
-        .expect("the symbolic link can be made");
+    files.make_directories(&primogenitor.join("prompts"));
+    files.write(&script, "#!/bin/sh\necho harness\n");
+    files.set_mode(&script, 0o750);
+    files.write(
+        &primogenitor.join("prompts/system.txt"),
+        "Solve the task.\n",
+    );
+    files.link("prompts/system.txt", &primogenitor.join("prompt.txt"));
     primogenitor
 }
 
 pub fn benchmark(directory: &Path, tasks: &[&str]) -> PathBuf {
-    benchmark_named(directory, "benchmark", tasks)
+    benchmark_in(&Disk, directory, tasks)
+}
+
+pub fn benchmark_in(files: &dyn Files, directory: &Path, tasks: &[&str]) -> PathBuf {
+    benchmark_named_in(files, directory, "benchmark", tasks)
 }
 
 pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf {
+    benchmark_named_in(&Disk, directory, name, tasks)
+}
+
+pub fn benchmark_named_in(
+    files: &dyn Files,
+    directory: &Path,
+    name: &str,
+    tasks: &[&str],
+) -> PathBuf {
     let benchmark = directory.join(name);
-    fs::create_dir_all(&benchmark).expect("the benchmark can be made");
+    files.make_directories(&benchmark);
     for id in tasks {
-        task(&benchmark, id);
+        task_in(files, &benchmark, id);
     }
     benchmark
 }
 
 pub fn task(benchmark: &Path, id: &str) -> PathBuf {
+    task_in(&Disk, benchmark, id)
+}
+
+pub fn task_in(files: &dyn Files, benchmark: &Path, id: &str) -> PathBuf {
     let task = benchmark.join(id);
     let grader = task.join("tests/test.sh");
-    fs::create_dir_all(task.join("tests")).expect("the tests of the task can be made");
-    fs::create_dir_all(task.join("environment/workspace")).expect("the environment can be made");
-    fs::write(
-        task.join("environment/Dockerfile"),
-        format!("FROM {IMAGE}\nWORKDIR /app\nCOPY workspace .\n"),
-    )
-    .expect("the Dockerfile can be written");
-    fs::write(
-        task.join("instruction.md"),
-        format!("Finish the work of {id}.\n"),
-    )
-    .expect("the specification can be written");
-    fs::write(task.join("task.toml"), "schema_version = \"1.4\"\n")
-        .expect("the configuration can be written");
-    fs::write(task.join("environment/workspace/work.txt"), "to do\n")
-        .expect("the file can be written");
-    fs::write(
+    files.make_directories(&task.join("tests"));
+    files.make_directories(&task.join("environment/workspace"));
+    files.write(
+        &task.join("environment/Dockerfile"),
+        &format!("FROM {IMAGE}\nWORKDIR /app\nCOPY workspace .\n"),
+    );
+    files.write(
+        &task.join("instruction.md"),
+        &format!("Finish the work of {id}.\n"),
+    );
+    files.write(&task.join("task.toml"), "schema_version = \"1.4\"\n");
+    files.write(&task.join("environment/workspace/work.txt"), "to do\n");
+    files.write(
         &grader,
-        format!(
+        &format!(
             "#!/bin/sh\nif grep -q -x -e {id} solved; then echo 1; else echo 0; fi \
              > /logs/verifier/reward.txt\n"
         ),
-    )
-    .expect("the grader can be written");
-    fs::set_permissions(&grader, fs::Permissions::from_mode(0o750))
-        .expect("the grader can be given its permission bits");
+    );
+    files.set_mode(&grader, 0o750);
     task
 }
 
@@ -199,10 +273,12 @@ pub fn without_seconds(journal: &str) -> String {
 }
 
 pub fn manual(page: &str) -> String {
-    let file = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/man/man1")
-        .join(format!("{page}.1"));
-    text_of_roff(&fs::read_to_string(file).unwrap())
+    let roff = MANUAL_PAGES
+        .iter()
+        .find(|(name, _)| *name == page)
+        .map(|(_, roff)| *roff)
+        .expect("the manual page is one of those that are written");
+    text_of_roff(roff)
 }
 
 pub fn manual_on_one_line(page: &str) -> String {
@@ -334,7 +410,11 @@ pub fn kept_grader(outputs_directory: &Path, task: &str, command: &str) {
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {
+    model_key_file_in(&Disk, directory, text)
+}
+
+pub fn model_key_file_in(files: &dyn Files, directory: &Path, text: &str) -> PathBuf {
     let file = directory.join("model-key");
-    fs::write(&file, text).expect("the file of the key can be written");
+    files.write(&file, text);
     file
 }

@@ -1,11 +1,9 @@
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
 use crate::journal::{self, Journal, Record, Seconds, Settings, Started, State};
-use tempfile::TempDir;
 
 fn settings() -> Settings {
     Settings {
@@ -87,13 +85,13 @@ fn attempt_finished(harness: u64, task: &str, result: AttemptResult) -> Record {
     }
 }
 
-fn journal_of(records: &[Record]) -> TempDir {
+fn journal_of(records: &[Record]) -> Memory {
     journal_with(settings(), records)
 }
 
-fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let mut journal = Journal::open(outputs_directory.path()).unwrap();
+fn journal_with(settings: Settings, records: &[Record]) -> Memory {
+    let directory = Memory::default();
+    let mut journal = Journal::open(&directory, directory.path()).unwrap();
     journal
         .append(&Record::Run {
             format: journal::FORMAT,
@@ -103,11 +101,15 @@ fn journal_with(settings: Settings, records: &[Record]) -> TempDir {
     for record in records {
         journal.append(record).unwrap();
     }
-    outputs_directory
+    directory
+}
+
+fn read(directory: &Memory) -> State {
+    journal::read(directory, directory.path()).unwrap()
 }
 
 fn rebuilt(records: &[Record]) -> State {
-    journal::read(journal_of(records).path()).unwrap()
+    read(&journal_of(records))
 }
 
 fn rebuilt_of_a_directed_evolution_that_builds(records: &[Record]) -> State {
@@ -115,18 +117,15 @@ fn rebuilt_of_a_directed_evolution_that_builds(records: &[Record]) -> State {
         harness_build_command: Some("make harness".to_owned()),
         ..settings()
     };
-    journal::read(journal_with(settings, records).path()).unwrap()
+    read(&journal_with(settings, records))
 }
 
 fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
-    let outputs_directory = journal_of(records);
-    OpenOptions::new()
-        .append(true)
-        .open(journal::path(outputs_directory.path()))
-        .unwrap()
-        .write_all(last_line.as_bytes())
-        .unwrap();
-    journal::read(outputs_directory.path()).unwrap()
+    let directory = journal_of(records);
+    let file = journal::path(directory.path());
+    let written = directory.read_to_string(&file).unwrap();
+    directory.write(&file, written + last_line).unwrap();
+    read(&directory)
 }
 
 fn four_actions_of_which_two_finished() -> [Record; 6] {
@@ -209,9 +208,10 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
 
 #[test]
 fn rebuilding_counts_the_attempts_at_the_selection_tasks_of_the_run_record_apart() {
-    let state =
-        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
-            .unwrap();
+    let state = read(&journal_with(
+        dividing_its_tasks(),
+        &an_attempt_at_each_task(),
+    ));
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
@@ -224,9 +224,10 @@ fn rebuilding_counts_the_attempts_at_the_selection_tasks_of_the_run_record_apart
 
 #[test]
 fn rebuilding_counts_the_attempts_at_the_corroboration_tasks_of_the_run_record_apart() {
-    let state =
-        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
-            .unwrap();
+    let state = read(&journal_with(
+        dividing_its_tasks(),
+        &an_attempt_at_each_task(),
+    ));
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
@@ -239,9 +240,10 @@ fn rebuilding_counts_the_attempts_at_the_corroboration_tasks_of_the_run_record_a
 
 #[test]
 fn rebuilding_counts_no_attempt_at_a_corroboration_task_in_a_clade() {
-    let state =
-        journal::read(journal_with(dividing_its_tasks(), &an_attempt_at_each_task()).path())
-            .unwrap();
+    let state = read(&journal_with(
+        dividing_its_tasks(),
+        &an_attempt_at_each_task(),
+    ));
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
@@ -368,9 +370,9 @@ fn a_whole_record_with_no_newline_at_its_end_is_ignored_as_cut_short() {
 
 #[test]
 fn reading_a_journal_takes_no_lock() {
-    let outputs_directory = journal_of(&[]);
-    let _writer = Journal::open(outputs_directory.path()).unwrap();
-    assert!(journal::read(outputs_directory.path()).is_ok());
+    let directory = journal_of(&[]);
+    let _writer = Journal::open(&directory, directory.path()).unwrap();
+    assert!(journal::read(&directory, directory.path()).is_ok());
 }
 
 fn an_experiment_whose_baseline_started() -> Vec<Record> {

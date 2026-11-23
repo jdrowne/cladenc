@@ -1,10 +1,8 @@
-use std::fs;
 use std::path::{Path, PathBuf};
-
-use tempfile::TempDir;
 
 use crate::benchmark::Artifact;
 use crate::containers::artifacts;
+use crate::file_system::tests::double::Memory;
 
 fn place_of(destination: &str) -> PathBuf {
     let artifact = Artifact {
@@ -18,20 +16,20 @@ fn place_of(destination: &str) -> PathBuf {
     )
 }
 
-fn kept_with(directories: &[&str], files: &[&str]) -> (TempDir, PathBuf) {
-    let directory = test_inputs::temporary_directory();
+fn kept_with(directories: &[&str], files: &[&str]) -> (Memory, PathBuf) {
+    let directory = Memory::default();
     let kept = directory.path().join("artifacts");
     for made in directories {
-        fs::create_dir_all(kept.join(made)).unwrap();
+        directory.create_dir_all(kept.join(made)).unwrap();
     }
     for file in files {
-        fs::write(kept.join(file), "").unwrap();
+        directory.write(kept.join(file), "").unwrap();
     }
     (directory, kept)
 }
 
-fn to_be_given() -> (TempDir, PathBuf) {
-    let directory = test_inputs::temporary_directory();
+fn to_be_given() -> (Memory, PathBuf) {
+    let directory = Memory::default();
     let given = directory.path().join("given-to-the-grader");
     (directory, given)
 }
@@ -51,17 +49,20 @@ fn a_destination_written_with_slashes_to_spare_is_kept_at_the_same_place() {
 
 #[test]
 fn the_empty_directories_above_a_place_are_removed_with_the_directory_of_the_artifacts() {
-    let (_directory, kept) = kept_with(&["app/reports"], &[]);
-    artifacts::remove_above_where_empty(&kept.join("app/reports/latest"), &kept);
-    assert!(!kept.exists());
+    let (directory, kept) = kept_with(&["app/reports"], &[]);
+    artifacts::remove_above_where_empty(&directory, &kept.join("app/reports/latest"), &kept);
+    assert!(!directory.exists(&kept));
 }
 
 #[test]
 fn a_directory_above_a_place_that_holds_something_stays_when_the_empty_one_under_it_goes() {
-    let (_directory, kept) = kept_with(&["app/reports"], &["app/notes.txt"]);
-    artifacts::remove_above_where_empty(&kept.join("app/reports/latest"), &kept);
+    let (directory, kept) = kept_with(&["app/reports"], &["app/notes.txt"]);
+    artifacts::remove_above_where_empty(&directory, &kept.join("app/reports/latest"), &kept);
     assert_eq!(
-        (kept.join("app/reports").exists(), kept.join("app").exists()),
+        (
+            directory.exists(&kept.join("app/reports")),
+            directory.exists(&kept.join("app"))
+        ),
         (false, true)
     );
 }
@@ -69,23 +70,23 @@ fn a_directory_above_a_place_that_holds_something_stays_when_the_empty_one_under
 #[test]
 fn no_directory_above_the_directory_of_the_artifacts_is_removed_however_empty() {
     let (directory, kept) = kept_with(&["app"], &[]);
-    artifacts::remove_above_where_empty(&kept.join("app/report"), &kept);
-    assert!(directory.path().exists());
+    artifacts::remove_above_where_empty(&directory, &kept.join("app/report"), &kept);
+    assert!(directory.exists(directory.path()));
 }
 
 #[test]
 fn a_file_made_to_be_given_to_the_grader_is_removed() {
-    let (_directory, given) = to_be_given();
-    fs::write(&given, "").unwrap();
-    artifacts::remove(&given);
-    assert!(!given.exists());
+    let (directory, given) = to_be_given();
+    directory.write(&given, "").unwrap();
+    artifacts::remove(&directory, &given);
+    assert!(!directory.exists(&given));
 }
 
 #[test]
 fn a_directory_made_to_be_given_to_the_grader_is_removed_with_all_it_holds() {
-    let (_directory, given) = to_be_given();
-    fs::create_dir_all(given.join("app")).unwrap();
-    fs::write(given.join("app/report"), "").unwrap();
-    artifacts::remove(&given);
-    assert!(!given.exists());
+    let (directory, given) = to_be_given();
+    directory.create_dir_all(given.join("app")).unwrap();
+    directory.write(given.join("app/report"), "").unwrap();
+    artifacts::remove(&directory, &given);
+    assert!(!directory.exists(&given));
 }

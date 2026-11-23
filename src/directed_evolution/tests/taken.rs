@@ -1,6 +1,4 @@
 use std::ffi::OsStr;
-use std::fs;
-use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -10,6 +8,7 @@ use crate::containers::{Attempted, Creation, HarnessEnding};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, Genealogy};
 use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
@@ -71,8 +70,8 @@ fn seen<T>(
     settings: &Settings,
     steps: impl FnOnce(Progress<'_>) -> T,
 ) -> (T, Vec<String>, Vec<Record>) {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    let journal = Journal::open(outputs_directory.path()).unwrap();
+    let directory = Memory::default();
+    let journal = Journal::open(&directory, directory.path()).unwrap();
     let mut written: Vec<u8> = Vec::new();
     let returned = steps(Progress::new(settings, journal, &mut written));
     let said = String::from_utf8(written)
@@ -80,7 +79,8 @@ fn seen<T>(
         .lines()
         .map(str::to_owned)
         .collect();
-    let journaled = fs::read_to_string(journal::path(outputs_directory.path()))
+    let journaled = directory
+        .read_to_string(journal::path(directory.path()))
         .unwrap()
         .lines()
         .map(|line| serde_json::from_str(line).unwrap())
@@ -148,7 +148,10 @@ fn start(progress: &mut Progress<'_>) -> Started {
 fn carry_out(progress: &mut Progress<'_>, actions: usize) {
     for _ in 0..actions {
         let action = start(progress);
-        progress.hear(end_of(action), &OutputsDirectory::at(Path::new("/outputs")));
+        progress.hear(
+            end_of(action),
+            &OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs")),
+        );
     }
 }
 

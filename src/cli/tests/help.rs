@@ -1,6 +1,3 @@
-use std::fs;
-use std::path::Path;
-
 use crate::cli::Cli;
 use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
@@ -31,9 +28,7 @@ fn help_of(sub_command: &str) -> String {
 }
 
 fn description_of_the_package() -> String {
-    let package = Path::new(env!("CARGO_MANIFEST_DIR")).join("etc/nfpm/nfpm.yaml");
-    fs::read_to_string(package)
-        .unwrap()
+    test_inputs::PACKAGE
         .lines()
         .skip_while(|line| *line != "description: >-")
         .skip(1)

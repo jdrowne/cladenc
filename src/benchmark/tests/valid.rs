@@ -1,7 +1,6 @@
-use std::fs;
-
 use crate::benchmark::configuration::{self, ConfigurationError};
 use crate::benchmark::{self, BenchmarkError, TaskConfiguration};
+use crate::file_system::tests::double::Memory;
 
 const NAMED: &str = "[task]\nname = \"a-team/fix-the-parser\"\n";
 const CHECKED: &str = "[environment.healthcheck]\ncommand = \"test -e /ready\"\n";
@@ -11,9 +10,11 @@ const NOT_ONE_OF_THE_NETWORK_MODES: &str =
     "invalid value: string \"private\", expected one of no-network, public, allowlist";
 
 fn read(written: &str) -> Result<TaskConfiguration, ConfigurationError> {
-    let directory = test_inputs::temporary_directory();
-    fs::write(directory.path().join("task.toml"), written).unwrap();
-    configuration::read_with(directory.path(), &|_| None)
+    let directory = Memory::default();
+    directory
+        .write(directory.path().join("task.toml"), written)
+        .unwrap();
+    configuration::read_with(&directory, directory.path(), &|_| None)
 }
 
 fn not_valid(line: usize, reason: &str) -> Result<TaskConfiguration, ConfigurationError> {
@@ -480,15 +481,16 @@ fn a_grader_given_an_environment_and_no_environment_mode_is_valid() {
 
 #[test]
 fn a_task_whose_task_toml_is_not_valid_in_what_cladenc_does_not_obey_is_refused_with_its_id() {
-    let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
-    fs::write(
-        benchmark.join("t2/task.toml"),
-        "[agent]\nnetwork_mode = \"private\"\n",
-    )
-    .unwrap();
+    let directory = Memory::default();
+    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    directory
+        .write(
+            benchmark.join("t2/task.toml"),
+            "[agent]\nnetwork_mode = \"private\"\n",
+        )
+        .unwrap();
     assert_eq!(
-        benchmark::tasks(&benchmark),
+        benchmark::tasks(&directory, &benchmark),
         Err(BenchmarkError::Configuration {
             task: "t2".to_owned(),
             error: ConfigurationError::NotValid {

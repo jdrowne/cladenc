@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::fmt::{self, Display, Formatter};
-use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 use std::time::Duration;
@@ -10,6 +9,7 @@ use serde::Deserialize;
 
 use super::artifacts::{self, Artifact, OF_THE_HARNESS};
 use super::{is_name, valid};
+use crate::file_system::FileSystem;
 
 pub(super) const CONFIGURATION: &str = "task.toml";
 const VERIFIER: &str = "verifier";
@@ -355,16 +355,17 @@ impl User {
 }
 
 impl TaskConfiguration {
-    pub fn read(task: &Path) -> Result<Self, ConfigurationError> {
-        read_with(task, &|variable| env::var(variable).ok())
+    pub fn read(files: &dyn FileSystem, task: &Path) -> Result<Self, ConfigurationError> {
+        read_with(files, task, &|variable| env::var(variable).ok())
     }
 }
 
 pub(super) fn read_with(
+    files: &dyn FileSystem,
     task: &Path,
     set: &dyn Fn(&str) -> Option<String>,
 ) -> Result<TaskConfiguration, ConfigurationError> {
-    let text = written_in(&task.join(CONFIGURATION))?;
+    let text = written_in(files, &task.join(CONFIGURATION))?;
     let written = toml::from_str::<Written>(&text)
         .and_then(|written| valid::check(&text).map(|()| written))
         .map_err(|error| ConfigurationError::NotValid {
@@ -605,8 +606,8 @@ fn size(
         .ok_or(ConfigurationError::NotASize { key })
 }
 
-fn written_in(file: &Path) -> Result<String, ConfigurationError> {
-    fs::read_to_string(file).map_err(|error| match error.kind() {
+fn written_in(files: &dyn FileSystem, file: &Path) -> Result<String, ConfigurationError> {
+    files.read_text(file).map_err(|error| match error.kind() {
         ErrorKind::NotFound => ConfigurationError::Missing,
         _ => ConfigurationError::Unreadable {
             reason: error.to_string(),

@@ -1,15 +1,17 @@
-use std::fs;
-use std::path::Path;
-
 use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
+use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const REFUSED: Answer = Answer::Refused("docker is not there");
 
-fn with_a_key(directory: &Path, settings: &mut Settings) {
-    settings.model_key_file = Some(test_inputs::model_key_file(directory, "a-made-up-key\n"));
+fn with_a_key(directory: &Memory, settings: &mut Settings) {
+    settings.model_key_file = Some(test_inputs::model_key_file_in(
+        directory,
+        directory.path(),
+        "a-made-up-key\n",
+    ));
 }
 
 fn failed() -> Evolved {
@@ -65,7 +67,10 @@ fn a_directed_evolution_whose_containers_cannot_be_listed_is_not_resumed() {
 fn a_directed_evolution_whose_file_of_the_key_is_gone_is_not_resumed() {
     let docker = Double::default().answering(&["--detach"], &[REFUSED]);
     let evolved = given::started(docker, with_a_key);
-    fs::remove_file(evolved.directory().join("model-key")).unwrap();
+    evolved
+        .files()
+        .remove_file(evolved.files().path().join("model-key"))
+        .unwrap();
     let evolved = given::resumed(evolved, Double::default());
     assert!(matches!(
         evolved.result,

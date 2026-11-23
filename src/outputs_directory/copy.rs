@@ -1,24 +1,27 @@
 use std::collections::BTreeSet;
 use std::ffi::OsString;
-use std::fs;
 use std::io::{self, ErrorKind};
-use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::Path;
 
-pub(super) fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
-    let kind = fs::symlink_metadata(from)?.file_type();
-    if kind.is_dir() {
-        fs::create_dir(to)
-            .and_then(|()| fs::read_dir(from))
-            .and_then(|mut entries| {
-                entries.try_for_each(|entry| {
-                    entry.and_then(|entry| copy_tree(&entry.path(), &to.join(entry.file_name())))
-                })
+use crate::file_system::{FileSystem, Kind};
+
+pub(super) fn copy_tree(files: &dyn FileSystem, from: &Path, to: &Path) -> io::Result<()> {
+    let kind = files.found(from)?.kind;
+    if kind == Kind::Directory {
+        files
+            .make_directory(to)
+            .and_then(|()| files.list(from))
+            .and_then(|names| {
+                names
+                    .iter()
+                    .try_for_each(|name| copy_tree(files, &from.join(name), &to.join(name)))
             })
-    } else if kind.is_file() {
-        fs::copy(from, to).map(|_| ())
-    } else if kind.is_symlink() {
-        fs::read_link(from).and_then(|target| symlink(target, to))
+    } else if kind == Kind::File {
+        files.copy(from, to)
+    } else if kind == Kind::SymbolicLink {
+        files
+            .target(from)
+            .and_then(|target| files.link(&target, to))
     } else {
         Err(io::Error::new(
             ErrorKind::InvalidInput,
@@ -30,59 +33,56 @@ pub(super) fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
     }
 }
 
-pub(crate) fn make_removable(tree: &Path) {
-    if let Ok(found) = fs::symlink_metadata(tree)
-        && found.is_dir()
+pub(crate) fn make_removable(files: &dyn FileSystem, tree: &Path) {
+    if let Ok(found) = files.found(tree)
+        && found.kind == Kind::Directory
     {
-        let mut permissions = found.permissions();
-        permissions.set_mode(permissions.mode() | 0o700);
-        let _ = fs::set_permissions(tree, permissions);
-        for entry in fs::read_dir(tree).into_iter().flatten().flatten() {
-            make_removable(&entry.path());
+        let _ = files.set_mode(tree, found.mode | 0o700);
+        for name in files.list(tree).unwrap_or_default() {
+            make_removable(files, &tree.join(name));
         }
     }
 }
 
-pub(crate) fn holds_only_harness_files(tree: &Path) -> io::Result<bool> {
-    let kind = fs::symlink_metadata(tree)?.file_type();
-    if kind.is_dir() {
-        fs::read_dir(tree).and_then(|mut entries| {
-            entries.try_fold(true, |only, entry| {
-                entry
-                    .and_then(|entry| holds_only_harness_files(&entry.path()))
-                    .map(|inside| only && inside)
+pub(crate) fn holds_only_harness_files(files: &dyn FileSystem, tree: &Path) -> io::Result<bool> {
+    let kind = files.found(tree)?.kind;
+    if kind == Kind::Directory {
+        files.list(tree).and_then(|names| {
+            names.iter().try_fold(true, |only, name| {
+                holds_only_harness_files(files, &tree.join(name)).map(|inside| only && inside)
             })
         })
     } else {
-        Ok(kind.is_file() || kind.is_symlink())
+        Ok(kind == Kind::File || kind == Kind::SymbolicLink)
     }
 }
 
-pub(crate) fn same_tree(one: &Path, other: &Path) -> io::Result<bool> {
-    let found = fs::symlink_metadata(one)?;
-    let other_found = fs::symlink_metadata(other)?;
-    let kind = found.file_type();
-    if kind != other_found.file_type() {
+pub(crate) fn same_tree(files: &dyn FileSystem, one: &Path, other: &Path) -> io::Result<bool> {
+    let found = files.found(one)?;
+    let other_found = files.found(other)?;
+    if found.kind != other_found.kind {
         Ok(false)
-    } else if kind.is_dir() {
-        same_entries(one, other)
-    } else if !kind.is_file() {
-        Ok(fs::read_link(one).ok() == fs::read_link(other).ok())
-    } else if found.permissions() != other_found.permissions() || found.len() != other_found.len() {
+    } else if found.kind == Kind::Directory {
+        same_entries(files, one, other)
+    } else if found.kind != Kind::File {
+        Ok(files.target(one).ok() == files.target(other).ok())
+    } else if found.mode != other_found.mode || found.length != other_found.length {
         Ok(false)
     } else {
-        fs::read(one).and_then(|contents| fs::read(other).map(|others| contents == others))
+        files
+            .read(one)
+            .and_then(|contents| files.read(other).map(|others| contents == others))
     }
 }
 
-fn same_entries(one: &Path, other: &Path) -> io::Result<bool> {
-    names_in(one)
-        .and_then(|names| names_in(other).map(|other_names| (names, other_names)))
+fn same_entries(files: &dyn FileSystem, one: &Path, other: &Path) -> io::Result<bool> {
+    names_in(files, one)
+        .and_then(|names| names_in(files, other).map(|other_names| (names, other_names)))
         .and_then(|(names, other_names)| {
             if names == other_names {
                 names
                     .iter()
-                    .map(|name| same_tree(&one.join(name), &other.join(name)))
+                    .map(|name| same_tree(files, &one.join(name), &other.join(name)))
                     .find(|same| !matches!(same, Ok(true)))
                     .unwrap_or(Ok(true))
             } else {
@@ -91,10 +91,8 @@ fn same_entries(one: &Path, other: &Path) -> io::Result<bool> {
         })
 }
 
-fn names_in(directory: &Path) -> io::Result<BTreeSet<OsString>> {
-    fs::read_dir(directory).and_then(|entries| {
-        entries
-            .map(|entry| entry.map(|found| found.file_name()))
-            .collect()
-    })
+fn names_in(files: &dyn FileSystem, directory: &Path) -> io::Result<BTreeSet<OsString>> {
+    files
+        .list(directory)
+        .map(|names| names.into_iter().collect())
 }

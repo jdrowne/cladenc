@@ -7,12 +7,13 @@ mod said;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
-use crate::containers::{self, ContainerError, Docker, Environment, Host, Launch};
+use crate::containers::{self, ContainerError, Docker, Environment, Host, Launch, Outside};
 use crate::genealogy::HarnessId;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
@@ -58,19 +59,24 @@ fn not_started(error: DirectedEvolutionError) -> DirectedEvolutionError {
 }
 
 pub fn start(
-    docker: &dyn Docker,
+    outside: Outside<'_>,
     settings: &Settings,
     path: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<Found, DirectedEvolutionError> {
-    let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
+    let docker = outside.docker;
+    let files = outside.files.as_ref();
+    let key = settings
+        .model_key(files)
+        .map_err(DirectedEvolutionError::Key)?;
     let making = Said::Making {
         outputs_directory: path,
         primogenitor: &settings.primogenitor,
     };
     say(writer, &making);
-    let (made, journal) = OutputsDirectory::create(path, &settings.primogenitor)
+    let kept = Arc::clone(outside.files);
+    let (made, journal) = OutputsDirectory::create(kept, path, &settings.primogenitor)
         .and_then(|outputs_directory| {
             settings
                 .benchmarks
@@ -104,7 +110,7 @@ pub fn start(
         })
         .map_err(not_started)
         .and_then(|made| {
-            Journal::open(path)
+            Journal::open(files, path)
                 .map(|journal| (made, journal))
                 .map_err(DirectedEvolutionError::Journal)
         })?;
@@ -169,13 +175,15 @@ fn build_image(
 }
 
 pub fn resume(
-    docker: &dyn Docker,
+    outside: Outside<'_>,
     path: &Path,
     stop: &AtomicBool,
     writer: &mut dyn Write,
 ) -> Result<Found, DirectedEvolutionError> {
-    let (journal, state) = Journal::open_existing(path)
-        .and_then(|journal| journal::read(path).map(|state| (journal, state)))
+    let docker = outside.docker;
+    let files = outside.files.as_ref();
+    let (journal, state) = Journal::open_existing(files, path)
+        .and_then(|journal| journal::read(files, path).map(|state| (journal, state)))
         .map_err(DirectedEvolutionError::Unusable)?;
     let State {
         settings,
@@ -185,7 +193,8 @@ pub fn resume(
         best_harness,
         ..
     } = state;
-    let outputs_directory = OutputsDirectory::at(path).holding_out(&settings.holdout_tasks);
+    let outputs_directory =
+        OutputsDirectory::at(Arc::clone(outside.files), path).holding_out(&settings.holdout_tasks);
     match best_harness {
         Some(best_harness) => {
             let directory = outputs_directory.harness(best_harness);
@@ -214,7 +223,9 @@ pub fn resume(
                     },
                 );
             }
-            let key = settings.model_key().map_err(DirectedEvolutionError::Key)?;
+            let key = settings
+                .model_key(files)
+                .map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
                 outputs_directory: path,
                 procreations: genealogy.procreations_started(),

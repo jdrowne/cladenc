@@ -1,7 +1,5 @@
 use std::collections::BTreeSet;
-use std::fs;
 use std::iter;
-use std::path::Path;
 
 use crate::cli::Cli;
 use clap::{Arg, Command, CommandFactory};
@@ -11,7 +9,7 @@ const HEAD_OF_SUB_COMMANDS: &str = "\n| Sub-command | Description |\n| --- | ---
 const HEAD_OF_FLAGS: &str = "\n| Flag | Required | Description |\n| --- | --- | --- |\n";
 
 fn readme() -> String {
-    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md")).unwrap()
+    test_inputs::README.to_owned()
 }
 
 fn sub_commands() -> Vec<Command> {

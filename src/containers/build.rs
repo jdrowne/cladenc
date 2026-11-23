@@ -23,6 +23,7 @@ pub fn build_primogenitor(
     let Some(command) = launch.build_command else {
         return Ok(());
     };
+    let files = host.outputs_directory.files();
     let source = host.outputs_directory.harness(0);
     let build = Build {
         image: launch.image,
@@ -32,7 +33,7 @@ pub fn build_primogenitor(
     };
     let limits = Limits::starting_now(launch.procreation_timeout, stop);
     match build.run(host, limits)? {
-        Ending::Exited(0) if holds_only_harness_files(&source).unwrap_or(false) => Ok(()),
+        Ending::Exited(0) if holds_only_harness_files(files, &source).unwrap_or(false) => Ok(()),
         Ending::Exited(0) => Err(ContainerError::OtherFiles),
         Ending::Exited(status) => Err(ContainerError::Exit(status)),
         Ending::TimedOut => Err(ContainerError::TimeLimit),
@@ -49,6 +50,7 @@ pub(super) fn build_child(
     let Some(command) = launch.build_command else {
         return Ok(CreationOutcome::Created);
     };
+    let files = host.outputs_directory.files();
     let build = Build {
         image: launch.image,
         command,
@@ -56,7 +58,7 @@ pub(super) fn build_child(
         source,
     };
     Ok(match build.run(host, limits)? {
-        Ending::Exited(0) if holds_only_harness_files(source).unwrap_or(false) => {
+        Ending::Exited(0) if holds_only_harness_files(files, source).unwrap_or(false) => {
             CreationOutcome::Created
         }
         Ending::Exited(_) => CreationOutcome::BuildFailed,

@@ -1,12 +1,11 @@
-use std::fs;
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
+use crate::file_system::tests::double::Memory;
 use crate::genealogy::AttemptResult;
 use crate::journal::{self, Journal, JournalError, Record, Seconds, Settings};
 use crate::report::leader::Leader;
 use crate::report::{self, Report};
-use tempfile::TempDir;
 
 const CUT_SHORT: &str = "{\"record\":\"procreation_fin";
 
@@ -39,8 +38,8 @@ fn settings() -> Settings {
     }
 }
 
-fn outputs_directory(last_line: &str) -> TempDir {
-    let outputs_directory = tempfile::tempdir().unwrap();
+fn outputs_directory(last_line: &str) -> Memory {
+    let directory = Memory::default();
     let records = [
         Record::Run {
             format: journal::FORMAT,
@@ -75,8 +74,14 @@ fn outputs_directory(last_line: &str) -> TempDir {
         .iter()
         .map(|record| record.line().unwrap() + "\n")
         .collect();
-    fs::write(journal::path(outputs_directory.path()), lines + last_line).unwrap();
-    outputs_directory
+    directory
+        .write(journal::path(directory.path()), lines + last_line)
+        .unwrap();
+    directory
+}
+
+fn read(directory: &Memory) -> Result<Report, JournalError> {
+    report::read(directory, directory.path())
 }
 
 fn finished_with(best_harness: u64) -> String {
@@ -109,43 +114,36 @@ fn of_the_records() -> Report {
 
 #[test]
 fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
-    assert_eq!(
-        report::read(outputs_directory("").path()).unwrap(),
-        of_the_records()
-    );
+    assert_eq!(read(&outputs_directory("")).unwrap(), of_the_records());
 }
 
 #[test]
 fn a_report_read_from_a_journal_counts_the_selection_tasks_its_run_record_leaves() {
-    let report = report::read(outputs_directory("").path()).unwrap();
+    let report = read(&outputs_directory("")).unwrap();
     assert_eq!(report.harnesses[0].selection_completed, 1);
 }
 
 #[test]
 fn a_report_read_from_a_journal_counts_the_corroboration_tasks_its_run_record_names() {
-    let report = report::read(outputs_directory("").path()).unwrap();
+    let report = read(&outputs_directory("")).unwrap();
     assert_eq!(report.harnesses[0].corroboration_not_completed, 1);
 }
 
 #[test]
 fn a_report_read_from_a_journal_holds_the_seconds_its_records_hold() {
-    let report = report::read(outputs_directory("").path()).unwrap();
+    let report = read(&outputs_directory("")).unwrap();
     assert_eq!(report.harnesses[0].attempt_seconds, 3.5);
 }
 
 #[test]
 fn a_journal_that_does_not_say_that_the_directed_evolution_finished_is_of_one_that_has_not_ended() {
-    assert!(
-        !report::read(outputs_directory("").path())
-            .unwrap()
-            .has_ended()
-    );
+    assert!(!read(&outputs_directory("")).unwrap().has_ended());
 }
 
 #[test]
 fn a_journal_that_says_that_the_directed_evolution_finished_is_of_one_that_has_ended() {
     assert!(
-        report::read(outputs_directory(&finished_with(0)).path())
+        read(&outputs_directory(&finished_with(0)))
             .unwrap()
             .has_ended()
     );
@@ -153,39 +151,36 @@ fn a_journal_that_says_that_the_directed_evolution_finished_is_of_one_that_has_e
 
 #[test]
 fn the_best_harness_of_a_report_read_from_a_journal_is_the_one_its_last_record_names() {
-    let report = report::read(outputs_directory(&finished_with(1)).path()).unwrap();
+    let report = read(&outputs_directory(&finished_with(1))).unwrap();
     assert_eq!(report.leader, Leader::BestHarness(1));
 }
 
 #[test]
 fn the_harness_ahead_so_far_of_a_journal_that_has_not_ended_is_counted_from_its_records() {
-    let report = report::read(outputs_directory("").path()).unwrap();
+    let report = read(&outputs_directory("")).unwrap();
     assert_eq!(report.leader, Leader::HarnessAheadSoFar(0));
 }
 
 #[test]
 fn a_directory_that_holds_no_journal_cannot_be_reported_on() {
-    let outputs_directory = tempfile::tempdir().unwrap();
-    assert!(matches!(
-        report::read(outputs_directory.path()),
-        Err(JournalError::Io(_))
-    ));
+    assert!(matches!(read(&Memory::default()), Err(JournalError::Io(_))));
 }
 
 #[test]
 fn a_last_line_that_was_cut_short_is_ignored() {
     assert_eq!(
-        report::read(outputs_directory(CUT_SHORT).path()).unwrap(),
+        read(&outputs_directory(CUT_SHORT)).unwrap(),
         of_the_records()
     );
 }
 
 #[test]
 fn a_last_line_that_was_cut_short_is_left_where_it_is() {
-    let outputs_directory = outputs_directory(CUT_SHORT);
-    let _report = report::read(outputs_directory.path());
+    let directory = outputs_directory(CUT_SHORT);
+    let _report = read(&directory);
     assert!(
-        fs::read_to_string(journal::path(outputs_directory.path()))
+        directory
+            .read_to_string(journal::path(directory.path()))
             .unwrap()
             .ends_with(CUT_SHORT)
     );
@@ -193,7 +188,7 @@ fn a_last_line_that_was_cut_short_is_left_where_it_is() {
 
 #[test]
 fn a_report_is_read_while_the_journal_is_locked() {
-    let outputs_directory = outputs_directory("");
-    let _in_use = Journal::open_existing(outputs_directory.path()).unwrap();
-    assert!(report::read(outputs_directory.path()).is_ok());
+    let directory = outputs_directory("");
+    let _in_use = Journal::open_existing(&directory, directory.path()).unwrap();
+    assert!(read(&directory).is_ok());
 }

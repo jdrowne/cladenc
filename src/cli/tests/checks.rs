@@ -1,33 +1,34 @@
-use std::fs;
-use std::os::unix::fs::symlink;
-use std::os::unix::net::UnixListener;
-use std::path::{Path, PathBuf};
+use std::path::{self, PathBuf};
 
 use crate::benchmark::Benchmark;
 use crate::cli::StartOptions;
 use crate::cli::checks::Refused;
+use crate::file_system::tests::double::Memory;
 use crate::holdout::{self, Percentages};
 use crate::journal::Settings;
-use tempfile::TempDir;
 
 const PERCENTAGES: Percentages = Percentages {
     selection: 30.0,
     corroboration: 30.0,
 };
 
-fn options(directory: &Path) -> StartOptions {
+fn options(directory: &Memory) -> StartOptions {
     StartOptions {
-        primogenitor: test_inputs::primogenitor(directory),
+        primogenitor: test_inputs::primogenitor_in(directory, directory.path()),
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: vec![test_inputs::benchmark(directory, &["t3", "t2", "t1"])],
+        benchmark: vec![test_inputs::benchmark_in(
+            directory,
+            directory.path(),
+            &["t3", "t2", "t1"],
+        )],
         procreation_docker_image: Some("image".to_owned()),
         procreation_dockerfile: None,
         procreation_docker_image_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        outputs_dir: directory.join("outputs"),
+        outputs_dir: directory.path().join("outputs"),
         max_procreations: 800,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
@@ -38,9 +39,10 @@ fn options(directory: &Path) -> StartOptions {
     }
 }
 
-fn with_a_dockerfile(directory: &TempDir, options: &mut StartOptions) {
+fn with_a_dockerfile(directory: &Memory, options: &mut StartOptions) {
     options.procreation_docker_image = None;
-    options.procreation_dockerfile = Some(test_inputs::dockerfile(
+    options.procreation_dockerfile = Some(test_inputs::dockerfile_in(
+        directory,
         directory.path(),
         "RUN touch /made-here\n",
     ));
@@ -60,28 +62,32 @@ fn is_named_after(prefix: &str, image: &str) -> bool {
     })
 }
 
-fn checked(change: impl FnOnce(&TempDir, &mut StartOptions)) -> Result<Settings, Refused> {
-    let directory = test_inputs::temporary_directory();
-    let mut options = options(directory.path());
+fn checked(change: impl FnOnce(&Memory, &mut StartOptions)) -> Result<Settings, Refused> {
+    let directory = Memory::default();
+    let mut options = options(&directory);
     change(&directory, &mut options);
-    options.settings()
+    options.settings(&directory)
 }
 
-fn flags_refused(change: impl FnOnce(&TempDir, &mut StartOptions)) -> &'static [&'static str] {
+fn flags_refused(change: impl FnOnce(&Memory, &mut StartOptions)) -> &'static [&'static str] {
     checked(change).unwrap_err().flags
 }
 
 fn with_no_grader_in_a_task() -> Refused {
-    checked(|_, options| fs::remove_dir_all(options.benchmark[0].join("t2/tests")).unwrap())
-        .unwrap_err()
+    checked(|directory, options| {
+        directory
+            .remove_dir_all(options.benchmark[0].join("t2/tests"))
+            .unwrap();
+    })
+    .unwrap_err()
 }
 
 #[test]
 fn values_that_fit_their_rows_give_the_settings_of_the_run() {
-    let directory = test_inputs::temporary_directory();
-    let options = options(directory.path());
-    let root = fs::canonicalize(directory.path()).unwrap();
-    let settings = options.settings().unwrap();
+    let directory = Memory::default();
+    let options = options(&directory);
+    let root = directory.path();
+    let settings = options.settings(&directory).unwrap();
     assert_eq!(
         settings,
         Settings {
@@ -115,17 +121,21 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
 
 #[test]
 fn two_directed_evolutions_started_from_one_command_line_are_given_different_seeds() {
-    let directory = test_inputs::temporary_directory();
-    let options = options(directory.path());
+    let directory = Memory::default();
+    let options = options(&directory);
     assert_ne!(
-        options.settings().unwrap().seed,
-        options.settings().unwrap().seed
+        options.settings(&directory).unwrap().seed,
+        options.settings(&directory).unwrap().seed
     );
 }
 
 #[test]
 fn a_path_given_from_the_working_directory_is_made_absolute() {
-    let settings = checked(|_, options| options.primogenitor = PathBuf::from("src")).unwrap();
+    let settings = checked(|directory, options| {
+        directory.create_dir("/src").unwrap();
+        options.primogenitor = PathBuf::from("src");
+    })
+    .unwrap();
     assert!(settings.primogenitor.is_absolute());
 }
 
@@ -141,7 +151,8 @@ fn a_primogenitor_that_does_not_exist_is_refused() {
 fn a_primogenitor_that_is_a_file_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
-            options.primogenitor = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
+            options.primogenitor =
+                test_inputs::model_key_file_in(directory, directory.path(), "a-made-up-key\n");
         }),
         ["--primogenitor"]
     );
@@ -149,10 +160,15 @@ fn a_primogenitor_that_is_a_file_is_refused() {
 
 #[test]
 fn a_primogenitor_that_holds_a_socket_is_refused() {
-    let directory = test_inputs::temporary_directory();
-    let options = options(directory.path());
-    let _socket = UnixListener::bind(options.primogenitor.join("socket")).unwrap();
-    assert_eq!(options.settings().unwrap_err().flags, ["--primogenitor"]);
+    let directory = Memory::default();
+    let options = options(&directory);
+    directory
+        .socket(options.primogenitor.join("socket"))
+        .unwrap();
+    assert_eq!(
+        options.settings(&directory).unwrap_err().flags,
+        ["--primogenitor"]
+    );
 }
 
 #[test]
@@ -182,20 +198,13 @@ fn a_directed_evolution_given_an_image_has_no_dockerfile_and_no_time_limit_of_a_
 
 #[test]
 fn a_dockerfile_is_a_setting_with_the_time_limit_of_its_build() {
-    let directory = test_inputs::temporary_directory();
-    let mut options = options(directory.path());
+    let directory = Memory::default();
+    let mut options = options(&directory);
     with_a_dockerfile(&directory, &mut options);
-    let settings = options.settings().unwrap();
+    let settings = options.settings(&directory).unwrap();
     assert_eq!(
         (settings.dockerfile, settings.docker_build_timeout),
-        (
-            Some(
-                fs::canonicalize(directory.path())
-                    .unwrap()
-                    .join("Dockerfile")
-            ),
-            Some(600)
-        )
+        (Some(directory.path().join("Dockerfile")), Some(600))
     );
 }
 
@@ -280,6 +289,10 @@ fn a_dockerfile_that_is_refused_is_said_with_what_the_flag_takes() {
 fn a_dockerfile_given_from_the_working_directory_is_made_absolute() {
     let settings = checked(|directory, options| {
         with_a_dockerfile(directory, options);
+        directory.create_dir_all("/tests/samples").unwrap();
+        directory
+            .write("/tests/samples/Dockerfile", "FROM scratch\n")
+            .unwrap();
         options.procreation_dockerfile = Some(PathBuf::from("tests/samples/Dockerfile"));
     })
     .unwrap();
@@ -291,7 +304,9 @@ fn a_dockerfile_given_through_a_symbolic_link_is_the_file_it_leads_to() {
     let settings = checked(|directory, options| {
         with_a_dockerfile(directory, options);
         let link = directory.path().join("link");
-        symlink(directory.path().join("Dockerfile"), &link).unwrap();
+        directory
+            .symlink(directory.path().join("Dockerfile"), &link)
+            .unwrap();
         options.procreation_dockerfile = Some(link);
     })
     .unwrap();
@@ -362,17 +377,24 @@ fn the_model_and_its_address_are_settings_as_they_were_given() {
 
 #[test]
 fn the_file_of_the_key_is_a_setting_and_the_key_is_not() {
-    let directory = test_inputs::temporary_directory();
-    let mut options = options(directory.path());
-    let file = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
+    let directory = Memory::default();
+    let mut options = options(&directory);
+    let file = test_inputs::model_key_file_in(&directory, directory.path(), "a-made-up-key\n");
     options.model_key_file = Some(file.clone());
-    assert_eq!(options.settings().unwrap().model_key_file, Some(file));
+    assert_eq!(
+        options.settings(&directory).unwrap().model_key_file,
+        Some(file)
+    );
 }
 
 #[test]
 fn a_file_of_the_key_given_from_the_working_directory_is_made_absolute() {
-    let settings = checked(|_, options| {
-        options.model_key_file = Some(PathBuf::from("tests/samples/model-key"));
+    let settings = checked(|directory, options| {
+        let given = PathBuf::from("tests/samples/model-key");
+        let file = path::absolute(&given).unwrap();
+        directory.create_dir_all(file.parent().unwrap()).unwrap();
+        directory.write(file, "a-made-up-key\n").unwrap();
+        options.model_key_file = Some(given);
     })
     .unwrap();
     assert!(settings.model_key_file.unwrap().is_absolute());
@@ -392,7 +414,11 @@ fn a_file_of_the_key_that_does_not_exist_is_refused() {
 fn a_file_of_the_key_that_holds_no_key_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
-            options.model_key_file = Some(test_inputs::model_key_file(directory.path(), "\n"));
+            options.model_key_file = Some(test_inputs::model_key_file_in(
+                directory,
+                directory.path(),
+                "\n",
+            ));
         }),
         ["--model-key-file"]
     );
@@ -440,7 +466,8 @@ fn the_holdout_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_draws(
 #[test]
 fn the_percentages_are_taken_of_the_tasks_of_each_benchmark_given() {
     let settings = checked(|directory, options| {
-        options.benchmark.push(test_inputs::benchmark_named(
+        options.benchmark.push(test_inputs::benchmark_named_in(
+            directory,
             directory.path(),
             "refactoring",
             &["t1", "t2", "t3", "t4", "t5"],
@@ -493,7 +520,8 @@ fn a_benchmark_that_is_refused_is_refused_ahead_of_the_selection_tasks_percentag
 fn a_benchmark_of_two_tasks_is_refused_by_the_flag_of_the_benchmarks() {
     assert_eq!(
         flags_refused(|directory, options| {
-            options.benchmark = vec![test_inputs::benchmark_named(
+            options.benchmark = vec![test_inputs::benchmark_named_in(
+                directory,
                 directory.path(),
                 "pair",
                 &["t1", "t2"],
@@ -506,7 +534,8 @@ fn a_benchmark_of_two_tasks_is_refused_by_the_flag_of_the_benchmarks() {
 #[test]
 fn a_benchmark_of_two_tasks_is_said_to_hold_fewer_than_three() {
     let refused = checked(|directory, options| {
-        options.benchmark = vec![test_inputs::benchmark_named(
+        options.benchmark = vec![test_inputs::benchmark_named_in(
+            directory,
             directory.path(),
             "pair",
             &["t1", "t2"],
@@ -558,7 +587,8 @@ fn the_corroboration_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_
 #[test]
 fn the_corroboration_tasks_percentage_is_taken_of_the_tasks_of_each_benchmark_given() {
     let settings = checked(|directory, options| {
-        options.benchmark.push(test_inputs::benchmark_named(
+        options.benchmark.push(test_inputs::benchmark_named_in(
+            directory,
             directory.path(),
             "refactoring",
             &["t1", "t2", "t3", "t4", "t5"],

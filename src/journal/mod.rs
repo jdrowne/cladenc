@@ -2,9 +2,9 @@ mod error;
 mod record;
 mod state;
 
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+
+use crate::file_system::{FileSystem, Opened};
 
 pub use error::JournalError;
 pub use record::{Record, Settings};
@@ -15,7 +15,7 @@ pub const FORMAT: u32 = 29;
 
 #[derive(Debug)]
 pub struct Journal {
-    file: File,
+    file: Box<dyn Opened>,
 }
 
 pub fn path(outputs_directory: &Path) -> PathBuf {
@@ -23,40 +23,37 @@ pub fn path(outputs_directory: &Path) -> PathBuf {
 }
 
 impl Journal {
-    pub fn open(outputs_directory: &Path) -> Result<Self, JournalError> {
-        Self::locked(OpenOptions::new().create(true), outputs_directory)
+    pub fn open(files: &dyn FileSystem, outputs_directory: &Path) -> Result<Self, JournalError> {
+        Self::locked(files, outputs_directory, true)
     }
 
-    pub(crate) fn open_existing(outputs_directory: &Path) -> Result<Self, JournalError> {
-        Self::locked(&mut OpenOptions::new(), outputs_directory)
+    pub(crate) fn open_existing(
+        files: &dyn FileSystem,
+        outputs_directory: &Path,
+    ) -> Result<Self, JournalError> {
+        Self::locked(files, outputs_directory, false)
     }
 
-    fn locked(options: &mut OpenOptions, outputs_directory: &Path) -> Result<Self, JournalError> {
-        let mut file = options
-            .read(true)
-            .append(true)
-            .open(path(outputs_directory))
+    fn locked(
+        files: &dyn FileSystem,
+        outputs_directory: &Path,
+        make: bool,
+    ) -> Result<Self, JournalError> {
+        let mut file = files
+            .open(&path(outputs_directory), make)
             .map_err(JournalError::Io)?;
-        file.try_lock().map_err(|_| JournalError::Locked)?;
-        let mut contents = Vec::new();
-        file.read_to_end(&mut contents)
-            .and_then(|_| file.set_len(whole_lines(&contents).len() as u64))
+        if !file.lock() {
+            return Err(JournalError::Locked);
+        }
+        file.contents()
+            .and_then(|contents| file.cut(whole_lines(&contents).len() as u64))
             .map(|()| Self { file })
             .map_err(JournalError::Io)
     }
 
     pub fn append(&mut self, record: &Record) -> Result<(), JournalError> {
         let line = record.line()? + "\n";
-        self.file
-            .write_all(line.as_bytes())
-            .and_then(|()| self.file.sync_all())
-            .map_err(JournalError::Io)
-    }
-}
-
-impl Drop for Journal {
-    fn drop(&mut self) {
-        let _ = self.file.unlock();
+        self.file.append(line.as_bytes()).map_err(JournalError::Io)
     }
 }
 

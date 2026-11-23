@@ -15,20 +15,20 @@ mod shown;
 use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use crate::benchmark::TaskConfiguration;
+use crate::file_system::FileSystem;
 use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
 use crate::model::Model;
 use crate::outputs_directory::{holds_only_harness_files, same_tree};
 
 pub use build::build_primogenitor;
 use container::{Bringing, Container, Mount, Run, Shell, Up};
-pub use docker::{Docker, Host};
+pub use docker::{Docker, Host, Outside};
 use grader::Grading;
 use health_check::Backoff;
 pub use image::{
@@ -36,8 +36,8 @@ pub use image::{
     remove_images,
 };
 pub use left::remove_left_behind;
-pub use program::Program;
-use program::{Ending, FOREVER, Limits, seconds_since};
+pub use program::{Ending, Limits, Program};
+use program::{FOREVER, seconds_since};
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes completes \
@@ -349,10 +349,11 @@ impl Changing<'_> {
         launch: &Launch<'_>,
         limits: Limits<'_>,
     ) -> Result<CreationOutcome, ContainerError> {
+        let files = host.outputs_directory.files();
         let copied = host.outputs_directory.harness(self.copied_from);
-        if !holds_only_harness_files(self.made).unwrap_or(false) {
+        if !holds_only_harness_files(files, self.made).unwrap_or(false) {
             Ok(CreationOutcome::Failed)
-        } else if same_tree(self.made, &copied).unwrap_or(false) {
+        } else if same_tree(files, self.made, &copied).unwrap_or(false) {
             Ok(CreationOutcome::Unchanged)
         } else {
             build::build_child(host, launch, self.harness, self.made, limits)
@@ -371,7 +372,7 @@ pub fn run_attempt(
     let running = outputs_directory.running_attempt(attempt.harness, attempt.task);
     let specification = outputs_directory
         .start_attempt(attempt.harness, attempt.task)
-        .and_then(|()| read_specification(&running))
+        .and_then(|()| read_specification(outputs_directory.files(), &running))
         .map_err(ContainerError::Io)?;
     let attempting = Attempting {
         attempt,
@@ -385,16 +386,16 @@ pub fn run_attempt(
         .map_err(ContainerError::Io)
 }
 
-fn read_specification(running: &Path) -> io::Result<String> {
-    fs::read_to_string(running.join("specification"))
+fn read_specification(files: &dyn FileSystem, running: &Path) -> io::Result<String> {
+    files.read_text(&running.join("specification"))
 }
 
-fn keep(file: &Path, text: &str) {
-    let _ = fs::write(file, text);
+fn keep(files: &dyn FileSystem, file: &Path, text: &str) {
+    let _ = files.write(file, text.as_bytes());
 }
 
-fn make_directory(directory: &Path) {
-    let _ = fs::create_dir_all(directory);
+fn make_directory(files: &dyn FileSystem, directory: &Path) {
+    let _ = files.make_directories(directory);
 }
 
 struct Attempting<'a> {
@@ -450,14 +451,15 @@ impl Attempting<'_> {
         } else {
             (HarnessEnding::Ended, "ended\n")
         };
-        keep(&self.running.join("ending"), word);
+        let files = host.outputs_directory.files();
+        keep(files, &self.running.join("ending"), word);
         let changes: String = up
             .changes()
             .into_iter()
             .filter(|change| !before.contains(change))
             .map(|change| change + "\n")
             .collect();
-        keep(&self.running.join("changes"), &changes);
+        keep(files, &self.running.join("changes"), &changes);
         up.keep_work(&self.running.join("work"));
         collect::run(
             &up,

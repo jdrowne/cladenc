@@ -1,11 +1,10 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use tempfile::TempDir;
-
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{self, TASK};
 use crate::containers::{self, ContainerError, Machine};
+use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
 const IMAGE: &str = "an-image:made";
@@ -14,7 +13,7 @@ const REFUSED: Answer = Answer::Refused("docker is not there");
 const UNSAID: &str = "Docker did not say how many CPUs and how much memory it has";
 
 struct Built {
-    _directory: TempDir,
+    _directory: Memory,
     outputs_directory: OutputsDirectory,
     docker: Double,
     result: Result<(), ContainerError>,
@@ -28,7 +27,8 @@ impl Built {
 
 fn image_built_by(docker: Double) -> Built {
     let (directory, outputs_directory) = given::made();
-    let dockerfile = test_inputs::dockerfile(directory.path(), "");
+    let docker = docker.on(&directory);
+    let dockerfile = test_inputs::dockerfile_in(&directory, directory.path(), "");
     let result = containers::build_image(
         given::host(&docker, &outputs_directory),
         &dockerfile,
@@ -46,6 +46,7 @@ fn image_built_by(docker: Double) -> Built {
 
 fn environment_built_by(docker: Double) -> Built {
     let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::build_environment(
         given::host(&docker, &outputs_directory),
         TASK,
@@ -63,6 +64,7 @@ fn environment_built_by(docker: Double) -> Built {
 
 fn grader_environment_built_by(docker: Double) -> Built {
     let (directory, outputs_directory) = given::made();
+    let docker = docker.on(&directory);
     let result = containers::build_grader_environment(
         given::host(&docker, &outputs_directory),
         TASK,
