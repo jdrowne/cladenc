@@ -4,9 +4,9 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::cli::{self, Cli};
+use cladenc::cli::Cli;
 use cladenc::containers::ContainerError;
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
 use cladenc::file_system::Disk;
 use cladenc::journal::{self, Record, Settings, Started};
 use clap::Parser;

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::cli::{self, Cli};
+use cladenc::cli::Cli;
 use cladenc::directed_evolution::Found;
 use cladenc::file_system::Disk;
 use cladenc::genealogy::CreationOutcome;

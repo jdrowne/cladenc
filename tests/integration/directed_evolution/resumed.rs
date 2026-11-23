@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::ContainerError;
-use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
+use cladenc::directed_evolution::{DirectedEvolutionError, Found};
 use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings, Started};
 use tempfile::TempDir;

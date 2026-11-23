@@ -1,4 +1,5 @@
 use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
 use crate::artificial_selection::ArtificialSelection;
