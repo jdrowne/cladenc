@@ -1,47 +1,52 @@
 ---
 name: the-checks-the-code-faces
-description: "The code is written to pass the checks of release.yml: no comments, one assertion per test, no directive that silences a tool, no linter configuration file but etc/clippy/clippy.toml, no Rust file over 1000 lines, no function over 50 statements, no test file without a test, each module of src a directory and no file beside a directory of its name, every line, region and function of src reached by the three tiers together and of crates/test_inputs by its own tests, every function of src that itself calls neither the file system nor a program reached in full by the unit tier alone, no unit test that starts docker, rustfmt clean, and clippy clean with limits on each function's cognitive complexity, nesting, parameters and lines; the release waits for every one of them"
+description: "The checks the code faces are the jobs of release.yml with the numbers of etc/clippy/clippy.toml, and they are read there, not here; kept here is only what the workflow does not say: how clippy counts its limits on a function, how to get under one, where a new check job is named, why a coverage table can show under 100 percent while the job passes, and what puts a function in the wrong group of the check on the unit tier"
 metadata:
   node_type: memory
   type: project
   originSessionId: 16a1d745-ea25-4971-9454-4ef3ef668142
-  modified: 2026-11-23T04:00:00.000Z
+  modified: 2026-11-23T03:30:36.994Z
 ---
 
 # The checks the code faces
 
-`.github/workflows/release.yml` holds the code to a set of checks, and the code is written to pass them from its first line:
+The checks are the jobs of `.github/workflows/release.yml`, with the numbers of `etc/clippy/clippy.toml`. They are read there, where they are always right, and are not listed here. Whether the code passes them is what a run of CI says, per [[ci-says-whether-the-code-is-right]].
 
-- `assert-no-comments`: no comment and no doc comment, in any file of the repository.
-- `assert-one-assert-per-test`: one assertion in each test function, in `src`, `tests` and `crates`.
-- `assert-no-inline-directives`: no attribute or inline directive that silences clippy, coverage, markdownlint, rustc, rustdoc, rustfmt or yamllint.
-- `assert-no-linter-config-files`: no configuration file for a linter or a formatter, and no `[lints]` table in a `Cargo.toml`. The one file let through is `etc/clippy/clippy.toml`, per [[a-tool-is-configured-under-etc]].
-- `assert-no-oversized-source-files`: no Rust file of more than 1000 lines.
-- `assert-no-oversized-functions`: no function of more than 50 statements. A statement is anything that stands directly in a block: a `let`, an expression with or without its `;`, the last expression of the block, an item. Every block inside the function is counted, a closure's among them. A function written inside another is counted by itself, and what is inside the parentheses of a macro call is not counted.
-- `assert-no-empty-test-files`: every test file holds a test. A test file is a Rust file under `tests/`, under the `tests/` directory of a module of `src/`, or under the `tests/` directory of a package of `crates/`. A `main.rs` or a `mod.rs` there only lists files and is let through.
-- `assert-one-directory-per-module`: no Rust file directly in `src/` but `lib.rs` and `main.rs`, so a module of `src/` is a directory, per [[each-module-of-src-is-a-directory]].
-- `assert-coverage`: the tests of the three tiers, taken together, reach every line, region and function of the code under `src/`. Cargo builds the library twice, once with the unit tests in it, per [[the-layout-follows-rust-conventions]], and once for the `cladenc` program and the other two tiers. The job adds the counts of the two builds up, so a function that the unit tests reach in part and the other tiers reach the rest of passes. The table `cargo llvm-cov` prints goes by the better build, so a file can show under 100 percent there while the job passes. The test code is kept out of the measure, the unit tests under `src/` among them, and so is `crates/test_inputs`.
-  - The four jobs that use `cargo-llvm-cov` install version 0.9.1 of it, and the version is raised by hand in all four at once. A later version may count `--fail-uncovered-lines` by the better build, and the check is read again when the version is raised.
-- `assert-coverage-of-test-inputs`: the tests of `crates/test_inputs`, which are in `crates/test_inputs/tests/`, reach every line, region and function of the package. They alone are counted: that a tier of `cladenc` calls a function of the package counts for nothing.
-- `assert-coverage-of-the-unit-tier`: the unit tests, taken alone, reach every region of each function of the third group of [[the-tiers-follow-the-standard-test-pyramid]]: a function under `src/`, outside `src/main.rs`, that itself calls neither the file system nor a program. The job reads the profiles of `unit-test-coverage` and no other tier's, and finds the group of each function from the source, with no list kept by hand:
-  - A function is of the second group, and the job asks nothing of it, when a statement of its own names something of `fs`, `File` or `OpenOptions`, calls one of the methods that ask the file system, such as `exists`, `is_dir`, `metadata` or `read_dir`, calls `spawn`, `output`, `status`, `wait`, `try_wait` or `kill` with no argument, or calls `killpg` or `symlink`. The sets are written at the head of the job's script, and a new way to reach the file system or a program is added there.
-  - A closure counts with the function it is written in, and a function written inside another is taken by itself.
-  - A method of the code's own that is named as one of those and takes no argument, such as a `status()`, puts its caller in the second group by mistake, so such a name is not given to one.
-- The two jobs that run the unit tests, `unit-test-debug` and `unit-test-coverage`, fail when a unit test starts `docker`, whether the test means to or it happens on the way out of what it calls. Each job puts the `docker` of `tests/e2e/samples/fake`, which only records what it is given, ahead of the real one on `PATH`, and fails when anything was recorded. A unit test of the code that drives Docker gives it the test double of Docker, `Double` of `src/containers/tests/double/mod.rs`, where the program gives it `Program`: the double is held in memory, records each command it is asked for, and answers as the test tells it to. What needs a real container is tested in the integration or the end-to-end tier.
-- `clippy`, with every warning an error, and `rustfmt`.
-- `clippy::self_named_module_files`, which `clippy` is given as an error: no Rust file beside a directory of its name, in `src`, `tests` and `crates` alike. A module that has files of its own under it is a directory, and its own code is in the `mod.rs` of that directory.
-- The limits `clippy` holds each function to, in `src`, `tests` and `crates` alike. `etc/clippy/clippy.toml` sets the numbers:
-  - a cognitive complexity of 15 at most, as `clippy::cognitive_complexity` counts it: one, and one more for each `if`, `match` of more than one arm, match guard, `while`, `for` and `?`, less the returns;
-  - a nesting of 4 at most, as `clippy::excessive_nesting` counts it: one level for an `impl`, a `trait` or an inline `mod`, and one for each pair of braces of a block, the function's own among them, so a method has two levels left inside its body and a free function three;
-  - 5 parameters at most, `self` counted;
-  - 200 lines at most between the braces of a function, blank lines not counted.
+What follows is what the workflow does not say.
 
-**Why:** The release waits for every one of these, so code that breaks one releases nothing, and its failed run is fixed before other work, per [[a-failed-run-is-fixed-before-other-work]]. No issue has to say these rules, per [[issues-have-no-fixed-form]], so a session that writes code finds them here.
+## How clippy counts its limits
 
-**How to apply:** The workflow is the list: where it and this memory disagree, the workflow is right, and this memory is corrected. Write to the checks and leave the running of them to CI, but for the quick checks of [[only-quick-checks-run-before-a-push]]. Code under `crates/` is held to the same checks, per [[crates-stores-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].
+`clippy` holds each function to four limits, in `src`, `tests` and `crates` alike:
 
-- A function that would take a sixth parameter is given a value that carries two of them together, as `Limits` carries a deadline and a stop flag in `src/containers/program.rs`, or what it needs is put in a value it already takes, as the time limits are in `Launch`.
-- A block that would be a fifth level is flattened: a `let … else { break }` at the head of a loop becomes a condition of the loop, or the inner part becomes a function of its own.
+- cognitive complexity, as `clippy::cognitive_complexity` counts it: one, and one more for each `if`, `match` of more than one arm, match guard, `while`, `for` and `?`, less the returns;
+- nesting, as `clippy::excessive_nesting` counts it: one level for an `impl`, a `trait` or an inline `mod`, and one for each pair of braces of a block, the function's own among them. A closure's braces are a level, and so are the braces of each arm of an `if` written on one line. A method has two levels left inside its body and a free function three;
+- parameters, `self` counted;
+- lines between the braces of a function, blank lines not counted.
+
+## Getting under a limit
+
+- A function that would take one parameter too many is given a value that carries two of them together, as `Limits` carries a deadline and a stop flag in `src/containers/program.rs`, or what it needs is put in a value it already takes, as the time limits are in `Launch`.
+- A block that would be one level too deep is flattened: a `let … else { break }` at the head of a loop becomes a condition of the loop, or the inner part becomes a function of its own.
 - No lint is silenced to get under a limit, since `assert-no-inline-directives` refuses the attribute.
-- In the workflow, a job that waits for no other job and is not a build is named in the `needs` of `release`. A check added as a job of its own is added there in the same commit. The builds, `build-coverage`, `build-debug` and `build-release`, wait for nothing and are not named there.
-- `assert-no-oversized-functions`, the count of regions in `assert-coverage` and `assert-coverage-of-the-unit-tier` are Python scripts written in the workflow. The workflow has no empty line, no line over 80 columns and no comment, so no script has any.
+
+## Coverage
+
+- Cargo builds the library twice, once with the unit tests in it, per [[the-layout-follows-rust-conventions]], and once for the `cladenc` program and the other two tiers. `assert-coverage` adds the counts of the two builds up, so a function that the unit tests reach in part and the other tiers reach the rest of passes. The table `cargo llvm-cov` prints goes by the better build, so a file can show under 100 percent there while the job passes.
+- Every job that uses `cargo-llvm-cov` installs the same version of it, and the version is raised by hand in all of them at once. A later version may count `--fail-uncovered-lines` by the better build, and the check is read again when the version is raised.
+- `assert-coverage-of-the-unit-tier` finds the group of each function, per [[the-tiers-follow-the-standard-test-pyramid]], from the names the function's own statements call. The names are sets at the head of the job's script:
+  - A new way for the code to reach the file system or a program is added to those sets in the commit that brings it.
+  - A method of the code's own that has one of those names and takes no argument, such as a `status()`, puts its caller in the second group by mistake. Such a name is not given to one.
+
+## The workflow itself
+
+- A job that waits for no other job and is not a build is named in the `needs` of `release`. A check added as a job of its own is added there in the same commit.
+- The workflow has no empty line, no line over 80 columns and no comment, so a script written in it has none either.
+- The local form of `assert-no-oversized-functions`, per [[only-quick-checks-run-before-a-push]], takes every script of the workflow that starts with `python - <<'PYTHON'`. Another script of the workflow ends its here-document with another word.
+
+**Why:** The user asked on 2026-11-22 why memories describe how the software works when the source of truth can be read, here the workflow. This memory used to list each job and what it does. The list went stale whenever a job changed, the memory itself said the workflow was right where the two disagreed, and the list did not prevent the misses it was written against. The reason it gave for the list, that code is to pass every check from the start, was never the user's, per [[ci-says-whether-the-code-is-right]].
+
+**How to apply:**
+
+- Read the workflow and `etc/clippy/clippy.toml` for what a check asks. Nothing is added here that can be read there.
+- Add here only what a session would otherwise learn from a failed run and the workflow would not have told it.
+- Code under `crates/` is held to the same checks, per [[crates-stores-shared-code]], and the tests of a change come before its code, per [[tests-are-written-before-code]].

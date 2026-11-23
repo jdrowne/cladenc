@@ -44,7 +44,7 @@ Each function of `src/` is in one of three groups. The group is told by the stat
 
 The integration tier, taken alone, reaches every line, region and function of the second group. The unit tier, taken alone, reaches every line, region and function of the third group: where a function of the third group calls one of the second, a unit test gives it a test double. The three tiers together reach all of `src/`. Nothing else is asked of a tier alone.
 
-CI holds the unit tier to this with `assert-coverage-of-the-unit-tier`, and the three tiers together to all of `src/` with `assert-coverage`, per [[the-checks-the-code-faces]]. The check that holds the integration tier to the second group is asked for in #157, and until it exists nothing holds that tier alone.
+CI holds the unit tier to this with `assert-coverage-of-the-unit-tier`, and the three tiers together to all of `src/` with `assert-coverage`, both jobs of `.github/workflows/release.yml`. The check that holds the integration tier to the second group is asked for in #157, and until it exists nothing holds that tier alone.
 
 **Why:** The user decided all of this on 2026-11-22:
 

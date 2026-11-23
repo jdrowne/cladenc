@@ -19,6 +19,6 @@ Every module of `src/` is a directory, and the module's own code is in the `mod.
 - A new module is `src/<name>/mod.rs` from its first line, with `pub mod <name>;` in `src/lib.rs`. It is not started as `src/<name>.rs` to be moved later.
 - A part of a module is a file in the module's directory, as `src/containers/program.rs`. Once that part has files of its own under it, it becomes a directory with a `mod.rs` too: `src/containers/program/mod.rs`.
 - A file is named `mod.rs` when a memory, an issue or a reply names a module's own code: `src/directed_evolution/mod.rs`, not `src/directed_evolution.rs`.
-- Two checks of `release.yml` hold the layout, per [[the-checks-the-code-faces]]: the job `assert-one-directory-per-module`, and `clippy::self_named_module_files` on the `cargo clippy` line.
+- Two checks of `release.yml` hold the layout: the job `assert-one-directory-per-module`, and `clippy::self_named_module_files` on the `cargo clippy` line.
 - The other two layouts are not proposed again, and `clippy::mod_module_files`, which refuses a `mod.rs`, is never turned on.
 - The unit tests and the tiers under `tests/` are laid out per [[the-layout-follows-rust-conventions]], and `crates/` per [[crates-stores-shared-code]].

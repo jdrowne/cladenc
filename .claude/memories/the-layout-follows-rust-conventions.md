@@ -22,7 +22,7 @@ The repository is laid out the way Rust and Cargo expect, so that a Rust reader 
 Three things are kept apart from Rust's conventions:
 
 - every module of `src/` is a directory with a `mod.rs`, per [[each-module-of-src-is-a-directory]];
-- no comment is written, a doc comment included, per [[the-checks-the-code-faces]];
+- no comment is written, a doc comment included, which the job `assert-no-comments` of `release.yml` refuses;
 - the settings of a linter are under `etc/`, per [[a-tool-is-configured-under-etc]].
 
 **Why:** A Rust reader finds each thing where they look for it. With a directory of tests, the test code stays in files of its own, so the coverage measure leaves it out by the name of the directory, which a `mod tests { … }` inside a source file would not allow without a directive in the code.
