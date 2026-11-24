@@ -1,5 +1,7 @@
 mod benchmarks;
 mod checks;
+mod docker;
+mod given;
 mod help;
 mod image;
 mod manual;

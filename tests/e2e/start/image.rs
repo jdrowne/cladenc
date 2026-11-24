@@ -1,8 +1,9 @@
 use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::os::unix::fs::symlink;
 use std::os::unix::process::ExitStatusExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::thread;
 use std::time::Duration;
@@ -82,24 +83,31 @@ fn image_named_in(said: &str) -> Option<Image> {
 }
 
 fn ran(steps: &str) -> Ran {
-    ran_on_a_machine_whose_programs_are_in(steps, &env::var("PATH").unwrap())
+    let directory = test_inputs::temporary_directory();
+    let start = start(directory.path(), steps);
+    ended(directory, start)
 }
 
 fn ran_on_a_machine_that_does_not_hold_timeout() -> Ran {
-    let only_docker = test_inputs::sample("e2e", "fake");
-    ran_on_a_machine_whose_programs_are_in(SOLVES_EVERY_TASK, &only_docker.display().to_string())
+    let directory = test_inputs::temporary_directory();
+    let mut start = start(directory.path(), SOLVES_EVERY_TASK);
+    start.env("PATH", programs_that_are_docker_alone(directory.path()));
+    ended(directory, start)
 }
 
-fn ran_on_a_machine_whose_programs_are_in(steps: &str, path: &str) -> Ran {
-    let directory = test_inputs::temporary_directory();
-    let output = start(directory.path(), steps)
-        .env("PATH", path)
-        .env(
-            "CLADENC_TEST_ARGUMENTS_OF_DOCKER",
-            directory.path().join("arguments-of-docker"),
-        )
-        .output()
+fn programs_that_are_docker_alone(directory: &Path) -> PathBuf {
+    let docker = env::split_paths(&env::var_os("PATH").unwrap())
+        .map(|programs| programs.join("docker"))
+        .find(|docker| docker.is_file())
         .unwrap();
+    let programs = directory.join("programs");
+    fs::create_dir(&programs).unwrap();
+    symlink(docker, programs.join("docker")).unwrap();
+    programs
+}
+
+fn ended(directory: TempDir, mut start: Command) -> Ran {
+    let output = start.output().unwrap();
     let said = String::from_utf8(output.stderr).unwrap();
     Ran {
         directory,
@@ -141,45 +149,6 @@ fn kept_of_the_image(ran: &Ran) -> Vec<String> {
     kept
 }
 
-fn arguments_of_a_docker_that_records_them() -> (TempDir, Vec<String>) {
-    let directory = test_inputs::temporary_directory();
-    let arguments = directory.path().join("arguments-of-docker");
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", "fake").display(),
-        env::var("PATH").unwrap()
-    );
-    start(directory.path(), SOLVES_EVERY_TASK)
-        .env("PATH", path)
-        .env("CLADENC_TEST_ARGUMENTS_OF_DOCKER", &arguments)
-        .output()
-        .unwrap();
-    let recorded = fs::read_to_string(arguments).unwrap();
-    (directory, recorded.lines().map(str::to_owned).collect())
-}
-
-fn arguments_of_a_timeout_that_records_them() -> Vec<String> {
-    let directory = test_inputs::temporary_directory();
-    let arguments = directory.path().join("arguments-of-timeout");
-    let path = format!(
-        "{}:{}:{}",
-        test_inputs::sample("e2e", "timed").display(),
-        test_inputs::sample("e2e", "fake").display(),
-        env::var("PATH").unwrap()
-    );
-    start(directory.path(), SOLVES_EVERY_TASK)
-        .env("PATH", path)
-        .env("CLADENC_TEST_ARGUMENTS_OF_TIMEOUT", &arguments)
-        .env(
-            "CLADENC_TEST_ARGUMENTS_OF_DOCKER",
-            directory.path().join("arguments-of-docker"),
-        )
-        .output()
-        .unwrap();
-    let recorded = fs::read_to_string(arguments).unwrap();
-    recorded.lines().map(str::to_owned).collect()
-}
-
 fn killed_outright_while_it_builds() -> Killed {
     let directory = test_inputs::temporary_directory();
     let mut cladenc = start_within(directory.path(), WAITS_THIRTY_SECONDS, "12")
@@ -218,14 +187,6 @@ fn the_build_of_the_image_ends_itself_at_its_time_limit_when_cladenc_was_killed_
     let killed = killed_outright_while_it_builds();
     thread::sleep(UNTIL_THE_STEP_WOULD_HAVE_ENDED);
     assert!(!docker_holds(&killed.image.name));
-}
-
-#[test]
-fn the_build_of_the_image_is_started_under_a_timeout_five_seconds_longer_than_its_time_limit() {
-    assert_eq!(
-        arguments_of_a_timeout_that_records_them()[..5],
-        ["-s", "KILL", "65", "docker", "build"]
-    );
 }
 
 #[test]
@@ -312,61 +273,4 @@ fn a_dockerfile_that_is_not_built_leaves_no_journal() {
             .join("outputs/journal.jsonl")
             .exists()
     );
-}
-
-#[test]
-fn docker_is_asked_to_build_from_the_copy_of_the_dockerfile_with_an_empty_directory_of_files() {
-    let (directory, arguments) = arguments_of_a_docker_that_records_them();
-    let kept = directory.path().join("outputs/image");
-    assert_eq!(
-        [&arguments[..2], &arguments[3..6]].concat(),
-        [
-            "build".to_owned(),
-            "--tag".to_owned(),
-            "--file".to_owned(),
-            kept.join("Dockerfile").display().to_string(),
-            kept.join("context").display().to_string(),
-        ]
-    );
-}
-
-#[test]
-fn the_container_of_a_procreation_is_started_from_the_image_docker_was_asked_to_build() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them();
-    let started_from = format!("\n{}\nsh\n-c\n", arguments[2]);
-    assert!(arguments.join("\n").contains(&started_from));
-}
-
-#[test]
-fn docker_is_asked_to_build_the_image_once_and_the_environment_of_each_of_the_three_tasks_once() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them();
-    assert_eq!(
-        arguments
-            .iter()
-            .filter(|argument| *argument == "build")
-            .count(),
-        4
-    );
-}
-
-#[test]
-fn docker_is_not_asked_to_fetch_when_it_builds_the_image() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them();
-    let build = arguments
-        .split(|argument| argument == "run")
-        .next()
-        .unwrap_or_default();
-    assert!(!build.iter().any(|argument| argument.starts_with("--pull")));
-}
-
-#[test]
-fn docker_is_told_never_to_fetch_the_image_it_built_at_any_container() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them();
-    let recorded = arguments.join("\n");
-    let containers: Vec<&str> = recorded.split("\nrun\n").skip(1).collect();
-    let told_never = containers
-        .iter()
-        .filter(|container| container.starts_with("--rm\n--pull\nnever\n"))
-        .count();
-    assert_eq!((told_never > 0, told_never), (true, containers.len()));
 }

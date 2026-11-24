@@ -14,7 +14,7 @@ use crate::outputs_directory::OutputsDirectory;
 
 pub(super) const TASK: &str = "benchmark/t1";
 
-pub(super) const TIMER: &str =
+pub(crate) const TIMER: &str =
     r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
 
 pub(super) const LOGS_LINKED: &str =

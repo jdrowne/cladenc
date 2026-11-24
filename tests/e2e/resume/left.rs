@@ -1,4 +1,3 @@
-use std::env;
 use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
@@ -89,26 +88,6 @@ fn stopped() -> TempDir {
     directory
 }
 
-fn resumed_with_the_docker_of(sample: &str, directory: &TempDir) -> Output {
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", sample).display(),
-        env::var("PATH").unwrap()
-    );
-    resume(&directory.path().join("outputs"))
-        .env("PATH", path)
-        .env(
-            "CLADENC_TEST_ARGUMENTS_OF_DOCKER",
-            directory.path().join("arguments-of-docker"),
-        )
-        .output()
-        .unwrap()
-}
-
-fn resumed_with_a_docker_that(sample: &str) -> Output {
-    resumed_with_the_docker_of(sample, &stopped())
-}
-
 fn resumed_with_no_docker() -> Output {
     let directory = stopped();
     let empty = directory.path().join("no-programs");
@@ -117,14 +96,6 @@ fn resumed_with_no_docker() -> Output {
         .env("PATH", empty)
         .output()
         .unwrap()
-}
-
-fn last_line_said(output: &Output) -> String {
-    String::from_utf8_lossy(&output.stderr)
-        .lines()
-        .last()
-        .unwrap_or_default()
-        .to_owned()
 }
 
 #[test]
@@ -165,61 +136,6 @@ fn resume_says_nothing_of_containers_where_none_was_left() {
     let directory = stopped();
     let output = resume(&directory.path().join("outputs")).output().unwrap();
     assert!(!String::from_utf8_lossy(&output.stderr).contains("cladenc: removed"));
-}
-
-#[test]
-fn resume_asks_docker_first_for_the_containers_that_carry_the_label_of_its_directed_evolution() {
-    let directory = stopped();
-    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
-    resumed_with_the_docker_of("fake", &directory);
-    let arguments = fs::read_to_string(directory.path().join("arguments-of-docker")).unwrap();
-    assert!(arguments.starts_with(&format!(
-        "ps\n--all\n--quiet\n--filter\nlabel=cladenc.directed-evolution={}\n",
-        outputs.display()
-    )));
-}
-
-#[test]
-fn a_resume_whose_docker_cannot_be_asked_exits_with_2() {
-    assert_eq!(
-        resumed_with_a_docker_that("unreachable").status.code(),
-        Some(2)
-    );
-}
-
-#[test]
-fn a_resume_whose_docker_cannot_be_asked_says_what_docker_said() {
-    assert_eq!(
-        last_line_said(&resumed_with_a_docker_that("unreachable")),
-        "cladenc: the containers that the directed evolution left running cannot be removed: \
-         Cannot connect to the Docker daemon"
-    );
-}
-
-#[test]
-fn a_resume_whose_docker_cannot_be_asked_continues_nothing() {
-    let directory = stopped();
-    let journal = directory.path().join("outputs/journal.jsonl");
-    let before = fs::read_to_string(&journal).unwrap();
-    resumed_with_the_docker_of("unreachable", &directory);
-    assert_eq!(fs::read_to_string(&journal).unwrap(), before);
-}
-
-#[test]
-fn a_resume_whose_docker_does_not_remove_a_container_exits_with_2() {
-    assert_eq!(
-        resumed_with_a_docker_that("unremoved").status.code(),
-        Some(2)
-    );
-}
-
-#[test]
-fn a_resume_whose_docker_does_not_remove_a_container_says_what_docker_said() {
-    assert_eq!(
-        last_line_said(&resumed_with_a_docker_that("unremoved")),
-        "cladenc: the containers that the directed evolution left running cannot be removed: \
-         cannot remove container 0123456789ab"
-    );
 }
 
 #[test]

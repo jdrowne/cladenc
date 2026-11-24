@@ -1,4 +1,0 @@
-#!/bin/sh
-[ "$1" = ps ] && echo 0123456789ab && exit 0
-echo "cannot remove container 0123456789ab" >&2
-exit 1

@@ -86,3 +86,12 @@ fn a_directed_evolution_whose_environments_cannot_be_built_again_is_not_resumed(
         Err(DirectedEvolutionError::Environment { .. })
     ));
 }
+
+#[test]
+fn a_resume_first_asks_docker_for_the_containers_that_carry_the_label_of_its_directed_evolution() {
+    let commands = resumed_by(Double::default()).commands();
+    assert_eq!(
+        commands.first().map(String::as_str),
+        Some("docker ps --all --quiet --filter label=cladenc.directed-evolution=OUTPUTS")
+    );
+}

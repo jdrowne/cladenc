@@ -1,60 +1,16 @@
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 
-use crate::cli::{self, Cli, Command, StartOptions};
+use crate::cli::tests::given::{self, Ran};
+use crate::cli::{Command, StartOptions};
 use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
 
-struct Ran {
-    status: u8,
-    output: String,
-    errors: String,
-}
-
 fn ran(change: impl FnOnce(&Memory, &mut StartOptions)) -> Ran {
     let directory = Memory::default();
-    let mut options = StartOptions {
-        primogenitor: test_inputs::primogenitor_in(&directory, directory.path()),
-        model: "a-model".to_owned(),
-        model_url: "http://models.example/v1".to_owned(),
-        model_key_file: None,
-        benchmark: vec![test_inputs::benchmark_in(
-            &directory,
-            directory.path(),
-            &["t1", "t2", "t3"],
-        )],
-        procreation_docker_image: Some("image".to_owned()),
-        procreation_dockerfile: None,
-        procreation_docker_image_build_timeout: None,
-        harness_build_command: None,
-        harness_run_command: "run a harness".to_owned(),
-        outputs_dir: directory.path().join("outputs"),
-        max_procreations: 1,
-        max_concurrent_containers: 1,
-        procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
-        max_task_health_check_retries: 0,
-        selection_tasks_percentage: 30.0,
-        corroboration_tasks_percentage: 30.0,
-    };
+    let mut options = given::options(&directory);
     change(&directory, &mut options);
-    let mut output = Vec::new();
-    let mut errors = Vec::new();
-    let cli = Cli {
-        command: Command::Start(Box::new(options)),
-    };
-    let status = cli::execute(
-        Double::default().on(&directory).outside(),
-        &cli,
-        &AtomicBool::new(false),
-        &mut output,
-        &mut errors,
-    );
-    Ran {
-        status,
-        output: String::from_utf8(output).unwrap(),
-        errors: String::from_utf8(errors).unwrap(),
-    }
+    let start = Command::Start(Box::new(options));
+    given::executed(Double::default(), &directory, start)
 }
 
 fn with_a_missing_benchmark(directory: &Memory, options: &mut StartOptions) {

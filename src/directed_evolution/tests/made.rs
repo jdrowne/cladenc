@@ -149,6 +149,17 @@ fn an_image_that_a_task_names_and_the_machine_lacks_ends_the_directed_evolution(
 }
 
 #[test]
+fn no_environment_is_built_for_a_task_that_names_its_image() {
+    let commands = given::started(Double::default(), of_t1(IMAGE_GIVEN)).commands();
+    let built: Vec<&str> = commands
+        .iter()
+        .filter(|command| command.starts_with("docker build "))
+        .map(String::as_str)
+        .collect();
+    assert_eq!(built, [ENVIRONMENTS_BUILT[1]]);
+}
+
+#[test]
 fn no_environment_is_told_as_built_when_every_task_names_an_image() {
     let said = given::started(Double::default(), of_each_task(IMAGE_GIVEN)).said;
     assert!(!said.contains("built the environment"));
@@ -219,6 +230,15 @@ fn an_image_of_a_grader_that_the_machine_lacks_ends_the_directed_evolution() {
 fn the_environment_of_a_grader_with_a_dockerfile_of_its_own_is_built_from_the_tests() {
     let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
     assert_eq!(evolved.count_of(GRADER_BUILT), 1);
+}
+
+#[test]
+fn the_container_of_a_grader_built_from_the_tests_is_a_container_of_that_image() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
+    assert_eq!(
+        evolved.count_of(" --detach cladenc-environments-0123456789abcdef:0-grader sleep "),
+        1
+    );
 }
 
 #[test]

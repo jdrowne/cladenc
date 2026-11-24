@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -7,8 +5,6 @@ use std::process::{Command, Output};
 use tempfile::TempDir;
 
 const TOLD: &str = "a-model http://models.example/v1";
-const TIMER: &str =
-    r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
 const SAY_WHAT_THE_HARNESS_IS_GIVEN: &str = "echo \"$CLADENC_HARNESS\" > where; pwd >> where; \
                                              echo \"$CLADENC_MODEL $CLADENC_MODEL_URL \
                                              ${CLADENC_MODEL_KEY-none}\" > model";
@@ -64,26 +60,6 @@ fn ran_with_no_file_of_a_key_and_a_key_in_the_environment() -> TempDir {
     directory
 }
 
-fn ran_with_a_docker_that_records_its_arguments() -> String {
-    ran_in_with_a_docker_that_records_its_arguments(&test_inputs::temporary_directory())
-}
-
-fn ran_in_with_a_docker_that_records_its_arguments(directory: &TempDir) -> String {
-    let key_file = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
-    let arguments = directory.path().join("arguments-of-docker");
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", "fake").display(),
-        env::var("PATH").unwrap()
-    );
-    start(directory.path(), Some(key_file))
-        .env("PATH", path)
-        .env("CLADENC_TEST_ARGUMENTS_OF_DOCKER", &arguments)
-        .output()
-        .unwrap();
-    fs::read_to_string(arguments).unwrap()
-}
-
 fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("outputs/harnesses/1").join(file)).unwrap()
 }
@@ -95,15 +71,6 @@ fn kept_with_the_attempt(directory: &TempDir, file: &str) -> String {
 
 fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
     kept_with_the_attempt(directory, &format!("work/{file}"))
-}
-
-fn followed_by<'a>(arguments: &'a str, word: &str) -> Vec<&'a str> {
-    let lines: Vec<&str> = arguments.lines().collect();
-    lines
-        .windows(2)
-        .filter(|pair| pair[0] == word)
-        .map(|pair| pair[1])
-        .collect()
 }
 
 #[test]
@@ -194,93 +161,5 @@ fn the_harness_of_an_attempt_is_given_no_key_that_no_file_holds_either() {
     assert_eq!(
         left_by_the_attempt(&directory, "model"),
         format!("{TOLD} none\n")
-    );
-}
-
-#[test]
-fn docker_is_given_the_name_of_the_variable_that_holds_the_key() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains("--env\nCLADENC_MODEL_KEY\n"));
-}
-
-#[test]
-fn the_key_is_on_no_command_line_of_docker() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(!arguments.contains("a-made-up-key"));
-}
-
-#[test]
-fn docker_is_told_never_to_fetch_the_image_of_a_container() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    let containers = arguments.lines().filter(|line| *line == "run").count();
-    assert_eq!(
-        arguments.matches("run\n--rm\n--pull\nnever\n").count(),
-        containers.max(1)
-    );
-}
-
-#[test]
-fn every_container_is_started_so_that_it_can_name_the_machine_cladenc_runs_on() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains("--add-host\nhost.docker.internal:host-gateway\n"));
-}
-
-fn count_of(arguments: &str, word: &str) -> usize {
-    arguments.lines().filter(|line| *line == word).count()
-}
-
-#[test]
-fn every_command_is_started_under_a_timer_that_ends_it() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    let timed = count_of(&arguments, "run") + count_of(&arguments, "exec");
-    let as_root = arguments.matches("exec\n--user\n0\n").count();
-    let commands = timed - count_of(&arguments, "--detach") - as_root;
-    assert_eq!(
-        arguments.matches(&format!("\nsh\n-c\n{TIMER}\n")).count(),
-        commands.max(1)
-    );
-}
-
-#[test]
-fn the_container_of_an_attempt_whose_task_gives_no_time_limit_sleeps_without_end() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    let image = followed_by(&arguments, "--detach")[0];
-    assert!(arguments.contains(&format!("--detach\n{image}\nsleep\n4294968495\n")));
-}
-
-#[test]
-fn the_containers_of_the_attempts_are_started_from_the_images_built_from_the_environments() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    let started: BTreeSet<&str> = followed_by(&arguments, "--detach").into_iter().collect();
-    let built: BTreeSet<&str> = followed_by(&arguments, "--tag").into_iter().collect();
-    assert_eq!(started, built);
-}
-
-#[test]
-fn the_timer_of_a_harness_is_given_its_command_and_five_seconds_more_than_the_time_limit() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("{TIMER}\n{SAY_WHAT_THE_HARNESS_IS_GIVEN}\n35\n")));
-}
-
-#[test]
-fn the_timer_of_a_grader_is_given_the_grader_of_the_task() {
-    let arguments = ran_with_a_docker_that_records_its_arguments();
-    assert!(arguments.contains(&format!("{TIMER}\n/tests/test.sh\n")));
-}
-
-#[test]
-fn every_container_carries_the_label_of_its_directed_evolution() {
-    let directory = test_inputs::temporary_directory();
-    let arguments = ran_in_with_a_docker_that_records_its_arguments(&directory);
-    let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
-    let label = format!("cladenc.directed-evolution={}", outputs.display());
-    let lines: Vec<&str> = arguments.lines().collect();
-    let containers = lines.iter().filter(|line| **line == "run").count();
-    assert_eq!(
-        lines
-            .windows(4)
-            .filter(|told| told[0] == "--name" && told[2] == "--label" && told[3] == label)
-            .count(),
-        containers.max(1)
     );
 }

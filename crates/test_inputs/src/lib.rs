@@ -310,14 +310,6 @@ fn text_of_roff_line(line: &str) -> String {
         })
 }
 
-pub fn sample(tier: &str, name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tests")
-        .join(tier)
-        .join("samples")
-        .join(name)
-}
-
 pub fn within_ten_seconds(holds: impl FnMut() -> bool) -> bool {
     within(TEN_SECONDS, holds)
 }

@@ -1,4 +1,3 @@
-use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -64,38 +63,4 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .output()
         .unwrap();
     assert_eq!(cladenc.wait().unwrap().code(), Some(0));
-}
-
-fn status_of_a_run_whose_docker_ends_itself_with(signal: &str) -> Option<i32> {
-    let directory = test_inputs::temporary_directory();
-    let arguments = start(directory.path(), "exit 0");
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", "killed").display(),
-        env::var("PATH").unwrap()
-    );
-    Command::new(&arguments[0])
-        .args(&arguments[1..])
-        .env("PATH", path)
-        .env("CLADENC_TEST_SIGNAL_OF_DOCKER", signal)
-        .output()
-        .unwrap()
-        .status
-        .code()
-}
-
-#[test]
-fn a_docker_that_sends_itself_a_hangup_is_ended_by_it() {
-    assert_eq!(
-        status_of_a_run_whose_docker_ends_itself_with("HUP"),
-        Some(1)
-    );
-}
-
-#[test]
-fn a_docker_that_sends_itself_a_quit_is_ended_by_it() {
-    assert_eq!(
-        status_of_a_run_whose_docker_ends_itself_with("QUIT"),
-        Some(1)
-    );
 }

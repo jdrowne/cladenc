@@ -13,6 +13,11 @@ fn with_a_dockerfile(directory: &Memory, settings: &mut Settings) {
     settings.docker_build_timeout = Some(30);
 }
 
+fn with_a_dockerfile_of_an_image_of_its_own(directory: &Memory, settings: &mut Settings) {
+    with_a_dockerfile(directory, settings);
+    settings.docker_image = "an-image:built".to_owned();
+}
+
 fn imaged_by(docker: Double) -> Evolved {
     given::started(docker, with_a_dockerfile)
 }
@@ -65,4 +70,29 @@ fn a_directed_evolution_that_is_stopped_while_its_image_is_built_has_not_started
         stopped.result,
         Err(DirectedEvolutionError::NotStarted)
     ));
+}
+
+#[test]
+fn the_container_of_a_procreation_is_started_from_the_image_that_was_built() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_an_image_of_its_own);
+    let built = evolved.count_of(" docker build --tag an-image:built --file ");
+    let started_from = evolved.count_of(" an-image:built sh -c ");
+    assert_eq!((built, started_from), (1, 1));
+}
+
+#[test]
+fn the_image_is_built_once_and_the_environment_of_each_task_once() {
+    assert_eq!(imaged_by(Double::default()).count_of("docker build "), 3);
+}
+
+#[test]
+fn every_container_is_told_never_to_fetch_the_image_that_was_built() {
+    let commands = imaged_by(Double::default()).commands();
+    let containers = commands
+        .iter()
+        .filter(|command| command.starts_with("docker run "));
+    let told_never = commands
+        .iter()
+        .filter(|command| command.starts_with("docker run --rm --pull never "));
+    assert_eq!((containers.count(), told_never.count()), (3, 3));
 }

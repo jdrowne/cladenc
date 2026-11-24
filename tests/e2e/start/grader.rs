@@ -1,13 +1,9 @@
-use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-const SUB_COMMANDS: [&str; 8] = [
-    "run", "exec", "build", "rm", "cp", "diff", "inspect", "image",
-];
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const GRADED_ON_ITS_REPORT: &str =
@@ -15,7 +11,6 @@ const GRADED_ON_ITS_REPORT: &str =
 const WRITE_A_REPORT: &str = "echo found > report.txt";
 const READ_THE_REPORT: &str = "cat /app/report.txt; grep -q found /app/report.txt && echo 1 > \
                                /logs/verifier/reward.txt";
-const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
                            1\"\ninterval_sec = 0\nretries = 1\n";
 const READY: &str = "[verifier.environment.healthcheck]\ncommand = \"true\"\n";
@@ -118,73 +113,6 @@ fn said_last(output: &Output) -> String {
     said(output).lines().last().unwrap_or_default().to_owned()
 }
 
-fn arguments_of_a_docker_that_records_them(
-    task_toml_of_t2: &str,
-    change: impl FnOnce(&Path),
-) -> (TempDir, Vec<String>) {
-    let directory = test_inputs::temporary_directory();
-    let arguments = directory.path().join("arguments-of-docker");
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", "fake").display(),
-        env::var("PATH").unwrap()
-    );
-    let mut start = start(directory.path(), "exit 0", task_toml_of_t2);
-    change(&directory.path().join("benchmark/t2"));
-    start
-        .env("PATH", path)
-        .env("CLADENC_TEST_ARGUMENTS_OF_DOCKER", &arguments)
-        .output()
-        .unwrap();
-    let recorded = fs::read_to_string(arguments).unwrap();
-    (directory, recorded.lines().map(str::to_owned).collect())
-}
-
-fn arguments_with_a_grader_built_from_its_tests() -> (TempDir, Vec<String>) {
-    arguments_of_a_docker_that_records_them(SEPARATE, |task| {
-        fs::write(
-            task.join("tests/Dockerfile"),
-            format!("FROM {}\n{HOLDS_ITS_TESTS}", test_inputs::IMAGE),
-        )
-        .unwrap();
-    })
-}
-
-fn calls(arguments: &[String], sub_command: &str) -> Vec<Vec<String>> {
-    arguments
-        .iter()
-        .enumerate()
-        .filter(|(_, argument)| *argument == sub_command)
-        .map(|(place, _)| {
-            arguments[place + 1..]
-                .iter()
-                .take_while(|argument| !SUB_COMMANDS.contains(&argument.as_str()))
-                .cloned()
-                .collect()
-        })
-        .collect()
-}
-
-fn followed_by(call: &[String], flag: &str) -> String {
-    call.windows(2)
-        .find(|pair| pair[0] == flag)
-        .map(|pair| pair[1].clone())
-        .unwrap_or_default()
-}
-
-fn containers_of_t2(arguments: &[String]) -> Vec<Vec<String>> {
-    calls(arguments, "run")
-        .into_iter()
-        .filter(|call| followed_by(call, "--detach").ends_with(":1"))
-        .collect()
-}
-
-fn place_of(arguments: &[String], sequence: &[&str]) -> Option<usize> {
-    arguments
-        .windows(sequence.len())
-        .position(|found| found == sequence)
-}
-
 #[test]
 fn a_harness_completes_a_task_whose_grader_runs_separately_by_the_path_that_was_kept() {
     assert_eq!(
@@ -279,78 +207,6 @@ fn a_task_that_names_the_image_of_its_grader_and_holds_no_tests_is_not_refused()
         |task| fs::remove_dir_all(task.join("tests")).unwrap(),
     );
     assert_eq!(output.status.code(), Some(0));
-}
-
-#[test]
-fn docker_is_asked_to_build_the_environment_of_a_grader_from_the_tests_of_its_task() {
-    let (directory, arguments) = arguments_with_a_grader_built_from_its_tests();
-    let outputs = directory.path().join("outputs");
-    let build = calls(&arguments, "build")
-        .into_iter()
-        .find(|call| followed_by(call, "--tag").ends_with(":1-grader"))
-        .unwrap_or_default();
-    assert_eq!(
-        build.get(2..).unwrap_or_default(),
-        [
-            "--label".to_owned(),
-            "cladenc.task=benchmark/t2".to_owned(),
-            "--label".to_owned(),
-            format!(
-                "cladenc.directed-evolution={}",
-                fs::canonicalize(&outputs).unwrap().display()
-            ),
-            outputs
-                .join("benchmarks/benchmark/t2/tests")
-                .display()
-                .to_string(),
-        ]
-    );
-}
-
-#[test]
-fn docker_is_asked_to_remove_the_environment_of_a_grader_with_the_environments() {
-    let (_directory, arguments) = arguments_with_a_grader_built_from_its_tests();
-    assert!(calls(&arguments, "rm").iter().any(|call| {
-        call.iter().any(|name| name.ends_with(":1"))
-            && call.iter().any(|name| name.ends_with(":1-grader"))
-    }));
-}
-
-#[test]
-fn the_container_of_a_grader_built_from_the_tests_is_a_container_of_that_image() {
-    let (_directory, arguments) = arguments_with_a_grader_built_from_its_tests();
-    assert!(
-        calls(&arguments, "run")
-            .iter()
-            .any(|call| followed_by(call, "--detach").ends_with(":1-grader"))
-    );
-}
-
-#[test]
-fn the_container_of_the_harness_is_removed_before_that_of_the_grader_is_brought_up() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them(SEPARATE, |_| ());
-    let containers = containers_of_t2(&arguments);
-    let harness = followed_by(&containers[0], "--name");
-    let grader = followed_by(&containers[1], "--name");
-    let removed = place_of(&arguments, &["rm", "--force", harness.as_str()]);
-    let brought_up = place_of(&arguments, &["--name", grader.as_str()]);
-    assert!(
-        removed
-            .zip(brought_up)
-            .is_some_and(|(removed, brought_up)| removed < brought_up)
-    );
-}
-
-#[test]
-fn the_container_of_a_grader_stays_for_the_time_limit_of_the_grader_and_ten_minutes_more() {
-    let (_directory, arguments) = arguments_of_a_docker_that_records_them(
-        "[verifier]\nenvironment_mode = \"separate\"\ntimeout_sec = 20\n",
-        |_| (),
-    );
-    assert_eq!(
-        containers_of_t2(&arguments)[1].last().map(String::as_str),
-        Some("620")
-    );
 }
 
 #[test]

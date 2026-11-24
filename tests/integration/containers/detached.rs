@@ -46,6 +46,22 @@ fn a_command_that_a_signal_ends_before_its_container_runs_is_said_to_be_ended_by
 }
 
 #[test]
+fn a_command_that_sends_itself_a_hangup_before_its_container_runs_is_ended_by_it() {
+    assert!(matches!(
+        detached("kill -s HUP $$", "").ended,
+        Err(ContainerError::Signal(1))
+    ));
+}
+
+#[test]
+fn a_command_that_sends_itself_a_quit_before_its_container_runs_is_ended_by_it() {
+    assert!(matches!(
+        detached("kill -s QUIT $$", "").ended,
+        Err(ContainerError::Signal(3))
+    ));
+}
+
+#[test]
 fn a_command_that_leaves_its_container_running_reads_what_it_is_given_on_its_standard_input() {
     assert!(matches!(
         detached(

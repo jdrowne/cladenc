@@ -50,6 +50,22 @@ fn a_program_that_a_signal_ends_is_said_to_be_ended_by_that_signal() {
 }
 
 #[test]
+fn a_program_that_sends_itself_a_hangup_is_ended_by_it() {
+    assert!(matches!(
+        ran("kill -s HUP $$", "").ended,
+        Err(ContainerError::Signal(1))
+    ));
+}
+
+#[test]
+fn a_program_that_sends_itself_a_quit_is_ended_by_it() {
+    assert!(matches!(
+        ran("kill -s QUIT $$", "").ended,
+        Err(ContainerError::Signal(3))
+    ));
+}
+
+#[test]
 fn a_program_still_running_once_a_stop_is_asked_for_is_ended_and_said_to_be_stopped() {
     assert!(matches!(
         ran_until("sleep 300", "", 60, true).ended,

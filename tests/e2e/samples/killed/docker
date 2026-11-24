@@ -1,3 +1,0 @@
-#!/bin/sh
-[ "$1" = build ] && exit 0
-kill -s "$CLADENC_TEST_SIGNAL_OF_DOCKER" $$

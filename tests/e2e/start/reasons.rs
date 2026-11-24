@@ -1,4 +1,3 @@
-use std::env;
 use std::path::Path;
 use std::process::Command;
 
@@ -48,25 +47,6 @@ fn a_run_a_container_stopped_says_which_attempt_and_where_what_docker_said_is_ke
                 .join("outputs/running/attempt-0-benchmark+t1/stderr")
                 .display()
         )
-    );
-}
-
-#[test]
-fn a_run_stopped_by_a_docker_that_a_signal_ended_says_which_attempt_and_which_signal() {
-    let directory = test_inputs::temporary_directory();
-    let path = format!(
-        "{}:{}",
-        test_inputs::sample("e2e", "killed").display(),
-        env::var("PATH").unwrap()
-    );
-    let mut start = start(directory.path(), "exit 0");
-    start
-        .env("PATH", path)
-        .env("CLADENC_TEST_SIGNAL_OF_DOCKER", "TERM");
-    assert_eq!(
-        said_last(&mut start),
-        "cladenc: the directed evolution stopped before its end: the attempt of harness 0 on \
-         task benchmark/t1 was ended by signal 15"
     );
 }
 

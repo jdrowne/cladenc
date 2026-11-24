@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Cannot connect to the Docker daemon" >&2
-exit 1

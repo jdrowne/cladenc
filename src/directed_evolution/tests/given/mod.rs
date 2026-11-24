@@ -25,6 +25,14 @@ impl Evolved {
         self.docker.commands(&outputs_directory)
     }
 
+    pub(super) fn inputs(&self) -> Vec<String> {
+        self.docker
+            .asked()
+            .into_iter()
+            .map(|asked| asked.input)
+            .collect()
+    }
+
     pub(super) fn count_of(&self, part: &str) -> usize {
         self.commands()
             .iter()

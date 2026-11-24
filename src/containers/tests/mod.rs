@@ -6,7 +6,7 @@ mod built;
 mod container;
 pub(crate) mod double;
 mod ended;
-mod given;
+pub(crate) mod given;
 mod graded;
 mod health_check;
 mod healthy;
