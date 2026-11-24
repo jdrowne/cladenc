@@ -26,31 +26,26 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn built_from(image: &str, build_command: &str, time_limit: u64, stop: bool) -> Built {
+fn built(build_command: &str) -> Built {
     let (directory, outputs_directory) = made();
     let launch = Launch {
-        image,
+        image: test_inputs::IMAGE,
         run_command: "exit 0",
         build_command: Some(build_command),
         model: MODEL,
-        procreation_timeout: time_limit,
+        procreation_timeout: 30,
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let stop = AtomicBool::new(stop);
     let result = containers::build_primogenitor(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        &stop,
+        &AtomicBool::new(false),
     );
     (directory, outputs_directory, result)
-}
-
-fn built(build_command: &str) -> Built {
-    built_from(test_inputs::IMAGE, build_command, 30, false)
 }
 
 fn left_in_the_primogenitor(build_command: &str, file: &str) -> String {
@@ -100,63 +95,4 @@ fn the_build_of_the_primogenitor_finds_nothing_at_the_top_of_the_filesystem_that
         left_in_the_primogenitor("ls / > top", "top"),
         test_inputs::printed_in_a_container_of(test_inputs::IMAGE, "ls /")
     );
-}
-
-#[test]
-fn the_standard_output_of_the_build_of_the_primogenitor_is_kept_under_builds() {
-    let (_directory, outputs_directory, _result) = built("echo out");
-    assert_eq!(
-        fs::read_to_string(outputs_directory.build(0).join("stdout")).unwrap(),
-        "out\n"
-    );
-}
-
-#[test]
-fn the_standard_error_of_the_build_of_the_primogenitor_is_kept_under_builds() {
-    let (_directory, outputs_directory, _result) = built("echo err >&2");
-    assert_eq!(
-        fs::read_to_string(outputs_directory.build(0).join("stderr")).unwrap(),
-        "err\n"
-    );
-}
-
-#[test]
-fn a_primogenitor_whose_build_exits_with_0_is_built() {
-    let (_directory, _outputs_directory, result) = built("exit 0");
-    assert!(result.is_ok());
-}
-
-#[test]
-fn a_primogenitor_whose_build_exits_with_another_status_is_an_error_that_holds_the_status() {
-    let (_directory, _outputs_directory, result) = built("exit 3");
-    assert!(matches!(result, Err(ContainerError::Exit(3))));
-}
-
-#[test]
-fn a_primogenitor_whose_build_runs_past_the_time_limit_is_an_error() {
-    let (_directory, _outputs_directory, result) =
-        built_from(test_inputs::IMAGE, "sleep 300", 1, false);
-    assert!(matches!(result, Err(ContainerError::TimeLimit)));
-}
-
-#[test]
-fn a_primogenitor_whose_build_leaves_a_named_pipe_is_an_error() {
-    let (_directory, _outputs_directory, result) = built("mkfifo pipe");
-    assert!(matches!(result, Err(ContainerError::OtherFiles)));
-}
-
-#[test]
-fn a_build_of_the_primogenitor_that_docker_does_not_start_is_an_error() {
-    let (_directory, outputs_directory, result) = built_from("Not An Image", "exit 0", 30, false);
-    assert!(matches!(
-        result,
-        Err(ContainerError::Docker(said)) if said == outputs_directory.build(0).join("stderr")
-    ));
-}
-
-#[test]
-fn a_build_of_the_primogenitor_whose_stop_flag_is_set_reports_that_it_was_stopped() {
-    let (_directory, _outputs_directory, result) =
-        built_from(test_inputs::IMAGE, "sleep 300", 60, true);
-    assert!(matches!(result, Err(ContainerError::Stopped)));
 }

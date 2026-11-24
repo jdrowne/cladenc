@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, HarnessEnding, Host, Launch, Program};
+use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::file_system::Disk;
 use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
@@ -14,10 +14,6 @@ use test_inputs::Image;
 
 const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt";
-const SAY_THE_SECONDS_OF_THE_TIMER: &str = "p=$PPID; \
-    while [ \"$(tr '\\0' '\\n' < /proc/$p/cmdline | wc -l)\" -lt 5 ]; \
-    do p=$(awk '/^PPid/ {print $2}' /proc/$p/status); done; \
-    tr '\\0' '\\n' < /proc/$p/cmdline | tail -n 1";
 const LEAVE_A_PROCESS_RUNNING: &str =
     "(while true; do echo beat >> beats; sleep 1; done) > /dev/null 2>&1 & sleep 1";
 const THE_PROCESS_STILL_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
@@ -57,7 +53,6 @@ struct Attempt<'a> {
     grader: &'a str,
     key: Option<&'a str>,
     harness_time_limit: Option<u64>,
-    grader_time_limit: u64,
     unreadable_in_the_harness: bool,
 }
 
@@ -69,7 +64,6 @@ impl Default for Attempt<'_> {
             grader: FINISHED,
             key: None,
             harness_time_limit: Some(30),
-            grader_time_limit: 30,
             unreadable_in_the_harness: false,
         }
     }
@@ -146,7 +140,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         image: environment_image.clone(),
         configuration: TaskConfiguration {
             harness_time_limit: attempt.harness_time_limit.map(Duration::from_secs),
-            grader_time_limit: Duration::from_secs(attempt.grader_time_limit),
+            grader_time_limit: Duration::from_secs(30),
             ..TaskConfiguration::default()
         },
         grader: None,
@@ -189,23 +183,6 @@ fn within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
         harness_time_limit: Some(time_limit),
         ..Attempt::default()
     })
-}
-
-fn graded_within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
-    attempted_as(&Attempt {
-        run_command,
-        grader,
-        grader_time_limit: time_limit,
-        ..Attempt::default()
-    })
-}
-
-fn ran_out_of_time(attempted: &Attempted) -> Option<bool> {
-    attempted
-        .result
-        .as_ref()
-        .ok()
-        .map(|attempted| attempted.ending == HarnessEnding::Stopped)
 }
 
 fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &str) -> Attempted {
@@ -338,18 +315,6 @@ fn the_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 }
 
 #[test]
-fn the_harness_of_a_directed_evolution_with_no_key_is_given_none() {
-    assert_eq!(
-        told_of_the_model(None),
-        format!(
-            "CLADENC_MODEL={}\nCLADENC_MODEL_URL={}\n",
-            test_inputs::MODEL,
-            test_inputs::MODEL_URL
-        )
-    );
-}
-
-#[test]
 fn the_harness_is_given_neither_the_tests_of_the_task_nor_its_own_attempts() {
     assert_eq!(left_by_the_harness(LOOK_FOR_THE_TESTS, "given"), "");
 }
@@ -369,23 +334,10 @@ fn the_standard_input_of_the_harness_is_empty() {
 }
 
 #[test]
-fn the_standard_output_of_the_harness_is_kept() {
-    assert_eq!(kept(&attempted("echo out", FINISHED), "stdout"), "out\n");
-}
-
-#[test]
 fn the_standard_error_of_the_harness_is_kept() {
     assert_eq!(
         kept(&attempted("echo err >&2", FINISHED), "stderr"),
         "err\n"
-    );
-}
-
-#[test]
-fn the_specification_of_the_task_is_kept_with_the_attempt() {
-    assert_eq!(
-        kept(&attempted(FINISH, FINISHED), "specification"),
-        "Finish the work of t1.\n"
     );
 }
 
@@ -448,64 +400,6 @@ fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
 }
 
 #[test]
-fn a_grader_that_leaves_no_score_gives_not_completed() {
-    assert!(with_its_result(
-        &attempted("true", FINISHED),
-        AttemptResult::NotCompleted
-    ));
-}
-
-#[test]
-fn a_grader_that_scores_0_gives_not_completed() {
-    assert!(with_its_result(
-        &attempted(FINISH, "echo 0 > /logs/verifier/reward.txt"),
-        AttemptResult::NotCompleted
-    ));
-}
-
-#[test]
-fn a_grader_that_scores_1_and_exits_with_another_status_than_0_gives_completed() {
-    assert!(with_its_result(
-        &attempted(FINISH, "echo 1 > /logs/verifier/reward.txt; exit 2"),
-        AttemptResult::Completed
-    ));
-}
-
-#[test]
-fn a_grader_that_scores_1_on_every_label_of_reward_json_gives_completed() {
-    assert!(with_its_result(
-        &attempted(
-            FINISH,
-            "echo '{\"tests\": 1, \"style\": 1.0}' > /logs/verifier/reward.json"
-        ),
-        AttemptResult::Completed
-    ));
-}
-
-#[test]
-fn a_grader_whose_reward_json_says_less_than_1_on_a_label_gives_not_completed() {
-    assert!(with_its_result(
-        &attempted(
-            FINISH,
-            "echo 1 > /logs/verifier/reward.txt; \
-             echo '{\"tests\": 1, \"style\": 0.5}' > /logs/verifier/reward.json"
-        ),
-        AttemptResult::NotCompleted
-    ));
-}
-
-#[test]
-fn the_score_of_the_grader_is_kept_with_the_attempt() {
-    assert_eq!(
-        kept(
-            &attempted(FINISH, FINISHED),
-            "grader/logs/verifier/reward.txt"
-        ),
-        "1\n"
-    );
-}
-
-#[test]
 fn what_the_grader_leaves_in_logs_verifier_is_kept_with_the_attempt() {
     assert_eq!(
         kept(
@@ -539,14 +433,6 @@ fn a_file_the_harness_left_in_tests_is_not_found_by_the_grader() {
         "ls -A /tests",
     );
     assert_eq!(kept(&attempted, "grader/stdout"), "test.sh\n");
-}
-
-#[test]
-fn a_harness_that_exits_with_another_status_than_0_is_still_checked() {
-    assert!(with_its_result(
-        &attempted("echo done > work.txt; exit 3", FINISHED),
-        AttemptResult::Completed
-    ));
 }
 
 #[test]
@@ -658,73 +544,11 @@ fn what_docker_said_of_an_attempt_whose_environment_is_not_on_the_machine_is_kep
 }
 
 #[test]
-fn the_standard_output_of_the_grader_is_kept_apart_from_that_of_the_harness() {
-    assert_eq!(printed_by_the_grader("echo out"), "out\n");
-}
-
-#[test]
-fn the_standard_error_of_the_grader_is_kept_apart_from_that_of_the_harness() {
-    assert_eq!(
-        kept(&attempted(FINISH, "echo err >&2"), "grader/stderr"),
-        "err\n"
-    );
-}
-
-#[test]
-fn an_attempt_that_ended_leaves_its_result_in_its_place() {
-    assert_eq!(kept(&attempted(FINISH, FINISHED), "result"), "completed\n");
-}
-
-#[test]
-fn an_attempt_that_ended_keeps_no_copy_of_the_harness() {
-    let attempted = attempted(FINISH, FINISHED);
-    assert!(
-        !attempted
-            .outputs_directory
-            .attempt(0, TASK)
-            .join("harness")
-            .exists()
-    );
-}
-
-#[test]
 fn what_a_harness_that_ran_past_its_time_limit_left_is_still_judged() {
     assert!(with_its_result(
         &within(2, FINISH_AND_STAY, FINISHED),
         AttemptResult::Completed
     ));
-}
-
-#[test]
-fn a_harness_that_ran_past_its_time_limit_is_checked() {
-    let attempted = within(2, "sleep 300", "echo checked");
-    assert_eq!(kept(&attempted, "grader/stdout"), "checked\n");
-}
-
-#[test]
-fn a_harness_that_ran_past_its_time_limit_comes_back_as_having_run_out_of_time() {
-    assert_eq!(
-        ran_out_of_time(&within(2, "sleep 300", FINISHED)),
-        Some(true)
-    );
-}
-
-#[test]
-fn a_harness_that_ended_by_itself_comes_back_as_not_having_run_out_of_time() {
-    assert_eq!(ran_out_of_time(&attempted(FINISH, FINISHED)), Some(false));
-}
-
-#[test]
-fn an_attempt_whose_harness_ran_past_its_time_limit_keeps_the_word_stopped() {
-    assert_eq!(
-        kept(&within(2, "sleep 300", FINISHED), "ending"),
-        "stopped\n"
-    );
-}
-
-#[test]
-fn an_attempt_whose_harness_ended_by_itself_keeps_the_word_ended() {
-    assert_eq!(kept(&attempted(FINISH, FINISHED), "ending"), "ended\n");
 }
 
 #[test]
@@ -740,79 +564,8 @@ fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_
 }
 
 #[test]
-fn a_harness_whose_task_gives_it_no_time_limit_is_given_none() {
-    let attempted = attempted_as(&Attempt {
-        run_command: SAY_THE_SECONDS_OF_THE_TIMER,
-        harness_time_limit: None,
-        ..Attempt::default()
-    });
-    assert!(kept(&attempted, "stdout").trim().parse::<u64>().unwrap() >= u64::from(u32::MAX));
-}
-
-#[test]
-fn a_grader_that_runs_past_its_time_limit_times_out() {
-    assert!(with_its_result(
-        &graded_within(2, FINISH, "sleep 300"),
-        AttemptResult::TimedOut
-    ));
-}
-
-#[test]
-fn the_timer_of_a_harness_waits_for_the_time_limit_of_the_harness_and_five_seconds_more() {
-    let seconds = kept(&attempted(SAY_THE_SECONDS_OF_THE_TIMER, FINISHED), "stdout");
-    assert!((30..=35).contains(&seconds.trim().parse::<u64>().unwrap()));
-}
-
-#[test]
-fn the_time_of_a_grader_is_counted_from_the_moment_the_harness_ends() {
-    let seconds = kept(
-        &graded_within(40, "sleep 8", SAY_THE_SECONDS_OF_THE_TIMER),
-        "grader/stdout",
-    );
-    assert!((40..=45).contains(&seconds.trim().parse::<u64>().unwrap()));
-}
-
-#[test]
 fn the_command_of_a_harness_is_not_the_first_process_of_its_container() {
     assert_ne!(left_by_the_harness("echo $$ > process", "process"), "1\n");
-}
-
-#[test]
-fn a_harness_whose_container_docker_did_not_start_is_an_error() {
-    assert!(matches!(
-        attempted("exit 125", FINISHED).result,
-        Err(ContainerError::Docker(_))
-    ));
-}
-
-#[test]
-fn a_grader_whose_container_docker_did_not_start_is_an_error() {
-    assert!(matches!(
-        attempted(FINISH, "exit 125").result,
-        Err(ContainerError::Docker(_))
-    ));
-}
-
-#[test]
-fn what_docker_said_of_a_grader_it_did_not_start_is_kept_with_the_grader() {
-    let attempted = attempted(FINISH, "exit 125");
-    let kept = attempted
-        .outputs_directory
-        .running_attempt(0, TASK)
-        .join("grader/stderr");
-    assert!(matches!(attempted.result, Err(ContainerError::Docker(said)) if said == kept));
-}
-
-#[test]
-fn after_an_error_the_directory_of_an_attempt_is_still_under_running() {
-    let attempted = attempted("exit 125", FINISHED);
-    assert!(
-        attempted
-            .outputs_directory
-            .running_attempt(0, TASK)
-            .join("stdout")
-            .is_file()
-    );
 }
 
 #[test]

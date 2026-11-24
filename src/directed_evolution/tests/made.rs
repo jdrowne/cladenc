@@ -3,7 +3,7 @@ use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
-use crate::journal::Settings;
+use crate::journal::{self, Settings};
 
 const ENVIRONMENTS_BUILT: [&str; 2] = [
     "docker build --tag cladenc-environments-0123456789abcdef:0 --label \
@@ -272,6 +272,171 @@ fn a_grader_that_asks_for_more_processors_than_the_machine_has_ends_the_directed
         on_a_machine("[verifier.environment]\ncpus = 16\n").result,
         Err(DirectedEvolutionError::TooLarge {
             key: "verifier.environment.cpus",
+            ..
+        })
+    ));
+}
+
+fn lacking_the_image_of_t1() -> Evolved {
+    let docker = Double::default().answering(&["image", "inspect"], &[REFUSED]);
+    given::started(docker, of_t1(IMAGE_GIVEN))
+}
+
+fn built_for_too_long() -> Evolved {
+    let docker = Double::default().answering(&["build"], &[Answer::TimedOut]);
+    given::started(docker, given::unchanged)
+}
+
+fn holds_a_journal(evolved: &Evolved) -> bool {
+    evolved.files().exists(journal::path(&evolved.outputs()))
+}
+
+fn places_of(evolved: &Evolved, starts: &[&str]) -> Vec<Option<usize>> {
+    let lines = evolved.lines();
+    starts
+        .iter()
+        .map(|start| lines.iter().position(|line| line.starts_with(start)))
+        .collect()
+}
+
+#[test]
+fn the_environment_of_each_task_is_told_to_be_built_with_the_image_it_is_built_as() {
+    let building: Vec<String> = made()
+        .lines()
+        .into_iter()
+        .filter(|line| line.starts_with("cladenc: building the environment of task "))
+        .collect();
+    assert_eq!(
+        building,
+        [
+            "cladenc: building the environment of task benchmark/t1 as the image \
+             cladenc-environments-0123456789abcdef:0",
+            "cladenc: building the environment of task benchmark/t2 as the image \
+             cladenc-environments-0123456789abcdef:1",
+        ]
+    );
+}
+
+#[test]
+fn the_environments_are_built_after_the_tasks_are_held_out_and_before_the_first_action() {
+    let starts = [
+        "cladenc: holding out ",
+        "cladenc: building the environment of task benchmark/t1 ",
+        "cladenc: built the environments ",
+        "cladenc: started the ",
+    ];
+    assert_eq!(
+        places_of(&made(), &starts),
+        [Some(2), Some(3), Some(5), Some(6)]
+    );
+}
+
+#[test]
+fn the_environments_built_for_some_of_the_tasks_are_told_with_how_many_of_how_many() {
+    let evolved = given::started(Double::default(), of_t1(IMAGE_GIVEN));
+    assert!(evolved.said.contains(&format!(
+        "cladenc: built the environment of 1 of the 2 tasks: what Docker printed is kept in \
+         {}\n",
+        evolved.outputs().join("environments").display()
+    )));
+}
+
+#[test]
+fn an_environment_whose_build_fails_leaves_the_directed_evolution_no_journal() {
+    assert!(!holds_a_journal(&not_built()));
+}
+
+#[test]
+fn an_environment_whose_build_fails_leaves_the_environments_after_it_unbuilt() {
+    assert_eq!(not_built().count_of("docker build "), 1);
+}
+
+#[test]
+fn a_directed_evolution_stopped_while_an_environment_is_built_does_not_say_it_was_not_built() {
+    let docker = Double::default().answering(&["build"], &[Answer::Stopped]);
+    let said = given::started(docker, given::unchanged).said;
+    assert!(!said.contains("cladenc: the build of the environment"));
+}
+
+#[test]
+fn an_environment_whose_build_runs_past_the_time_limit_of_its_task_ends_the_directed_evolution() {
+    assert!(matches!(
+        built_for_too_long().result,
+        Err(DirectedEvolutionError::Environment {
+            task,
+            error: ContainerError::TimeLimit,
+        }) if task == "benchmark/t1"
+    ));
+}
+
+#[test]
+fn an_environment_whose_build_runs_past_its_time_limit_is_said_with_where_what_docker_printed_is_kept()
+ {
+    let evolved = built_for_too_long();
+    assert!(evolved.said.contains(&format!(
+        "cladenc: the build of the environment of task benchmark/t1 ran past its time limit: \
+         what Docker printed is kept in {}\n",
+        evolved
+            .outputs()
+            .join("environments/benchmark/t1")
+            .display()
+    )));
+}
+
+#[test]
+fn an_image_that_a_task_names_and_the_machine_lacks_leaves_the_directed_evolution_no_journal() {
+    assert!(!holds_a_journal(&lacking_the_image_of_t1()));
+}
+
+#[test]
+fn an_image_that_a_task_names_and_the_machine_lacks_leaves_the_environments_after_it_unbuilt() {
+    assert_eq!(lacking_the_image_of_t1().count_of("docker build "), 0);
+}
+
+#[test]
+fn a_task_that_asks_for_more_than_the_machine_has_leaves_the_directed_evolution_no_journal() {
+    assert!(!holds_a_journal(&on_a_machine(
+        "[environment]\ncpus = 16\n"
+    )));
+}
+
+#[test]
+fn a_directed_evolution_that_runs_to_its_end_holds_a_journal() {
+    assert!(holds_a_journal(&made()));
+}
+
+#[test]
+fn the_environment_of_a_grader_is_told_to_be_built_with_the_image_it_is_built_as() {
+    let said = given::started(Double::default(), with_a_dockerfile_of_the_grader).said;
+    assert!(said.contains(
+        "cladenc: building the environment of the grader of task benchmark/t1 as the image \
+         cladenc-environments-0123456789abcdef:0-grader\n"
+    ));
+}
+
+#[test]
+fn the_environment_of_a_grader_is_built_after_that_of_its_task_and_before_that_of_the_next() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
+    let starts = [
+        "cladenc: building the environment of task benchmark/t1 ",
+        "cladenc: building the environment of the grader of task benchmark/t1 ",
+        "cladenc: building the environment of task benchmark/t2 ",
+    ];
+    assert_eq!(places_of(&evolved, &starts), [Some(3), Some(4), Some(5)]);
+}
+
+#[test]
+fn a_grader_that_runs_in_a_copy_of_the_environment_of_its_task_has_no_environment_built() {
+    let said = given::started(Double::default(), of_t1(SEPARATE)).said;
+    assert!(!said.contains("environment of the grader"));
+}
+
+#[test]
+fn a_grader_that_asks_for_more_memory_than_the_machine_has_ends_the_directed_evolution() {
+    assert!(matches!(
+        on_a_machine("[verifier.environment]\nmemory_mb = 32000\n").result,
+        Err(DirectedEvolutionError::TooLarge {
+            key: "verifier.environment.memory_mb",
             ..
         })
     ));

@@ -3,7 +3,6 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::cli::{self, Cli};
 use cladenc::containers::{Outside, Program};
 use cladenc::directed_evolution::{self, DirectedEvolutionError, Found};
 use cladenc::file_system::{Disk, FileSystem};
@@ -38,13 +37,4 @@ pub fn resume(
         files: &files,
     };
     directed_evolution::resume(outside, path, stop, writer)
-}
-
-pub fn execute(cli: &Cli, stop: &AtomicBool, output: &mut dyn Write, errors: &mut dyn Write) -> u8 {
-    let files = disk();
-    let outside = Outside {
-        docker: &Program,
-        files: &files,
-    };
-    cli::execute(outside, cli, stop, output, errors)
 }

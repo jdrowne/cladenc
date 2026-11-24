@@ -3,9 +3,8 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Environment, Host, Launch, Program};
+use cladenc::containers::{self, Environment, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -18,19 +17,10 @@ const WRITE_A_DIRECTORY: &str = "mkdir -p out/logs out/cache/inner && echo a > o
                                  b > out/logs/b.txt && touch out/draft.tmp out/logs/run.tmp \
                                  out/cache/inner/entry";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
-const CHANGE_THE_REPORT: &str = "echo changed > report.txt; echo 1 > /logs/verifier/reward.txt";
-
 struct Attempted {
     _directory: TempDir,
     _built: Image,
     outputs_directory: OutputsDirectory,
-    result: Result<containers::Attempted, ContainerError>,
-}
-
-struct Attempt<'a> {
-    task_toml: &'a str,
-    run_command: &'a str,
-    grader: &'a str,
 }
 
 fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) {
@@ -57,22 +47,22 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) 
     )
 }
 
-fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
+fn attempted(task_toml: &str, run_command: &str) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    fs::write(benchmark.join("t1/task.toml"), attempt.task_toml).unwrap();
+    fs::write(benchmark.join("t1/task.toml"), task_toml).unwrap();
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", attempt.grader);
+    test_inputs::kept_grader(&path, "t1", COMPLETE);
     let (environment, built) = environment_of(&outputs_directory);
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: attempt.run_command,
+        run_command,
         build_command: None,
         model: Model {
             name: test_inputs::MODEL,
@@ -83,7 +73,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let result = containers::run_attempt(
+    let _ = containers::run_attempt(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -101,16 +91,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         _directory: directory,
         _built: built,
         outputs_directory,
-        result,
     }
-}
-
-fn attempted(task_toml: &str, run_command: &str) -> Attempted {
-    attempted_as(&Attempt {
-        task_toml,
-        run_command,
-        grader: COMPLETE,
-    })
 }
 
 fn kept(attempted: &Attempted, file: &str) -> String {
@@ -149,10 +130,6 @@ fn everything_kept(attempted: &Attempted) -> Vec<String> {
         .collect();
     kept.sort();
     kept
-}
-
-fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
-    attempted.result.as_ref().ok().map(|ended| ended.result)
 }
 
 #[test]
@@ -194,19 +171,6 @@ fn a_path_the_task_lists_is_kept_at_the_destination_the_task_gives() {
 }
 
 #[test]
-fn what_the_patterns_of_the_task_match_is_left_out_of_a_directory_that_is_kept() {
-    let attempted = attempted(
-        "[[artifacts]]\nsource = \"/app/out\"\ndestination = \"out\"\nexclude = [\"*.tmp\", \
-         \"cache\"]\n",
-        WRITE_A_DIRECTORY,
-    );
-    assert_eq!(
-        artifacts_of(&attempted),
-        ["out", "out/a.txt", "out/logs", "out/logs/b.txt"]
-    );
-}
-
-#[test]
 fn a_directory_no_one_can_read_is_left_out_where_a_pattern_matches_it() {
     let attempted = attempted(
         "[[artifacts]]\nsource = \"/app/out\"\ndestination = \"out\"\nexclude = [\"cache\"]\n",
@@ -214,16 +178,6 @@ fn a_directory_no_one_can_read_is_left_out_where_a_pattern_matches_it() {
          out/cache/inner out/cache",
     );
     assert_eq!(artifacts_of(&attempted), ["out", "out/kept"]);
-}
-
-#[test]
-fn a_path_is_kept_as_the_harness_left_it_and_not_as_the_grader_did() {
-    let attempted = attempted_as(&Attempt {
-        task_toml: REPORT,
-        run_command: WRITE_A_REPORT,
-        grader: CHANGE_THE_REPORT,
-    });
-    assert_eq!(kept(&attempted, "artifacts/app/report.txt"), "found\n");
 }
 
 #[test]
@@ -242,27 +196,6 @@ fn a_path_that_is_not_in_the_container_keeps_nothing() {
 }
 
 #[test]
-fn an_attempt_goes_on_where_a_path_the_task_lists_is_not_in_the_container() {
-    let attempted = attempted("artifacts = [\"/app/never/made.txt\"]\n", WRITE_A_REPORT);
-    assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
-}
-
-#[test]
-fn a_path_listed_after_one_that_is_not_in_the_container_is_kept() {
-    let attempted = attempted(
-        "artifacts = [\"/app/never/made.txt\", \"/app/report.txt\"]\n",
-        WRITE_A_REPORT,
-    );
-    assert_eq!(artifacts_of(&attempted), ["app", "app/report.txt"]);
-}
-
-#[test]
-fn an_attempt_whose_task_lists_no_artifacts_keeps_none() {
-    let attempted = attempted("", WRITE_A_REPORT);
-    assert!(!everything_kept(&attempted).contains(&"artifacts".to_owned()));
-}
-
-#[test]
 fn a_symbolic_link_at_a_path_the_task_lists_is_followed() {
     let attempted = attempted(REPORT, "echo found > real.txt && ln -s real.txt report.txt");
     assert!(
@@ -274,13 +207,4 @@ fn a_symbolic_link_at_a_path_the_task_lists_is_followed() {
         )
         .is_ok_and(|report| report.is_file())
     );
-}
-
-#[test]
-fn what_a_harness_that_was_stopped_left_at_a_path_the_task_lists_is_kept() {
-    let attempted = attempted(
-        &format!("{REPORT}\n[agent]\ntimeout_sec = 2\n"),
-        "echo found > report.txt; sleep 300",
-    );
-    assert_eq!(kept(&attempted, "artifacts/app/report.txt"), "found\n");
 }

@@ -173,18 +173,6 @@ fn a_file_the_harness_saved_in_logs_artifacts_is_under_var_log() {
 }
 
 #[test]
-fn an_attempt_whose_harness_saved_nothing_in_logs_artifacts_keeps_no_artifacts() {
-    let attempted = attempted_in(AS_ROOT, FINISH, FINISHED);
-    assert!(
-        !attempted
-            .outputs_directory
-            .attempt(0, TASK)
-            .join("artifacts")
-            .exists()
-    );
-}
-
-#[test]
 fn logs_that_the_environment_of_the_task_holds_is_left_as_it_is() {
     assert_eq!(
         printed_by_the_harness_in(HOLDS_LOGS, "cat /logs/held; [ -L /logs ] || echo no link"),

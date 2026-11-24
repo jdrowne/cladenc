@@ -1,4 +1,7 @@
+use std::path::Path;
 use std::sync::atomic::AtomicBool;
+use std::thread;
+use std::time::Duration;
 
 use nix::unistd::{Gid, Uid};
 
@@ -65,6 +68,40 @@ fn procreated_by(docker: Double, launch: &Launch<'_>) -> Procreated {
         docker,
         result,
     }
+}
+
+fn taking(docker: Double, needles: &[&str], milliseconds: u64) -> Double {
+    docker.doing(needles, move |_, _| {
+        thread::sleep(Duration::from_millis(milliseconds));
+    })
+}
+
+fn changing_what_it_runs_from() -> Double {
+    Double::default().doing(&PROCREATION, |files, asked| {
+        let runs_from = asked
+            .arguments
+            .iter()
+            .find_map(|argument| argument.strip_suffix(HARNESS));
+        if let Some(runs_from) = runs_from {
+            files
+                .write(Path::new(runs_from).join("harness.sh"), "changed\n")
+                .unwrap();
+        }
+    })
+}
+
+fn removing_what_the_progenitor_added() -> Double {
+    Double::default()
+        .changing()
+        .doing(&PROCREATION, |files, asked| {
+            let work = asked
+                .arguments
+                .iter()
+                .find_map(|argument| argument.strip_suffix(WORK));
+            if let Some(work) = work.filter(|_| asked.kept.ends_with("baseline-3")) {
+                files.remove_file(Path::new(work).join("changed")).unwrap();
+            }
+        })
 }
 
 fn control_made_by(docker: Double) -> Procreated {
@@ -151,6 +188,39 @@ fn a_progenitor_that_changes_its_copy_has_created_a_child() {
 }
 
 #[test]
+fn the_seconds_of_a_procreation_are_those_its_progenitor_ran() {
+    let docker = taking(Double::default(), &PROCREATION, 20);
+    let seconds = procreated_by(docker, &LAUNCH)
+        .result
+        .map(|creation| creation.seconds);
+    assert!(seconds.is_ok_and(|seconds| seconds >= 0.02));
+}
+
+#[test]
+fn the_seconds_of_a_procreation_leave_out_those_the_build_of_its_child_ran() {
+    let docker = taking(Double::default().changing(), &BUILD, 500);
+    let seconds = procreated_by(docker, &BUILT)
+        .result
+        .map(|creation| creation.seconds);
+    assert!(seconds.is_ok_and(|seconds| seconds < 0.5));
+}
+
+#[test]
+fn the_seconds_of_a_baseline_are_those_the_primogenitor_ran() {
+    let docker = taking(Double::default(), &PROCREATION, 20);
+    let seconds = control_made_by(docker)
+        .result
+        .map(|creation| creation.seconds);
+    assert!(seconds.is_ok_and(|seconds| seconds >= 0.02));
+}
+
+#[test]
+fn a_progenitor_that_changes_only_the_source_code_it_runs_from_has_made_no_child() {
+    let procreated = procreated_by(changing_what_it_runs_from(), &LAUNCH);
+    assert_eq!(procreated.outcome(), Some(CreationOutcome::Unchanged));
+}
+
+#[test]
 fn the_copy_that_a_progenitor_changed_becomes_the_child() {
     let procreated = procreated_by(Double::default().changing(), &LAUNCH);
     assert!(
@@ -227,6 +297,23 @@ fn a_procreation_that_docker_does_not_start_names_the_file_that_holds_what_docke
 }
 
 #[test]
+fn a_procreation_whose_record_cannot_be_put_in_its_place_is_not_carried_out() {
+    let (directory, outputs_directory) = given::made();
+    directory
+        .create_dir_all(outputs_directory.procreation(1).join("in the way"))
+        .unwrap();
+    let docker = Double::default().on(&directory);
+    let result = containers::run_procreation(
+        given::host(&docker, &outputs_directory),
+        &LAUNCH,
+        1,
+        0,
+        &AtomicBool::new(false),
+    );
+    assert!(matches!(result, Err(ContainerError::Io(_))));
+}
+
+#[test]
 fn a_child_whose_build_exits_with_zero_and_leaves_only_harness_files_is_created() {
     let procreated = procreated_by(Double::default().changing(), &BUILT);
     assert_eq!(procreated.outcome(), Some(CreationOutcome::Created));
@@ -296,6 +383,42 @@ fn a_procreation_that_is_stopped_while_its_child_is_built_was_stopped() {
         procreated_by(docker, &BUILT).result,
         Err(ContainerError::Stopped)
     ));
+}
+
+#[test]
+fn the_child_of_a_progenitor_that_failed_is_not_built() {
+    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(1)]);
+    assert_eq!(procreated_by(docker, &BUILT).docker.asked().len(), 1);
+}
+
+#[test]
+fn a_progenitor_that_failed_has_failed_whatever_the_build_of_its_child_would_do() {
+    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(1)]);
+    assert_eq!(
+        procreated_by(docker, &BUILT).outcome(),
+        Some(CreationOutcome::Failed)
+    );
+}
+
+#[test]
+fn the_time_limit_of_a_procreation_covers_its_progenitor_and_the_build_of_its_child_together() {
+    let docker = taking(Double::default().changing(), &PROCREATION, 1100);
+    let commands = procreated_by(docker, &BUILT).commands();
+    let seconds_left = commands[1]
+        .rsplit(' ')
+        .next()
+        .and_then(|seconds| seconds.parse::<u64>().ok());
+    assert!(seconds_left.is_some_and(|seconds| seconds < 35));
+}
+
+#[test]
+fn a_child_whose_build_docker_does_not_start_names_the_file_that_holds_what_docker_said() {
+    let docker = Double::default()
+        .changing()
+        .answering(&BUILD, &[Answer::Exited(125)]);
+    let procreated = procreated_by(docker, &BUILT);
+    let said = procreated.outputs_directory.build(1).join("stderr");
+    assert!(matches!(&procreated.result, Err(ContainerError::Docker(kept)) if *kept == said));
 }
 
 #[test]
@@ -369,6 +492,43 @@ fn a_primogenitor_that_changes_the_copy_has_created_the_singleton_control_group_
     assert_eq!(
         control_made_by(Double::default().changing()).outcome(),
         Some(CreationOutcome::Created)
+    );
+}
+
+#[test]
+fn a_primogenitor_that_exits_with_another_status_than_zero_has_failed() {
+    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(3)]);
+    assert_eq!(
+        control_made_by(docker).outcome(),
+        Some(CreationOutcome::Failed)
+    );
+}
+
+#[test]
+fn what_the_primogenitor_leaves_is_compared_with_the_source_code_of_the_progenitor() {
+    let (directory, outputs_directory) = given::made();
+    let docker = removing_what_the_progenitor_added().on(&directory);
+    let host = given::host(&docker, &outputs_directory);
+    let stop = AtomicBool::new(false);
+    containers::run_procreation(host, &LAUNCH, 1, 0, &stop).unwrap();
+    containers::run_procreation(host, &LAUNCH, 2, 1, &stop).unwrap();
+    let experiment = Experiment {
+        child: 2,
+        progenitor: 1,
+    };
+    let made = containers::run_baseline(host, &LAUNCH, 3, experiment, &stop);
+    assert_eq!(
+        made.ok().map(|creation| creation.outcome),
+        Some(CreationOutcome::Created)
+    );
+}
+
+#[test]
+fn what_the_primogenitor_prints_is_kept_with_its_baseline() {
+    let made = control_made_by(Double::default());
+    assert_eq!(
+        made.docker.asked()[0].kept,
+        made.outputs_directory.running_baseline(2)
     );
 }
 

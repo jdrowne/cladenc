@@ -3,7 +3,7 @@ use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
-use crate::journal::Settings;
+use crate::journal::{self, Settings};
 
 const IMAGE_BUILT: &str = "timeout -s KILL 35 docker build --tag debian:stable-slim --file \
                            OUTPUTS/image/Dockerfile OUTPUTS/image/context";
@@ -95,4 +95,78 @@ fn every_container_is_told_never_to_fetch_the_image_that_was_built() {
         .iter()
         .filter(|command| command.starts_with("docker run --rm --pull never "));
     assert_eq!((containers.count(), told_never.count()), (3, 3));
+}
+
+fn stopped_at_an_attempt() -> Evolved {
+    let needles = ["run a harness", "attempt-0-benchmark+t2"];
+    imaged_by(Double::default().answering(&needles, &[Answer::Exited(125)]))
+}
+
+fn resumed_with_its_dockerfile_gone() -> Evolved {
+    let stopped = stopped_at_an_attempt();
+    stopped
+        .files()
+        .remove_file(stopped.files().path().join("Dockerfile"))
+        .unwrap();
+    given::resumed(stopped, Double::default())
+}
+
+#[test]
+fn the_image_is_built_after_the_tasks_are_copied_and_before_the_first_action() {
+    let lines = imaged_by(Double::default()).lines();
+    let places = [
+        "cladenc: copying the ",
+        "cladenc: building the image ",
+        "cladenc: started the ",
+    ]
+    .map(|start| lines.iter().position(|line| line.starts_with(start)));
+    assert_eq!(places, [Some(1), Some(3), Some(8)]);
+}
+
+#[test]
+fn the_run_record_names_the_image_that_was_built_its_dockerfile_and_the_time_limit() {
+    let evolved = imaged_by(Double::default());
+    let named = format!(
+        r#""docker_image":"debian:stable-slim","dockerfile":"{}","docker_build_timeout":30,"#,
+        evolved.files().path().join("Dockerfile").display()
+    );
+    assert!(
+        evolved
+            .journal()
+            .lines()
+            .next()
+            .is_some_and(|run| run.contains(&named))
+    );
+}
+
+#[test]
+fn an_image_whose_build_fails_leaves_the_directed_evolution_no_journal() {
+    let evolved = not_built();
+    assert!(!evolved.files().exists(journal::path(&evolved.outputs())));
+}
+
+#[test]
+fn an_image_whose_build_fails_is_said_last_with_where_what_docker_printed_is_kept() {
+    let evolved = not_built();
+    assert!(evolved.said.ends_with(&format!(
+        ": what Docker printed is kept in {}\n",
+        evolved.outputs().join("image").display()
+    )));
+}
+
+#[test]
+fn a_directed_evolution_that_is_resumed_builds_no_image() {
+    let resumed = given::resumed(stopped_at_an_attempt(), Double::default());
+    assert_eq!(resumed.count_of("--file"), 0);
+}
+
+#[test]
+fn a_directed_evolution_that_is_resumed_does_not_say_that_it_builds_an_image() {
+    let resumed = given::resumed(stopped_at_an_attempt(), Double::default());
+    assert!(!resumed.said.contains("building the image"));
+}
+
+#[test]
+fn a_directed_evolution_that_is_resumed_ends_though_the_dockerfile_it_was_given_is_gone() {
+    assert!(resumed_with_its_dockerfile_gone().result.is_ok());
 }

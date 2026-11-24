@@ -1,56 +1,25 @@
-use std::fs;
-use std::io;
-use std::sync::atomic::AtomicBool;
+use crate::containers::tests::double::Double;
+use crate::directed_evolution::tests::given;
+use crate::file_system::tests::double::Memory;
+use crate::journal::{Record, Settings};
 
-use cladenc::benchmark::Benchmark;
-use cladenc::file_system::Disk;
-use cladenc::journal::{self, Record, Settings};
+fn three_at_once(directory: &Memory, settings: &mut Settings) {
+    given::over_five_tasks(directory, settings);
+    settings.max_concurrent_containers = 3;
+}
 
-fn records(change: impl FnOnce(&mut Settings)) -> Vec<Record> {
-    let directory = test_inputs::temporary_directory();
-    let mut settings = Settings {
-        primogenitor: test_inputs::primogenitor(directory.path()),
-        model: test_inputs::MODEL.to_owned(),
-        model_url: test_inputs::MODEL_URL.to_owned(),
-        model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(
-                &Disk,
-                &test_inputs::benchmark(directory.path(), &["t1", "t2", "t3", "t4", "t5"]),
-            )
-            .unwrap(),
-        ],
-        docker_image: test_inputs::IMAGE.to_owned(),
-        dockerfile: None,
-        docker_build_timeout: None,
-        harness_build_command: None,
-        harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
-        max_procreations: 1,
-        max_concurrent_containers: 3,
-        procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
-        max_task_health_check_retries: 0,
-        selection_tasks_percentage: 25.0,
-        holdout_tasks: Vec::new(),
-        corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: Vec::new(),
-        environment_image_repository: test_inputs::environment_image_repository(),
-        seed: 7,
-    };
-    change(&mut settings);
-    let outputs_directory = directory.path().join("outputs");
-    crate::real::start(
-        &settings,
-        &outputs_directory,
-        &AtomicBool::new(false),
-        &mut io::sink(),
-    )
-    .unwrap();
-    fs::read_to_string(journal::path(&outputs_directory))
-        .unwrap()
-        .lines()
-        .map(|line| serde_json::from_str(line).unwrap())
-        .collect()
+fn three_at_once_with_two_procreations(directory: &Memory, settings: &mut Settings) {
+    three_at_once(directory, settings);
+    settings.max_procreations = 2;
+}
+
+fn two_at_once(directory: &Memory, settings: &mut Settings) {
+    given::over_five_tasks(directory, settings);
+    settings.max_concurrent_containers = 2;
+}
+
+fn records(change: impl FnOnce(&Memory, &mut Settings)) -> Vec<Record> {
+    given::started(Double::default().changing(), change).records()
 }
 
 fn most_running_at_once(records: &[Record]) -> usize {
@@ -96,10 +65,6 @@ fn most_running_as_a_procreation_starts(records: &[Record]) -> Option<usize> {
     most
 }
 
-fn two_procreations(settings: &mut Settings) {
-    settings.max_procreations = 2;
-}
-
 fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
     records.iter().filter(|record| counted(record)).count()
 }
@@ -124,12 +89,12 @@ fn fewest_tasks_a_progenitor_had_attempted(records: &[Record]) -> Option<usize> 
 
 #[test]
 fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finished_at_most() {
-    assert_eq!(most_running_at_once(&records(|_| {})), 3);
+    assert_eq!(most_running_at_once(&records(three_at_once)), 3);
 }
 
 #[test]
 fn with_a_limit_of_three_the_journal_still_holds_one_attempt_of_every_task_by_each_harness() {
-    let records = records(|_| {});
+    let records = records(three_at_once);
     assert_eq!(
         count(&records, |record| matches!(
             record,
@@ -141,7 +106,7 @@ fn with_a_limit_of_three_the_journal_still_holds_one_attempt_of_every_task_by_ea
 
 #[test]
 fn with_a_limit_of_three_every_procreation_still_starts() {
-    let records = records(two_procreations);
+    let records = records(three_at_once_with_two_procreations);
     assert_eq!(
         count(&records, |record| matches!(
             record,
@@ -153,12 +118,14 @@ fn with_a_limit_of_three_every_procreation_still_starts() {
 
 #[test]
 fn with_a_limit_of_three_a_procreation_starts_only_when_nothing_else_runs() {
-    let records = records(two_procreations);
+    let records = records(three_at_once_with_two_procreations);
     assert_eq!(most_running_as_a_procreation_starts(&records), Some(0));
 }
 
 #[test]
 fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_benchmarked_in_full() {
-    let records = records(|settings| settings.max_concurrent_containers = 2);
-    assert_eq!(fewest_tasks_a_progenitor_had_attempted(&records), Some(5));
+    assert_eq!(
+        fewest_tasks_a_progenitor_had_attempted(&records(two_at_once)),
+        Some(5)
+    );
 }

@@ -131,7 +131,7 @@ impl Settings {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "record", rename_all = "snake_case")]
-pub enum Record {
+pub(crate) enum Record {
     Run {
         format: u32,
         #[serde(flatten)]

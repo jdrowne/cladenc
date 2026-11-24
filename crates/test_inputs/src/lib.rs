@@ -73,9 +73,7 @@ fi"#;
 pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/attempts ]
 then
   touch solved
-  solved=$(($(wc -l < solved)))
-  [ -e end-with-125-at ] && [ "$solved" -eq "$(cat end-with-125-at)" ] && exit 125
-  echo "t$((solved + 1))" >> solved
+  echo "t$(($(wc -l < solved) + 1))" >> solved
 else
   [ -e end-with-125 ] && exit 125
   touch "$CLADENC_HARNESS/solved"
@@ -355,25 +353,6 @@ pub fn container_is_running(id_file: &Path) -> bool {
         .args(["ps", "--quiet", "--filter", &filter])
         .output()
         .is_ok_and(|listed| listed.status.success() && !listed.stdout.is_empty())
-}
-
-pub fn end_with_125_at(primogenitor: &Path, solved: u64) {
-    fs::write(primogenitor.join("end-with-125-at"), format!("{solved}\n"))
-        .expect("the marker can be written");
-}
-
-pub fn end_with_125_no_more(outputs_directory: &Path) {
-    for harness in
-        fs::read_dir(outputs_directory.join("harnesses")).expect("the harnesses are there")
-    {
-        let marker = harness
-            .expect("a harness can be listed")
-            .path()
-            .join("end-with-125-at");
-        if marker.exists() {
-            fs::remove_file(marker).expect("the marker can be removed");
-        }
-    }
 }
 
 pub fn end_with_125_on(directory: &Path, task: &str) {

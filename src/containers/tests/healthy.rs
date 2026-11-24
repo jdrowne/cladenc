@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::benchmark::{HealthCheck, TaskConfiguration};
 use crate::containers::tests::double::{Answer, Double};
-use crate::containers::tests::given::{self, HEALTH_CHECK, LAUNCH, TIMER, Tried};
+use crate::containers::tests::given::{self, HEALTH_CHECK, LAUNCH, TASK, TIMER, Tried};
 use crate::containers::{Checked, ContainerError, Launch, Retry};
 
 const RETRIED: Launch<'static> = Launch {
@@ -110,6 +110,74 @@ fn a_task_whose_health_check_does_not_pass_is_not_attempted() {
         &tried.result,
         Err(ContainerError::TaskHealthCheck { tries: 1, kept }) if *kept == printed
     ));
+}
+
+#[test]
+fn a_health_check_that_runs_past_its_time_limit_has_not_passed() {
+    let tried = checked(Double::default().answering(&CHECK, &[Answer::TimedOut]), 1);
+    assert!(matches!(
+        tried.result,
+        Err(ContainerError::TaskHealthCheck { tries: 1, .. })
+    ));
+}
+
+#[test]
+fn an_attempt_whose_task_is_never_healthy_keeps_no_result() {
+    let tried = checked(never_healthy(), 1);
+    assert!(
+        !tried
+            .directory
+            .exists(tried.outputs_directory.attempt(0, TASK))
+    );
+}
+
+#[test]
+fn a_task_that_is_never_healthy_leaves_nothing_of_a_harness_that_was_never_started() {
+    let tried = checked(never_healthy(), 1);
+    let left = ["ending", "changes", "work", "collect", "artifacts"]
+        .map(|left| tried.directory.exists(tried.running().join(left)));
+    assert_eq!(left, [false; 5]);
+}
+
+#[test]
+fn an_attempt_whose_task_has_no_health_check_keeps_nothing_of_one() {
+    let environment = given::environment(TaskConfiguration::default());
+    let tried = given::attempted(Double::default(), &LAUNCH, &environment);
+    let kept = tried
+        .outputs_directory
+        .attempt(0, TASK)
+        .join("health-check");
+    assert!(!tried.directory.exists(kept));
+}
+
+#[test]
+fn the_most_retries_of_the_health_check_of_a_grader_are_not_those_of_that_of_a_task() {
+    let launch = Launch {
+        max_grader_health_check_retries: 3,
+        ..LAUNCH
+    };
+    let environment = given::environment(with(given::checked(1)));
+    let tried = given::attempted(never_healthy(), &launch, &environment);
+    assert!(matches!(
+        tried.result,
+        Err(ContainerError::TaskHealthCheck { tries: 1, .. })
+    ));
+}
+
+#[test]
+fn no_retry_of_the_health_check_of_a_task_is_told_where_none_is_allowed() {
+    assert!(checked(never_healthy(), 1).retries.is_empty());
+}
+
+#[test]
+fn the_seconds_of_an_attempt_leave_out_the_tries_that_did_not_pass_and_the_wait_after_them() {
+    let health_check = HealthCheck {
+        interval: Duration::from_millis(300),
+        ..given::checked(1)
+    };
+    let docker = Double::default().answering(&CHECK, &[Answer::Exited(1), Answer::Exited(0)]);
+    let tried = given::attempted(docker, &RETRIED, &given::environment(with(health_check)));
+    assert!(tried.result.is_ok_and(|attempted| attempted.seconds < 0.3));
 }
 
 #[test]

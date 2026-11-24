@@ -1,8 +1,5 @@
 use std::cell::RefCell;
-use std::collections::BTreeSet;
 use std::fs;
-use std::io::Write;
-use std::net::TcpListener;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
@@ -11,7 +8,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{
-    self, Checked, ContainerError, Environment, GraderImage, Host, Launch, Program, Retry,
+    self, ContainerError, Environment, GraderImage, Host, Launch, Program, Retry,
 };
 use cladenc::file_system::Disk;
 use cladenc::genealogy::AttemptResult;
@@ -27,20 +24,13 @@ const REPORT: &str = "artifacts = [\"/app/report.txt\"]\n";
 const OUT: &str = "artifacts = [\"/app/out\"]\n";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
-const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
                            1\"\ninterval_sec = 0\nretries = 1\n";
-const NEVER_READY_IN_HALF_A_SECOND: &str = "[verifier.environment.healthcheck]\ncommand = \"exit \
-                                            1\"\ninterval_sec = 0.5\nretries = 1\n";
-const NAMES_ITS_CONTAINER: &str = "[verifier.environment.healthcheck]\ncommand = \"cat \
-                                   /etc/hostname; exit 1\"\ninterval_sec = 0\nretries = 1\n";
-
 #[derive(Clone, Copy)]
 enum Grader<'a> {
     InTheEnvironment,
     BuiltWith(&'a str),
-    Named(&'a str),
 }
 
 struct Attempt<'a> {
@@ -74,10 +64,6 @@ fn image_of_the_grader(
         Grader::InTheEnvironment => GraderImage {
             name: environment.name.clone(),
             holds_grader: false,
-        },
-        Grader::Named(name) => GraderImage {
-            name: name.to_owned(),
-            holds_grader: true,
         },
         Grader::BuiltWith(steps) => {
             let image = test_inputs::image();
@@ -150,13 +136,6 @@ fn prepared(attempt: &Attempt<'_>) -> Prepared {
     }
 }
 
-struct Retried {
-    attempted: Attempted,
-    told: Vec<Retry>,
-    printed_before_each_retry: Vec<String>,
-    containers_at_each_retry: Vec<usize>,
-}
-
 fn carried_out(prepared: Prepared, run_command: &str) -> Attempted {
     carried_out_with(prepared, run_command, 0, &|_| ())
 }
@@ -200,6 +179,21 @@ fn carried_out_with(
         outputs_directory: prepared.outputs_directory,
         result,
     }
+}
+
+fn containers_at_each_retry(task_toml: &str, max_retries: u64) -> Vec<usize> {
+    let prepared = prepared(&Attempt {
+        task_toml,
+        run_command: WRITE_A_REPORT,
+        grader: COMPLETE,
+        image: Grader::InTheEnvironment,
+    });
+    let label = label_of(&prepared.outputs_directory);
+    let counted = RefCell::new(Vec::new());
+    carried_out_with(prepared, WRITE_A_REPORT, max_retries, &|_| {
+        counted.borrow_mut().push(containers_with(&label));
+    });
+    counted.into_inner()
 }
 
 fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
@@ -291,58 +285,6 @@ fn containers_while_the_grader_runs() -> usize {
         carried_out(prepared, WRITE_A_REPORT);
         counted.join().unwrap()
     })
-}
-
-fn retried(task_toml: &str, max_retries: u64) -> Retried {
-    let prepared = prepared(&Attempt {
-        task_toml,
-        run_command: WRITE_A_REPORT,
-        grader: COMPLETE,
-        image: Grader::InTheEnvironment,
-    });
-    let printed = health_check_of_the_running(&prepared.outputs_directory).join("stdout");
-    let label = label_of(&prepared.outputs_directory);
-    let told = RefCell::new(Vec::new());
-    let printed_before_each_retry = RefCell::new(Vec::new());
-    let containers_at_each_retry = RefCell::new(Vec::new());
-    let attempted = carried_out_with(prepared, WRITE_A_REPORT, max_retries, &|retry| {
-        told.borrow_mut().push(retry);
-        printed_before_each_retry
-            .borrow_mut()
-            .push(fs::read_to_string(&printed).unwrap_or_default());
-        containers_at_each_retry
-            .borrow_mut()
-            .push(containers_with(&label));
-    });
-    Retried {
-        attempted,
-        told: told.into_inner(),
-        printed_before_each_retry: printed_before_each_retry.into_inner(),
-        containers_at_each_retry: containers_at_each_retry.into_inner(),
-    }
-}
-
-fn health_check_of_the_running(outputs_directory: &OutputsDirectory) -> PathBuf {
-    outputs_directory
-        .running_attempt(0, TASK)
-        .join("grader/health-check")
-}
-
-fn ready_at_the_second_run() -> String {
-    let listener = TcpListener::bind("0.0.0.0:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    thread::spawn(move || {
-        for answer in ["wait\n", "ready\n"] {
-            let _ = listener
-                .accept()
-                .and_then(|(mut check, _)| check.write_all(answer.as_bytes()));
-        }
-    });
-    format!(
-        "[verifier.environment.healthcheck]\ncommand = \"bash -c 'read -r answer < \
-         /dev/tcp/host.docker.internal/{port} && test $answer = ready'\"\ninterval_sec = \
-         0\nretries = 1\n"
-    )
 }
 
 #[test]
@@ -535,16 +477,6 @@ fn what_a_grader_that_runs_separately_left_in_logs_verifier_is_kept_with_the_att
 }
 
 #[test]
-fn a_grader_that_runs_separately_past_its_time_limit_is_timed_out() {
-    let attempted = attempted(
-        "[verifier]\nenvironment_mode = \"separate\"\ntimeout_sec = 2\n",
-        WRITE_A_REPORT,
-        "sleep 300",
-    );
-    assert_eq!(result_of(&attempted), Some(AttemptResult::TimedOut));
-}
-
-#[test]
 fn the_container_of_the_harness_is_gone_while_the_grader_runs_in_its_own() {
     assert_eq!(containers_while_the_grader_runs(), 1);
 }
@@ -677,126 +609,8 @@ fn a_grader_with_an_environment_of_its_own_is_not_held_to_the_memory_of_that_of_
 }
 
 #[test]
-fn a_grader_whose_health_check_does_not_pass_gives_no_result_but_an_error_that_says_so() {
-    assert!(matches!(
-        retried(NEVER_READY, 0).attempted.result,
-        Err(ContainerError::GraderHealthCheck { tries: 1, .. })
-    ));
-}
-
-#[test]
-fn the_health_check_of_a_grader_is_tried_once_and_then_as_many_times_as_the_most_retries() {
-    assert!(matches!(
-        retried(NEVER_READY, 2).attempted.result,
-        Err(ContainerError::GraderHealthCheck { tries: 3, .. })
-    ));
-}
-
-#[test]
-fn the_error_of_a_grader_that_was_never_run_names_where_what_its_health_check_printed_is() {
-    let retried = retried(NEVER_READY, 0);
-    assert!(matches!(
-        &retried.attempted.result,
-        Err(ContainerError::GraderHealthCheck { kept, .. })
-            if *kept == health_check_of_the_running(&retried.attempted.outputs_directory)
-    ));
-}
-
-#[test]
-fn what_the_health_check_of_a_grader_that_was_never_run_printed_is_kept() {
-    let retried = retried(NEVER_READY, 1);
-    assert_eq!(
-        fs::read_to_string(
-            health_check_of_the_running(&retried.attempted.outputs_directory).join("stdout")
-        )
-        .unwrap(),
-        "not ready\n"
-    );
-}
-
-#[test]
-fn an_attempt_whose_grader_was_never_run_keeps_no_result() {
-    let retried = retried(NEVER_READY, 0);
-    assert!(
-        !retried
-            .attempted
-            .outputs_directory
-            .attempt(0, TASK)
-            .exists()
-    );
-}
-
-#[test]
-fn a_grader_whose_health_check_does_not_pass_is_not_run() {
-    let retried = retried(NEVER_READY, 1);
-    assert!(
-        !retried
-            .attempted
-            .outputs_directory
-            .running_attempt(0, TASK)
-            .join("grader/stdout")
-            .exists()
-    );
-}
-
-#[test]
-fn each_retry_is_told_with_a_wait_that_starts_at_the_interval_of_the_health_check_and_doubles() {
-    assert_eq!(
-        retried(NEVER_READY_IN_HALF_A_SECOND, 2).told,
-        [
-            Retry {
-                checked: Checked::Grader,
-                number: 1,
-                most: 2,
-                wait: Duration::from_millis(500),
-            },
-            Retry {
-                checked: Checked::Grader,
-                number: 2,
-                most: 2,
-                wait: Duration::from_secs(1),
-            }
-        ]
-    );
-}
-
-#[test]
-fn no_retry_is_told_where_the_most_retries_are_0() {
-    assert_eq!(retried(NEVER_READY, 0).told, Vec::<Retry>::new());
-}
-
-#[test]
-fn each_retry_of_the_health_check_of_a_grader_is_in_a_new_container() {
-    let retried = retried(NAMES_ITS_CONTAINER, 2);
-    let last = fs::read_to_string(
-        health_check_of_the_running(&retried.attempted.outputs_directory).join("stdout"),
-    )
-    .unwrap();
-    let containers: BTreeSet<String> = retried
-        .printed_before_each_retry
-        .into_iter()
-        .chain([last])
-        .collect();
-    assert_eq!(containers.len(), 3);
-}
-
-#[test]
 fn the_container_of_a_grader_is_removed_before_the_wait_for_a_retry() {
-    assert_eq!(retried(NEVER_READY, 2).containers_at_each_retry, [0, 0]);
-}
-
-#[test]
-fn a_grader_whose_health_check_passes_in_a_container_brought_up_again_is_run() {
-    let retried = retried(&ready_at_the_second_run(), 1);
-    assert_eq!(
-        result_of(&retried.attempted),
-        Some(AttemptResult::Completed)
-    );
-}
-
-#[test]
-fn a_health_check_of_a_grader_that_passes_at_a_retry_is_not_tried_again() {
-    assert_eq!(retried(&ready_at_the_second_run(), 3).told.len(), 1);
+    assert_eq!(containers_at_each_retry(NEVER_READY, 2), [0, 0]);
 }
 
 #[test]
@@ -817,30 +631,6 @@ fn a_grader_whose_health_check_passes_is_run() {
         COMPLETE,
     );
     assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
-}
-
-#[test]
-fn a_health_check_of_a_grader_that_exits_with_status_125_is_an_error_of_docker() {
-    let attempted = attempted(
-        "[verifier.environment.healthcheck]\ncommand = \"exit 125\"\n",
-        WRITE_A_REPORT,
-        COMPLETE,
-    );
-    assert!(matches!(attempted.result, Err(ContainerError::Docker(_))));
-}
-
-#[test]
-fn a_grader_whose_container_docker_did_not_start_is_an_error_that_names_what_docker_said() {
-    let attempted = attempted_as(&Attempt {
-        task_toml: SEPARATE,
-        run_command: WRITE_A_REPORT,
-        grader: COMPLETE,
-        image: Grader::Named(NOT_ON_THE_MACHINE),
-    });
-    assert!(matches!(
-        &attempted.result,
-        Err(ContainerError::Docker(said)) if said.ends_with("grader/stderr")
-    ));
 }
 
 #[test]

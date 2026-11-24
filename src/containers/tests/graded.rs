@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use crate::benchmark::{Artifact, EnvironmentConfiguration, TaskConfiguration};
+use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{
     self, EMPTIED, HEALTH_CHECK, LAUNCH, LOGS_LINKED, TASK, TESTS_LINKED, TIMER, Tried,
@@ -18,6 +18,7 @@ const RETRIED: Launch<'static> = Launch {
 const GRADER_IMAGE: &str = "grader:t1";
 const COPIED: [&str; 2] = ["cp", "--follow-link"];
 const CHECK: [&str; 2] = ["exec", HEALTH_CHECK];
+const GRADER: [&str; 2] = ["exec", "/tests/test.sh"];
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const REMOVED: &str = "docker rm --force NAME";
 const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
@@ -167,6 +168,15 @@ fn a_grader_in_a_container_of_its_own_decides_the_result_of_the_attempt() {
 }
 
 #[test]
+fn a_grader_in_a_container_of_its_own_that_runs_past_its_time_limit_timed_out() {
+    let docker = Double::default().answering(&GRADER, &[Answer::TimedOut]);
+    assert_eq!(
+        result_of(&graded_apart(docker)),
+        Some(AttemptResult::TimedOut)
+    );
+}
+
+#[test]
 fn what_docker_says_when_it_brings_up_the_container_of_a_grader_is_kept_with_the_grader() {
     let tried = graded_apart(Double::default());
     assert_eq!(
@@ -304,6 +314,30 @@ fn a_grader_whose_health_check_does_not_pass_is_not_run() {
 }
 
 #[test]
+fn an_attempt_whose_grader_is_never_run_keeps_no_result() {
+    let tried = graded_with(never_healthy(), with_a_checked_grader());
+    assert!(
+        !tried
+            .directory
+            .exists(tried.outputs_directory.attempt(0, TASK))
+    );
+}
+
+#[test]
+fn no_retry_of_the_health_check_of_a_grader_is_told_where_none_is_allowed() {
+    let tried = graded_with(never_healthy(), with_a_checked_grader());
+    assert!(tried.retries.is_empty());
+}
+
+#[test]
+fn a_health_check_of_a_grader_that_docker_does_not_run_names_the_file_that_holds_what_it_said() {
+    let docker = Double::default().answering(&CHECK, &[Answer::Exited(125)]);
+    let tried = graded_with(docker, with_a_checked_grader());
+    let said = tried.running().join("grader/health-check/stderr");
+    assert!(matches!(&tried.result, Err(ContainerError::Docker(kept)) if *kept == said));
+}
+
+#[test]
 fn the_container_of_a_grader_whose_health_check_does_not_pass_is_removed() {
     let tried = graded_with(never_healthy(), with_a_checked_grader());
     assert_eq!(tried.commands()[14..], [REMOVED]);
@@ -334,6 +368,27 @@ fn each_time_a_grader_is_brought_up_again_for_its_health_check_is_told() {
             wait: Duration::ZERO,
         }]
     );
+}
+
+#[test]
+fn the_wait_before_a_grader_is_brought_up_again_starts_at_the_interval_of_its_check_and_doubles() {
+    let configuration = TaskConfiguration {
+        grader_environment: Some(EnvironmentConfiguration {
+            health_check: Some(HealthCheck {
+                interval: Duration::from_millis(1),
+                ..given::checked(1)
+            }),
+            ..EnvironmentConfiguration::default()
+        }),
+        ..TaskConfiguration::default()
+    };
+    let launch = Launch {
+        max_grader_health_check_retries: 2,
+        ..LAUNCH
+    };
+    let tried = given::attempted(never_healthy(), &launch, &apart(true, configuration));
+    let waits: Vec<Duration> = tried.retries.iter().map(|retry| retry.wait).collect();
+    assert_eq!(waits, [Duration::from_millis(1), Duration::from_millis(2)]);
 }
 
 #[test]

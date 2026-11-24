@@ -187,12 +187,6 @@ fn the_time_limit_of_an_attempt_leaves_no_container_behind() {
 }
 
 #[test]
-fn an_attempt_whose_stop_flag_is_set_reports_that_it_was_stopped() {
-    let (_directory, _outputs_directory, result) = stopped_while_its_harness_runs();
-    assert!(matches!(result, Err(ContainerError::Stopped)));
-}
-
-#[test]
 fn an_attempt_whose_stop_flag_is_set_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_harness_runs();
     assert!(test_inputs::container_is_gone(
@@ -203,23 +197,6 @@ fn an_attempt_whose_stop_flag_is_set_leaves_no_container_behind() {
 }
 
 #[test]
-fn an_attempt_whose_stop_flag_is_set_leaves_its_directory_under_running() {
-    let (_directory, outputs_directory, _result) = stopped_while_its_harness_runs();
-    assert!(
-        outputs_directory
-            .running_attempt(0, "benchmark/t1")
-            .join("specification")
-            .is_file()
-    );
-}
-
-#[test]
-fn an_attempt_stopped_while_its_grader_runs_reports_that_it_was_stopped() {
-    let (_directory, _outputs_directory, result) = stopped_while_its_grader_runs();
-    assert!(matches!(result, Err(ContainerError::Stopped)));
-}
-
-#[test]
 fn an_attempt_stopped_while_its_grader_runs_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_grader_runs();
     assert!(test_inputs::container_is_gone(
@@ -227,50 +204,6 @@ fn an_attempt_stopped_while_its_grader_runs_leaves_no_container_behind() {
             .running_attempt(0, "benchmark/t1")
             .join("grader/stdout")
     ));
-}
-
-#[test]
-fn an_attempt_whose_stop_flag_was_set_before_it_started_is_stopped() {
-    let (_directory, outputs_directory) = made();
-    let stop = AtomicBool::new(true);
-    assert!(matches!(
-        containers::run_attempt(
-            Host {
-                docker: &Program,
-                outputs_directory: &outputs_directory
-            },
-            &launch("sleep 300"),
-            attempt(&environment()),
-            &stop,
-            &|_| ()
-        ),
-        Err(ContainerError::Stopped)
-    ));
-}
-
-#[test]
-fn a_procreation_whose_stop_flag_was_set_before_it_started_is_stopped() {
-    let (_directory, outputs_directory) = made();
-    let stop = AtomicBool::new(true);
-    assert!(matches!(
-        containers::run_procreation(
-            Host {
-                docker: &Program,
-                outputs_directory: &outputs_directory
-            },
-            &launch("sleep 300"),
-            1,
-            0,
-            &stop
-        ),
-        Err(ContainerError::Stopped)
-    ));
-}
-
-#[test]
-fn a_procreation_whose_stop_flag_is_set_reports_that_it_was_stopped() {
-    let (_directory, _outputs_directory, result) = procreation_stopped_while_running();
-    assert!(matches!(result, Err(ContainerError::Stopped)));
 }
 
 #[test]

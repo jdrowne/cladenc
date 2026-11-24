@@ -7,14 +7,15 @@ use std::path::{Path, PathBuf};
 use crate::file_system::{FileSystem, Opened};
 
 pub use error::JournalError;
-pub use record::{Record, Settings};
+pub(crate) use record::Record;
+pub use record::Settings;
 pub use state::Started;
 pub(crate) use state::{Seconds, State, read};
 
-pub const FORMAT: u32 = 29;
+pub(crate) const FORMAT: u32 = 29;
 
 #[derive(Debug)]
-pub struct Journal {
+pub(crate) struct Journal {
     file: Box<dyn Opened>,
 }
 
@@ -23,7 +24,10 @@ pub fn path(outputs_directory: &Path) -> PathBuf {
 }
 
 impl Journal {
-    pub fn open(files: &dyn FileSystem, outputs_directory: &Path) -> Result<Self, JournalError> {
+    pub(crate) fn open(
+        files: &dyn FileSystem,
+        outputs_directory: &Path,
+    ) -> Result<Self, JournalError> {
         Self::locked(files, outputs_directory, true)
     }
 
@@ -51,7 +55,7 @@ impl Journal {
             .map_err(JournalError::Io)
     }
 
-    pub fn append(&mut self, record: &Record) -> Result<(), JournalError> {
+    pub(crate) fn append(&mut self, record: &Record) -> Result<(), JournalError> {
         let line = record.line()? + "\n";
         self.file.append(line.as_bytes()).map_err(JournalError::Io)
     }

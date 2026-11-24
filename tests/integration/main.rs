@@ -24,27 +24,19 @@ mod containers {
     mod procreation;
     mod ran;
     mod retried;
-    mod seconds;
 }
 
 mod directed_evolution {
-    mod again;
     mod alike;
     mod built;
-    mod concurrent;
     mod configuration;
-    mod ended;
     mod environment;
     mod experiment;
-    mod finished;
     mod grader;
-    mod health_check;
     mod held_out;
     mod image;
     mod keyed;
-    mod resumed;
     mod stopped;
-    mod unchanged;
 }
 
 mod file_system {

@@ -1,7 +1,9 @@
+use crate::containers::ContainerError;
 use crate::containers::tests::double::{Answer, Double};
+use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
-use crate::journal::Settings;
+use crate::journal::{Settings, Started};
 
 const CHECKED: &str = "[environment.healthcheck]\ncommand = \"test -e /ready\"\ninterval_sec = \
                        0.0\nretries = 1\n";
@@ -44,4 +46,158 @@ fn a_directed_evolution_goes_on_once_the_health_check_of_a_task_passes() {
         .ok()
         .map(|found| found.best_harness);
     assert_eq!(best, Some(0));
+}
+
+const GRADER_CHECKED: &str = "[verifier.environment.healthcheck]\ncommand = \"test -e \
+                              /graded\"\ninterval_sec = 0.0\nretries = 1\n";
+const STARTED: &str = r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#;
+const FINISHED: &str = r#"{"record":"attempt_finished","harness":0,"task":"benchmark/t1""#;
+const STARTED_AGAIN: &str =
+    "cladenc: started again the attempt of harness 0 on task benchmark/t1\n";
+
+fn with_a_health_check_of_the_grader(directory: &Memory, settings: &mut Settings) {
+    settings.max_grader_health_check_retries = 1;
+    given::configured(directory, "t1", GRADER_CHECKED);
+}
+
+fn never_ready() -> Evolved {
+    let docker = Double::default().answering(&["exec", "test -e /ready"], &[Answer::Exited(1)]);
+    given::started(docker, with_a_health_check)
+}
+
+fn with_a_grader_that_is_never_ready() -> Evolved {
+    let docker = Double::default().answering(&["exec", "test -e /graded"], &[Answer::Exited(1)]);
+    given::started(docker, with_a_health_check_of_the_grader)
+}
+
+fn journaled(evolved: &Evolved) -> [bool; 2] {
+    let journal = evolved.journal();
+    [STARTED, FINISHED].map(|record| journal.contains(record))
+}
+
+#[test]
+fn a_task_that_is_never_ready_stops_the_directed_evolution_naming_the_attempt_and_the_tries() {
+    assert!(matches!(
+        never_ready().result,
+        Err(DirectedEvolutionError::Action {
+            action: Started::Attempt { harness: 0, task },
+            error: ContainerError::TaskHealthCheck { tries: 2, .. },
+        }) if task == "benchmark/t1"
+    ));
+}
+
+#[test]
+fn a_harness_that_was_never_started_is_said_with_the_tries_and_where_the_health_check_is_kept() {
+    let evolved = never_ready();
+    assert!(evolved.said.contains(&format!(
+        "cladenc: the attempt of harness 0 on task benchmark/t1 was not carried out: the health \
+         check of the task did not pass in 2 tries, so the harness was not started, and {} holds \
+         what the health check printed the last time it ran\n",
+        evolved
+            .outputs()
+            .join("running/attempt-0-benchmark+t1/health-check")
+            .display()
+    )));
+}
+
+#[test]
+fn an_attempt_whose_harness_was_never_started_is_not_said_to_be_one_it_did_not_complete() {
+    let said = never_ready().said;
+    assert!(!said.contains("did not complete task benchmark/t1"));
+}
+
+#[test]
+fn an_attempt_whose_harness_was_never_started_is_journaled_as_started_and_not_as_finished() {
+    assert_eq!(journaled(&never_ready()), [true, false]);
+}
+
+#[test]
+fn an_attempt_whose_harness_was_never_started_is_carried_out_again_when_resumed() {
+    let resumed = given::resumed(never_ready(), Double::default());
+    assert!(resumed.said.contains(STARTED_AGAIN));
+}
+
+#[test]
+fn a_directed_evolution_resumed_once_the_task_is_ready_runs_to_its_end() {
+    let resumed = given::resumed(never_ready(), Double::default());
+    assert!(resumed.result.is_ok());
+}
+
+#[test]
+fn a_grader_that_is_never_ready_stops_the_directed_evolution_naming_the_attempt_and_the_tries() {
+    assert!(matches!(
+        with_a_grader_that_is_never_ready().result,
+        Err(DirectedEvolutionError::Action {
+            action: Started::Attempt { harness: 0, task },
+            error: ContainerError::GraderHealthCheck { tries: 2, .. },
+        }) if task == "benchmark/t1"
+    ));
+}
+
+#[test]
+fn a_grader_that_is_brought_up_again_for_its_health_check_is_told_with_the_number_of_the_retry() {
+    let said = with_a_grader_that_is_never_ready().said;
+    assert!(said.contains(
+        "cladenc: the attempt of harness 0 on task benchmark/t1 is not graded yet: the health \
+         check of the container of its grader did not pass, and cladenc tries again in a new \
+         container after 0 seconds, retry 1 of 1\n"
+    ));
+}
+
+#[test]
+fn a_grader_that_was_never_run_is_said_with_the_tries_and_where_its_health_check_is_kept() {
+    let evolved = with_a_grader_that_is_never_ready();
+    assert!(evolved.said.contains(&format!(
+        "cladenc: the attempt of harness 0 on task benchmark/t1 was not graded: the health \
+         check of the container of its grader did not pass in 2 tries, so the grader was not \
+         run, and {} holds what the health check printed the last time it ran\n",
+        evolved
+            .outputs()
+            .join("running/attempt-0-benchmark+t1/grader/health-check")
+            .display()
+    )));
+}
+
+#[test]
+fn an_attempt_whose_grader_was_never_run_is_not_said_to_be_one_the_harness_did_not_complete() {
+    let said = with_a_grader_that_is_never_ready().said;
+    assert!(!said.contains("did not complete task benchmark/t1"));
+}
+
+#[test]
+fn an_attempt_whose_grader_was_never_run_is_journaled_as_started_and_not_as_finished() {
+    assert_eq!(
+        journaled(&with_a_grader_that_is_never_ready()),
+        [true, false]
+    );
+}
+
+#[test]
+fn an_attempt_whose_grader_was_never_run_is_carried_out_again_when_resumed() {
+    let resumed = given::resumed(with_a_grader_that_is_never_ready(), Double::default());
+    assert!(resumed.said.contains(STARTED_AGAIN));
+}
+
+#[test]
+fn a_directed_evolution_resumed_once_the_grader_is_ready_runs_to_its_end() {
+    let resumed = given::resumed(with_a_grader_that_is_never_ready(), Double::default());
+    assert!(resumed.result.is_ok());
+}
+
+#[test]
+fn what_the_health_check_of_a_task_that_was_never_ready_printed_is_kept_where_cladenc_says() {
+    let evolved = never_ready();
+    let kept = evolved
+        .outputs()
+        .join("running/attempt-0-benchmark+t1/health-check");
+    assert!(evolved.files().is_dir(kept));
+}
+
+#[test]
+fn what_the_health_check_of_a_grader_that_was_never_run_printed_is_kept_where_cladenc_says() {
+    let evolved = with_a_grader_that_is_never_ready();
+    let kept = evolved
+        .outputs()
+        .join("running/attempt-0-benchmark+t1/grader/health-check");
+    assert!(evolved.files().is_dir(kept));
 }

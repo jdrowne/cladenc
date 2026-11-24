@@ -29,7 +29,7 @@ const WAIT: Duration = Duration::from_millis(100);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Found {
-    pub best_harness: HarnessId,
+    pub(crate) best_harness: HarnessId,
     pub directory: PathBuf,
 }
 

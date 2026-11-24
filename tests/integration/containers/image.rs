@@ -27,11 +27,10 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn built_within(steps: &str, time_limit: u64, stop: bool) -> Built {
+fn built(steps: &str) -> Built {
     let (directory, outputs_directory) = made();
     let dockerfile = test_inputs::dockerfile(directory.path(), steps);
     let image = test_inputs::image();
-    let stop = AtomicBool::new(stop);
     let result = containers::build_image(
         Host {
             docker: &Program,
@@ -39,8 +38,8 @@ fn built_within(steps: &str, time_limit: u64, stop: bool) -> Built {
         },
         &dockerfile,
         &image.name,
-        time_limit,
-        &stop,
+        60,
+        &AtomicBool::new(false),
     );
     Built {
         _directory: directory,
@@ -48,10 +47,6 @@ fn built_within(steps: &str, time_limit: u64, stop: bool) -> Built {
         image,
         result,
     }
-}
-
-fn built(steps: &str) -> Built {
-    built_within(steps, 60, false)
 }
 
 fn printed_by_docker(built: &Built) -> String {
@@ -76,25 +71,8 @@ fn a_container_of_the_image_holds_what_the_dockerfile_made() {
 }
 
 #[test]
-fn a_copy_of_the_dockerfile_is_kept_in_the_outputs_directory() {
-    let built = built(MADE);
-    assert_eq!(
-        fs::read_to_string(built.outputs_directory.image().join("Dockerfile")).unwrap(),
-        format!("FROM {}\n{MADE}", test_inputs::IMAGE)
-    );
-}
-
-#[test]
 fn what_docker_printed_while_it_built_is_kept_in_the_outputs_directory() {
     assert!(printed_by_docker(&built(MADE)).contains("RUN echo by the Dockerfile"));
-}
-
-#[test]
-fn a_dockerfile_with_a_step_that_fails_is_not_built() {
-    assert!(matches!(
-        built("RUN exit 3\n").result,
-        Err(ContainerError::Exit(_))
-    ));
 }
 
 #[test]
@@ -102,21 +80,5 @@ fn a_dockerfile_that_copies_a_file_is_not_built_since_it_is_given_no_file_to_cop
     assert!(matches!(
         built("COPY harness.sh /harness.sh\n").result,
         Err(ContainerError::Exit(_))
-    ));
-}
-
-#[test]
-fn a_build_that_runs_past_its_time_limit_is_ended() {
-    assert!(matches!(
-        built_within("RUN sleep 30\n", 1, false).result,
-        Err(ContainerError::TimeLimit)
-    ));
-}
-
-#[test]
-fn a_build_is_ended_when_the_directed_evolution_is_asked_to_stop() {
-    assert!(matches!(
-        built_within(MADE, 60, true).result,
-        Err(ContainerError::Stopped)
     ));
 }

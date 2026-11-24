@@ -222,9 +222,3 @@ fn a_progenitor_cannot_change_what_it_is_given_of_a_harness_of_its_line() {
         made_by(3, "touch /var/log/cladenc/line/0/harness/written");
     assert!(!outputs_directory.harness(0).join("written").exists());
 }
-
-#[test]
-fn a_procreation_that_was_given_its_line_records_the_progenitor_of_its_child() {
-    let (_directory, outputs_directory) = made_by(3, "exit 0");
-    assert_eq!(outputs_directory.progenitor_of(4), Some(3));
-}

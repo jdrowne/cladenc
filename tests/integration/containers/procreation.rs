@@ -1,7 +1,6 @@
 use std::fs;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
-use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 
@@ -145,10 +144,6 @@ fn outcome_of(run_command: &str) -> CreationOutcome {
     result.unwrap().outcome
 }
 
-fn harness_script(harness: &Path) -> String {
-    fs::read_to_string(harness.join("harness.sh")).unwrap()
-}
-
 #[test]
 fn the_working_directory_of_a_harness_is_the_copy_that_becomes_its_child() {
     assert_eq!(
@@ -194,14 +189,6 @@ fn a_harness_is_given_the_key_the_model_is_called_with() {
     assert_eq!(
         left_by_a_harness_given_a_key("printf %s \"$CLADENC_MODEL_KEY\" > given", "given"),
         test_inputs::MODEL_KEY
-    );
-}
-
-#[test]
-fn a_harness_of_a_directed_evolution_with_no_key_is_given_none() {
-    assert_eq!(
-        left_in_the_child("echo \"${CLADENC_MODEL_KEY-none}\" > given", "given"),
-        "none\n"
     );
 }
 
@@ -296,72 +283,6 @@ fn a_harness_that_changes_its_copy_and_exits_with_0_creates_its_child() {
 }
 
 #[test]
-fn a_procreation_with_no_build_command_leaves_no_build_of_its_child() {
-    let (_directory, outputs_directory, _result) = procreated("touch changed");
-    assert!(!outputs_directory.build(1).exists());
-}
-
-#[test]
-fn a_procreation_that_created_its_child_leaves_a_directory_for_the_attempts_of_the_child() {
-    let (_directory, outputs_directory, _result) = procreated("touch changed");
-    assert!(outputs_directory.attempts(1).is_dir());
-}
-
-#[test]
-fn a_harness_that_exits_with_1_fails_its_child() {
-    let (_directory, _outputs_directory, result) = procreated("exit 1");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Failed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_harness_that_exits_with_another_status_fails_its_child_too() {
-    let (_directory, _outputs_directory, result) = procreated("exit 2");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Failed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_harness_that_a_signal_ends_fails_its_child() {
-    let (_directory, _outputs_directory, result) = procreated("sh -c 'kill -TERM $$'; exit $?");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Failed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_procreation_that_failed_keeps_what_its_harness_left_beside_the_harnesses() {
-    let (_directory, outputs_directory, _result) = procreated("touch tried; exit 1");
-    assert!(outputs_directory.harness(1).join("tried").is_file());
-}
-
-#[test]
-fn a_harness_that_runs_past_the_time_limit_times_out() {
-    let (_directory, _outputs_directory, result) = procreated_within("sleep 300", 1);
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::TimedOut,
-            ..
-        })
-    ));
-}
-
-#[test]
 fn the_time_limit_removes_the_container_of_a_harness() {
     let (_directory, outputs_directory, _result) = procreated_within("hostname > id; sleep 300", 5);
     assert!(test_inputs::container_is_gone(
@@ -376,55 +297,10 @@ fn a_container_that_docker_does_not_start_is_an_error() {
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
-    let (_directory, _outputs_directory, result) = procreated("exit 125");
-    assert!(matches!(result, Err(ContainerError::Docker(_))));
-}
-
-#[test]
-fn the_error_names_the_file_that_holds_what_docker_said() {
-    let (_directory, outputs_directory, result) = not_started_by_docker();
-    assert!(matches!(
-        result,
-        Err(ContainerError::Docker(said)) if said == outputs_directory.running_procreation(1).join("stderr")
-    ));
-}
-
-#[test]
 fn what_docker_said_is_kept_under_running() {
     let (_directory, outputs_directory, _result) = not_started_by_docker();
     let said = fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap();
     assert!(said.contains("invalid reference format"));
-}
-
-#[test]
-fn a_harness_that_writes_into_the_source_code_it_runs_from_leaves_its_progenitor_unchanged() {
-    let (_directory, outputs_directory, _result) =
-        procreated("echo changed > \"$CLADENC_HARNESS/harness.sh\"");
-    assert_eq!(
-        harness_script(&outputs_directory.harness(0)),
-        "#!/bin/sh\necho harness\n"
-    );
-}
-
-#[test]
-fn a_child_that_holds_a_named_pipe_is_failed() {
-    let (_directory, _outputs_directory, result) = procreated("mkfifo pipe");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Failed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_procreation_whose_directory_cannot_be_put_in_place_is_an_error() {
-    let (_directory, outputs_directory) = made_at("outputs");
-    fs::create_dir_all(outputs_directory.procreation(1).join("in the way")).unwrap();
-    let result = started_from(test_inputs::IMAGE, "exit 0", &outputs_directory, 30);
-    assert!(matches!(result, Err(ContainerError::Io(_))));
 }
 
 #[test]
@@ -443,62 +319,4 @@ fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_moun
 #[test]
 fn a_harness_that_exits_with_0_and_leaves_its_copy_as_it_was_creates_no_child() {
     assert_eq!(outcome_of("exit 0"), CreationOutcome::Unchanged);
-}
-
-#[test]
-fn a_procreation_that_left_the_copy_as_it_was_is_recorded_with_the_word_unchanged() {
-    assert_eq!(kept_of_the_procreation("exit 0", "outcome"), "unchanged\n");
-}
-
-#[test]
-fn a_procreation_that_left_the_copy_as_it_was_leaves_no_directory_for_attempts() {
-    let (_directory, outputs_directory, _result) = procreated("exit 0");
-    assert!(!outputs_directory.attempts(1).exists());
-}
-
-#[test]
-fn a_harness_that_writes_a_file_again_with_the_contents_it_had_creates_no_child() {
-    assert_eq!(
-        outcome_of("cat harness.sh > kept; cat kept > harness.sh; rm kept"),
-        CreationOutcome::Unchanged
-    );
-}
-
-#[test]
-fn a_harness_that_only_writes_into_the_source_code_it_runs_from_creates_no_child() {
-    assert_eq!(
-        outcome_of("echo changed > \"$CLADENC_HARNESS/harness.sh\""),
-        CreationOutcome::Unchanged
-    );
-}
-
-#[test]
-fn a_harness_that_changes_the_contents_of_a_file_of_its_copy_creates_its_child() {
-    assert_eq!(
-        outcome_of("echo changed >> harness.sh"),
-        CreationOutcome::Created
-    );
-}
-
-#[test]
-fn a_harness_that_changes_only_the_permission_bits_of_a_file_of_its_copy_creates_its_child() {
-    assert_eq!(outcome_of("chmod 700 harness.sh"), CreationOutcome::Created);
-}
-
-#[test]
-fn a_harness_that_only_removes_a_file_of_its_copy_creates_its_child() {
-    assert_eq!(outcome_of("rm prompt.txt"), CreationOutcome::Created);
-}
-
-#[test]
-fn a_harness_that_only_points_a_symbolic_link_of_its_copy_elsewhere_creates_its_child() {
-    assert_eq!(
-        outcome_of("ln -sf harness.sh prompt.txt"),
-        CreationOutcome::Created
-    );
-}
-
-#[test]
-fn a_harness_that_exits_with_1_and_leaves_its_copy_as_it_was_fails_its_child() {
-    assert_eq!(outcome_of("exit 1"), CreationOutcome::Failed);
 }

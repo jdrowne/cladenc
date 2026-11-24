@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicBool;
+use std::thread;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, CollectCommand, TaskConfiguration};
@@ -6,7 +8,7 @@ use crate::containers::tests::given::{
     self, ARTIFACTS_MADE, EMPTIED, LAUNCH, LOGS_LINKED, TASK, TESTS_LINKED, TIMER, Tried,
     VERIFIER_EMPTIED,
 };
-use crate::containers::{ContainerError, HarnessEnding, Launch};
+use crate::containers::{self, Attempt, ContainerError, HarnessEnding, Launch};
 use crate::genealogy::AttemptResult;
 use crate::model::Model;
 
@@ -55,6 +57,20 @@ fn last_word_of(command: &str) -> Option<&str> {
 
 fn with_a_user_of_the_image() -> Double {
     Double::default().answering(&["inspect"], &[Answer::Printed("builder\n/\n")])
+}
+
+fn taking(needles: &[&str], milliseconds: u64) -> Double {
+    Double::default().doing(needles, move |_, _| {
+        thread::sleep(Duration::from_millis(milliseconds));
+    })
+}
+
+fn seconds_of(tried: &Tried) -> Option<f64> {
+    tried
+        .result
+        .as_ref()
+        .ok()
+        .map(|attempted| attempted.seconds)
 }
 
 fn collecting(users: &[Option<&str>]) -> TaskConfiguration {
@@ -228,6 +244,50 @@ fn the_logs_of_the_grader_are_copied_into_the_directory_of_the_running_attempt()
     let docker = Double::default().grading(|attempt| attempt == "attempt-0-benchmark+t1");
     assert_eq!(
         result_of(&attempted_by(docker)),
+        Some(AttemptResult::Completed)
+    );
+}
+
+#[test]
+fn an_attempt_whose_harness_exits_with_a_status_other_than_zero_is_graded_all_the_same() {
+    let docker = Double::default()
+        .grading(|_| true)
+        .answering(&HARNESS, &[Answer::Exited(3)]);
+    assert_eq!(
+        result_of(&attempted_by(docker)),
+        Some(AttemptResult::Completed)
+    );
+}
+
+#[test]
+fn the_reward_of_the_grader_is_kept_with_the_attempt() {
+    let tried = attempted_by(Double::default().grading(|_| true));
+    assert_eq!(
+        kept(&tried, "grader/logs/verifier/reward.txt").as_deref(),
+        Some("1")
+    );
+}
+
+#[test]
+fn the_grader_of_a_holdout_task_decides_the_result_of_its_attempt() {
+    let (directory, outputs_directory) = given::made();
+    let outputs_directory = outputs_directory.holding_out(&[TASK.to_owned()]);
+    let docker = Double::default().grading(|_| true).on(&directory);
+    let environment = given::environment(TaskConfiguration::default());
+    let attempt = Attempt {
+        harness: 0,
+        task: TASK,
+        environment: &environment,
+    };
+    let attempted = containers::run_attempt(
+        given::host(&docker, &outputs_directory),
+        &LAUNCH,
+        attempt,
+        &AtomicBool::new(false),
+        &|_| (),
+    );
+    assert_eq!(
+        attempted.ok().map(|attempted| attempted.result),
         Some(AttemptResult::Completed)
     );
 }
@@ -457,6 +517,30 @@ fn the_grader_is_given_the_time_limit_the_task_sets_for_it() {
 }
 
 #[test]
+fn the_time_limit_of_the_grader_is_counted_from_the_moment_the_harness_ends() {
+    let tried = attempted_by(taking(&HARNESS, 1100));
+    assert_eq!(last_word_of(&tried.commands()[15]), Some("605"));
+}
+
+#[test]
+fn the_seconds_of_an_attempt_are_those_its_harness_ran() {
+    let tried = attempted_by(taking(&HARNESS, 20));
+    assert!(seconds_of(&tried).is_some_and(|seconds| seconds >= 0.02));
+}
+
+#[test]
+fn the_seconds_of_an_attempt_leave_out_those_its_grader_ran() {
+    let tried = attempted_by(taking(&GRADER, 500));
+    assert!(seconds_of(&tried).is_some_and(|seconds| seconds < 0.5));
+}
+
+#[test]
+fn the_seconds_of_an_attempt_whose_harness_was_stopped_are_those_it_ran() {
+    let docker = taking(&HARNESS, 20).answering(&HARNESS, &[Answer::TimedOut]);
+    assert!(seconds_of(&attempted_by(docker)).is_some_and(|seconds| seconds >= 0.02));
+}
+
+#[test]
 fn what_docker_says_when_it_brings_up_the_container_is_kept_with_the_running_attempt() {
     let tried = attempted_by(Double::default());
     assert_eq!(tried.docker.asked()[0].kept, tried.running().join("stderr"));
@@ -618,6 +702,12 @@ fn an_attempt_whose_harness_docker_does_not_run_names_the_file_that_holds_what_d
 fn an_attempt_that_is_stopped_while_its_harness_runs_was_stopped() {
     let tried = attempted_by(Double::default().answering(&HARNESS, &[Answer::Stopped]));
     assert!(matches!(tried.result, Err(ContainerError::Stopped)));
+}
+
+#[test]
+fn an_attempt_that_is_stopped_stays_among_the_running_ones() {
+    let tried = attempted_by(Double::default().answering(&HARNESS, &[Answer::Stopped]));
+    assert!(tried.directory.is_dir(tried.running()));
 }
 
 #[test]

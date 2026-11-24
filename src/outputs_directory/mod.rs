@@ -131,7 +131,7 @@ impl OutputsDirectory {
         self.path.join("procreations").join(child.to_string())
     }
 
-    pub fn baseline(&self, harness: HarnessId) -> PathBuf {
+    pub(crate) fn baseline(&self, harness: HarnessId) -> PathBuf {
         self.path.join("baselines").join(harness.to_string())
     }
 
@@ -151,7 +151,7 @@ impl OutputsDirectory {
         }
     }
 
-    pub fn build(&self, harness: HarnessId) -> PathBuf {
+    pub(crate) fn build(&self, harness: HarnessId) -> PathBuf {
         self.path.join("builds").join(harness.to_string())
     }
 
@@ -257,7 +257,7 @@ impl OutputsDirectory {
             })
     }
 
-    pub fn progenitor_of(&self, harness: HarnessId) -> Option<HarnessId> {
+    fn progenitor_of(&self, harness: HarnessId) -> Option<HarnessId> {
         self.files
             .read_text(&self.procreation(harness).join("progenitor"))
             .ok()

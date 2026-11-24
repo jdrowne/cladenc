@@ -3,7 +3,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::containers::{self, ContainerError, Host, Launch, Program};
-use cladenc::genealogy::CreationOutcome;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
@@ -128,11 +127,6 @@ fn left_in_the_child(build_command: &str, file: &str) -> String {
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
-fn kept_of_the_build(build_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, build_command);
-    fs::read_to_string(outputs_directory.build(1).join(file)).unwrap()
-}
-
 #[test]
 fn the_working_directory_of_the_build_of_a_child_is_the_source_code_of_the_child() {
     assert_eq!(
@@ -199,118 +193,6 @@ fn the_build_of_a_child_runs_as_the_user_cladenc_runs_as() {
 }
 
 #[test]
-fn the_standard_output_of_the_build_of_a_child_is_kept_under_builds() {
-    assert_eq!(kept_of_the_build("echo out", "stdout"), "out\n");
-}
-
-#[test]
-fn the_standard_error_of_the_build_of_a_child_is_kept_under_builds() {
-    assert_eq!(kept_of_the_build("echo err >&2", "stderr"), "err\n");
-}
-
-#[test]
-fn the_standard_output_of_a_harness_is_kept_apart_from_that_of_the_build_of_its_child() {
-    let (_directory, outputs_directory, _result) =
-        procreated("echo ran; touch changed", "echo built");
-    assert_eq!(
-        fs::read_to_string(outputs_directory.procreation(1).join("stdout")).unwrap(),
-        "ran\n"
-    );
-}
-
-#[test]
-fn a_child_whose_build_exits_with_0_is_created() {
-    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 0");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Created,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_child_whose_build_exits_with_another_status_did_not_build() {
-    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 1");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::BuildFailed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_child_that_did_not_build_is_kept_beside_the_harnesses() {
-    let (_directory, outputs_directory, _result) = procreated("touch tried", "exit 1");
-    assert!(outputs_directory.harness(1).join("tried").is_file());
-}
-
-#[test]
-fn a_child_that_did_not_build_gets_no_directory_for_attempts() {
-    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, "exit 1");
-    assert!(!outputs_directory.attempts(1).exists());
-}
-
-#[test]
-fn a_child_whose_build_leaves_a_named_pipe_did_not_build() {
-    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "mkfifo pipe");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::BuildFailed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn the_child_of_a_harness_that_failed_is_not_built() {
-    let (_directory, outputs_directory, _result) = procreated("exit 1", "exit 0");
-    assert!(!outputs_directory.build(1).exists());
-}
-
-#[test]
-fn a_harness_that_failed_fails_its_child_whatever_the_build_would_have_done() {
-    let (_directory, _outputs_directory, result) = procreated("exit 1", "exit 0");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Failed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn a_build_that_runs_past_the_time_limit_of_its_procreation_times_the_procreation_out() {
-    let (_directory, _outputs_directory, result) =
-        procreated_within(CHANGE_THE_COPY, "touch started; sleep 300", 8);
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::TimedOut,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn the_time_limit_of_a_procreation_covers_its_harness_and_the_build_of_its_child_together() {
-    let (_directory, _outputs_directory, result) =
-        procreated_within("sleep 4; touch changed", "sleep 4", 6);
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::TimedOut,
-            ..
-        })
-    ));
-}
-
-#[test]
 fn the_time_limit_removes_the_container_of_a_build() {
     let (_directory, outputs_directory, _result) =
         procreated_within(CHANGE_THE_COPY, "hostname > id; sleep 300", 8);
@@ -320,77 +202,9 @@ fn the_time_limit_removes_the_container_of_a_build() {
 }
 
 #[test]
-fn a_build_whose_container_ends_with_status_125_is_taken_as_one_docker_did_not_start() {
-    let (_directory, _outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 125");
-    assert!(matches!(result, Err(ContainerError::Docker(_))));
-}
-
-#[test]
-fn the_error_of_a_build_names_the_file_under_builds_that_holds_what_docker_said() {
-    let (_directory, outputs_directory, result) = procreated(CHANGE_THE_COPY, "exit 125");
-    assert!(matches!(
-        result,
-        Err(ContainerError::Docker(said)) if said == outputs_directory.build(1).join("stderr")
-    ));
-}
-
-#[test]
-fn a_build_whose_output_cannot_be_kept_is_an_error() {
-    let (directory, outputs_directory) = made();
-    fs::write(directory.path().join("outputs/builds"), "").unwrap();
-    let launch = Launch {
-        image: test_inputs::IMAGE,
-        run_command: CHANGE_THE_COPY,
-        build_command: Some("exit 0"),
-        model: MODEL,
-        procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
-        max_task_health_check_retries: 0,
-    };
-    let stop = AtomicBool::new(false);
-    assert!(matches!(
-        containers::run_procreation(
-            Host {
-                docker: &Program,
-                outputs_directory: &outputs_directory
-            },
-            &launch,
-            1,
-            0,
-            &stop
-        ),
-        Err(ContainerError::Io(_))
-    ));
-}
-
-#[test]
-fn a_procreation_stopped_while_its_child_is_built_reports_that_it_was_stopped() {
-    let (_directory, _outputs_directory, result) = stopped_while_its_child_is_built();
-    assert!(matches!(result, Err(ContainerError::Stopped)));
-}
-
-#[test]
 fn a_procreation_stopped_while_its_child_is_built_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_child_is_built();
     assert!(test_inputs::container_is_gone(
         &outputs_directory.running_procreation(1).join("child/id")
-    ));
-}
-
-#[test]
-fn a_child_that_would_be_the_copy_as_it_was_is_not_built() {
-    let (_directory, outputs_directory, _result) = procreated("exit 0", "echo built > built");
-    assert!(!outputs_directory.build(1).exists());
-}
-
-#[test]
-fn a_harness_that_leaves_its_copy_as_it_was_creates_no_child_whatever_the_build_would_have_done() {
-    let (_directory, _outputs_directory, result) = procreated("exit 0", "exit 1");
-    assert!(matches!(
-        result,
-        Ok(containers::Creation {
-            outcome: CreationOutcome::Unchanged,
-            ..
-        })
     ));
 }

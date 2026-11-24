@@ -95,3 +95,30 @@ fn a_resume_first_asks_docker_for_the_containers_that_carry_the_label_of_its_dir
         Some("docker ps --all --quiet --filter label=cladenc.directed-evolution=OUTPUTS")
     );
 }
+
+#[test]
+fn the_journal_of_a_directed_evolution_holds_the_file_of_the_key_and_not_the_key() {
+    let journal = given::started(Double::default(), with_a_key).journal();
+    assert_eq!(
+        (
+            journal.contains("a-made-up-key"),
+            journal.contains("/model-key\"")
+        ),
+        (false, true)
+    );
+}
+
+#[test]
+fn a_directed_evolution_that_is_not_resumed_for_its_key_journals_nothing_more() {
+    let docker = Double::default().answering(&["--detach"], &[REFUSED]);
+    let evolved = given::started(docker, with_a_key);
+    let journal = evolved.journal();
+    evolved
+        .files()
+        .remove_file(evolved.files().path().join("model-key"))
+        .unwrap();
+    assert_eq!(
+        given::resumed(evolved, Double::default()).journal(),
+        journal
+    );
+}

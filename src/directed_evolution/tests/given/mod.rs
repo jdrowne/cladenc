@@ -1,10 +1,11 @@
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::containers::tests::double::Double;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::file_system::tests::double::Memory;
-use crate::journal::Settings;
+use crate::journal::{self, Record, Settings};
 use crate::outputs_directory::OutputsDirectory;
 
 pub(super) struct Evolved {
@@ -19,10 +20,57 @@ impl Evolved {
         &self.directory
     }
 
+    pub(super) fn outputs(&self) -> PathBuf {
+        self.directory.path().join("outputs")
+    }
+
+    pub(super) fn outputs_directory(&self) -> OutputsDirectory {
+        OutputsDirectory::at(self.directory.shared(), &self.outputs())
+    }
+
     pub(super) fn commands(&self) -> Vec<String> {
-        let outputs = self.directory.path().join("outputs");
-        let outputs_directory = OutputsDirectory::at(self.directory.shared(), &outputs);
-        self.docker.commands(&outputs_directory)
+        self.docker.commands(&self.outputs_directory())
+    }
+
+    pub(super) fn journal(&self) -> String {
+        self.directory
+            .read_to_string(journal::path(&self.outputs()))
+            .unwrap()
+    }
+
+    pub(super) fn records(&self) -> Vec<Record> {
+        self.journal()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect()
+    }
+
+    pub(super) fn starts(&self) -> Vec<String> {
+        self.records()
+            .into_iter()
+            .filter_map(|record| match record {
+                Record::AttemptStarted { harness, .. } => Some(format!("attempt of {harness}")),
+                Record::ProcreationStarted { child, progenitor } => {
+                    Some(format!("procreation of {child} by {progenitor}"))
+                }
+                Record::BaselineStarted {
+                    harness,
+                    child,
+                    progenitor,
+                } => Some(format!(
+                    "baseline of {harness} for {child} from {progenitor}"
+                )),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub(super) fn lines(&self) -> Vec<String> {
+        self.said.lines().map(str::to_owned).collect()
+    }
+
+    pub(super) fn best_harness(&self) -> Option<u64> {
+        self.result.as_ref().ok().map(|found| found.best_harness)
     }
 
     pub(super) fn inputs(&self) -> Vec<String> {
@@ -85,6 +133,16 @@ pub(super) fn configured(directory: &Memory, task: &str, configuration: &str) {
 
 pub(super) fn unchanged(_: &Memory, _: &mut Settings) {}
 
+pub(super) fn over_one_task(_: &Memory, settings: &mut Settings) {
+    settings.benchmarks[0].tasks = vec!["t1".to_owned()];
+}
+
+pub(super) fn over_five_tasks(directory: &Memory, settings: &mut Settings) {
+    let tasks = ["t1", "t2", "t3", "t4", "t5"];
+    let benchmark = test_inputs::benchmark_in(directory, directory.path(), &tasks);
+    settings.benchmarks = vec![Benchmark::read(directory, &benchmark).unwrap()];
+}
+
 pub(super) fn started(docker: Double, change: impl FnOnce(&Memory, &mut Settings)) -> Evolved {
     started_until(docker, change, &AtomicBool::new(false))
 }
@@ -115,12 +173,16 @@ pub(super) fn started_until(
 }
 
 pub(super) fn resumed(evolved: Evolved, docker: Double) -> Evolved {
+    resumed_until(evolved, docker, &AtomicBool::new(false))
+}
+
+pub(super) fn resumed_until(evolved: Evolved, docker: Double, stop: &AtomicBool) -> Evolved {
     let docker = docker.on(&evolved.directory);
     let mut said = Vec::new();
     let result = directed_evolution::resume(
         docker.outside(),
         &evolved.directory.path().join("outputs"),
-        &AtomicBool::new(false),
+        stop,
         &mut said,
     );
     Evolved {

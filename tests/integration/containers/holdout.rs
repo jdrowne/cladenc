@@ -18,8 +18,6 @@ const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/opt/cladenc /var/log/claden
                                          evidence; true";
 const SAY_WHAT_IS_GIVEN: &str = "{ env | grep ^CLADENC_ | grep -v ^CLADENC_INSTRUCTION= | sort; \
                                  pwd; ls -R /var/opt/cladenc /var/log/cladenc 2>&1; }";
-const SOLVE_THE_HOLDOUT_TASK: &str = "echo t2 > solved; echo t2";
-
 fn launch(run_command: &str) -> Launch<'_> {
     Launch {
         image: test_inputs::IMAGE,
@@ -133,40 +131,5 @@ fn the_harness_of_an_attempt_at_a_holdout_task_is_given_what_that_of_any_attempt
     assert_eq!(
         given_in_the_attempt_at(HELD_OUT),
         given_in_the_attempt_at(SHOWN)
-    );
-}
-
-#[test]
-fn the_grader_of_a_holdout_task_says_whether_the_harness_completed_it() {
-    let (_directory, _outputs_directory, result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
-    assert!(matches!(
-        result,
-        Ok(containers::Attempted {
-            result: AttemptResult::Completed,
-            ..
-        })
-    ));
-}
-
-#[test]
-fn an_attempt_at_a_holdout_task_is_kept_under_holdout_with_what_it_printed() {
-    let (_directory, outputs_directory, _result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
-    assert_eq!(
-        fs::read_to_string(
-            outputs_directory
-                .path()
-                .join("holdout/0/benchmark/t2/stdout")
-        )
-        .unwrap(),
-        "t2\n"
-    );
-}
-
-#[test]
-fn an_attempt_at_a_holdout_task_leaves_nothing_under_attempts() {
-    let (_directory, outputs_directory, _result) = attempted(SOLVE_THE_HOLDOUT_TASK, HELD_OUT);
-    assert_eq!(
-        fs::read_dir(outputs_directory.attempts(0)).unwrap().count(),
-        0
     );
 }

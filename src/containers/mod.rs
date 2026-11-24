@@ -122,34 +122,34 @@ pub struct Attempt<'a> {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Creation {
     pub outcome: CreationOutcome,
-    pub seconds: f64,
+    pub(crate) seconds: f64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum HarnessEnding {
+pub(crate) enum HarnessEnding {
     Ended,
     Stopped,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Checked {
+pub(crate) enum Checked {
     Task,
     Grader,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Retry {
-    pub checked: Checked,
-    pub number: u64,
-    pub most: u64,
-    pub wait: Duration,
+    pub(crate) checked: Checked,
+    pub(crate) number: u64,
+    pub(crate) most: u64,
+    pub(crate) wait: Duration,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Attempted {
     pub result: AttemptResult,
-    pub seconds: f64,
-    pub ending: HarnessEnding,
+    pub(crate) seconds: f64,
+    pub(crate) ending: HarnessEnding,
 }
 
 #[derive(Debug)]

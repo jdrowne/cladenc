@@ -8,6 +8,9 @@ use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::journal::Started;
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
+const PROCREATION: [&str; 2] = ["run", "run a harness"];
+const FIRST_ATTEMPT_STARTED: &str =
+    r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#;
 
 fn refused() -> Evolved {
     let refused = [Answer::Refused("docker is not there")];
@@ -72,4 +75,58 @@ fn a_directed_evolution_that_is_asked_to_stop_tells_so() {
 #[test]
 fn nothing_is_started_after_a_directed_evolution_is_asked_to_stop() {
     assert_eq!(stopped().count_of("--detach"), 1);
+}
+
+#[test]
+fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_directed_evolution() {
+    let docker = Double::default().answering(&["run a harness"], &[Answer::Exited(2)]);
+    assert!(given::started(docker, given::unchanged).result.is_ok());
+}
+
+#[test]
+fn an_attempt_that_cannot_be_carried_out_is_journaled_as_started_and_not_as_finished() {
+    assert_eq!(
+        refused().journal().lines().last(),
+        Some(FIRST_ATTEMPT_STARTED)
+    );
+}
+
+#[test]
+fn a_directed_evolution_that_is_asked_to_stop_journals_nothing_for_the_action_that_was_running() {
+    assert_eq!(
+        stopped().journal().lines().last(),
+        Some(FIRST_ATTEMPT_STARTED)
+    );
+}
+
+#[test]
+fn a_directed_evolution_that_is_asked_to_stop_says_so_last_with_the_containers_running() {
+    let said = stopped().said;
+    assert!(said.ends_with("cladenc: asked to stop, with 1 container running\n"));
+}
+
+#[test]
+fn a_procreation_whose_container_docker_does_not_start_is_told_when_it_happens() {
+    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(125)]);
+    let said = given::started(docker, given::unchanged).said;
+    assert!(said.contains(
+        "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker did \
+         not start its container"
+    ));
+}
+
+#[test]
+fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stopped_at_it() {
+    let docker = Double::default().answering(&HARNESS, &[Answer::TimedOut]);
+    let said = given::started(docker, given::unchanged).said;
+    assert!(said.contains(
+        "cladenc: harness 0 did not complete task benchmark/t1, after it was stopped at its time \
+         limit: what the attempt left is kept in "
+    ));
+}
+
+#[test]
+fn a_directed_evolution_whose_harnesses_all_run_out_of_time_runs_to_its_end() {
+    let docker = Double::default().answering(&HARNESS, &[Answer::TimedOut]);
+    assert!(given::started(docker, given::unchanged).result.is_ok());
 }

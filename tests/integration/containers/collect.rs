@@ -1,11 +1,10 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, ContainerError, Environment, GraderImage, Host, Launch, Program};
+use cladenc::containers::{self, Environment, GraderImage, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -23,7 +22,6 @@ struct Attempted {
     _directory: TempDir,
     _built: Image,
     outputs_directory: OutputsDirectory,
-    result: Result<containers::Attempted, ContainerError>,
 }
 
 struct Attempt<'a> {
@@ -89,7 +87,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         max_grader_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let result = containers::run_attempt(
+    let _ = containers::run_attempt(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -107,7 +105,6 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         _directory: directory,
         _built: built,
         outputs_directory,
-        result,
     }
 }
 
@@ -127,28 +124,6 @@ fn kept(attempted: &Attempted, file: &str) -> String {
     fs::read_to_string(kept_at(attempted, file)).unwrap()
 }
 
-fn listed(directory: &Path, below: &str, found: &mut Vec<String>) {
-    for entry in fs::read_dir(directory).into_iter().flatten() {
-        let entry = entry.unwrap();
-        let path = format!("{below}{}", entry.file_name().to_string_lossy());
-        if entry.file_type().unwrap().is_dir() {
-            listed(&entry.path(), &format!("{path}/"), found);
-        }
-        found.push(path);
-    }
-}
-
-fn artifacts_of(attempted: &Attempted) -> Vec<String> {
-    let mut found = Vec::new();
-    listed(&kept_at(attempted, "artifacts"), "", &mut found);
-    found.sort();
-    found
-}
-
-fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
-    attempted.result.as_ref().ok().map(|ended| ended.result)
-}
-
 fn collecting(commands: &[&str]) -> String {
     commands
         .iter()
@@ -162,36 +137,6 @@ fn what_a_harness_left_in_logs_artifacts_is_kept_though_the_task_lists_no_path()
     assert_eq!(
         kept(&attempted, "artifacts/logs/artifacts/report.txt"),
         "found\n"
-    );
-}
-
-#[test]
-fn what_a_harness_left_in_logs_artifacts_is_kept_beside_the_paths_the_task_lists() {
-    let attempted = attempted(
-        "artifacts = [\"/app/report.txt\"]\n",
-        "echo found > report.txt; echo noted > /logs/artifacts/notes.txt",
-    );
-    assert_eq!(
-        artifacts_of(&attempted),
-        [
-            "app",
-            "app/report.txt",
-            "logs",
-            "logs/artifacts",
-            "logs/artifacts/notes.txt"
-        ]
-    );
-}
-
-#[test]
-fn a_task_that_lists_logs_artifacts_itself_has_its_own_entry_obeyed_in_its_place() {
-    let attempted = attempted(
-        "[[artifacts]]\nsource = \"/logs/artifacts\"\ndestination = \"published\"\n",
-        PUBLISH_A_REPORT,
-    );
-    assert_eq!(
-        artifacts_of(&attempted),
-        ["published", "published/report.txt"]
     );
 }
 
@@ -222,61 +167,6 @@ fn a_command_under_collect_is_run_where_the_harness_worked_before_the_paths_are_
 }
 
 #[test]
-fn what_a_command_under_collect_printed_is_kept_with_the_attempt() {
-    let attempted = attempted(&collecting(&["echo collected"]), WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "collect/1/stdout"), "collected\n");
-}
-
-#[test]
-fn what_a_command_under_collect_printed_on_standard_error_is_kept_apart() {
-    let attempted = attempted(&collecting(&["echo failed >&2"]), WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "collect/1/stderr"), "failed\n");
-}
-
-#[test]
-fn the_commands_under_collect_are_run_in_the_order_the_task_lists_them() {
-    let attempted = attempted(
-        &format!(
-            "artifacts = [\"/app/order.txt\"]\n\n{}",
-            collecting(&["echo first >> order.txt", "echo second >> order.txt"])
-        ),
-        WRITE_A_REPORT,
-    );
-    assert_eq!(
-        kept(&attempted, "artifacts/app/order.txt"),
-        "first\nsecond\n"
-    );
-}
-
-#[test]
-fn what_each_command_under_collect_printed_is_kept_under_its_place_in_the_list() {
-    let attempted = attempted(&collecting(&["echo first", "echo second"]), WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "collect/2/stdout"), "second\n");
-}
-
-#[test]
-fn a_command_under_collect_that_fails_does_not_keep_the_next_from_running() {
-    let attempted = attempted(&collecting(&["exit 3", "echo after"]), WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "collect/2/stdout"), "after\n");
-}
-
-#[test]
-fn a_command_under_collect_that_fails_does_not_end_the_attempt() {
-    let attempted = attempted(&collecting(&["exit 3"]), WRITE_A_REPORT);
-    assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
-}
-
-#[test]
-fn a_command_under_collect_that_runs_past_its_time_limit_does_not_keep_the_next_from_running() {
-    let attempted = attempted(
-        "[[verifier.collect]]\ncommand = \"sleep 300\"\ntimeout_sec = 1\n\n[[verifier.collect]]\n\
-         command = \"echo after\"\n",
-        WRITE_A_REPORT,
-    );
-    assert_eq!(kept(&attempted, "collect/2/stdout"), "after\n");
-}
-
-#[test]
 fn a_command_under_collect_is_run_as_the_user_of_the_environment_where_it_names_none() {
     let attempted = attempted(&collecting(&["id -u"]), WRITE_A_REPORT);
     assert_eq!(kept(&attempted, "collect/1/stdout"), "0\n");
@@ -289,30 +179,4 @@ fn a_command_under_collect_is_run_as_the_user_its_entry_names() {
         WRITE_A_REPORT,
     );
     assert_eq!(kept(&attempted, "collect/1/stdout"), "1000\n");
-}
-
-#[test]
-fn what_a_command_under_collect_made_is_not_among_what_the_harness_left() {
-    let attempted = attempted(COPY_THE_REPORT, WRITE_A_REPORT);
-    assert!(!kept_at(&attempted, "work/rows.txt").exists());
-}
-
-#[test]
-fn the_commands_under_collect_are_run_for_a_harness_that_was_stopped() {
-    let attempted = attempted(
-        &format!("{ROWS}\n[agent]\ntimeout_sec = 2\n\n{COPY_THE_REPORT}"),
-        "echo found > report.txt; sleep 300",
-    );
-    assert_eq!(kept(&attempted, "artifacts/app/rows.txt"), "found\n");
-}
-
-#[test]
-fn a_command_under_collect_that_exits_with_status_125_is_an_error_of_docker() {
-    let attempted = attempted(&collecting(&["exit 125"]), WRITE_A_REPORT);
-    assert!(matches!(attempted.result, Err(ContainerError::Docker(_))));
-}
-
-#[test]
-fn an_attempt_whose_task_lists_no_command_under_collect_keeps_nothing_of_one() {
-    assert!(!kept_at(&attempted("", WRITE_A_REPORT), "collect").exists());
 }

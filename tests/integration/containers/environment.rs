@@ -37,11 +37,7 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn built_from(steps: &str, stop: bool) -> Built {
-    built_within(600, steps, stop)
-}
-
-fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
+fn built(steps: &str) -> Built {
     let (directory, outputs_directory) = made();
     let environment = outputs_directory.task(TASK).join("environment");
     fs::write(environment.join("given.txt"), "from the build context\n").unwrap();
@@ -51,7 +47,6 @@ fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
     )
     .unwrap();
     let image = test_inputs::image();
-    let stop = AtomicBool::new(stop);
     let result = containers::build_environment(
         Host {
             docker: &Program,
@@ -59,8 +54,8 @@ fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
         },
         TASK,
         &image.name,
-        Duration::from_secs(time_limit),
-        &stop,
+        Duration::from_secs(600),
+        &AtomicBool::new(false),
     );
     Built {
         _directory: directory,
@@ -68,10 +63,6 @@ fn built_within(time_limit: u64, steps: &str, stop: bool) -> Built {
         image,
         result,
     }
-}
-
-fn built(steps: &str) -> Built {
-    built_from(steps, false)
 }
 
 fn printed_by_docker(built: &Built) -> String {
@@ -164,22 +155,6 @@ fn an_environment_with_a_step_that_fails_is_not_built() {
     ));
 }
 
-#[test]
-fn the_build_of_an_environment_is_ended_when_the_directed_evolution_is_asked_to_stop() {
-    assert!(matches!(
-        built_from(MADE, true).result,
-        Err(ContainerError::Stopped)
-    ));
-}
-
-#[test]
-fn the_build_of_an_environment_that_runs_past_its_time_limit_is_ended() {
-    assert!(matches!(
-        built_within(2, "RUN sleep 300\n", false).result,
-        Err(ContainerError::TimeLimit)
-    ));
-}
-
 fn grader_built(steps: &str) -> Built {
     let (directory, outputs_directory) = made();
     let tests = outputs_directory.task(TASK).join("tests");
@@ -257,12 +232,4 @@ fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_directed_evolut
                 .display()
         )
     );
-}
-
-#[test]
-fn an_environment_of_a_grader_with_a_step_that_fails_is_not_built() {
-    assert!(matches!(
-        grader_built("RUN exit 3\n").result,
-        Err(ContainerError::Exit(_))
-    ));
 }
