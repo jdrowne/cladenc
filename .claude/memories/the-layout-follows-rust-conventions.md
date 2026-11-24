@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 61956d23-4c1b-40cc-a69e-f7b691101931
-  modified: 2026-11-23T21:00:00.000Z
+  modified: 2026-11-24T12:00:00.000Z
 ---
 
 # The layout follows Rust's conventions
@@ -15,7 +15,6 @@ The repository is laid out the way Rust and Cargo expect, so that a Rust reader 
 - **Unit tests are inside the library.** The unit tests of a module are a module named `tests` beside its code: the directory `src/<module>/tests/`, with a `mod.rs` that lists its files and nothing else. The last lines of `src/<module>/mod.rs` declare it, as `#[cfg(test)]` over `mod tests;`. A test file there reaches the library as `crate::…`.
 - **The unit tests are always a directory.** No `tests.rs` file, and no `mod tests { … }` written into a source file, however few the tests are. One form holds for every module.
 - **The other two tiers are under `tests/`.** `tests/integration/` and `tests/e2e/` are one test program each, and the `main.rs` of each lists its files.
-- **The samples are under `tests/` too.** `tests/samples/` holds them, named from the top of the repository, as `tests/samples/Dockerfile`. This says where a sample is kept, not which tier may read one: by [[the-tiers-follow-the-standard-test-pyramid]] a unit test reads no file, and no tier keeps a program to put in the place of `docker`. That no test reads `tests/samples/` any more is #160.
 - **A package other than `cladenc` is under `crates/`,** per [[crates-stores-shared-code]].
 - **`Cargo.toml` names nothing that Cargo finds itself:** no `[[bin]]` and no `[[test]]`. Cargo takes `src/main.rs` for the program, `src/lib.rs` for the library, and each directory of `tests/` that has a `main.rs` for a test program.
 

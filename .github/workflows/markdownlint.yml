@@ -23,9 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm install --global --prefer-offline markdownlint-cli
       - name: markdownlint
-        run: >-
-          markdownlint --dot --disable MD013 --ignore 'tests/**/samples/**'
-          -- '**/*.md'
+        run: markdownlint --dot --disable MD013 -- '**/*.md'
   yamllint:
     runs-on: ubuntu-latest
     steps:

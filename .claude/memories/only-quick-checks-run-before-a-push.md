@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: c0ccaee5-b418-4970-9ebc-74bd1acf04de
-  modified: 2026-11-22T14:38:49.966Z
+  modified: 2026-11-24T12:00:00.000Z
 ---
 
 # Only quick checks run before a push
@@ -107,14 +107,13 @@ The first three of the five commands below are the scripts of their jobs, as the
 
 One check runs for a commit that changes a Markdown file:
 
-- `markdownlint`: every Markdown file keeps the rules of `markdownlint` but the limit on the length of a line, and the files under a `samples` directory of `tests/` are left out.
+- `markdownlint`: every Markdown file keeps the rules of `markdownlint` but the limit on the length of a line.
 
 It is a tool that is installed locally, called with the flags its job gives it, and given the Markdown files git tracks where the job gives it every Markdown file of the checkout:
 
 ```bash
 (
-  git ls-files -z '*.md' | xargs -0 markdownlint --dot --disable MD013 \
-    --ignore 'tests/**/samples/**' --
+  git ls-files -z '*.md' | xargs -0 markdownlint --dot --disable MD013 --
 )
 ```
 
