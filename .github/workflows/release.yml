@@ -331,6 +331,8 @@ jobs:
           SHOWN = f"cat /dev/null; python3 -c '{SOCKET}'; :"
           BEGUN = {"prctl", "rseq", "set_robust_list"}
           APART = BEGUN | {"getcwd"}
+          SETTING = "/proc/sys/vm/overcommit_memory"
+          ALLOCATOR = f'openat(AT_FDCWD, "{SETTING}", O_RDONLY|O_CLOEXEC) = '
           TRACED = ",".join(["%file", "%network", "execve", "execveat", *BEGUN])
           CALL = re.compile(r"(\d+) +(\w+)\(")
           def calls(command):
@@ -362,7 +364,7 @@ jobs:
               return [
                   f"{what} used a file, a program or the network: {line}"
                   for _, name, line in apart
-                  if name not in APART
+                  if name not in APART and not line.startswith(ALLOCATOR)
               ]
           def said_of(test):
               return said(test, [UNIT_TESTS, "--exact", test])
