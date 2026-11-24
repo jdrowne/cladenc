@@ -56,7 +56,7 @@ fn containers_of_the_attempts(commands: &[String]) -> Vec<&String> {
         .collect()
 }
 
-fn run_in_a_container(commands: &[String], run: &str) -> Vec<&String> {
+fn run_in_a_container<'a>(commands: &'a [String], run: &str) -> Vec<&'a String> {
     commands
         .iter()
         .filter(|command| command.starts_with(COMMAND) && command.contains(run))
