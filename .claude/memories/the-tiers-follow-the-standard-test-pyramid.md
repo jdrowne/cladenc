@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 61956d23-4c1b-40cc-a69e-f7b691101931
-  modified: 2026-11-23T04:00:00.000Z
+  modified: 2026-11-23T18:00:00.000Z
 ---
 
 # The tiers follow the standard test pyramid
@@ -44,7 +44,7 @@ Each function of `src/` is in one of three groups. The group is told by the stat
 
 The integration tier, taken alone, reaches every line, region and function of the second group. The unit tier, taken alone, reaches every line, region and function of the third group: where a function of the third group calls one of the second, a unit test gives it a test double. The three tiers together reach all of `src/`. Nothing else is asked of a tier alone.
 
-CI holds the unit tier to this with `assert-coverage-of-the-unit-tier`, and the three tiers together to all of `src/` with `assert-coverage`, both jobs of `.github/workflows/release.yml`. The check that holds the integration tier to the second group is asked for in #157, and until it exists nothing holds that tier alone.
+CI holds each of the two tiers to this, and the three tiers together to all of `src/`. The jobs that do it are read in `.github/workflows/release.yml`.
 
 **Why:** The user decided all of this on 2026-11-22:
 
@@ -64,7 +64,7 @@ What is mine, and not the user's:
 
 - A new test goes in the lowest tier that can show what it checks.
 - A unit test uses none of the three: no `std::fs`, no temporary directory, no started program.
-- A new function of the second group gets integration tests that reach all of it, though no check asks for it yet, and a new function of the third group gets unit tests that reach all of it.
+- A new function of the second group gets integration tests that reach all of it, and a new function of the third group gets unit tests that reach all of it.
 - A function of the second group holds as little as it can besides its call: what decides and what computes goes in a function of its own, so that the unit tier holds it.
 - An end-to-end test puts nothing in the place of `docker`. What `cladenc` does when Docker fails in a chosen way is checked in the unit tier, with a test double.
 - Where the code, a workflow or another memory draws the tiers another way, the pyramid's definitions hold, and the other is corrected.
