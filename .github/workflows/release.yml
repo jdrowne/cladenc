@@ -712,7 +712,6 @@ jobs:
           -D clippy::self_named_module_files
           -D clippy::too_many_lines
   e2e-test-coverage:
-    name: e2e-test-coverage-share-${{ matrix.share }}
     needs:
       - build-coverage
       - cache-images
@@ -732,39 +731,20 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - env:
-          SHARE: ${{ matrix.share }}
-          SHARES: ${{ strategy.job-total }}
-          SHARE_INDEX: ${{ strategy.job-index }}
-        name: E2E tests, keeping their profiles
+      - name: E2E tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
           source coverage.env
-          profiles="$PWD/target/e2e-$SHARE-%p-%m.profraw"
-          export LLVM_PROFILE_FILE="$profiles"
-          tests="$(cat target/test-e2e)"
-          "$tests" --list --format terse |
-            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
-              "$TESTS_OF_THE_SHARE" > share.txt
-          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
-            < share.txt
-          tar -cf "profiles-e2e-$SHARE.tar" target/*.profraw
+          export LLVM_PROFILE_FILE="$PWD/target/e2e-%p-%m.profraw"
+          "$(cat target/test-e2e)" --test-threads 8
+          tar -cf profiles-e2e.tar target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-e2e-${{ matrix.share }}
-          path: profiles-e2e-${{ matrix.share }}.tar
+          name: coverage-e2e
+          path: profiles-e2e.tar
           retention-days: 1
-    strategy:
-      fail-fast: false
-      matrix:
-        share:
-          - 1
-          - 2
-          - 3
-          - 4
   e2e-test-debug:
-    name: e2e-test-debug-share-${{ matrix.share }}
     needs:
       - build-debug
       - cache-images
@@ -784,26 +764,10 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - env:
-          SHARES: ${{ strategy.job-total }}
-          SHARE_INDEX: ${{ strategy.job-index }}
-        name: E2E tests
+      - name: E2E tests
         run: |
           tar -xf debug.tar
-          tests=target/debug/test-e2e
-          "$tests" --list --format terse |
-            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
-              "$TESTS_OF_THE_SHARE" > share.txt
-          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
-            < share.txt
-    strategy:
-      fail-fast: false
-      matrix:
-        share:
-          - 1
-          - 2
-          - 3
-          - 4
+          target/debug/test-e2e --test-threads 8
   integration-test-coverage:
     name: integration-test-coverage-share-${{ matrix.share }}
     needs:
