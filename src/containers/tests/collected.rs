@@ -77,6 +77,9 @@ fn the_collect_commands_run_for_a_harness_that_was_stopped() {
 #[test]
 fn an_attempt_whose_task_names_no_collect_command_keeps_nothing_of_one() {
     let tried = attempted(Double::default(), &[]);
-    let collected = tried.outputs_directory.attempt(0, TASK).join("collect");
+    let collected = tried
+        .outputs_directory
+        .attempt(0, TASK)
+        .join("collection-hooks");
     assert!(!tried.directory.exists(collected));
 }

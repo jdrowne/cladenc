@@ -586,8 +586,8 @@ fn what_a_collect_command_prints_is_kept_in_a_directory_named_by_its_place_among
     assert_eq!(
         [&asked[9].kept, &asked[10].kept],
         [
-            &tried.running().join("collect/1"),
-            &tried.running().join("collect/2")
+            &tried.running().join("collection-hooks/1"),
+            &tried.running().join("collection-hooks/2")
         ]
     );
 }
@@ -603,7 +603,7 @@ fn a_collect_command_that_exits_with_a_status_other_than_zero_does_not_end_the_a
 fn a_collect_command_that_docker_does_not_run_names_the_file_that_holds_what_docker_said() {
     let docker = Double::default().answering(&COLLECT, &[Answer::Exited(125)]);
     let tried = attempted_with(docker, collecting(&[None]));
-    let said = tried.running().join("collect/1/stderr");
+    let said = tried.running().join("collection-hooks/1/stderr");
     assert!(matches!(&tried.result, Err(ContainerError::Docker(kept)) if *kept == said));
 }
 

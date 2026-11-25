@@ -181,9 +181,9 @@ fn the_instruction_says_where_what_was_left_at_the_paths_the_task_lists_under_ar
 #[test]
 fn the_instruction_says_where_what_the_commands_of_the_task_printed_is() {
     assert!(containers::INSTRUCTION.contains(
-        " the directory named collect holds what the commands that the task runs before those \
-         paths are kept printed, one directory for each, where it runs any, the files named \
-         stdout and stderr hold what you printed, "
+        " the directory named collection-hooks holds what the commands that the task runs before \
+         those paths are kept printed, one directory for each, where it runs any, the files \
+         named stdout and stderr hold what you printed, "
     ));
 }
 

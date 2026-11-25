@@ -169,7 +169,7 @@ fn a_command_under_collect_is_run_where_the_harness_worked_before_the_paths_are_
 #[test]
 fn a_command_under_collect_is_run_as_the_user_of_the_environment_where_it_names_none() {
     let attempted = attempted(&collecting(&["id -u"]), WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "collect/1/stdout"), "0\n");
+    assert_eq!(kept(&attempted, "collection-hooks/1/stdout"), "0\n");
 }
 
 #[test]
@@ -178,5 +178,5 @@ fn a_command_under_collect_is_run_as_the_user_its_entry_names() {
         "[[verifier.collect]]\ncommand = \"id -u\"\nuser = 1000\n",
         WRITE_A_REPORT,
     );
-    assert_eq!(kept(&attempted, "collect/1/stdout"), "1000\n");
+    assert_eq!(kept(&attempted, "collection-hooks/1/stdout"), "1000\n");
 }

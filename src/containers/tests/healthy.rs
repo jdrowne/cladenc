@@ -134,7 +134,7 @@ fn an_attempt_whose_task_is_never_healthy_keeps_no_result() {
 #[test]
 fn a_task_that_is_never_healthy_leaves_nothing_of_a_harness_that_was_never_started() {
     let tried = checked(never_healthy(), 1);
-    let left = ["ending", "changes", "work", "collect", "artifacts"]
+    let left = ["ending", "changes", "work", "collection-hooks", "artifacts"]
         .map(|left| tried.directory.exists(tried.running().join(left)));
     assert_eq!(left, [false; 5]);
 }

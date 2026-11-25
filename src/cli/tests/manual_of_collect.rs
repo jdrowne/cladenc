@@ -29,9 +29,9 @@ fn the_manual_of_start_says_what_a_task_that_lists_logs_artifacts_itself_gets() 
 #[test]
 fn the_manual_of_start_says_when_the_commands_under_collect_are_run() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where the task.toml of a task lists commands under verifier.collect, cladenc runs each in \
-         the container of the harness once the harness has ended or was stopped, before it keeps \
-         any path, in the order the task lists them."
+        "Where the task.toml of a task lists commands under verifier.collect, which Harbor calls \
+         collection hooks, cladenc runs each in the container of the harness once the harness has \
+         ended or was stopped, before it keeps any path, in the order the task lists them."
     ));
 }
 
@@ -63,8 +63,8 @@ fn the_manual_of_start_says_that_a_command_under_collect_that_fails_ends_no_atte
 #[test]
 fn the_manual_of_start_says_where_what_a_command_under_collect_printed_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "collect in the directory of the attempt keeps what each command printed, in a directory \
-         named after the place of the command in the list, counted from 1."
+        "collection-hooks in the directory of the attempt keeps what each command printed, in a \
+         directory named after the place of the command in the list, counted from 1."
     ));
 }
 
@@ -77,9 +77,9 @@ fn the_manual_of_start_names_the_commands_under_collect_among_what_cladenc_obeys
 }
 
 #[test]
-fn the_manual_of_start_names_collect_among_what_an_attempt_keeps() {
+fn the_manual_of_start_names_collection_hooks_among_what_an_attempt_keeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "collect what each command under verifier.collect printed, in a directory named after its \
-         place in the list, where the task lists any"
+        "collection-hooks what each command under verifier.collect printed, in a directory named \
+         after its place in the list, where the task lists any"
     ));
 }

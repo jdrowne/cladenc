@@ -50,10 +50,10 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     working directory of the task, the file named changes lists every path you added, changed or \
     removed in the container of the task, one to a line after A, C or D, the directory named \
     artifacts holds what you left at the paths that the task names to be kept, where it names \
-    any, and what you left in /logs/artifacts, in logs/artifacts, the directory named collect \
-    holds what the commands that the task runs before those paths are kept printed, one \
-    directory for each, where it runs any, the files named stdout and stderr hold what you \
-    printed, the \
+    any, and what you left in /logs/artifacts, in logs/artifacts, the directory named \
+    collection-hooks holds what the commands that the task runs before those paths are kept \
+    printed, one directory for each, where it runs any, the files named stdout and stderr hold \
+    what you printed, the \
     directory named grader holds what the grader of the task printed, in the files named stdout \
     and stderr, and the files it left in logs/verifier, and the directory named health-check \
     holds what the health check of the environment of the task printed the last time it ran, in \
@@ -86,7 +86,7 @@ const WORK: &str = "/var/opt/cladenc/work";
 const ATTEMPTS: &str = "/var/log/cladenc/attempts";
 const HEALTH_CHECK: &str = "health-check";
 const ARTIFACTS: &str = "artifacts";
-const COLLECT: &str = "collect";
+const COLLECTION_HOOKS: &str = "collection-hooks";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Launch<'a> {
@@ -464,7 +464,7 @@ impl Attempting<'_> {
         collect::run(
             &up,
             &environment.configuration.collect_commands,
-            &self.running.join(COLLECT),
+            &self.running.join(COLLECTION_HOOKS),
             stop,
         )?;
         artifacts::keep(

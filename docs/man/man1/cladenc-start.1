@@ -866,9 +866,10 @@ run as root saves a file there as well.
 A task that lists /logs/artifacts itself, or a path that is kept at the same
 place, has that entry obeyed in its place.
 .PP
-Where the task.toml of a task lists commands under verifier.collect, cladenc
-runs each in the container of the harness once the harness has ended or was
-stopped, before it keeps any path, in the order the task lists them.
+Where the task.toml of a task lists commands under verifier.collect, which
+Harbor calls collection hooks, cladenc runs each in the container of the
+harness once the harness has ended or was stopped, before it keeps any path,
+in the order the task lists them.
 A command is run as the harness is, under the same timer and in the working
 directory of the environment, as the user its entry names as user, or the user
 of the environment where it names none.
@@ -877,8 +878,9 @@ it gives none.
 A command that exits with another status than 0, or runs past its time limit,
 does not end the attempt: the next command is run, and the paths are kept as
 they then are.
-collect in the directory of the attempt keeps what each command printed, in a
-directory named after the place of the command in the list, counted from 1.
+collection\-hooks in the directory of the attempt keeps what each command
+printed, in a directory named after the place of the command in the list,
+counted from 1.
 .SH GRADERS IN A CONTAINER OF THEIR OWN
 Where the task.toml of a task says that its grader runs separately, cladenc
 runs the grader in a container of its own, which holds nothing of the
@@ -1174,44 +1176,44 @@ completes more of such tasks may only be better at drawing that out.
 attempts in the outputs directory keeps every attempt at a task that is not
 held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
-.TP 15n
+.TP 18n
 \fBresult\fP
 one word: completed, not_completed or timed_out
-.TP 15n
+.TP 18n
 \fBending\fP
 one word: ended, or stopped where the harness ran past its time limit
-.TP 15n
+.TP 18n
 \fBspecification\fP
 the task specification
-.TP 15n
+.TP 18n
 \fBwork\fP
 what the harness left in the working directory of the environment, not kept
 where that directory is /
-.TP 15n
+.TP 18n
 \fBchanges\fP
 every path the harness added, changed or removed in the container, one to a
 line after A, C or D
-.TP 15n
+.TP 18n
 \fBartifacts\fP
 what the harness left at the paths the task lists under artifacts, where it
 lists any, and in /logs/artifacts
-.TP 15n
-\fBcollect\fP
+.TP 18n
+\fBcollection\-hooks\fP
 what each command under verifier.collect printed, in a directory named after
 its place in the list, where the task lists any
-.TP 15n
+.TP 18n
 \fBstdout\fP
 the standard output of the harness
-.TP 15n
+.TP 18n
 \fBstderr\fP
 the standard error of the harness
-.TP 15n
+.TP 18n
 \fBgrader\fP
 the standard output and the standard error of the grader, in stdout and
 stderr, and in logs/verifier what the grader left in /logs/verifier, its score
 among them; where the grader ran in a container of its own with a health
 check, what the last run of that printed, in health\-check
-.TP 15n
+.TP 18n
 \fBhealth\-check\fP
 the standard output and the standard error of the last run of the health
 check, in stdout and stderr, where the task gives one
