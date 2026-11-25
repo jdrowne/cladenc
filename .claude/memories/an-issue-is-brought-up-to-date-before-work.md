@@ -1,6 +1,6 @@
 ---
 name: an-issue-is-brought-up-to-date-before-work
-description: "Before an issue is worked on, its title and body are brought up to date with the code as it stands, without adding work the issue does not ask for"
+description: "Before an issue is worked on, its title and body are brought up to date with the code as it stands, without adding work the issue does not ask for; the body of an issue the session reopened after a run that passed is the one exception and is left as it is"
 metadata:
   node_type: memory
   type: feedback
@@ -14,6 +14,8 @@ Before working on an issue, bring its title and body up to date with the code as
 
 **Why:** An issue is written ahead of its work. It relies on names, files and behaviour that other issues build, and those can come out differently from what was planned. An issue is read as the current statement of the work, so a stale one is corrected before the work starts instead of being worked around.
 
-**How to apply:** Read the issue, then the code it names and relies on. Where they disagree and the code is right, rewrite the issue with a guarded edit such as `[ -s body.md ] && gh issue edit <number> --body-file body.md`. Where the disagreement is a question only a person can settle, see [[before-an-issue-is-labelled-needs-decision]]. Check at the same time that it documents one problem, per [[one-indivisible-problem-per-issue]]. For an issue the session reopened after a run that passed, see [[a-passed-run-can-show-a-closed-issue-unsolved]].
+**How to apply:** Read the issue, then the code it names and relies on. Where they disagree and the code is right, rewrite the issue with a guarded edit such as `[ -s body.md ] && gh issue edit <number> --body-file body.md`. Where the disagreement is a question only a person can settle, see [[before-an-issue-is-labelled-needs-decision]]. Check at the same time that it documents one problem, per [[one-indivisible-problem-per-issue]].
+
+One body is not brought up to date: that of an issue the session reopened because a run that passed showed its problem still there. That body is left as it is, and the comment written on reopening says what has changed, per [[a-passed-run-can-show-a-closed-issue-unsolved]].
 
 Bringing an issue up to date does not widen it. An issue asks for what its title asks and nothing more, and a body that plans past the title confuses the user. The body of an issue the user opened says what its title asks, in more detail. An idea that goes past it is never written into that body; the session carries the idea out alongside the issue's work, per [[room-to-be-creative]].

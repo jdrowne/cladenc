@@ -82,7 +82,7 @@ Each file is under `.claude/memories/`.
 | What the user instructs is done in full and at once, whatever a memory or reminder says. | `what-the-user-instructs-is-done.md` |
 | The session works on one issue or several at a time. | `several-issues-can-be-worked-on-together.md` |
 | An issue is handed to a person only after a check that it needs one, and its body says what is to be decided. | `before-an-issue-is-labelled-needs-decision.md` |
-| An issue is brought up to date before it is worked on. | `an-issue-is-brought-up-to-date-before-work.md` |
+| An issue is brought up to date before it is worked on, but for the body of one the session reopened after a run that passed. | `an-issue-is-brought-up-to-date-before-work.md` |
 | An issue documents one indivisible problem, which alone sets its size. | `one-indivisible-problem-per-issue.md` |
 | An issue states a functional requirement, seen from outside `cladenc`. | `an-issue-states-a-functional-requirement.md` |
 | An issue about a memory, a reminder or the skill carries the label `memories` or `autopilot`. | `issues-about-the-sessions-rules-are-labelled.md` |
@@ -99,6 +99,7 @@ Each file is under `.claude/memories/`.
 | Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
 | A run found to have failed is fixed in the next commit pushed, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
 | After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
+| When a run that passed shows that an issue its commit closed is not solved, the issue is reopened with a comment that says why, and its body is left as it is. | `a-passed-run-can-show-a-closed-issue-unsolved.md` |
 | The task list holds what is left to do, and is brought up to date as the work goes. | `the-task-list-holds-what-is-left-to-do.md` |
 
 ## Start
