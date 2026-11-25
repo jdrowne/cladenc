@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
+use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -36,9 +36,9 @@ fn settings() -> Settings {
     }
 }
 
-fn attempted(genealogy: &mut Genealogy, task: &str, result: AttemptResult) {
-    genealogy.start_attempt(0, task).unwrap();
-    genealogy.end_attempt(0, task, result).unwrap();
+fn trialled(genealogy: &mut Genealogy, task: &str, result: TrialResult) {
+    genealogy.start_trial(0, task).unwrap();
+    genealogy.end_trial(0, task, result).unwrap();
 }
 
 fn table(build: impl FnOnce(&mut Genealogy)) -> String {
@@ -51,9 +51,9 @@ fn table_with(seconds: &[Seconds], build: impl FnOnce(&mut Genealogy)) -> String
     Report::of(&settings(), &genealogy, seconds, Some(0)).table()
 }
 
-fn took(attempts: f64, procreation: Option<f64>) -> Seconds {
+fn took(trials: f64, procreation: Option<f64>) -> Seconds {
     Seconds {
-        attempts,
+        trials,
         procreation,
     }
 }
@@ -61,9 +61,9 @@ fn took(attempts: f64, procreation: Option<f64>) -> Seconds {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table_with(&[took(4.5, None)], |genealogy| {
-        attempted(genealogy, "benchmark/t1", AttemptResult::Completed);
-        attempted(genealogy, "benchmark/t4", AttemptResult::Completed);
-        attempted(genealogy, "benchmark/t5", AttemptResult::NotCompleted);
+        trialled(genealogy, "benchmark/t1", TrialResult::Completed);
+        trialled(genealogy, "benchmark/t4", TrialResult::Completed);
+        trialled(genealogy, "benchmark/t5", TrialResult::NotCompleted);
         genealogy.start_procreation(0).unwrap();
     });
     assert_eq!(
@@ -75,9 +75,9 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000        4.5              -\n\
-         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  procreation seconds\n\
+         0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000        4.5            -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n"
     );
 }
 
@@ -115,18 +115,18 @@ fn a_failed_harness_is_shown_as_failed() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n\
-         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0              30.3\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  procreation seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0            30.3\n"
     );
 }
 
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        attempted(genealogy, "benchmark/t1", AttemptResult::Completed);
-        attempted(genealogy, "benchmark/t2", AttemptResult::NotCompleted);
-        attempted(genealogy, "benchmark/t3", AttemptResult::NotCompleted);
+        trialled(genealogy, "benchmark/t1", TrialResult::Completed);
+        trialled(genealogy, "benchmark/t2", TrialResult::NotCompleted);
+        trialled(genealogy, "benchmark/t3", TrialResult::NotCompleted);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.333  "));
 }
@@ -159,7 +159,7 @@ fn the_seconds_of_a_procreation_are_printed_to_one_decimal_place() {
 }
 
 #[test]
-fn the_seconds_of_the_attempts_of_a_harness_are_printed_to_one_decimal_place() {
+fn the_seconds_of_the_trials_of_a_harness_are_printed_to_one_decimal_place() {
     let table = table_with(&[took(12.345, None)], |_| {});
     assert!(table.lines().nth(8).unwrap().contains("  12.3  "));
 }
@@ -195,8 +195,8 @@ fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_t
 #[test]
 fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_score() {
     let table = table(|genealogy| {
-        attempted(genealogy, "benchmark/t1", AttemptResult::NotCompleted);
-        attempted(genealogy, "benchmark/t4", AttemptResult::Completed);
+        trialled(genealogy, "benchmark/t1", TrialResult::NotCompleted);
+        trialled(genealogy, "benchmark/t4", TrialResult::Completed);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.000  "));
 }

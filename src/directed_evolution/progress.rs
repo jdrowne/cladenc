@@ -7,7 +7,7 @@ use super::action::{Ended, Told, carry_out};
 use super::said::{Retrying, say};
 use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::containers::{Attempted, ContainerError, Creation};
+use crate::containers::{ContainerError, Creation, Trialled};
 use crate::genealogy::{Experiment, Genealogy};
 use crate::journal::{Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
@@ -198,27 +198,27 @@ impl<'a> Progress<'a> {
                     outputs_directory,
                 });
             }
-            Ended::Attempted {
+            Ended::Trialled {
                 harness,
                 task,
-                attempted:
-                    Attempted {
+                trialled:
+                    Trialled {
                         result,
                         seconds,
                         ending,
                     },
             } => {
                 self.genealogy
-                    .end_attempt(harness, &task, result)
-                    .expect("an attempt that ended was started");
-                self.say(&Said::Attempted {
+                    .end_trial(harness, &task, result)
+                    .expect("a trial that ended was started");
+                self.say(&Said::Trialled {
                     harness,
                     task: &task,
                     result,
                     ending,
                     outputs_directory,
                 });
-                self.record(&Record::AttemptFinished {
+                self.record(&Record::TrialFinished {
                     harness,
                     task,
                     result,
@@ -256,7 +256,7 @@ impl<'a> Progress<'a> {
             say(
                 self.writer,
                 &Said::Finished {
-                    attempts: self.genealogy.started(),
+                    trials: self.genealogy.started(),
                     harnesses: self.genealogy.harness_count(),
                     best_harness,
                     directory: &found.directory,
@@ -276,15 +276,16 @@ impl<'a> Progress<'a> {
                 self.record(&Record::ProcreationStarted { child, progenitor });
                 Started::Procreation { child, progenitor }
             }
-            Action::Attempt { harness, task } => {
-                self.genealogy.start_attempt(harness, &task).expect(
-                    "a harness that attempts a task is created and has not been given the task",
+            Action::Trial { harness, task } => {
+                self.genealogy.start_trial(harness, &task).expect(
+                    "a harness that starts a trial on a task is created and has not been given \
+                     the task",
                 );
-                self.record(&Record::AttemptStarted {
+                self.record(&Record::TrialStarted {
                     harness,
                     task: task.clone(),
                 });
-                Started::Attempt { harness, task }
+                Started::Trial { harness, task }
             }
         };
         self.next_action = self.genealogy.actions_started();

@@ -4,7 +4,7 @@ use crate::containers::ContainerError;
 use crate::containers::container;
 use crate::containers::program::Ending;
 
-const RUNNING: &str = "/outputs/running/attempt-3-benchmark+t1";
+const RUNNING: &str = "/outputs/running/trial-3-benchmark+t1";
 
 fn said() -> PathBuf {
     Path::new(RUNNING).join("stderr")

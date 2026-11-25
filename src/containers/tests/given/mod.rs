@@ -5,9 +5,7 @@ use std::time::Duration;
 
 use crate::benchmark::{Benchmark, HealthCheck, TaskConfiguration};
 use crate::containers::tests::double::Double;
-use crate::containers::{
-    self, Attempt, Attempted, ContainerError, Environment, Host, Launch, Retry,
-};
+use crate::containers::{self, ContainerError, Environment, Host, Launch, Retry, Trial, Trialled};
 use crate::file_system::tests::double::Memory;
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
@@ -48,7 +46,7 @@ pub(super) struct Tried {
     pub(super) directory: Memory,
     pub(super) outputs_directory: OutputsDirectory,
     pub(super) docker: Double,
-    pub(super) result: Result<Attempted, ContainerError>,
+    pub(super) result: Result<Trialled, ContainerError>,
     pub(super) retries: Vec<Retry>,
 }
 
@@ -58,7 +56,7 @@ impl Tried {
     }
 
     pub(super) fn running(&self) -> PathBuf {
-        self.outputs_directory.running_attempt(0, TASK)
+        self.outputs_directory.running_trial(0, TASK)
     }
 }
 
@@ -128,11 +126,11 @@ pub(super) fn environment(configuration: TaskConfiguration) -> Environment {
     }
 }
 
-pub(super) fn attempted(docker: Double, launch: &Launch<'_>, environment: &Environment) -> Tried {
-    attempted_until(docker, launch, environment, &AtomicBool::new(false))
+pub(super) fn trialled(docker: Double, launch: &Launch<'_>, environment: &Environment) -> Tried {
+    trialled_until(docker, launch, environment, &AtomicBool::new(false))
 }
 
-pub(super) fn attempted_until(
+pub(super) fn trialled_until(
     docker: Double,
     launch: &Launch<'_>,
     environment: &Environment,
@@ -141,15 +139,15 @@ pub(super) fn attempted_until(
     let (directory, outputs_directory) = made();
     let docker = docker.on(&directory);
     let retries = RefCell::new(Vec::new());
-    let attempt = Attempt {
+    let trial = Trial {
         harness: 0,
         task: TASK,
         environment,
     };
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         host(&docker, &outputs_directory),
         launch,
-        attempt,
+        trial,
         stop,
         &|retry| retries.borrow_mut().push(retry),
     );

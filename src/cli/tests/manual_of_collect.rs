@@ -53,17 +53,17 @@ fn the_manual_of_start_says_what_time_limit_a_command_under_collect_has() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_command_under_collect_that_fails_ends_no_attempt() {
+fn the_manual_of_start_says_that_a_command_under_collect_that_fails_ends_no_trial() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "A command that exits with another status than 0, or runs past its time limit, does not \
-         end the attempt: the next command is run, and the paths are kept as they then are."
+         end the trial: the next command is run, and the paths are kept as they then are."
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_where_what_a_command_under_collect_printed_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "collection-hooks in the directory of the attempt keeps what each command printed, in a \
+        "collection-hooks in the directory of the trial keeps what each command printed, in a \
          directory named after the place of the command in the list, counted from 1."
     ));
 }
@@ -77,7 +77,7 @@ fn the_manual_of_start_names_the_commands_under_collect_among_what_cladenc_obeys
 }
 
 #[test]
-fn the_manual_of_start_names_collection_hooks_among_what_an_attempt_keeps() {
+fn the_manual_of_start_names_collection_hooks_among_what_a_trial_keeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "collection-hooks what each command under verifier.collect printed, in a directory named \
          after its place in the list, where the task lists any"

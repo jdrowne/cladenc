@@ -173,7 +173,7 @@ fn the_machine_is_asked_once_what_it_has_whatever_the_number_of_tasks_that_ask_f
 }
 
 #[test]
-fn a_task_that_asks_for_what_the_machine_has_is_attempted() {
+fn a_task_that_asks_for_what_the_machine_has_is_trialled() {
     let best = on_a_machine(TWO_CPUS).result.ok();
     assert_eq!(best.map(|found| found.best_harness), Some(0));
 }

@@ -66,7 +66,7 @@ fn killed_outright() -> Left {
     .unwrap();
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
-    let written = outputs.join("running/attempt-0-benchmark+t1/stdout");
+    let written = outputs.join("running/trial-0-benchmark+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &written, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     let status = cladenc.wait().unwrap();

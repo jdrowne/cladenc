@@ -7,7 +7,7 @@ use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
 use crate::containers::Launch;
 use crate::file_system::FileSystem;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 use crate::holdout::TaskSet;
 use crate::model::{self, Model};
 
@@ -157,14 +157,14 @@ pub(crate) enum Record {
         outcome: CreationOutcome,
         seconds: f64,
     },
-    AttemptStarted {
+    TrialStarted {
         harness: HarnessId,
         task: String,
     },
-    AttemptFinished {
+    TrialFinished {
         harness: HarnessId,
         task: String,
-        result: AttemptResult,
+        result: TrialResult,
         seconds: f64,
     },
     DirectedEvolutionFinished {

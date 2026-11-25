@@ -45,7 +45,7 @@ fn signalled(signal: Signal) -> ExitStatus {
         .unwrap();
     let id_file = directory
         .path()
-        .join("outputs/running/attempt-0-benchmark+t1/stdout");
+        .join("outputs/running/trial-0-benchmark+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
     cladenc.wait().unwrap()

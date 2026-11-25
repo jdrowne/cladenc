@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::benchmark::{Benchmark, SPECIFICATION};
 use crate::file_system::FileSystem;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
+use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 
 use copy::copy_tree;
 pub(crate) use copy::{holds_only_harness_files, make_removable, same_tree};
@@ -55,13 +55,13 @@ impl OutputsDirectory {
             .and_then(|()| files.make_directory(&path.join("harnesses")))
             .and_then(|()| files.make_directory(&path.join("procreations")))
             .and_then(|()| files.make_directory(&path.join("baselines")))
-            .and_then(|()| files.make_directory(&path.join("attempts")))
+            .and_then(|()| files.make_directory(&path.join("trials")))
             .and_then(|()| files.make_directory(&path.join("holdout")))
             .and_then(|()| files.make_directory(&path.join("running")))
             .and_then(|()| files.make_directory(&path.join("benchmarks")))
             .and_then(|()| files.resolved(primogenitor))
             .and_then(|resolved| copy_tree(files, &resolved, &self.harness(0)))
-            .and_then(|()| files.make_directory(&self.attempts(0)))
+            .and_then(|()| files.make_directory(&self.trials(0)))
     }
 
     pub fn path(&self) -> &Path {
@@ -135,19 +135,19 @@ impl OutputsDirectory {
         self.path.join("baselines").join(harness.to_string())
     }
 
-    pub fn attempts(&self, harness: HarnessId) -> PathBuf {
-        self.path.join("attempts").join(harness.to_string())
+    pub fn trials(&self, harness: HarnessId) -> PathBuf {
+        self.path.join("trials").join(harness.to_string())
     }
 
     fn holdout(&self, harness: HarnessId) -> PathBuf {
         self.path.join("holdout").join(harness.to_string())
     }
 
-    pub fn attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
+    pub fn trial(&self, harness: HarnessId, task: &str) -> PathBuf {
         if self.holdout_tasks.contains(task) {
             self.holdout(harness).join(task)
         } else {
-            self.attempts(harness).join(task)
+            self.trials(harness).join(task)
         }
     }
 
@@ -167,10 +167,10 @@ impl OutputsDirectory {
             .join(format!("baseline-{harness}"))
     }
 
-    pub fn running_attempt(&self, harness: HarnessId, task: &str) -> PathBuf {
+    pub fn running_trial(&self, harness: HarnessId, task: &str) -> PathBuf {
         self.path
             .join("running")
-            .join(format!("attempt-{harness}-{}", task.replace('/', "+")))
+            .join(format!("trial-{harness}-{}", task.replace('/', "+")))
     }
 
     pub fn start_procreation(&self, child: HarnessId, progenitor: HarnessId) -> io::Result<()> {
@@ -249,7 +249,7 @@ impl OutputsDirectory {
         self.files
             .rename(made, &self.harness(harness))
             .and_then(|()| match outcome {
-                CreationOutcome::Created => self.files.make_directory(&self.attempts(harness)),
+                CreationOutcome::Created => self.files.make_directory(&self.trials(harness)),
                 CreationOutcome::Unchanged
                 | CreationOutcome::Failed
                 | CreationOutcome::BuildFailed
@@ -292,9 +292,9 @@ impl OutputsDirectory {
             .map(|()| build)
     }
 
-    pub fn start_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
-        let running = self.running_attempt(harness, task);
-        let kept = self.attempt(harness, task);
+    pub fn start_trial(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+        let running = self.running_trial(harness, task);
+        let kept = self.trial(harness, task);
         let files = self.files();
         files
             .list(&self.harness(harness))
@@ -312,20 +312,15 @@ impl OutputsDirectory {
             })
     }
 
-    pub fn end_attempt(
-        &self,
-        harness: HarnessId,
-        task: &str,
-        result: AttemptResult,
-    ) -> io::Result<()> {
-        let running = self.running_attempt(harness, task);
+    pub fn end_trial(&self, harness: HarnessId, task: &str, result: TrialResult) -> io::Result<()> {
+        let running = self.running_trial(harness, task);
         let word = match result {
-            AttemptResult::Completed => "completed\n",
-            AttemptResult::NotCompleted => "not_completed\n",
-            AttemptResult::TimedOut => "timed_out\n",
+            TrialResult::Completed => "completed\n",
+            TrialResult::NotCompleted => "not_completed\n",
+            TrialResult::TimedOut => "timed_out\n",
         };
         self.note(&running.join("result"), word)
-            .and_then(|()| self.files.rename(&running, &self.attempt(harness, task)))
+            .and_then(|()| self.files.rename(&running, &self.trial(harness, task)))
     }
 
     pub(crate) fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
@@ -333,7 +328,7 @@ impl OutputsDirectory {
             self.running_procreation(child),
             self.harness(child),
             self.procreation(child),
-            self.attempts(child),
+            self.trials(child),
             self.build(child),
         ]
         .iter()
@@ -345,20 +340,17 @@ impl OutputsDirectory {
             self.running_baseline(harness),
             self.harness(harness),
             self.baseline(harness),
-            self.attempts(harness),
+            self.trials(harness),
             self.build(harness),
         ]
         .iter()
         .try_for_each(|left| remove_if_there(self.files(), left))
     }
 
-    pub(crate) fn discard_attempt(&self, harness: HarnessId, task: &str) -> io::Result<()> {
-        [
-            self.running_attempt(harness, task),
-            self.attempt(harness, task),
-        ]
-        .iter()
-        .try_for_each(|left| remove_if_there(self.files(), left))
+    pub(crate) fn discard_trial(&self, harness: HarnessId, task: &str) -> io::Result<()> {
+        [self.running_trial(harness, task), self.trial(harness, task)]
+            .iter()
+            .try_for_each(|left| remove_if_there(self.files(), left))
     }
 }
 

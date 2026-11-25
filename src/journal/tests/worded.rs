@@ -94,14 +94,14 @@ fn a_procreation_is_named_by_its_progenitor_and_its_child() {
 }
 
 #[test]
-fn an_attempt_is_named_by_its_harness_and_its_task() {
+fn a_trial_is_named_by_its_harness_and_its_task() {
     assert_eq!(
-        Started::Attempt {
+        Started::Trial {
             harness: 0,
             task: "t1".to_owned()
         }
         .to_string(),
-        "the attempt of harness 0 on task t1"
+        "the trial of harness 0 on task t1"
     );
 }
 

@@ -1,7 +1,7 @@
 use std::io;
 
 use super::Shared;
-use crate::containers::{self, Attempt, Attempted, ContainerError, Creation, Host, Retry};
+use crate::containers::{self, ContainerError, Creation, Host, Retry, Trial, Trialled};
 use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
@@ -26,10 +26,10 @@ pub(super) enum Ended {
         experiment: Experiment,
         creation: Creation,
     },
-    Attempted {
+    Trialled {
         harness: HarnessId,
         task: String,
-        attempted: Attempted,
+        trialled: Trialled,
     },
     Stopped,
     Failed {
@@ -82,10 +82,10 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                     creation,
                 })
         }
-        Started::Attempt { harness, task } => cleared
+        Started::Trial { harness, task } => cleared
             .and_then(|()| {
                 let environment = shared.environments.get(&task).cloned().unwrap_or_default();
-                let attempt = Attempt {
+                let trial = Trial {
                     harness,
                     task: &task,
                     environment: &environment,
@@ -97,12 +97,12 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                         retry,
                     });
                 };
-                containers::run_attempt(host, &shared.launch, attempt, &shared.halt, &retrying)
+                containers::run_trial(host, &shared.launch, trial, &shared.halt, &retrying)
             })
-            .map(|attempted| Ended::Attempted {
+            .map(|trialled| Ended::Trialled {
                 harness,
                 task,
-                attempted,
+                trialled,
             }),
     };
     match result {
@@ -116,6 +116,6 @@ pub(super) fn discard(outputs_directory: &OutputsDirectory, action: &Started) ->
     match action {
         Started::Procreation { child, .. } => outputs_directory.discard_procreation(*child),
         Started::Baseline { harness, .. } => outputs_directory.discard_baseline(*harness),
-        Started::Attempt { harness, task } => outputs_directory.discard_attempt(*harness, task),
+        Started::Trial { harness, task } => outputs_directory.discard_trial(*harness, task),
     }
 }

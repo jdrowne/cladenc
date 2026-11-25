@@ -112,7 +112,7 @@ fn a_task_whose_task_toml_cannot_be_obeyed_is_worded_with_its_task_and_why() {
                 variable: "TOKEN".to_owned(),
             },
         }),
-        "task benchmark/t1 cannot be attempted: its task.toml gives API_TOKEN under \
+        "task benchmark/t1 cannot be given a trial: its task.toml gives API_TOKEN under \
          environment.env the value of TOKEN, which is not set where cladenc runs"
     );
 }
@@ -124,7 +124,7 @@ fn a_task_whose_copy_holds_no_task_toml_is_worded_with_its_task() {
             task: "benchmark/t1".to_owned(),
             error: ConfigurationError::Missing,
         }),
-        "task benchmark/t1 cannot be attempted: its task.toml is not there"
+        "task benchmark/t1 cannot be given a trial: its task.toml is not there"
     );
 }
 
@@ -229,17 +229,17 @@ fn a_directed_evolution_whose_primogenitor_took_too_long_to_build_says_so() {
 }
 
 #[test]
-fn a_directed_evolution_an_attempt_stopped_names_the_harness_and_the_task() {
+fn a_directed_evolution_a_trial_stopped_names_the_harness_and_the_task() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
-            action: Started::Attempt {
+            action: Started::Trial {
                 harness: 0,
                 task: "t1".to_owned()
             },
             error: ContainerError::Exit(2)
         }),
         "the directed evolution stopped before its end: \
-         the attempt of harness 0 on task t1 exited with status 2"
+         the trial of harness 0 on task t1 exited with status 2"
     );
 }
 
@@ -279,19 +279,19 @@ fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_har
 fn a_directed_evolution_that_a_verifier_s_health_check_stopped_says_precisely_what_happened() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
-            action: Started::Attempt {
+            action: Started::Trial {
                 harness: 3,
                 task: "parsing/t1".to_owned()
             },
             error: ContainerError::VerifierHealthCheck {
                 tries: 4,
-                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/verifier/health-check"),
+                kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/verifier/health-check"),
             }
         }),
-        "the directed evolution stopped before its end: the attempt of harness 3 on task \
+        "the directed evolution stopped before its end: the trial of harness 3 on task \
          parsing/t1 was not verified: the health check of its verifier container did not \
          pass in 4 tries, so the verifier was not run, and \
-         /outputs/running/attempt-3-parsing+t1/verifier/health-check holds what the health check \
+         /outputs/running/trial-3-parsing+t1/verifier/health-check holds what the health check \
          printed the last time it ran"
     );
 }
@@ -300,18 +300,18 @@ fn a_directed_evolution_that_a_verifier_s_health_check_stopped_says_precisely_wh
 fn a_directed_evolution_that_a_task_s_health_check_stopped_says_precisely_what_happened() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
-            action: Started::Attempt {
+            action: Started::Trial {
                 harness: 3,
                 task: "parsing/t1".to_owned()
             },
             error: ContainerError::TaskHealthCheck {
                 tries: 4,
-                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/health-check"),
+                kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/health-check"),
             }
         }),
-        "the directed evolution stopped before its end: the attempt of harness 3 on task \
+        "the directed evolution stopped before its end: the trial of harness 3 on task \
          parsing/t1 was not carried out: the health check of the task did not pass in 4 tries, \
-         so the harness was not started, and /outputs/running/attempt-3-parsing+t1/health-check \
+         so the harness was not started, and /outputs/running/trial-3-parsing+t1/health-check \
          holds what the health check printed the last time it ran"
     );
 }

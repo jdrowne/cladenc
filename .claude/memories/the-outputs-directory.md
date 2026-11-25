@@ -18,7 +18,7 @@ The directory that `cladenc start` creates and a directed evolution writes into 
 
 - Say outputs directory in replies, issues, commits, the README and the help text, and write the flag as `--outputs-dir <DIR>`.
 - In the code the module is `src/outputs_directory/mod.rs`, its type is `OutputsDirectory`, and a value that holds its path is `outputs_directory`, or `outputs_dir` where it is the field of a flag. A test names its example directory `outputs`.
-- What it is: a directory on the person's own machine, `cladenc start` creates it, and `cladenc` puts there the source code of every harness, what each attempt and each procreation left, and the journal. A container sees only the parts of it that `cladenc` mounts into it, under the paths of [[paths-follow-the-linux-filesystem-convention]].
+- What it is: a directory on the person's own machine, `cladenc start` creates it, and `cladenc` puts there the source code of every harness, what each trial and each procreation left, and the journal. A container sees only the parts of it that `cladenc` mounts into it, under the paths of [[paths-follow-the-linux-filesystem-convention]].
 - The first record of the journal keeps the name run record.
 
 Related: [[a-flag-is-not-called-an-option]].

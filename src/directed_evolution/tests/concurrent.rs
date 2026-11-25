@@ -29,13 +29,13 @@ fn most_running_at_once(records: &[Record]) -> usize {
         match record {
             Record::ProcreationStarted { .. }
             | Record::BaselineStarted { .. }
-            | Record::AttemptStarted { .. } => {
+            | Record::TrialStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
             Record::ProcreationFinished { .. }
             | Record::BaselineFinished { .. }
-            | Record::AttemptFinished { .. } => running -= 1,
+            | Record::TrialFinished { .. } => running -= 1,
             Record::Run { .. }
             | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}
@@ -53,10 +53,10 @@ fn most_running_as_a_procreation_starts(records: &[Record]) -> Option<usize> {
                 most = most.max(Some(running));
                 running += 1;
             }
-            Record::BaselineStarted { .. } | Record::AttemptStarted { .. } => running += 1,
+            Record::BaselineStarted { .. } | Record::TrialStarted { .. } => running += 1,
             Record::ProcreationFinished { .. }
             | Record::BaselineFinished { .. }
-            | Record::AttemptFinished { .. } => running -= 1,
+            | Record::TrialFinished { .. } => running -= 1,
             Record::Run { .. }
             | Record::PrimogenitorBuilt
             | Record::DirectedEvolutionFinished { .. } => {}
@@ -69,7 +69,7 @@ fn count(records: &[Record], counted: impl Fn(&Record) -> bool) -> usize {
     records.iter().filter(|record| counted(record)).count()
 }
 
-fn fewest_tasks_a_progenitor_had_attempted(records: &[Record]) -> Option<usize> {
+fn fewest_tasks_a_progenitor_had_trialled(records: &[Record]) -> Option<usize> {
     records
         .iter()
         .enumerate()
@@ -78,7 +78,7 @@ fn fewest_tasks_a_progenitor_had_attempted(records: &[Record]) -> Option<usize> 
                 Some(count(&records[..place], |earlier| {
                     matches!(
                         earlier,
-                        Record::AttemptFinished { harness, .. } if harness == progenitor
+                        Record::TrialFinished { harness, .. } if harness == progenitor
                     )
                 }))
             }
@@ -93,12 +93,12 @@ fn with_a_limit_of_three_the_journal_holds_three_actions_started_and_not_finishe
 }
 
 #[test]
-fn with_a_limit_of_three_the_journal_still_holds_one_attempt_of_every_task_by_each_harness() {
+fn with_a_limit_of_three_the_journal_still_holds_one_trial_of_every_task_by_each_harness() {
     let records = records(three_at_once);
     assert_eq!(
         count(&records, |record| matches!(
             record,
-            Record::AttemptStarted { .. }
+            Record::TrialStarted { .. }
         )),
         10
     );
@@ -125,7 +125,7 @@ fn with_a_limit_of_three_a_procreation_starts_only_when_nothing_else_runs() {
 #[test]
 fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_benchmarked_in_full() {
     assert_eq!(
-        fewest_tasks_a_progenitor_had_attempted(&records(two_at_once)),
+        fewest_tasks_a_progenitor_had_trialled(&records(two_at_once)),
         Some(5)
     );
 }

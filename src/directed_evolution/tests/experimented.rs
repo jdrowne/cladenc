@@ -25,7 +25,7 @@ fn twice_over_three_tasks(directory: &Memory, settings: &mut Settings) {
 fn working() -> Double {
     Double::default()
         .changing()
-        .verifying(|attempt| attempt == "attempt-2-benchmark+t3")
+        .verifying(|trial| trial == "trial-2-benchmark+t3")
 }
 
 fn experimented() -> Evolved {
@@ -62,21 +62,21 @@ fn a_baseline_is_established_at_the_procreation_of_a_harness_other_than_the_prim
     assert_eq!(
         experimented().starts(),
         [
-            "attempt of 0",
-            "attempt of 0",
-            "attempt of 0",
+            "trial of 0",
+            "trial of 0",
+            "trial of 0",
             "procreation of 1 by 0",
-            "attempt of 1",
-            "attempt of 1",
-            "attempt of 1",
+            "trial of 1",
+            "trial of 1",
+            "trial of 1",
             "procreation of 2 by 1",
             "baseline of 3 for 2 from 1",
-            "attempt of 2",
-            "attempt of 2",
-            "attempt of 2",
-            "attempt of 3",
-            "attempt of 3",
-            "attempt of 3",
+            "trial of 2",
+            "trial of 2",
+            "trial of 2",
+            "trial of 3",
+            "trial of 3",
+            "trial of 3",
         ]
     );
 }
@@ -123,7 +123,7 @@ fn a_directed_evolution_says_last_how_many_harnesses_it_holds_with_the_singleton
     assert_eq!(
         evolved.lines().last(),
         Some(&format!(
-            "cladenc: the directed evolution finished with 12 attempts started and 4 harnesses: \
+            "cladenc: the directed evolution finished with 12 trials started and 4 harnesses: \
              its best harness is harness 0, kept in {}",
             evolved.outputs().join("harnesses/0").display()
         ))
@@ -173,13 +173,13 @@ fn a_resumed_directed_evolution_counts_the_singleton_control_group_harness_among
 }
 
 #[test]
-fn a_child_that_would_be_the_progenitor_s_copy_as_it_was_attempts_no_task() {
+fn a_child_that_would_be_the_progenitor_s_copy_as_it_was_trials_no_task() {
     assert_eq!(
         changing_nothing().starts(),
         [
-            "attempt of 0",
-            "attempt of 0",
-            "attempt of 0",
+            "trial of 0",
+            "trial of 0",
+            "trial of 0",
             "procreation of 1 by 0",
             "procreation of 2 by 0",
         ]
@@ -222,22 +222,22 @@ fn what_a_procreation_that_changed_nothing_left_is_kept_among_the_harnesses() {
 }
 
 #[test]
-fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_attempts_no_task() {
+fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_trials_no_task() {
     assert_eq!(
         leaving_the_copy_of_the_baseline_as_it_was().starts(),
         [
-            "attempt of 0",
-            "attempt of 0",
-            "attempt of 0",
+            "trial of 0",
+            "trial of 0",
+            "trial of 0",
             "procreation of 1 by 0",
-            "attempt of 1",
-            "attempt of 1",
-            "attempt of 1",
+            "trial of 1",
+            "trial of 1",
+            "trial of 1",
             "procreation of 2 by 1",
             "baseline of 3 for 2 from 1",
-            "attempt of 2",
-            "attempt of 2",
-            "attempt of 2",
+            "trial of 2",
+            "trial of 2",
+            "trial of 2",
         ]
     );
 }

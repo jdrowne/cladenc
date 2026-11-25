@@ -26,7 +26,7 @@ pub enum GenealogyError {
         harness: HarnessId,
         task: String,
     },
-    AttemptNotRunning {
+    TrialNotRunning {
         harness: HarnessId,
         task: String,
     },
@@ -59,15 +59,16 @@ impl Display for GenealogyError {
             ),
             Self::HarnessNotCreated { harness } => write!(
                 formatter,
-                "harness {harness} cannot attempt a task because it is not a created harness"
+                "harness {harness} cannot start a trial on a task because it is not a created \
+                 harness"
             ),
             Self::TaskAlreadyGiven { harness, task } => write!(
                 formatter,
                 "harness {harness} has already been given task {task}"
             ),
-            Self::AttemptNotRunning { harness, task } => write!(
+            Self::TrialNotRunning { harness, task } => write!(
                 formatter,
-                "no attempt of harness {harness} on task {task} is running"
+                "no trial of harness {harness} on task {task} is running"
             ),
         }
     }

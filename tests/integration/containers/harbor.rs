@@ -6,7 +6,7 @@ use std::time::Duration;
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
+use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -26,20 +26,20 @@ const SAVE_A_REPORT: &str = "echo found > /logs/artifacts/report.json";
 const PLANT_WHERE_TESTS_POINTS: &str = "mkdir -p /var/opt/cladenc/harbor/tests && echo planted > \
                                         /var/opt/cladenc/harbor/tests/planted.sh";
 
-struct Attempted {
+struct Trialled {
     _directory: TempDir,
     _built: Image,
     outputs_directory: OutputsDirectory,
-    result: Result<containers::Attempted, ContainerError>,
+    result: Result<containers::Trialled, ContainerError>,
 }
 
 struct Asked {
-    attempted: Attempted,
+    trialled: Trialled,
     of_the_harness: &'static [&'static str],
     of_the_verifier: &'static [&'static str],
 }
 
-fn attempted_in(steps: &str, run_command: &str, verifier: &str) -> Attempted {
+fn trialled_in(steps: &str, run_command: &str, verifier: &str) -> Trialled {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -90,13 +90,13 @@ fn attempted_in(steps: &str, run_command: &str, verifier: &str) -> Attempted {
         },
         verifier: None,
     };
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &environment,
@@ -104,7 +104,7 @@ fn attempted_in(steps: &str, run_command: &str, verifier: &str) -> Attempted {
         &stop,
         &|_| (),
     );
-    Attempted {
+    Trialled {
         _directory: directory,
         _built: image,
         outputs_directory,
@@ -112,8 +112,8 @@ fn attempted_in(steps: &str, run_command: &str, verifier: &str) -> Attempted {
     }
 }
 
-fn kept(attempted: &Attempted, file: &str) -> String {
-    fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
+fn kept(trialled: &Trialled, file: &str) -> String {
+    fs::read_to_string(trialled.outputs_directory.trial(0, TASK).join(file)).unwrap()
 }
 
 fn asked_in(
@@ -122,7 +122,7 @@ fn asked_in(
     of_the_verifier: &'static [&'static str],
 ) -> Asked {
     Asked {
-        attempted: attempted_in(
+        trialled: trialled_in(
             steps,
             &test_inputs::one_after_another(of_the_harness),
             &test_inputs::one_after_another(of_the_verifier),
@@ -190,7 +190,7 @@ fn printed_by_the_harness(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
         asked.of_the_harness,
-        &kept(&asked.attempted, "stdout"),
+        &kept(&asked.trialled, "stdout"),
     )
 }
 
@@ -198,19 +198,19 @@ fn printed_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
         asked.of_the_verifier,
-        &kept(&asked.attempted, "verifier/stdout"),
+        &kept(&asked.trialled, "verifier/stdout"),
     )
 }
 
 fn printed_by_the_verifier_in(steps: &str, run_command: &str, verifier: &str) -> String {
     kept(
-        &attempted_in(steps, run_command, verifier),
+        &trialled_in(steps, run_command, verifier),
         "verifier/stdout",
     )
 }
 
-fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
-    attempted.result.as_ref().ok().map(|ended| ended.result)
+fn result_of(trialled: &Trialled) -> Option<TrialResult> {
+    trialled.result.as_ref().ok().map(|ended| ended.result)
 }
 
 #[test]
@@ -238,10 +238,10 @@ fn logs_artifacts_belongs_to_the_user_the_harness_runs_as() {
 }
 
 #[test]
-fn what_a_harness_that_does_not_run_as_root_saved_in_logs_artifacts_is_kept_with_the_attempt() {
+fn what_a_harness_that_does_not_run_as_root_saved_in_logs_artifacts_is_kept_with_the_trial() {
     assert_eq!(
         kept(
-            &AS_A_USER_AND_LOOKED_AT.attempted,
+            &AS_A_USER_AND_LOOKED_AT.trialled,
             "artifacts/logs/artifacts/report.json"
         ),
         "found\n"
@@ -274,7 +274,7 @@ fn logs_that_the_environment_of_the_task_holds_is_left_as_it_is() {
 fn logs_artifacts_is_made_in_the_logs_that_the_environment_of_the_task_holds() {
     assert_eq!(
         kept(
-            &HOLDING_LOGS_AND_LOOKED_AT.attempted,
+            &HOLDING_LOGS_AND_LOOKED_AT.trialled,
             "artifacts/logs/artifacts/report.json"
         ),
         "found\n"
@@ -295,8 +295,8 @@ fn nothing_is_made_under_var_log_where_the_environment_of_the_task_holds_logs() 
 #[test]
 fn the_verifier_scores_in_the_logs_that_the_environment_of_the_task_holds() {
     assert_eq!(
-        result_of(&HOLDING_LOGS_AND_LOOKED_AT.attempted),
-        Some(AttemptResult::Completed)
+        result_of(&HOLDING_LOGS_AND_LOOKED_AT.trialled),
+        Some(TrialResult::Completed)
     );
 }
 
@@ -387,7 +387,7 @@ fn the_verifier_finds_logs_and_tests_at_the_top_of_the_filesystem_as_symbolic_li
 }
 
 #[test]
-fn the_container_of_an_attempt_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
+fn the_container_of_a_trial_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
     assert_eq!(
         printed_by_the_harness(
             &AS_ROOT_AND_LOOKED_AT,

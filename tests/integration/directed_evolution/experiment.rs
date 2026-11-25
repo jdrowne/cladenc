@@ -9,7 +9,7 @@ use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
-const A_PROGENITOR_THAT_PROCREATES_BETTER_THAN_THE_PRIMOGENITOR: &str = r#"if [ -d /var/log/cladenc/attempts ]
+const A_PROGENITOR_THAT_PROCREATES_BETTER_THAN_THE_PRIMOGENITOR: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   [ -e "$CLADENC_HARNESS/improved" ] && echo t3 >> solved
   echo improved >> improved

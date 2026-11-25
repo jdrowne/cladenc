@@ -8,7 +8,7 @@ use crate::containers::tests::given::{
     VERIFIER_EMPTIED,
 };
 use crate::containers::{Checked, ContainerError, Environment, Launch, Retry, VerifierImage};
-use crate::genealogy::AttemptResult;
+use crate::genealogy::TrialResult;
 
 const RETRIED: Launch<'static> = Launch {
     max_verifier_health_check_retries: 1,
@@ -22,7 +22,7 @@ const VERIFIER: [&str; 2] = ["exec", "/tests/test.sh"];
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const REMOVED: &str = "docker rm --force NAME";
 const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
-const GIVEN: &str = "OUTPUTS/running/attempt-0-benchmark+t1/given-to-the-verifier";
+const GIVEN: &str = "OUTPUTS/running/trial-0-benchmark+t1/given-to-the-verifier";
 const BROUGHT_UP: &str = "docker run --rm --pull never --name NAME --label \
                           cladenc.directed-evolution=OUTPUTS --add-host \
                           host.docker.internal:host-gateway";
@@ -42,11 +42,11 @@ fn verified_apart(docker: Double) -> Tried {
 }
 
 fn verified_with(docker: Double, configuration: TaskConfiguration) -> Tried {
-    given::attempted(docker, &LAUNCH, &apart(true, configuration))
+    given::trialled(docker, &LAUNCH, &apart(true, configuration))
 }
 
-fn result_of(tried: &Tried) -> Option<AttemptResult> {
-    tried.result.as_ref().ok().map(|attempted| attempted.result)
+fn result_of(tried: &Tried) -> Option<TrialResult> {
+    tried.result.as_ref().ok().map(|trialled| trialled.result)
 }
 
 fn leaving_a_directory() -> Double {
@@ -134,7 +134,7 @@ fn a_verifier_that_its_image_holds_is_given_no_tests_and_runs_in_its_own_contain
                 "docker exec --env-file /dev/stdin --user 0 NAME sh -c {TIMER} /tests/test.sh 605"
             ),
             "docker cp NAME:/logs/verifier/. \
-             OUTPUTS/running/attempt-0-benchmark+t1/verifier/logs/verifier"
+             OUTPUTS/running/trial-0-benchmark+t1/verifier/logs/verifier"
                 .to_owned(),
             REMOVED.to_owned(),
         ]
@@ -144,7 +144,7 @@ fn a_verifier_that_its_image_holds_is_given_no_tests_and_runs_in_its_own_contain
 #[test]
 fn a_verifier_that_its_image_does_not_hold_is_given_the_tests_of_the_task() {
     let environment = apart(false, TaskConfiguration::default());
-    let tried = given::attempted(Double::default(), &LAUNCH, &environment);
+    let tried = given::trialled(Double::default(), &LAUNCH, &environment);
     assert_eq!(
         tried.commands()[14..18],
         [
@@ -162,9 +162,9 @@ fn a_verifier_that_its_image_does_not_hold_is_given_the_tests_of_the_task() {
 }
 
 #[test]
-fn a_verifier_in_a_container_of_its_own_decides_the_result_of_the_attempt() {
+fn a_verifier_in_a_container_of_its_own_decides_the_result_of_the_trial() {
     let tried = verified_apart(Double::default().verifying(|_| true));
-    assert_eq!(result_of(&tried), Some(AttemptResult::Completed));
+    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
 }
 
 #[test]
@@ -172,7 +172,7 @@ fn a_verifier_in_a_container_of_its_own_that_runs_past_its_time_limit_timed_out(
     let docker = Double::default().answering(&VERIFIER, &[Answer::TimedOut]);
     assert_eq!(
         result_of(&verified_apart(docker)),
-        Some(AttemptResult::TimedOut)
+        Some(TrialResult::TimedOut)
     );
 }
 
@@ -260,14 +260,10 @@ fn what_is_given_to_the_verifier_is_owned_by_the_user_the_task_names_for_the_ver
 }
 
 #[test]
-fn the_copy_that_is_given_to_the_verifier_is_not_kept_with_the_attempt() {
+fn the_copy_that_is_given_to_the_verifier_is_not_kept_with_the_trial() {
     let tried = verified_apart(leaving_a_directory());
-    let attempt = tried.outputs_directory.attempt(0, TASK);
-    assert!(
-        !tried
-            .directory
-            .exists(attempt.join("given-to-the-verifier"))
-    );
+    let trial = tried.outputs_directory.trial(0, TASK);
+    assert!(!tried.directory.exists(trial.join("given-to-the-verifier")));
 }
 
 #[test]
@@ -318,12 +314,12 @@ fn a_verifier_whose_health_check_does_not_pass_is_not_run() {
 }
 
 #[test]
-fn an_attempt_whose_verifier_is_never_run_keeps_no_result() {
+fn a_trial_whose_verifier_is_never_run_keeps_no_result() {
     let tried = verified_with(never_healthy(), with_a_checked_verifier());
     assert!(
         !tried
             .directory
-            .exists(tried.outputs_directory.attempt(0, TASK))
+            .exists(tried.outputs_directory.trial(0, TASK))
     );
 }
 
@@ -350,7 +346,7 @@ fn a_verifier_container_whose_health_check_does_not_pass_is_removed() {
 #[test]
 fn a_verifier_whose_health_check_does_not_pass_is_brought_up_again_as_often_as_is_allowed() {
     let environment = apart(true, with_a_checked_verifier());
-    let tried = given::attempted(never_healthy(), &RETRIED, &environment);
+    let tried = given::trialled(never_healthy(), &RETRIED, &environment);
     let brought_up = tried
         .commands()
         .iter()
@@ -362,7 +358,7 @@ fn a_verifier_whose_health_check_does_not_pass_is_brought_up_again_as_often_as_i
 #[test]
 fn each_time_a_verifier_is_brought_up_again_for_its_health_check_is_told() {
     let environment = apart(true, with_a_checked_verifier());
-    let tried = given::attempted(never_healthy(), &RETRIED, &environment);
+    let tried = given::trialled(never_healthy(), &RETRIED, &environment);
     assert_eq!(
         tried.retries,
         [Retry {
@@ -391,7 +387,7 @@ fn the_wait_before_a_verifier_is_brought_up_again_starts_at_the_interval_of_its_
         max_verifier_health_check_retries: 2,
         ..LAUNCH
     };
-    let tried = given::attempted(never_healthy(), &launch, &apart(true, configuration));
+    let tried = given::trialled(never_healthy(), &launch, &apart(true, configuration));
     let waits: Vec<Duration> = tried.retries.iter().map(|retry| retry.wait).collect();
     assert_eq!(waits, [Duration::from_millis(1), Duration::from_millis(2)]);
 }
@@ -399,7 +395,7 @@ fn the_wait_before_a_verifier_is_brought_up_again_starts_at_the_interval_of_its_
 #[test]
 fn a_verifier_whose_health_check_never_passes_names_how_often_it_was_tried() {
     let environment = apart(true, with_a_checked_verifier());
-    let tried = given::attempted(never_healthy(), &RETRIED, &environment);
+    let tried = given::trialled(never_healthy(), &RETRIED, &environment);
     assert!(matches!(
         tried.result,
         Err(ContainerError::VerifierHealthCheck { tries: 2, .. })
@@ -412,8 +408,8 @@ fn a_verifier_whose_health_check_passes_once_it_is_brought_up_again_is_run() {
         .verifying(|_| true)
         .answering(&CHECK, &[Answer::Exited(1), Answer::Exited(0)]);
     let environment = apart(true, with_a_checked_verifier());
-    let tried = given::attempted(docker, &RETRIED, &environment);
-    assert_eq!(result_of(&tried), Some(AttemptResult::Completed));
+    let tried = given::trialled(docker, &RETRIED, &environment);
+    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
 }
 
 #[test]
@@ -425,7 +421,7 @@ fn a_verifier_whose_container_docker_does_not_bring_up_names_the_file_that_holds
 }
 
 #[test]
-fn an_attempt_whose_logs_cannot_be_linked_in_its_verifier_container_is_not_carried_out() {
+fn a_trial_whose_logs_cannot_be_linked_in_its_verifier_container_is_not_carried_out() {
     let docker = Double::default().answering(&["exec", LOGS_LINKED], &[REFUSED]);
     assert!(matches!(
         verified_apart(docker).result,
@@ -434,7 +430,7 @@ fn an_attempt_whose_logs_cannot_be_linked_in_its_verifier_container_is_not_carri
 }
 
 #[test]
-fn an_attempt_whose_artifacts_cannot_be_given_to_its_verifier_is_not_carried_out() {
+fn a_trial_whose_artifacts_cannot_be_given_to_its_verifier_is_not_carried_out() {
     let docker = leaving_a_directory().answering(&["chown", "/logs/artifacts"], &[REFUSED]);
     assert!(matches!(
         verified_apart(docker).result,

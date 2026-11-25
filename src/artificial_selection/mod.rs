@@ -11,7 +11,7 @@ use wait::Waits;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum Action {
     Procreation { progenitor: HarnessId },
-    Attempt { harness: HarnessId, task: String },
+    Trial { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -29,7 +29,7 @@ impl ArtificialSelection {
     pub(crate) fn next_action(&self, genealogy: &Genealogy, action: u64) -> Option<Action> {
         self.progenitor(genealogy, action)
             .map(|progenitor| Action::Procreation { progenitor })
-            .or_else(|| self.attempt(genealogy))
+            .or_else(|| self.trial(genealogy))
     }
 
     fn progenitor(&self, genealogy: &Genealogy, action: u64) -> Option<HarnessId> {
@@ -54,12 +54,12 @@ impl ArtificialSelection {
             .filter(|harness| !harness.is_a_singleton_control_group_harness())
             .all(|harness| match harness.state() {
                 HarnessState::BeingCreated => false,
-                HarnessState::Created => harness.has_attempted_every(&self.tasks),
+                HarnessState::Created => harness.has_trialled_every(&self.tasks),
                 HarnessState::Unchanged | HarnessState::Failed => true,
             })
     }
 
-    fn attempt(&self, genealogy: &Genealogy) -> Option<Action> {
+    fn trial(&self, genealogy: &Genealogy) -> Option<Action> {
         genealogy
             .created_harnesses()
             .into_iter()
@@ -67,7 +67,7 @@ impl ArtificialSelection {
                 harness
                     .tasks_not_given(&self.tasks)
                     .first()
-                    .map(|task| Action::Attempt {
+                    .map(|task| Action::Trial {
                         harness: harness.id(),
                         task: (*task).to_owned(),
                     })

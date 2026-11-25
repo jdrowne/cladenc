@@ -34,7 +34,7 @@ fn what_a_procreation_left_is_discarded_before_it_is_carried_out_again() {
         [
             directory.exists(outputs_directory.harness(1)),
             directory.exists(outputs_directory.procreation(1)),
-            directory.exists(outputs_directory.attempts(1)),
+            directory.exists(outputs_directory.trials(1)),
         ],
         [false, false, false]
     );
@@ -54,17 +54,17 @@ fn what_a_baseline_left_is_discarded_before_it_is_carried_out_again() {
 }
 
 #[test]
-fn what_an_attempt_left_is_discarded_before_it_is_carried_out_again() {
+fn what_a_trial_left_is_discarded_before_it_is_carried_out_again() {
     let (directory, outputs_directory) = made();
     directory
-        .create_dir(outputs_directory.running_attempt(0, TASK))
+        .create_dir(outputs_directory.running_trial(0, TASK))
         .unwrap();
-    let attempt = Started::Attempt {
+    let trial = Started::Trial {
         harness: 0,
         task: TASK.to_owned(),
     };
-    action::discard(&outputs_directory, &attempt).unwrap();
-    assert!(!directory.exists(outputs_directory.running_attempt(0, TASK)));
+    action::discard(&outputs_directory, &trial).unwrap();
+    assert!(!directory.exists(outputs_directory.running_trial(0, TASK)));
 }
 
 #[test]

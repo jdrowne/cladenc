@@ -8,7 +8,7 @@ use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 
-const AN_ATTEMPT: [&str; 2] = ["run a harness", "attempt-0-benchmark+t2"];
+const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
 const A_PROCREATION: [&str; 2] = ["run a harness", "procreation-1"];
 const NOT_STARTED: Answer = Answer::Exited(125);
 const TASK: &str = "benchmark/t2";
@@ -25,7 +25,7 @@ fn twice(directory: &Memory, settings: &mut Settings) {
 fn working() -> Double {
     Double::default()
         .changing()
-        .verifying(|attempt| attempt.starts_with("attempt-1-"))
+        .verifying(|trial| trial.starts_with("trial-1-"))
 }
 
 fn unbroken() -> Evolved {
@@ -45,8 +45,8 @@ fn stopped_again_at(needles: &[&str]) -> Evolved {
     given::resumed(stopped_at(needles), still_not_started)
 }
 
-fn stopped_once_at_an_attempt() -> Evolved {
-    let docker = working().answering(&AN_ATTEMPT, &[NOT_STARTED]);
+fn stopped_once_at_a_trial() -> Evolved {
+    let docker = working().answering(&A_TRIAL, &[NOT_STARTED]);
     given::started(docker, with_a_selection_task)
 }
 
@@ -60,9 +60,9 @@ fn resumed_with_something_left(
     given::resumed(stopped, working())
 }
 
-fn resumed_with_something_left_by_an_attempt() -> Evolved {
-    resumed_with_something_left(&AN_ATTEMPT, |outputs_directory| {
-        outputs_directory.running_attempt(0, TASK)
+fn resumed_with_something_left_by_a_trial() -> Evolved {
+    resumed_with_something_left(&A_TRIAL, |outputs_directory| {
+        outputs_directory.running_trial(0, TASK)
     })
 }
 
@@ -77,20 +77,20 @@ fn journal_of(evolved: &Evolved) -> String {
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_an_attempt_stops_the_directed_evolution_naming_it() {
+fn a_container_that_ends_with_status_125_at_a_trial_stops_the_directed_evolution_naming_it() {
     assert!(matches!(
-        stopped_at(&AN_ATTEMPT).result,
+        stopped_at(&A_TRIAL).result,
         Err(DirectedEvolutionError::Action {
-            action: Started::Attempt { harness: 0, task },
+            action: Started::Trial { harness: 0, task },
             error: ContainerError::Docker(_),
         }) if task == TASK
     ));
 }
 
 #[test]
-fn a_directed_evolution_an_attempt_stopped_continues_to_the_journal_an_unbroken_one_writes() {
+fn a_directed_evolution_a_trial_stopped_continues_to_the_journal_an_unbroken_one_writes() {
     assert_eq!(
-        journal_of(&resumed_after_a_stop_at(&AN_ATTEMPT)),
+        journal_of(&resumed_after_a_stop_at(&A_TRIAL)),
         journal_of(&unbroken())
     );
 }
@@ -120,9 +120,9 @@ fn a_directed_evolution_a_procreation_stopped_continues_to_the_journal_an_unbrok
 #[test]
 fn a_directed_evolution_resumed_while_docker_still_does_not_start_the_container_stops_again() {
     assert!(matches!(
-        stopped_again_at(&AN_ATTEMPT).result,
+        stopped_again_at(&A_TRIAL).result,
         Err(DirectedEvolutionError::Action {
-            action: Started::Attempt { .. },
+            action: Started::Trial { .. },
             error: ContainerError::Docker(_),
         })
     ));
@@ -130,7 +130,7 @@ fn a_directed_evolution_resumed_while_docker_still_does_not_start_the_container_
 
 #[test]
 fn a_directed_evolution_that_stopped_again_continues_to_the_same_journal_once_resumed_once_more() {
-    let resumed = given::resumed(stopped_again_at(&AN_ATTEMPT), working());
+    let resumed = given::resumed(stopped_again_at(&A_TRIAL), working());
     assert_eq!(journal_of(&resumed), journal_of(&unbroken()));
 }
 
@@ -138,7 +138,7 @@ fn a_directed_evolution_that_stopped_again_continues_to_the_same_journal_once_re
 fn a_resumed_directed_evolution_returns_the_harness_an_unbroken_directed_evolution_returns() {
     assert_eq!(
         [
-            resumed_after_a_stop_at(&AN_ATTEMPT).best_harness(),
+            resumed_after_a_stop_at(&A_TRIAL).best_harness(),
             unbroken().best_harness()
         ],
         [Some(1), Some(1)]
@@ -148,15 +148,15 @@ fn a_resumed_directed_evolution_returns_the_harness_an_unbroken_directed_evoluti
 #[test]
 fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its_outputs_directory()
 {
-    let resumed = resumed_after_a_stop_at(&AN_ATTEMPT);
+    let resumed = resumed_after_a_stop_at(&A_TRIAL);
     let best = resumed.outputs().join("harnesses/1");
     assert_eq!(resumed.result.ok().map(|found| found.directory), Some(best));
 }
 
 #[test]
 fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
-    assert!(stopped_at(&AN_ATTEMPT).said.contains(
-        "cladenc: the attempt of harness 0 on task benchmark/t2 could not be carried out: Docker \
+    assert!(stopped_at(&A_TRIAL).said.contains(
+        "cladenc: the trial of harness 0 on task benchmark/t2 could not be carried out: Docker \
          did not start its container, and "
     ));
 }
@@ -164,14 +164,14 @@ fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
 #[test]
 fn a_directed_evolution_that_an_action_stops_says_last_that_it_is_stopping() {
     assert_eq!(
-        stopped_at(&AN_ATTEMPT).lines().last().map(String::as_str),
+        stopped_at(&A_TRIAL).lines().last().map(String::as_str),
         Some("cladenc: stopping the directed evolution, with 0 containers running")
     );
 }
 
 #[test]
 fn a_resumed_directed_evolution_says_first_how_far_the_directed_evolution_had_got() {
-    let resumed = resumed_after_a_stop_at(&AN_ATTEMPT);
+    let resumed = resumed_after_a_stop_at(&A_TRIAL);
     assert!(resumed.said.starts_with(&format!(
         "cladenc: continuing the directed evolution in {}, which has started ",
         resumed.outputs().display()
@@ -179,10 +179,10 @@ fn a_resumed_directed_evolution_says_first_how_far_the_directed_evolution_had_go
 }
 
 #[test]
-fn a_resumed_directed_evolution_counts_the_attempts_started_before_it_stopped_when_it_finishes() {
-    let resumed = given::resumed(stopped_once_at_an_attempt(), working());
+fn a_resumed_directed_evolution_counts_the_trials_started_before_it_stopped_when_it_finishes() {
+    let resumed = given::resumed(stopped_once_at_a_trial(), working());
     assert!(resumed.lines().last().is_some_and(|last| {
-        last.starts_with("cladenc: the directed evolution finished with 4 attempts started and ")
+        last.starts_with("cladenc: the directed evolution finished with 4 trials started and ")
     }));
 }
 
@@ -211,16 +211,16 @@ fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given
 }
 
 #[test]
-fn what_an_attempt_left_where_it_was_running_is_gone_before_it_is_started_again() {
-    let resumed = resumed_with_something_left_by_an_attempt();
-    let kept = resumed.outputs_directory().attempt(0, TASK);
+fn what_a_trial_left_where_it_was_running_is_gone_before_it_is_started_again() {
+    let resumed = resumed_with_something_left_by_a_trial();
+    let kept = resumed.outputs_directory().trial(0, TASK);
     assert!(!resumed.files().exists(kept.join("leftover")));
 }
 
 #[test]
-fn an_attempt_that_is_started_again_ends_with_its_result_in_place() {
-    let resumed = resumed_with_something_left_by_an_attempt();
-    let kept = resumed.outputs_directory().attempt(0, TASK);
+fn a_trial_that_is_started_again_ends_with_its_result_in_place() {
+    let resumed = resumed_with_something_left_by_a_trial();
+    let kept = resumed.outputs_directory().trial(0, TASK);
     assert!(resumed.files().is_file(kept.join("result")));
 }
 

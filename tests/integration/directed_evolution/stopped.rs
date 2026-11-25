@@ -40,7 +40,7 @@ fn stopped_by_its_flag() -> TempDir {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
-    let id_file = outputs_directory.join("running/attempt-0-benchmark+t1/stdout");
+    let id_file = outputs_directory.join("running/trial-0-benchmark+t1/stdout");
     let stop = AtomicBool::new(false);
     let _ = thread::scope(|scope| {
         scope.spawn(|| {
@@ -58,6 +58,6 @@ fn a_directed_evolution_stopped_by_its_flag_leaves_no_container_behind() {
     assert!(test_inputs::container_is_gone(
         &directory
             .path()
-            .join("outputs/running/attempt-0-benchmark+t1/stdout")
+            .join("outputs/running/trial-0-benchmark+t1/stdout")
     ));
 }

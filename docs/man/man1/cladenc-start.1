@@ -109,7 +109,7 @@ below 100.
 Every procreation, and every build of a harness, is carried out in a container
 of one image, the image of the directed evolution.
 The creation of a singleton control group harness is carried out in a
-container of that image as well, and no attempt is: an attempt is carried out
+container of that image as well, and no trial is: a trial is carried out
 in the environment of its task.
 The image of the directed evolution is the image that
 \fB\-\-procreation\-docker\-image\fP names, or the image that cladenc builds
@@ -258,7 +258,7 @@ exit status 2.
 \fBcladenc start\fP then leaves it no journal.
 .SH HARNESSES
 A harness is started in a container, of the image of the directed evolution
-for a procreation and of the environment of its task for an attempt, as
+for a procreation and of the environment of its task for a trial, as
 .PP
 .RS 4
 .EX
@@ -278,8 +278,8 @@ seconds, and five seconds more
 .PP
 The timer is a line of shell that starts the command, ends it once the seconds
 have passed, and hands on its exit status.
-Every container of a directed evolution is started under it, or, for an
-attempt, under sleep, so that a container ends itself once its time limit has
+Every container of a directed evolution is started under it, or, for a
+trial, under sleep, so that a container ends itself once its time limit has
 passed, also when cladenc was killed outright, as by \fBkill \-9\fP, and is
 not there to remove it.
 The image of the directed evolution has to hold sh and sleep, and the
@@ -316,8 +316,8 @@ the address the model is served at, the value of \fB\-\-model\-url\fP
 the key the model is called with, read from the file that
 \fB\-\-model\-key\-file\fP names, and not set where that flag is not given
 .PP
-In a procreation the command runs as the user cladenc runs as, and in an
-attempt as the user of the environment of the task, or as the user that the
+In a procreation the command runs as the user cladenc runs as, and in a
+trial as the user of the environment of the task, or as the user that the
 task.toml of the task names.
 It is given nothing on standard input, and its standard output and standard
 error are kept.
@@ -344,9 +344,9 @@ A procreation is carried out by the harness that procreates.
 /var/opt/cladenc/work holds a second copy of its source code, and the
 instruction asks the harness to improve that copy: what the harness leaves
 there is its child.
-/var/log/cladenc/attempts holds the finished attempts of the harness at the
+/var/log/cladenc/trials holds the finished trials of the harness on the
 non-holdout tasks, to read: one directory for each benchmark, and in it one
-for each task, holding what the attempt of that task kept.
+for each task, holding what the trial on that task kept.
 .PP
 A harness that procreates is given more to read, and nothing more to change:
 what was kept of each harness it descends from, back to the primogenitor, and
@@ -365,8 +365,8 @@ Each of these directories is named by the id of its harness, and holds
 \fBharness\fP
 the source code of that harness
 .TP 13n
-\fBattempts\fP
-its attempts at the non-holdout tasks, laid out as /var/log/cladenc/attempts
+\fBtrials\fP
+its trials on the non-holdout tasks, laid out as /var/log/cladenc/trials
 is
 .TP 13n
 \fBprocreation\fP
@@ -378,13 +378,13 @@ outcome: created, unchanged, failed, build_failed or timed_out
 what its build printed, in stdout and stderr
 .PP
 A directory that would hold nothing is not there: the primogenitor has no
-procreation, a harness that was not created has no attempts, and a harness
+procreation, a harness that was not created has no trials, and a harness
 that was not built has no build.
 Nothing of a holdout task is in any of them.
 .PP
 The instruction asks the harness that procreates for a change to how its child
 works on any task: one that answers something it saw in several of its
-attempts, not in one, and that leaves in the source code nothing that names a
+trials, not in one, and that leaves in the source code nothing that names a
 task, a file of a task or the answer to one.
 It says that taking out what does not help is an improvement as well, that the
 child may be asked in its turn to improve a copy of its own source code, so
@@ -394,14 +394,14 @@ An instruction is a request: cladenc enforces none of it.
 .PP
 A harness procreates only once it has been benchmarked in full, on every task
 of every benchmark of the directed evolution, so that it finds every
-non-holdout task in /var/log/cladenc/attempts.
+non-holdout task in /var/log/cladenc/trials.
 The primogenitor is benchmarked in full before the first procreation.
 .PP
 Every harness is benchmarked in full once it is created, whether it procreates
 or not.
 cladenc chooses which harness procreates, partly by chance.
-It does not choose which harness attempts next: the created harness with the
-lowest id that has a task left attempts it.
+It does not choose which trial starts next: the created harness with the
+lowest id that has a task left starts a trial on it.
 .PP
 \fB\-\-max\-procreations\fP gives the most procreations a directed evolution
 starts.
@@ -412,13 +412,13 @@ With one benchmark of 5 tasks and \fB\-\-max\-procreations\fP 1, the
 primogenitor is benchmarked on the 5 tasks and procreates, and its child is
 benchmarked on the 5 tasks where the procreation created it.
 .PP
-A procreation starts only once no attempt is left to start, no attempt is
+A procreation starts only once no trial is left to start, no trial is
 running and no other procreation is under way: every harness created so far
 has been benchmarked in full, the child of the procreation before among them.
 So cladenc chooses each harness that procreates with what every created
 harness completed in hand.
 A singleton control group harness is not waited for, since it never
-procreates: its creation and its attempts go on beside a procreation.
+procreates: its creation and its trials go on beside a procreation.
 While a procreation runs, no container of another child is started, so fewer
 containers run than \fB\-\-max\-concurrent\-containers\fP allows.
 .PP
@@ -477,8 +477,8 @@ holds a second copy of the source code of the progenitor, which is what is
 changed
 .PP
 The primogenitor is given the instruction the progenitor is given, and what
-the progenitor is given to read: under /var/log/cladenc/attempts the attempts
-of the progenitor at the non-holdout tasks, under /var/log/cladenc/line the
+the progenitor is given to read: under /var/log/cladenc/trials the trials of the progenitor
+on the non-holdout tasks, under /var/log/cladenc/line the
 harnesses the progenitor descends from, and under /var/log/cladenc/children
 the children the progenitor procreated before the progenitor's child of the
 experiment.
@@ -520,7 +520,7 @@ of the harness and is what CLADENC_HARNESS names.
 A build calls no model, and is given none of the three variables of the model.
 What the build makes stays there, and is part of every copy made of the
 harness.
-The primogenitor is built before any procreation or attempt, within the time
+The primogenitor is built before any procreation or trial, within the time
 limit of one procreation.
 A child is built as the last step of its procreation, within what is left of
 the time limit of that procreation.
@@ -556,8 +556,8 @@ dots, underscores and hyphens, and the directory holds
 a file of text, the task specification, which says what is to be done
 .TP 16n
 \fBtask.toml\fP
-a file of text, the task configuration of Harbor, which says how the task is
-to be attempted
+a file of text, the task configuration of Harbor, which says how a trial on the task is carried
+out
 .TP 16n
 \fBtests\fP
 a directory that holds test.sh, an executable file, the verifier of the task,
@@ -565,7 +565,7 @@ and whatever else the verifier uses
 .TP 16n
 \fBenvironment\fP
 a directory that holds a file named Dockerfile, which describes the
-environment of the task, the image its attempts are carried out in with the
+environment of the task, the image its trials are carried out in with the
 files the work starts from, and whatever else the Dockerfile uses
 .PP
 as in Harbor's task layout, and may hold more, such as solution, which no
@@ -633,8 +633,8 @@ The draw is made once for a directed evolution and written in its journal, and
 .PP
 Every harness is benchmarked on the holdout tasks as on the non-holdout tasks,
 selection tasks and corroboration tasks alike, and nothing a harness is given
-in an attempt says which of the sets its task is in.
-A harness that procreates is given its attempts at the non-holdout tasks, and
+in a trial says which of the sets its task is in.
+A harness that procreates is given its trials on the non-holdout tasks, and
 nothing of the holdout tasks: no task specification, no work, no result, and
 no count of them.
 .PP
@@ -686,14 +686,14 @@ harness reads, as
 .PP
 .RS 4
 .EX
-\-\-harness\-run\-command \(aqif [ \-d /var/log/cladenc/attempts ]
+\-\-harness\-run\-command \(aqif [ \-d /var/log/cladenc/trials ]
     then echo >> procreated; else <COMMAND>; fi\(aq
 .EE
 .RE
 .PP
 where <COMMAND> is the run command of the other, and procreated is a name that
 no file of the primogenitor has.
-/var/log/cladenc/attempts is there for a procreation and not for an attempt,
+/var/log/cladenc/trials is there for a procreation and not for a trial,
 so every procreation calls no model, and creates a child that is the source
 code of its progenitor with one line more in the file named procreated.
 The line is added because a procreation that changes nothing creates no child.
@@ -710,11 +710,11 @@ that.
 of the selection tasks, of the corroboration tasks and of the non-holdout
 tasks, and \fBcladenc status\fP says how many so far.
 Where every harness works as the primogenitor does, that is what one more
-attempt at each task for each child gives the primogenitor, and it is set
+trial on each task for each child gives the primogenitor, and it is set
 beside the count of the best harness of the other directed evolution, which
-had one attempt at each task.
-.SH ATTEMPTS
-An attempt is one harness working on one task, once, and cladenc carries it
+had one trial on each task.
+.SH TRIALS
+A trial is one harness working on one task, once, and cladenc carries it
 out in two steps, in one container of the environment of the task, started as
 .PP
 .RS 4
@@ -742,7 +742,7 @@ Before the harness is started, cladenc makes
 a symbolic link to /var/log/cladenc/harbor
 .TP 17n
 \fB/logs/artifacts\fP
-an empty directory, for what the harness saves to be kept with the attempt
+an empty directory, for what the harness saves to be kept with the trial
 .PP
 When the harness has ended, with whatever exit status, the tests directory of
 the task is copied into the same container, and its verifier is run there, in
@@ -767,7 +767,7 @@ left outside /tests and /logs/verifier, and the processes it left running, are
 there as well.
 A verifier calls no model, and is given none of the three variables of the
 model.
-The container is removed once the attempt has ended.
+The container is removed once the trial has ended.
 .PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
@@ -794,8 +794,8 @@ What it left is judged all the same.
 The verifier has a time limit of its own, timeout_sec under verifier, or 600
 seconds where the task gives none, counted from the moment the harness ended
 or was stopped.
-No flag gives a time limit of an attempt.
-Where a task gives its harness no time limit, the container of an attempt does
+No flag gives a time limit of a trial.
+Where a task gives its harness no time limit, the container of a trial does
 not end itself: a cladenc that was killed outright leaves it running until
 \fBcladenc resume\fP removes it, or a person does.
 .SH HEALTH CHECKS
@@ -825,25 +825,25 @@ where the task gives none, and before each retry after that twice as long as
 before the last: 5 seconds, then 10, then 20.
 It says each retry on standard error.
 Where the health check passes in no container, the directed evolution stops
-with exit status 1, and no result is recorded for the attempt.
+with exit status 1, and no result is recorded for the trial.
 cladenc then names the harness and the task, says that the health check of the
 task did not pass and in how many tries, and names the directory that holds
 what the health check printed the last time it ran.
 That directory is under running in the outputs directory, and stays there
-until \fBcladenc resume\fP carries out the attempt again.
+until \fBcladenc resume\fP carries out the trial again.
 .SH ARTIFACTS
 Where the task.toml of a task lists paths under artifacts, cladenc keeps each
-with the attempt, a file or a directory with all it holds, as the harness left
+with the trial, a file or a directory with all it holds, as the harness left
 it: it copies them out of the container once the harness has ended or was
 stopped, before the tests directory is copied in.
 An entry of the list is a path in the container, or a table that names the
 path as source.
-The path is kept in artifacts in the directory of the attempt, at the place
+The path is kept in artifacts in the directory of the trial, at the place
 the table gives as destination, and at the path itself without its leading /
 where the table gives none or the entry is a path alone: /app/out/report.json
 is kept as artifacts/app/out/report.json.
 A symbolic link at the path is followed.
-A path that is not in the container keeps nothing, and the attempt goes on.
+A path that is not in the container keeps nothing, and the trial goes on.
 Where two entries would be kept at the same place, or one inside the other,
 the first is kept and the other is not.
 .PP
@@ -876,9 +876,9 @@ of the environment where it names none.
 It has the time limit that its entry gives as timeout_sec, or 60 seconds where
 it gives none.
 A command that exits with another status than 0, or runs past its time limit,
-does not end the attempt: the next command is run, and the paths are kept as
+does not end the trial: the next command is run, and the paths are kept as
 they then are.
-collection\-hooks in the directory of the attempt keeps what each command
+collection\-hooks in the directory of the trial keeps what each command
 printed, in a directory named after the place of the command in the list,
 counted from 1.
 .SH VERIFIERS IN A CONTAINER OF THEIR OWN
@@ -928,7 +928,7 @@ well.
 .PP
 Once the harness has ended or was stopped, and the paths under artifacts are
 kept, cladenc removes the container of the harness and brings up that of the
-verifier, so that an attempt is one container at a time.
+verifier, so that a trial is one container at a time.
 Where the settings of the verifier give a health check, cladenc runs it there as
 it runs that of the task, and nothing else is done in the container until the
 health check has passed.
@@ -949,12 +949,12 @@ where the task gives none, and before each retry after that twice as long as
 before the last: 5 seconds, then 10, then 20.
 It says each retry on standard error.
 Where the health check passes in no container, the directed evolution stops
-with exit status 1, and no result is recorded for the attempt.
+with exit status 1, and no result is recorded for the trial.
 cladenc then names the harness and the task, says that the health check of the
 verifier container did not pass and in how many tries, and names the
 directory that holds what the health check printed the last time it ran.
 That directory is under running in the outputs directory, and stays there
-until \fBcladenc resume\fP carries out the attempt again.
+until \fBcladenc resume\fP carries out the trial again.
 .PP
 What is copied in is not trusted.
 No file keeps a setuid or a setgid bit.
@@ -983,7 +983,7 @@ and is removed once the verifier has ended.
 A verifier image has to hold what the environment of a task has to: sh,
 sleep, rm, mkdir, chown and ln.
 .SH CPUS AND MEMORY
-The container of an attempt is given no more CPUs and no more memory than its
+The container of a trial is given no more CPUs and no more memory than its
 task asks for, as \fB\-\-cpus\fP and \fB\-\-memory\fP of \fBdocker run\fP, so
 the harness and the verifier have them between them.
 A task that asks for neither is given what Docker gives any container.
@@ -1047,7 +1047,7 @@ paths under artifacts are kept
 the time limit of the build of the environment, in seconds
 .TP 7n
 \fBcpus under environment\fP
-the most CPUs the container of an attempt is given, a whole number or a part
+the most CPUs the container of a trial is given, a whole number or a part
 of one
 .TP 7n
 \fBmemory_mb under environment\fP
@@ -1058,7 +1058,7 @@ a command that has to pass before the harness is started, and how often it is
 run
 .TP 7n
 \fBartifacts\fP
-paths in the container that are kept with the attempt once the harness has
+paths in the container that are kept with the trial once the harness has
 ended
 .PP
 cladenc obeys nothing else of a task.toml.
@@ -1121,7 +1121,7 @@ place of reward.txt where both are there.
 /tests and /logs/verifier are the paths of Harbor's task layout, which a
 verifier expects.
 .PP
-How an attempt ends decides its result:
+How a trial ends decides its result:
 .TP 7n
 \fBa score of 1, or 1 for every label of reward.json\fP
 the harness completed the task
@@ -1131,11 +1131,11 @@ the harness did not complete the task
 .TP 7n
 \fBa health check of the task, or of the verifier container, that passes in none of its tries\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
-carries out the attempt again
+carries out the trial again
 .TP 7n
 \fBexit status 125 of either step or of the health check\fP
 Docker did not start the container: the directed evolution stops, and
-\fBcladenc resume\fP carries out the attempt again
+\fBcladenc resume\fP carries out the trial again
 .TP 7n
 \fBthe time limit of the verifier\fP
 the container is removed, and the harness did not complete the task, which is
@@ -1172,8 +1172,8 @@ A task taken from a public source may have been among what the model was
 trained on.
 A harness then completes it from what the model remembers, and a child that
 completes more of such tasks may only be better at drawing that out.
-.SH KEPT ATTEMPTS
-attempts in the outputs directory keeps every attempt at a task that is not
+.SH KEPT TRIALS
+trials in the outputs directory keeps every trial on a task that is not
 held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 .TP 18n
@@ -1218,7 +1218,7 @@ check, what the last run of that printed, in health\-check
 the standard output and the standard error of the last run of the health
 check, in stdout and stderr, where the task gives one
 .PP
-holdout in the outputs directory keeps the attempts at the holdout tasks,
+holdout in the outputs directory keeps the trials on the holdout tasks,
 selection tasks and corroboration tasks together, in the same way, apart from
 the others, so that the directory a harness that procreates is given holds
 none of them.

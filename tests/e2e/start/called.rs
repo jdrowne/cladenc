@@ -52,8 +52,8 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("outputs/harnesses/1").join(file)).unwrap()
 }
 
-fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
-    let kept = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t1");
+fn left_by_the_trial(directory: &TempDir, file: &str) -> String {
+    let kept = test_inputs::kept_trial(&directory.path().join("outputs"), 0, "benchmark/t1");
     fs::read_to_string(kept.join("work").join(file)).unwrap()
 }
 
@@ -67,10 +67,10 @@ fn a_harness_is_given_no_key_that_no_file_holds_though_the_environment_of_claden
 }
 
 #[test]
-fn the_harness_of_an_attempt_is_given_no_key_that_no_file_holds_either() {
+fn the_harness_of_a_trial_is_given_no_key_that_no_file_holds_either() {
     let directory = &*RAN_WITH_NO_FILE_OF_A_KEY_AND_A_KEY_IN_THE_ENVIRONMENT;
     assert_eq!(
-        left_by_the_attempt(directory, "model"),
+        left_by_the_trial(directory, "model"),
         format!("{TOLD} none\n")
     );
 }

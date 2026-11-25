@@ -34,7 +34,7 @@ fn a_directed_evolution_whose_primogenitor_is_not_built_ends_with_status_one() {
 #[test]
 fn a_directed_evolution_one_of_whose_actions_fails_ends_with_status_one() {
     let error = DirectedEvolutionError::Action {
-        action: Started::Attempt {
+        action: Started::Trial {
             harness: 3,
             task: "benchmark/t1".to_owned(),
         },

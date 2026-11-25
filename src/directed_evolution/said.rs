@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
+use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -73,10 +73,10 @@ pub(super) enum Said<'a> {
         outcome: CreationOutcome,
         outputs_directory: &'a OutputsDirectory,
     },
-    Attempted {
+    Trialled {
         harness: HarnessId,
         task: &'a str,
-        result: AttemptResult,
+        result: TrialResult,
         ending: HarnessEnding,
         outputs_directory: &'a OutputsDirectory,
     },
@@ -90,7 +90,7 @@ pub(super) enum Said<'a> {
         running: u64,
     },
     Finished {
-        attempts: u64,
+        trials: u64,
         harnesses: u64,
         best_harness: HarnessId,
         directory: &'a Path,
@@ -240,7 +240,7 @@ impl Display for Said<'_> {
                 };
                 write!(formatter, "{baseline} {}", kept.after(*outcome))
             }
-            Self::Attempted {
+            Self::Trialled {
                 harness,
                 task,
                 result,
@@ -248,9 +248,9 @@ impl Display for Said<'_> {
                 outputs_directory,
             } => {
                 let (how, why) = match result {
-                    AttemptResult::Completed => ("completed", ""),
-                    AttemptResult::NotCompleted => ("did not complete", ""),
-                    AttemptResult::TimedOut => (
+                    TrialResult::Completed => ("completed", ""),
+                    TrialResult::NotCompleted => ("did not complete", ""),
+                    TrialResult::TimedOut => (
                         "did not complete",
                         ", as the verifier ran past its time limit",
                     ),
@@ -261,9 +261,9 @@ impl Display for Said<'_> {
                 };
                 write!(
                     formatter,
-                    "harness {harness} {how} task {task}{stopped}{why}: what the attempt left is \
+                    "harness {harness} {how} task {task}{stopped}{why}: what the trial left is \
                      kept in {}",
-                    outputs_directory.attempt(*harness, task).display()
+                    outputs_directory.trial(*harness, task).display()
                 )
             }
             Self::Retrying(said) => said.fmt(formatter),
@@ -281,7 +281,7 @@ impl Display for Said<'_> {
                 )
             }
             Self::Finished {
-                attempts,
+                trials,
                 harnesses,
                 best_harness,
                 directory,
@@ -289,7 +289,7 @@ impl Display for Said<'_> {
                 formatter,
                 "the directed evolution finished with {} started and {}: its best harness is \
                  harness {best_harness}, kept in {}",
-                counted(*attempts, "attempt", "attempts"),
+                counted(*trials, "trial", "trials"),
                 counted(*harnesses, "harness", "harnesses"),
                 directory.display()
             ),
@@ -422,7 +422,7 @@ impl Display for Retrying<'_> {
         };
         write!(
             formatter,
-            "the attempt of harness {} on task {} is not {not_yet} yet: the health check of \
+            "the trial of harness {} on task {} is not {not_yet} yet: the health check of \
              {of} did not pass, and cladenc tries again in a new container after {wait}, \
              retry {number} of {most}",
             self.harness, self.task

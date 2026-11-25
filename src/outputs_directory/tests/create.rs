@@ -48,9 +48,9 @@ fn a_new_outputs_directory_holds_a_copy_of_the_primogenitor_as_harness_0() {
 }
 
 #[test]
-fn a_new_outputs_directory_holds_an_empty_directory_for_the_attempts_of_harness_0() {
+fn a_new_outputs_directory_holds_an_empty_directory_for_the_trials_of_harness_0() {
     let (directory, outputs_directory) = made();
-    assert_eq!(entries(&directory, outputs_directory.join("attempts/0")), 0);
+    assert_eq!(entries(&directory, outputs_directory.join("trials/0")), 0);
 }
 
 #[test]

@@ -76,7 +76,7 @@ impl Display for DirectedEvolutionError {
             ),
             Self::Configuration { task, error } => write!(
                 formatter,
-                "task {task} cannot be attempted: its task.toml {error}"
+                "task {task} cannot be given a trial: its task.toml {error}"
             ),
             Self::NotOnTheMachine { task, image, error } => write!(
                 formatter,

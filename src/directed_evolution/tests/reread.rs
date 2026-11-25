@@ -7,7 +7,7 @@ use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
-const AN_ATTEMPT: [&str; 2] = ["run a harness", "attempt-0-benchmark+t2"];
+const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
 const IMAGE_GIVEN: &str = "[environment]\ndocker_image = \"an-image:given\"\n";
 const NEVER_SET: &str = "[verifier.env]\nKEY = \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET}\"\n";
 const NOT_VALID: &str = "[agent]\nnetwork_mode = \"private\"\n";
@@ -18,7 +18,7 @@ const ENVIRONMENT_OF_T1_BUILT: &str = "docker build --tag cladenc-environments-0
                                        OUTPUTS/benchmarks/benchmark/t1/environment";
 
 fn stopping() -> Double {
-    Double::default().answering(&AN_ATTEMPT, &[Answer::Exited(125)])
+    Double::default().answering(&A_TRIAL, &[Answer::Exited(125)])
 }
 
 fn stopped() -> Evolved {

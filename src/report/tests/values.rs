@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessState};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessState, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 use crate::report::leader::Leader;
@@ -35,9 +35,9 @@ fn settings() -> Settings {
     }
 }
 
-fn attempted(genealogy: &mut Genealogy, harness: u64, task: &str, result: AttemptResult) {
-    genealogy.start_attempt(harness, task).unwrap();
-    genealogy.end_attempt(harness, task, result).unwrap();
+fn trialled(genealogy: &mut Genealogy, harness: u64, task: &str, result: TrialResult) {
+    genealogy.start_trial(harness, task).unwrap();
+    genealogy.end_trial(harness, task, result).unwrap();
 }
 
 fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
@@ -46,31 +46,26 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     genealogy
         .end_procreation(child, CreationOutcome::Created)
         .unwrap();
-    attempted(
-        &mut genealogy,
-        0,
-        "benchmark/t1",
-        AttemptResult::NotCompleted,
-    );
-    attempted(&mut genealogy, 0, "benchmark/t2", AttemptResult::Completed);
-    attempted(&mut genealogy, 0, "benchmark/t3", AttemptResult::Completed);
-    attempted(
+    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::NotCompleted);
+    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::Completed);
+    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::Completed);
+    trialled(
         &mut genealogy,
         child,
         "benchmark/t1",
-        AttemptResult::Completed,
+        TrialResult::Completed,
     );
-    attempted(
+    trialled(
         &mut genealogy,
         child,
         "benchmark/t2",
-        AttemptResult::NotCompleted,
+        TrialResult::NotCompleted,
     );
-    attempted(
+    trialled(
         &mut genealogy,
         child,
         "benchmark/t3",
-        AttemptResult::NotCompleted,
+        TrialResult::NotCompleted,
     );
     genealogy
 }
@@ -82,18 +77,18 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
         .end_procreation(failed, CreationOutcome::Failed)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
-    genealogy.start_attempt(0, "benchmark/t1").unwrap();
+    genealogy.start_trial(0, "benchmark/t1").unwrap();
     genealogy
 }
 
 fn seconds() -> [Seconds; 2] {
     [
         Seconds {
-            attempts: 0.1 + 0.2,
+            trials: 0.1 + 0.2,
             procreation: None,
         },
         Seconds {
-            attempts: 7.5,
+            trials: 7.5,
             procreation: Some(30.25),
         },
     ]
@@ -104,7 +99,7 @@ fn report(genealogy: &Genealogy) -> Report {
 }
 
 #[test]
-fn a_clade_with_no_finished_attempt_has_no_clade_score() {
+fn a_clade_with_no_finished_trial_has_no_clade_score() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(report.harnesses[0].clade_score, None);
 }
@@ -128,7 +123,7 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
 }
 
 #[test]
-fn the_selection_counts_of_a_harness_are_those_of_its_own_attempts_at_the_selection_tasks() {
+fn the_selection_counts_of_a_harness_are_those_of_its_own_trials_on_the_selection_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
@@ -140,8 +135,7 @@ fn the_selection_counts_of_a_harness_are_those_of_its_own_attempts_at_the_select
 }
 
 #[test]
-fn the_corroboration_counts_of_a_harness_are_those_of_its_own_attempts_at_the_corroboration_tasks()
-{
+fn the_corroboration_counts_of_a_harness_are_those_of_its_own_trials_on_the_corroboration_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
@@ -165,7 +159,7 @@ fn the_corroboration_counts_of_a_child_are_its_own_and_not_those_of_its_progenit
 }
 
 #[test]
-fn the_non_holdout_counts_of_a_harness_are_those_of_its_own_attempts_at_the_non_holdout_tasks() {
+fn the_non_holdout_counts_of_a_harness_are_those_of_its_own_trials_on_the_non_holdout_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
@@ -308,9 +302,9 @@ fn the_state_of_each_harness_is_reported() {
 }
 
 #[test]
-fn the_seconds_of_the_attempts_of_a_harness_are_reported_to_the_millisecond() {
+fn the_seconds_of_the_trials_of_a_harness_are_reported_to_the_millisecond() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(report.harnesses[0].attempt_seconds, 0.3);
+    assert_eq!(report.harnesses[0].trial_seconds, 0.3);
 }
 
 #[test]
@@ -330,7 +324,7 @@ fn a_harness_for_which_no_seconds_are_given_is_reported_with_none_spent() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
     assert_eq!(
         (
-            report.harnesses[2].attempt_seconds,
+            report.harnesses[2].trial_seconds,
             report.harnesses[2].procreation_seconds
         ),
         (0.0, None)
@@ -406,11 +400,11 @@ fn a_task_that_two_harnesses_completed_is_counted_once() {
     genealogy
         .end_procreation(another, CreationOutcome::Created)
         .unwrap();
-    attempted(
+    trialled(
         &mut genealogy,
         another,
         "benchmark/t1",
-        AttemptResult::Completed,
+        TrialResult::Completed,
     );
     assert_eq!(report(&genealogy).selection_tasks_completed_by_any, 1);
 }

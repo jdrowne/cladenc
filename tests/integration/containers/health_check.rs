@@ -12,7 +12,7 @@ use test_inputs::Image;
 const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt";
 const TASK: &str = "benchmark/t1";
-struct Attempted {
+struct Trialled {
     _directory: TempDir,
     _built: Image,
     outputs_directory: OutputsDirectory,
@@ -46,7 +46,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) 
     )
 }
 
-fn attempted(task_toml: &str, run_command: &str) -> Attempted {
+fn trialled(task_toml: &str, run_command: &str) -> Trialled {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -72,13 +72,13 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let _ = containers::run_attempt(
+    let _ = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &environment,
@@ -86,29 +86,29 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         &AtomicBool::new(false),
         &|_| (),
     );
-    Attempted {
+    Trialled {
         _directory: directory,
         _built: built,
         outputs_directory,
     }
 }
 
-fn kept(attempted: &Attempted, file: &str) -> String {
-    fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
+fn kept(trialled: &Trialled, file: &str) -> String {
+    fs::read_to_string(trialled.outputs_directory.trial(0, TASK).join(file)).unwrap()
 }
 
 fn printed_by_the_check(task_toml: &str) -> String {
-    kept(&attempted(task_toml, FINISH), "health-check/stdout")
+    kept(&trialled(task_toml, FINISH), "health-check/stdout")
 }
 
 #[test]
 fn the_health_check_of_a_task_is_run_before_its_harness_is_started() {
-    let attempted = attempted(&checked_by("touch /checked", ""), "ls /checked");
-    assert_eq!(kept(&attempted, "stdout"), "/checked\n");
+    let trialled = trialled(&checked_by("touch /checked", ""), "ls /checked");
+    assert_eq!(kept(&trialled, "stdout"), "/checked\n");
 }
 
 #[test]
-fn what_a_health_check_that_passed_printed_is_kept_with_the_attempt() {
+fn what_a_health_check_that_passed_printed_is_kept_with_the_trial() {
     assert_eq!(
         printed_by_the_check(&checked_by("echo ready", "")),
         "ready\n"

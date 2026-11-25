@@ -95,7 +95,7 @@ fn stopped_while_t2_is_built() -> Evolved {
     }
 }
 
-fn stopped_at_an_attempt() -> Evolved {
+fn stopped_at_a_trial() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
@@ -109,7 +109,7 @@ fn stopped_at_an_attempt() -> Evolved {
 }
 
 fn resumed() -> Evolved {
-    let stopped = stopped_at_an_attempt();
+    let stopped = stopped_at_a_trial();
     let outputs_directory = stopped.directory.path().join("outputs");
     test_inputs::end_with_125_on_no_more(&outputs_directory, "t2");
     let stop = AtomicBool::new(false);
@@ -166,9 +166,9 @@ fn a_resumed_directed_evolution_that_ended_leaves_no_environment_it_built_on_the
 }
 
 #[test]
-fn a_directed_evolution_that_stopped_at_an_attempt_leaves_no_environment_on_the_machine() {
+fn a_directed_evolution_that_stopped_at_a_trial_leaves_no_environment_on_the_machine() {
     assert_eq!(
-        environments_left_by(&stopped_at_an_attempt()),
+        environments_left_by(&stopped_at_a_trial()),
         Vec::<String>::new()
     );
 }

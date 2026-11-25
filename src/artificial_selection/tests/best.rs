@@ -1,5 +1,5 @@
 use crate::artificial_selection::ArtificialSelection;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn tasks() -> Vec<String> {
     (0..5).map(|number| format!("task-{number}")).collect()
@@ -19,20 +19,20 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
     genealogy.end_procreation(child, outcome).unwrap();
 }
 
-fn attempt(genealogy: &mut Genealogy, harness: HarnessId, count: usize, completed: usize) {
+fn trial(genealogy: &mut Genealogy, harness: HarnessId, count: usize, completed: usize) {
     for (number, task) in tasks().iter().take(count).enumerate() {
         let result = if number < completed {
-            AttemptResult::Completed
+            TrialResult::Completed
         } else {
-            AttemptResult::NotCompleted
+            TrialResult::NotCompleted
         };
-        genealogy.start_attempt(harness, task).unwrap();
-        genealogy.end_attempt(harness, task, result).unwrap();
+        genealogy.start_trial(harness, task).unwrap();
+        genealogy.end_trial(harness, task, result).unwrap();
     }
 }
 
 fn benchmarked_in_full(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
-    attempt(genealogy, harness, 5, completed);
+    trial(genealogy, harness, 5, completed);
 }
 
 #[test]
@@ -83,17 +83,17 @@ fn a_harness_with_a_task_left_is_not_the_best_while_another_is_benchmarked_in_fu
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     benchmarked_in_full(&mut genealogy, 0, 1);
-    attempt(&mut genealogy, 1, 4, 4);
+    trial(&mut genealogy, 1, 4, 4);
     assert_eq!(best(&genealogy), 0);
 }
 
 #[test]
-fn a_harness_whose_last_attempt_has_not_ended_is_not_yet_benchmarked_in_full() {
+fn a_harness_whose_last_trial_has_not_ended_is_not_yet_benchmarked_in_full() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     benchmarked_in_full(&mut genealogy, 0, 1);
-    attempt(&mut genealogy, 1, 4, 4);
-    genealogy.start_attempt(1, "task-4").unwrap();
+    trial(&mut genealogy, 1, 4, 4);
+    genealogy.start_trial(1, "task-4").unwrap();
     assert_eq!(best(&genealogy), 0);
 }
 
@@ -101,8 +101,8 @@ fn a_harness_whose_last_attempt_has_not_ended_is_not_yet_benchmarked_in_full() {
 fn where_no_harness_is_benchmarked_in_full_the_primogenitor_is_the_best() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    attempt(&mut genealogy, 0, 1, 0);
-    attempt(&mut genealogy, 1, 3, 3);
+    trial(&mut genealogy, 0, 1, 0);
+    trial(&mut genealogy, 1, 3, 3);
     assert_eq!(best(&genealogy), 0);
 }
 

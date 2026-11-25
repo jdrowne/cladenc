@@ -113,9 +113,9 @@ fn the_manual_of_start_says_that_a_container_ends_itself_when_cladenc_was_killed
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_container_of_an_attempt_is_started_under_sleep() {
+fn the_manual_of_start_says_that_the_container_of_a_trial_is_started_under_sleep() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every container of a directed evolution is started under it, or, for an attempt, under \
+        "Every container of a directed evolution is started under it, or, for a trial, under \
          sleep,"
     ));
 }
@@ -137,17 +137,17 @@ fn the_manual_of_start_says_what_the_environment_of_every_task_has_to_hold() {
 }
 
 #[test]
-fn the_manual_of_start_says_in_which_image_the_harness_of_an_attempt_is_started() {
+fn the_manual_of_start_says_in_which_image_the_harness_of_a_trial_is_started() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "A harness is started in a container, of the image of the directed evolution for a \
-         procreation and of the environment of its task for an attempt, as"
+         procreation and of the environment of its task for a trial, as"
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_as_which_user_the_command_of_a_harness_runs() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "In a procreation the command runs as the user cladenc runs as, and in an attempt as the \
+        "In a procreation the command runs as the user cladenc runs as, and in a trial as the \
          user of the environment of the task, or as the user that the task.toml of the task names."
     ));
 }
@@ -373,7 +373,7 @@ fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_cont
         manual_on_one_line("cladenc-start")
             .split_whitespace()
             .filter(|word| {
-                ["/harness", "/work", "/task", "/attempts"]
+                ["/harness", "/work", "/task", "/trials"]
                     .iter()
                     .any(|top| word.starts_with(top))
             })
@@ -386,7 +386,7 @@ fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_cont
 fn the_manual_of_start_says_which_containers_are_started_from_the_image() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The creation of a singleton control group harness is carried out in a container of that \
-         image as well, and no attempt is: an attempt is carried out in the environment of its \
+         image as well, and no trial is: a trial is carried out in the environment of its \
          task."
     ));
 }

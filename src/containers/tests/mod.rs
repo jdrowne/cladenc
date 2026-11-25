@@ -1,6 +1,5 @@
 mod arguments;
 mod artifacts;
-mod attempted;
 mod build;
 mod built;
 mod collected;
@@ -20,6 +19,7 @@ mod program;
 mod retried;
 mod reward;
 mod shown;
+mod trialled;
 mod trusted;
 mod unstarted;
 mod up;

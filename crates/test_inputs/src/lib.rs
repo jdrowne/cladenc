@@ -55,7 +55,7 @@ pub const MODEL_URL: &str = "http://models.example/v1";
 
 pub const MODEL_KEY: &str = "a-made-up-key";
 
-pub const SOLVE_ONE_MORE: &str = r#"if [ -d /var/log/cladenc/attempts ]
+pub const SOLVE_ONE_MORE: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   touch solved
   echo "t$(($(wc -l < solved) + 1))" >> solved
@@ -64,7 +64,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_EVERY_TASK: &str = r#"if [ -d /var/log/cladenc/attempts ]
+pub const SOLVE_EVERY_TASK: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   for task in t1 t2 t3 t4 t5; do echo "$task"; done > solved
 else
@@ -72,7 +72,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/attempts ]
+pub const SOLVE_ONE_MORE_OR_END_WITH_125: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   touch solved
   echo "t$(($(wc -l < solved) + 1))" >> solved
@@ -82,7 +82,7 @@ else
   cp "$CLADENC_HARNESS/solved" solved
 fi"#;
 
-pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /var/log/cladenc/attempts ]
+pub const SOLVE_WHAT_THE_IMAGE_SOLVES: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   cp /solved-by-the-image solved
 else
@@ -245,8 +245,8 @@ pub fn task_in(files: &dyn Files, benchmark: &Path, id: &str) -> PathBuf {
     task
 }
 
-pub fn kept_attempt(outputs_directory: &Path, harness: u64, task: &str) -> PathBuf {
-    ["attempts", "holdout"]
+pub fn kept_trial(outputs_directory: &Path, harness: u64, task: &str) -> PathBuf {
+    ["trials", "holdout"]
         .iter()
         .map(|kept| {
             outputs_directory
@@ -254,8 +254,8 @@ pub fn kept_attempt(outputs_directory: &Path, harness: u64, task: &str) -> PathB
                 .join(harness.to_string())
                 .join(task)
         })
-        .find(|attempt| attempt.is_dir())
-        .expect("the attempt is kept in the outputs directory")
+        .find(|trial| trial.is_dir())
+        .expect("the trial is kept in the outputs directory")
 }
 
 pub fn without_seconds(journal: &str) -> String {

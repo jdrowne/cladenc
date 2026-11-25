@@ -1,5 +1,5 @@
 use crate::artificial_selection::ArtificialSelection;
-use crate::genealogy::{AttemptResult, Genealogy};
+use crate::genealogy::{Genealogy, TrialResult};
 
 fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
@@ -16,19 +16,19 @@ fn artificial_selection(max_procreations: u64) -> ArtificialSelection {
 fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     for task in tasks() {
-        genealogy.start_attempt(0, &task).unwrap();
+        genealogy.start_trial(0, &task).unwrap();
         genealogy
-            .end_attempt(0, &task, AttemptResult::Completed)
+            .end_trial(0, &task, TrialResult::Completed)
             .unwrap();
     }
     genealogy
 }
 
 #[test]
-fn there_is_no_next_action_while_the_only_harness_that_could_procreate_still_attempts_a_task() {
+fn there_is_no_next_action_while_the_only_harness_that_could_procreate_still_trials_a_task() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    genealogy.start_attempt(0, "task-0").unwrap();
-    genealogy.start_attempt(0, "task-1").unwrap();
+    genealogy.start_trial(0, "task-0").unwrap();
+    genealogy.start_trial(0, "task-1").unwrap();
     assert_eq!(artificial_selection(100).next_action(&genealogy, 0), None);
 }
 

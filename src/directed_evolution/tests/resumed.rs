@@ -36,9 +36,9 @@ fn a_directed_evolution_that_is_resumed_tells_how_far_it_had_come() {
 }
 
 #[test]
-fn an_attempt_that_had_not_ended_is_started_again() {
+fn a_trial_that_had_not_ended_is_started_again() {
     let said = resumed_by(Double::default()).said;
-    assert!(said.contains("started again the attempt of harness 0 on task benchmark/t1"));
+    assert!(said.contains("started again the trial of harness 0 on task benchmark/t1"));
 }
 
 #[test]

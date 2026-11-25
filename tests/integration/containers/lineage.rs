@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::{AttemptResult, CreationOutcome};
+use cladenc::genealogy::{CreationOutcome, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -29,11 +29,11 @@ fn launch(run_command: &str) -> Launch<'_> {
     }
 }
 
-fn attempted(outputs_directory: &OutputsDirectory, harness: u64) {
+fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
     for task in ["benchmark/t1", "benchmark/t2"] {
-        outputs_directory.start_attempt(harness, task).unwrap();
+        outputs_directory.start_trial(harness, task).unwrap();
         outputs_directory
-            .end_attempt(harness, task, AttemptResult::NotCompleted)
+            .end_trial(harness, task, TrialResult::NotCompleted)
             .unwrap();
     }
 }
@@ -71,14 +71,14 @@ fn family() -> (TempDir, OutputsDirectory) {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    attempted(&outputs_directory, 0);
+    trialled(&outputs_directory, 0);
     procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
     let build = outputs_directory.start_build(1).unwrap();
     fs::write(build.join("stdout"), "building\n").unwrap();
-    attempted(&outputs_directory, 1);
+    trialled(&outputs_directory, 1);
     procreated(&outputs_directory, 2, 0, CreationOutcome::Failed);
     procreated(&outputs_directory, 3, 1, CreationOutcome::Created);
-    attempted(&outputs_directory, 3);
+    trialled(&outputs_directory, 3);
     (directory, outputs_directory)
 }
 
@@ -109,14 +109,14 @@ fn a_progenitor_is_given_a_directory_for_each_harness_it_descends_from() {
 
 #[test]
 fn a_progenitor_that_has_made_no_child_is_given_no_directory_of_children() {
-    assert_eq!(found_by(3, "ls /var/log/cladenc"), "attempts\nline\n");
+    assert_eq!(found_by(3, "ls /var/log/cladenc"), "trials\nline\n");
 }
 
 #[test]
 fn the_primogenitor_is_given_the_children_it_made_created_or_not_and_no_line() {
     assert_eq!(
         found_by(0, "{ ls /var/log/cladenc; ls /var/log/cladenc/children; }"),
-        "attempts\nchildren\n1\n2\n"
+        "trials\nchildren\n1\n2\n"
     );
 }
 
@@ -135,20 +135,20 @@ fn a_progenitor_is_given_no_harness_that_is_neither_of_its_line_nor_its_child() 
 fn of_a_harness_that_was_made_and_built_a_progenitor_is_given_all_four_directories() {
     assert_eq!(
         found_by(3, "ls /var/log/cladenc/line/1"),
-        "attempts\nbuild\nharness\nprocreation\n"
+        "trials\nbuild\nharness\nprocreation\n"
     );
 }
 
 #[test]
-fn of_the_primogenitor_a_progenitor_is_given_its_source_code_and_its_attempts_alone() {
+fn of_the_primogenitor_a_progenitor_is_given_its_source_code_and_its_trials_alone() {
     assert_eq!(
         found_by(3, "ls /var/log/cladenc/line/0"),
-        "attempts\nharness\n"
+        "trials\nharness\n"
     );
 }
 
 #[test]
-fn of_a_child_that_was_not_created_a_progenitor_is_given_no_attempts() {
+fn of_a_child_that_was_not_created_a_progenitor_is_given_no_trials() {
     assert_eq!(
         found_by(0, "ls /var/log/cladenc/children/2"),
         "harness\nprocreation\n"
@@ -192,17 +192,17 @@ fn a_progenitor_reads_the_source_code_of_a_harness_of_its_line() {
 }
 
 #[test]
-fn a_progenitor_reads_the_attempts_of_a_harness_of_its_line_at_the_tasks_that_are_not_held_out() {
+fn a_progenitor_reads_the_trials_of_a_harness_of_its_line_at_the_tasks_that_are_not_held_out() {
     assert_eq!(
-        found_by(3, "ls /var/log/cladenc/line/1/attempts/benchmark"),
+        found_by(3, "ls /var/log/cladenc/line/1/trials/benchmark"),
         "t1\n"
     );
 }
 
 #[test]
-fn a_progenitor_reads_the_attempts_of_a_child_it_made_at_the_tasks_that_are_not_held_out() {
+fn a_progenitor_reads_the_trials_of_a_child_it_made_at_the_tasks_that_are_not_held_out() {
     assert_eq!(
-        found_by(0, "ls /var/log/cladenc/children/1/attempts/benchmark"),
+        found_by(0, "ls /var/log/cladenc/children/1/trials/benchmark"),
         "t1\n"
     );
 }

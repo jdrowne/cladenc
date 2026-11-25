@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Experiment, Genealogy, HarnessId, TrialResult};
 use crate::journal::Settings;
 use crate::report::Report;
 use serde_json::Value;
@@ -45,12 +45,12 @@ fn settings() -> Settings {
 fn benchmarked(genealogy: &mut Genealogy, harness: HarnessId, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
-            AttemptResult::Completed
+            TrialResult::Completed
         } else {
-            AttemptResult::NotCompleted
+            TrialResult::NotCompleted
         };
-        genealogy.start_attempt(harness, &task).unwrap();
-        genealogy.end_attempt(harness, &task, result).unwrap();
+        genealogy.start_trial(harness, &task).unwrap();
+        genealogy.end_trial(harness, &task, result).unwrap();
     }
 }
 
@@ -212,7 +212,7 @@ fn the_tasks_of_an_experiment_where_one_of_the_two_harnesses_was_not_created_are
 }
 
 #[test]
-fn a_task_that_one_of_the_two_harnesses_has_not_attempted_yet_is_not_counted() {
+fn a_task_that_one_of_the_two_harnesses_has_not_trialled_yet_is_not_counted() {
     let mut genealogy = with_a_child_of_the_primogenitor();
     experiment_on(&mut genealogy, 1, (CREATED, CREATED));
     benchmarked(&mut genealogy, 2, &["benchmark/c1"]);

@@ -64,7 +64,7 @@ fn the_manual_of_a_command_is_read_from_its_page() {
 #[test]
 fn the_manual_keeps_the_lines_of_an_example() {
     assert!(manual("cladenc-start").contains(
-        "--harness-run-command 'if [ -d /var/log/cladenc/attempts ]\n    then echo >> procreated; \
+        "--harness-run-command 'if [ -d /var/log/cladenc/trials ]\n    then echo >> procreated; \
          else <COMMAND>; fi'"
     ));
 }

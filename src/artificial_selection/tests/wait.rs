@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::artificial_selection::wait::Waits;
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 const CREATED: CreationOutcome = CreationOutcome::Created;
 const FAILED: CreationOutcome = CreationOutcome::Failed;
@@ -26,9 +26,9 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
 
 fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
-        genealogy.start_attempt(harness, &task).unwrap();
+        genealogy.start_trial(harness, &task).unwrap();
         genealogy
-            .end_attempt(harness, &task, AttemptResult::NotCompleted)
+            .end_trial(harness, &task, TrialResult::NotCompleted)
             .unwrap();
     }
 }
@@ -54,7 +54,7 @@ fn progenitors(genealogy: &Genealogy) -> Vec<HarnessId> {
         .filter_map(
             |seed| match artificial_selection(seed).next_action(genealogy, 0) {
                 Some(Action::Procreation { progenitor }) => Some(progenitor),
-                Some(Action::Attempt { .. }) | None => None,
+                Some(Action::Trial { .. }) | None => None,
             },
         )
         .collect();
@@ -217,7 +217,7 @@ fn a_procreation_that_is_still_running_does_not_end_the_wait_of_its_progenitor()
 }
 
 #[test]
-fn a_harness_that_waits_can_be_the_progenitor_again_once_its_wait_is_over_and_no_attempt_is_left() {
+fn a_harness_that_waits_can_be_the_progenitor_again_once_its_wait_is_over_and_no_trial_is_left() {
     let mut genealogy = after(&[(1, FAILED), (0, CREATED)]);
     benchmark_in_full(&mut genealogy, 3);
     assert!(progenitors(&genealogy).contains(&1));

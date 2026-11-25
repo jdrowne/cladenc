@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
 use crate::containers::tests::double::Double;
-use crate::containers::{self, Attempt, ContainerError, Environment, Host, Launch};
+use crate::containers::{self, ContainerError, Environment, Host, Launch, Trial};
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
@@ -84,16 +84,16 @@ fn a_baseline_that_cannot_be_started_in_the_outputs_directory_is_not_carried_out
 }
 
 #[test]
-fn an_attempt_of_a_harness_that_is_not_there_is_an_error() {
+fn a_trial_of_a_harness_that_is_not_there_is_an_error() {
     let (_directory, outputs_directory) = made();
     let environment = Environment {
         image: test_inputs::IMAGE.to_owned(),
         ..Environment::default()
     };
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         host(&Double::default(), &outputs_directory),
         &LAUNCH,
-        Attempt {
+        Trial {
             harness: 9,
             task: "benchmark/t1",
             environment: &environment,

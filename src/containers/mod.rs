@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 
 use crate::benchmark::TaskConfiguration;
 use crate::file_system::FileSystem;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, HarnessId};
+use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::model::Model;
 use crate::outputs_directory::{holds_only_harness_files, same_tree};
 
@@ -41,7 +41,7 @@ use verifier::Verifying;
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes completes \
-    more coding tasks than you do. /var/log/cladenc/attempts holds the attempts you are shown: one \
+    more coding tasks than you do. /var/log/cladenc/trials holds the trials you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
     completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
@@ -65,16 +65,16 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     /var/log/cladenc/line holds one directory for each harness you descend from, named by its id, \
     and /var/log/cladenc/children one for each harness you made before, created or not. In the \
     directory of such a harness, the directory named harness holds its source code, the directory \
-    named attempts holds its attempts, laid out as yours are, the directory named procreation \
+    named trials holds its trials, laid out as yours are, the directory named procreation \
     holds what the harness that made it printed, in the files named stdout and stderr, with the id \
     of that harness in the file named progenitor and one word in the file named outcome, created, \
     unchanged, failed, build_failed or timed_out, and the directory named build holds what its \
     build printed. A directory that would hold nothing is not there. Use all of them to find what \
     to improve, and to see what was changed before and what came of it. Make a change to how the \
-    harness works on any task: one that answers something you saw in several of your attempts, not \
+    harness works on any task: one that answers something you saw in several of your trials, not \
     in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
     one. Taking out what does not help is an improvement as well. Change files in the current \
-    directory only: what it holds when you end becomes a new harness, which attempts tasks in its \
+    directory only: what it holds when you end becomes a new harness, which is benchmarked in its \
     turn. It may then be asked, as you are now, to improve a copy of its own source code, so a \
     change that makes it better at that counts as well. Where you leave the current directory as \
     it was, no new harness is made: a change that you only print in your answer changes no file. \
@@ -82,7 +82,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
 
 const HARNESS: &str = "/var/opt/cladenc/harness";
 const WORK: &str = "/var/opt/cladenc/work";
-const ATTEMPTS: &str = "/var/log/cladenc/attempts";
+const TRIALS: &str = "/var/log/cladenc/trials";
 const HEALTH_CHECK: &str = "health-check";
 const ARTIFACTS: &str = "artifacts";
 const COLLECTION_HOOKS: &str = "collection-hooks";
@@ -112,7 +112,7 @@ pub struct VerifierImage {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Attempt<'a> {
+pub struct Trial<'a> {
     pub harness: HarnessId,
     pub task: &'a str,
     pub environment: &'a Environment,
@@ -145,8 +145,8 @@ pub struct Retry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Attempted {
-    pub result: AttemptResult,
+pub struct Trialled {
+    pub result: TrialResult,
     pub(crate) seconds: f64,
     pub(crate) ending: HarnessEnding,
 }
@@ -218,7 +218,7 @@ pub fn run_procreation(
     let running = outputs_directory.running_procreation(child);
     let source = running.join("progenitor");
     let made = running.join("child");
-    let attempts = outputs_directory.attempts(progenitor);
+    let trials = outputs_directory.trials(progenitor);
     let shown = shown::to(outputs_directory, progenitor, None);
     let changing = Changing {
         harness: child,
@@ -226,7 +226,7 @@ pub fn run_procreation(
         running: &running,
         source: &source,
         made: &made,
-        attempts: &attempts,
+        trials: &trials,
         shown: &shown,
     };
     let creation = changing.run(host, launch, stop)?;
@@ -250,7 +250,7 @@ pub fn run_baseline(
     let running = outputs_directory.running_baseline(harness);
     let source = running.join("primogenitor");
     let made = running.join("singleton-control-group-harness");
-    let attempts = outputs_directory.attempts(experiment.progenitor);
+    let trials = outputs_directory.trials(experiment.progenitor);
     let shown = shown::to(
         outputs_directory,
         experiment.progenitor,
@@ -262,7 +262,7 @@ pub fn run_baseline(
         running: &running,
         source: &source,
         made: &made,
-        attempts: &attempts,
+        trials: &trials,
         shown: &shown,
     };
     let creation = changing.run(host, launch, stop)?;
@@ -278,7 +278,7 @@ struct Changing<'a> {
     running: &'a Path,
     source: &'a Path,
     made: &'a Path,
-    attempts: &'a Path,
+    trials: &'a Path,
     shown: &'a [(PathBuf, String)],
 }
 
@@ -301,8 +301,8 @@ impl Changing<'_> {
                 read_only: false,
             },
             Mount {
-                from: self.attempts,
-                to: ATTEMPTS,
+                from: self.trials,
+                to: TRIALS,
                 read_only: true,
             },
         ]
@@ -360,28 +360,28 @@ impl Changing<'_> {
     }
 }
 
-pub fn run_attempt(
+pub fn run_trial(
     host: Host<'_>,
     launch: &Launch<'_>,
-    attempt: Attempt<'_>,
+    trial: Trial<'_>,
     stop: &AtomicBool,
     retrying: &dyn Fn(Retry),
-) -> Result<Attempted, ContainerError> {
+) -> Result<Trialled, ContainerError> {
     let outputs_directory = host.outputs_directory;
-    let running = outputs_directory.running_attempt(attempt.harness, attempt.task);
+    let running = outputs_directory.running_trial(trial.harness, trial.task);
     let specification = outputs_directory
-        .start_attempt(attempt.harness, attempt.task)
+        .start_trial(trial.harness, trial.task)
         .and_then(|()| read_specification(outputs_directory.files(), &running))
         .map_err(ContainerError::Io)?;
-    let attempting = Attempting {
-        attempt,
+    let trialling = Trialling {
+        trial,
         running: &running,
         specification: &specification,
     };
-    let attempted = attempting.run(host, launch, stop, retrying)?;
+    let trialled = trialling.run(host, launch, stop, retrying)?;
     outputs_directory
-        .end_attempt(attempt.harness, attempt.task, attempted.result)
-        .map(|()| attempted)
+        .end_trial(trial.harness, trial.task, trialled.result)
+        .map(|()| trialled)
         .map_err(ContainerError::Io)
 }
 
@@ -397,20 +397,20 @@ fn make_directory(files: &dyn FileSystem, directory: &Path) {
     let _ = files.make_directories(directory);
 }
 
-struct Attempting<'a> {
-    attempt: Attempt<'a>,
+struct Trialling<'a> {
+    trial: Trial<'a>,
     running: &'a Path,
     specification: &'a str,
 }
 
-impl Attempting<'_> {
+impl Trialling<'_> {
     fn run(
         &self,
         host: Host<'_>,
         launch: &Launch<'_>,
         stop: &AtomicBool,
         retrying: &dyn Fn(Retry),
-    ) -> Result<Attempted, ContainerError> {
+    ) -> Result<Trialled, ContainerError> {
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
             ("CLADENC_INSTRUCTION", self.specification),
@@ -422,7 +422,7 @@ impl Attempting<'_> {
             command: launch.run_command,
             environment: &environment,
         };
-        let environment = self.attempt.environment;
+        let environment = self.trial.environment;
         let (up, started) = self.brought_up(host, launch, stop, retrying)?;
         let run = Run {
             shell: &shell,
@@ -434,7 +434,7 @@ impl Attempting<'_> {
             variables: &[],
         };
         up.put(
-            &host.outputs_directory.harness(self.attempt.harness),
+            &host.outputs_directory.harness(self.trial.harness),
             HARNESS,
             run.user,
         )
@@ -473,14 +473,14 @@ impl Attempting<'_> {
         );
         let verifying = Verifying {
             host,
-            attempt: &self.attempt,
+            trial: &self.trial,
             running: self.running,
             stop,
             max_retries: launch.max_verifier_health_check_retries,
             retrying,
         };
         let result = verifying.run(up)?;
-        Ok(Attempted {
+        Ok(Trialled {
             result,
             seconds,
             ending,
@@ -494,8 +494,8 @@ impl Attempting<'_> {
         stop: &AtomicBool,
         retrying: &dyn Fn(Retry),
     ) -> Result<(Up<'b>, Instant), ContainerError> {
-        let bringing = Bringing::of_the_task(self.attempt.environment);
-        let health_check = self.attempt.environment.configuration.health_check.as_ref();
+        let bringing = Bringing::of_the_task(self.trial.environment);
+        let health_check = self.trial.environment.configuration.health_check.as_ref();
         let kept = self.running.join(HEALTH_CHECK);
         let backoff = Backoff {
             checked: Checked::Task,

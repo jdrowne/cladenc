@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
+use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -38,16 +38,16 @@ fn settings() -> Settings {
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     let mut genealogy = settings().genealogy();
     for (task, result) in [
-        ("benchmark/t1", AttemptResult::Completed),
-        ("benchmark/t2", AttemptResult::NotCompleted),
-        ("benchmark/t3", AttemptResult::Completed),
+        ("benchmark/t1", TrialResult::Completed),
+        ("benchmark/t2", TrialResult::NotCompleted),
+        ("benchmark/t3", TrialResult::Completed),
     ] {
-        genealogy.start_attempt(0, task).unwrap();
-        genealogy.end_attempt(0, task, result).unwrap();
+        genealogy.start_trial(0, task).unwrap();
+        genealogy.end_trial(0, task, result).unwrap();
     }
     genealogy.start_procreation(0).unwrap();
     let seconds = [Seconds {
-        attempts: 4.5,
+        trials: 4.5,
         procreation: None,
     }];
     assert_eq!(
@@ -69,13 +69,13 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
             r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
-            r#""attempt_seconds":4.5,"procreation_seconds":null},"#,
+            r#""trial_seconds":4.5,"procreation_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"experiment":null,"state":"being_created","#,
             r#""selection_completed":0,"selection_not_completed":0,"#,
             r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":0,"#,
             r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
-            r#""attempt_seconds":0.0,"procreation_seconds":null}]}"#
+            r#""trial_seconds":0.0,"procreation_seconds":null}]}"#
         )
     );
 }

@@ -8,7 +8,7 @@ use std::thread;
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::{AttemptResult, CreationOutcome};
+use cladenc::genealogy::{CreationOutcome, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
@@ -212,34 +212,34 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 }
 
 #[test]
-fn a_harness_can_read_the_ended_attempts_of_its_progenitor_and_none_still_running() {
+fn a_harness_can_read_the_ended_trials_of_its_progenitor_and_none_still_running() {
     let (directory, outputs_directory) = made_at("outputs");
     let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    outputs_directory.start_attempt(0, "benchmark/t1").unwrap();
+    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
     outputs_directory
-        .end_attempt(0, "benchmark/t1", AttemptResult::NotCompleted)
+        .end_trial(0, "benchmark/t1", TrialResult::NotCompleted)
         .unwrap();
-    outputs_directory.start_attempt(0, "benchmark/t2").unwrap();
+    outputs_directory.start_trial(0, "benchmark/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence",
+        "ls /var/log/cladenc/trials /var/log/cladenc/trials/benchmark > evidence",
         &outputs_directory,
         30,
     );
     assert_eq!(
         fs::read_to_string(outputs_directory.harness(1).join("evidence")).unwrap(),
-        "/var/log/cladenc/attempts:\nbenchmark\n\n/var/log/cladenc/attempts/benchmark:\nt1\n"
+        "/var/log/cladenc/trials:\nbenchmark\n\n/var/log/cladenc/trials/benchmark:\nt1\n"
     );
 }
 
 #[test]
-fn a_harness_cannot_write_into_the_attempts_of_its_progenitor() {
+fn a_harness_cannot_write_into_the_trials_of_its_progenitor() {
     let (_directory, outputs_directory, _result) =
-        procreated("touch /var/log/cladenc/attempts/written");
-    assert!(!outputs_directory.attempts(0).join("written").exists());
+        procreated("touch /var/log/cladenc/trials/written");
+    assert!(!outputs_directory.trials(0).join("written").exists());
 }
 
 #[test]

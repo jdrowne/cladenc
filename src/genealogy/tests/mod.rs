@@ -1,4 +1,3 @@
-mod attempt;
 mod build;
 mod clade;
 mod completed;
@@ -7,7 +6,8 @@ mod experiment;
 mod holdout;
 mod primogenitor;
 mod procreation;
-mod refused_attempt;
 mod refused_procreation;
+mod refused_trial;
 mod tasks;
+mod trial;
 mod worded;

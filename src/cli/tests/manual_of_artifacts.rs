@@ -3,7 +3,7 @@ use test_inputs::manual_on_one_line;
 #[test]
 fn the_manual_of_start_names_the_artifacts_among_what_cladenc_obeys() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "artifacts paths in the container that are kept with the attempt once the harness has ended"
+        "artifacts paths in the container that are kept with the trial once the harness has ended"
     ));
 }
 
@@ -11,7 +11,7 @@ fn the_manual_of_start_names_the_artifacts_among_what_cladenc_obeys() {
 fn the_manual_of_start_says_when_the_paths_a_task_lists_under_artifacts_are_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the task.toml of a task lists paths under artifacts, cladenc keeps each with the \
-         attempt, a file or a directory with all it holds, as the harness left it: it copies them \
+         trial, a file or a directory with all it holds, as the harness left it: it copies them \
          out of the container once the harness has ended or was stopped, before the tests \
          directory is copied in."
     ));
@@ -27,7 +27,7 @@ fn the_manual_of_start_says_how_an_entry_under_artifacts_is_written() {
 #[test]
 fn the_manual_of_start_says_where_a_path_listed_under_artifacts_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The path is kept in artifacts in the directory of the attempt, at the place the table \
+        "The path is kept in artifacts in the directory of the trial, at the place the table \
          gives as destination, and at the path itself without its leading / where the table gives \
          none or the entry is a path alone: /app/out/report.json is kept as \
          artifacts/app/out/report.json."
@@ -44,9 +44,8 @@ fn the_manual_of_start_says_that_a_symbolic_link_at_a_path_under_artifacts_is_fo
 #[test]
 fn the_manual_of_start_says_what_a_path_that_is_not_in_the_container_keeps() {
     assert!(
-        manual_on_one_line("cladenc-start").contains(
-            "A path that is not in the container keeps nothing, and the attempt goes on."
-        )
+        manual_on_one_line("cladenc-start")
+            .contains("A path that is not in the container keeps nothing, and the trial goes on.")
     );
 }
 

@@ -54,7 +54,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .spawn()
         .unwrap();
     let outputs = directory.path().join("outputs");
-    let id_file = outputs.join("running/attempt-0-benchmark+t1/stdout");
+    let id_file = outputs.join("running/trial-0-benchmark+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGHUP).unwrap();
     let id = fs::read_to_string(&id_file).unwrap();

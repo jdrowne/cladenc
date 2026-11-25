@@ -17,7 +17,7 @@ fn the_readme_names_no_directory_under_var_lib() {
 }
 
 #[test]
-fn the_readme_says_where_the_source_code_of_the_harness_of_an_attempt_is() {
+fn the_readme_says_where_the_source_code_of_the_harness_of_a_trial_is() {
     assert!(readme().contains("with its source code copied in at `/var/opt/cladenc/harness`."));
 }
 

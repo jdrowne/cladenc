@@ -332,7 +332,7 @@ fn the_readme_names_no_budget() {
 #[test]
 fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
     assert_eq!(
-        ["`/harness`", "`/work`", "`/task`", "`/attempts`"]
+        ["`/harness`", "`/work`", "`/task`", "`/trials`"]
             .into_iter()
             .filter(|top| readme().contains(top))
             .collect::<Vec<&str>>(),
@@ -540,7 +540,7 @@ fn the_section_of_cladenc_start_says_what_time_limits_the_harness_and_the_verifi
          time limit is stopped, with every process it left running, and what it left is judged \
          all the same. The verifier has a time limit of its own, `timeout_sec` under `verifier`, \
          or 600 seconds where the task gives none, counted from the moment the harness ended or \
-         was stopped. No flag gives a time limit of an attempt."
+         was stopped. No flag gives a time limit of a trial."
     ));
 }
 
@@ -553,9 +553,9 @@ fn the_section_of_cladenc_start_says_what_time_limit_the_build_of_an_environment
 }
 
 #[test]
-fn the_section_of_cladenc_start_says_that_an_attempt_is_given_no_more_than_its_task_asks_for() {
+fn the_section_of_cladenc_start_says_that_a_trial_is_given_no_more_than_its_task_asks_for() {
     assert!(what_is_said_of("start").contains(
-        "The container of an attempt is given no more CPUs and no more memory than the task's \
+        "The container of a trial is given no more CPUs and no more memory than the task's \
          `task.toml` asks for, as `cpus` and `memory_mb` under `environment`, and a task that \
          asks for more of either than Docker has stops the directed evolution with exit status 2."
     ));
@@ -576,7 +576,7 @@ fn the_flag_of_the_image_says_which_containers_are_started_from_the_image() {
     assert!(readme().contains(
         "| `--procreation-docker-image <IMAGE>` | Not Required | The Docker image every \
          procreation, every build of a harness and every creation of a singleton control group \
-         harness is carried out in. No attempt is carried out in it: an attempt is carried out \
+         harness is carried out in. No trial is carried out in it: a trial is carried out \
          in the environment of its task,"
     ));
 }
@@ -622,7 +622,7 @@ fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
 #[test]
 fn the_flag_of_the_benchmark_says_that_the_paths_a_task_lists_under_artifacts_are_kept() {
     assert!(readme().contains(
-        "its variables and its health check. It keeps with each attempt the paths that the \
+        "its variables and its health check. It keeps with each trial the paths that the \
          `task.toml` lists under `artifacts`."
     ));
 }
@@ -631,7 +631,7 @@ fn the_flag_of_the_benchmark_says_that_the_paths_a_task_lists_under_artifacts_ar
 fn the_steps_of_cladenc_start_say_when_and_where_the_paths_under_artifacts_are_kept() {
     assert!(what_is_said_of("start").contains(
         "Where the task's `task.toml` lists paths under `artifacts`, `cladenc` keeps each \
-         with the attempt as the harness left it, before the verifier is run: at the place the \
+         with the trial as the harness left it, before the verifier is run: at the place the \
          entry gives as `destination`, or at the path itself without its leading `/`, and, of \
          a directory, without what the patterns the entry lists as `exclude` match."
     ));
@@ -640,9 +640,8 @@ fn the_steps_of_cladenc_start_say_when_and_where_the_paths_under_artifacts_are_k
 #[test]
 fn the_steps_of_cladenc_start_say_what_a_path_that_is_not_in_the_container_keeps() {
     assert!(
-        what_is_said_of("start").contains(
-            "A path that is not in the container keeps nothing, and the attempt goes on."
-        )
+        what_is_said_of("start")
+            .contains("A path that is not in the container keeps nothing, and the trial goes on.")
     );
 }
 
@@ -680,15 +679,15 @@ fn the_steps_of_cladenc_start_say_that_a_task_that_is_never_ready_stops_the_dire
     assert!(what_is_said_of("start").contains(
         "the task gives none, and twice as long before each retry after that, and says each \
          retry on standard error. Where the health check passes in no container, the directed \
-         evolution stops with exit status 1 and no result is recorded for the attempt: \
+         evolution stops with exit status 1 and no result is recorded for the trial: \
          `cladenc` names the harness, the task, the number of tries and the directory that \
          holds what the health check printed the last time it ran, and `cladenc resume` \
-         carries out the attempt again. Where the task's `task.toml`"
+         carries out the trial again. Where the task's `task.toml`"
     ));
 }
 
 #[test]
-fn the_readme_names_no_attempt_whose_harness_was_not_started() {
+fn the_readme_names_no_trial_whose_harness_was_not_started() {
     assert!(!readme().contains("not_started"));
 }
 
@@ -701,7 +700,7 @@ fn the_flag_of_the_most_retries_of_a_task_says_all_that_a_retry_is() {
          container, and `cladenc` waits before it: the `interval_sec` of the health check \
          before the first retry, and twice as long before each retry after that. Where the \
          health check passes in no container, the directed evolution stops and no result is \
-         recorded for the attempt. |\n"
+         recorded for the trial. |\n"
     ));
 }
 

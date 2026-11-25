@@ -1,4 +1,4 @@
-use crate::genealogy::{AttemptResult, CreationOutcome};
+use crate::genealogy::{CreationOutcome, TrialResult};
 use crate::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -17,8 +17,8 @@ fn procreation_finished(outcome: CreationOutcome) -> Record {
     }
 }
 
-fn attempt_finished(result: AttemptResult) -> Record {
-    Record::AttemptFinished {
+fn trial_finished(result: TrialResult) -> Record {
+    Record::TrialFinished {
         harness: 1,
         task: "t2".to_owned(),
         result,
@@ -100,37 +100,37 @@ fn the_build_of_the_primogenitor_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_start_of_an_attempt_is_written_with_its_harness_and_task() {
+fn the_start_of_a_trial_is_written_with_its_harness_and_task() {
     assert_eq!(
-        line(&Record::AttemptStarted {
+        line(&Record::TrialStarted {
             harness: 1,
             task: "t2".to_owned()
         }),
-        r#"{"record":"attempt_started","harness":1,"task":"t2"}"#
+        r#"{"record":"trial_started","harness":1,"task":"t2"}"#
     );
 }
 
 #[test]
-fn the_end_of_an_attempt_is_written_with_a_result_of_completed() {
+fn the_end_of_a_trial_is_written_with_a_result_of_completed() {
     assert_eq!(
-        line(&attempt_finished(AttemptResult::Completed)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"completed","seconds":3.25}"#
+        line(&trial_finished(TrialResult::Completed)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"completed","seconds":3.25}"#
     );
 }
 
 #[test]
-fn the_end_of_an_attempt_is_written_with_a_result_of_not_completed() {
+fn the_end_of_a_trial_is_written_with_a_result_of_not_completed() {
     assert_eq!(
-        line(&attempt_finished(AttemptResult::NotCompleted)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"not_completed","seconds":3.25}"#
+        line(&trial_finished(TrialResult::NotCompleted)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"not_completed","seconds":3.25}"#
     );
 }
 
 #[test]
-fn the_end_of_an_attempt_is_written_with_a_result_of_timed_out() {
+fn the_end_of_a_trial_is_written_with_a_result_of_timed_out() {
     assert_eq!(
-        line(&attempt_finished(AttemptResult::TimedOut)),
-        r#"{"record":"attempt_finished","harness":1,"task":"t2","result":"timed_out","seconds":3.25}"#
+        line(&trial_finished(TrialResult::TimedOut)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"timed_out","seconds":3.25}"#
     );
 }
 
@@ -158,8 +158,8 @@ fn the_end_of_a_procreation_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_start_of_an_attempt_survives_being_written_and_read_back() {
-    let record = Record::AttemptStarted {
+fn the_start_of_a_trial_survives_being_written_and_read_back() {
+    let record = Record::TrialStarted {
         harness: 1,
         task: "t2".to_owned(),
     };
@@ -167,8 +167,8 @@ fn the_start_of_an_attempt_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_an_attempt_survives_being_written_and_read_back() {
-    let record = attempt_finished(AttemptResult::TimedOut);
+fn the_end_of_a_trial_survives_being_written_and_read_back() {
+    let record = trial_finished(TrialResult::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 

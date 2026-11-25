@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Beta, Distribution};
@@ -23,13 +23,13 @@ fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
         .end_procreation(child, CreationOutcome::Created)
         .unwrap();
     for harness in [0, 1] {
-        genealogy.start_attempt(harness, "task-0").unwrap();
+        genealogy.start_trial(harness, "task-0").unwrap();
         genealogy
-            .end_attempt(harness, "task-0", AttemptResult::Completed)
+            .end_trial(harness, "task-0", TrialResult::Completed)
             .unwrap();
-        genealogy.start_attempt(harness, "task-1").unwrap();
+        genealogy.start_trial(harness, "task-1").unwrap();
         genealogy
-            .end_attempt(harness, "task-1", AttemptResult::NotCompleted)
+            .end_trial(harness, "task-1", TrialResult::NotCompleted)
             .unwrap();
     }
     genealogy
@@ -44,13 +44,13 @@ fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
             .unwrap();
     }
     for harness in [0, 1, 2] {
-        genealogy.start_attempt(harness, "task-0").unwrap();
+        genealogy.start_trial(harness, "task-0").unwrap();
         genealogy
-            .end_attempt(harness, "task-0", AttemptResult::Completed)
+            .end_trial(harness, "task-0", TrialResult::Completed)
             .unwrap();
-        genealogy.start_attempt(harness, "task-1").unwrap();
+        genealogy.start_trial(harness, "task-1").unwrap();
         genealogy
-            .end_attempt(harness, "task-1", AttemptResult::NotCompleted)
+            .end_trial(harness, "task-1", TrialResult::NotCompleted)
             .unwrap();
     }
     let child = genealogy.start_procreation(1).unwrap();
@@ -162,7 +162,7 @@ fn a_harness_that_waits_takes_no_draw() {
 }
 
 #[test]
-fn an_attempt_is_the_same_whatever_the_seed() {
+fn a_trial_is_the_same_whatever_the_seed() {
     let first = artificial_selection(0).next_action(&Genealogy::new().selecting_by(&tasks()), 0);
     assert!((1..50).all(|seed| {
         artificial_selection(seed).next_action(&Genealogy::new().selecting_by(&tasks()), 0) == first

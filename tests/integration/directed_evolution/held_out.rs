@@ -9,10 +9,10 @@ use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
-const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
-                                    /var/log/cladenc/attempts/benchmark > tasks-found; fi";
+const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/trials ]; then ls \
+                                    /var/log/cladenc/trials/benchmark > tasks-found; fi";
 
-const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
+const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/trials ]; then ls \
                                           /var/log/cladenc > given; fi";
 
 fn settings(directory: &Path, run_command: &str) -> Settings {
@@ -75,7 +75,7 @@ static GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN: LazyLock<[String; 2]> = LazyLock::ne
 });
 
 #[test]
-fn a_progenitor_finds_its_attempts_at_the_tasks_that_are_not_held_out_and_no_other() {
+fn a_progenitor_finds_its_trials_on_the_tasks_that_are_not_held_out_and_no_other() {
     let directory = evolved();
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/tasks-found")).unwrap(),
@@ -84,14 +84,14 @@ fn a_progenitor_finds_its_attempts_at_the_tasks_that_are_not_held_out_and_no_oth
 }
 
 #[test]
-fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_attempts_and_nothing_else() {
-    assert_eq!(GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[0], "attempts\n");
+fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_trials_and_nothing_else() {
+    assert_eq!(GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[0], "trials\n");
 }
 
 #[test]
 fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
     assert!(
-        ["attempts\nchildren\n", "attempts\nline\n"]
+        ["trials\nchildren\n", "trials\nline\n"]
             .contains(&GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[1].as_str())
     );
 }

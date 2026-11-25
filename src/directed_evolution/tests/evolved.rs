@@ -11,7 +11,7 @@ const IMAGES_REMOVED: &str = "docker image rm --force \
                               cladenc-environments-0123456789abcdef:1-verifier \
                               cladenc-environments-0123456789abcdef:1";
 
-const SHOWN_THE_PRIMOGENITOR: &str = "/attempts/0:/var/log/cladenc/attempts:ro";
+const SHOWN_THE_PRIMOGENITOR: &str = "/trials/0:/var/log/cladenc/trials:ro";
 const EXPERIMENT: &str = "the singleton control group harness, by the primogenitor from the \
                           source code of harness 1";
 
@@ -46,7 +46,7 @@ fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
 fn selected() -> Evolved {
     let docker = Double::default()
         .changing()
-        .verifying(|attempt| attempt.starts_with("attempt-1-"));
+        .verifying(|trial| trial.starts_with("trial-1-"));
     given::started(docker, with_a_selection_task)
 }
 
@@ -63,12 +63,12 @@ fn the_best_harness_is_found_among_the_harnesses_of_the_outputs_directory() {
 }
 
 #[test]
-fn the_primogenitor_attempts_each_task_in_a_container_of_its_own() {
+fn the_primogenitor_trials_each_task_in_a_container_of_its_own() {
     assert_eq!(evolved().count_of("--detach"), 2);
 }
 
 #[test]
-fn a_procreation_starts_once_the_primogenitor_attempted_every_task() {
+fn a_procreation_starts_once_the_primogenitor_trialled_every_task() {
     let said = evolved().said;
     assert!(said.contains("started the procreation of harness 1 by harness 0, procreation 1 of 1"));
 }
@@ -95,7 +95,7 @@ fn a_copy_that_its_progenitor_changes_becomes_a_harness() {
 }
 
 #[test]
-fn a_child_attempts_every_task_as_well() {
+fn a_child_trials_every_task_as_well() {
     assert_eq!(changing().count_of("--detach"), 4);
 }
 

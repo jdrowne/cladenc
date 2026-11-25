@@ -1,5 +1,5 @@
 use crate::genealogy::{
-    AttemptResult, CreationOutcome, Experiment, Genealogy, GenealogyError, HarnessId, HarnessState,
+    CreationOutcome, Experiment, Genealogy, GenealogyError, HarnessId, HarnessState, TrialResult,
 };
 
 const EXPERIMENT: Experiment = Experiment {
@@ -34,10 +34,10 @@ fn with_a_baseline_ended(outcome: CreationOutcome) -> Genealogy {
     genealogy
 }
 
-fn after_an_attempt_of_the_singleton_control_group_harness(result: AttemptResult) -> Genealogy {
+fn after_a_trial_of_the_singleton_control_group_harness(result: TrialResult) -> Genealogy {
     let mut genealogy = with_a_baseline_ended(CreationOutcome::Created);
-    genealogy.start_attempt(3, "a").unwrap();
-    genealogy.end_attempt(3, "a", result).unwrap();
+    genealogy.start_trial(3, "a").unwrap();
+    genealogy.end_trial(3, "a", result).unwrap();
     genealogy
 }
 
@@ -208,72 +208,64 @@ fn a_child_procreated_after_a_baseline_takes_the_id_after_the_singleton_control_
 
 #[test]
 fn a_selection_task_the_singleton_control_group_harness_completed_is_counted_for_it() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert_eq!(genealogy.harnesses()[3].selection_completed(), 1);
 }
 
 #[test]
 fn the_singleton_control_group_harness_is_counted_in_no_clade_of_its_own() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert_eq!(genealogy.harnesses()[3].clade_score(), None);
 }
 
 #[test]
 fn the_singleton_control_group_harness_is_not_counted_in_the_clade_of_the_progenitor() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::NotCompleted);
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::NotCompleted);
     assert_eq!(genealogy.harnesses()[1].clade_score(), None);
 }
 
 #[test]
 fn the_singleton_control_group_harness_is_not_counted_in_the_clade_of_the_primogenitor() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert_eq!(genealogy.harnesses()[0].clade_score(), None);
 }
 
 #[test]
-fn an_attempt_of_the_singleton_control_group_harness_counts_as_started() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+fn a_trial_of_the_singleton_control_group_harness_counts_as_started() {
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert_eq!(genealogy.started(), 1);
 }
 
 #[test]
-fn an_attempt_of_the_singleton_control_group_harness_is_no_action_that_is_counted_as_started() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+fn a_trial_of_the_singleton_control_group_harness_is_no_action_that_is_counted_as_started() {
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert_eq!(genealogy.actions_started(), 2);
 }
 
 #[test]
-fn the_actions_started_count_each_procreation_and_each_attempt_of_a_harness_that_is_not_one() {
+fn the_actions_started_count_each_procreation_and_each_trial_of_a_harness_that_is_not_one() {
     let mut genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
-    genealogy.start_attempt(0, "a").unwrap();
+        after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
+    genealogy.start_trial(0, "a").unwrap();
     assert_eq!(genealogy.actions_started(), 3);
 }
 
 #[test]
 fn a_task_only_the_singleton_control_group_harness_completed_is_completed_by_no_harness_of_a_clade()
 {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::Completed);
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     assert!(!genealogy.completed_by_any("a"));
 }
 
 #[test]
-fn a_harness_has_attempted_a_task_once_its_attempt_has_ended() {
-    let genealogy =
-        after_an_attempt_of_the_singleton_control_group_harness(AttemptResult::NotCompleted);
-    assert!(genealogy.harnesses()[3].has_attempted("a"));
+fn a_harness_has_trialled_a_task_once_its_trial_has_ended() {
+    let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::NotCompleted);
+    assert!(genealogy.harnesses()[3].has_trialled("a"));
 }
 
 #[test]
-fn a_harness_has_not_attempted_a_task_while_its_attempt_is_running() {
+fn a_harness_has_not_trialled_a_task_while_its_trial_is_running() {
     let mut genealogy = with_a_baseline_ended(CreationOutcome::Created);
-    genealogy.start_attempt(3, "a").unwrap();
-    assert!(!genealogy.harnesses()[3].has_attempted("a"));
+    genealogy.start_trial(3, "a").unwrap();
+    assert!(!genealogy.harnesses()[3].has_trialled("a"));
 }

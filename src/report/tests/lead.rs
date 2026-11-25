@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy};
+use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
 use crate::journal::Settings;
 use crate::report::Report;
 use crate::report::lead::{self, Lead, OnlyLeaderCompleted};
@@ -47,12 +47,12 @@ fn settings() -> Settings {
 fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
-            AttemptResult::Completed
+            TrialResult::Completed
         } else {
-            AttemptResult::NotCompleted
+            TrialResult::NotCompleted
         };
-        genealogy.start_attempt(harness, &task).unwrap();
-        genealogy.end_attempt(harness, &task, result).unwrap();
+        genealogy.start_trial(harness, &task).unwrap();
+        genealogy.end_trial(harness, &task, result).unwrap();
     }
 }
 

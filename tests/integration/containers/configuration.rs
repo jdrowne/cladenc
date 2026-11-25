@@ -6,7 +6,7 @@ use std::sync::atomic::AtomicBool;
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::containers::{self, ContainerError, Environment, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
+use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -22,15 +22,15 @@ const WITH_A_MODE: &str = "[environment.env]\nMODE = \"strict\"\n";
 const WITH_A_JUDGE: &str = "[verifier.env]\nJUDGE = \"strict\"\n";
 const IN_AN_IMAGE: &str = "[environment]\ndocker_image = \"debian:stable-slim\"\n";
 
-struct Attempted {
+struct Trialled {
     _directory: TempDir,
     _built: Option<Image>,
     outputs_directory: OutputsDirectory,
-    result: Result<containers::Attempted, ContainerError>,
+    result: Result<containers::Trialled, ContainerError>,
 }
 
 struct Asked {
-    attempted: Attempted,
+    trialled: Trialled,
     of_the_harness: &'static [&'static str],
     of_the_verifier: &'static [&'static str],
 }
@@ -67,7 +67,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<
     )
 }
 
-fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
+fn trialled(task_toml: &str, run_command: &str, verifier: &str) -> Trialled {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -93,13 +93,13 @@ fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &environment,
@@ -107,7 +107,7 @@ fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
         &AtomicBool::new(false),
         &|_| (),
     );
-    Attempted {
+    Trialled {
         _directory: directory,
         _built: built,
         outputs_directory,
@@ -115,16 +115,16 @@ fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
     }
 }
 
-fn kept(attempted: &Attempted, file: &str) -> String {
-    fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
+fn kept(trialled: &Trialled, file: &str) -> String {
+    fs::read_to_string(trialled.outputs_directory.trial(0, TASK).join(file)).unwrap()
 }
 
 fn printed_by_the_harness(task_toml: &str, run_command: &str) -> String {
-    kept(&attempted(task_toml, run_command, FINISHED), "stdout")
+    kept(&trialled(task_toml, run_command, FINISHED), "stdout")
 }
 
 fn printed_by_the_verifier(task_toml: &str, verifier: &str) -> String {
-    kept(&attempted(task_toml, FINISH, verifier), "verifier/stdout")
+    kept(&trialled(task_toml, FINISH, verifier), "verifier/stdout")
 }
 
 fn asked(
@@ -133,7 +133,7 @@ fn asked(
     of_the_verifier: &'static [&'static str],
 ) -> Asked {
     Asked {
-        attempted: attempted(
+        trialled: trialled(
             task_toml,
             &test_inputs::one_after_another(of_the_harness),
             &test_inputs::one_after_another(of_the_verifier),
@@ -180,7 +180,7 @@ fn found_by_the_harness(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
         asked.of_the_harness,
-        &kept(&asked.attempted, "stdout"),
+        &kept(&asked.trialled, "stdout"),
     )
 }
 
@@ -188,7 +188,7 @@ fn found_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
         asked.of_the_verifier,
-        &kept(&asked.attempted, "verifier/stdout"),
+        &kept(&asked.trialled, "verifier/stdout"),
     )
 }
 
@@ -256,18 +256,18 @@ fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_verifier() {
 #[test]
 fn a_verifier_that_runs_as_another_user_than_the_harness_can_score() {
     assert!(matches!(
-        WITH_A_USER_FOR_THE_VERIFIER.attempted.result,
-        Ok(containers::Attempted {
-            result: AttemptResult::Completed,
+        WITH_A_USER_FOR_THE_VERIFIER.trialled.result,
+        Ok(containers::Trialled {
+            result: TrialResult::Completed,
             ..
         })
     ));
 }
 
 #[test]
-fn an_attempt_whose_task_names_a_user_that_its_environment_does_not_hold_is_an_error() {
+fn a_trial_whose_task_names_a_user_that_its_environment_does_not_hold_is_an_error() {
     assert!(matches!(
-        attempted("[agent]\nuser = \"nobody-here\"\n", FINISH, FINISHED).result,
+        trialled("[agent]\nuser = \"nobody-here\"\n", FINISH, FINISHED).result,
         Err(ContainerError::Io(_))
     ));
 }
@@ -291,7 +291,7 @@ fn the_verifier_works_in_the_working_directory_the_task_names() {
 #[test]
 fn what_the_harness_leaves_in_the_working_directory_the_task_names_is_kept_as_its_work() {
     assert_eq!(
-        kept(&WITH_A_WORKING_DIRECTORY.attempted, "work/note"),
+        kept(&WITH_A_WORKING_DIRECTORY.trialled, "work/note"),
         "left\n"
     );
 }
@@ -387,7 +387,7 @@ fn a_variable_of_the_task_does_not_take_the_place_of_what_cladenc_tells_the_harn
 }
 
 #[test]
-fn an_attempt_is_carried_out_in_the_image_the_task_names() {
+fn a_trial_is_carried_out_in_the_image_the_task_names() {
     assert_eq!(found_by_the_harness(&WITH_AN_IMAGE, "pwd; ls /app"), "/\n");
 }
 

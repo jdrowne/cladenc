@@ -1,7 +1,7 @@
 use test_inputs::manual_on_one_line;
 
 #[test]
-fn the_manual_of_start_says_what_the_harness_of_an_attempt_is_given_of_its_task() {
+fn the_manual_of_start_says_what_the_harness_of_a_trial_is_given_of_its_task() {
     assert!(
         manual_on_one_line("cladenc-start")
             .contains("CLADENC_INSTRUCTION holds the task specification. The")
@@ -9,7 +9,7 @@ fn the_manual_of_start_says_what_the_harness_of_an_attempt_is_given_of_its_task(
 }
 
 #[test]
-fn the_manual_of_start_says_that_an_attempt_is_carried_out_in_the_environment_of_its_task() {
+fn the_manual_of_start_says_that_a_trial_is_carried_out_in_the_environment_of_its_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "and cladenc carries it out in two steps, in one container of the environment of the task, \
          started as"
@@ -17,7 +17,7 @@ fn the_manual_of_start_says_that_an_attempt_is_carried_out_in_the_environment_of
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_source_code_of_the_harness_of_an_attempt_is() {
+fn the_manual_of_start_says_where_the_source_code_of_the_harness_of_a_trial_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "First the source code of the harness is copied into that container, at \
          /var/opt/cladenc/harness,"
@@ -25,7 +25,7 @@ fn the_manual_of_start_says_where_the_source_code_of_the_harness_of_an_attempt_i
 }
 
 #[test]
-fn the_manual_of_start_says_as_whom_and_where_the_harness_of_an_attempt_runs() {
+fn the_manual_of_start_says_as_whom_and_where_the_harness_of_a_trial_runs() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "in the working directory of the environment and as its user: the user and the working \
          directory its Dockerfile names, and root and / where it names none."
@@ -65,13 +65,13 @@ fn the_manual_of_start_names_what_a_verifier_is_given() {
 }
 
 #[test]
-fn the_manual_of_start_names_what_cladenc_makes_before_the_harness_of_an_attempt_is_started() {
+fn the_manual_of_start_names_what_cladenc_makes_before_the_harness_of_a_trial_is_started() {
     let help = manual_on_one_line("cladenc-start");
     let made = [
         "change the verifier. Before the harness is started, cladenc makes",
         "/logs a symbolic link to /var/log/cladenc/harbor",
         "/logs/artifacts an empty directory, for what the harness saves to be",
-        "kept with the attempt",
+        "kept with the trial",
     ];
     assert!(made.iter().all(|line| help.contains(line)));
 }
@@ -151,14 +151,12 @@ fn the_manual_of_start_says_that_no_container_is_given_the_solution_of_a_task() 
 }
 
 #[test]
-fn the_manual_of_start_says_that_how_an_attempt_ends_decides_the_result() {
-    assert!(
-        manual_on_one_line("cladenc-start").contains("How an attempt ends decides its result:")
-    );
+fn the_manual_of_start_says_that_how_a_trial_ends_decides_the_result() {
+    assert!(manual_on_one_line("cladenc-start").contains("How a trial ends decides its result:"));
 }
 
 #[test]
-fn the_manual_of_start_says_what_each_way_an_attempt_ends_gives() {
+fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
     let help = manual_on_one_line("cladenc-start");
     let endings = [
         "a score of 1, or 1 for every label of reward.json the harness completed the task",
@@ -168,7 +166,7 @@ fn the_manual_of_start_says_what_each_way_an_attempt_ends_gives() {
          the directed evolution stops",
         "a health check of the task, or of the verifier container, that passes in none of its \
          tries no result is recorded: the directed evolution stops, and cladenc resume carries out \
-         the attempt again",
+         the trial again",
         "the time limit of the verifier the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
@@ -183,7 +181,7 @@ fn the_manual_of_start_says_that_the_time_limit_gives_not_completed_recorded_as_
 }
 
 #[test]
-fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_an_attempt() {
+fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_a_trial() {
     let help = manual_on_one_line("cladenc-start");
     let kept = [
         "result one word: completed, not_completed or timed_out",
@@ -223,7 +221,7 @@ fn the_manual_of_start_names_what_the_directory_of_a_task_holds() {
 #[test]
 fn the_manual_of_start_says_that_the_environment_of_a_task_holds_the_files_the_work_starts_from() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "describes the environment of the task, the image its attempts are carried out in with the \
+        "describes the environment of the task, the image its trials are carried out in with the \
          files the work starts from,"
     ));
 }
@@ -237,7 +235,7 @@ fn the_manual_of_start_says_that_a_task_that_lacks_one_of_the_four_is_refused() 
 fn the_manual_of_start_says_what_the_task_toml_of_a_task_is_for() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("which says how the task is to be attempted tests")
+            .contains("which says how a trial on the task is carried out tests")
     );
 }
 
@@ -381,7 +379,7 @@ fn the_manual_of_start_says_that_the_holdout_tasks_are_drawn_once_and_kept_in_th
 fn the_manual_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_too() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Every harness is benchmarked on the holdout tasks as on the non-holdout tasks, selection \
-         tasks and corroboration tasks alike, and nothing a harness is given in an attempt says \
+         tasks and corroboration tasks alike, and nothing a harness is given in a trial says \
          which of the sets its task is in."
     ));
 }
@@ -389,29 +387,29 @@ fn the_manual_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_t
 #[test]
 fn the_manual_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness that procreates is given its attempts at the non-holdout tasks, and nothing of \
+        "A harness that procreates is given its trials on the non-holdout tasks, and nothing of \
          the holdout tasks: no task specification, no work, no result, and no count of them."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_which_attempts_the_directory_named_attempts_keeps() {
+fn the_manual_of_start_says_which_trials_the_directory_named_trials_keeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "attempts in the outputs directory keeps every attempt at a task that is not held out,"
+        "trials in the outputs directory keeps every trial on a task that is not held out,"
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_attempts_at_the_holdout_tasks_are_kept() {
+fn the_manual_of_start_says_where_the_trials_on_the_holdout_tasks_are_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "holdout in the outputs directory keeps the attempts at the holdout tasks, selection tasks \
+        "holdout in the outputs directory keeps the trials on the holdout tasks, selection tasks \
          and corroboration tasks together, in the same way, apart from the others, so that the \
          directory a harness that procreates is given holds none of them."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_directory_of_an_attempt_is() {
+fn the_manual_of_start_says_where_the_directory_of_a_trial_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "in a directory named after the harness, in it one named after the benchmark, and in that \
          one named after the task, which holds"

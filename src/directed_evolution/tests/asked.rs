@@ -49,7 +49,7 @@ fn containers(commands: &[String]) -> Vec<&String> {
         .collect()
 }
 
-fn containers_of_the_attempts(commands: &[String]) -> Vec<&String> {
+fn containers_of_the_trials(commands: &[String]) -> Vec<&String> {
     commands
         .iter()
         .filter(|command| command.contains(STAYS))
@@ -147,16 +147,16 @@ fn every_command_is_started_under_a_timer_that_ends_it() {
 }
 
 #[test]
-fn the_container_of_an_attempt_whose_task_gives_no_time_limit_sleeps_without_end() {
+fn the_container_of_a_trial_whose_task_gives_no_time_limit_sleeps_without_end() {
     let commands = evolved().commands();
     assert_eq!(
-        last_words(&containers_of_the_attempts(&commands)),
+        last_words(&containers_of_the_trials(&commands)),
         ["4294968495", "4294968495"]
     );
 }
 
 #[test]
-fn the_containers_of_the_attempts_are_started_from_the_images_built_from_the_environments() {
+fn the_containers_of_the_trials_are_started_from_the_images_built_from_the_environments() {
     let commands = evolved().commands();
     let all: Vec<&String> = commands.iter().collect();
     let started: BTreeSet<String> = following("--detach", &all).into_iter().collect();
@@ -195,9 +195,9 @@ fn the_value_of_a_variable_of_a_task_is_given_to_docker_on_its_standard_input_al
 }
 
 #[test]
-fn the_container_of_an_attempt_is_started_in_the_working_directory_its_task_names() {
+fn the_container_of_a_trial_is_started_in_the_working_directory_its_task_names() {
     let commands = obeyed().commands();
-    let named: Vec<bool> = containers_of_the_attempts(&commands)
+    let named: Vec<bool> = containers_of_the_trials(&commands)
         .iter()
         .map(|command| command.contains(" --workdir /srv/elsewhere "))
         .collect();
@@ -205,10 +205,10 @@ fn the_container_of_an_attempt_is_started_in_the_working_directory_its_task_name
 }
 
 #[test]
-fn docker_reads_the_variables_of_the_container_of_an_attempt_from_its_standard_input() {
+fn docker_reads_the_variables_of_the_container_of_a_trial_from_its_standard_input() {
     let commands = obeyed().commands();
     assert!(each_holds(
-        &containers_of_the_attempts(&commands),
+        &containers_of_the_trials(&commands),
         " --env-file /dev/stdin "
     ));
 }
@@ -227,10 +227,10 @@ fn the_harness_and_the_verifier_of_a_task_are_started_as_the_users_the_task_name
 }
 
 #[test]
-fn the_container_of_an_attempt_sleeps_for_both_time_limits_of_its_task_and_ten_minutes_more() {
+fn the_container_of_a_trial_sleeps_for_both_time_limits_of_its_task_and_ten_minutes_more() {
     let commands = obeyed().commands();
     assert_eq!(
-        last_words(&containers_of_the_attempts(&commands)),
+        last_words(&containers_of_the_trials(&commands)),
         ["4294968495", "650"]
     );
 }

@@ -1,4 +1,3 @@
-mod attempt;
 mod baseline;
 mod benchmark;
 mod build;
@@ -11,3 +10,4 @@ mod image;
 mod line;
 mod procreation;
 mod removable;
+mod trial;

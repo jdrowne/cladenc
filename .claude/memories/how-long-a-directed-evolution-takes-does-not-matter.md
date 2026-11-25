@@ -10,8 +10,8 @@ metadata:
 
 # How long a directed evolution takes does not matter
 
-How long a directed evolution takes to run, a trial run by hand among them, is not a cost to weigh. Never propose bringing part of a benchmark, a lower `--max-procreations` or a smaller model to make one finish sooner, and never write run time into an issue as something a person has to decide.
+How long a directed evolution takes to run, one run by hand to try `cladenc` out among them, is not a cost to weigh. Never propose bringing part of a benchmark, a lower `--max-procreations` or a smaller model to make one finish sooner, and never write run time into an issue as something a person has to decide.
 
 **Why:** the user does not mind a directed evolution running for days; only what it shows matters.
 
-**How to apply:** bring the whole benchmark and size a trial by what it has to show. Memory, disk and the model's ability still count; time does not. See [[every-harness-is-benchmarked-in-full]].
+**How to apply:** bring the whole benchmark and size such a run by what it has to show. Memory, disk and the model's ability still count; time does not. See [[every-harness-is-benchmarked-in-full]].

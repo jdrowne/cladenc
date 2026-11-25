@@ -12,7 +12,7 @@ fn place_of(destination: &str) -> PathBuf {
     };
     artifacts::place_of(
         &artifact,
-        Path::new("/outputs/running/attempt-3-t1/artifacts"),
+        Path::new("/outputs/running/trial-3-t1/artifacts"),
     )
 }
 
@@ -38,7 +38,7 @@ fn to_be_given() -> (Memory, PathBuf) {
 fn an_artifact_is_kept_at_its_destination_under_the_directory_of_the_artifacts() {
     assert_eq!(
         place_of("app/reports"),
-        Path::new("/outputs/running/attempt-3-t1/artifacts/app/reports")
+        Path::new("/outputs/running/trial-3-t1/artifacts/app/reports")
     );
 }
 

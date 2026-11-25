@@ -18,7 +18,7 @@ pub enum Started {
         child: HarnessId,
         progenitor: HarnessId,
     },
-    Attempt {
+    Trial {
         harness: HarnessId,
         task: String,
     },
@@ -40,8 +40,8 @@ impl Display for Started {
                 "the creation of harness {harness}, the singleton control group harness, by the \
                  primogenitor from the source code of harness {progenitor}"
             ),
-            Self::Attempt { harness, task } => {
-                write!(formatter, "the attempt of harness {harness} on task {task}")
+            Self::Trial { harness, task } => {
+                write!(formatter, "the trial of harness {harness} on task {task}")
             }
         }
     }
@@ -55,7 +55,7 @@ enum First {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct Seconds {
-    pub(crate) attempts: f64,
+    pub(crate) trials: f64,
     pub(crate) procreation: Option<f64>,
 }
 
@@ -170,23 +170,23 @@ impl State {
                 self.unfinished
                     .retain(|action| !matches!(action, Started::Baseline { harness: running, .. } if *running == harness));
             }
-            Record::AttemptStarted { harness, task } => {
+            Record::TrialStarted { harness, task } => {
                 self.genealogy
-                    .start_attempt(harness, &task)
+                    .start_trial(harness, &task)
                     .map_err(refused)?;
-                self.start(Started::Attempt { harness, task });
+                self.start(Started::Trial { harness, task });
             }
-            Record::AttemptFinished {
+            Record::TrialFinished {
                 harness,
                 task,
                 result,
                 seconds,
             } => {
                 self.genealogy
-                    .end_attempt(harness, &task, result)
+                    .end_trial(harness, &task, result)
                     .map_err(refused)?;
-                self.seconds[harness as usize].attempts += seconds;
-                let finished = Started::Attempt { harness, task };
+                self.seconds[harness as usize].trials += seconds;
+                let finished = Started::Trial { harness, task };
                 self.unfinished.retain(|action| *action != finished);
             }
             Record::DirectedEvolutionFinished { best_harness } => {

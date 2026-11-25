@@ -96,7 +96,7 @@ fn the_manual_of_start_says_that_each_retry_of_the_health_check_of_a_task_is_sai
 fn the_manual_of_start_says_that_a_task_that_is_never_ready_stops_the_directed_evolution() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the health check passes in no container, the directed evolution stops with exit \
-         status 1, and no result is recorded for the attempt."
+         status 1, and no result is recorded for the trial."
     ));
 }
 
@@ -113,7 +113,7 @@ fn the_manual_of_start_says_what_cladenc_names_of_a_harness_that_was_never_start
 fn the_manual_of_start_says_where_what_the_health_check_of_a_task_printed_stays() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "ran. That directory is under running in the outputs directory, and stays there until \
-         cladenc resume carries out the attempt again. ARTIFACTS Where the task.toml of a task \
+         cladenc resume carries out the trial again. ARTIFACTS Where the task.toml of a task \
          lists paths under artifacts"
     ));
 }
@@ -141,6 +141,6 @@ fn the_manual_of_start_says_where_what_a_health_check_printed_is_kept() {
 }
 
 #[test]
-fn the_manual_of_start_names_no_attempt_whose_harness_was_not_started() {
+fn the_manual_of_start_names_no_trial_whose_harness_was_not_started() {
     assert!(!manual_on_one_line("cladenc-start").contains("not_started"));
 }

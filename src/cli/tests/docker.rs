@@ -107,10 +107,10 @@ fn a_start_whose_docker_a_signal_ended_gives_exit_status_1() {
 }
 
 #[test]
-fn a_start_whose_docker_a_signal_ended_says_which_attempt_and_which_signal() {
+fn a_start_whose_docker_a_signal_ended_says_which_trial_and_which_signal() {
     assert_eq!(
         said_last(&ended_by_a_signal()),
-        "cladenc: the directed evolution stopped before its end: the attempt of harness 0 on \
+        "cladenc: the directed evolution stopped before its end: the trial of harness 0 on \
          task benchmark/t1 was ended by signal 15"
     );
 }

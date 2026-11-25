@@ -23,7 +23,7 @@ fn the_readme_says_when_the_commands_a_task_lists_under_collect_are_run() {
 #[test]
 fn the_readme_says_what_a_command_under_collect_that_fails_does_and_where_its_output_is() {
     assert!(readme().contains(
-        "A command that fails does not end the attempt, and what each command printed is kept \
+        "A command that fails does not end the trial, and what each command printed is kept \
          in `collection-hooks`."
     ));
 }

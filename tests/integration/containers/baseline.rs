@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use cladenc::benchmark::Benchmark;
 use cladenc::containers::{self, ContainerError, Creation, Host, Launch, Program};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::{AttemptResult, CreationOutcome, Experiment};
+use cladenc::genealogy::{CreationOutcome, Experiment, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -30,15 +30,15 @@ fn launch<'a>(image: &'a str, run_command: &'a str, build_command: Option<&'a st
     }
 }
 
-fn attempted(outputs_directory: &OutputsDirectory, harness: u64) {
+fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
     for task in ["benchmark/t1", "benchmark/t2"] {
-        outputs_directory.start_attempt(harness, task).unwrap();
+        outputs_directory.start_trial(harness, task).unwrap();
         outputs_directory
-            .end_attempt(harness, task, AttemptResult::NotCompleted)
+            .end_trial(harness, task, TrialResult::NotCompleted)
             .unwrap();
         fs::write(
-            outputs_directory.attempt(harness, task).join("stdout"),
-            format!("attempt of {harness}\n"),
+            outputs_directory.trial(harness, task).join("stdout"),
+            format!("trial of {harness}\n"),
         )
         .unwrap();
     }
@@ -79,9 +79,9 @@ fn family() -> (TempDir, OutputsDirectory) {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    attempted(&outputs_directory, 0);
+    trialled(&outputs_directory, 0);
     procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
-    attempted(&outputs_directory, 1);
+    trialled(&outputs_directory, 1);
     procreated(&outputs_directory, 2, 1, CreationOutcome::Created);
     procreated(&outputs_directory, 3, 1, CreationOutcome::Created);
     procreated(&outputs_directory, 4, 1, CreationOutcome::Failed);
@@ -158,16 +158,16 @@ fn the_primogenitor_is_given_the_instruction_the_progenitor_is_given() {
 }
 
 #[test]
-fn the_primogenitor_is_given_the_attempts_of_the_progenitor_to_read() {
+fn the_primogenitor_is_given_the_trials_of_the_progenitor_to_read() {
     assert_eq!(
-        found("cat /var/log/cladenc/attempts/benchmark/t1/stdout"),
-        "attempt of 1\n"
+        found("cat /var/log/cladenc/trials/benchmark/t1/stdout"),
+        "trial of 1\n"
     );
 }
 
 #[test]
-fn the_primogenitor_is_given_no_attempt_of_the_progenitor_at_a_holdout_task() {
-    assert_eq!(found("ls /var/log/cladenc/attempts/benchmark"), "t1\n");
+fn the_primogenitor_is_given_no_trial_of_the_progenitor_at_a_holdout_task() {
+    assert_eq!(found("ls /var/log/cladenc/trials/benchmark"), "t1\n");
 }
 
 #[test]

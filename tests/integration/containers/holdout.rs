@@ -2,17 +2,17 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, ContainerError, Environment, Host, Launch, Program};
+use cladenc::containers::{self, ContainerError, Environment, Host, Launch, Program, Trial};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
+use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
 
 const SHOWN: &str = "benchmark/t1";
 const HELD_OUT: &str = "benchmark/t2";
-const LIST_THE_ATTEMPTS: &str =
-    "ls /var/log/cladenc/attempts /var/log/cladenc/attempts/benchmark > evidence";
+const LIST_THE_TRIALS: &str =
+    "ls /var/log/cladenc/trials /var/log/cladenc/trials/benchmark > evidence";
 const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/opt/cladenc /var/log/cladenc -name '*t2*'; \
                                          grep -r -l t2 /var/opt/cladenc /var/log/cladenc; } > \
                                          evidence; true";
@@ -58,22 +58,22 @@ fn environment() -> Environment {
     }
 }
 
-fn attempted(
+fn trialled(
     run_command: &str,
     task: &str,
 ) -> (
     TempDir,
     OutputsDirectory,
-    Result<containers::Attempted, ContainerError>,
+    Result<containers::Trialled, ContainerError>,
 ) {
     let (directory, outputs_directory) = made();
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch(run_command),
-        Attempt {
+        Trial {
             harness: 0,
             task,
             environment: &environment(),
@@ -84,17 +84,17 @@ fn attempted(
     (directory, outputs_directory, result)
 }
 
-fn given_in_the_attempt_at(task: &str) -> String {
-    let (_directory, outputs_directory, _result) = attempted(SAY_WHAT_IS_GIVEN, task);
-    fs::read_to_string(outputs_directory.attempt(0, task).join("stdout")).unwrap()
+fn given_in_the_trial_at(task: &str) -> String {
+    let (_directory, outputs_directory, _result) = trialled(SAY_WHAT_IS_GIVEN, task);
+    fs::read_to_string(outputs_directory.trial(0, task).join("stdout")).unwrap()
 }
 
 fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
     let (_directory, outputs_directory) = made();
     for task in [SHOWN, HELD_OUT] {
-        outputs_directory.start_attempt(0, task).unwrap();
+        outputs_directory.start_trial(0, task).unwrap();
         outputs_directory
-            .end_attempt(0, task, AttemptResult::NotCompleted)
+            .end_trial(0, task, TrialResult::NotCompleted)
             .unwrap();
     }
     let _ = containers::run_procreation(
@@ -111,10 +111,10 @@ fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
 }
 
 #[test]
-fn a_progenitor_is_given_its_attempts_at_the_tasks_that_are_not_held_out_and_no_other() {
+fn a_progenitor_is_given_its_trials_on_the_tasks_that_are_not_held_out_and_no_other() {
     assert_eq!(
-        left_in_the_child_of_a_benchmarked_progenitor(LIST_THE_ATTEMPTS),
-        "/var/log/cladenc/attempts:\nbenchmark\n\n/var/log/cladenc/attempts/benchmark:\nt1\n"
+        left_in_the_child_of_a_benchmarked_progenitor(LIST_THE_TRIALS),
+        "/var/log/cladenc/trials:\nbenchmark\n\n/var/log/cladenc/trials/benchmark:\nt1\n"
     );
 }
 
@@ -127,9 +127,9 @@ fn nothing_a_progenitor_is_given_is_named_after_a_holdout_task_or_holds_its_id()
 }
 
 #[test]
-fn the_harness_of_an_attempt_at_a_holdout_task_is_given_what_that_of_any_attempt_is() {
+fn the_harness_of_a_trial_on_a_holdout_task_is_given_what_that_of_any_trial_is() {
     assert_eq!(
-        given_in_the_attempt_at(HELD_OUT),
-        given_in_the_attempt_at(SHOWN)
+        given_in_the_trial_at(HELD_OUT),
+        given_in_the_trial_at(SHOWN)
     );
 }

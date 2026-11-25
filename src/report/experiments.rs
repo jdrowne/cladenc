@@ -111,8 +111,8 @@ fn completed_by_one_alone(one: &Harness, other: &Harness, tasks: &[String]) -> u
     tasks
         .iter()
         .filter(|task| {
-            one.has_attempted(task)
-                && other.has_attempted(task)
+            one.has_trialled(task)
+                && other.has_trialled(task)
                 && one.has_completed(task)
                 && !other.has_completed(task)
         })

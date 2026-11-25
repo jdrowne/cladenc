@@ -123,7 +123,7 @@ fn control_made_by(docker: Double) -> Procreated {
 }
 
 #[test]
-fn a_harness_procreates_in_a_container_that_holds_its_copy_its_work_and_its_attempts() {
+fn a_harness_procreates_in_a_container_that_holds_its_copy_its_work_and_its_trials() {
     let procreated = procreated_by(Double::default(), &LAUNCH);
     assert_eq!(
         procreated.commands(),
@@ -133,7 +133,7 @@ fn a_harness_procreates_in_a_container_that_holds_its_copy_its_work_and_its_atte
              --workdir /var/opt/cladenc/work \
              --volume OUTPUTS/running/procreation-1/progenitor:/var/opt/cladenc/harness \
              --volume OUTPUTS/running/procreation-1/child:/var/opt/cladenc/work \
-             --volume OUTPUTS/attempts/0:/var/log/cladenc/attempts:ro \
+             --volume OUTPUTS/trials/0:/var/log/cladenc/trials:ro \
              --env CLADENC_HARNESS --env CLADENC_INSTRUCTION --env CLADENC_MODEL \
              --env CLADENC_MODEL_URL debian:stable-slim sh -c {TIMER} run a harness 35",
             Uid::effective(),
@@ -422,7 +422,7 @@ fn a_child_whose_build_docker_does_not_start_names_the_file_that_holds_what_dock
 }
 
 #[test]
-fn a_progenitor_is_shown_the_source_code_and_the_attempts_of_each_harness_it_descends_from() {
+fn a_progenitor_is_shown_the_source_code_and_the_trials_of_each_harness_it_descends_from() {
     let (directory, outputs_directory) = given::made();
     let docker = Double::default().changing();
     let docker = docker.on(&directory);
@@ -435,9 +435,9 @@ fn a_progenitor_is_shown_the_source_code_and_the_attempts_of_each_harness_it_des
         [
             "OUTPUTS/running/procreation-2/progenitor:/var/opt/cladenc/harness",
             "OUTPUTS/running/procreation-2/child:/var/opt/cladenc/work",
-            "OUTPUTS/attempts/1:/var/log/cladenc/attempts:ro",
+            "OUTPUTS/trials/1:/var/log/cladenc/trials:ro",
             "OUTPUTS/harnesses/0:/var/log/cladenc/line/0/harness:ro",
-            "OUTPUTS/attempts/0:/var/log/cladenc/line/0/attempts:ro",
+            "OUTPUTS/trials/0:/var/log/cladenc/line/0/trials:ro",
         ]
     );
 }
@@ -450,7 +450,7 @@ fn the_singleton_control_group_harness_is_created_from_a_copy_of_the_source_of_t
         [
             "OUTPUTS/running/baseline-2/primogenitor:/var/opt/cladenc/harness",
             "OUTPUTS/running/baseline-2/singleton-control-group-harness:/var/opt/cladenc/work",
-            "OUTPUTS/attempts/0:/var/log/cladenc/attempts:ro",
+            "OUTPUTS/trials/0:/var/log/cladenc/trials:ro",
         ]
     );
 }
@@ -473,7 +473,7 @@ fn the_primogenitor_is_shown_each_child_its_progenitor_made_before_that_of_the_e
         given::following("--volume", &docker.commands(&outputs_directory)[2])[3..],
         [
             "OUTPUTS/harnesses/1:/var/log/cladenc/children/1/harness:ro",
-            "OUTPUTS/attempts/1:/var/log/cladenc/children/1/attempts:ro",
+            "OUTPUTS/trials/1:/var/log/cladenc/children/1/trials:ro",
             "OUTPUTS/procreations/1:/var/log/cladenc/children/1/procreation:ro",
         ]
     );

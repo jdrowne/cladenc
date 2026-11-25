@@ -164,7 +164,7 @@ impl Double {
                 .any(|argument| argument.ends_with(VERIFIER));
             let to = asked.arguments.last().map(PathBuf::from);
             if let Some(to) = to.filter(|_| from_the_verifier) {
-                let reward = reward(completes(&attempt_of(&to)));
+                let reward = reward(completes(&trial_of(&to)));
                 files.write(to.join("reward.txt"), reward).unwrap();
             }
         })
@@ -245,7 +245,7 @@ impl Docker for Double {
     }
 }
 
-fn attempt_of(to: &Path) -> String {
+fn trial_of(to: &Path) -> String {
     to.ancestors()
         .nth(3)
         .and_then(Path::file_name)

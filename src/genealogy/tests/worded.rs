@@ -50,10 +50,10 @@ fn a_singleton_control_group_harness_that_is_not_being_created_is_worded() {
 }
 
 #[test]
-fn a_harness_that_attempts_a_task_but_is_not_created_is_worded() {
+fn a_harness_that_trials_a_task_but_is_not_created_is_worded() {
     assert_eq!(
         worded(GenealogyError::HarnessNotCreated { harness: 3 }),
-        "harness 3 cannot attempt a task because it is not a created harness"
+        "harness 3 cannot start a trial on a task because it is not a created harness"
     );
 }
 
@@ -69,12 +69,12 @@ fn a_task_given_twice_is_worded() {
 }
 
 #[test]
-fn an_attempt_that_is_not_running_is_worded() {
+fn a_trial_that_is_not_running_is_worded() {
     assert_eq!(
-        worded(GenealogyError::AttemptNotRunning {
+        worded(GenealogyError::TrialNotRunning {
             harness: 3,
             task: "t1".to_owned()
         }),
-        "no attempt of harness 3 on task t1 is running"
+        "no trial of harness 3 on task t1 is running"
     );
 }

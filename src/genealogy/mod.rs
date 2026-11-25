@@ -24,7 +24,7 @@ pub enum CreationOutcome {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AttemptResult {
+pub enum TrialResult {
     Completed,
     NotCompleted,
     TimedOut,
@@ -201,38 +201,38 @@ impl Genealogy {
         Ok(())
     }
 
-    pub(crate) fn start_attempt(
+    pub(crate) fn start_trial(
         &mut self,
         harness: HarnessId,
         task: &str,
     ) -> Result<(), GenealogyError> {
-        let attempting = self
+        let trialling = self
             .harness_in_state(harness, HarnessState::Created)
             .ok_or(GenealogyError::HarnessNotCreated { harness })?;
-        if !attempting.give(task) {
+        if !trialling.give(task) {
             return Err(GenealogyError::TaskAlreadyGiven {
                 harness,
                 task: task.to_owned(),
             });
         }
-        let in_an_experiment = attempting.is_a_singleton_control_group_harness();
+        let in_an_experiment = trialling.is_a_singleton_control_group_harness();
         self.started += 1;
         self.started_by_singleton_control_group_harnesses += u64::from(in_an_experiment);
         Ok(())
     }
 
-    pub(crate) fn end_attempt(
+    pub(crate) fn end_trial(
         &mut self,
         harness: HarnessId,
         task: &str,
-        result: AttemptResult,
+        result: TrialResult,
     ) -> Result<(), GenealogyError> {
         let set = self.set_of(task);
         let finished = self
             .harness_mut(harness)
-            .is_some_and(|attempting| attempting.finish(task, result, set));
+            .is_some_and(|trialling| trialling.finish(task, result, set));
         if !finished {
-            return Err(GenealogyError::AttemptNotRunning {
+            return Err(GenealogyError::TrialNotRunning {
                 harness,
                 task: task.to_owned(),
             });

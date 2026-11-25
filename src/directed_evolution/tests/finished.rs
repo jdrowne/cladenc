@@ -13,7 +13,7 @@ const PROCREATION: [&str; 2] = ["run", "run a harness"];
 fn solving() -> Double {
     Double::default()
         .changing()
-        .verifying(|attempt| attempt.starts_with("attempt-1-"))
+        .verifying(|trial| trial.starts_with("trial-1-"))
 }
 
 fn over_one_holdout_task(directory: &Memory, settings: &mut Settings) {
@@ -75,17 +75,17 @@ fn started(evolved: &Evolved, action: &str) -> usize {
         .count()
 }
 
-fn attempts_started(evolved: &Evolved) -> Vec<(u64, String)> {
-    let mut attempts: Vec<(u64, String)> = evolved
+fn trials_started(evolved: &Evolved) -> Vec<(u64, String)> {
+    let mut trials: Vec<(u64, String)> = evolved
         .records()
         .into_iter()
         .filter_map(|record| match record {
-            Record::AttemptStarted { harness, task } => Some((harness, task)),
+            Record::TrialStarted { harness, task } => Some((harness, task)),
             _ => None,
         })
         .collect();
-    attempts.sort();
-    attempts
+    trials.sort();
+    trials
 }
 
 #[test]
@@ -137,14 +137,14 @@ fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
     assert_eq!(
         kinds_of_starts(&evolved)[..8],
         [
-            "attempt of 0",
-            "attempt of 0",
+            "trial of 0",
+            "trial of 0",
             "procreation",
-            "attempt of 1",
-            "attempt of 1",
+            "trial of 1",
+            "trial of 1",
             "procreation",
-            "attempt of 2",
-            "attempt of 2",
+            "trial of 2",
+            "trial of 2",
         ]
     );
 }
@@ -155,12 +155,12 @@ fn given_two_benchmarks_the_primogenitor_procreates_once_benchmarked_on_both() {
     assert_eq!(
         evolved.starts()[..6],
         [
-            "attempt of 0",
-            "attempt of 0",
-            "attempt of 0",
-            "attempt of 0",
+            "trial of 0",
+            "trial of 0",
+            "trial of 0",
+            "trial of 0",
             "procreation of 1 by 0",
-            "attempt of 1",
+            "trial of 1",
         ]
     );
 }
@@ -179,10 +179,10 @@ fn a_procreation_that_fails_is_one_of_the_most_a_directed_evolution_starts() {
 }
 
 #[test]
-fn every_harness_that_is_created_attempts_every_task_once_whatever_it_completes() {
+fn every_harness_that_is_created_trials_every_task_once_whatever_it_completes() {
     let evolved = given::started(Double::default().changing(), given::unchanged);
     assert_eq!(
-        attempts_started(&evolved),
+        trials_started(&evolved),
         [
             (0, "benchmark/t1".to_owned()),
             (0, "benchmark/t2".to_owned()),
@@ -195,7 +195,7 @@ fn every_harness_that_is_created_attempts_every_task_once_whatever_it_completes(
 #[test]
 fn a_directed_evolution_over_one_task_ends_once_every_created_harness_has_been_given_it() {
     let evolved = given::started(Double::default().changing(), given::over_one_task);
-    assert_eq!(started(&evolved, "attempt"), 2);
+    assert_eq!(started(&evolved, "trial"), 2);
 }
 
 #[test]
@@ -233,10 +233,10 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 }
 
 #[test]
-fn a_directed_evolution_says_an_attempt_it_starts_with_no_number() {
+fn a_directed_evolution_says_a_trial_it_starts_with_no_number() {
     assert_eq!(
         said_over_one_task().lines()[5],
-        "cladenc: started the attempt of harness 0 on task benchmark/t1"
+        "cladenc: started the trial of harness 0 on task benchmark/t1"
     );
 }
 
@@ -271,11 +271,11 @@ fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept
 }
 
 #[test]
-fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what_the_attempt_left_is_kept()
+fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what_the_trial_left_is_kept()
  {
     let evolved = said_over_one_task();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: harness 1 completed task benchmark/t1: what the attempt left is kept in {}",
+        "cladenc: harness 1 completed task benchmark/t1: what the trial left is kept in {}",
         evolved.outputs().join("holdout/1/benchmark/t1").display()
     )));
 }
@@ -286,7 +286,7 @@ fn a_directed_evolution_says_last_that_it_finished_and_which_harness_is_its_best
     assert_eq!(
         evolved.lines().last(),
         Some(&format!(
-            "cladenc: the directed evolution finished with 2 attempts started and 2 harnesses: \
+            "cladenc: the directed evolution finished with 2 trials started and 2 harnesses: \
              its best harness is harness 1, kept in {}",
             evolved.outputs().join("harnesses/1").display()
         ))

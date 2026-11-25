@@ -5,7 +5,6 @@ mod cli {
 mod containers {
     mod apart;
     mod artifacts;
-    mod attempt;
     mod baseline;
     mod build;
     mod collect;
@@ -24,6 +23,7 @@ mod containers {
     mod procreation;
     mod ran;
     mod retried;
+    mod trial;
 }
 
 mod directed_evolution {

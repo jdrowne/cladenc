@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
@@ -15,9 +15,9 @@ fn artificial_selection(max_procreations: u64) -> ArtificialSelection {
 
 fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
-        genealogy.start_attempt(harness, &task).unwrap();
+        genealogy.start_trial(harness, &task).unwrap();
         genealogy
-            .end_attempt(harness, &task, AttemptResult::NotCompleted)
+            .end_trial(harness, &task, TrialResult::NotCompleted)
             .unwrap();
     }
 }
@@ -57,10 +57,10 @@ fn a_failed_harness_does_not_hold_back_a_procreation() {
 }
 
 #[test]
-fn a_created_harness_with_a_task_not_yet_given_attempts_it_before_a_procreation_starts() {
+fn a_created_harness_with_a_task_not_yet_given_trials_it_before_a_procreation_starts() {
     assert_eq!(
         artificial_selection(100).next_action(&with_a_child(CreationOutcome::Created), 0),
-        Some(Action::Attempt {
+        Some(Action::Trial {
             harness: 1,
             task: "task-0".to_owned()
         })
@@ -68,18 +68,18 @@ fn a_created_harness_with_a_task_not_yet_given_attempts_it_before_a_procreation_
 }
 
 #[test]
-fn no_procreation_is_due_while_an_attempt_is_running() {
+fn no_procreation_is_due_while_a_trial_is_running() {
     let mut genealogy = with_a_child(CreationOutcome::Created);
-    genealogy.start_attempt(1, "task-0").unwrap();
-    genealogy.start_attempt(1, "task-1").unwrap();
+    genealogy.start_trial(1, "task-0").unwrap();
+    genealogy.start_trial(1, "task-1").unwrap();
     assert_eq!(artificial_selection(100).next_action(&genealogy, 0), None);
 }
 
 #[test]
-fn an_attempt_is_the_next_action_once_the_most_procreations_have_started() {
+fn a_trial_is_the_next_action_once_the_most_procreations_have_started() {
     assert_eq!(
         artificial_selection(1).next_action(&with_a_child(CreationOutcome::Created), 0),
-        Some(Action::Attempt {
+        Some(Action::Trial {
             harness: 1,
             task: "task-0".to_owned()
         })

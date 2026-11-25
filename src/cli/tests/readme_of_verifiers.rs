@@ -106,10 +106,10 @@ fn the_flag_of_the_most_retries_says_how_long_cladenc_waits_before_each_retry() 
 }
 
 #[test]
-fn the_flag_of_the_most_retries_says_what_becomes_of_an_attempt_that_no_verifier_judged() {
+fn the_flag_of_the_most_retries_says_what_becomes_of_a_trial_that_no_verifier_judged() {
     assert!(readme().contains(
         "Where the health check passes in no container, the directed evolution stops and no \
-         result is recorded for the attempt. |\n"
+         result is recorded for the trial. |\n"
     ));
 }
 
@@ -144,9 +144,9 @@ fn the_readme_says_how_long_cladenc_waits_before_a_retry_and_that_it_says_each()
 fn the_readme_says_that_a_verifier_that_never_ran_stops_the_directed_evolution() {
     assert!(readme().contains(
         "Where the health check passes in no container, the directed evolution stops with \
-         exit status 1 and no result is recorded for the attempt: `cladenc` names the \
+         exit status 1 and no result is recorded for the trial: `cladenc` names the \
          harness, the task, the number of tries and the directory that holds what the health \
-         check printed the last time it ran, and `cladenc resume` carries out the attempt \
+         check printed the last time it ran, and `cladenc resume` carries out the trial \
          again."
     ));
 }

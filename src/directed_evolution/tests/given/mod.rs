@@ -49,7 +49,7 @@ impl Evolved {
         self.records()
             .into_iter()
             .filter_map(|record| match record {
-                Record::AttemptStarted { harness, .. } => Some(format!("attempt of {harness}")),
+                Record::TrialStarted { harness, .. } => Some(format!("trial of {harness}")),
                 Record::ProcreationStarted { child, progenitor } => {
                     Some(format!("procreation of {child} by {progenitor}"))
                 }

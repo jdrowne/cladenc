@@ -199,7 +199,7 @@ fn the_manual_of_start_names_the_time_limits_of_a_task_toml_that_cladenc_obeys()
 }
 
 #[test]
-fn the_manual_of_start_says_what_time_limit_the_harness_of_an_attempt_has() {
+fn the_manual_of_start_says_what_time_limit_the_harness_of_a_trial_has() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The harness has the time limit that the task.toml of the task gives, as timeout_sec under \
          agent, and no time limit where it gives none, as in Harbor."
@@ -223,23 +223,21 @@ fn the_manual_of_start_says_what_time_limit_the_verifier_has_and_from_when_it_is
 }
 
 #[test]
-fn the_manual_of_start_says_that_no_flag_gives_a_time_limit_of_an_attempt() {
-    assert!(
-        manual_on_one_line("cladenc-start").contains("No flag gives a time limit of an attempt.")
-    );
+fn the_manual_of_start_says_that_no_flag_gives_a_time_limit_of_a_trial() {
+    assert!(manual_on_one_line("cladenc-start").contains("No flag gives a time limit of a trial."));
 }
 
 #[test]
 fn the_manual_of_start_says_that_a_container_with_no_time_limit_does_not_end_itself() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where a task gives its harness no time limit, the container of an attempt does not end \
+        "Where a task gives its harness no time limit, the container of a trial does not end \
          itself: a cladenc that was killed outright leaves it running until cladenc resume removes \
          it, or a person does."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
+fn the_manual_of_start_says_how_long_the_container_of_a_trial_sleeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "<SECONDS> the time limit of the harness and the time limit of the verifier together, the \
          longest the health check of the task can take, and ten minutes more, for what cladenc \
@@ -255,7 +253,7 @@ fn the_manual_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_an_attempt_keeps_whether_its_harness_was_stopped() {
+fn the_manual_of_start_says_that_a_trial_keeps_whether_its_harness_was_stopped() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "ending one word: ended, or stopped where the harness ran past its time limit specification"
     ));
@@ -272,9 +270,9 @@ fn the_manual_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc
 }
 
 #[test]
-fn the_manual_of_start_says_that_an_attempt_is_given_no_more_than_its_task_asks_for() {
+fn the_manual_of_start_says_that_a_trial_is_given_no_more_than_its_task_asks_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The container of an attempt is given no more CPUs and no more memory than its task asks \
+        "The container of a trial is given no more CPUs and no more memory than its task asks \
          for, as --cpus and --memory of docker run, so the harness and the verifier have them \
          between them."
     ));

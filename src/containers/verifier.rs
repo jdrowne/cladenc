@@ -7,11 +7,11 @@ use super::docker::Host;
 use super::health_check::{self, Backoff};
 use super::program::{Ending, Limits};
 use super::{
-    ARTIFACTS, Attempt, Checked, ContainerError, HEALTH_CHECK, Retry, VerifierImage, artifacts,
+    ARTIFACTS, Checked, ContainerError, HEALTH_CHECK, Retry, Trial, VerifierImage, artifacts,
     harbor, reward,
 };
 use crate::benchmark::TESTS;
-use crate::genealogy::AttemptResult;
+use crate::genealogy::TrialResult;
 
 const VERIFIER: Shell<'static> = Shell {
     command: harbor::VERIFIER,
@@ -20,7 +20,7 @@ const VERIFIER: Shell<'static> = Shell {
 
 pub(super) struct Verifying<'a> {
     pub(super) host: Host<'a>,
-    pub(super) attempt: &'a Attempt<'a>,
+    pub(super) trial: &'a Trial<'a>,
     pub(super) running: &'a Path,
     pub(super) stop: &'a AtomicBool,
     pub(super) max_retries: u64,
@@ -28,8 +28,8 @@ pub(super) struct Verifying<'a> {
 }
 
 impl<'a> Verifying<'a> {
-    pub(super) fn run(&self, up: Up<'_>) -> Result<AttemptResult, ContainerError> {
-        match &self.attempt.environment.verifier {
+    pub(super) fn run(&self, up: Up<'_>) -> Result<TrialResult, ContainerError> {
+        match &self.trial.environment.verifier {
             None => self.run_in(&up, true),
             Some(image) => {
                 drop(up);
@@ -38,8 +38,8 @@ impl<'a> Verifying<'a> {
         }
     }
 
-    fn run_apart(&self, image: &VerifierImage) -> Result<AttemptResult, ContainerError> {
-        let configuration = &self.attempt.environment.configuration;
+    fn run_apart(&self, image: &VerifierImage) -> Result<TrialResult, ContainerError> {
+        let configuration = &self.trial.environment.configuration;
         let up = self.brought_up(image)?;
         let user = configuration.verifier_user.as_deref().unwrap_or(up.user());
         let paths = self.running.join(ARTIFACTS);
@@ -49,7 +49,7 @@ impl<'a> Verifying<'a> {
     }
 
     fn brought_up(&self, image: &VerifierImage) -> Result<Up<'a>, ContainerError> {
-        let configuration = &self.attempt.environment.configuration;
+        let configuration = &self.trial.environment.configuration;
         let verifier = self.running.join("verifier");
         let bringing = Bringing::of_the_verifier(&image.name, configuration);
         let health_check = configuration
@@ -74,15 +74,15 @@ impl<'a> Verifying<'a> {
         })
     }
 
-    fn run_in(&self, up: &Up<'_>, tests_are_given: bool) -> Result<AttemptResult, ContainerError> {
-        let configuration = &self.attempt.environment.configuration;
+    fn run_in(&self, up: &Up<'_>, tests_are_given: bool) -> Result<TrialResult, ContainerError> {
+        let configuration = &self.trial.environment.configuration;
         let limits = Limits::within(configuration.verifier_time_limit, self.stop);
         let verifier = self.running.join("verifier");
         let logs = verifier.join("logs/verifier");
         let tests = self
             .host
             .outputs_directory
-            .task(self.attempt.task)
+            .task(self.trial.task)
             .join(TESTS);
         let run = Run {
             shell: &VERIFIER,
@@ -100,11 +100,11 @@ impl<'a> Verifying<'a> {
             .map(|ending| {
                 up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
                 match ending {
-                    Ending::TimedOut => AttemptResult::TimedOut,
+                    Ending::TimedOut => TrialResult::TimedOut,
                     Ending::Exited(_) if reward::completed(up.files(), &logs) => {
-                        AttemptResult::Completed
+                        TrialResult::Completed
                     }
-                    Ending::Exited(_) => AttemptResult::NotCompleted,
+                    Ending::Exited(_) => TrialResult::NotCompleted,
                 }
             })
     }

@@ -9,8 +9,7 @@ use crate::journal::Started;
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
 const PROCREATION: [&str; 2] = ["run", "run a harness"];
-const FIRST_ATTEMPT_STARTED: &str =
-    r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#;
+const FIRST_TRIAL_STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#;
 
 fn refused() -> Evolved {
     let refused = [Answer::Refused("docker is not there")];
@@ -28,33 +27,33 @@ fn stopped() -> Evolved {
 }
 
 #[test]
-fn an_attempt_that_cannot_be_carried_out_ends_the_directed_evolution_with_its_cause() {
+fn a_trial_that_cannot_be_carried_out_ends_the_directed_evolution_with_its_cause() {
     assert!(matches!(
         refused().result,
         Err(DirectedEvolutionError::Action {
-            action: Started::Attempt { harness: 0, task },
+            action: Started::Trial { harness: 0, task },
             error: ContainerError::Io(_),
         }) if task == "benchmark/t1"
     ));
 }
 
 #[test]
-fn an_attempt_that_cannot_be_carried_out_is_told_with_its_cause() {
+fn a_trial_that_cannot_be_carried_out_is_told_with_its_cause() {
     let said = refused().said;
     assert!(said.contains(
-        "the attempt of harness 0 on task benchmark/t1 could not be carried out: docker is not \
+        "the trial of harness 0 on task benchmark/t1 could not be carried out: docker is not \
          there"
     ));
 }
 
 #[test]
-fn a_directed_evolution_tells_that_it_stops_when_an_attempt_cannot_be_carried_out() {
+fn a_directed_evolution_tells_that_it_stops_when_a_trial_cannot_be_carried_out() {
     let said = refused().said;
     assert!(said.contains("stopping the directed evolution, with"));
 }
 
 #[test]
-fn nothing_is_started_after_an_attempt_that_cannot_be_carried_out() {
+fn nothing_is_started_after_a_trial_that_cannot_be_carried_out() {
     assert_eq!(refused().count_of("--detach"), 1);
 }
 
@@ -84,10 +83,10 @@ fn a_harness_that_exits_with_a_status_other_than_0_or_125_does_not_stop_the_dire
 }
 
 #[test]
-fn an_attempt_that_cannot_be_carried_out_is_journaled_as_started_and_not_as_finished() {
+fn a_trial_that_cannot_be_carried_out_is_journaled_as_started_and_not_as_finished() {
     assert_eq!(
         refused().journal().lines().last(),
-        Some(FIRST_ATTEMPT_STARTED)
+        Some(FIRST_TRIAL_STARTED)
     );
 }
 
@@ -95,7 +94,7 @@ fn an_attempt_that_cannot_be_carried_out_is_journaled_as_started_and_not_as_fini
 fn a_directed_evolution_that_is_asked_to_stop_journals_nothing_for_the_action_that_was_running() {
     assert_eq!(
         stopped().journal().lines().last(),
-        Some(FIRST_ATTEMPT_STARTED)
+        Some(FIRST_TRIAL_STARTED)
     );
 }
 
@@ -121,7 +120,7 @@ fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stop
     let said = given::started(docker, given::unchanged).said;
     assert!(said.contains(
         "cladenc: harness 0 did not complete task benchmark/t1, after it was stopped at its time \
-         limit: what the attempt left is kept in "
+         limit: what the trial left is kept in "
     ));
 }
 

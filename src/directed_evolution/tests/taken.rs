@@ -5,12 +5,12 @@ use std::sync::atomic::AtomicBool;
 
 use crate::artificial_selection::Action;
 use crate::benchmark::Benchmark;
-use crate::containers::{Attempted, Creation, HarnessEnding};
+use crate::containers::{Creation, HarnessEnding, Trialled};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment, Genealogy};
+use crate::genealogy::{CreationOutcome, Experiment, Genealogy, TrialResult};
 use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 
@@ -101,8 +101,8 @@ fn journaled<T>(settings: &Settings, steps: impl FnOnce(Progress<'_>) -> T) -> V
     seen(settings, steps).2
 }
 
-fn attempt(harness: u64, task: &str) -> Started {
-    Started::Attempt {
+fn trial(harness: u64, task: &str) -> Started {
+    Started::Trial {
         harness,
         task: task.to_owned(),
     }
@@ -128,11 +128,11 @@ fn end_of(action: Started) -> Told {
             experiment: Experiment { child, progenitor },
             creation,
         },
-        Started::Attempt { harness, task } => Ended::Attempted {
+        Started::Trial { harness, task } => Ended::Trialled {
             harness,
             task,
-            attempted: Attempted {
-                result: AttemptResult::Completed,
+            trialled: Trialled {
+                result: TrialResult::Completed,
                 seconds: 1.5,
                 ending: HarnessEnding::Ended,
             },
@@ -156,12 +156,12 @@ fn carry_out(progress: &mut Progress<'_>, actions: usize) {
     }
 }
 
-fn left_attempting<'a>(progress: Progress<'a>, tasks: &[&str]) -> Progress<'a> {
+fn left_trialling<'a>(progress: Progress<'a>, tasks: &[&str]) -> Progress<'a> {
     let mut genealogy = settings().genealogy();
     for task in tasks {
-        genealogy.start_attempt(0, task).unwrap();
+        genealogy.start_trial(0, task).unwrap();
     }
-    let unfinished = tasks.iter().map(|task| attempt(0, task)).collect();
+    let unfinished = tasks.iter().map(|task| trial(0, task)).collect();
     progress.resumed(genealogy, unfinished, tasks.len() as u64)
 }
 
@@ -177,9 +177,9 @@ fn awaiting_a_baseline(progress: Progress<'_>, unfinished: Vec<Started>) -> Prog
 
 fn benchmarked_in_full(genealogy: &mut Genealogy, harness: u64) {
     for task in [FIRST, SECOND] {
-        genealogy.start_attempt(harness, task).unwrap();
+        genealogy.start_trial(harness, task).unwrap();
         genealogy
-            .end_attempt(harness, task, AttemptResult::Completed)
+            .end_trial(harness, task, TrialResult::Completed)
             .unwrap();
     }
 }
@@ -213,24 +213,24 @@ fn progenitor_taken(taken: Option<(Started, bool)>) -> Option<u64> {
 }
 
 #[test]
-fn the_first_action_taken_is_an_attempt_of_the_primogenitor_on_the_first_task() {
+fn the_first_action_taken_is_a_trial_of_the_primogenitor_on_the_first_task() {
     assert_eq!(
         returned(&settings(), |mut progress| progress.take()),
-        Some((attempt(0, FIRST), false))
+        Some((trial(0, FIRST), false))
     );
 }
 
 #[test]
-fn the_second_action_taken_is_an_attempt_of_the_primogenitor_on_the_next_task() {
+fn the_second_action_taken_is_a_trial_of_the_primogenitor_on_the_next_task() {
     let taken = returned(&settings(), |mut progress| {
         progress.take();
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(0, SECOND), false)));
+    assert_eq!(taken, Some((trial(0, SECOND), false)));
 }
 
 #[test]
-fn no_action_is_taken_while_the_primogenitor_attempts_every_task() {
+fn no_action_is_taken_while_the_primogenitor_trials_every_task() {
     let taken = returned(&settings(), |mut progress| {
         progress.take();
         progress.take();
@@ -240,10 +240,10 @@ fn no_action_is_taken_while_the_primogenitor_attempts_every_task() {
 }
 
 #[test]
-fn an_attempt_that_is_taken_is_journaled_as_started() {
+fn a_trial_that_is_taken_is_journaled_as_started() {
     assert_eq!(
         journaled(&settings(), |mut progress| progress.take()),
-        [Record::AttemptStarted {
+        [Record::TrialStarted {
             harness: 0,
             task: FIRST.to_owned()
         }]
@@ -304,7 +304,7 @@ fn a_child_that_was_created_is_given_its_first_task_next() {
         carry_out(&mut progress, 3);
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(1, FIRST), false)));
+    assert_eq!(taken, Some((trial(1, FIRST), false)));
 }
 
 #[test]
@@ -351,15 +351,15 @@ fn a_resumed_directed_evolution_chooses_the_progenitor_an_uninterrupted_one_choo
 #[test]
 fn an_action_that_a_resume_found_unfinished_is_taken_first_to_be_started_again() {
     let taken = returned(&settings(), |progress| {
-        left_attempting(progress, &[FIRST]).take()
+        left_trialling(progress, &[FIRST]).take()
     });
-    assert_eq!(taken, Some((attempt(0, FIRST), true)));
+    assert_eq!(taken, Some((trial(0, FIRST), true)));
 }
 
 #[test]
 fn an_action_taken_to_be_started_again_is_not_journaled_a_second_time() {
     let journaled = journaled(&settings(), |progress| {
-        left_attempting(progress, &[FIRST]).take()
+        left_trialling(progress, &[FIRST]).take()
     });
     assert!(journaled.is_empty());
 }
@@ -367,21 +367,21 @@ fn an_action_taken_to_be_started_again_is_not_journaled_a_second_time() {
 #[test]
 fn the_unfinished_actions_of_a_resume_are_taken_in_the_order_they_were_started() {
     let taken = returned(&settings(), |progress| {
-        let mut progress = left_attempting(progress, &[FIRST, SECOND]);
+        let mut progress = left_trialling(progress, &[FIRST, SECOND]);
         progress.take();
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(0, SECOND), true)));
+    assert_eq!(taken, Some((trial(0, SECOND), true)));
 }
 
 #[test]
 fn after_the_unfinished_actions_of_a_resume_the_action_chosen_next_is_taken() {
     let taken = returned(&settings(), |progress| {
-        let mut progress = left_attempting(progress, &[FIRST]);
+        let mut progress = left_trialling(progress, &[FIRST]);
         progress.take();
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(0, SECOND), false)));
+    assert_eq!(taken, Some((trial(0, SECOND), false)));
 }
 
 #[test]
@@ -436,7 +436,7 @@ fn once_the_baseline_of_an_experiment_is_taken_the_action_chosen_next_is_taken()
         progress.take();
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(0, FIRST), false)));
+    assert_eq!(taken, Some((trial(0, FIRST), false)));
 }
 
 #[test]
@@ -473,10 +473,10 @@ fn an_action_set_running_is_to_be_carried_out() {
 }
 
 #[test]
-fn an_attempt_set_running_is_said_to_have_started() {
+fn a_trial_set_running_is_said_to_have_started() {
     assert_eq!(
         said(&settings(), |mut progress| start(&mut progress)),
-        ["cladenc: started the attempt of harness 0 on task benchmark/t1"]
+        ["cladenc: started the trial of harness 0 on task benchmark/t1"]
     );
 }
 
@@ -509,11 +509,11 @@ fn a_baseline_set_running_is_said_to_have_started() {
 #[test]
 fn an_unfinished_action_set_running_is_said_to_have_started_again() {
     let said = said(&settings(), |progress| {
-        start(&mut left_attempting(progress, &[FIRST]))
+        start(&mut left_trialling(progress, &[FIRST]))
     });
     assert_eq!(
         said,
-        ["cladenc: started again the attempt of harness 0 on task benchmark/t1"]
+        ["cladenc: started again the trial of harness 0 on task benchmark/t1"]
     );
 }
 
@@ -614,10 +614,10 @@ fn no_action_is_taken_before_the_primogenitor_is_built() {
 }
 
 #[test]
-fn once_the_primogenitor_is_built_its_attempt_on_the_first_task_is_taken() {
+fn once_the_primogenitor_is_built_its_trial_on_the_first_task_is_taken() {
     let taken = returned(&with_a_build_command(), |mut progress| {
         progress.built();
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(0, FIRST), false)));
+    assert_eq!(taken, Some((trial(0, FIRST), false)));
 }

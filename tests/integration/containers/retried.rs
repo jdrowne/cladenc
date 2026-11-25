@@ -92,13 +92,13 @@ fn containers_at_each_retry(task_toml: &str, max_retries: u64) -> Vec<usize> {
         max_task_health_check_retries: max_retries,
     };
     let counted = RefCell::new(Vec::new());
-    let _ = containers::run_attempt(
+    let _ = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &prepared.outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &prepared.environment,

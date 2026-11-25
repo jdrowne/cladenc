@@ -34,7 +34,7 @@ const HEADER: [&str; COLUMNS] = [
     "clade completed",
     "clade not completed",
     "clade score",
-    "attempt seconds",
+    "trial seconds",
     "procreation seconds",
 ];
 
@@ -73,7 +73,7 @@ struct HarnessReport {
     clade_completed: u64,
     clade_not_completed: u64,
     clade_score: Option<f64>,
-    attempt_seconds: f64,
+    trial_seconds: f64,
     procreation_seconds: Option<f64>,
 }
 
@@ -225,7 +225,7 @@ impl HarnessReport {
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
-            attempt_seconds: (seconds.attempts * 1000.0).round() / 1000.0,
+            trial_seconds: (seconds.trials * 1000.0).round() / 1000.0,
             procreation_seconds: seconds.procreation,
         }
     }
@@ -254,7 +254,7 @@ impl HarnessReport {
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
-            format!("{:.1}", self.attempt_seconds),
+            format!("{:.1}", self.trial_seconds),
             shown(
                 self.procreation_seconds
                     .map(|seconds| format!("{seconds:.1}")),

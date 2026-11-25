@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
-use cladenc::containers::{self, Attempt, ContainerError, Environment, Host, Launch, Program};
+use cladenc::containers::{self, ContainerError, Environment, Host, Launch, Program, Trial};
 use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -17,12 +17,12 @@ const MODEL: Model<'static> = Model {
 };
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname > id; sleep 300";
-const SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY: &str = "hostname; sleep 300";
+const SAY_THE_CONTAINER_OF_THE_TRIAL_AND_STAY: &str = "hostname; sleep 300";
 
-type Attempted = (
+type Trialled = (
     TempDir,
     OutputsDirectory,
-    Result<containers::Attempted, ContainerError>,
+    Result<containers::Trialled, ContainerError>,
 );
 type Procreated = (
     TempDir,
@@ -37,8 +37,8 @@ fn environment() -> Environment {
     }
 }
 
-fn attempt(environment: &Environment) -> Attempt<'_> {
-    Attempt {
+fn trial(environment: &Environment) -> Trial<'_> {
+    Trial {
         harness: 0,
         task: "benchmark/t1",
         environment,
@@ -87,9 +87,9 @@ fn stopped_once_written<Outcome>(
     })
 }
 
-fn timed_out() -> Attempted {
+fn timed_out() -> Trialled {
     let (directory, outputs_directory) = made();
-    let launch = launch(SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY);
+    let launch = launch(SAY_THE_CONTAINER_OF_THE_TRIAL_AND_STAY);
     let environment = Environment {
         image: test_inputs::IMAGE.to_owned(),
         configuration: TaskConfiguration {
@@ -99,33 +99,33 @@ fn timed_out() -> Attempted {
         verifier: None,
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        attempt(&environment),
+        trial(&environment),
         &stop,
         &|_| (),
     );
     (directory, outputs_directory, result)
 }
 
-fn stopped_while_its_harness_runs() -> Attempted {
+fn stopped_while_its_harness_runs() -> Trialled {
     let (directory, outputs_directory) = made();
-    let launch = launch(SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY);
+    let launch = launch(SAY_THE_CONTAINER_OF_THE_TRIAL_AND_STAY);
     let id_file = outputs_directory
-        .running_attempt(0, "benchmark/t1")
+        .running_trial(0, "benchmark/t1")
         .join("stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(
+        containers::run_trial(
             Host {
                 docker: &Program,
                 outputs_directory: &outputs_directory,
             },
             &launch,
-            attempt(&environment()),
+            trial(&environment()),
             stop,
             &|_| (),
         )
@@ -133,25 +133,25 @@ fn stopped_while_its_harness_runs() -> Attempted {
     (directory, outputs_directory, result)
 }
 
-fn stopped_while_its_verifier_runs() -> Attempted {
+fn stopped_while_its_verifier_runs() -> Trialled {
     let (directory, outputs_directory) = made();
     test_inputs::kept_verifier(
         &directory.path().join("outputs"),
         "t1",
-        SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY,
+        SAY_THE_CONTAINER_OF_THE_TRIAL_AND_STAY,
     );
     let launch = launch("true");
     let id_file = outputs_directory
-        .running_attempt(0, "benchmark/t1")
+        .running_trial(0, "benchmark/t1")
         .join("verifier/stdout");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_attempt(
+        containers::run_trial(
             Host {
                 docker: &Program,
                 outputs_directory: &outputs_directory,
             },
             &launch,
-            attempt(&environment()),
+            trial(&environment()),
             stop,
             &|_| (),
         )
@@ -179,29 +179,29 @@ fn procreation_stopped_while_running() -> Procreated {
 }
 
 #[test]
-fn the_time_limit_of_an_attempt_leaves_no_container_behind() {
+fn the_time_limit_of_a_trial_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = timed_out();
     assert!(test_inputs::container_is_gone(
-        &outputs_directory.attempt(0, "benchmark/t1").join("stdout")
+        &outputs_directory.trial(0, "benchmark/t1").join("stdout")
     ));
 }
 
 #[test]
-fn an_attempt_whose_stop_flag_is_set_leaves_no_container_behind() {
+fn a_trial_whose_stop_flag_is_set_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_harness_runs();
     assert!(test_inputs::container_is_gone(
         &outputs_directory
-            .running_attempt(0, "benchmark/t1")
+            .running_trial(0, "benchmark/t1")
             .join("stdout")
     ));
 }
 
 #[test]
-fn an_attempt_stopped_while_its_verifier_runs_leaves_no_container_behind() {
+fn a_trial_stopped_while_its_verifier_runs_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_verifier_runs();
     assert!(test_inputs::container_is_gone(
         &outputs_directory
-            .running_attempt(0, "benchmark/t1")
+            .running_trial(0, "benchmark/t1")
             .join("verifier/stdout")
     ));
 }

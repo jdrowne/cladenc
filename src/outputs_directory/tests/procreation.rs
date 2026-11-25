@@ -131,9 +131,9 @@ fn a_procreation_that_created_its_child_leaves_the_files_of_the_child_as_its_har
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_attempts() {
+fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert_eq!(entries(&directory, outputs_directory.attempts(1)), 0);
+    assert_eq!(entries(&directory, outputs_directory.trials(1)), 0);
 }
 
 #[test]
@@ -194,9 +194,9 @@ fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses()
 }
 
 #[test]
-fn a_procreation_that_failed_leaves_no_directory_for_the_attempts_of_its_child() {
+fn a_procreation_that_failed_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
@@ -220,9 +220,9 @@ fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesse
 }
 
 #[test]
-fn a_procreation_that_timed_out_leaves_no_directory_for_the_attempts_of_its_child() {
+fn a_procreation_that_timed_out_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
-    assert!(!directory.exists(outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
@@ -232,9 +232,9 @@ fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_t
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_attempts() {
+fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
-    assert!(!directory.exists(outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
@@ -258,7 +258,7 @@ fn a_procreation_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_ha
 }
 
 #[test]
-fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_attempts_of_its_child() {
+fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(!directory.exists(outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.trials(1)));
 }

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{AttemptResult, CreationOutcome};
+use crate::genealogy::{CreationOutcome, TrialResult};
 use crate::outputs_directory::OutputsDirectory;
 
 fn made() -> (Memory, OutputsDirectory) {
@@ -31,15 +31,13 @@ fn with_a_procreation_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn with_an_attempt_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
+fn with_a_trial_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_attempt(0, "benchmark/t1").unwrap();
+    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
     outputs_directory
-        .end_attempt(0, "benchmark/t1", AttemptResult::Completed)
+        .end_trial(0, "benchmark/t1", TrialResult::Completed)
         .unwrap();
-    outputs_directory
-        .discard_attempt(0, "benchmark/t1")
-        .unwrap();
+    outputs_directory.discard_trial(0, "benchmark/t1").unwrap();
     (directory, outputs_directory)
 }
 
@@ -76,9 +74,9 @@ fn discarding_a_procreation_that_ended_leaves_no_directory_of_the_procreation() 
 }
 
 #[test]
-fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_attempts_of_its_child() {
+fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = with_a_procreation_discarded_after_it_ended();
-    assert!(!directory.exists(outputs_directory.attempts(1)));
+    assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
@@ -106,40 +104,38 @@ fn discarding_a_procreation_leaves_the_progenitor_as_it_was() {
 }
 
 #[test]
-fn discarding_an_attempt_that_is_running_leaves_nothing_running() {
+fn discarding_a_trial_that_is_running_leaves_nothing_running() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_attempt(0, "benchmark/t1").unwrap();
-    outputs_directory
-        .discard_attempt(0, "benchmark/t1")
-        .unwrap();
-    assert!(!directory.exists(outputs_directory.running_attempt(0, "benchmark/t1")));
+    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
+    outputs_directory.discard_trial(0, "benchmark/t1").unwrap();
+    assert!(!directory.exists(outputs_directory.running_trial(0, "benchmark/t1")));
 }
 
 #[test]
-fn discarding_an_attempt_that_ended_leaves_no_directory_of_the_attempt() {
-    let (directory, outputs_directory) = with_an_attempt_discarded_after_it_ended();
-    assert!(!directory.exists(outputs_directory.attempt(0, "benchmark/t1")));
+fn discarding_a_trial_that_ended_leaves_no_directory_of_the_trial() {
+    let (directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
+    assert!(!directory.exists(outputs_directory.trial(0, "benchmark/t1")));
 }
 
 #[test]
-fn discarding_an_attempt_keeps_the_directory_for_the_attempts_of_its_harness() {
-    let (directory, outputs_directory) = with_an_attempt_discarded_after_it_ended();
-    assert!(directory.is_dir(outputs_directory.attempts(0)));
+fn discarding_a_trial_keeps_the_directory_for_the_trials_of_its_harness() {
+    let (directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
+    assert!(directory.is_dir(outputs_directory.trials(0)));
 }
 
 #[test]
-fn discarding_an_attempt_that_ended_leaves_no_attempt_in_the_directory_of_its_benchmark() {
-    let (directory, outputs_directory) = with_an_attempt_discarded_after_it_ended();
+fn discarding_a_trial_that_ended_leaves_no_trial_in_the_directory_of_its_benchmark() {
+    let (directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
     assert_eq!(
-        entries(&directory, outputs_directory.attempts(0).join("benchmark")),
+        entries(&directory, outputs_directory.trials(0).join("benchmark")),
         0
     );
 }
 
 #[test]
-fn a_discarded_attempt_can_be_started_again() {
-    let (_directory, outputs_directory) = with_an_attempt_discarded_after_it_ended();
-    assert!(outputs_directory.start_attempt(0, "benchmark/t1").is_ok());
+fn a_discarded_trial_can_be_started_again() {
+    let (_directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
+    assert!(outputs_directory.start_trial(0, "benchmark/t1").is_ok());
 }
 
 #[test]

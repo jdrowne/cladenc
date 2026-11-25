@@ -75,9 +75,9 @@ fn outputs_of(evolved: &Evolved) -> PathBuf {
     evolved.directory.path().join("outputs")
 }
 
-fn printed_in_the_attempt_at(evolved: &Evolved, task: &str) -> String {
-    let attempt = test_inputs::kept_attempt(&outputs_of(evolved), 0, task);
-    fs::read_to_string(attempt.join("stdout")).unwrap()
+fn printed_in_the_trial_at(evolved: &Evolved, task: &str) -> String {
+    let trial = test_inputs::kept_trial(&outputs_of(evolved), 0, task);
+    fs::read_to_string(trial.join("stdout")).unwrap()
 }
 
 #[test]
@@ -91,24 +91,24 @@ fn a_directed_evolution_in_which_every_task_names_an_image_runs_to_its_end() {
 }
 
 #[test]
-fn an_attempt_at_a_task_that_names_an_image_is_carried_out_in_a_container_of_that_image() {
+fn a_trial_on_a_task_that_names_an_image_is_carried_out_in_a_container_of_that_image() {
     let evolved = with_t2_in(test_inputs::IMAGE);
-    let attempt = test_inputs::kept_attempt(&outputs_of(&evolved), 0, "benchmark/t2");
-    assert!(!attempt.join("work").exists());
+    let trial = test_inputs::kept_trial(&outputs_of(&evolved), 0, "benchmark/t2");
+    assert!(!trial.join("work").exists());
 }
 
 #[test]
-fn an_attempt_at_a_task_is_given_the_variables_its_task_toml_names() {
+fn a_trial_on_a_task_is_given_the_variables_its_task_toml_names() {
     assert_eq!(
-        printed_in_the_attempt_at(&WITH_A_MODE_FOR_T1, "benchmark/t1"),
+        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "benchmark/t1"),
         "strict\n"
     );
 }
 
 #[test]
-fn an_attempt_at_a_task_is_given_no_variable_that_another_task_names() {
+fn a_trial_on_a_task_is_given_no_variable_that_another_task_names() {
     assert_eq!(
-        printed_in_the_attempt_at(&WITH_A_MODE_FOR_T1, "benchmark/t2"),
+        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "benchmark/t2"),
         "\n"
     );
 }

@@ -97,13 +97,13 @@ fn every_container_is_told_never_to_fetch_the_image_that_was_built() {
     assert_eq!((containers.count(), told_never.count()), (3, 3));
 }
 
-fn stopped_at_an_attempt() -> Evolved {
-    let needles = ["run a harness", "attempt-0-benchmark+t2"];
+fn stopped_at_a_trial() -> Evolved {
+    let needles = ["run a harness", "trial-0-benchmark+t2"];
     imaged_by(Double::default().answering(&needles, &[Answer::Exited(125)]))
 }
 
 fn resumed_with_its_dockerfile_gone() -> Evolved {
-    let stopped = stopped_at_an_attempt();
+    let stopped = stopped_at_a_trial();
     stopped
         .files()
         .remove_file(stopped.files().path().join("Dockerfile"))
@@ -156,13 +156,13 @@ fn an_image_whose_build_fails_is_said_last_with_where_what_docker_printed_is_kep
 
 #[test]
 fn a_directed_evolution_that_is_resumed_builds_no_image() {
-    let resumed = given::resumed(stopped_at_an_attempt(), Double::default());
+    let resumed = given::resumed(stopped_at_a_trial(), Double::default());
     assert_eq!(resumed.count_of("--file"), 0);
 }
 
 #[test]
 fn a_directed_evolution_that_is_resumed_does_not_say_that_it_builds_an_image() {
-    let resumed = given::resumed(stopped_at_an_attempt(), Double::default());
+    let resumed = given::resumed(stopped_at_a_trial(), Double::default());
     assert!(!resumed.said.contains("building the image"));
 }
 

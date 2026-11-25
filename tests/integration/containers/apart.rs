@@ -12,7 +12,7 @@ use cladenc::containers::{
     self, ContainerError, Environment, Host, Launch, Program, Retry, VerifierImage,
 };
 use cladenc::file_system::Disk;
-use cladenc::genealogy::AttemptResult;
+use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use tempfile::TempDir;
@@ -35,7 +35,7 @@ enum Verifier<'a> {
     BuiltWith(&'a str),
 }
 
-struct Attempt<'a> {
+struct Trial<'a> {
     task_toml: &'a str,
     run_command: &'a str,
     verifier: &'a str,
@@ -49,15 +49,15 @@ struct Prepared {
     environment: Environment,
 }
 
-struct Attempted {
+struct Trialled {
     _directory: TempDir,
     _built: Vec<Image>,
     outputs_directory: OutputsDirectory,
-    result: Result<containers::Attempted, ContainerError>,
+    result: Result<containers::Trialled, ContainerError>,
 }
 
 struct Asked {
-    attempted: Attempted,
+    trialled: Trialled,
     of_the_verifier: &'static [&'static str],
 }
 
@@ -102,18 +102,18 @@ fn image_of_the_verifier(
     }
 }
 
-fn prepared(attempt: &Attempt<'_>) -> Prepared {
+fn prepared(trial: &Trial<'_>) -> Prepared {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
     let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    fs::write(benchmark.join("t1/task.toml"), attempt.task_toml).unwrap();
+    fs::write(benchmark.join("t1/task.toml"), trial.task_toml).unwrap();
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_verifier(&path, "t1", attempt.verifier);
+    test_inputs::kept_verifier(&path, "t1", trial.verifier);
     let configuration = TaskConfiguration::read(&Disk, &outputs_directory.task(TASK)).unwrap();
     let image = test_inputs::image();
     containers::build_environment(
@@ -128,7 +128,7 @@ fn prepared(attempt: &Attempt<'_>) -> Prepared {
     )
     .unwrap();
     let mut built = Vec::new();
-    let verifier = image_of_the_verifier(&outputs_directory, attempt.image, &image, &mut built);
+    let verifier = image_of_the_verifier(&outputs_directory, trial.image, &image, &mut built);
     let environment = Environment {
         image: image.name.clone(),
         configuration,
@@ -143,7 +143,7 @@ fn prepared(attempt: &Attempt<'_>) -> Prepared {
     }
 }
 
-fn carried_out(prepared: Prepared, run_command: &str) -> Attempted {
+fn carried_out(prepared: Prepared, run_command: &str) -> Trialled {
     carried_out_with(prepared, run_command, 0, &|_| ())
 }
 
@@ -152,7 +152,7 @@ fn carried_out_with(
     run_command: &str,
     max_retries: u64,
     retrying: &dyn Fn(Retry),
-) -> Attempted {
+) -> Trialled {
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command,
@@ -166,13 +166,13 @@ fn carried_out_with(
         max_verifier_health_check_retries: max_retries,
         max_task_health_check_retries: 0,
     };
-    let result = containers::run_attempt(
+    let result = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &prepared.outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &prepared.environment,
@@ -180,7 +180,7 @@ fn carried_out_with(
         &AtomicBool::new(false),
         retrying,
     );
-    Attempted {
+    Trialled {
         _directory: prepared.directory,
         _built: prepared.built,
         outputs_directory: prepared.outputs_directory,
@@ -189,7 +189,7 @@ fn carried_out_with(
 }
 
 fn containers_at_each_retry(task_toml: &str, max_retries: u64) -> Vec<usize> {
-    let prepared = prepared(&Attempt {
+    let prepared = prepared(&Trial {
         task_toml,
         run_command: WRITE_A_REPORT,
         verifier: COMPLETE,
@@ -203,12 +203,12 @@ fn containers_at_each_retry(task_toml: &str, max_retries: u64) -> Vec<usize> {
     counted.into_inner()
 }
 
-fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
-    carried_out(prepared(attempt), attempt.run_command)
+fn trialled_as(trial: &Trial<'_>) -> Trialled {
+    carried_out(prepared(trial), trial.run_command)
 }
 
-fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
-    attempted_as(&Attempt {
+fn trialled(task_toml: &str, run_command: &str, verifier: &str) -> Trialled {
+    trialled_as(&Trial {
         task_toml,
         run_command,
         verifier,
@@ -216,8 +216,8 @@ fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
     })
 }
 
-fn verified_in_an_image_built_with(steps: &str, task_toml: &str, verifier: &str) -> Attempted {
-    attempted_as(&Attempt {
+fn verified_in_an_image_built_with(steps: &str, task_toml: &str, verifier: &str) -> Trialled {
+    trialled_as(&Trial {
         task_toml,
         run_command: WRITE_A_REPORT,
         verifier,
@@ -225,21 +225,21 @@ fn verified_in_an_image_built_with(steps: &str, task_toml: &str, verifier: &str)
     })
 }
 
-fn verified_in_its_image(task_toml: &str, verifier: &str) -> Attempted {
+fn verified_in_its_image(task_toml: &str, verifier: &str) -> Trialled {
     verified_in_an_image_built_with(HOLDS_ITS_TESTS, task_toml, verifier)
 }
 
-fn kept_at(attempted: &Attempted, file: &str) -> PathBuf {
-    attempted.outputs_directory.attempt(0, TASK).join(file)
+fn kept_at(trialled: &Trialled, file: &str) -> PathBuf {
+    trialled.outputs_directory.trial(0, TASK).join(file)
 }
 
-fn kept(attempted: &Attempted, file: &str) -> String {
-    fs::read_to_string(kept_at(attempted, file)).unwrap()
+fn kept(trialled: &Trialled, file: &str) -> String {
+    fs::read_to_string(kept_at(trialled, file)).unwrap()
 }
 
 fn printed_by_the_verifier(task_toml: &str, run_command: &str, verifier: &str) -> String {
     kept(
-        &attempted(task_toml, run_command, verifier),
+        &trialled(task_toml, run_command, verifier),
         "verifier/stdout",
     )
 }
@@ -255,7 +255,7 @@ static VERIFIED_SEPARATELY: LazyLock<Asked> = LazyLock::new(|| {
         "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt",
     ];
     Asked {
-        attempted: attempted(
+        trialled: trialled(
             SEPARATE,
             CHANGE_THE_WORK_AND_WRITE_A_REPORT,
             &test_inputs::one_after_another(of_the_verifier),
@@ -270,7 +270,7 @@ static VERIFIED_SEPARATELY_ON_ITS_REPORT: LazyLock<Asked> = LazyLock::new(|| {
         "grep -q found /app/report.txt && echo 1 > /logs/verifier/reward.txt",
     ];
     Asked {
-        attempted: attempted(
+        trialled: trialled(
             &separate_and(REPORT),
             WRITE_A_REPORT,
             &test_inputs::one_after_another(of_the_verifier),
@@ -286,10 +286,7 @@ static VERIFIED_IN_ITS_IMAGE: LazyLock<Asked> = LazyLock::new(|| {
         "ls /app 2> /dev/null || echo no /app",
     ];
     Asked {
-        attempted: verified_in_its_image(
-            SEPARATE,
-            &test_inputs::one_after_another(of_the_verifier),
-        ),
+        trialled: verified_in_its_image(SEPARATE, &test_inputs::one_after_another(of_the_verifier)),
         of_the_verifier,
     }
 });
@@ -298,7 +295,7 @@ fn found_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
         asked.of_the_verifier,
-        &kept(&asked.attempted, "verifier/stdout"),
+        &kept(&asked.trialled, "verifier/stdout"),
     )
 }
 
@@ -309,8 +306,8 @@ fn printed_by_the_verifier_in_its_image(task_toml: &str, verifier: &str) -> Stri
     )
 }
 
-fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
-    attempted.result.as_ref().ok().map(|ended| ended.result)
+fn result_of(trialled: &Trialled) -> Option<TrialResult> {
+    trialled.result.as_ref().ok().map(|ended| ended.result)
 }
 
 fn separate_and(more: &str) -> String {
@@ -335,7 +332,7 @@ fn containers_with(label: &str) -> usize {
 }
 
 fn containers_while_the_verifier_runs() -> usize {
-    let prepared = prepared(&Attempt {
+    let prepared = prepared(&Trial {
         task_toml: SEPARATE,
         run_command: WRITE_A_REPORT,
         verifier: "echo started; sleep 5; echo 1 > /logs/verifier/reward.txt",
@@ -343,7 +340,7 @@ fn containers_while_the_verifier_runs() -> usize {
     });
     let started = prepared
         .outputs_directory
-        .running_attempt(0, TASK)
+        .running_trial(0, TASK)
         .join("verifier/stdout");
     let label = label_of(&prepared.outputs_directory);
     thread::scope(|scope| {
@@ -421,16 +418,16 @@ fn a_path_the_task_lists_is_at_the_same_path_in_the_verifier_container() {
 #[test]
 fn a_harness_completes_a_task_whose_verifier_runs_separately_by_what_was_kept() {
     assert_eq!(
-        result_of(&VERIFIED_SEPARATELY_ON_ITS_REPORT.attempted),
-        Some(AttemptResult::Completed)
+        result_of(&VERIFIED_SEPARATELY_ON_ITS_REPORT.trialled),
+        Some(TrialResult::Completed)
     );
 }
 
 #[test]
 fn a_harness_does_not_complete_a_task_by_work_that_its_separate_verifier_is_not_given() {
     assert_eq!(
-        result_of(&VERIFIED_SEPARATELY.attempted),
-        Some(AttemptResult::NotCompleted)
+        result_of(&VERIFIED_SEPARATELY.trialled),
+        Some(TrialResult::NotCompleted)
     );
 }
 
@@ -474,12 +471,12 @@ fn what_the_patterns_of_the_task_left_out_is_not_given_to_the_verifier() {
 
 #[test]
 fn a_verifier_is_run_where_a_path_the_task_lists_was_not_in_the_container_of_the_harness() {
-    let attempted = attempted(
+    let trialled = trialled(
         &separate_and("artifacts = [\"/app/never/made.txt\"]\n"),
         WRITE_A_REPORT,
         COMPLETE,
     );
-    assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
+    assert_eq!(result_of(&trialled), Some(TrialResult::Completed));
 }
 
 #[test]
@@ -531,10 +528,10 @@ fn what_is_given_to_the_verifier_belongs_to_the_user_the_verifier_runs_as() {
 }
 
 #[test]
-fn what_a_verifier_that_runs_separately_left_in_logs_verifier_is_kept_with_the_attempt() {
+fn what_a_verifier_that_runs_separately_left_in_logs_verifier_is_kept_with_the_trial() {
     assert_eq!(
         kept(
-            &VERIFIED_SEPARATELY.attempted,
+            &VERIFIED_SEPARATELY.trialled,
             "verifier/logs/verifier/notes.txt"
         ),
         "noted\n"
@@ -683,30 +680,30 @@ fn a_verifier_container_is_removed_before_the_wait_for_a_retry() {
 
 #[test]
 fn what_the_health_check_of_a_verifier_printed_is_kept_with_what_is_kept_of_the_verifier() {
-    let attempted = attempted(
+    let trialled = trialled(
         "[verifier.environment.healthcheck]\ncommand = \"echo ready\"\n",
         WRITE_A_REPORT,
         COMPLETE,
     );
-    assert_eq!(kept(&attempted, "verifier/health-check/stdout"), "ready\n");
+    assert_eq!(kept(&trialled, "verifier/health-check/stdout"), "ready\n");
 }
 
 #[test]
 fn a_verifier_whose_health_check_passes_is_run() {
-    let attempted = attempted(
+    let trialled = trialled(
         "[verifier.environment.healthcheck]\ncommand = \"test -e /app/work.txt\"\n",
         WRITE_A_REPORT,
         COMPLETE,
     );
-    assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
+    assert_eq!(result_of(&trialled), Some(TrialResult::Completed));
 }
 
 #[test]
 fn a_path_that_cannot_be_put_in_the_verifier_container_is_an_error() {
-    let attempted = verified_in_an_image_built_with(
+    let trialled = verified_in_an_image_built_with(
         "RUN touch /app\nCOPY . /tests/\n",
         &separate_and(REPORT),
         COMPLETE,
     );
-    assert!(matches!(attempted.result, Err(ContainerError::Io(_))));
+    assert!(matches!(trialled.result, Err(ContainerError::Io(_))));
 }

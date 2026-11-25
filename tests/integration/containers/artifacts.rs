@@ -17,7 +17,7 @@ const WRITE_A_DIRECTORY: &str = "mkdir -p out/logs out/cache/inner && echo a > o
                                  b > out/logs/b.txt && touch out/draft.tmp out/logs/run.tmp \
                                  out/cache/inner/entry";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
-struct Attempted {
+struct Trialled {
     _directory: TempDir,
     _built: Image,
     outputs_directory: OutputsDirectory,
@@ -47,7 +47,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) 
     )
 }
 
-fn attempted(task_toml: &str, run_command: &str) -> Attempted {
+fn trialled(task_toml: &str, run_command: &str) -> Trialled {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -73,13 +73,13 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let _ = containers::run_attempt(
+    let _ = containers::run_trial(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
         },
         &launch,
-        containers::Attempt {
+        containers::Trial {
             harness: 0,
             task: TASK,
             environment: &environment,
@@ -87,15 +87,15 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
         &AtomicBool::new(false),
         &|_| (),
     );
-    Attempted {
+    Trialled {
         _directory: directory,
         _built: built,
         outputs_directory,
     }
 }
 
-fn kept(attempted: &Attempted, file: &str) -> String {
-    fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
+fn kept(trialled: &Trialled, file: &str) -> String {
+    fs::read_to_string(trialled.outputs_directory.trial(0, TASK).join(file)).unwrap()
 }
 
 fn listed(directory: &Path, below: &str, found: &mut Vec<String>) {
@@ -109,13 +109,10 @@ fn listed(directory: &Path, below: &str, found: &mut Vec<String>) {
     }
 }
 
-fn artifacts_of(attempted: &Attempted) -> Vec<String> {
+fn artifacts_of(trialled: &Trialled) -> Vec<String> {
     let mut found = Vec::new();
     listed(
-        &attempted
-            .outputs_directory
-            .attempt(0, TASK)
-            .join("artifacts"),
+        &trialled.outputs_directory.trial(0, TASK).join("artifacts"),
         "",
         &mut found,
     );
@@ -123,8 +120,8 @@ fn artifacts_of(attempted: &Attempted) -> Vec<String> {
     found
 }
 
-fn everything_kept(attempted: &Attempted) -> Vec<String> {
-    let mut kept: Vec<String> = fs::read_dir(attempted.outputs_directory.attempt(0, TASK))
+fn everything_kept(trialled: &Trialled) -> Vec<String> {
+    let mut kept: Vec<String> = fs::read_dir(trialled.outputs_directory.trial(0, TASK))
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
         .collect();
@@ -134,15 +131,15 @@ fn everything_kept(attempted: &Attempted) -> Vec<String> {
 
 #[test]
 fn a_file_the_task_lists_is_kept_at_its_path_without_the_leading_slash() {
-    let attempted = attempted(REPORT, WRITE_A_REPORT);
-    assert_eq!(kept(&attempted, "artifacts/app/report.txt"), "found\n");
+    let trialled = trialled(REPORT, WRITE_A_REPORT);
+    assert_eq!(kept(&trialled, "artifacts/app/report.txt"), "found\n");
 }
 
 #[test]
 fn a_directory_the_task_lists_is_kept_with_all_it_holds() {
-    let attempted = attempted("artifacts = [\"/app/out/logs\"]\n", WRITE_A_DIRECTORY);
+    let trialled = trialled("artifacts = [\"/app/out/logs\"]\n", WRITE_A_DIRECTORY);
     assert_eq!(
-        artifacts_of(&attempted),
+        artifacts_of(&trialled),
         [
             "app",
             "app/out",
@@ -155,12 +152,12 @@ fn a_directory_the_task_lists_is_kept_with_all_it_holds() {
 
 #[test]
 fn a_path_the_task_lists_is_kept_at_the_destination_the_task_gives() {
-    let attempted = attempted(
+    let trialled = trialled(
         "[[artifacts]]\nsource = \"/app/out/logs\"\ndestination = \"kept/results\"\n",
         WRITE_A_DIRECTORY,
     );
     assert_eq!(
-        artifacts_of(&attempted),
+        artifacts_of(&trialled),
         [
             "kept",
             "kept/results",
@@ -172,37 +169,37 @@ fn a_path_the_task_lists_is_kept_at_the_destination_the_task_gives() {
 
 #[test]
 fn a_directory_no_one_can_read_is_left_out_where_a_pattern_matches_it() {
-    let attempted = attempted(
+    let trialled = trialled(
         "[[artifacts]]\nsource = \"/app/out\"\ndestination = \"out\"\nexclude = [\"cache\"]\n",
         "mkdir -p out/cache/inner && touch out/kept out/cache/inner/entry && chmod 300 \
          out/cache/inner out/cache",
     );
-    assert_eq!(artifacts_of(&attempted), ["out", "out/kept"]);
+    assert_eq!(artifacts_of(&trialled), ["out", "out/kept"]);
 }
 
 #[test]
 fn nothing_of_the_verifier_is_among_what_is_kept_of_the_paths_the_task_lists() {
-    let attempted = attempted(
+    let trialled = trialled(
         "artifacts = [\"/tests\", \"/logs/verifier\"]\n",
         WRITE_A_REPORT,
     );
-    assert_eq!(artifacts_of(&attempted), Vec::<String>::new());
+    assert_eq!(artifacts_of(&trialled), Vec::<String>::new());
 }
 
 #[test]
 fn a_path_that_is_not_in_the_container_keeps_nothing() {
-    let attempted = attempted("artifacts = [\"/app/never/made.txt\"]\n", WRITE_A_REPORT);
-    assert!(!everything_kept(&attempted).contains(&"artifacts".to_owned()));
+    let trialled = trialled("artifacts = [\"/app/never/made.txt\"]\n", WRITE_A_REPORT);
+    assert!(!everything_kept(&trialled).contains(&"artifacts".to_owned()));
 }
 
 #[test]
 fn a_symbolic_link_at_a_path_the_task_lists_is_followed() {
-    let attempted = attempted(REPORT, "echo found > real.txt && ln -s real.txt report.txt");
+    let trialled = trialled(REPORT, "echo found > real.txt && ln -s real.txt report.txt");
     assert!(
         fs::symlink_metadata(
-            attempted
+            trialled
                 .outputs_directory
-                .attempt(0, TASK)
+                .trial(0, TASK)
                 .join("artifacts/app/report.txt")
         )
         .is_ok_and(|report| report.is_file())

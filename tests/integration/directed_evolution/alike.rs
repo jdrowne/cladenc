@@ -35,7 +35,7 @@ fn settings(directory: &Path) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: run_command_the_manual_gives("echo attempted > attempted"),
+        harness_run_command: run_command_the_manual_gives("echo trialled > trialled"),
         max_procreations: 2,
         max_concurrent_containers: 1,
         procreation_timeout: 30,
@@ -142,7 +142,7 @@ fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() 
         [0, 1, 2].map(|harness| {
             journal
                 .matches(&format!(
-                    r#""record":"attempt_finished","harness":{harness},"#
+                    r#""record":"trial_finished","harness":{harness},"#
                 ))
                 .count()
         }),
@@ -151,16 +151,16 @@ fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() 
 }
 
 #[test]
-fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_an_attempt() {
+fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_a_trial() {
     let directory = &*EVOLVED;
     assert_eq!(
         fs::read_to_string(
             directory
                 .path()
-                .join("outputs/attempts/2/benchmark/t1/work/attempted")
+                .join("outputs/trials/2/benchmark/t1/work/trialled")
         )
         .unwrap(),
-        "attempted\n"
+        "trialled\n"
     );
 }
 

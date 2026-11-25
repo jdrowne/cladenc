@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use cladenc::benchmark::Benchmark;
-use cladenc::containers::{self, Attempt, Environment, Host, Launch, Program};
+use cladenc::containers::{self, Environment, Host, Launch, Program, Trial};
 use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -75,7 +75,7 @@ static REMOVED: LazyLock<(Left, io::Result<u64>)> = LazyLock::new(|| {
     (left, removed)
 });
 
-fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution() -> bool {
+fn the_container_of_a_trial_is_listed_under_the_label_of_its_directed_evolution() -> bool {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -99,7 +99,7 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
         max_task_health_check_retries: 0,
     };
     let id_file = outputs_directory
-        .running_attempt(0, "benchmark/t1")
+        .running_trial(0, "benchmark/t1")
         .join("stdout");
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
@@ -113,18 +113,18 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
             stop.store(true, Ordering::SeqCst);
             String::from_utf8(listed.stdout).unwrap()
         });
-        let attempt = Attempt {
+        let trial = Trial {
             harness: 0,
             task: "benchmark/t1",
             environment: &environment(),
         };
-        let _ = containers::run_attempt(
+        let _ = containers::run_trial(
             Host {
                 docker: &Program,
                 outputs_directory: &outputs_directory,
             },
             &launch,
-            attempt,
+            trial,
             &stop,
             &|_| (),
         );
@@ -192,6 +192,6 @@ fn a_directed_evolution_reached_through_a_symbolic_link_is_the_same_directed_evo
 }
 
 #[test]
-fn the_container_of_an_attempt_carries_the_label_of_its_directed_evolution() {
-    assert!(the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution());
+fn the_container_of_a_trial_carries_the_label_of_its_directed_evolution() {
+    assert!(the_container_of_a_trial_is_listed_under_the_label_of_its_directed_evolution());
 }

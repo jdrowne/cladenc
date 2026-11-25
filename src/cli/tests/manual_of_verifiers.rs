@@ -104,7 +104,7 @@ fn the_manual_of_start_says_that_the_container_of_the_harness_is_removed_before_
     assert!(manual_on_one_line("cladenc-start").contains(
         "Once the harness has ended or was stopped, and the paths under artifacts are kept, \
          cladenc removes the container of the harness and brings up that of the verifier, so that \
-         an attempt is one container at a time."
+         a trial is one container at a time."
     ));
 }
 
@@ -153,7 +153,7 @@ fn the_manual_of_start_says_that_each_retry_is_said() {
 fn the_manual_of_start_says_that_a_verifier_that_never_ran_stops_the_directed_evolution() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the health check passes in no container, the directed evolution stops with exit \
-         status 1, and no result is recorded for the attempt."
+         status 1, and no result is recorded for the trial."
     ));
 }
 
@@ -163,7 +163,7 @@ fn the_manual_of_start_says_what_cladenc_names_when_a_verifier_never_ran() {
         "cladenc then names the harness and the task, says that the health check of the verifier \
          container did not pass and in how many tries, and names the directory that holds what \
          the health check printed the last time it ran. That directory is under running in the \
-         outputs directory, and stays there until cladenc resume carries out the attempt again."
+         outputs directory, and stays there until cladenc resume carries out the trial again."
     ));
 }
 

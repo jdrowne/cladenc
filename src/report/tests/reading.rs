@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::AttemptResult;
+use crate::genealogy::TrialResult;
 use crate::journal::{self, Journal, JournalError, Record, Seconds, Settings};
 use crate::report::leader::Leader;
 use crate::report::{self, Report};
@@ -45,24 +45,24 @@ fn outputs_directory(last_line: &str) -> Memory {
             format: journal::FORMAT,
             settings: Box::new(settings()),
         },
-        Record::AttemptStarted {
+        Record::TrialStarted {
             harness: 0,
             task: "benchmark/t1".to_owned(),
         },
-        Record::AttemptFinished {
+        Record::TrialFinished {
             harness: 0,
             task: "benchmark/t1".to_owned(),
-            result: AttemptResult::Completed,
+            result: TrialResult::Completed,
             seconds: 1.5,
         },
-        Record::AttemptStarted {
+        Record::TrialStarted {
             harness: 0,
             task: "benchmark/t2".to_owned(),
         },
-        Record::AttemptFinished {
+        Record::TrialFinished {
             harness: 0,
             task: "benchmark/t2".to_owned(),
-            result: AttemptResult::NotCompleted,
+            result: TrialResult::NotCompleted,
             seconds: 2.0,
         },
         Record::ProcreationStarted {
@@ -93,18 +93,18 @@ fn finished_with(best_harness: u64) -> String {
 
 fn of_the_records() -> Report {
     let mut genealogy = settings().genealogy();
-    genealogy.start_attempt(0, "benchmark/t1").unwrap();
+    genealogy.start_trial(0, "benchmark/t1").unwrap();
     genealogy
-        .end_attempt(0, "benchmark/t1", AttemptResult::Completed)
+        .end_trial(0, "benchmark/t1", TrialResult::Completed)
         .unwrap();
-    genealogy.start_attempt(0, "benchmark/t2").unwrap();
+    genealogy.start_trial(0, "benchmark/t2").unwrap();
     genealogy
-        .end_attempt(0, "benchmark/t2", AttemptResult::NotCompleted)
+        .end_trial(0, "benchmark/t2", TrialResult::NotCompleted)
         .unwrap();
     genealogy.start_procreation(0).unwrap();
     let seconds = [
         Seconds {
-            attempts: 3.5,
+            trials: 3.5,
             procreation: None,
         },
         Seconds::default(),
@@ -132,7 +132,7 @@ fn a_report_read_from_a_journal_counts_the_corroboration_tasks_its_run_record_na
 #[test]
 fn a_report_read_from_a_journal_holds_the_seconds_its_records_hold() {
     let report = read(&outputs_directory("")).unwrap();
-    assert_eq!(report.harnesses[0].attempt_seconds, 3.5);
+    assert_eq!(report.harnesses[0].trial_seconds, 3.5);
 }
 
 #[test]

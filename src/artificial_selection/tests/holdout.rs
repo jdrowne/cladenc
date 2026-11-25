@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn tasks() -> Vec<String> {
     (0..15).map(|number| format!("task-{number}")).collect()
@@ -16,12 +16,12 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
 fn benchmarked(genealogy: &mut Genealogy, harness: HarnessId, completed: &[usize]) {
     for (number, task) in tasks().iter().enumerate() {
         let result = if completed.contains(&number) {
-            AttemptResult::Completed
+            TrialResult::Completed
         } else {
-            AttemptResult::NotCompleted
+            TrialResult::NotCompleted
         };
-        genealogy.start_attempt(harness, task).unwrap();
-        genealogy.end_attempt(harness, task, result).unwrap();
+        genealogy.start_trial(harness, task).unwrap();
+        genealogy.end_trial(harness, task, result).unwrap();
     }
 }
 

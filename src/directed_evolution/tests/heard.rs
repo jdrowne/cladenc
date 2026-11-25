@@ -5,23 +5,23 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use crate::benchmark::Benchmark;
-use crate::containers::{Attempted, Checked, ContainerError, Creation, HarnessEnding, Retry};
+use crate::containers::{Checked, ContainerError, Creation, HarnessEnding, Retry, Trialled};
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
 use crate::directed_evolution::{DirectedEvolutionError, Found};
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
+use crate::genealogy::{CreationOutcome, Experiment, TrialResult};
 use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 
 const FIRST: &str = "benchmark/t1";
 const SECOND: &str = "benchmark/t2";
-const STARTED_THE_FIRST_ATTEMPT: &str =
-    "cladenc: started the attempt of harness 0 on task benchmark/t1";
-const THE_FIRST_ATTEMPT_FAILED: &str =
-    "cladenc: the attempt of harness 0 on task benchmark/t1 exited with status 3";
-const ENDED_WITH_THE_FIRST_ATTEMPT: &str = "the directed evolution stopped before its end: the \
-     attempt of harness 0 on task benchmark/t1 exited with status 3";
+const STARTED_THE_FIRST_TRIAL: &str =
+    "cladenc: started the trial of harness 0 on task benchmark/t1";
+const THE_FIRST_TRIAL_FAILED: &str =
+    "cladenc: the trial of harness 0 on task benchmark/t1 exited with status 3";
+const ENDED_WITH_THE_FIRST_TRIAL: &str = "the directed evolution stopped before its end: the \
+     trial of harness 0 on task benchmark/t1 exited with status 3";
 
 fn settings() -> Settings {
     Settings {
@@ -111,8 +111,8 @@ fn outputs_directory() -> OutputsDirectory {
     OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
 }
 
-fn attempt(harness: u64, task: &str) -> Started {
-    Started::Attempt {
+fn trial(harness: u64, task: &str) -> Started {
+    Started::Trial {
         harness,
         task: task.to_owned(),
     }
@@ -125,8 +125,8 @@ fn first_procreation() -> Started {
     }
 }
 
-fn first_attempt_started() -> Record {
-    Record::AttemptStarted {
+fn first_trial_started() -> Record {
+    Record::TrialStarted {
         harness: 0,
         task: FIRST.to_owned(),
     }
@@ -142,9 +142,9 @@ fn end_of(action: Started, well: bool) -> Told {
         seconds: 2.5,
     };
     let result = if well {
-        AttemptResult::Completed
+        TrialResult::Completed
     } else {
-        AttemptResult::NotCompleted
+        TrialResult::NotCompleted
     };
     Told::Ended(match action {
         Started::Procreation { child, progenitor } => Ended::Procreated {
@@ -161,10 +161,10 @@ fn end_of(action: Started, well: bool) -> Told {
             experiment: Experiment { child, progenitor },
             creation,
         },
-        Started::Attempt { harness, task } => Ended::Attempted {
+        Started::Trial { harness, task } => Ended::Trialled {
             harness,
             task,
-            attempted: Attempted {
+            trialled: Trialled {
                 result,
                 seconds: 1.5,
                 ending: HarnessEnding::Ended,
@@ -204,12 +204,12 @@ fn carry_out(progress: &mut Progress<'_>, actions: usize, badly: &[Started]) {
     }
 }
 
-fn stop_the_first_attempt(progress: &mut Progress<'_>) {
+fn stop_the_first_trial(progress: &mut Progress<'_>) {
     start(progress);
     progress.hear(Told::Ended(Ended::Stopped), &outputs_directory());
 }
 
-fn fail_the_first_attempt(progress: &mut Progress<'_>) {
+fn fail_the_first_trial(progress: &mut Progress<'_>) {
     let action = start(progress);
     progress.hear(
         failed(action, ContainerError::Exit(3)),
@@ -217,7 +217,7 @@ fn fail_the_first_attempt(progress: &mut Progress<'_>) {
     );
 }
 
-fn fail_both_attempts(progress: &mut Progress<'_>) {
+fn fail_both_trials(progress: &mut Progress<'_>) {
     let first = start(progress);
     let second = start(progress);
     progress.hear(failed(first, ContainerError::Exit(3)), &outputs_directory());
@@ -246,67 +246,67 @@ fn error_of(finished: Result<Found, DirectedEvolutionError>) -> Option<String> {
 }
 
 #[test]
-fn an_attempt_that_ended_is_journaled_with_its_result_and_how_long_it_took() {
+fn a_trial_that_ended_is_journaled_with_its_result_and_how_long_it_took() {
     let journaled = journaled(&settings(), |mut progress| {
         carry_out(&mut progress, 1, &[]);
     });
     assert_eq!(
         journaled.last(),
-        Some(&Record::AttemptFinished {
+        Some(&Record::TrialFinished {
             harness: 0,
             task: FIRST.to_owned(),
-            result: AttemptResult::Completed,
+            result: TrialResult::Completed,
             seconds: 1.5
         })
     );
 }
 
 #[test]
-fn an_attempt_that_did_not_complete_its_task_is_journaled_as_such() {
+fn a_trial_that_did_not_complete_its_task_is_journaled_as_such() {
     let journaled = journaled(&settings(), |mut progress| {
-        carry_out(&mut progress, 1, &[attempt(0, FIRST)]);
+        carry_out(&mut progress, 1, &[trial(0, FIRST)]);
     });
     assert_eq!(
         journaled.last(),
-        Some(&Record::AttemptFinished {
+        Some(&Record::TrialFinished {
             harness: 0,
             task: FIRST.to_owned(),
-            result: AttemptResult::NotCompleted,
+            result: TrialResult::NotCompleted,
             seconds: 1.5
         })
     );
 }
 
 #[test]
-fn an_attempt_that_completed_its_task_is_said_with_where_what_it_left_is_kept() {
+fn a_trial_that_completed_its_task_is_said_with_where_what_it_left_is_kept() {
     let said = said(&settings(), |mut progress| {
         carry_out(&mut progress, 1, &[]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: harness 0 completed task benchmark/t1: what the attempt left is kept in \
-             /outputs/attempts/0/benchmark/t1"
+            "cladenc: harness 0 completed task benchmark/t1: what the trial left is kept in \
+             /outputs/trials/0/benchmark/t1"
         )
     );
 }
 
 #[test]
-fn an_attempt_that_did_not_complete_its_task_is_said_not_to_have_completed_it() {
+fn a_trial_that_did_not_complete_its_task_is_said_not_to_have_completed_it() {
     let said = said(&settings(), |mut progress| {
-        carry_out(&mut progress, 1, &[attempt(0, FIRST)]);
+        carry_out(&mut progress, 1, &[trial(0, FIRST)]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: harness 0 did not complete task benchmark/t1: what the attempt left is \
-             kept in /outputs/attempts/0/benchmark/t1"
+            "cladenc: harness 0 did not complete task benchmark/t1: what the trial left is \
+             kept in /outputs/trials/0/benchmark/t1"
         )
     );
 }
 
 #[test]
-fn an_attempt_that_ended_is_one_container_fewer_running() {
+fn a_trial_that_ended_is_one_container_fewer_running() {
     let running = returned(&settings(), |mut progress| {
         start(&mut progress);
         carry_out(&mut progress, 1, &[]);
@@ -379,7 +379,7 @@ fn a_child_that_was_created_is_given_its_first_task() {
         carry_out(&mut progress, 3, &[]);
         progress.take()
     });
-    assert_eq!(taken, Some((attempt(1, FIRST), false)));
+    assert_eq!(taken, Some((trial(1, FIRST), false)));
 }
 
 #[test]
@@ -433,7 +433,7 @@ fn a_baseline_that_created_the_singleton_control_group_harness_is_said_with_wher
 #[test]
 fn an_action_that_was_stopped_is_one_container_fewer_running() {
     let running = returned(&settings(), |mut progress| {
-        stop_the_first_attempt(&mut progress);
+        stop_the_first_trial(&mut progress);
         progress.running()
     });
     assert_eq!(running, 0);
@@ -442,28 +442,28 @@ fn an_action_that_was_stopped_is_one_container_fewer_running() {
 #[test]
 fn an_action_that_was_stopped_is_not_journaled_as_finished() {
     let journaled = journaled(&settings(), |mut progress| {
-        stop_the_first_attempt(&mut progress);
+        stop_the_first_trial(&mut progress);
     });
-    assert_eq!(journaled, [first_attempt_started()]);
+    assert_eq!(journaled, [first_trial_started()]);
 }
 
 #[test]
 fn nothing_is_said_of_an_action_that_was_stopped() {
     let said = said(&settings(), |mut progress| {
-        stop_the_first_attempt(&mut progress);
+        stop_the_first_trial(&mut progress);
     });
-    assert_eq!(said, [STARTED_THE_FIRST_ATTEMPT]);
+    assert_eq!(said, [STARTED_THE_FIRST_TRIAL]);
 }
 
 #[test]
-fn an_attempt_that_is_tried_again_in_a_new_container_is_said() {
+fn a_trial_that_is_tried_again_in_a_new_container_is_said() {
     let said = said(&settings(), |mut progress| {
         progress.hear(retrying(), &outputs_directory());
     });
     assert_eq!(
         said,
         [
-            "cladenc: the attempt of harness 0 on task benchmark/t1 is not carried out yet: the \
+            "cladenc: the trial of harness 0 on task benchmark/t1 is not carried out yet: the \
              health check of the task did not pass, and cladenc tries again in a new container \
              after 1 second, retry 1 of 3"
         ]
@@ -471,7 +471,7 @@ fn an_attempt_that_is_tried_again_in_a_new_container_is_said() {
 }
 
 #[test]
-fn an_attempt_that_is_tried_again_in_a_new_container_is_not_journaled() {
+fn a_trial_that_is_tried_again_in_a_new_container_is_not_journaled() {
     let journaled = journaled(&settings(), |mut progress| {
         progress.hear(retrying(), &outputs_directory());
     });
@@ -479,7 +479,7 @@ fn an_attempt_that_is_tried_again_in_a_new_container_is_not_journaled() {
 }
 
 #[test]
-fn an_attempt_that_is_tried_again_in_a_new_container_is_still_a_container_running() {
+fn a_trial_that_is_tried_again_in_a_new_container_is_still_a_container_running() {
     let running = returned(&settings(), |mut progress| {
         start(&mut progress);
         progress.hear(retrying(), &outputs_directory());
@@ -491,15 +491,15 @@ fn an_attempt_that_is_tried_again_in_a_new_container_is_still_a_container_runnin
 #[test]
 fn an_action_that_failed_is_said_with_what_went_wrong() {
     let said = said(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
     });
-    assert_eq!(said, [STARTED_THE_FIRST_ATTEMPT, THE_FIRST_ATTEMPT_FAILED]);
+    assert_eq!(said, [STARTED_THE_FIRST_TRIAL, THE_FIRST_TRIAL_FAILED]);
 }
 
 #[test]
 fn an_action_that_failed_is_one_container_fewer_running() {
     let running = returned(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         progress.running()
     });
     assert_eq!(running, 0);
@@ -508,15 +508,15 @@ fn an_action_that_failed_is_one_container_fewer_running() {
 #[test]
 fn an_action_that_failed_is_not_journaled_as_finished() {
     let journaled = journaled(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
     });
-    assert_eq!(journaled, [first_attempt_started()]);
+    assert_eq!(journaled, [first_trial_started()]);
 }
 
 #[test]
 fn an_action_that_failed_halts_the_directed_evolution() {
     let halted = returned(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         progress.halted(&AtomicBool::new(false))
     });
     assert!(halted);
@@ -525,7 +525,7 @@ fn an_action_that_failed_halts_the_directed_evolution() {
 #[test]
 fn a_directed_evolution_whose_actions_end_without_failing_is_not_halted() {
     let halted = returned(&settings(), |mut progress| {
-        carry_out(&mut progress, 3, &[attempt(0, FIRST), first_procreation()]);
+        carry_out(&mut progress, 3, &[trial(0, FIRST), first_procreation()]);
         progress.halted(&AtomicBool::new(false))
     });
     assert!(!halted);
@@ -542,7 +542,7 @@ fn a_directed_evolution_that_was_asked_to_stop_is_halted() {
 #[test]
 fn an_action_is_not_to_be_carried_out_once_another_failed() {
     let carried_out = returned(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         let (action, again) = progress.take().unwrap();
         progress.set_running(&action, again)
     });
@@ -552,48 +552,48 @@ fn an_action_is_not_to_be_carried_out_once_another_failed() {
 #[test]
 fn a_directed_evolution_ends_with_the_action_that_failed() {
     let error = returned(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         error_of(finish(progress))
     });
-    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_ATTEMPT));
+    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_TRIAL));
 }
 
 #[test]
 fn a_directed_evolution_ends_with_the_first_of_the_actions_that_failed() {
     let error = returned(&settings(), |mut progress| {
-        fail_both_attempts(&mut progress);
+        fail_both_trials(&mut progress);
         error_of(finish(progress))
     });
-    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_ATTEMPT));
+    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_TRIAL));
 }
 
 #[test]
 fn an_action_that_failed_after_another_is_said_with_what_went_wrong() {
     let said = said(&settings(), |mut progress| {
-        fail_both_attempts(&mut progress);
+        fail_both_trials(&mut progress);
     });
     assert_eq!(
         said.last().map(String::as_str),
-        Some("cladenc: the attempt of harness 0 on task benchmark/t2 ran past its time limit")
+        Some("cladenc: the trial of harness 0 on task benchmark/t2 ran past its time limit")
     );
 }
 
 #[test]
 fn a_directed_evolution_that_ends_with_a_failure_does_not_journal_that_it_finished() {
     let journaled = journaled(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         finish(progress)
     });
-    assert_eq!(journaled, [first_attempt_started()]);
+    assert_eq!(journaled, [first_trial_started()]);
 }
 
 #[test]
 fn a_directed_evolution_that_ends_with_a_failure_is_not_said_to_have_finished() {
     let said = said(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         finish(progress)
     });
-    assert_eq!(said, [STARTED_THE_FIRST_ATTEMPT, THE_FIRST_ATTEMPT_FAILED]);
+    assert_eq!(said, [STARTED_THE_FIRST_TRIAL, THE_FIRST_TRIAL_FAILED]);
 }
 
 #[test]
@@ -605,7 +605,7 @@ fn a_directed_evolution_that_is_asked_to_stop_says_so_with_the_containers_runnin
     assert_eq!(
         said,
         [
-            STARTED_THE_FIRST_ATTEMPT,
+            STARTED_THE_FIRST_TRIAL,
             "cladenc: asked to stop, with 1 container running"
         ]
     );
@@ -675,11 +675,11 @@ fn a_directed_evolution_whose_journal_cannot_be_written_ends_with_an_error_that_
 #[test]
 fn the_action_that_failed_first_is_kept_when_the_journal_cannot_be_written_later() {
     let error = returned(&settings(), |mut progress| {
-        fail_the_first_attempt(&mut progress);
+        fail_the_first_trial(&mut progress);
         progress.record(&unwritable());
         error_of(finish(progress))
     });
-    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_ATTEMPT));
+    assert_eq!(error.as_deref(), Some(ENDED_WITH_THE_FIRST_TRIAL));
 }
 
 #[test]
@@ -707,7 +707,7 @@ fn a_directed_evolution_that_finishes_says_what_it_started_and_its_best_harness(
     assert_eq!(
         said(&settings(), finish),
         [
-            "cladenc: the directed evolution finished with 0 attempts started and 1 harness: its \
+            "cladenc: the directed evolution finished with 0 trials started and 1 harness: its \
              best harness is harness 0, kept in /outputs/harnesses/0"
         ]
     );
@@ -716,7 +716,7 @@ fn a_directed_evolution_that_finishes_says_what_it_started_and_its_best_harness(
 #[test]
 fn the_best_harness_is_the_one_heard_to_complete_the_most_selection_tasks() {
     let found = returned(&selecting_by_the_second_task(), |mut progress| {
-        carry_out(&mut progress, 5, &[attempt(0, SECOND), attempt(1, FIRST)]);
+        carry_out(&mut progress, 5, &[trial(0, SECOND), trial(1, FIRST)]);
         finish(progress).ok()
     });
     assert_eq!(
@@ -729,15 +729,15 @@ fn the_best_harness_is_the_one_heard_to_complete_the_most_selection_tasks() {
 }
 
 #[test]
-fn a_directed_evolution_that_finishes_counts_the_attempts_and_the_harnesses_it_heard_of() {
+fn a_directed_evolution_that_finishes_counts_the_trials_and_the_harnesses_it_heard_of() {
     let said = said(&selecting_by_the_second_task(), |mut progress| {
-        carry_out(&mut progress, 5, &[attempt(0, SECOND), attempt(1, FIRST)]);
+        carry_out(&mut progress, 5, &[trial(0, SECOND), trial(1, FIRST)]);
         finish(progress)
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: the directed evolution finished with 4 attempts started and 2 harnesses: \
+            "cladenc: the directed evolution finished with 4 trials started and 2 harnesses: \
              its best harness is harness 1, kept in /outputs/harnesses/1"
         )
     );

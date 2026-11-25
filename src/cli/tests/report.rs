@@ -181,9 +181,9 @@ fn a_report_prints_the_table_on_standard_output() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  attempt seconds  procreation seconds\n\
-         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0              -\n\
-         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0              30.3\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  procreation seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0            30.3\n"
     );
 }
 

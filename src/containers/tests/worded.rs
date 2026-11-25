@@ -41,9 +41,9 @@ fn the_instruction_says_where_the_source_code_to_improve_is() {
 }
 
 #[test]
-fn the_instruction_says_where_the_attempts_are() {
+fn the_instruction_says_where_the_trials_are() {
     assert!(containers::INSTRUCTION.contains(
-        "than you do. /var/log/cladenc/attempts holds the attempts you are shown: one directory \
+        "than you do. /var/log/cladenc/trials holds the trials you are shown: one directory \
          for each benchmark, and in it one directory for each task. In the directory of a task, "
     ));
 }
@@ -66,10 +66,10 @@ fn the_instruction_says_where_the_line_of_the_harness_and_the_children_it_made_b
 }
 
 #[test]
-fn the_instruction_says_where_the_source_code_and_the_attempts_of_such_a_harness_are() {
+fn the_instruction_says_where_the_source_code_and_the_trials_of_such_a_harness_are() {
     assert!(containers::INSTRUCTION.contains(
         " In the directory of such a harness, the directory named harness holds its source \
-         code, the directory named attempts holds its attempts, laid out as yours are, "
+         code, the directory named trials holds its trials, laid out as yours are, "
     ));
 }
 
@@ -107,10 +107,10 @@ fn the_instruction_says_what_the_line_and_the_children_are_to_be_read_for() {
 }
 
 #[test]
-fn the_instruction_asks_for_a_change_that_answers_several_attempts_and_not_one() {
+fn the_instruction_asks_for_a_change_that_answers_several_trials_and_not_one() {
     assert!(containers::INSTRUCTION.contains(
         " Make a change to how the harness works on any task: one that answers something you \
-         saw in several of your attempts, not in one. "
+         saw in several of your trials, not in one. "
     ));
 }
 
@@ -133,7 +133,7 @@ fn the_instruction_says_that_taking_out_what_does_not_help_is_an_improvement() {
 #[test]
 fn the_instruction_says_that_the_child_may_be_asked_to_improve_its_own_source_code_in_its_turn() {
     assert!(containers::INSTRUCTION.contains(
-        "becomes a new harness, which attempts tasks in its turn. It may then be asked, as you \
+        "becomes a new harness, which is benchmarked in its turn. It may then be asked, as you \
          are now, to improve a copy of its own source code, so a change that makes it better \
          at that counts as well. "
     ));
@@ -148,12 +148,12 @@ fn the_instruction_says_that_a_current_directory_left_as_it_was_makes_no_new_har
 }
 
 #[test]
-fn the_instruction_does_not_say_that_every_task_the_harness_attempted_is_there() {
-    assert!(!containers::INSTRUCTION.contains("each task you have attempted"));
+fn the_instruction_does_not_say_that_every_task_the_harness_trialled_is_there() {
+    assert!(!containers::INSTRUCTION.contains("each task you have trialled"));
 }
 
 #[test]
-fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness() {
+fn the_instruction_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::INSTRUCTION.contains(
         "the file named specification says what you were asked to do, the file named result \
          reads completed, not_completed or timed_out, the file named ending reads ended, or \
@@ -165,7 +165,7 @@ fn the_instruction_says_what_each_attempt_keeps_of_the_task_and_of_the_harness()
 }
 
 #[test]
-fn the_instruction_names_no_attempt_whose_harness_was_never_started() {
+fn the_instruction_names_no_trial_whose_harness_was_never_started() {
     assert!(!containers::INSTRUCTION.contains("not_started"));
 }
 
@@ -205,7 +205,7 @@ fn the_instruction_says_where_what_the_health_check_printed_is() {
 }
 
 #[test]
-fn the_instruction_says_how_the_verifier_judged_the_attempt() {
+fn the_instruction_says_how_the_verifier_judged_the_trial() {
     assert!(containers::INSTRUCTION.contains(
         " Once you had ended or were stopped, the verifier ran the tests of the task, which you \
          are not shown, on what you left, or, where the task has its verifier run in a container \
@@ -243,11 +243,11 @@ fn a_verifier_that_was_never_run_is_worded_with_the_tries_and_where_the_health_c
     assert_eq!(
         worded(ContainerError::VerifierHealthCheck {
             tries: 4,
-            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/verifier/health-check"),
+            kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/verifier/health-check"),
         }),
         "was not verified: the health check of its verifier container did not pass in 4 \
          tries, so the verifier was not run, and \
-         /outputs/running/attempt-3-parsing+t1/verifier/health-check holds what the health check \
+         /outputs/running/trial-3-parsing+t1/verifier/health-check holds what the health check \
          printed the last time it ran"
     );
 }
@@ -271,10 +271,10 @@ fn a_harness_that_was_never_started_is_worded_with_the_tries_and_where_the_healt
     assert_eq!(
         worded(ContainerError::TaskHealthCheck {
             tries: 4,
-            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/health-check"),
+            kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/health-check"),
         }),
         "was not carried out: the health check of the task did not pass in 4 tries, so the \
-         harness was not started, and /outputs/running/attempt-3-parsing+t1/health-check holds \
+         harness was not started, and /outputs/running/trial-3-parsing+t1/health-check holds \
          what the health check printed the last time it ran"
     );
 }

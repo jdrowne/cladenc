@@ -22,7 +22,7 @@ fn up_to_the_seconds(table: &str) -> String {
     let seconds = table
         .lines()
         .nth(7)
-        .and_then(|header| header.find("attempt seconds"))
+        .and_then(|header| header.find("trial seconds"))
         .unwrap();
     let above: String = table
         .lines()

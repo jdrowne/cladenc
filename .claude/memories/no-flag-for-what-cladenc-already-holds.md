@@ -10,7 +10,7 @@ metadata:
 
 # No flag for what cladenc already holds
 
-A flag gives `cladenc` something only a person can tell it. What `cladenc` holds already is read by `cladenc` and is not asked for by a flag. At every moment of a directed evolution the outputs directory keeps the source code of the primogenitor and of every other harness, the attempts of every harness, and the journal, so `cladenc` knows where the source code of the primogenitor and of a progenitor is without being told.
+A flag gives `cladenc` something only a person can tell it. What `cladenc` holds already is read by `cladenc` and is not asked for by a flag. At every moment of a directed evolution the outputs directory keeps the source code of the primogenitor and of every other harness, the trials of every harness, and the journal, so `cladenc` knows where the source code of the primogenitor and of a progenitor is without being told.
 
 **Why:** A flag for a value `cladenc` has at hand is one more thing a person can give wrongly. A design that has a person name, by a flag, a harness or a value that `cladenc` has at hand is turned down, and so is a second flag put in the place of the first.
 

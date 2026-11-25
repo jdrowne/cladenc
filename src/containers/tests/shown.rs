@@ -52,10 +52,10 @@ fn a_progenitor_is_shown_every_harness_it_descends_from_with_the_nearest_first()
         names(shown::to(&outputs_directory, 2, None)),
         [
             "/var/log/cladenc/line/1/harness",
-            "/var/log/cladenc/line/1/attempts",
+            "/var/log/cladenc/line/1/trials",
             "/var/log/cladenc/line/1/procreation",
             "/var/log/cladenc/line/0/harness",
-            "/var/log/cladenc/line/0/attempts",
+            "/var/log/cladenc/line/0/trials",
         ]
     );
 }
@@ -67,15 +67,15 @@ fn a_progenitor_is_shown_every_child_it_made_after_its_line_whether_created_or_n
         names(shown::to(&outputs_directory, 1, None)),
         [
             "/var/log/cladenc/line/0/harness",
-            "/var/log/cladenc/line/0/attempts",
+            "/var/log/cladenc/line/0/trials",
             "/var/log/cladenc/children/2/harness",
-            "/var/log/cladenc/children/2/attempts",
+            "/var/log/cladenc/children/2/trials",
             "/var/log/cladenc/children/2/procreation",
             "/var/log/cladenc/children/2/build",
             "/var/log/cladenc/children/3/harness",
             "/var/log/cladenc/children/3/procreation",
             "/var/log/cladenc/children/4/harness",
-            "/var/log/cladenc/children/4/attempts",
+            "/var/log/cladenc/children/4/trials",
             "/var/log/cladenc/children/4/procreation",
         ]
     );
@@ -88,9 +88,9 @@ fn a_progenitor_shown_what_it_saw_before_a_child_is_shown_only_the_children_made
         names(shown::to(&outputs_directory, 1, Some(3))),
         [
             "/var/log/cladenc/line/0/harness",
-            "/var/log/cladenc/line/0/attempts",
+            "/var/log/cladenc/line/0/trials",
             "/var/log/cladenc/children/2/harness",
-            "/var/log/cladenc/children/2/attempts",
+            "/var/log/cladenc/children/2/trials",
             "/var/log/cladenc/children/2/procreation",
             "/var/log/cladenc/children/2/build",
         ]
@@ -108,7 +108,7 @@ fn what_a_progenitor_is_shown_of_a_harness_is_what_the_outputs_directory_keeps_o
         kept,
         [
             outputs_directory.harness(1),
-            outputs_directory.attempts(1),
+            outputs_directory.trials(1),
             outputs_directory.procreation(1),
         ]
     );

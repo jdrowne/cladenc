@@ -148,15 +148,15 @@ fn an_ended_baseline_keeps_what_the_primogenitor_left_as_the_singleton_control_g
 }
 
 #[test]
-fn a_singleton_control_group_harness_that_was_created_is_given_a_directory_for_its_attempts() {
+fn a_singleton_control_group_harness_that_was_created_is_given_a_directory_for_its_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert_eq!(entries(&directory, outputs_directory.attempts(3)), 0);
+    assert_eq!(entries(&directory, outputs_directory.trials(3)), 0);
 }
 
 #[test]
-fn a_singleton_control_group_harness_that_was_not_created_is_given_no_directory_for_attempts() {
+fn a_singleton_control_group_harness_that_was_not_created_is_given_no_directory_for_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.trials(3)));
 }
 
 #[test]
@@ -237,9 +237,9 @@ fn discarding_a_baseline_that_ended_removes_what_was_kept_of_it() {
 }
 
 #[test]
-fn discarding_a_baseline_that_ended_removes_the_directory_of_the_attempts() {
+fn discarding_a_baseline_that_ended_removes_the_directory_of_the_trials() {
     let (directory, outputs_directory) = discarded_after_it_ended();
-    assert!(!directory.exists(outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.trials(3)));
 }
 
 #[test]
@@ -257,7 +257,7 @@ fn a_baseline_recorded_as_unchanged_records_the_word_unchanged() {
 }
 
 #[test]
-fn a_baseline_recorded_as_unchanged_leaves_no_directory_for_attempts() {
+fn a_baseline_recorded_as_unchanged_leaves_no_directory_for_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
-    assert!(!directory.exists(outputs_directory.attempts(3)));
+    assert!(!directory.exists(outputs_directory.trials(3)));
 }

@@ -5,7 +5,7 @@ use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::said::{Environments, Retrying};
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{AttemptResult, CreationOutcome, Experiment};
+use crate::genealogy::{CreationOutcome, Experiment, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
@@ -20,8 +20,8 @@ fn procreation() -> Started {
     }
 }
 
-fn attempt() -> Started {
-    Started::Attempt {
+fn trial() -> Started {
+    Started::Trial {
         harness: 3,
         task: "fix-the-parser".to_owned(),
     }
@@ -68,8 +68,8 @@ fn procreated(outcome: CreationOutcome) -> String {
     .to_string()
 }
 
-fn attempted(result: AttemptResult) -> String {
-    Said::Attempted {
+fn trialled(result: TrialResult) -> String {
+    Said::Trialled {
         harness: 3,
         task: "fix-the-parser",
         result,
@@ -79,8 +79,8 @@ fn attempted(result: AttemptResult) -> String {
     .to_string()
 }
 
-fn attempted_by_a_harness_that_ran_out_of_time(result: AttemptResult) -> String {
-    Said::Attempted {
+fn trialled_by_a_harness_that_ran_out_of_time(result: TrialResult) -> String {
+    Said::Trialled {
         harness: 3,
         task: "fix-the-parser",
         result,
@@ -171,34 +171,34 @@ fn one_selection_task_and_one_corroboration_task_are_not_said_as_several() {
 #[test]
 fn a_harness_that_was_stopped_at_its_time_limit_and_completed_its_task_is_said_with_both() {
     assert_eq!(
-        attempted_by_a_harness_that_ran_out_of_time(AttemptResult::Completed),
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::Completed),
         "harness 3 completed task fix-the-parser, after it was stopped at its time limit: what \
-         the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+         the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
 fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is_said_with_both() {
     assert_eq!(
-        attempted_by_a_harness_that_ran_out_of_time(AttemptResult::NotCompleted),
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::NotCompleted),
         "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
-         limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+         limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn an_attempt_at_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps_it() {
+fn a_trial_on_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps_it() {
     assert_eq!(
-        Said::Attempted {
+        Said::Trialled {
             harness: 3,
             task: "parsing/fix-the-parser",
-            result: AttemptResult::Completed,
+            result: TrialResult::Completed,
             ending: HarnessEnding::Ended,
             outputs_directory: &outputs_directory()
                 .holding_out(&["parsing/fix-the-parser".to_owned()]),
         }
         .to_string(),
-        "harness 3 completed task parsing/fix-the-parser: what the attempt left is kept in \
+        "harness 3 completed task parsing/fix-the-parser: what the trial left is kept in \
          /outputs/holdout/3/parsing/fix-the-parser"
     );
 }
@@ -548,18 +548,18 @@ fn a_procreation_that_is_run_again_is_said_to_have_started_again_with_no_number(
 }
 
 #[test]
-fn an_attempt_is_said_to_have_started_with_no_number() {
+fn a_trial_is_said_to_have_started_with_no_number() {
     assert_eq!(
-        started(&attempt(), false),
-        "started the attempt of harness 3 on task fix-the-parser"
+        started(&trial(), false),
+        "started the trial of harness 3 on task fix-the-parser"
     );
 }
 
 #[test]
-fn an_attempt_that_is_run_again_is_said_to_have_started_again_with_no_number() {
+fn a_trial_that_is_run_again_is_said_to_have_started_again_with_no_number() {
     assert_eq!(
-        started(&attempt(), true),
-        "started again the attempt of harness 3 on task fix-the-parser"
+        started(&trial(), true),
+        "started again the trial of harness 3 on task fix-the-parser"
     );
 }
 
@@ -609,29 +609,29 @@ fn a_procreation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn a_harness_that_completed_a_task_is_said_with_where_what_the_attempt_left_is_kept() {
+fn a_harness_that_completed_a_task_is_said_with_where_what_the_trial_left_is_kept() {
     assert_eq!(
-        attempted(AttemptResult::Completed),
-        "harness 3 completed task fix-the-parser: what the attempt left is kept \
-         in /outputs/attempts/3/fix-the-parser"
+        trialled(TrialResult::Completed),
+        "harness 3 completed task fix-the-parser: what the trial left is kept \
+         in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
 fn a_harness_that_did_not_complete_a_task_is_said_not_to_have_completed_it() {
     assert_eq!(
-        attempted(AttemptResult::NotCompleted),
-        "harness 3 did not complete task fix-the-parser: what the attempt left is kept \
-         in /outputs/attempts/3/fix-the-parser"
+        trialled(TrialResult::NotCompleted),
+        "harness 3 did not complete task fix-the-parser: what the trial left is kept \
+         in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
 fn a_harness_whose_verifier_timed_out_is_said_not_to_have_completed_the_task_for_it() {
     assert_eq!(
-        attempted(AttemptResult::TimedOut),
+        trialled(TrialResult::TimedOut),
         "harness 3 did not complete task fix-the-parser, as the verifier ran past its time \
-         limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
+         limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
@@ -639,11 +639,11 @@ fn a_harness_whose_verifier_timed_out_is_said_not_to_have_completed_the_task_for
 fn an_action_that_stops_the_directed_evolution_is_said_with_what_became_of_it() {
     assert_eq!(
         Said::Failed {
-            action: &attempt(),
+            action: &trial(),
             error: &ContainerError::Exit(2),
         }
         .to_string(),
-        "the attempt of harness 3 on task fix-the-parser exited with status 2"
+        "the trial of harness 3 on task fix-the-parser exited with status 2"
     );
 }
 
@@ -675,13 +675,13 @@ fn a_directed_evolution_that_stops_over_a_failure_is_said_to_be_stopping() {
 fn the_end_of_a_directed_evolution_is_said_with_its_best_harness_and_where_it_is_kept() {
     assert_eq!(
         Said::Finished {
-            attempts: 800,
+            trials: 800,
             harnesses: 31,
             best_harness: 12,
             directory: Path::new("/outputs/harnesses/12"),
         }
         .to_string(),
-        "the directed evolution finished with 800 attempts started and 31 harnesses: its best \
+        "the directed evolution finished with 800 trials started and 31 harnesses: its best \
          harness is harness 12, kept in /outputs/harnesses/12"
     );
 }
@@ -705,10 +705,10 @@ fn retrying_after(wait: Duration) -> String {
 }
 
 #[test]
-fn a_retry_of_the_health_check_of_a_task_is_said_with_its_attempt_its_wait_and_its_number() {
+fn a_retry_of_the_health_check_of_a_task_is_said_with_its_trial_its_wait_and_its_number() {
     assert_eq!(
         retrying(Checked::Task, Duration::from_secs(10)),
-        "the attempt of harness 3 on task parsing/fix-the-parser is not carried out yet: the \
+        "the trial of harness 3 on task parsing/fix-the-parser is not carried out yet: the \
          health check of the task did not pass, and cladenc tries again in a new container \
          after 10 seconds, retry 2 of 5"
     );
@@ -723,10 +723,10 @@ fn a_wait_of_1_second_before_a_retry_of_the_health_check_of_a_task_is_not_said_a
 }
 
 #[test]
-fn a_retry_of_the_health_check_of_a_verifier_is_said_with_its_attempt_its_wait_and_its_number() {
+fn a_retry_of_the_health_check_of_a_verifier_is_said_with_its_trial_its_wait_and_its_number() {
     assert_eq!(
         retrying_after(Duration::from_secs(10)),
-        "the attempt of harness 3 on task parsing/fix-the-parser is not verified yet: the health \
+        "the trial of harness 3 on task parsing/fix-the-parser is not verified yet: the health \
          check of its verifier container did not pass, and cladenc tries again in a new \
          container after 10 seconds, retry 2 of 5"
     );
@@ -752,16 +752,16 @@ fn a_wait_of_a_part_of_a_second_before_a_retry_is_said_with_the_part() {
 fn a_verifier_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
     assert_eq!(
         Said::Failed {
-            action: &attempt(),
+            action: &trial(),
             error: &ContainerError::VerifierHealthCheck {
                 tries: 1,
-                kept: "/outputs/running/attempt-3-fix-the-parser/verifier/health-check".into(),
+                kept: "/outputs/running/trial-3-fix-the-parser/verifier/health-check".into(),
             },
         }
         .to_string(),
-        "the attempt of harness 3 on task fix-the-parser was not verified: the health check of \
+        "the trial of harness 3 on task fix-the-parser was not verified: the health check of \
          its verifier container did not pass in 1 try, so the verifier was not run, and \
-         /outputs/running/attempt-3-fix-the-parser/verifier/health-check holds what the health \
+         /outputs/running/trial-3-fix-the-parser/verifier/health-check holds what the health \
          check printed the last time it ran"
     );
 }
@@ -770,16 +770,16 @@ fn a_verifier_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
 fn a_harness_that_was_never_started_is_said_with_what_stopped_it_from_being_started() {
     assert_eq!(
         Said::Failed {
-            action: &attempt(),
+            action: &trial(),
             error: &ContainerError::TaskHealthCheck {
                 tries: 1,
-                kept: "/outputs/running/attempt-3-fix-the-parser/health-check".into(),
+                kept: "/outputs/running/trial-3-fix-the-parser/health-check".into(),
             },
         }
         .to_string(),
-        "the attempt of harness 3 on task fix-the-parser was not carried out: the health check \
+        "the trial of harness 3 on task fix-the-parser was not carried out: the health check \
          of the task did not pass in 1 try, so the harness was not started, and \
-         /outputs/running/attempt-3-fix-the-parser/health-check holds what the health check \
+         /outputs/running/trial-3-fix-the-parser/health-check holds what the health check \
          printed the last time it ran"
     );
 }

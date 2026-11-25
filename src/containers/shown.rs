@@ -25,7 +25,7 @@ pub(super) fn to(
         .flat_map(|(relation, harness)| {
             [
                 (outputs_directory.harness(harness), "harness"),
-                (outputs_directory.attempts(harness), "attempts"),
+                (outputs_directory.trials(harness), "trials"),
                 (outputs_directory.procreation(harness), "procreation"),
                 (outputs_directory.build(harness), "build"),
             ]

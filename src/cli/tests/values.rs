@@ -378,9 +378,9 @@ fn the_older_name_of_the_flag_of_the_time_limit_of_the_build_of_the_image_is_no_
 }
 
 #[test]
-fn a_time_limit_of_an_attempt_is_no_flag_of_start() {
+fn a_time_limit_of_a_trial_is_no_flag_of_start() {
     assert_eq!(
-        and(Some("--attempt-timeout=3600".to_owned()))
+        and(Some("--trial-timeout=3600".to_owned()))
             .unwrap_err()
             .kind(),
         ErrorKind::UnknownArgument

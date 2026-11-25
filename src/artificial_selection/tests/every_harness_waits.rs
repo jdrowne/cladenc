@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{AttemptResult, CreationOutcome, Genealogy, HarnessId};
+use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 const CREATED: CreationOutcome = CreationOutcome::Created;
 const FAILED: CreationOutcome = CreationOutcome::Failed;
@@ -25,9 +25,9 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
 
 fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
-        genealogy.start_attempt(harness, &task).unwrap();
+        genealogy.start_trial(harness, &task).unwrap();
         genealogy
-            .end_attempt(harness, &task, AttemptResult::NotCompleted)
+            .end_trial(harness, &task, TrialResult::NotCompleted)
             .unwrap();
     }
 }
@@ -55,7 +55,7 @@ fn progenitors(genealogy: &Genealogy) -> Vec<HarnessId> {
         .filter_map(
             |seed| match artificial_selection(1000, seed).next_action(genealogy, 0) {
                 Some(Action::Procreation { progenitor }) => Some(progenitor),
-                Some(Action::Attempt { .. }) | None => None,
+                Some(Action::Trial { .. }) | None => None,
             },
         )
         .collect();
@@ -116,7 +116,7 @@ fn a_harness_that_waits_stays_left_out_while_another_harness_has_a_task_not_yet_
     child_of(&mut genealogy, 0, FAILED);
     assert_eq!(
         artificial_selection(1000, 0).next_action(&genealogy, 0),
-        Some(Action::Attempt {
+        Some(Action::Trial {
             harness: 1,
             task: "task-0".to_owned()
         })
@@ -124,11 +124,11 @@ fn a_harness_that_waits_stays_left_out_while_another_harness_has_a_task_not_yet_
 }
 
 #[test]
-fn a_harness_that_waits_stays_left_out_while_an_attempt_of_another_harness_is_still_running() {
+fn a_harness_that_waits_stays_left_out_while_a_trial_of_another_harness_is_still_running() {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     child_of(&mut genealogy, 0, CREATED);
     for task in tasks() {
-        genealogy.start_attempt(1, &task).unwrap();
+        genealogy.start_trial(1, &task).unwrap();
     }
     child_of(&mut genealogy, 0, FAILED);
     assert_eq!(

@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use serde::Serialize;
 
-use super::{AttemptResult, Experiment, HarnessId};
+use super::{Experiment, HarnessId, TrialResult};
 use crate::holdout::TaskSet;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -130,12 +130,12 @@ impl Harness {
         self.completed.contains(task)
     }
 
-    pub(crate) fn has_attempted(&self, task: &str) -> bool {
+    pub(crate) fn has_trialled(&self, task: &str) -> bool {
         self.given.contains(task) && !self.running.contains(task)
     }
 
-    pub(crate) fn has_attempted_every(&self, tasks: &[String]) -> bool {
-        tasks.iter().all(|task| self.has_attempted(task))
+    pub(crate) fn has_trialled_every(&self, tasks: &[String]) -> bool {
+        tasks.iter().all(|task| self.has_trialled(task))
     }
 
     pub(super) fn set_state(&mut self, state: HarnessState) {
@@ -146,10 +146,10 @@ impl Harness {
         self.given.insert(task.to_owned()) && self.running.insert(task.to_owned())
     }
 
-    pub(super) fn finish(&mut self, task: &str, result: AttemptResult, set: TaskSet) -> bool {
+    pub(super) fn finish(&mut self, task: &str, result: TrialResult, set: TaskSet) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            let completed = result == AttemptResult::Completed;
+            let completed = result == TrialResult::Completed;
             if completed {
                 self.completed.insert(task.to_owned());
             }
@@ -166,10 +166,10 @@ impl Harness {
         was_running
     }
 
-    pub(super) fn count_in_clade(&mut self, result: AttemptResult) {
+    pub(super) fn count_in_clade(&mut self, result: TrialResult) {
         match result {
-            AttemptResult::Completed => self.clade_completed += 1,
-            AttemptResult::NotCompleted | AttemptResult::TimedOut => self.clade_not_completed += 1,
+            TrialResult::Completed => self.clade_completed += 1,
+            TrialResult::NotCompleted | TrialResult::TimedOut => self.clade_not_completed += 1,
         }
     }
 }
