@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
@@ -23,6 +24,7 @@ const OWN: &str = "[verifier.environment]\n";
 const REPORT: &str = "artifacts = [\"/app/report.txt\"]\n";
 const OUT: &str = "artifacts = [\"/app/out\"]\n";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
+const CHANGE_THE_WORK_AND_WRITE_A_REPORT: &str = "echo done > work.txt; echo found > report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
@@ -52,6 +54,11 @@ struct Attempted {
     _built: Vec<Image>,
     outputs_directory: OutputsDirectory,
     result: Result<containers::Attempted, ContainerError>,
+}
+
+struct Asked {
+    attempted: Attempted,
+    of_the_grader: &'static [&'static str],
 }
 
 fn image_of_the_grader(
@@ -234,6 +241,61 @@ fn printed_by_the_grader(task_toml: &str, run_command: &str, grader: &str) -> St
     kept(&attempted(task_toml, run_command, grader), "grader/stdout")
 }
 
+static GRADED_SEPARATELY: LazyLock<Asked> = LazyLock::new(|| {
+    let of_the_grader: &'static [&'static str] = &[
+        "cat work.txt",
+        "ls",
+        "ls /tests",
+        "readlink /tests",
+        "readlink /logs",
+        "echo noted > /logs/verifier/notes.txt",
+        "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt",
+    ];
+    Asked {
+        attempted: attempted(
+            SEPARATE,
+            CHANGE_THE_WORK_AND_WRITE_A_REPORT,
+            &test_inputs::one_after_another(of_the_grader),
+        ),
+        of_the_grader,
+    }
+});
+
+static GRADED_SEPARATELY_ON_ITS_REPORT: LazyLock<Asked> = LazyLock::new(|| {
+    let of_the_grader: &'static [&'static str] = &[
+        "cat /app/report.txt",
+        "grep -q found /app/report.txt && echo 1 > /logs/verifier/reward.txt",
+    ];
+    Asked {
+        attempted: attempted(
+            &separate_and(REPORT),
+            WRITE_A_REPORT,
+            &test_inputs::one_after_another(of_the_grader),
+        ),
+        of_the_grader,
+    }
+});
+
+static GRADED_IN_ITS_IMAGE: LazyLock<Asked> = LazyLock::new(|| {
+    let of_the_grader: &'static [&'static str] = &[
+        "echo from the image",
+        "[ -L /tests ] || echo no link; ls -d /var/opt/cladenc/harbor 2> /dev/null",
+        "ls /app 2> /dev/null || echo no /app",
+    ];
+    Asked {
+        attempted: graded_in_its_image(SEPARATE, &test_inputs::one_after_another(of_the_grader)),
+        of_the_grader,
+    }
+});
+
+fn found_by_the_grader(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_grader,
+        &kept(&asked.attempted, "grader/stdout"),
+    )
+}
+
 fn printed_by_the_grader_in_its_image(task_toml: &str, grader: &str) -> String {
     kept(&graded_in_its_image(task_toml, grader), "grader/stdout")
 }
@@ -290,23 +352,20 @@ fn containers_while_the_grader_runs() -> usize {
 #[test]
 fn a_grader_that_runs_separately_finds_the_working_directory_as_the_environment_made_it() {
     assert_eq!(
-        printed_by_the_grader(SEPARATE, "echo done > work.txt", "cat work.txt"),
+        found_by_the_grader(&GRADED_SEPARATELY, "cat work.txt"),
         "to do\n"
     );
 }
 
 #[test]
 fn a_grader_that_runs_separately_finds_no_file_that_the_harness_made() {
-    assert_eq!(
-        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "ls"),
-        "work.txt\n"
-    );
+    assert_eq!(found_by_the_grader(&GRADED_SEPARATELY, "ls"), "work.txt\n");
 }
 
 #[test]
 fn a_grader_that_runs_in_a_copy_of_the_environment_is_given_the_tests_of_the_task() {
     assert_eq!(
-        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "ls /tests"),
+        found_by_the_grader(&GRADED_SEPARATELY, "ls /tests"),
         "test.sh\n"
     );
 }
@@ -314,7 +373,7 @@ fn a_grader_that_runs_in_a_copy_of_the_environment_is_given_the_tests_of_the_tas
 #[test]
 fn a_grader_that_runs_in_a_copy_of_the_environment_finds_tests_a_symbolic_link_under_var_opt() {
     assert_eq!(
-        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "readlink /tests"),
+        found_by_the_grader(&GRADED_SEPARATELY, "readlink /tests"),
         "/var/opt/cladenc/harbor/tests\n"
     );
 }
@@ -322,7 +381,7 @@ fn a_grader_that_runs_in_a_copy_of_the_environment_finds_tests_a_symbolic_link_u
 #[test]
 fn a_grader_that_runs_separately_finds_logs_a_symbolic_link_to_a_directory_under_var_log() {
     assert_eq!(
-        printed_by_the_grader(SEPARATE, WRITE_A_REPORT, "readlink /logs"),
+        found_by_the_grader(&GRADED_SEPARATELY, "readlink /logs"),
         "/var/log/cladenc/harbor\n"
     );
 }
@@ -342,29 +401,25 @@ fn logs_verifier_of_a_grader_that_runs_separately_belongs_to_the_user_the_grader
 #[test]
 fn a_path_the_task_lists_is_at_the_same_path_in_the_container_of_the_grader() {
     assert_eq!(
-        printed_by_the_grader(&separate_and(REPORT), WRITE_A_REPORT, "cat /app/report.txt"),
+        found_by_the_grader(&GRADED_SEPARATELY_ON_ITS_REPORT, "cat /app/report.txt"),
         "found\n"
     );
 }
 
 #[test]
 fn a_harness_completes_a_task_whose_grader_runs_separately_by_what_was_kept() {
-    let attempted = attempted(
-        &separate_and(REPORT),
-        WRITE_A_REPORT,
-        "grep -q found /app/report.txt && echo 1 > /logs/verifier/reward.txt",
+    assert_eq!(
+        result_of(&GRADED_SEPARATELY_ON_ITS_REPORT.attempted),
+        Some(AttemptResult::Completed)
     );
-    assert_eq!(result_of(&attempted), Some(AttemptResult::Completed));
 }
 
 #[test]
 fn a_harness_does_not_complete_a_task_by_work_that_its_separate_grader_is_not_given() {
-    let attempted = attempted(
-        SEPARATE,
-        "echo done > work.txt",
-        "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt",
+    assert_eq!(
+        result_of(&GRADED_SEPARATELY.attempted),
+        Some(AttemptResult::NotCompleted)
     );
-    assert_eq!(result_of(&attempted), Some(AttemptResult::NotCompleted));
 }
 
 #[test]
@@ -465,13 +520,11 @@ fn what_is_given_to_the_grader_belongs_to_the_user_the_grader_runs_as() {
 
 #[test]
 fn what_a_grader_that_runs_separately_left_in_logs_verifier_is_kept_with_the_attempt() {
-    let attempted = attempted(
-        SEPARATE,
-        WRITE_A_REPORT,
-        "echo noted > /logs/verifier/notes.txt",
-    );
     assert_eq!(
-        kept(&attempted, "grader/logs/verifier/notes.txt"),
+        kept(
+            &GRADED_SEPARATELY.attempted,
+            "grader/logs/verifier/notes.txt"
+        ),
         "noted\n"
     );
 }
@@ -484,7 +537,7 @@ fn the_container_of_the_harness_is_gone_while_the_grader_runs_in_its_own() {
 #[test]
 fn a_grader_in_an_image_built_from_the_tests_of_the_task_is_the_grader_the_image_holds() {
     assert_eq!(
-        printed_by_the_grader_in_its_image(SEPARATE, "echo from the image"),
+        found_by_the_grader(&GRADED_IN_ITS_IMAGE, "echo from the image"),
         "from the image\n"
     );
 }
@@ -492,8 +545,8 @@ fn a_grader_in_an_image_built_from_the_tests_of_the_task_is_the_grader_the_image
 #[test]
 fn nothing_is_made_at_tests_in_a_container_whose_image_holds_the_grader() {
     assert_eq!(
-        printed_by_the_grader_in_its_image(
-            SEPARATE,
+        found_by_the_grader(
+            &GRADED_IN_ITS_IMAGE,
             "[ -L /tests ] || echo no link; ls -d /var/opt/cladenc/harbor 2> /dev/null"
         ),
         "no link\n"
@@ -503,7 +556,7 @@ fn nothing_is_made_at_tests_in_a_container_whose_image_holds_the_grader() {
 #[test]
 fn an_image_built_from_the_tests_of_the_task_is_not_the_environment_of_the_task() {
     assert_eq!(
-        printed_by_the_grader_in_its_image(SEPARATE, "ls /app 2> /dev/null || echo no /app"),
+        found_by_the_grader(&GRADED_IN_ITS_IMAGE, "ls /app 2> /dev/null || echo no /app"),
         "no /app\n"
     );
 }

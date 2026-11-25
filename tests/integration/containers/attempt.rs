@@ -29,7 +29,7 @@ const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
     "mkdir -p locked/inner && touch locked/inner/file && chmod 500 locked/inner locked";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const LOOK_FOR_THE_TESTS: &str = "ls -d /tests /var/opt/cladenc/harbor/tests \
-    /var/log/cladenc/attempts > given 2> /dev/null";
+    /var/log/cladenc/attempts 2> /dev/null";
 const TASK: &str = "benchmark/t1";
 const AS_A_USER: &str = "RUN mkdir /app && chown 1000:1000 /app\nUSER 1000\nWORKDIR /app\n\
                          COPY --chown=1000:1000 workspace .\n";
@@ -40,6 +40,12 @@ struct Attempted {
     environment_image: String,
     outputs_directory: OutputsDirectory,
     result: Result<containers::Attempted, ContainerError>,
+}
+
+struct Asked {
+    attempted: Attempted,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
 }
 
 #[derive(Clone, Copy)]
@@ -196,7 +202,78 @@ fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &
     })
 }
 
-static FINISHED_AND_GRADED: LazyLock<Attempted> = LazyLock::new(|| attempted(FINISH, FINISHED));
+fn asked_as(
+    environment: Environment<'_>,
+    key: Option<&str>,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
+) -> Asked {
+    Asked {
+        attempted: attempted_as(&Attempt {
+            environment,
+            run_command: &test_inputs::one_after_another(of_the_harness),
+            grader: &test_inputs::one_after_another(of_the_grader),
+            key,
+            ..Attempt::default()
+        }),
+        of_the_harness,
+        of_the_grader,
+    }
+}
+
+static LOOKED_AT: LazyLock<Asked> = LazyLock::new(|| {
+    asked_as(
+        Environment::OfTheTask,
+        Some(test_inputs::MODEL_KEY),
+        &[
+            "cat work.txt",
+            "pwd",
+            "id -u",
+            "echo \"$CLADENC_HARNESS\"; cat /var/opt/cladenc/harness/harness.sh",
+            "echo \"$CLADENC_INSTRUCTION\"",
+            "env | grep ^CLADENC_MODEL | sort",
+            LOOK_FOR_THE_TESTS,
+            "ls /",
+            "cat",
+            "echo $$",
+            "hostname",
+            FINISH,
+        ],
+        &[
+            "ls -A /logs/verifier",
+            "pwd",
+            "ls -A /tests",
+            "echo \"$0\"",
+            "ls /",
+            "env | grep -c ^CLADENC_",
+            "hostname",
+            "echo seen > /logs/verifier/notes.txt",
+            FINISHED,
+        ],
+    )
+});
+
+static AS_A_USER_AND_LOOKED_AT: LazyLock<Asked> = LazyLock::new(|| {
+    asked_as(
+        Environment::BuiltWith(AS_A_USER),
+        None,
+        &[
+            "id -u",
+            "stat -c %u /var/opt/cladenc/harness/harness.sh",
+            FINISH,
+        ],
+        &["id -u", FINISHED],
+    )
+});
+
+static AT_THE_TOP: LazyLock<Asked> = LazyLock::new(|| {
+    asked_as(
+        Environment::Named(test_inputs::IMAGE),
+        None,
+        &["pwd", FINISH],
+        &[FINISHED],
+    )
+});
 
 static LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<(Attempted, io::Result<()>)> =
     LazyLock::new(|| {
@@ -212,21 +289,20 @@ fn kept(attempted: &Attempted, file: &str) -> String {
     fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
 }
 
-fn left_by_the_harness(run_command: &str, file: &str) -> String {
-    kept(&attempted(run_command, FINISHED), &format!("work/{file}"))
+fn found_by_the_harness(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_harness,
+        &kept(&asked.attempted, "stdout"),
+    )
 }
 
-fn printed_by_the_grader(grader: &str) -> String {
-    kept(&attempted(FINISH, grader), "grader/stdout")
-}
-
-fn told_of_the_model(key: Option<&str>) -> String {
-    let attempted = attempted_as(&Attempt {
-        run_command: "env | grep ^CLADENC_MODEL | sort > model",
-        key,
-        ..Attempt::default()
-    });
-    kept(&attempted, "work/model")
+fn found_by_the_grader(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_grader,
+        &kept(&asked.attempted, "grader/stdout"),
+    )
 }
 
 fn with_its_result(attempted: &Attempted, result: AttemptResult) -> bool {
@@ -246,39 +322,37 @@ fn the_top_of_the_filesystem_of(attempted: &Attempted, added: &[&str]) -> String
 
 #[test]
 fn the_harness_works_on_the_files_the_environment_of_the_task_starts_from() {
-    assert_eq!(
-        left_by_the_harness("cat work.txt > read", "read"),
-        "to do\n"
-    );
+    assert_eq!(found_by_the_harness(&LOOKED_AT, "cat work.txt"), "to do\n");
 }
 
 #[test]
 fn the_harness_works_in_the_working_directory_of_the_environment_of_the_task() {
-    assert_eq!(left_by_the_harness("pwd > where", "where"), "/app\n");
+    assert_eq!(found_by_the_harness(&LOOKED_AT, "pwd"), "/app\n");
 }
 
 #[test]
 fn the_harness_runs_as_the_user_of_the_environment_of_the_task() {
-    let attempted = in_the_environment(Environment::BuiltWith(AS_A_USER), "id -u", FINISHED);
-    assert_eq!(kept(&attempted, "stdout"), "1000\n");
+    assert_eq!(
+        found_by_the_harness(&AS_A_USER_AND_LOOKED_AT, "id -u"),
+        "1000\n"
+    );
 }
 
 #[test]
 fn the_harness_in_an_environment_that_names_no_user_runs_as_root() {
-    assert_eq!(left_by_the_harness("id -u > who", "who"), "0\n");
+    assert_eq!(found_by_the_harness(&LOOKED_AT, "id -u"), "0\n");
 }
 
 #[test]
 fn the_harness_in_an_environment_that_names_no_working_directory_works_at_the_top() {
-    let attempted = in_the_environment(Environment::Named(test_inputs::IMAGE), "pwd", FINISHED);
-    assert_eq!(kept(&attempted, "stdout"), "/\n");
+    assert_eq!(found_by_the_harness(&AT_THE_TOP, "pwd"), "/\n");
 }
 
 #[test]
 fn no_work_is_kept_where_the_working_directory_of_the_environment_is_the_top() {
-    let attempted = in_the_environment(Environment::Named(test_inputs::IMAGE), FINISH, FINISHED);
     assert!(
-        !attempted
+        !AT_THE_TOP
+            .attempted
             .outputs_directory
             .attempt(0, TASK)
             .join("work")
@@ -289,9 +363,9 @@ fn no_work_is_kept_where_the_working_directory_of_the_environment_is_the_top() {
 #[test]
 fn the_harness_is_told_where_its_source_code_is() {
     assert_eq!(
-        left_by_the_harness(
-            "echo \"$CLADENC_HARNESS\" > told; cat /var/opt/cladenc/harness/harness.sh >> told",
-            "told"
+        found_by_the_harness(
+            &LOOKED_AT,
+            "echo \"$CLADENC_HARNESS\"; cat /var/opt/cladenc/harness/harness.sh"
         ),
         "/var/opt/cladenc/harness\n#!/bin/sh\necho harness\n"
     );
@@ -299,18 +373,19 @@ fn the_harness_is_told_where_its_source_code_is() {
 
 #[test]
 fn the_source_code_of_the_harness_belongs_to_the_user_of_the_environment() {
-    let attempted = in_the_environment(
-        Environment::BuiltWith(AS_A_USER),
-        "stat -c %u /var/opt/cladenc/harness/harness.sh",
-        FINISHED,
+    assert_eq!(
+        found_by_the_harness(
+            &AS_A_USER_AND_LOOKED_AT,
+            "stat -c %u /var/opt/cladenc/harness/harness.sh"
+        ),
+        "1000\n"
     );
-    assert_eq!(kept(&attempted, "stdout"), "1000\n");
 }
 
 #[test]
 fn the_harness_is_asked_to_do_what_the_specification_of_the_task_says() {
     assert_eq!(
-        left_by_the_harness("echo \"$CLADENC_INSTRUCTION\" > asked", "asked"),
+        found_by_the_harness(&LOOKED_AT, "echo \"$CLADENC_INSTRUCTION\""),
         "Finish the work of t1.\n\n"
     );
 }
@@ -318,7 +393,7 @@ fn the_harness_is_asked_to_do_what_the_specification_of_the_task_says() {
 #[test]
 fn the_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
     assert_eq!(
-        told_of_the_model(Some(test_inputs::MODEL_KEY)),
+        found_by_the_harness(&LOOKED_AT, "env | grep ^CLADENC_MODEL | sort"),
         format!(
             "CLADENC_MODEL={}\nCLADENC_MODEL_KEY={}\nCLADENC_MODEL_URL={}\n",
             test_inputs::MODEL,
@@ -330,21 +405,20 @@ fn the_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
 
 #[test]
 fn the_harness_is_given_neither_the_tests_of_the_task_nor_its_own_attempts() {
-    assert_eq!(left_by_the_harness(LOOK_FOR_THE_TESTS, "given"), "");
+    assert_eq!(found_by_the_harness(&LOOKED_AT, LOOK_FOR_THE_TESTS), "");
 }
 
 #[test]
 fn the_harness_finds_at_the_top_of_the_filesystem_what_the_environment_holds_with_logs() {
-    let attempted = attempted("ls / > top", FINISHED);
     assert_eq!(
-        kept(&attempted, "work/top"),
-        the_top_of_the_filesystem_of(&attempted, &["logs"])
+        found_by_the_harness(&LOOKED_AT, "ls /"),
+        the_top_of_the_filesystem_of(&LOOKED_AT.attempted, &["logs"])
     );
 }
 
 #[test]
 fn the_standard_input_of_the_harness_is_empty() {
-    assert_eq!(left_by_the_harness("cat > input", "input"), "");
+    assert_eq!(found_by_the_harness(&LOOKED_AT, "cat"), "");
 }
 
 #[test]
@@ -379,7 +453,8 @@ fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
 fn a_harness_that_changes_the_files_of_the_environment_leaves_the_task_unchanged() {
     assert_eq!(
         fs::read_to_string(
-            FINISHED_AND_GRADED
+            LOOKED_AT
+                .attempted
                 .outputs_directory
                 .task(TASK)
                 .join("environment/workspace/work.txt")
@@ -402,7 +477,7 @@ fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_rem
 #[test]
 fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
     assert!(with_its_result(
-        &FINISHED_AND_GRADED,
+        &LOOKED_AT.attempted,
         AttemptResult::Completed
     ));
 }
@@ -410,17 +485,14 @@ fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
 #[test]
 fn what_the_grader_leaves_in_logs_verifier_is_kept_with_the_attempt() {
     assert_eq!(
-        kept(
-            &attempted(FINISH, "echo seen > /logs/verifier/notes.txt"),
-            "grader/logs/verifier/notes.txt"
-        ),
+        kept(&LOOKED_AT.attempted, "grader/logs/verifier/notes.txt"),
         "seen\n"
     );
 }
 
 #[test]
 fn the_grader_finds_logs_verifier_empty() {
-    assert_eq!(printed_by_the_grader("ls -A /logs/verifier"), "");
+    assert_eq!(found_by_the_grader(&LOOKED_AT, "ls -A /logs/verifier"), "");
 }
 
 #[test]
@@ -445,26 +517,28 @@ fn a_file_the_harness_left_in_tests_is_not_found_by_the_grader() {
 
 #[test]
 fn the_grader_works_in_the_working_directory_the_harness_worked_in() {
-    assert_eq!(printed_by_the_grader("pwd"), "/app\n");
+    assert_eq!(found_by_the_grader(&LOOKED_AT, "pwd"), "/app\n");
 }
 
 #[test]
 fn the_grader_runs_as_the_user_the_harness_ran_as() {
-    let attempted = in_the_environment(Environment::BuiltWith(AS_A_USER), FINISH, "id -u");
-    assert_eq!(kept(&attempted, "grader/stdout"), "1000\n");
+    assert_eq!(
+        found_by_the_grader(&AS_A_USER_AND_LOOKED_AT, "id -u"),
+        "1000\n"
+    );
 }
 
 #[test]
 fn the_grader_of_an_environment_with_a_user_can_score() {
     assert!(with_its_result(
-        &in_the_environment(Environment::BuiltWith(AS_A_USER), FINISH, FINISHED),
+        &AS_A_USER_AND_LOOKED_AT.attempted,
         AttemptResult::Completed
     ));
 }
 
 #[test]
 fn the_grader_finds_the_tests_of_its_task_at_tests() {
-    assert_eq!(printed_by_the_grader("ls -A /tests"), "test.sh\n");
+    assert_eq!(found_by_the_grader(&LOOKED_AT, "ls -A /tests"), "test.sh\n");
 }
 
 #[test]
@@ -478,21 +552,26 @@ fn the_grader_cannot_change_the_tests_of_its_task() {
 
 #[test]
 fn the_grader_that_is_run_is_the_test_sh_of_the_tests_of_its_task() {
-    assert_eq!(printed_by_the_grader("echo \"$0\""), "/tests/test.sh\n");
+    assert_eq!(
+        found_by_the_grader(&LOOKED_AT, "echo \"$0\""),
+        "/tests/test.sh\n"
+    );
 }
 
 #[test]
 fn the_grader_finds_at_the_top_of_the_filesystem_what_the_environment_holds_with_logs_and_tests() {
-    let attempted = attempted(FINISH, "ls /");
     assert_eq!(
-        kept(&attempted, "grader/stdout"),
-        the_top_of_the_filesystem_of(&attempted, &["logs", "tests"])
+        found_by_the_grader(&LOOKED_AT, "ls /"),
+        the_top_of_the_filesystem_of(&LOOKED_AT.attempted, &["logs", "tests"])
     );
 }
 
 #[test]
 fn the_grader_is_given_no_variable_of_cladenc() {
-    assert_eq!(printed_by_the_grader("env | grep -c ^CLADENC_"), "0\n");
+    assert_eq!(
+        found_by_the_grader(&LOOKED_AT, "env | grep -c ^CLADENC_"),
+        "0\n"
+    );
 }
 
 #[test]
@@ -516,19 +595,18 @@ fn the_grader_finds_a_process_that_the_harness_left_running() {
 
 #[test]
 fn the_grader_runs_in_the_container_the_harness_ran_in() {
-    let attempted = attempted("hostname", "hostname");
     assert_eq!(
-        kept(&attempted, "grader/stdout"),
-        kept(&attempted, "stdout")
+        found_by_the_grader(&LOOKED_AT, "hostname"),
+        found_by_the_harness(&LOOKED_AT, "hostname")
     );
 }
 
 #[test]
 fn an_attempt_that_ended_leaves_no_container_behind() {
-    let attempted = attempted("hostname", FINISHED);
-    assert!(test_inputs::container_is_gone(
-        &attempted.outputs_directory.attempt(0, TASK).join("stdout")
-    ));
+    let directory = test_inputs::temporary_directory();
+    let id_file = directory.path().join("id");
+    fs::write(&id_file, found_by_the_harness(&LOOKED_AT, "hostname")).unwrap();
+    assert!(test_inputs::container_is_gone(&id_file));
 }
 
 #[test]
@@ -574,7 +652,7 @@ fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_
 
 #[test]
 fn the_command_of_a_harness_is_not_the_first_process_of_its_container() {
-    assert_ne!(left_by_the_harness("echo $$ > process", "process"), "1\n");
+    assert_ne!(found_by_the_harness(&LOOKED_AT, "echo $$"), "1\n");
 }
 
 #[test]

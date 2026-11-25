@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -30,6 +31,12 @@ struct Attempted {
     _built: Image,
     outputs_directory: OutputsDirectory,
     result: Result<containers::Attempted, ContainerError>,
+}
+
+struct Asked {
+    attempted: Attempted,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
 }
 
 fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
@@ -109,20 +116,94 @@ fn kept(attempted: &Attempted, file: &str) -> String {
     fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
 }
 
-fn printed_by_the_harness_in(steps: &str, run_command: &str) -> String {
-    kept(&attempted_in(steps, run_command, FINISHED), "stdout")
+fn asked_in(
+    steps: &str,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
+) -> Asked {
+    Asked {
+        attempted: attempted_in(
+            steps,
+            &test_inputs::one_after_another(of_the_harness),
+            &test_inputs::one_after_another(of_the_grader),
+        ),
+        of_the_harness,
+        of_the_grader,
+    }
 }
 
-fn printed_by_the_harness(run_command: &str) -> String {
-    printed_by_the_harness_in(AS_ROOT, run_command)
+static AS_ROOT_AND_LOOKED_AT: LazyLock<Asked> = LazyLock::new(|| {
+    asked_in(
+        AS_ROOT,
+        &[
+            "readlink /logs",
+            "find /var/log/cladenc/harbor",
+            "ls -d /var/lib/cladenc 2> /dev/null; echo looked",
+            FINISH,
+        ],
+        &[
+            "find /var/log/cladenc/harbor | sort",
+            "readlink /tests",
+            "find /var/opt/cladenc/harbor",
+            "[ -L /logs ] && [ -L /tests ] && echo links",
+        ],
+    )
+});
+
+static AS_ROOT_AND_WRITTEN_TO: LazyLock<Asked> = LazyLock::new(|| {
+    asked_in(
+        AS_ROOT,
+        &[
+            SAVE_A_REPORT,
+            "cat /var/log/cladenc/harbor/artifacts/report.json",
+            PLANT_WHERE_TESTS_POINTS,
+        ],
+        &["ls -A /tests"],
+    )
+});
+
+static AS_A_USER_AND_LOOKED_AT: LazyLock<Asked> = LazyLock::new(|| {
+    asked_in(
+        AS_A_USER,
+        &["stat -c %u /logs/artifacts", SAVE_A_REPORT, FINISH],
+        &[
+            "stat -c %u /var/log/cladenc/harbor/verifier",
+            "stat -c %u /var/opt/cladenc/harbor/tests /tests/test.sh",
+        ],
+    )
+});
+
+static HOLDING_LOGS_AND_LOOKED_AT: LazyLock<Asked> = LazyLock::new(|| {
+    asked_in(
+        HOLDS_LOGS,
+        &[
+            "cat /logs/held; [ -L /logs ] || echo no link",
+            "ls -d /var/log/cladenc 2> /dev/null; echo looked",
+            SAVE_A_REPORT,
+            FINISH,
+        ],
+        &[FINISHED],
+    )
+});
+
+fn printed_by_the_harness(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_harness,
+        &kept(&asked.attempted, "stdout"),
+    )
+}
+
+fn printed_by_the_grader(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_grader,
+        &kept(&asked.attempted, "grader/stdout"),
+    )
 }
 
 fn printed_by_the_grader_in(steps: &str, run_command: &str, grader: &str) -> String {
     kept(&attempted_in(steps, run_command, grader), "grader/stdout")
-}
-
-fn printed_by_the_grader(grader: &str) -> String {
-    printed_by_the_grader_in(AS_ROOT, FINISH, grader)
 }
 
 fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
@@ -132,7 +213,7 @@ fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
 #[test]
 fn the_harness_finds_logs_a_symbolic_link_to_a_directory_under_var_log() {
     assert_eq!(
-        printed_by_the_harness("readlink /logs"),
+        printed_by_the_harness(&AS_ROOT_AND_LOOKED_AT, "readlink /logs"),
         "/var/log/cladenc/harbor\n"
     );
 }
@@ -140,7 +221,7 @@ fn the_harness_finds_logs_a_symbolic_link_to_a_directory_under_var_log() {
 #[test]
 fn the_harness_finds_under_logs_an_empty_directory_named_artifacts_and_nothing_else() {
     assert_eq!(
-        printed_by_the_harness("find /var/log/cladenc/harbor"),
+        printed_by_the_harness(&AS_ROOT_AND_LOOKED_AT, "find /var/log/cladenc/harbor"),
         "/var/log/cladenc/harbor\n/var/log/cladenc/harbor/artifacts\n"
     );
 }
@@ -148,16 +229,18 @@ fn the_harness_finds_under_logs_an_empty_directory_named_artifacts_and_nothing_e
 #[test]
 fn logs_artifacts_belongs_to_the_user_the_harness_runs_as() {
     assert_eq!(
-        printed_by_the_harness_in(AS_A_USER, "stat -c %u /logs/artifacts"),
+        printed_by_the_harness(&AS_A_USER_AND_LOOKED_AT, "stat -c %u /logs/artifacts"),
         "1000\n"
     );
 }
 
 #[test]
 fn what_a_harness_that_does_not_run_as_root_saved_in_logs_artifacts_is_kept_with_the_attempt() {
-    let attempted = attempted_in(AS_A_USER, SAVE_A_REPORT, FINISHED);
     assert_eq!(
-        kept(&attempted, "artifacts/logs/artifacts/report.json"),
+        kept(
+            &AS_A_USER_AND_LOOKED_AT.attempted,
+            "artifacts/logs/artifacts/report.json"
+        ),
         "found\n"
     );
 }
@@ -165,9 +248,10 @@ fn what_a_harness_that_does_not_run_as_root_saved_in_logs_artifacts_is_kept_with
 #[test]
 fn a_file_the_harness_saved_in_logs_artifacts_is_under_var_log() {
     assert_eq!(
-        printed_by_the_harness(&format!(
-            "{SAVE_A_REPORT}; cat /var/log/cladenc/harbor/artifacts/report.json"
-        )),
+        printed_by_the_harness(
+            &AS_ROOT_AND_WRITTEN_TO,
+            "cat /var/log/cladenc/harbor/artifacts/report.json"
+        ),
         "found\n"
     );
 }
@@ -175,16 +259,21 @@ fn a_file_the_harness_saved_in_logs_artifacts_is_under_var_log() {
 #[test]
 fn logs_that_the_environment_of_the_task_holds_is_left_as_it_is() {
     assert_eq!(
-        printed_by_the_harness_in(HOLDS_LOGS, "cat /logs/held; [ -L /logs ] || echo no link"),
+        printed_by_the_harness(
+            &HOLDING_LOGS_AND_LOOKED_AT,
+            "cat /logs/held; [ -L /logs ] || echo no link"
+        ),
         "held\nno link\n"
     );
 }
 
 #[test]
 fn logs_artifacts_is_made_in_the_logs_that_the_environment_of_the_task_holds() {
-    let attempted = attempted_in(HOLDS_LOGS, SAVE_A_REPORT, FINISHED);
     assert_eq!(
-        kept(&attempted, "artifacts/logs/artifacts/report.json"),
+        kept(
+            &HOLDING_LOGS_AND_LOOKED_AT.attempted,
+            "artifacts/logs/artifacts/report.json"
+        ),
         "found\n"
     );
 }
@@ -192,8 +281,8 @@ fn logs_artifacts_is_made_in_the_logs_that_the_environment_of_the_task_holds() {
 #[test]
 fn nothing_is_made_under_var_log_where_the_environment_of_the_task_holds_logs() {
     assert_eq!(
-        printed_by_the_harness_in(
-            HOLDS_LOGS,
+        printed_by_the_harness(
+            &HOLDING_LOGS_AND_LOOKED_AT,
             "ls -d /var/log/cladenc 2> /dev/null; echo looked"
         ),
         "looked\n"
@@ -203,7 +292,7 @@ fn nothing_is_made_under_var_log_where_the_environment_of_the_task_holds_logs() 
 #[test]
 fn the_grader_scores_in_the_logs_that_the_environment_of_the_task_holds() {
     assert_eq!(
-        result_of(&attempted_in(HOLDS_LOGS, FINISH, FINISHED)),
+        result_of(&HOLDING_LOGS_AND_LOOKED_AT.attempted),
         Some(AttemptResult::Completed)
     );
 }
@@ -211,7 +300,10 @@ fn the_grader_scores_in_the_logs_that_the_environment_of_the_task_holds() {
 #[test]
 fn the_grader_finds_logs_verifier_under_var_log_beside_logs_artifacts() {
     assert_eq!(
-        printed_by_the_grader("find /var/log/cladenc/harbor | sort"),
+        printed_by_the_grader(
+            &AS_ROOT_AND_LOOKED_AT,
+            "find /var/log/cladenc/harbor | sort"
+        ),
         "/var/log/cladenc/harbor\n/var/log/cladenc/harbor/artifacts\n\
          /var/log/cladenc/harbor/verifier\n"
     );
@@ -220,9 +312,8 @@ fn the_grader_finds_logs_verifier_under_var_log_beside_logs_artifacts() {
 #[test]
 fn logs_verifier_belongs_to_the_user_the_grader_runs_as() {
     assert_eq!(
-        printed_by_the_grader_in(
-            AS_A_USER,
-            FINISH,
+        printed_by_the_grader(
+            &AS_A_USER_AND_LOOKED_AT,
             "stat -c %u /var/log/cladenc/harbor/verifier"
         ),
         "1000\n"
@@ -240,7 +331,7 @@ fn the_grader_finds_logs_a_symbolic_link_again_where_the_harness_removed_it() {
 #[test]
 fn the_grader_finds_tests_a_symbolic_link_to_a_directory_under_var_opt() {
     assert_eq!(
-        printed_by_the_grader("readlink /tests"),
+        printed_by_the_grader(&AS_ROOT_AND_LOOKED_AT, "readlink /tests"),
         "/var/opt/cladenc/harbor/tests\n"
     );
 }
@@ -248,7 +339,7 @@ fn the_grader_finds_tests_a_symbolic_link_to_a_directory_under_var_opt() {
 #[test]
 fn the_directory_that_tests_points_to_holds_the_tests_of_the_task_and_nothing_else() {
     assert_eq!(
-        printed_by_the_grader("find /var/opt/cladenc/harbor"),
+        printed_by_the_grader(&AS_ROOT_AND_LOOKED_AT, "find /var/opt/cladenc/harbor"),
         "/var/opt/cladenc/harbor\n/var/opt/cladenc/harbor/tests\n\
          /var/opt/cladenc/harbor/tests/test.sh\n"
     );
@@ -257,9 +348,8 @@ fn the_directory_that_tests_points_to_holds_the_tests_of_the_task_and_nothing_el
 #[test]
 fn the_tests_of_the_task_belong_to_the_user_the_grader_runs_as() {
     assert_eq!(
-        printed_by_the_grader_in(
-            AS_A_USER,
-            FINISH,
+        printed_by_the_grader(
+            &AS_A_USER_AND_LOOKED_AT,
             "stat -c %u /var/opt/cladenc/harbor/tests /tests/test.sh"
         ),
         "1000\n1000\n"
@@ -269,7 +359,7 @@ fn the_tests_of_the_task_belong_to_the_user_the_grader_runs_as() {
 #[test]
 fn a_file_the_harness_left_where_tests_points_is_not_found_by_the_grader() {
     assert_eq!(
-        printed_by_the_grader_in(AS_ROOT, PLANT_WHERE_TESTS_POINTS, "ls -A /tests"),
+        printed_by_the_grader(&AS_ROOT_AND_WRITTEN_TO, "ls -A /tests"),
         "test.sh\n"
     );
 }
@@ -285,7 +375,10 @@ fn what_the_environment_of_the_task_holds_at_tests_is_not_found_by_the_grader() 
 #[test]
 fn the_grader_finds_logs_and_tests_at_the_top_of_the_filesystem_as_symbolic_links() {
     assert_eq!(
-        printed_by_the_grader("[ -L /logs ] && [ -L /tests ] && echo links"),
+        printed_by_the_grader(
+            &AS_ROOT_AND_LOOKED_AT,
+            "[ -L /logs ] && [ -L /tests ] && echo links"
+        ),
         "links\n"
     );
 }
@@ -293,7 +386,10 @@ fn the_grader_finds_logs_and_tests_at_the_top_of_the_filesystem_as_symbolic_link
 #[test]
 fn the_container_of_an_attempt_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
     assert_eq!(
-        printed_by_the_harness("ls -d /var/lib/cladenc 2> /dev/null; echo looked"),
+        printed_by_the_harness(
+            &AS_ROOT_AND_LOOKED_AT,
+            "ls -d /var/lib/cladenc 2> /dev/null; echo looked"
+        ),
         "looked\n"
     );
 }

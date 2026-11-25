@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
@@ -26,6 +27,12 @@ struct Attempted {
     _built: Option<Image>,
     outputs_directory: OutputsDirectory,
     result: Result<containers::Attempted, ContainerError>,
+}
+
+struct Asked {
+    attempted: Attempted,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
 }
 
 fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<Image>) {
@@ -120,9 +127,77 @@ fn printed_by_the_grader(task_toml: &str, grader: &str) -> String {
     kept(&attempted(task_toml, FINISH, grader), "grader/stdout")
 }
 
+fn asked(
+    task_toml: &str,
+    of_the_harness: &'static [&'static str],
+    of_the_grader: &'static [&'static str],
+) -> Asked {
+    Asked {
+        attempted: attempted(
+            task_toml,
+            &test_inputs::one_after_another(of_the_harness),
+            &test_inputs::one_after_another(of_the_grader),
+        ),
+        of_the_harness,
+        of_the_grader,
+    }
+}
+
+static WITH_A_USER_FOR_THE_HARNESS: LazyLock<Asked> = LazyLock::new(|| {
+    asked(
+        AS_1000,
+        &["id -u", "stat -c %u /var/opt/cladenc/harness/harness.sh"],
+        &["id -u"],
+    )
+});
+
+static WITH_A_USER_FOR_THE_GRADER: LazyLock<Asked> = LazyLock::new(|| {
+    asked(
+        GRADED_AS_1000,
+        &["id -u", FINISH],
+        &["id -u", "stat -c %u /tests/test.sh", FINISHED],
+    )
+});
+
+static WITH_A_WORKING_DIRECTORY: LazyLock<Asked> =
+    LazyLock::new(|| asked(ELSEWHERE, &["pwd", "echo left > note"], &["pwd"]));
+
+static WITH_A_VARIABLE_OF_THE_ENVIRONMENT: LazyLock<Asked> =
+    LazyLock::new(|| asked(WITH_A_MODE, &["echo \"$MODE\""], &["echo \"$MODE\""]));
+
+static WITH_A_VARIABLE_FOR_THE_GRADER: LazyLock<Asked> = LazyLock::new(|| {
+    asked(
+        WITH_A_JUDGE,
+        &["echo \"${JUDGE-not given}\""],
+        &["echo \"$JUDGE\""],
+    )
+});
+
+static WITH_AN_IMAGE: LazyLock<Asked> =
+    LazyLock::new(|| asked(IN_AN_IMAGE, &["pwd; ls /app"], &["pwd"]));
+
+fn found_by_the_harness(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_harness,
+        &kept(&asked.attempted, "stdout"),
+    )
+}
+
+fn found_by_the_grader(asked: &Asked, command: &str) -> String {
+    test_inputs::printed_by(
+        command,
+        asked.of_the_grader,
+        &kept(&asked.attempted, "grader/stdout"),
+    )
+}
+
 #[test]
 fn the_harness_runs_as_the_user_the_task_names_by_number() {
-    assert_eq!(printed_by_the_harness(AS_1000, "id -u"), "1000\n");
+    assert_eq!(
+        found_by_the_harness(&WITH_A_USER_FOR_THE_HARNESS, "id -u"),
+        "1000\n"
+    );
 }
 
 #[test]
@@ -136,7 +211,10 @@ fn the_harness_runs_as_the_user_the_task_names_by_name() {
 #[test]
 fn the_source_code_of_the_harness_belongs_to_the_user_the_task_names() {
     assert_eq!(
-        printed_by_the_harness(AS_1000, "stat -c %u /var/opt/cladenc/harness/harness.sh"),
+        found_by_the_harness(
+            &WITH_A_USER_FOR_THE_HARNESS,
+            "stat -c %u /var/opt/cladenc/harness/harness.sh"
+        ),
         "1000\n"
     );
 }
@@ -144,24 +222,33 @@ fn the_source_code_of_the_harness_belongs_to_the_user_the_task_names() {
 #[test]
 fn the_grader_of_a_task_that_names_a_user_for_the_harness_alone_runs_as_the_user_of_the_environment()
  {
-    assert_eq!(printed_by_the_grader(AS_1000, "id -u"), "0\n");
+    assert_eq!(
+        found_by_the_grader(&WITH_A_USER_FOR_THE_HARNESS, "id -u"),
+        "0\n"
+    );
 }
 
 #[test]
 fn the_grader_runs_as_the_user_the_task_names_for_it() {
-    assert_eq!(printed_by_the_grader(GRADED_AS_1000, "id -u"), "1000\n");
+    assert_eq!(
+        found_by_the_grader(&WITH_A_USER_FOR_THE_GRADER, "id -u"),
+        "1000\n"
+    );
 }
 
 #[test]
 fn the_harness_of_a_task_that_names_a_user_for_the_grader_alone_runs_as_the_user_of_the_environment()
  {
-    assert_eq!(printed_by_the_harness(GRADED_AS_1000, "id -u"), "0\n");
+    assert_eq!(
+        found_by_the_harness(&WITH_A_USER_FOR_THE_GRADER, "id -u"),
+        "0\n"
+    );
 }
 
 #[test]
 fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_grader() {
     assert_eq!(
-        printed_by_the_grader(GRADED_AS_1000, "stat -c %u /tests/test.sh"),
+        found_by_the_grader(&WITH_A_USER_FOR_THE_GRADER, "stat -c %u /tests/test.sh"),
         "1000\n"
     );
 }
@@ -169,7 +256,7 @@ fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_grader() {
 #[test]
 fn a_grader_that_runs_as_another_user_than_the_harness_can_score() {
     assert!(matches!(
-        attempted(GRADED_AS_1000, FINISH, FINISHED).result,
+        WITH_A_USER_FOR_THE_GRADER.attempted.result,
         Ok(containers::Attempted {
             result: AttemptResult::Completed,
             ..
@@ -187,24 +274,32 @@ fn an_attempt_whose_task_names_a_user_that_its_environment_does_not_hold_is_an_e
 
 #[test]
 fn the_harness_works_in_the_working_directory_the_task_names() {
-    assert_eq!(printed_by_the_harness(ELSEWHERE, "pwd"), "/srv/elsewhere\n");
+    assert_eq!(
+        found_by_the_harness(&WITH_A_WORKING_DIRECTORY, "pwd"),
+        "/srv/elsewhere\n"
+    );
 }
 
 #[test]
 fn the_grader_works_in_the_working_directory_the_task_names() {
-    assert_eq!(printed_by_the_grader(ELSEWHERE, "pwd"), "/srv/elsewhere\n");
+    assert_eq!(
+        found_by_the_grader(&WITH_A_WORKING_DIRECTORY, "pwd"),
+        "/srv/elsewhere\n"
+    );
 }
 
 #[test]
 fn what_the_harness_leaves_in_the_working_directory_the_task_names_is_kept_as_its_work() {
-    let attempted = attempted(ELSEWHERE, "echo left > note", FINISHED);
-    assert_eq!(kept(&attempted, "work/note"), "left\n");
+    assert_eq!(
+        kept(&WITH_A_WORKING_DIRECTORY.attempted, "work/note"),
+        "left\n"
+    );
 }
 
 #[test]
 fn the_harness_is_given_the_variables_of_the_environment_of_the_task() {
     assert_eq!(
-        printed_by_the_harness(WITH_A_MODE, "echo \"$MODE\""),
+        found_by_the_harness(&WITH_A_VARIABLE_OF_THE_ENVIRONMENT, "echo \"$MODE\""),
         "strict\n"
     );
 }
@@ -212,7 +307,7 @@ fn the_harness_is_given_the_variables_of_the_environment_of_the_task() {
 #[test]
 fn the_grader_is_given_the_variables_of_the_environment_of_the_task() {
     assert_eq!(
-        printed_by_the_grader(WITH_A_MODE, "echo \"$MODE\""),
+        found_by_the_grader(&WITH_A_VARIABLE_OF_THE_ENVIRONMENT, "echo \"$MODE\""),
         "strict\n"
     );
 }
@@ -220,7 +315,7 @@ fn the_grader_is_given_the_variables_of_the_environment_of_the_task() {
 #[test]
 fn the_grader_is_given_the_variables_the_task_names_for_it() {
     assert_eq!(
-        printed_by_the_grader(WITH_A_JUDGE, "echo \"$JUDGE\""),
+        found_by_the_grader(&WITH_A_VARIABLE_FOR_THE_GRADER, "echo \"$JUDGE\""),
         "strict\n"
     );
 }
@@ -228,7 +323,10 @@ fn the_grader_is_given_the_variables_the_task_names_for_it() {
 #[test]
 fn the_harness_is_not_given_the_variables_the_task_names_for_the_grader() {
     assert_eq!(
-        printed_by_the_harness(WITH_A_JUDGE, "echo \"${JUDGE-not given}\""),
+        found_by_the_harness(
+            &WITH_A_VARIABLE_FOR_THE_GRADER,
+            "echo \"${JUDGE-not given}\""
+        ),
         "not given\n"
     );
 }
@@ -290,12 +388,12 @@ fn a_variable_of_the_task_does_not_take_the_place_of_what_cladenc_tells_the_harn
 
 #[test]
 fn an_attempt_is_carried_out_in_the_image_the_task_names() {
-    assert_eq!(printed_by_the_harness(IN_AN_IMAGE, "pwd; ls /app"), "/\n");
+    assert_eq!(found_by_the_harness(&WITH_AN_IMAGE, "pwd; ls /app"), "/\n");
 }
 
 #[test]
 fn the_grader_of_a_task_that_names_an_image_runs_in_a_container_of_that_image() {
-    assert_eq!(printed_by_the_grader(IN_AN_IMAGE, "pwd"), "/\n");
+    assert_eq!(found_by_the_grader(&WITH_AN_IMAGE, "pwd"), "/\n");
 }
 
 #[test]

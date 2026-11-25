@@ -12,6 +12,8 @@ const LOOK: Duration = Duration::from_millis(10);
 const TEN_SECONDS: u32 = 1_000;
 const TWO_MINUTES: u32 = 12_000;
 
+const MARK: char = '\u{1e}';
+
 const ROFF_ESCAPES: [(&str, &str); 6] = [
     ("\\-", "-"),
     ("\\(aq", "'"),
@@ -388,4 +390,23 @@ pub fn model_key_file_in(files: &dyn Files, directory: &Path, text: &str) -> Pat
     let file = directory.join("model-key");
     files.write(&file, text);
     file
+}
+
+pub fn one_after_another(commands: &[&str]) -> String {
+    commands
+        .iter()
+        .map(|command| format!("printf '\\036'\n{command}\n"))
+        .collect()
+}
+
+pub fn printed_by(command: &str, commands: &[&str], printed: &str) -> String {
+    let place = commands
+        .iter()
+        .position(|one| *one == command)
+        .expect("the command is one of those that were run");
+    printed
+        .split(MARK)
+        .nth(place + 1)
+        .expect("every command was run after its mark")
+        .to_owned()
 }
