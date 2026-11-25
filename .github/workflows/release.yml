@@ -726,7 +726,7 @@ jobs:
           tar -xPf coverage.tar
           source coverage.env
           export LLVM_PROFILE_FILE="$PWD/target/e2e-%p-%m.profraw"
-          "$(cat target/test-e2e)"
+          "$(cat target/test-e2e)" --test-threads 8
           tar -cf profiles-e2e.tar target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
@@ -757,7 +757,7 @@ jobs:
       - name: E2E tests
         run: |
           tar -xf debug.tar
-          target/debug/test-e2e
+          target/debug/test-e2e --test-threads 8
   integration-test-coverage:
     needs:
       - build-coverage
@@ -783,7 +783,7 @@ jobs:
           tar -xPf coverage.tar
           source coverage.env
           export LLVM_PROFILE_FILE="$PWD/target/integration-%p-%m.profraw"
-          "$(cat target/test-integration)"
+          "$(cat target/test-integration)" --test-threads 8
           tar -cf profiles-integration.tar target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
@@ -814,7 +814,7 @@ jobs:
       - name: Integration tests
         run: |
           tar -xf debug.tar
-          target/debug/test-integration
+          target/debug/test-integration --test-threads 8
   package:
     needs:
       - build-release
