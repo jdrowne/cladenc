@@ -7,6 +7,13 @@ defaults:
     shell: bash
 env:
   IMAGES: debian:stable-slim goreleaser/nfpm
+  TESTS_OF_THE_SHARE: |-
+    sub(/: test$/, "") {
+      file = $0
+      sub(/::[^:]*$/, "", file)
+      if (!(file in dealt)) dealt[file] = files++
+      if (dealt[file] % shares == share) print
+    }
 jobs:
   assert-coverage:
     needs:
@@ -102,13 +109,16 @@ jobs:
       - name: Take the profiles of the tier
         uses: actions/download-artifact@v8
         with:
-          name: coverage-${{ matrix.tier }}
+          merge-multiple: true
+          pattern: coverage-${{ matrix.tier }}*
       - env:
           TIER: ${{ matrix.tier }}
         name: Assert that the tier alone reaches its functions
         run: |
           tar -xPf coverage.tar
-          tar -xPf "profiles-$TIER.tar"
+          for packed in "profiles-$TIER"*.tar; do
+            tar -xPf "$packed"
+          done
           source coverage.env
           cargo llvm-cov report --json \
             --ignore-filename-regex '(^|/)tests/' > coverage.json
@@ -702,6 +712,7 @@ jobs:
           -D clippy::self_named_module_files
           -D clippy::too_many_lines
   e2e-test-coverage:
+    name: e2e-test-coverage-share-${{ matrix.share }}
     needs:
       - build-coverage
       - cache-images
@@ -721,20 +732,39 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - name: E2E tests, keeping their profiles
+      - env:
+          SHARE: ${{ matrix.share }}
+          SHARES: ${{ strategy.job-total }}
+          SHARE_INDEX: ${{ strategy.job-index }}
+        name: E2E tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
           source coverage.env
-          export LLVM_PROFILE_FILE="$PWD/target/e2e-%p-%m.profraw"
-          "$(cat target/test-e2e)" --test-threads 8
-          tar -cf profiles-e2e.tar target/*.profraw
+          profiles="$PWD/target/e2e-$SHARE-%p-%m.profraw"
+          export LLVM_PROFILE_FILE="$profiles"
+          tests="$(cat target/test-e2e)"
+          "$tests" --list --format terse |
+            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
+              "$TESTS_OF_THE_SHARE" > share.txt
+          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
+            < share.txt
+          tar -cf "profiles-e2e-$SHARE.tar" target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-e2e
-          path: profiles-e2e.tar
+          name: coverage-e2e-${{ matrix.share }}
+          path: profiles-e2e-${{ matrix.share }}.tar
           retention-days: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        share:
+          - 1
+          - 2
+          - 3
+          - 4
   e2e-test-debug:
+    name: e2e-test-debug-share-${{ matrix.share }}
     needs:
       - build-debug
       - cache-images
@@ -754,11 +784,28 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - name: E2E tests
+      - env:
+          SHARES: ${{ strategy.job-total }}
+          SHARE_INDEX: ${{ strategy.job-index }}
+        name: E2E tests
         run: |
           tar -xf debug.tar
-          target/debug/test-e2e --test-threads 8
+          tests=target/debug/test-e2e
+          "$tests" --list --format terse |
+            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
+              "$TESTS_OF_THE_SHARE" > share.txt
+          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
+            < share.txt
+    strategy:
+      fail-fast: false
+      matrix:
+        share:
+          - 1
+          - 2
+          - 3
+          - 4
   integration-test-coverage:
+    name: integration-test-coverage-share-${{ matrix.share }}
     needs:
       - build-coverage
       - cache-images
@@ -778,20 +825,39 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - name: Integration tests, keeping their profiles
+      - env:
+          SHARE: ${{ matrix.share }}
+          SHARES: ${{ strategy.job-total }}
+          SHARE_INDEX: ${{ strategy.job-index }}
+        name: Integration tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
           source coverage.env
-          export LLVM_PROFILE_FILE="$PWD/target/integration-%p-%m.profraw"
-          "$(cat target/test-integration)" --test-threads 8
-          tar -cf profiles-integration.tar target/*.profraw
+          profiles="$PWD/target/integration-$SHARE-%p-%m.profraw"
+          export LLVM_PROFILE_FILE="$profiles"
+          tests="$(cat target/test-integration)"
+          "$tests" --list --format terse |
+            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
+              "$TESTS_OF_THE_SHARE" > share.txt
+          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
+            < share.txt
+          tar -cf "profiles-integration-$SHARE.tar" target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-integration
-          path: profiles-integration.tar
+          name: coverage-integration-${{ matrix.share }}
+          path: profiles-integration-${{ matrix.share }}.tar
           retention-days: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        share:
+          - 1
+          - 2
+          - 3
+          - 4
   integration-test-debug:
+    name: integration-test-debug-share-${{ matrix.share }}
     needs:
       - build-debug
       - cache-images
@@ -811,10 +877,26 @@ jobs:
           path: images.tar
       - name: Load the images
         run: docker load --input images.tar
-      - name: Integration tests
+      - env:
+          SHARES: ${{ strategy.job-total }}
+          SHARE_INDEX: ${{ strategy.job-index }}
+        name: Integration tests
         run: |
           tar -xf debug.tar
-          target/debug/test-integration --test-threads 8
+          tests=target/debug/test-integration
+          "$tests" --list --format terse |
+            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
+              "$TESTS_OF_THE_SHARE" > share.txt
+          xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
+            < share.txt
+    strategy:
+      fail-fast: false
+      matrix:
+        share:
+          - 1
+          - 2
+          - 3
+          - 4
   package:
     needs:
       - build-release
