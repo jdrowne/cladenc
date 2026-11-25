@@ -151,6 +151,6 @@ Everything else the workflows check is left to CI: whether the code compiles, ev
 - A commit of `README.md` alone runs the three checks of every push and `markdownlint`, and nothing else. A commit of a memory is the same, since a memory is a Markdown file.
 - The workflow is the list: where a command here and its job disagree, the workflow is right, and the command here is corrected. A commit that changes the job of one of the eleven checks changes the command of the check here as well.
 - CI installs the newest release of each tool on every run, so a tool can be an older release locally than in its job. A check that passes locally and fails in CI is a failed run like any other, per [[a-failed-run-is-fixed-before-other-work]].
-- My own reading, which the user has not confirmed: a tool that is not found locally is not installed by the session, and neither is another version of `tree-sitter` or `tree-sitter-rust` when the job names one. The user is told, and the check is left to CI for the push.
+- A tool that is not found locally is not installed by the session, and neither is another version of `tree-sitter` or `tree-sitter-rust` when the job names one. The user is told, and the check is left to CI for the push.
 - The runs the push starts are watched per [[every-run-is-watched]].
 - The autopilot has a reminder of its own for this rule, per "Reminders" in `.claude/skills/autopilot/SKILL.md`.

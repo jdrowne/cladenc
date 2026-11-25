@@ -32,9 +32,6 @@ That code is written to pass the checks from the start was a session's wording i
 - Do not trace by hand what a compiler or a test would say in order to be spared a run.
 - Time and the count of runs are never given as a reason: not for a test left out, not for a narrower fix, not for doing other than a rule such as [[the-work-waits-for-ci]] says.
 - What the checks are is read in `.github/workflows/release.yml` and `etc/clippy/clippy.toml`, not in a memory, per [[what-the-repository-says-is-read-there]].
-
-What is mine, and not the user's:
-
 - This does not make a careless push fine. What is known to be wrong is fixed before the push, and what is not known is left to CI.
 - A test that fails because it expected the wrong thing is corrected to what `cladenc` is meant to do, which is read in the code and the issue, and never to whatever makes it pass.
 

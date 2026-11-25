@@ -2,6 +2,7 @@
 
 - [Push to main](push-to-main.md) — commit/push directly to main, no feature branches or PRs; starting the autopilot counts as the ask, and so does asking for a change
 - [Never quote the user verbatim](never-quote-the-user-verbatim.md) — restate what the user says in fresh words in memories, issues, commits, comments and summaries
+- [A memory does not say whose a point is](a-memory-does-not-say-whose-a-point-is.md) — a memory states its rule plainly; no section or sentence sorts what it holds into the session's and the user's, whatever a session's starting instructions say about labelling its interpretations
 - [Room to be creative](room-to-be-creative.md) — creative work is wanted, not a narrow reading of the ask; no rule limits the work to only what was asked; an idea of the session's own is done in the work at hand, and the user is asked only for a decision of theirs
 - [crates/ stores shared code](crates-stores-shared-code.md) — code more than one consumer uses is a package under crates/; here, code shared by the test tiers; a package under crates/ has tests of its own, in its own tests/ directory, held to full coverage of it, even one only tests use
 - [The paper is a starting point](the-paper-is-a-starting-point.md) — keep the HGM paper's ideas, name things plainly and with biological words (directed evolution, artificial selection), and let cladenc leave the paper where a change improves it

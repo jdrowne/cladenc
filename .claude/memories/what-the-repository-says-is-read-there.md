@@ -23,8 +23,5 @@ Such a memory goes stale each time the file changes, and a session that trusts i
 
 - Before a memory is saved, ask whether a file of the repository says it, or a run of CI would. When one does, nothing is saved.
 - What a check asks is read in the workflow and in the configuration it points at. What a function does is read in the function.
-
-What is mine, and not the user's:
-
 - What a failed run teaches about a tool is not saved either. The run says it again the next time, per [[ci-says-whether-the-code-is-right]], and the deleted memory grew out of such notes.
-- The user named one memory. Another memory found to restate a file has the same fault.
+- Any other memory found to restate a file has the same fault as the one that was deleted.

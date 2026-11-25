@@ -54,11 +54,7 @@ CI holds each of the two tiers to this, and the three tiers together to all of `
 - Each term of the rule is defined by something that can be looked up in the code. The user turned down an earlier wording that said the unit tier reaches what a unit test can reach and the integration tier the code that reaches outside the process, since it defined neither.
 - The word is test double. The user asked what the session's own word for it, stand-in, meant.
 
-What is mine, and not the user's:
-
-- The user named no source. The three things are read from "The Practical Test Pyramid" on martinfowler.com, which sets out Mike Cohn's pyramid and names databases, the file system and other applications reached over the network, and they are applied to what `cladenc` has.
-- Leaving out the clock, the environment and the program's own input and output.
-- Telling the second group from the third by the statements of a function itself. It needs no list kept by hand, which the user turned down in #153.
+The three things are read from "The Practical Test Pyramid" on martinfowler.com, which sets out Mike Cohn's pyramid and names databases, the file system and other applications reached over the network, and they are applied to what `cladenc` has. Telling the second group from the third by the statements of a function itself needs no list kept by hand, which the user turned down in #153.
 
 **How to apply:**
 

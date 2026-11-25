@@ -14,4 +14,4 @@ When a design decision is put to the user, the first option offered is the simpl
 
 **Why:** A choice between heavy designs strikes the user as overcomplicated, and they settle it at once when it reaches them as plain flags.
 
-**How to apply:** Before asking, find the smallest thing that would work and offer that. My own interpretation, not something the user said: they would sooner pass one more flag than have `cladenc` impose a rule on harnesses or depend on another tool. Related: [[cladenc-takes-a-primogenitor-and-a-model]], [[before-an-issue-is-labelled-needs-decision]].
+**How to apply:** Before asking, find the smallest thing that would work and offer that. Related: [[cladenc-takes-a-primogenitor-and-a-model]], [[before-an-issue-is-labelled-needs-decision]].

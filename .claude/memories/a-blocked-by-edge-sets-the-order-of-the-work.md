@@ -14,13 +14,9 @@ Where the session recommends an order between issues, it writes that order as `b
 
 **Why:** On 2026-11-24 the session filed #161 to #165 and recommended an order for them, in a reply and in their bodies, with no edge between them. The user asked why the order was not enforced with `blocked_by` edges. The reason was a rule of 2026-11-15, by which an edge was written only for a real block and an ordering was no dependency. The user had that rule removed.
 
-What is mine, and not the user's:
-
-- That an order the session recommends is from now on written as edges. The user removed the old rule and asked the question above. They stated no new rule in its place.
-- That no edge is written where the session has no order to recommend. The autopilot takes only issues that no open issue blocks, so an edge with no order behind it holds back work that could be done.
-
 **How to apply:**
 
 - When a reply or the body of an issue says which issue to do first, write the edge at once, and tell the user which edges were written.
 - To write an edge, run `gh api repos/{owner}/{repo}/issues/<number>/dependencies/blocked_by -F issue_id=<id>`, where `gh api` fills in `{owner}` and `{repo}`, `<number>` is the issue that waits and `<id>` is the blocker's numeric id from `gh api repos/{owner}/{repo}/issues/<n> --jq .id`, not the node id `gh issue view --json id` returns. `-F` sends the id as a number; sent with `-f`, as a string, it is rejected with HTTP 422 and no edge is added.
+- Write no edge where there is no order to recommend. The autopilot takes only issues that no open issue blocks, so an edge with no order behind it holds back work that could be done.
 - How the autopilot keeps the order the edges set is per [[several-issues-can-be-worked-on-together]].

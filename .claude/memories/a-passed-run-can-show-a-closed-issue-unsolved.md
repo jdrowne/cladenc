@@ -18,11 +18,6 @@ A commit of the session's closes an issue, its run passes, and what the run show
 
 - The case is one where only a run can say whether the work did what the issue asks, as with anything about how long CI takes. A run that failed is another case, per [[a-failed-run-is-fixed-before-other-work]].
 - Reopen with `gh issue reopen <number>`, then `gh issue comment <number>` with a comment that names the commit, what its run showed, with the numbers where there are any, and what is still to do.
-- Leave the body as it is. This holds against [[an-issue-is-brought-up-to-date-before-work]] too: what the closed commit changed in the code is said in the comment, not written into the body.
+- Leave the body as it is. What the run showed is said in the comment, not written into the body.
 - Go on working on the issue. The commit that finishes the work closes it again with its `Closes #N` line, per [[a-commit-closes-at-least-one-issue]].
 - No new issue is filed for what is left, and the first commit still closes its issue on push.
-
-What is mine, and not the user's:
-
-- That the comment carries the numbers of the run. The user accepted a comment that says why, and in the case of #162 the numbers were the reason.
-- That the body stays untouched for as long as the issue is open again, the edit that brings an issue up to date before work among the edits left out. The user refused the edit made on reopening and said nothing of a later one.

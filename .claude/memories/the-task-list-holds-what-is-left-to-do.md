@@ -21,8 +21,5 @@ The session brings its task list up to date as the work goes, so that at any mom
 - A task whose work changed is reworded, and a task no longer needed is deleted.
 - A completed task is deleted, so that finished work does not pile up above what is left.
 - The autopilot has a reminder of its own for this rule, per "Reminders" in `.claude/skills/autopilot/SKILL.md`.
-
-What is mine, and not the user's:
-
-- That the rule holds with the autopilot stopped. The user asked for a reminder. The skill's test for a new reminder asks whether its rule would hold without the autopilot, and I took this one to.
-- That the list is brought up to date during the wait of [[the-work-waits-for-ci]] as well. Marking a task reads no code and changes nothing in the repository, and those are what the wait holds back.
+- The rule holds with the autopilot stopped as well.
+- The list is brought up to date during the wait of [[the-work-waits-for-ci]] as well. Marking a task reads no code and changes nothing in the repository, and those are what the wait holds back.
