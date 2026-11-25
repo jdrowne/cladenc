@@ -1,7 +1,10 @@
 use std::fs;
 use std::process::Command;
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
+
+use crate::shared::UNCHANGED;
 
 const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/attempts ]; then ls \
                                           /var/log/cladenc > given; fi";
@@ -39,10 +42,12 @@ fn ran(run_command: &str, max_procreations: &str) -> TempDir {
     directory
 }
 
+static WITH_TWO_PROCREATIONS: LazyLock<TempDir> =
+    LazyLock::new(|| ran(KEEP_WHAT_IS_GIVEN_TO_READ, "2"));
+
 fn given_to_the_maker_of(child: &str) -> String {
-    let directory = ran(KEEP_WHAT_IS_GIVEN_TO_READ, "2");
     fs::read_to_string(
-        directory
+        WITH_TWO_PROCREATIONS
             .path()
             .join("outputs/harnesses")
             .join(child)
@@ -75,8 +80,7 @@ fn the_outputs_directory_records_which_harness_made_a_child_and_how_the_procreat
 
 #[test]
 fn the_outputs_directory_records_a_procreation_that_changed_nothing_as_unchanged() {
-    let directory = ran("exit 0", "1");
-    let kept = directory.path().join("outputs/procreations/1");
+    let kept = UNCHANGED.0.path().join("outputs/procreations/1");
     assert_eq!(
         ["progenitor", "outcome"].map(|file| fs::read_to_string(kept.join(file)).unwrap()),
         ["0\n", "unchanged\n"]

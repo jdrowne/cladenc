@@ -1,9 +1,12 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
+
+use crate::shared::STOPPED;
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
@@ -45,16 +48,13 @@ fn report(directory: &Path) -> Output {
         .unwrap()
 }
 
-fn report_of_one_that_stopped_before_its_end() -> Output {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit 125").status().unwrap();
-    report(directory.path())
-}
+static REPORT_OF_ONE_THAT_STOPPED_BEFORE_ITS_END: LazyLock<Output> =
+    LazyLock::new(|| report(STOPPED.0.path()));
 
 #[test]
 fn report_exits_with_2_on_a_directed_evolution_that_stopped_before_its_end() {
     assert_eq!(
-        report_of_one_that_stopped_before_its_end().status.code(),
+        REPORT_OF_ONE_THAT_STOPPED_BEFORE_ITS_END.status.code(),
         Some(2)
     );
 }
@@ -62,7 +62,7 @@ fn report_exits_with_2_on_a_directed_evolution_that_stopped_before_its_end() {
 #[test]
 fn report_says_of_a_directed_evolution_that_stopped_before_its_end_to_call_status() {
     assert_eq!(
-        String::from_utf8(report_of_one_that_stopped_before_its_end().stderr).unwrap(),
+        str::from_utf8(&REPORT_OF_ONE_THAT_STOPPED_BEFORE_ITS_END.stderr).unwrap(),
         "cladenc: the directed evolution has not ended: call `cladenc status` to read its state \
          so far\n"
     );
@@ -71,7 +71,7 @@ fn report_says_of_a_directed_evolution_that_stopped_before_its_end_to_call_statu
 #[test]
 fn report_prints_nothing_on_standard_output_of_a_directed_evolution_that_stopped_before_its_end() {
     assert_eq!(
-        report_of_one_that_stopped_before_its_end().stdout,
+        REPORT_OF_ONE_THAT_STOPPED_BEFORE_ITS_END.stdout,
         Vec::<u8>::new()
     );
 }

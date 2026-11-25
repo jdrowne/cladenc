@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -42,6 +43,9 @@ fn started(run_command: &str, task_toml_of_t2: &str) -> (TempDir, Output) {
     (directory, output)
 }
 
+static WITH_AN_ENTRY_WITH_NO_COMMAND_UNDER_COLLECT: LazyLock<(TempDir, Output)> =
+    LazyLock::new(|| started("exit 0", "[[verifier.collect]]\ntimeout_sec = 30\n"));
+
 fn kept_of_the_attempt_at_t2(directory: &TempDir, file: &str) -> String {
     let attempt = test_inputs::kept_attempt(&directory.path().join("outputs"), 0, "benchmark/t2");
     fs::read_to_string(attempt.join(file)).unwrap()
@@ -81,12 +85,12 @@ fn a_task_that_lists_a_command_for_another_container_under_collect_is_reported()
 
 #[test]
 fn a_task_that_lists_an_entry_with_no_command_under_collect_exits_with_2() {
-    let (_directory, output) = started("exit 0", "[[verifier.collect]]\ntimeout_sec = 30\n");
+    let (_directory, output) = &*WITH_AN_ENTRY_WITH_NO_COMMAND_UNDER_COLLECT;
     assert_eq!(output.status.code(), Some(2));
 }
 
 #[test]
 fn a_task_that_lists_an_entry_with_no_command_under_collect_is_reported_as_not_valid() {
-    let (_directory, output) = started("exit 0", "[[verifier.collect]]\ntimeout_sec = 30\n");
-    assert!(said(&output).ends_with(": missing field `command`\n"));
+    let (_directory, output) = &*WITH_AN_ENTRY_WITH_NO_COMMAND_UNDER_COLLECT;
+    assert!(said(output).ends_with(": missing field `command`\n"));
 }

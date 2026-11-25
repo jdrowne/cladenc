@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 
@@ -79,11 +80,11 @@ fn procreated(run_command: &str) -> Procreated {
     procreated_within(run_command, 30)
 }
 
-fn not_started_by_docker() -> Procreated {
+static NOT_STARTED_BY_DOCKER: LazyLock<Procreated> = LazyLock::new(|| {
     let (directory, outputs_directory) = made_at("outputs");
     let result = started_from("Not An Image", "exit 0", &outputs_directory, 30);
     (directory, outputs_directory, result)
-}
+});
 
 fn left_in_the_child(run_command: &str, file: &str) -> String {
     let (_directory, outputs_directory, _result) = procreated(run_command);
@@ -292,13 +293,13 @@ fn the_time_limit_removes_the_container_of_a_harness() {
 
 #[test]
 fn a_container_that_docker_does_not_start_is_an_error() {
-    let (_directory, _outputs_directory, result) = not_started_by_docker();
+    let (_directory, _outputs_directory, result) = &*NOT_STARTED_BY_DOCKER;
     assert!(matches!(result, Err(ContainerError::Docker(_))));
 }
 
 #[test]
 fn what_docker_said_is_kept_under_running() {
-    let (_directory, outputs_directory, _result) = not_started_by_docker();
+    let (_directory, outputs_directory, _result) = &*NOT_STARTED_BY_DOCKER;
     let said = fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap();
     assert!(said.contains("invalid reference format"));
 }

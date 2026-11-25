@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -60,9 +61,17 @@ fn report_of(directory: &Path) -> String {
     String::from_utf8(report.stdout).unwrap()
 }
 
-fn interrupted() -> TempDir {
-    stopped_by(Signal::SIGINT)
-}
+static RESUMED_AFTER_AN_INTERRUPT: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
+    let directory = stopped_by(Signal::SIGINT);
+    let resumed = resume(directory.path());
+    (directory, resumed)
+});
+
+static STOPPED_AGAIN_UNDER_RESUME: LazyLock<Output> = LazyLock::new(|| {
+    let directory = test_inputs::temporary_directory();
+    start(directory.path(), "exit 125").status().unwrap();
+    resume(directory.path())
+});
 
 fn stopped_by(signal: Signal) -> TempDir {
     let directory = test_inputs::temporary_directory();
@@ -86,21 +95,19 @@ fn stopped_by(signal: Signal) -> TempDir {
 
 #[test]
 fn after_an_interrupt_stops_a_run_resume_finishes_it_and_exits_with_0() {
-    let directory = interrupted();
-    assert_eq!(resume(directory.path()).status.code(), Some(0));
+    let (_directory, resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
+    assert_eq!(resumed.status.code(), Some(0));
 }
 
 #[test]
 fn after_an_interrupt_stops_a_run_resume_prints_the_directory_of_a_harness() {
-    let directory = interrupted();
-    let output = resume(directory.path());
-    assert!(Path::new(String::from_utf8(output.stdout).unwrap().trim_end()).is_dir());
+    let (_directory, resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
+    assert!(Path::new(str::from_utf8(&resumed.stdout).unwrap().trim_end()).is_dir());
 }
 
 #[test]
 fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolution_finished() {
-    let directory = interrupted();
-    resume(directory.path());
+    let (directory, _resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
     let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert!(
         journal
@@ -113,8 +120,8 @@ fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolutio
 
 #[test]
 fn after_an_interrupt_stops_a_run_resume_prints_what_report_prints_after_the_line_of_the_end() {
-    let directory = interrupted();
-    let said = String::from_utf8(resume(directory.path()).stderr).unwrap();
+    let (directory, resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
+    let said = str::from_utf8(&resumed.stderr).unwrap();
     assert_eq!(
         said.split_once("cladenc: the directed evolution finished ")
             .and_then(|(_, rest)| rest.split_once('\n'))
@@ -137,17 +144,13 @@ fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
 
 #[test]
 fn a_directed_evolution_that_stops_again_under_resume_exits_with_1() {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit 125").status().unwrap();
-    assert_eq!(resume(directory.path()).status.code(), Some(1));
+    assert_eq!(STOPPED_AGAIN_UNDER_RESUME.status.code(), Some(1));
 }
 
 #[test]
 fn a_directed_evolution_that_stops_again_under_resume_prints_no_report() {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit 125").status().unwrap();
     assert!(
-        String::from_utf8(resume(directory.path()).stderr)
+        str::from_utf8(&STOPPED_AGAIN_UNDER_RESUME.stderr)
             .unwrap()
             .lines()
             .last()

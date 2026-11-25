@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -57,9 +58,8 @@ fn resume(directory: &Path) -> Command {
     resume
 }
 
-fn resumed_with_the_variable_no_longer_set() -> Output {
-    resume(stopped().path()).output().unwrap()
-}
+static RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET: LazyLock<Output> =
+    LazyLock::new(|| resume(stopped().path()).output().unwrap());
 
 fn resumed_with_the_variable_set_to(value: &str) -> (TempDir, Output) {
     let directory = stopped();
@@ -73,7 +73,7 @@ fn resumed_with_the_variable_set_to(value: &str) -> (TempDir, Output) {
 #[test]
 fn a_variable_of_a_task_that_is_no_longer_set_stops_cladenc_resume_with_exit_status_2() {
     assert_eq!(
-        resumed_with_the_variable_no_longer_set().status.code(),
+        RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET.status.code(),
         Some(2)
     );
 }
@@ -81,7 +81,7 @@ fn a_variable_of_a_task_that_is_no_longer_set_stops_cladenc_resume_with_exit_sta
 #[test]
 fn a_variable_of_a_task_that_is_no_longer_set_is_reported_last_with_the_task_and_the_variable() {
     assert!(
-        String::from_utf8(resumed_with_the_variable_no_longer_set().stderr)
+        str::from_utf8(&RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET.stderr)
             .unwrap()
             .ends_with(
                 "cladenc: task benchmark/t2 cannot be attempted: its task.toml gives API_TOKEN \

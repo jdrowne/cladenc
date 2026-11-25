@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -41,6 +42,17 @@ fn started(task_toml_of_t2: &str) -> (TempDir, Output) {
     (directory, output)
 }
 
+static WITH_A_VARIABLE_THAT_IS_NOT_SET: LazyLock<(TempDir, Output)> =
+    LazyLock::new(|| started(NEVER_SET));
+
+static WITH_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<(TempDir, Output)> =
+    LazyLock::new(|| started(&in_an_image(NOT_ON_THE_MACHINE)));
+
+static WITH_AN_IMAGE_THAT_IS_ON_THE_MACHINE: LazyLock<(TempDir, Output)> =
+    LazyLock::new(|| started(&in_an_image(test_inputs::IMAGE)));
+
+static WITH_TOO_MANY_CPUS: LazyLock<(TempDir, Output)> = LazyLock::new(|| started(TOO_MANY_CPUS));
+
 fn said(output: &Output) -> String {
     String::from_utf8(output.stderr.clone()).unwrap()
 }
@@ -51,12 +63,12 @@ fn in_an_image(image: &str) -> String {
 
 #[test]
 fn a_task_that_names_a_variable_that_is_not_set_stops_cladenc_start_with_exit_status_2() {
-    assert_eq!(started(NEVER_SET).1.status.code(), Some(2));
+    assert_eq!(WITH_A_VARIABLE_THAT_IS_NOT_SET.1.status.code(), Some(2));
 }
 
 #[test]
 fn a_task_that_names_a_variable_that_is_not_set_is_reported_with_the_task_and_the_variable() {
-    assert!(said(&started(NEVER_SET).1).ends_with(
+    assert!(said(&WITH_A_VARIABLE_THAT_IS_NOT_SET.1).ends_with(
         "benchmark: task t2 holds a task.toml that gives KEY under environment.env the value of \
          CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET, which is not set where cladenc runs\n"
     ));
@@ -64,7 +76,7 @@ fn a_task_that_names_a_variable_that_is_not_set_is_reported_with_the_task_and_th
 
 #[test]
 fn a_task_that_names_a_variable_that_is_not_set_leaves_no_outputs_directory() {
-    let (directory, _output) = started(NEVER_SET);
+    let (directory, _output) = &*WITH_A_VARIABLE_THAT_IS_NOT_SET;
     assert!(!directory.path().join("outputs").exists());
 }
 
@@ -119,30 +131,30 @@ fn a_task_that_lists_a_path_of_another_container_under_artifacts_is_reported_wit
     );
 }
 
-fn started_with_no_task_toml_in_t2() -> (TempDir, Output) {
+static WITH_NO_TASK_TOML_IN_T2: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut cladenc = start(directory.path(), "");
     fs::remove_file(directory.path().join("benchmark/t2/task.toml")).unwrap();
     let output = cladenc.output().unwrap();
     (directory, output)
-}
+});
 
 #[test]
 fn a_task_that_holds_no_task_toml_stops_cladenc_start_with_exit_status_2() {
-    assert_eq!(started_with_no_task_toml_in_t2().1.status.code(), Some(2));
+    assert_eq!(WITH_NO_TASK_TOML_IN_T2.1.status.code(), Some(2));
 }
 
 #[test]
 fn a_task_that_holds_no_task_toml_is_reported_with_the_task() {
     assert!(
-        said(&started_with_no_task_toml_in_t2().1)
+        said(&WITH_NO_TASK_TOML_IN_T2.1)
             .ends_with("benchmark: task t2 holds no file named task.toml\n")
     );
 }
 
 #[test]
 fn a_task_that_holds_no_task_toml_leaves_no_outputs_directory() {
-    let (directory, _output) = started_with_no_task_toml_in_t2();
+    let (directory, _output) = &*WITH_NO_TASK_TOML_IN_T2;
     assert!(!directory.path().join("outputs").exists());
 }
 
@@ -159,7 +171,7 @@ fn a_task_whose_task_toml_is_not_valid_in_what_cladenc_does_not_obey_is_reported
 #[test]
 fn a_task_whose_image_is_not_on_the_machine_stops_cladenc_start_with_exit_status_2() {
     assert_eq!(
-        started(&in_an_image(NOT_ON_THE_MACHINE)).1.status.code(),
+        WITH_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE.1.status.code(),
         Some(2)
     );
 }
@@ -167,7 +179,7 @@ fn a_task_whose_image_is_not_on_the_machine_stops_cladenc_start_with_exit_status
 #[test]
 fn a_task_whose_image_is_not_on_the_machine_is_reported_last_with_the_task_and_the_image() {
     assert!(
-        said(&started(&in_an_image(NOT_ON_THE_MACHINE)).1)
+        said(&WITH_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE.1)
             .lines()
             .last()
             .unwrap_or_default()
@@ -181,13 +193,13 @@ fn a_task_whose_image_is_not_on_the_machine_is_reported_last_with_the_task_and_t
 
 #[test]
 fn a_task_whose_image_is_not_on_the_machine_leaves_no_journal() {
-    let (directory, _output) = started(&in_an_image(NOT_ON_THE_MACHINE));
+    let (directory, _output) = &*WITH_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE;
     assert!(!directory.path().join("outputs/journal.jsonl").exists());
 }
 
 #[test]
 fn a_task_whose_image_is_on_the_machine_is_said_to_be_taken_as_its_environment() {
-    assert!(said(&started(&in_an_image(test_inputs::IMAGE)).1).contains(
+    assert!(said(&WITH_AN_IMAGE_THAT_IS_ON_THE_MACHINE.1).contains(
         "cladenc: taking the image debian:stable-slim as the environment of task benchmark/t2, \
          as its task.toml says\n"
     ));
@@ -196,7 +208,7 @@ fn a_task_whose_image_is_on_the_machine_is_said_to_be_taken_as_its_environment()
 #[test]
 fn a_directed_evolution_with_a_task_whose_image_is_on_the_machine_runs_to_its_end() {
     assert_eq!(
-        started(&in_an_image(test_inputs::IMAGE)).1.status.code(),
+        WITH_AN_IMAGE_THAT_IS_ON_THE_MACHINE.1.status.code(),
         Some(0)
     );
 }
@@ -205,13 +217,13 @@ const TOO_MANY_CPUS: &str = "[environment]\ncpus = 100000\n";
 
 #[test]
 fn a_task_that_asks_for_more_cpus_than_the_machine_has_stops_cladenc_start_with_exit_status_2() {
-    assert_eq!(started(TOO_MANY_CPUS).1.status.code(), Some(2));
+    assert_eq!(WITH_TOO_MANY_CPUS.1.status.code(), Some(2));
 }
 
 #[test]
 fn a_task_that_asks_for_more_cpus_than_the_machine_has_is_reported_last_with_what_it_asks_for() {
     assert!(
-        said(&started(TOO_MANY_CPUS).1)
+        said(&WITH_TOO_MANY_CPUS.1)
             .lines()
             .last()
             .unwrap_or_default()

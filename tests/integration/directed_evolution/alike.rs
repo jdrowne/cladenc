@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -49,14 +50,14 @@ fn settings(directory: &Path) -> Settings {
     }
 }
 
-fn evolved() -> TempDir {
+static EVOLVED: LazyLock<TempDir> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
-}
+});
 
 fn kept_in(tree: &Path) -> Vec<String> {
     let mut kept: Vec<String> = fs::read_dir(tree)
@@ -98,9 +99,9 @@ fn journal_of(directory: &TempDir) -> String {
 
 #[test]
 fn with_the_run_command_the_manual_gives_every_procreation_creates_its_child() {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
-        journal_of(&directory)
+        journal_of(directory)
             .lines()
             .filter(|line| line.contains(r#""record":"procreation_finished""#))
             .filter(|line| line.contains(r#""outcome":"created""#))
@@ -112,13 +113,13 @@ fn with_the_run_command_the_manual_gives_every_procreation_creates_its_child() {
 #[test]
 fn with_the_run_command_the_manual_gives_each_child_holds_the_files_of_the_primogenitor_unchanged()
 {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
         ["1", "2"]
-            .map(|child| source_code_without_the_file_the_run_command_adds_to(&directory, child)),
+            .map(|child| source_code_without_the_file_the_run_command_adds_to(directory, child)),
         [
-            source_code_of(&directory, "0"),
-            source_code_of(&directory, "0")
+            source_code_of(directory, "0"),
+            source_code_of(directory, "0")
         ]
     );
 }
@@ -126,7 +127,7 @@ fn with_the_run_command_the_manual_gives_each_child_holds_the_files_of_the_primo
 #[test]
 fn with_the_run_command_the_manual_gives_a_child_of_the_primogenitor_holds_a_file_of_one_line_more()
 {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/procreated")).unwrap(),
         "\n"
@@ -135,8 +136,8 @@ fn with_the_run_command_the_manual_gives_a_child_of_the_primogenitor_holds_a_fil
 
 #[test]
 fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() {
-    let directory = evolved();
-    let journal = journal_of(&directory);
+    let directory = &*EVOLVED;
+    let journal = journal_of(directory);
     assert_eq!(
         [0, 1, 2].map(|harness| {
             journal
@@ -151,7 +152,7 @@ fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() 
 
 #[test]
 fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_an_attempt() {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
         fs::read_to_string(
             directory
@@ -165,7 +166,7 @@ fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_an_att
 
 #[test]
 fn the_report_of_such_a_directed_evolution_counts_the_tasks_one_harness_at_least_completed() {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     let report = report::read(&Disk, &directory.path().join("outputs")).unwrap();
     assert_eq!(
         (

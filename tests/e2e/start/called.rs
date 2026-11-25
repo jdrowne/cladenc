@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -44,21 +45,22 @@ fn start(directory: &Path, key_file: Option<PathBuf>) -> Command {
     start
 }
 
-fn ran() -> (TempDir, Output) {
+static RAN: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let key_file = test_inputs::model_key_file(directory.path(), "a-made-up-key\n");
     let output = start(directory.path(), Some(key_file)).output().unwrap();
     (directory, output)
-}
+});
 
-fn ran_with_no_file_of_a_key_and_a_key_in_the_environment() -> TempDir {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), None)
-        .env("CLADENC_MODEL_KEY", "a-key-from-elsewhere")
-        .output()
-        .unwrap();
-    directory
-}
+static RAN_WITH_NO_FILE_OF_A_KEY_AND_A_KEY_IN_THE_ENVIRONMENT: LazyLock<TempDir> =
+    LazyLock::new(|| {
+        let directory = test_inputs::temporary_directory();
+        start(directory.path(), None)
+            .env("CLADENC_MODEL_KEY", "a-key-from-elsewhere")
+            .output()
+            .unwrap();
+        directory
+    });
 
 fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("outputs/harnesses/1").join(file)).unwrap()
@@ -75,69 +77,74 @@ fn left_by_the_attempt(directory: &TempDir, file: &str) -> String {
 
 #[test]
 fn a_harness_is_started_in_a_container_that_holds_its_source_code_and_the_copy_to_improve() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        kept_by_the_harness(&directory, "where"),
+        kept_by_the_harness(directory, "where"),
         "/var/opt/cladenc/harness\n/var/opt/cladenc/work\n"
     );
 }
 
 #[test]
 fn a_harness_is_told_the_model_the_address_it_is_served_at_and_its_key() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        kept_by_the_harness(&directory, "model"),
+        kept_by_the_harness(directory, "model"),
         format!("{TOLD} a-made-up-key\n")
     );
 }
 
 #[test]
 fn the_harness_of_an_attempt_is_started_in_the_working_directory_of_the_environment_of_its_task() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        left_by_the_attempt(&directory, "where"),
+        left_by_the_attempt(directory, "where"),
         "/var/opt/cladenc/harness\n/app\n"
     );
 }
 
 #[test]
 fn the_harness_of_an_attempt_is_told_the_model_the_address_it_is_served_at_and_its_key() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        left_by_the_attempt(&directory, "model"),
+        left_by_the_attempt(directory, "model"),
         format!("{TOLD} a-made-up-key\n")
     );
 }
 
 #[test]
 fn the_grader_of_a_task_is_run_where_the_harness_ran_beside_the_tests_of_its_task() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        kept_with_the_attempt(&directory, "grader/stdout"),
+        kept_with_the_attempt(directory, "grader/stdout"),
         "test.sh\n/app\n"
     );
 }
 
 #[test]
 fn the_grader_of_a_task_is_told_nothing_of_the_model() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        kept_with_the_attempt(&directory, "grader/stderr"),
+        kept_with_the_attempt(directory, "grader/stderr"),
         "none none none\n"
     );
 }
 
 #[test]
 fn the_key_is_neither_printed_nor_written_into_the_journal() {
-    let (directory, output) = ran();
+    let (directory, output) = &*RAN;
     let journal = fs::read(directory.path().join("outputs/journal.jsonl")).unwrap();
-    let shown = [output.stdout, output.stderr, journal].concat();
+    let shown = [
+        output.stdout.as_slice(),
+        output.stderr.as_slice(),
+        journal.as_slice(),
+    ]
+    .concat();
     assert!(!String::from_utf8(shown).unwrap().contains("a-made-up-key"));
 }
 
 #[test]
 fn the_journal_names_the_file_the_key_is_read_from() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     let named = format!(
         "\"model_key_file\":\"{}\"",
@@ -148,18 +155,18 @@ fn the_journal_names_the_file_the_key_is_read_from() {
 
 #[test]
 fn a_harness_is_given_no_key_that_no_file_holds_though_the_environment_of_cladenc_holds_one() {
-    let directory = ran_with_no_file_of_a_key_and_a_key_in_the_environment();
+    let directory = &*RAN_WITH_NO_FILE_OF_A_KEY_AND_A_KEY_IN_THE_ENVIRONMENT;
     assert_eq!(
-        kept_by_the_harness(&directory, "model"),
+        kept_by_the_harness(directory, "model"),
         format!("{TOLD} none\n")
     );
 }
 
 #[test]
 fn the_harness_of_an_attempt_is_given_no_key_that_no_file_holds_either() {
-    let directory = ran_with_no_file_of_a_key_and_a_key_in_the_environment();
+    let directory = &*RAN_WITH_NO_FILE_OF_A_KEY_AND_A_KEY_IN_THE_ENVIRONMENT;
     assert_eq!(
-        left_by_the_attempt(&directory, "model"),
+        left_by_the_attempt(directory, "model"),
         format!("{TOLD} none\n")
     );
 }

@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use serde_json::Value;
 use tempfile::TempDir;
@@ -9,7 +10,7 @@ const CREATE_ONLY_WHERE_NO_CHILD_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/clad
                                                            then [ ! -d /var/log/cladenc/children ] \
                                                            && echo procreated >> procreated; fi";
 
-fn ran() -> (TempDir, Output) {
+static RAN: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let options = [
         (
@@ -43,7 +44,7 @@ fn ran() -> (TempDir, Output) {
         .output()
         .unwrap();
     (directory, output)
-}
+});
 
 fn journal_of(directory: &TempDir) -> String {
     fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap()
@@ -69,26 +70,21 @@ fn experiments_of(directory: &TempDir) -> Value {
 
 #[test]
 fn start_says_that_it_has_the_primogenitor_create_a_singleton_control_group_harness() {
-    let (_directory, output) = ran();
-    assert!(
-        String::from_utf8(output.stderr)
-            .unwrap()
-            .lines()
-            .any(|line| {
-                line.starts_with("cladenc: started the creation of harness ")
+    let (_directory, output) = &*RAN;
+    assert!(str::from_utf8(&output.stderr).unwrap().lines().any(|line| {
+        line.starts_with("cladenc: started the creation of harness ")
             && line.contains(
                 ", the singleton control group harness, by the primogenitor from the source \
                  code of harness ",
             )
-            })
-    );
+    }));
 }
 
 #[test]
 fn start_establishes_no_baseline_where_the_primogenitor_procreates() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert!(
-        !journal_of(&directory)
+        !journal_of(directory)
             .lines()
             .filter(|line| line.contains(r#""record":"baseline_started""#))
             .any(|line| line.ends_with(r#""progenitor":0}"#))
@@ -97,9 +93,9 @@ fn start_establishes_no_baseline_where_the_primogenitor_procreates() {
 
 #[test]
 fn start_starts_as_many_procreations_as_the_most_it_was_given_beside_its_baselines() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
-        journal_of(&directory)
+        journal_of(directory)
             .matches(r#""record":"procreation_started""#)
             .count(),
         3
@@ -108,8 +104,8 @@ fn start_starts_as_many_procreations_as_the_most_it_was_given_beside_its_baselin
 
 #[test]
 fn start_benchmarks_a_singleton_control_group_harness_in_full() {
-    let (directory, _output) = ran();
-    let journal = journal_of(&directory);
+    let (directory, _output) = &*RAN;
+    let journal = journal_of(directory);
     let singleton_control_group_harness: Value = journal
         .lines()
         .find(|line| line.contains(r#""record":"baseline_started""#))
@@ -127,13 +123,13 @@ fn start_benchmarks_a_singleton_control_group_harness_in_full() {
 
 #[test]
 fn report_says_in_how_many_experiments_both_harnesses_were_created() {
-    let (directory, _output) = ran();
-    assert!(experiments_of(&directory)["both_created"].as_u64() >= Some(1));
+    let (directory, _output) = &*RAN;
+    assert!(experiments_of(directory)["both_created"].as_u64() >= Some(1));
 }
 
 #[test]
 fn report_prints_what_the_experiments_created_above_the_table() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert!(
         report(directory.path(), None)
             .lines()
@@ -145,7 +141,7 @@ fn report_prints_what_the_experiments_created_above_the_table() {
 
 #[test]
 fn report_prints_what_told_the_harnesses_of_the_experiments_apart_above_the_table() {
-    let (directory, _output) = ran();
+    let (directory, _output) = &*RAN;
     assert_eq!(
         report(directory.path(), None).lines().nth(5).unwrap(),
         "on the corroboration tasks of the experiments where both were created: only the \

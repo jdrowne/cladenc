@@ -5,7 +5,8 @@ use std::process::{Command, Output};
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use serde_json::Value;
-use tempfile::TempDir;
+
+use crate::shared::STOPPED;
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
@@ -48,12 +49,6 @@ fn status(directory: &Path, json: Option<&str>) -> Output {
         .unwrap()
 }
 
-fn stopped_before_its_end() -> TempDir {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit 125").status().unwrap();
-    directory
-}
-
 fn lines_of(directory: &Path) -> Vec<String> {
     String::from_utf8(status(directory, None).stdout)
         .unwrap()
@@ -68,19 +63,19 @@ fn object_of(directory: &Path) -> Value {
 
 #[test]
 fn status_exits_with_0_on_a_directed_evolution_that_stopped_before_its_end() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(status(directory.path(), None).status.code(), Some(0));
 }
 
 #[test]
 fn status_prints_nothing_on_standard_error_of_a_directed_evolution_that_stopped_before_its_end() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(status(directory.path(), None).stderr, Vec::<u8>::new());
 }
 
 #[test]
 fn status_says_first_that_the_directed_evolution_has_not_ended() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(
         lines_of(directory.path())[0],
         "the directed evolution has not ended: what follows is its state so far"
@@ -89,7 +84,7 @@ fn status_says_first_that_the_directed_evolution_has_not_ended() {
 
 #[test]
 fn status_names_the_harness_that_is_ahead_so_far() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(
         lines_of(directory.path())[2],
         "started 0 of 1 procreation, harness ahead so far 0"
@@ -98,19 +93,19 @@ fn status_names_the_harness_that_is_ahead_so_far() {
 
 #[test]
 fn status_prints_a_row_for_the_primogenitor_under_the_header_of_the_table() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert!(lines_of(directory.path())[9].starts_with("0   -           -           created  "));
 }
 
 #[test]
 fn with_json_status_prints_an_object_that_says_that_the_directed_evolution_has_not_ended() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(object_of(directory.path())["ended"], Value::Bool(false));
 }
 
 #[test]
 fn with_json_status_names_the_harness_that_is_ahead_so_far() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert_eq!(
         object_of(directory.path())["harness_ahead_so_far"].as_u64(),
         Some(0)
@@ -119,13 +114,13 @@ fn with_json_status_names_the_harness_that_is_ahead_so_far() {
 
 #[test]
 fn with_json_status_names_no_best_harness() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     assert!(object_of(directory.path())["best_harness"].is_null());
 }
 
 #[test]
 fn status_leaves_the_journal_unchanged() {
-    let directory = stopped_before_its_end();
+    let (directory, _run) = &*STOPPED;
     let journal = directory.path().join("outputs/journal.jsonl");
     let before = fs::read(&journal).unwrap();
     status(directory.path(), None);

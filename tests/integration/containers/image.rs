@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::containers::{self, ContainerError, Host, Program};
@@ -49,6 +50,8 @@ fn built(steps: &str) -> Built {
     }
 }
 
+static BUILT: LazyLock<Built> = LazyLock::new(|| built(MADE));
+
 fn printed_by_docker(built: &Built) -> String {
     ["stdout", "stderr"]
         .iter()
@@ -58,12 +61,12 @@ fn printed_by_docker(built: &Built) -> String {
 
 #[test]
 fn an_image_is_built_from_a_dockerfile() {
-    assert!(built(MADE).result.is_ok());
+    assert!(BUILT.result.is_ok());
 }
 
 #[test]
 fn a_container_of_the_image_holds_what_the_dockerfile_made() {
-    let built = built(MADE);
+    let built = &*BUILT;
     assert_eq!(
         test_inputs::printed_in_a_container_of(&built.image.name, "cat /made-here"),
         "by the Dockerfile\n"
@@ -72,7 +75,7 @@ fn a_container_of_the_image_holds_what_the_dockerfile_made() {
 
 #[test]
 fn what_docker_printed_while_it_built_is_kept_in_the_outputs_directory() {
-    assert!(printed_by_docker(&built(MADE)).contains("RUN echo by the Dockerfile"));
+    assert!(printed_by_docker(&BUILT).contains("RUN echo by the Dockerfile"));
 }
 
 #[test]

@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -63,6 +64,9 @@ fn evolved(task_tomls: &[(&str, &str)]) -> Evolved {
     Evolved { directory, found }
 }
 
+static WITH_A_MODE_FOR_T1: LazyLock<Evolved> =
+    LazyLock::new(|| evolved(&[("t1", "[environment.env]\nMODE = \"strict\"\n")]));
+
 fn with_t2_in(image: &str) -> Evolved {
     evolved(&[("t2", &in_the_image(image))])
 }
@@ -95,17 +99,18 @@ fn an_attempt_at_a_task_that_names_an_image_is_carried_out_in_a_container_of_tha
 
 #[test]
 fn an_attempt_at_a_task_is_given_the_variables_its_task_toml_names() {
-    let evolved = evolved(&[("t1", "[environment.env]\nMODE = \"strict\"\n")]);
     assert_eq!(
-        printed_in_the_attempt_at(&evolved, "benchmark/t1"),
+        printed_in_the_attempt_at(&WITH_A_MODE_FOR_T1, "benchmark/t1"),
         "strict\n"
     );
 }
 
 #[test]
 fn an_attempt_at_a_task_is_given_no_variable_that_another_task_names() {
-    let evolved = evolved(&[("t1", "[environment.env]\nMODE = \"strict\"\n")]);
-    assert_eq!(printed_in_the_attempt_at(&evolved, "benchmark/t2"), "\n");
+    assert_eq!(
+        printed_in_the_attempt_at(&WITH_A_MODE_FOR_T1, "benchmark/t2"),
+        "\n"
+    );
 }
 
 #[test]

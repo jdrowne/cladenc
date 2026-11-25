@@ -5,43 +5,7 @@ use std::process::{Command, Output};
 use serde_json::Value;
 use tempfile::TempDir;
 
-fn options(directory: &Path) -> Vec<String> {
-    [
-        ("--primogenitor", test_inputs::primogenitor(directory)),
-        ("--model", test_inputs::MODEL.into()),
-        ("--model-url", test_inputs::MODEL_URL.into()),
-        (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
-        ),
-        ("--procreation-docker-image", test_inputs::IMAGE.into()),
-        (
-            "--harness-run-command",
-            test_inputs::SOLVE_EVERY_TASK.into(),
-        ),
-        ("--outputs-dir", directory.join("outputs")),
-        ("--max-procreations", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
-        ("--procreation-timeout", "30".into()),
-        ("--max-grader-health-check-retries", "0".into()),
-        ("--max-task-health-check-retries", "0".into()),
-        ("--selection-tasks-percentage", "25".into()),
-        ("--corroboration-tasks-percentage", "25".into()),
-    ]
-    .iter()
-    .map(|(option, value)| format!("{option}={}", value.display()))
-    .collect()
-}
-
-fn ran() -> (TempDir, Output) {
-    let directory = test_inputs::temporary_directory();
-    let output = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("start")
-        .args(options(directory.path()))
-        .output()
-        .unwrap();
-    (directory, output)
-}
+use crate::shared::{self, ENDED};
 
 fn sentences_and_report(output: &Output) -> (String, String) {
     let printed = String::from_utf8(output.stderr.clone()).unwrap();
@@ -72,21 +36,21 @@ fn seed_in_the_run_record_of(directory: &TempDir) -> Option<u64> {
 
 #[test]
 fn a_run_over_the_sample_programs_prints_the_directory_of_a_harness_on_standard_output() {
-    let (_directory, output) = ran();
-    assert!(Path::new(String::from_utf8(output.stdout).unwrap().trim_end()).is_dir());
+    let (_directory, output) = &*ENDED;
+    assert!(Path::new(str::from_utf8(&output.stdout).unwrap().trim_end()).is_dir());
 }
 
 #[test]
 fn a_run_over_the_sample_programs_exits_with_0() {
-    let (_directory, output) = ran();
+    let (_directory, output) = &*ENDED;
     assert_eq!(output.status.code(), Some(0));
 }
 
 #[test]
 fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
-    let (directory, output) = ran();
+    let (directory, output) = &*ENDED;
     assert_eq!(
-        String::from_utf8(output.stdout).unwrap(),
+        str::from_utf8(&output.stdout).unwrap(),
         format!(
             "{}\n",
             directory.path().join("outputs/harnesses/1").display()
@@ -96,25 +60,25 @@ fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
 
 #[test]
 fn the_run_record_of_the_journal_holds_the_seed_that_cladenc_drew() {
-    let (directory, _output) = ran();
-    assert!(seed_in_the_run_record_of(&directory).is_some());
+    let (directory, _output) = &*ENDED;
+    assert!(seed_in_the_run_record_of(directory).is_some());
 }
 
 #[test]
 fn two_runs_started_from_one_command_line_draw_different_seeds() {
-    let (first, _output) = ran();
-    let (second, _output) = ran();
+    let (first, _output) = &*ENDED;
+    let (second, _output) = shared::solved_every_task();
     assert_ne!(
-        seed_in_the_run_record_of(&first).unwrap(),
+        seed_in_the_run_record_of(first).unwrap(),
         seed_in_the_run_record_of(&second).unwrap()
     );
 }
 
 #[test]
 fn every_line_of_standard_error_up_to_the_report_is_a_sentence_of_cladenc() {
-    let (_directory, output) = ran();
+    let (_directory, output) = &*ENDED;
     assert!(
-        sentences_and_report(&output)
+        sentences_and_report(output)
             .0
             .lines()
             .all(|line| line.starts_with("cladenc: ") && !line.contains("\"record\""))
@@ -123,9 +87,9 @@ fn every_line_of_standard_error_up_to_the_report_is_a_sentence_of_cladenc() {
 
 #[test]
 fn standard_error_starts_with_the_outputs_directory_being_made() {
-    let (directory, output) = ran();
+    let (directory, output) = &*ENDED;
     assert!(
-        String::from_utf8(output.stderr)
+        str::from_utf8(&output.stderr)
             .unwrap()
             .starts_with(&format!(
                 "cladenc: making the outputs directory {} with a copy of the primogenitor ",
@@ -136,8 +100,8 @@ fn standard_error_starts_with_the_outputs_directory_being_made() {
 
 #[test]
 fn the_last_sentence_of_cladenc_names_the_best_harness_and_where_it_is_kept() {
-    let (directory, output) = ran();
-    assert!(sentences_and_report(&output).0.ends_with(&format!(
+    let (directory, output) = &*ENDED;
+    assert!(sentences_and_report(output).0.ends_with(&format!(
         "its best harness is harness 1, kept in {}\n",
         directory.path().join("outputs/harnesses/1").display()
     )));
@@ -145,24 +109,24 @@ fn the_last_sentence_of_cladenc_names_the_best_harness_and_where_it_is_kept() {
 
 #[test]
 fn standard_error_ends_with_what_report_prints_of_the_directed_evolution() {
-    let (directory, output) = ran();
-    assert_eq!(sentences_and_report(&output).1, report_of(&directory));
+    let (directory, output) = &*ENDED;
+    assert_eq!(sentences_and_report(output).1, report_of(directory));
 }
 
 #[test]
 fn the_report_on_standard_error_names_the_best_harness() {
-    let (_directory, output) = ran();
+    let (_directory, output) = &*ENDED;
     assert_eq!(
-        sentences_and_report(&output).1.lines().nth(1),
+        sentences_and_report(output).1.lines().nth(1),
         Some("started 1 of 1 procreation, best harness 1")
     );
 }
 
 #[test]
 fn the_report_on_standard_error_ends_with_the_row_of_the_last_harness() {
-    let (_directory, output) = ran();
+    let (_directory, output) = &*ENDED;
     assert!(
-        sentences_and_report(&output)
+        sentences_and_report(output)
             .1
             .lines()
             .last()
@@ -172,6 +136,6 @@ fn the_report_on_standard_error_ends_with_the_row_of_the_last_harness() {
 
 #[test]
 fn a_run_prints_no_line_of_the_report_on_standard_output() {
-    let (_directory, output) = ran();
-    assert_eq!(String::from_utf8(output.stdout).unwrap().lines().count(), 1);
+    let (_directory, output) = &*ENDED;
+    assert_eq!(str::from_utf8(&output.stdout).unwrap().lines().count(), 1);
 }

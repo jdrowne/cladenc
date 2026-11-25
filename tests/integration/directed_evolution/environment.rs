@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
@@ -68,9 +69,7 @@ fn evolved() -> Evolved {
     evolved_with_t2_built_from("")
 }
 
-fn not_built() -> Evolved {
-    evolved_with_t2_built_from("RUN exit 3\n")
-}
+static NOT_BUILT: LazyLock<Evolved> = LazyLock::new(|| evolved_with_t2_built_from("RUN exit 3\n"));
 
 fn stopped_while_t2_is_built() -> Evolved {
     let directory = test_inputs::temporary_directory();
@@ -138,7 +137,7 @@ fn a_directed_evolution_that_ended_leaves_no_environment_it_built_on_the_machine
 
 #[test]
 fn a_directed_evolution_whose_environment_is_not_built_leaves_none_it_built_on_the_machine() {
-    assert_eq!(environments_left_by(&not_built()), Vec::<String>::new());
+    assert_eq!(environments_left_by(&NOT_BUILT), Vec::<String>::new());
 }
 
 #[test]
@@ -151,8 +150,7 @@ fn a_directed_evolution_stopped_while_an_environment_is_built_leaves_none_on_the
 
 #[test]
 fn what_docker_printed_for_an_environment_that_was_not_built_says_which_step_failed() {
-    let evolved = not_built();
-    let kept = evolved
+    let kept = NOT_BUILT
         .directory
         .path()
         .join("outputs/environments/benchmark/t2");

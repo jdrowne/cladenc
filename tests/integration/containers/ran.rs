@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::containers::{ContainerError, Docker, Ending, Limits, Program};
@@ -31,6 +32,8 @@ fn ran_until(script: &str, input: &str, time_limit: u64, stop: bool) -> Ran {
 fn ran(script: &str, input: &str) -> Ran {
     ran_until(script, input, 60, false)
 }
+
+static PRINTED_AND_SAID: LazyLock<Ran> = LazyLock::new(|| ran("echo printed; echo said >&2", ""));
 
 fn kept(ran: &Ran, name: &str) -> String {
     fs::read_to_string(ran.directory.path().join(name)).unwrap()
@@ -83,14 +86,12 @@ fn a_program_still_running_past_its_time_limit_is_ended_and_said_to_have_timed_o
 
 #[test]
 fn what_a_program_prints_is_kept_in_the_file_named_stdout() {
-    let ran = ran("echo printed; echo said >&2", "");
-    assert_eq!(kept(&ran, "stdout"), "printed\n");
+    assert_eq!(kept(&PRINTED_AND_SAID, "stdout"), "printed\n");
 }
 
 #[test]
 fn what_a_program_says_went_wrong_is_kept_in_the_file_named_stderr() {
-    let ran = ran("echo printed; echo said >&2", "");
-    assert_eq!(kept(&ran, "stderr"), "said\n");
+    assert_eq!(kept(&PRINTED_AND_SAID, "stderr"), "said\n");
 }
 
 #[test]

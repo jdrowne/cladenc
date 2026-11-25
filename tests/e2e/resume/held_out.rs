@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::sync::LazyLock;
 
 use serde_json::Value;
 use tempfile::TempDir;
@@ -39,7 +40,7 @@ struct Resumed {
     run_record_when_stopped: String,
 }
 
-fn stopped_at_its_first_attempt_and_resumed() -> Resumed {
+static RESUMED: LazyLock<Resumed> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path());
     test_inputs::end_with_125_on(directory.path(), "t1");
@@ -56,7 +57,7 @@ fn stopped_at_its_first_attempt_and_resumed() -> Resumed {
         directory,
         run_record_when_stopped,
     }
-}
+});
 
 fn run_record_of(outputs: &Path) -> String {
     let journal = fs::read_to_string(outputs.join("journal.jsonl")).unwrap();
@@ -90,27 +91,24 @@ fn tasks_kept_under_holdout_of(resumed: &Resumed, harness: &str) -> Vec<String> 
 
 #[test]
 fn resume_leaves_the_holdout_tasks_in_the_journal_as_they_were_drawn() {
-    let resumed = stopped_at_its_first_attempt_and_resumed();
     assert_eq!(
-        run_record_of(&resumed.directory.path().join("outputs")),
-        resumed.run_record_when_stopped
+        run_record_of(&RESUMED.directory.path().join("outputs")),
+        RESUMED.run_record_when_stopped
     );
 }
 
 #[test]
 fn resume_keeps_the_attempts_of_the_primogenitor_at_the_holdout_tasks_under_holdout() {
-    let resumed = stopped_at_its_first_attempt_and_resumed();
     assert_eq!(
-        tasks_kept_under_holdout_of(&resumed, "0"),
-        holdout_tasks_of(&resumed.run_record_when_stopped)
+        tasks_kept_under_holdout_of(&RESUMED, "0"),
+        holdout_tasks_of(&RESUMED.run_record_when_stopped)
     );
 }
 
 #[test]
 fn resume_keeps_the_attempts_of_a_child_at_the_holdout_tasks_under_holdout() {
-    let resumed = stopped_at_its_first_attempt_and_resumed();
     assert_eq!(
-        tasks_kept_under_holdout_of(&resumed, "1"),
-        holdout_tasks_of(&resumed.run_record_when_stopped)
+        tasks_kept_under_holdout_of(&RESUMED, "1"),
+        holdout_tasks_of(&RESUMED.run_record_when_stopped)
     );
 }

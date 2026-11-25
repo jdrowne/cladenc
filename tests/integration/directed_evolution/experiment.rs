@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -49,18 +50,18 @@ fn settings(directory: &Path) -> Settings {
     }
 }
 
-fn evolved() -> TempDir {
+static EVOLVED: LazyLock<TempDir> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
     directory
-}
+});
 
 #[test]
 fn the_singleton_control_group_harness_is_created_from_the_source_code_of_the_progenitor() {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/3/improved")).unwrap(),
         "improved\nimproved\n"
@@ -69,7 +70,7 @@ fn the_singleton_control_group_harness_is_created_from_the_source_code_of_the_pr
 
 #[test]
 fn the_primogenitor_and_not_the_progenitor_creates_the_singleton_control_group_harness() {
-    let directory = evolved();
+    let directory = &*EVOLVED;
     assert_eq!(
         ["2", "3"].map(|harness| {
             directory

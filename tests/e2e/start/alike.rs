@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command;
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -11,7 +12,7 @@ fn run_command_the_manual_gives(command: &str) -> String {
         .unwrap()
 }
 
-fn ran() -> TempDir {
+static RAN: LazyLock<TempDir> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let options = [
         (
@@ -45,7 +46,7 @@ fn ran() -> TempDir {
         .output()
         .unwrap();
     directory
-}
+});
 
 fn script_of(directory: &TempDir, harness: &str) -> String {
     fs::read_to_string(
@@ -71,7 +72,7 @@ fn names_in_harness(directory: &TempDir, harness: &str) -> Vec<String> {
 
 #[test]
 fn a_run_with_the_run_command_the_manual_gives_creates_as_many_children_as_the_most_procreations() {
-    let directory = ran();
+    let directory = &*RAN;
     let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
     assert_eq!(
         journal
@@ -85,28 +86,28 @@ fn a_run_with_the_run_command_the_manual_gives_creates_as_many_children_as_the_m
 
 #[test]
 fn a_run_with_the_run_command_the_manual_gives_adds_to_one_file_of_each_child_and_names_no_other() {
-    let directory = ran();
+    let directory = &*RAN;
     assert_eq!(
-        ["1", "2"].map(|child| names_in_harness(&directory, child)),
+        ["1", "2"].map(|child| names_in_harness(directory, child)),
         [
-            names_in_harness(&directory, "0"),
-            names_in_harness(&directory, "0")
+            names_in_harness(directory, "0"),
+            names_in_harness(directory, "0")
         ]
     );
 }
 
 #[test]
 fn a_run_with_the_run_command_the_manual_gives_leaves_the_script_of_each_child_unchanged() {
-    let directory = ran();
+    let directory = &*RAN;
     assert_eq!(
-        ["1", "2"].map(|child| script_of(&directory, child)),
-        [script_of(&directory, "0"), script_of(&directory, "0")]
+        ["1", "2"].map(|child| script_of(directory, child)),
+        [script_of(directory, "0"), script_of(directory, "0")]
     );
 }
 
 #[test]
 fn a_run_with_the_run_command_the_manual_gives_adds_one_line_to_a_file_of_a_child() {
-    let directory = ran();
+    let directory = &*RAN;
     assert_eq!(
         fs::read_to_string(directory.path().join("outputs/harnesses/1/procreated")).unwrap(),
         "\n"

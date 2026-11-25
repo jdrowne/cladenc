@@ -3,43 +3,8 @@ use std::path::Path;
 use std::process::{Command, Output};
 
 use serde_json::Value;
-use tempfile::TempDir;
 
-fn ended() -> TempDir {
-    let directory = test_inputs::temporary_directory();
-    let options = [
-        (
-            "--primogenitor",
-            test_inputs::primogenitor(directory.path()),
-        ),
-        ("--model", test_inputs::MODEL.into()),
-        ("--model-url", test_inputs::MODEL_URL.into()),
-        (
-            "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
-        ),
-        ("--procreation-docker-image", test_inputs::IMAGE.into()),
-        (
-            "--harness-run-command",
-            test_inputs::SOLVE_EVERY_TASK.into(),
-        ),
-        ("--outputs-dir", directory.path().join("outputs")),
-        ("--max-procreations", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
-        ("--procreation-timeout", "30".into()),
-        ("--max-grader-health-check-retries", "0".into()),
-        ("--max-task-health-check-retries", "0".into()),
-        ("--selection-tasks-percentage", "25".into()),
-        ("--corroboration-tasks-percentage", "25".into()),
-    ]
-    .map(|(option, value)| format!("{option}={}", value.display()));
-    Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("start")
-        .args(options)
-        .output()
-        .unwrap();
-    directory
-}
+use crate::shared::ENDED;
 
 fn report(directory: &Path, json: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
@@ -91,7 +56,7 @@ fn without_the_seconds(mut object: Value) -> Value {
 
 #[test]
 fn report_prints_the_table() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert_eq!(
         up_to_the_seconds(&table_of(directory.path())),
         "model a-model at http://models.example/v1\n\
@@ -109,7 +74,7 @@ fn report_prints_the_table() {
 
 #[test]
 fn with_json_report_prints_an_object_holding_the_same_values() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     let values: Value = serde_json::from_str(concat!(
         r#"{"ended":true,"model":"a-model","model_url":"http://models.example/v1","#,
         r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
@@ -140,7 +105,7 @@ fn with_json_report_prints_an_object_holding_the_same_values() {
 
 #[test]
 fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procreation() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert!(
         table_of(directory.path())
             .lines()
@@ -152,7 +117,7 @@ fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procre
 
 #[test]
 fn report_shows_the_seconds_that_the_attempts_of_each_harness_took_together() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     let object = object_of(directory.path());
     assert_eq!(
         [0, 1].map(|harness: usize| {
@@ -167,7 +132,7 @@ fn report_shows_the_seconds_that_the_attempts_of_each_harness_took_together() {
 
 #[test]
 fn report_shows_the_seconds_that_the_procreation_that_made_a_child_took() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert!(
         object_of(directory.path())["harnesses"][1]["procreation_seconds"]
             .as_f64()
@@ -178,13 +143,13 @@ fn report_shows_the_seconds_that_the_procreation_that_made_a_child_took() {
 
 #[test]
 fn report_shows_no_seconds_of_a_procreation_for_the_primogenitor() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert!(object_of(directory.path())["harnesses"][0]["procreation_seconds"].is_null());
 }
 
 #[test]
 fn with_json_report_prints_the_object_on_one_line() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert_eq!(
         String::from_utf8(report(directory.path(), Some("--json")).stdout)
             .unwrap()
@@ -196,13 +161,13 @@ fn with_json_report_prints_the_object_on_one_line() {
 
 #[test]
 fn report_exits_with_0() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     assert_eq!(report(directory.path(), None).status.code(), Some(0));
 }
 
 #[test]
 fn report_leaves_the_journal_unchanged() {
-    let directory = ended();
+    let (directory, _run) = &*ENDED;
     let journal = directory.path().join("outputs/journal.jsonl");
     let before = fs::read(&journal).unwrap();
     report(directory.path(), None);

@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
@@ -37,46 +38,41 @@ fn ran(build_command: &str) -> (TempDir, Output) {
     (directory, output)
 }
 
-fn left_in_the_run(build_command: &str, file: &str) -> String {
-    let (directory, _output) = ran(build_command);
+static BUILT: LazyLock<(TempDir, Output)> = LazyLock::new(|| ran("echo built >> built"));
+
+static NOT_BUILT: LazyLock<(TempDir, Output)> = LazyLock::new(|| ran("exit 3"));
+
+fn left_in(directory: &TempDir, file: &str) -> String {
     fs::read_to_string(directory.path().join("outputs").join(file)).unwrap()
 }
 
 #[test]
 fn a_run_given_a_build_command_builds_the_primogenitor() {
-    assert_eq!(
-        left_in_the_run("echo built >> built", "harnesses/0/built"),
-        "built\n"
-    );
+    assert_eq!(left_in(&BUILT.0, "harnesses/0/built"), "built\n");
 }
 
 #[test]
 fn a_run_given_a_build_command_builds_a_child_after_its_progenitor() {
-    assert_eq!(
-        left_in_the_run("echo built >> built", "harnesses/1/built"),
-        "built\nbuilt\n"
-    );
+    assert_eq!(left_in(&BUILT.0, "harnesses/1/built"), "built\nbuilt\n");
 }
 
 #[test]
 fn a_run_keeps_what_the_build_of_a_harness_wrote_under_builds() {
-    assert_eq!(
-        left_in_the_run("echo making", "builds/1/stdout"),
-        "making\n"
-    );
+    let (directory, _output) = ran("echo making");
+    assert_eq!(left_in(&directory, "builds/1/stdout"), "making\n");
 }
 
 #[test]
 fn a_run_whose_primogenitor_does_not_build_exits_with_1() {
-    let (_directory, output) = ran("exit 3");
+    let (_directory, output) = &*NOT_BUILT;
     assert_eq!(output.status.code(), Some(1));
 }
 
 #[test]
 fn a_run_whose_primogenitor_does_not_build_says_how_the_build_ended() {
-    let (_directory, output) = ran("exit 3");
+    let (_directory, output) = &*NOT_BUILT;
     assert_eq!(
-        String::from_utf8(output.stderr).unwrap().lines().last(),
+        str::from_utf8(&output.stderr).unwrap().lines().last(),
         Some(
             "cladenc: the directed evolution stopped before its end: \
              the build of the primogenitor exited with status 3"

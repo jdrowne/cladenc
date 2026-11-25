@@ -2,6 +2,7 @@ use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
@@ -74,13 +75,13 @@ fn killed_outright() -> Left {
     Left { directory, id_file }
 }
 
-fn resumed_after_being_killed_outright() -> (Left, Output) {
+static RESUMED_AFTER_BEING_KILLED_OUTRIGHT: LazyLock<(Left, Output)> = LazyLock::new(|| {
     let left = killed_outright();
     let output = resume(&left.directory.path().join("outputs"))
         .output()
         .unwrap();
     (left, output)
-}
+});
 
 fn stopped() -> TempDir {
     let directory = test_inputs::temporary_directory();
@@ -100,19 +101,19 @@ fn resumed_with_no_docker() -> Output {
 
 #[test]
 fn resume_removes_the_container_that_a_cladenc_killed_outright_left_running() {
-    let (left, _output) = resumed_after_being_killed_outright();
+    let (left, _output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
     assert!(test_inputs::container_is_gone(&left.id_file));
 }
 
 #[test]
 fn after_cladenc_was_killed_outright_resume_finishes_the_directed_evolution_and_exits_with_0() {
-    let (_left, output) = resumed_after_being_killed_outright();
+    let (_left, output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
     assert_eq!(output.status.code(), Some(0));
 }
 
 #[test]
 fn resume_says_how_many_containers_it_removed() {
-    let (_left, output) = resumed_after_being_killed_outright();
+    let (_left, output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
     assert_eq!(
         String::from_utf8_lossy(&output.stderr)
             .lines()

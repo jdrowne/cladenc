@@ -15,6 +15,8 @@ mod resume {
     mod unusable;
 }
 
+mod shared;
+
 mod start {
     mod alike;
     mod benchmarks;

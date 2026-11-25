@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -66,9 +67,8 @@ fn evolved_with_t2(task_toml: &str, steps_of_its_tests: Option<&str>) -> Evolved
     Evolved { settings, found }
 }
 
-fn with_a_grader_built_from_its_tests() -> Evolved {
-    evolved_with_t2(SEPARATE, Some(HOLDS_ITS_TESTS))
-}
+static WITH_A_GRADER_BUILT_FROM_ITS_TESTS: LazyLock<Evolved> =
+    LazyLock::new(|| evolved_with_t2(SEPARATE, Some(HOLDS_ITS_TESTS)));
 
 fn with_a_grader_that_is_not_built() -> Evolved {
     evolved_with_t2(SEPARATE, Some(NEVER_BUILT))
@@ -96,13 +96,13 @@ fn environments_left_by(evolved: &Evolved) -> Vec<String> {
 
 #[test]
 fn a_directed_evolution_whose_task_has_a_grader_built_from_its_tests_runs_to_its_end() {
-    assert!(with_a_grader_built_from_its_tests().found.is_ok());
+    assert!(WITH_A_GRADER_BUILT_FROM_ITS_TESTS.found.is_ok());
 }
 
 #[test]
 fn a_directed_evolution_that_ended_leaves_no_environment_of_a_grader_on_the_machine() {
     assert_eq!(
-        environments_left_by(&with_a_grader_built_from_its_tests()),
+        environments_left_by(&WITH_A_GRADER_BUILT_FROM_ITS_TESTS),
         Vec::<String>::new()
     );
 }

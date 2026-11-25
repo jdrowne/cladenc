@@ -1,5 +1,7 @@
 use std::fs;
+use std::io;
 use std::os::unix::fs::PermissionsExt;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -194,6 +196,18 @@ fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &
     })
 }
 
+static FINISHED_AND_GRADED: LazyLock<Attempted> = LazyLock::new(|| attempted(FINISH, FINISHED));
+
+static LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<(Attempted, io::Result<()>)> =
+    LazyLock::new(|| {
+        let attempted = attempted(LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN, FINISHED);
+        let removed = fs::remove_dir_all(attempted.outputs_directory.path());
+        (attempted, removed)
+    });
+
+static IN_AN_ENVIRONMENT_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Attempted> =
+    LazyLock::new(|| in_the_environment(Environment::Named(NOT_ON_THE_MACHINE), FINISH, FINISHED));
+
 fn kept(attempted: &Attempted, file: &str) -> String {
     fs::read_to_string(attempted.outputs_directory.attempt(0, TASK).join(file)).unwrap()
 }
@@ -363,10 +377,9 @@ fn a_harness_that_changes_its_source_code_leaves_the_harness_unchanged() {
 
 #[test]
 fn a_harness_that_changes_the_files_of_the_environment_leaves_the_task_unchanged() {
-    let attempted = attempted(FINISH, FINISHED);
     assert_eq!(
         fs::read_to_string(
-            attempted
+            FINISHED_AND_GRADED
                 .outputs_directory
                 .task(TASK)
                 .join("environment/workspace/work.txt")
@@ -378,23 +391,18 @@ fn a_harness_that_changes_the_files_of_the_environment_leaves_the_task_unchanged
 
 #[test]
 fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_attempt_end() {
-    assert!(
-        attempted(LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN, FINISHED)
-            .result
-            .is_ok()
-    );
+    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.0.result.is_ok());
 }
 
 #[test]
 fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_removed() {
-    let attempted = attempted(LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN, FINISHED);
-    assert!(fs::remove_dir_all(attempted.outputs_directory.path()).is_ok());
+    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.1.is_ok());
 }
 
 #[test]
 fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
     assert!(with_its_result(
-        &attempted(FINISH, FINISHED),
+        &FINISHED_AND_GRADED,
         AttemptResult::Completed
     ));
 }
@@ -525,14 +533,15 @@ fn an_attempt_that_ended_leaves_no_container_behind() {
 
 #[test]
 fn an_attempt_whose_environment_is_not_on_the_machine_is_an_error() {
-    let attempted = in_the_environment(Environment::Named(NOT_ON_THE_MACHINE), FINISH, FINISHED);
-    assert!(matches!(attempted.result, Err(ContainerError::Docker(_))));
+    assert!(matches!(
+        IN_AN_ENVIRONMENT_THAT_IS_NOT_ON_THE_MACHINE.result,
+        Err(ContainerError::Docker(_))
+    ));
 }
 
 #[test]
 fn what_docker_said_of_an_attempt_whose_environment_is_not_on_the_machine_is_kept() {
-    let attempted = in_the_environment(Environment::Named(NOT_ON_THE_MACHINE), FINISH, FINISHED);
-    let said = attempted
+    let said = IN_AN_ENVIRONMENT_THAT_IS_NOT_ON_THE_MACHINE
         .outputs_directory
         .running_attempt(0, TASK)
         .join("stderr");

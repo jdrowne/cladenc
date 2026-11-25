@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -65,6 +66,10 @@ fn built(steps: &str) -> Built {
     }
 }
 
+static BUILT: LazyLock<Built> = LazyLock::new(|| built(MADE));
+
+static GRADER_BUILT: LazyLock<Built> = LazyLock::new(|| grader_built(HELD));
+
 fn printed_by_docker(built: &Built) -> String {
     ["stdout", "stderr"]
         .iter()
@@ -92,12 +97,12 @@ fn id_of(built: &Built) -> String {
 
 #[test]
 fn the_environment_of_a_task_is_built_from_its_dockerfile() {
-    assert!(built(MADE).result.is_ok());
+    assert!(BUILT.result.is_ok());
 }
 
 #[test]
 fn a_container_of_the_environment_holds_what_the_dockerfile_of_the_task_made() {
-    let built = built(MADE);
+    let built = &*BUILT;
     assert_eq!(
         test_inputs::printed_in_a_container_of(&built.image.name, "cat /made-here"),
         "by the environment\n"
@@ -115,7 +120,7 @@ fn the_environment_is_built_with_the_environment_directory_of_the_task_as_its_bu
 
 #[test]
 fn the_image_of_an_environment_is_labelled_with_its_task() {
-    let built = built(MADE);
+    let built = &*BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.task"),
         "benchmark/t1\n"
@@ -124,7 +129,7 @@ fn the_image_of_an_environment_is_labelled_with_its_task() {
 
 #[test]
 fn the_image_of_an_environment_is_labelled_with_its_directed_evolution() {
-    let built = built(MADE);
+    let built = &*BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.directed-evolution"),
         format!(
@@ -138,13 +143,13 @@ fn the_image_of_an_environment_is_labelled_with_its_directed_evolution() {
 
 #[test]
 fn the_environments_two_directed_evolutions_build_from_one_task_are_two_images() {
-    let (one, other) = (built(MADE), built(MADE));
-    assert_ne!(id_of(&one), id_of(&other));
+    let other = built(MADE);
+    assert_ne!(id_of(&BUILT), id_of(&other));
 }
 
 #[test]
 fn what_docker_printed_while_it_built_the_environment_is_kept_in_the_outputs_directory() {
-    assert!(printed_by_docker(&built(MADE)).contains("RUN echo by the environment"));
+    assert!(printed_by_docker(&BUILT).contains("RUN echo by the environment"));
 }
 
 #[test]
@@ -194,12 +199,12 @@ fn printed_by_docker_for_the_grader(built: &Built) -> String {
 
 #[test]
 fn the_environment_of_a_grader_is_built_from_the_dockerfile_in_the_tests_of_its_task() {
-    assert!(grader_built(HELD).result.is_ok());
+    assert!(GRADER_BUILT.result.is_ok());
 }
 
 #[test]
 fn the_environment_of_a_grader_is_built_with_the_tests_of_its_task_as_its_build_context() {
-    let built = grader_built(HELD);
+    let built = &*GRADER_BUILT;
     assert_eq!(
         test_inputs::printed_in_a_container_of(&built.image.name, "cat /tests/notes.txt"),
         "from the tests of the task\n"
@@ -208,12 +213,12 @@ fn the_environment_of_a_grader_is_built_with_the_tests_of_its_task_as_its_build_
 
 #[test]
 fn what_docker_printed_while_it_built_the_environment_of_a_grader_is_kept_in_grader() {
-    assert!(printed_by_docker_for_the_grader(&grader_built(HELD)).contains("COPY notes.txt"));
+    assert!(printed_by_docker_for_the_grader(&GRADER_BUILT).contains("COPY notes.txt"));
 }
 
 #[test]
 fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_task() {
-    let built = grader_built(HELD);
+    let built = &*GRADER_BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.task"),
         "benchmark/t1\n"
@@ -222,7 +227,7 @@ fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_task() {
 
 #[test]
 fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_directed_evolution() {
-    let built = grader_built(HELD);
+    let built = &*GRADER_BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.directed-evolution"),
         format!(

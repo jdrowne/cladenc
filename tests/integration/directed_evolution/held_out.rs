@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::benchmark::Benchmark;
@@ -55,7 +56,7 @@ fn evolved() -> TempDir {
     directory
 }
 
-fn given_to_the_makers_of_two_children() -> [String; 2] {
+static GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN: LazyLock<[String; 2]> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), KEEP_WHAT_IS_GIVEN_TO_READ);
     settings.max_procreations = 2;
@@ -71,7 +72,7 @@ fn given_to_the_makers_of_two_children() -> [String; 2] {
         )
         .unwrap()
     })
-}
+});
 
 #[test]
 fn a_progenitor_finds_its_attempts_at_the_tasks_that_are_not_held_out_and_no_other() {
@@ -84,13 +85,13 @@ fn a_progenitor_finds_its_attempts_at_the_tasks_that_are_not_held_out_and_no_oth
 
 #[test]
 fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_attempts_and_nothing_else() {
-    assert_eq!(given_to_the_makers_of_two_children()[0], "attempts\n");
+    assert_eq!(GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[0], "attempts\n");
 }
 
 #[test]
 fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
     assert!(
         ["attempts\nchildren\n", "attempts\nline\n"]
-            .contains(&given_to_the_makers_of_two_children()[1].as_str())
+            .contains(&GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[1].as_str())
     );
 }

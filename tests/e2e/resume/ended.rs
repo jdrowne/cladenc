@@ -1,8 +1,35 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::LazyLock;
 
 use tempfile::TempDir;
+
+struct Resumed {
+    directory: TempDir,
+    run: Output,
+    journal_before: Vec<u8>,
+    resumed: Output,
+    journal_after: Vec<u8>,
+}
+
+static RESUMED: LazyLock<Resumed> = LazyLock::new(|| {
+    let (directory, run) = ended();
+    let journal = directory.path().join("outputs/journal.jsonl");
+    let journal_before = fs::read(&journal).unwrap();
+    let resumed = resume(directory.path());
+    let journal_after = fs::read(&journal).unwrap();
+    Resumed {
+        directory,
+        run,
+        journal_before,
+        resumed,
+        journal_after,
+    }
+});
+
+static REFUSED_FOR_QUIET: LazyLock<Output> =
+    LazyLock::new(|| resume_with(RESUMED.directory.path(), Some("--quiet")));
 
 fn ended() -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();
@@ -67,30 +94,23 @@ fn resume_with(directory: &Path, another: Option<&str>) -> Output {
 
 #[test]
 fn resume_on_a_run_that_ended_prints_the_path_the_run_printed() {
-    let (directory, run) = ended();
-    assert_eq!(resume(directory.path()).stdout, run.stdout);
+    assert_eq!(RESUMED.resumed.stdout, RESUMED.run.stdout);
 }
 
 #[test]
 fn resume_on_a_run_that_ended_exits_with_0() {
-    let (directory, _run) = ended();
-    assert_eq!(resume(directory.path()).status.code(), Some(0));
+    assert_eq!(RESUMED.resumed.status.code(), Some(0));
 }
 
 #[test]
 fn resume_on_a_run_that_ended_leaves_the_journal_unchanged() {
-    let (directory, _run) = ended();
-    let journal = directory.path().join("outputs/journal.jsonl");
-    let before = fs::read(&journal).unwrap();
-    resume(directory.path());
-    assert_eq!(fs::read(&journal).unwrap(), before);
+    assert_eq!(RESUMED.journal_after, RESUMED.journal_before);
 }
 
 #[test]
 fn resume_on_a_run_that_ended_says_on_standard_error_that_the_directed_evolution_had_finished() {
-    let (directory, _run) = ended();
     assert!(
-        String::from_utf8(resume(directory.path()).stderr)
+        str::from_utf8(&RESUMED.resumed.stderr)
             .unwrap()
             .starts_with(
                 "cladenc: the directed evolution had finished: its best harness is harness "
@@ -100,28 +120,22 @@ fn resume_on_a_run_that_ended_says_on_standard_error_that_the_directed_evolution
 
 #[test]
 fn resume_on_a_run_that_ended_prints_on_standard_error_what_report_prints() {
-    let (directory, _run) = ended();
-    let said = String::from_utf8(resume(directory.path()).stderr).unwrap();
+    let said = str::from_utf8(&RESUMED.resumed.stderr).unwrap();
     assert_eq!(
         said.split_once('\n').map(|(_, report)| report.to_owned()),
-        Some(report_of(directory.path()))
+        Some(report_of(RESUMED.directory.path()))
     );
 }
 
 #[test]
 fn quiet_which_is_no_flag_of_resume_exits_with_2() {
-    let (directory, _run) = ended();
-    assert_eq!(
-        resume_with(directory.path(), Some("--quiet")).status.code(),
-        Some(2)
-    );
+    assert_eq!(REFUSED_FOR_QUIET.status.code(), Some(2));
 }
 
 #[test]
 fn quiet_which_is_no_flag_of_resume_is_refused_as_an_argument_that_is_not_expected() {
-    let (directory, _run) = ended();
     assert!(
-        String::from_utf8(resume_with(directory.path(), Some("--quiet")).stderr)
+        str::from_utf8(&REFUSED_FOR_QUIET.stderr)
             .unwrap()
             .starts_with("error: unexpected argument '--quiet' found\n")
     );
@@ -129,9 +143,5 @@ fn quiet_which_is_no_flag_of_resume_is_refused_as_an_argument_that_is_not_expect
 
 #[test]
 fn quiet_which_is_no_flag_of_resume_prints_nothing_on_standard_output() {
-    let (directory, _run) = ended();
-    assert_eq!(
-        resume_with(directory.path(), Some("--quiet")).stdout,
-        Vec::<u8>::new()
-    );
+    assert_eq!(REFUSED_FOR_QUIET.stdout, Vec::<u8>::new());
 }

@@ -3,6 +3,7 @@ use std::io;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
@@ -68,6 +69,12 @@ fn removed_from(left: &Left, outputs: &str) -> io::Result<u64> {
     })
 }
 
+static REMOVED: LazyLock<(Left, io::Result<u64>)> = LazyLock::new(|| {
+    let left = left_by_a_directed_evolution_in("outputs");
+    let removed = removed_from(&left, "outputs");
+    (left, removed)
+});
+
 fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evolution() -> bool {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
@@ -128,15 +135,12 @@ fn the_container_of_an_attempt_is_listed_under_the_label_of_its_directed_evoluti
 
 #[test]
 fn a_container_that_carries_the_label_of_the_directed_evolution_is_removed() {
-    let left = left_by_a_directed_evolution_in("outputs");
-    let _ = removed_from(&left, "outputs");
-    assert!(test_inputs::container_is_gone(&left.id_file));
+    assert!(test_inputs::container_is_gone(&REMOVED.0.id_file));
 }
 
 #[test]
 fn the_number_of_containers_removed_is_returned() {
-    let left = left_by_a_directed_evolution_in("outputs");
-    assert_eq!(removed_from(&left, "outputs").ok(), Some(1));
+    assert_eq!(REMOVED.1.as_ref().ok(), Some(&1));
 }
 
 #[test]

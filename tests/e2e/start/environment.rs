@@ -1,11 +1,13 @@
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
+use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
-
 use tempfile::TempDir;
+
+use crate::shared::UNCHANGED;
 
 fn start(directory: &Path) -> Command {
     let options = [
@@ -33,7 +35,7 @@ fn start(directory: &Path) -> Command {
     start
 }
 
-fn not_built() -> (TempDir, Output) {
+static NOT_BUILT: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path());
     fs::write(
@@ -43,17 +45,17 @@ fn not_built() -> (TempDir, Output) {
     .unwrap();
     let output = start.output().unwrap();
     (directory, output)
-}
+});
 
 #[test]
 fn a_task_whose_environment_is_not_built_exits_with_2() {
-    assert_eq!(not_built().1.status.code(), Some(2));
+    assert_eq!(NOT_BUILT.1.status.code(), Some(2));
 }
 
 #[test]
 fn a_task_whose_environment_is_not_built_is_reported_last_on_standard_error_with_its_task() {
     assert!(
-        String::from_utf8(not_built().1.stderr)
+        str::from_utf8(&NOT_BUILT.1.stderr)
             .unwrap()
             .lines()
             .last()
@@ -67,12 +69,12 @@ fn a_task_whose_environment_is_not_built_is_reported_last_on_standard_error_with
 
 #[test]
 fn a_task_whose_environment_is_not_built_prints_nothing_on_standard_output() {
-    assert_eq!(not_built().1.stdout, b"");
+    assert_eq!(NOT_BUILT.1.stdout, b"");
 }
 
 #[test]
 fn a_task_whose_environment_is_not_built_leaves_no_journal() {
-    let (directory, _output) = not_built();
+    let (directory, _output) = &*NOT_BUILT;
     assert!(!directory.path().join("outputs/journal.jsonl").exists());
 }
 
@@ -95,7 +97,7 @@ fn environments_left_by(said: &str) -> Vec<String> {
         .collect()
 }
 
-fn interrupted_while_the_environment_of_t2_is_built() -> Output {
+static INTERRUPTED_WHILE_THE_ENVIRONMENT_OF_T2_IS_BUILT: LazyLock<Output> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path());
     fs::write(
@@ -114,14 +116,12 @@ fn interrupted_while_the_environment_of_t2_is_built() -> Output {
     test_inputs::within_ten_seconds(|| printed.exists());
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGINT).unwrap();
     cladenc.wait_with_output().unwrap()
-}
+});
 
 #[test]
 fn cladenc_start_leaves_no_environment_it_built_on_the_machine_when_it_ends() {
-    let directory = test_inputs::temporary_directory();
-    let output = start(directory.path()).output().unwrap();
     assert_eq!(
-        environments_left_by(&String::from_utf8(output.stderr).unwrap()),
+        environments_left_by(str::from_utf8(&UNCHANGED.1.stderr).unwrap()),
         Vec::<String>::new()
     );
 }
@@ -129,7 +129,7 @@ fn cladenc_start_leaves_no_environment_it_built_on_the_machine_when_it_ends() {
 #[test]
 fn an_interrupt_while_an_environment_is_built_gives_exit_status_2() {
     assert_eq!(
-        interrupted_while_the_environment_of_t2_is_built()
+        INTERRUPTED_WHILE_THE_ENVIRONMENT_OF_T2_IS_BUILT
             .status
             .code(),
         Some(2)
@@ -139,7 +139,7 @@ fn an_interrupt_while_an_environment_is_built_gives_exit_status_2() {
 #[test]
 fn an_interrupt_while_an_environment_is_built_says_that_resume_has_nothing_to_continue() {
     assert!(
-        String::from_utf8(interrupted_while_the_environment_of_t2_is_built().stderr)
+        str::from_utf8(&INTERRUPTED_WHILE_THE_ENVIRONMENT_OF_T2_IS_BUILT.stderr)
             .unwrap()
             .ends_with(
                 "cladenc: the directed evolution was stopped before it was started, so `cladenc \

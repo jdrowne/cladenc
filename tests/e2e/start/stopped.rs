@@ -2,10 +2,13 @@ use std::fs;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
+use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
+
+use crate::shared::STOPPED;
 
 const SAY_THE_CONTAINER_AND_STAY: &str = "hostname; sleep 300";
 
@@ -56,6 +59,12 @@ fn signalled(signal: Signal) -> (TempDir, ExitStatus) {
     (directory, status)
 }
 
+static INTERRUPTED: LazyLock<(TempDir, ExitStatus)> = LazyLock::new(|| signalled(Signal::SIGINT));
+
+static HUNG_UP: LazyLock<(TempDir, ExitStatus)> = LazyLock::new(|| signalled(Signal::SIGHUP));
+
+static QUIT: LazyLock<(TempDir, ExitStatus)> = LazyLock::new(|| signalled(Signal::SIGQUIT));
+
 fn killed_outright() -> (TempDir, ExitStatus) {
     let (directory, status) = signalled(Signal::SIGKILL);
     let outputs = fs::canonicalize(directory.path().join("outputs")).unwrap();
@@ -88,7 +97,7 @@ fn killed_outright() -> (TempDir, ExitStatus) {
 
 #[test]
 fn an_interrupt_during_a_run_gives_exit_status_1() {
-    let (_directory, status) = signalled(Signal::SIGINT);
+    let (_directory, status) = &*INTERRUPTED;
     assert_eq!(status.code(), Some(1));
 }
 
@@ -100,32 +109,32 @@ fn a_request_to_end_during_a_run_gives_exit_status_1() {
 
 #[test]
 fn a_hangup_during_a_run_gives_exit_status_1() {
-    let (_directory, status) = signalled(Signal::SIGHUP);
+    let (_directory, status) = &*HUNG_UP;
     assert_eq!(status.code(), Some(1));
 }
 
 #[test]
 fn a_quit_during_a_run_gives_exit_status_1() {
-    let (_directory, status) = signalled(Signal::SIGQUIT);
+    let (_directory, status) = &*QUIT;
     assert_eq!(status.code(), Some(1));
 }
 
 #[test]
 fn a_quit_during_a_run_leaves_no_container_behind() {
-    let (directory, _status) = signalled(Signal::SIGQUIT);
-    assert!(test_inputs::container_is_gone(&id_file(&directory)));
+    let (directory, _status) = &*QUIT;
+    assert!(test_inputs::container_is_gone(&id_file(directory)));
 }
 
 #[test]
 fn a_hangup_during_a_run_leaves_no_container_behind() {
-    let (directory, _status) = signalled(Signal::SIGHUP);
-    assert!(test_inputs::container_is_gone(&id_file(&directory)));
+    let (directory, _status) = &*HUNG_UP;
+    assert!(test_inputs::container_is_gone(&id_file(directory)));
 }
 
 #[test]
 fn an_interrupt_during_a_run_leaves_no_container_behind() {
-    let (directory, _status) = signalled(Signal::SIGINT);
-    assert!(test_inputs::container_is_gone(&id_file(&directory)));
+    let (directory, _status) = &*INTERRUPTED;
+    assert!(test_inputs::container_is_gone(&id_file(directory)));
 }
 
 #[test]
@@ -136,7 +145,5 @@ fn a_cladenc_that_is_killed_outright_during_a_run_is_ended_by_the_signal() {
 
 #[test]
 fn a_container_that_docker_does_not_start_gives_exit_status_1() {
-    let directory = test_inputs::temporary_directory();
-    let status = start(directory.path(), "exit 125").status().unwrap();
-    assert_eq!(status.code(), Some(1));
+    assert_eq!(STOPPED.1.status.code(), Some(1));
 }
