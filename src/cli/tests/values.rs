@@ -266,6 +266,16 @@ fn the_limit_of_concurrent_containers_has_no_second_name() {
 }
 
 #[test]
+fn the_primogenitor_has_no_second_name() {
+    assert_eq!(
+        and(Some("--progenitor=/primogenitor".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
 fn the_most_retries_of_the_health_check_of_a_grader_are_the_number_given() {
     assert!(matches!(
         with("--max-grader-health-check-retries", "5").unwrap().command,

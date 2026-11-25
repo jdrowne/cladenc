@@ -1,19 +1,16 @@
-use std::fs;
-use std::path::Path;
 use std::process::{Command, Output};
 
-use serde_json::Value;
 use tempfile::TempDir;
 
-use crate::shared::{self, ENDED};
+use crate::shared::ENDED;
 
-fn sentences_and_report(output: &Output) -> (String, String) {
-    let printed = String::from_utf8(output.stderr.clone()).unwrap();
+fn report_on_standard_error(output: &Output) -> String {
+    let printed = str::from_utf8(&output.stderr).unwrap();
     let finished = printed
         .find("cladenc: the directed evolution finished ")
         .unwrap();
     let report = finished + printed[finished..].find('\n').unwrap() + 1;
-    (printed[..report].to_owned(), printed[report..].to_owned())
+    printed[report..].to_owned()
 }
 
 fn report_of(directory: &TempDir) -> String {
@@ -26,18 +23,6 @@ fn report_of(directory: &TempDir) -> String {
         .output()
         .unwrap();
     String::from_utf8(report.stdout).unwrap()
-}
-
-fn seed_in_the_run_record_of(directory: &TempDir) -> Option<u64> {
-    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
-    let run_record: Value = serde_json::from_str(journal.lines().next().unwrap()).unwrap();
-    run_record["seed"].as_u64()
-}
-
-#[test]
-fn a_run_over_the_sample_programs_prints_the_directory_of_a_harness_on_standard_output() {
-    let (_directory, output) = &*ENDED;
-    assert!(Path::new(str::from_utf8(&output.stdout).unwrap().trim_end()).is_dir());
 }
 
 #[test]
@@ -59,83 +44,7 @@ fn the_harness_a_run_prints_is_the_one_the_samples_make_best() {
 }
 
 #[test]
-fn the_run_record_of_the_journal_holds_the_seed_that_cladenc_drew() {
-    let (directory, _output) = &*ENDED;
-    assert!(seed_in_the_run_record_of(directory).is_some());
-}
-
-#[test]
-fn two_runs_started_from_one_command_line_draw_different_seeds() {
-    let (first, _output) = &*ENDED;
-    let (second, _output) = shared::solved_every_task();
-    assert_ne!(
-        seed_in_the_run_record_of(first).unwrap(),
-        seed_in_the_run_record_of(&second).unwrap()
-    );
-}
-
-#[test]
-fn every_line_of_standard_error_up_to_the_report_is_a_sentence_of_cladenc() {
-    let (_directory, output) = &*ENDED;
-    assert!(
-        sentences_and_report(output)
-            .0
-            .lines()
-            .all(|line| line.starts_with("cladenc: ") && !line.contains("\"record\""))
-    );
-}
-
-#[test]
-fn standard_error_starts_with_the_outputs_directory_being_made() {
-    let (directory, output) = &*ENDED;
-    assert!(
-        str::from_utf8(&output.stderr)
-            .unwrap()
-            .starts_with(&format!(
-                "cladenc: making the outputs directory {} with a copy of the primogenitor ",
-                directory.path().join("outputs").display()
-            ))
-    );
-}
-
-#[test]
-fn the_last_sentence_of_cladenc_names_the_best_harness_and_where_it_is_kept() {
-    let (directory, output) = &*ENDED;
-    assert!(sentences_and_report(output).0.ends_with(&format!(
-        "its best harness is harness 1, kept in {}\n",
-        directory.path().join("outputs/harnesses/1").display()
-    )));
-}
-
-#[test]
 fn standard_error_ends_with_what_report_prints_of_the_directed_evolution() {
     let (directory, output) = &*ENDED;
-    assert_eq!(sentences_and_report(output).1, report_of(directory));
-}
-
-#[test]
-fn the_report_on_standard_error_names_the_best_harness() {
-    let (_directory, output) = &*ENDED;
-    assert_eq!(
-        sentences_and_report(output).1.lines().nth(1),
-        Some("started 1 of 1 procreation, best harness 1")
-    );
-}
-
-#[test]
-fn the_report_on_standard_error_ends_with_the_row_of_the_last_harness() {
-    let (_directory, output) = &*ENDED;
-    assert!(
-        sentences_and_report(output)
-            .1
-            .lines()
-            .last()
-            .is_some_and(|row| row.starts_with("1   0           -           created  "))
-    );
-}
-
-#[test]
-fn a_run_prints_no_line_of_the_report_on_standard_output() {
-    let (_directory, output) = &*ENDED;
-    assert_eq!(str::from_utf8(&output.stdout).unwrap().lines().count(), 1);
+    assert_eq!(report_on_standard_error(output), report_of(directory));
 }

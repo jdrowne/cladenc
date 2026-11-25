@@ -14,6 +14,8 @@ use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
 use tempfile::TempDir;
 
+const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
+
 const MODEL: Model<'static> = Model {
     name: test_inputs::MODEL,
     url: test_inputs::MODEL_URL,
@@ -85,6 +87,17 @@ static NOT_STARTED_BY_DOCKER: LazyLock<Procreated> = LazyLock::new(|| {
     let result = started_from("Not An Image", "exit 0", &outputs_directory, 30);
     (directory, outputs_directory, result)
 });
+
+static IN_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Procreated> = LazyLock::new(|| {
+    let (directory, outputs_directory) = made_at("outputs");
+    let result = started_from(NOT_ON_THE_MACHINE, "exit 0", &outputs_directory, 30);
+    (directory, outputs_directory, result)
+});
+
+fn what_docker_said_of(procreated: &Procreated) -> String {
+    let (_directory, outputs_directory, _result) = procreated;
+    fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap()
+}
 
 fn left_in_the_child(run_command: &str, file: &str) -> String {
     let (_directory, outputs_directory, _result) = procreated(run_command);
@@ -302,6 +315,19 @@ fn what_docker_said_is_kept_under_running() {
     let (_directory, outputs_directory, _result) = &*NOT_STARTED_BY_DOCKER;
     let said = fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap();
     assert!(said.contains("invalid reference format"));
+}
+
+#[test]
+fn docker_says_of_an_image_the_machine_does_not_hold_that_there_is_no_such_image() {
+    assert!(what_docker_said_of(&IN_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE).contains("No such image"));
+}
+
+#[test]
+fn docker_does_not_look_in_a_registry_for_an_image_the_machine_does_not_hold() {
+    assert!(
+        !what_docker_said_of(&IN_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE)
+            .contains("Unable to find image")
+    );
 }
 
 #[test]

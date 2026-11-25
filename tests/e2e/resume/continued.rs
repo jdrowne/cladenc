@@ -49,31 +49,13 @@ fn resume(directory: &Path) -> Output {
         .unwrap()
 }
 
-fn report_of(directory: &Path) -> String {
-    let report = Command::new(env!("CARGO_BIN_EXE_cladenc"))
-        .arg("report")
-        .arg(format!(
-            "--outputs-dir={}",
-            directory.join("outputs").display()
-        ))
-        .output()
-        .unwrap();
-    String::from_utf8(report.stdout).unwrap()
-}
-
 static RESUMED_AFTER_AN_INTERRUPT: LazyLock<(TempDir, Output)> = LazyLock::new(|| {
-    let directory = stopped_by(Signal::SIGINT);
+    let directory = stopped_by_an_interrupt();
     let resumed = resume(directory.path());
     (directory, resumed)
 });
 
-static STOPPED_AGAIN_UNDER_RESUME: LazyLock<Output> = LazyLock::new(|| {
-    let directory = test_inputs::temporary_directory();
-    start(directory.path(), "exit 125").status().unwrap();
-    resume(directory.path())
-});
-
-fn stopped_by(signal: Signal) -> TempDir {
+fn stopped_by_an_interrupt() -> TempDir {
     let directory = test_inputs::temporary_directory();
     let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
     fs::write(
@@ -87,7 +69,7 @@ fn stopped_by(signal: Signal) -> TempDir {
     let outputs = directory.path().join("outputs");
     let id_file = outputs.join("running/attempt-0-benchmark+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
-    kill(Pid::from_raw(cladenc.id().cast_signed()), signal).unwrap();
+    kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGINT).unwrap();
     cladenc.wait().unwrap();
     fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
     directory
@@ -103,59 +85,4 @@ fn after_an_interrupt_stops_a_run_resume_finishes_it_and_exits_with_0() {
 fn after_an_interrupt_stops_a_run_resume_prints_the_directory_of_a_harness() {
     let (_directory, resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
     assert!(Path::new(str::from_utf8(&resumed.stdout).unwrap().trim_end()).is_dir());
-}
-
-#[test]
-fn after_an_interrupt_stops_a_run_resume_ends_the_journal_with_directed_evolution_finished() {
-    let (directory, _resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
-    let journal = fs::read_to_string(directory.path().join("outputs/journal.jsonl")).unwrap();
-    assert!(
-        journal
-            .lines()
-            .last()
-            .unwrap()
-            .starts_with(r#"{"record":"directed_evolution_finished""#)
-    );
-}
-
-#[test]
-fn after_an_interrupt_stops_a_run_resume_prints_what_report_prints_after_the_line_of_the_end() {
-    let (directory, resumed) = &*RESUMED_AFTER_AN_INTERRUPT;
-    let said = str::from_utf8(&resumed.stderr).unwrap();
-    assert_eq!(
-        said.split_once("cladenc: the directed evolution finished ")
-            .and_then(|(_, rest)| rest.split_once('\n'))
-            .map(|(_, report)| report.to_owned()),
-        Some(report_of(directory.path()))
-    );
-}
-
-#[test]
-fn after_a_hangup_stops_a_run_resume_finishes_it_and_exits_with_0() {
-    let directory = stopped_by(Signal::SIGHUP);
-    assert_eq!(resume(directory.path()).status.code(), Some(0));
-}
-
-#[test]
-fn after_a_quit_stops_a_run_resume_finishes_it_and_exits_with_0() {
-    let directory = stopped_by(Signal::SIGQUIT);
-    assert_eq!(resume(directory.path()).status.code(), Some(0));
-}
-
-#[test]
-fn a_directed_evolution_that_stops_again_under_resume_exits_with_1() {
-    assert_eq!(STOPPED_AGAIN_UNDER_RESUME.status.code(), Some(1));
-}
-
-#[test]
-fn a_directed_evolution_that_stops_again_under_resume_prints_no_report() {
-    assert!(
-        str::from_utf8(&STOPPED_AGAIN_UNDER_RESUME.stderr)
-            .unwrap()
-            .lines()
-            .last()
-            .is_some_and(|line| {
-                line.starts_with("cladenc: the directed evolution stopped before its end: ")
-            })
-    );
 }

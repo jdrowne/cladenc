@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use test_inputs::{benchmark, benchmark_named, temporary_directory};
+use test_inputs::{Disk, benchmark, benchmark_named_in, temporary_directory};
 
 fn held_by(directory: &Path) -> Vec<String> {
     let mut held: Vec<String> = fs::read_dir(directory)
@@ -50,7 +50,7 @@ fn each_task_of_a_benchmark_has_an_environment_an_instruction_a_configuration_an
 fn a_benchmark_given_a_name_is_the_directory_of_that_name() {
     let directory = temporary_directory();
     assert_eq!(
-        benchmark_named(directory.path(), "refactoring", &["t1"]),
+        benchmark_named_in(&Disk, directory.path(), "refactoring", &["t1"]),
         directory.path().join("refactoring")
     );
 }
@@ -59,7 +59,8 @@ fn a_benchmark_given_a_name_is_the_directory_of_that_name() {
 fn a_benchmark_given_a_name_holds_a_directory_for_each_of_its_tasks() {
     let directory = temporary_directory();
     assert_eq!(
-        held_by(&benchmark_named(
+        held_by(&benchmark_named_in(
+            &Disk,
             directory.path(),
             "refactoring",
             &["t2", "t1"]
@@ -72,6 +73,6 @@ fn a_benchmark_given_a_name_holds_a_directory_for_each_of_its_tasks() {
 fn a_benchmark_given_a_name_stands_beside_the_one_named_benchmark() {
     let directory = temporary_directory();
     benchmark(directory.path(), &["t1"]);
-    benchmark_named(directory.path(), "refactoring", &["t1"]);
+    benchmark_named_in(&Disk, directory.path(), "refactoring", &["t1"]);
     assert_eq!(held_by(directory.path()), ["benchmark", "refactoring"]);
 }

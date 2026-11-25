@@ -3,15 +3,10 @@ use std::sync::LazyLock;
 
 use tempfile::TempDir;
 
-pub static ENDED: LazyLock<(TempDir, Output)> = LazyLock::new(solved_every_task);
-
-pub static UNCHANGED: LazyLock<(TempDir, Output)> = LazyLock::new(|| ran("exit 0"));
+pub static ENDED: LazyLock<(TempDir, Output)> =
+    LazyLock::new(|| ran(test_inputs::SOLVE_EVERY_TASK));
 
 pub static STOPPED: LazyLock<(TempDir, Output)> = LazyLock::new(|| ran("exit 125"));
-
-pub fn solved_every_task() -> (TempDir, Output) {
-    ran(test_inputs::SOLVE_EVERY_TASK)
-}
 
 fn ran(run_command: &str) -> (TempDir, Output) {
     let directory = test_inputs::temporary_directory();

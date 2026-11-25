@@ -1,29 +1,21 @@
-use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
 
-use serde_json::Value;
-
 use crate::shared::ENDED;
 
-fn report(directory: &Path, json: Option<&str>) -> Output {
+fn report(directory: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("report")
         .arg(format!(
             "--outputs-dir={}",
             directory.join("outputs").display()
         ))
-        .args(json)
         .output()
         .unwrap()
 }
 
 fn table_of(directory: &Path) -> String {
-    String::from_utf8(report(directory, None).stdout).unwrap()
-}
-
-fn object_of(directory: &Path) -> Value {
-    serde_json::from_slice(&report(directory, Some("--json")).stdout).unwrap()
+    String::from_utf8(report(directory).stdout).unwrap()
 }
 
 fn up_to_the_seconds(table: &str) -> String {
@@ -45,15 +37,6 @@ fn up_to_the_seconds(table: &str) -> String {
     above + &rows
 }
 
-fn without_the_seconds(mut object: Value) -> Value {
-    for harness in object["harnesses"].as_array_mut().unwrap() {
-        let values = harness.as_object_mut().unwrap();
-        values.remove("attempt_seconds");
-        values.remove("procreation_seconds");
-    }
-    object
-}
-
 #[test]
 fn report_prints_the_table() {
     let (directory, _run) = &*ENDED;
@@ -73,103 +56,7 @@ fn report_prints_the_table() {
 }
 
 #[test]
-fn with_json_report_prints_an_object_holding_the_same_values() {
-    let (directory, _run) = &*ENDED;
-    let values: Value = serde_json::from_str(concat!(
-        r#"{"ended":true,"model":"a-model","model_url":"http://models.example/v1","#,
-        r#""procreations_started":1,"max_procreations":1,"best_harness":1,"#,
-        r#""selection_tasks_completed_by_any":1,"selection_tasks":1,"#,
-        r#""corroboration_tasks_completed_by_any":1,"corroboration_tasks":1,"#,
-        r#""non_holdout_tasks_completed_by_any":1,"non_holdout_tasks":1,"#,
-        r#""corroboration_lead":{"only_best_harness_completed":1,"#,
-        r#""only_primogenitor_completed":0,"likelihood_by_luck":0.5},"#,
-        r#""experiments":{"conducted":0,"progenitors_child_created":0,"#,
-        r#""singleton_control_group_harness_created":0,"both_created":0,"#,
-        r#""only_progenitors_child_completed":0,"#,
-        r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":null},"#,
-        r#""harnesses":["#,
-        r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
-        r#""selection_completed":0,"selection_not_completed":1,"#,
-        r#""corroboration_completed":0,"corroboration_not_completed":1,"#,
-        r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
-        r#""clade_completed":1,"clade_not_completed":1,"clade_score":0.5},"#,
-        r#"{"id":1,"progenitor":0,"experiment":null,"state":"created","#,
-        r#""selection_completed":1,"selection_not_completed":0,"#,
-        r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
-        r#""non_holdout_completed":1,"non_holdout_not_completed":0,"#,
-        r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0}]}"#,
-    ))
-    .unwrap();
-    assert_eq!(without_the_seconds(object_of(directory.path())), values);
-}
-
-#[test]
-fn the_table_of_a_report_ends_with_the_seconds_of_the_attempts_and_of_the_procreation() {
-    let (directory, _run) = &*ENDED;
-    assert!(
-        table_of(directory.path())
-            .lines()
-            .nth(7)
-            .unwrap()
-            .ends_with("  attempt seconds  procreation seconds")
-    );
-}
-
-#[test]
-fn report_shows_the_seconds_that_the_attempts_of_each_harness_took_together() {
-    let (directory, _run) = &*ENDED;
-    let object = object_of(directory.path());
-    assert_eq!(
-        [0, 1].map(|harness: usize| {
-            object["harnesses"][harness]["attempt_seconds"]
-                .as_f64()
-                .unwrap()
-                > 0.0
-        }),
-        [true, true]
-    );
-}
-
-#[test]
-fn report_shows_the_seconds_that_the_procreation_that_made_a_child_took() {
-    let (directory, _run) = &*ENDED;
-    assert!(
-        object_of(directory.path())["harnesses"][1]["procreation_seconds"]
-            .as_f64()
-            .unwrap()
-            > 0.0
-    );
-}
-
-#[test]
-fn report_shows_no_seconds_of_a_procreation_for_the_primogenitor() {
-    let (directory, _run) = &*ENDED;
-    assert!(object_of(directory.path())["harnesses"][0]["procreation_seconds"].is_null());
-}
-
-#[test]
-fn with_json_report_prints_the_object_on_one_line() {
-    let (directory, _run) = &*ENDED;
-    assert_eq!(
-        String::from_utf8(report(directory.path(), Some("--json")).stdout)
-            .unwrap()
-            .lines()
-            .count(),
-        1
-    );
-}
-
-#[test]
 fn report_exits_with_0() {
     let (directory, _run) = &*ENDED;
-    assert_eq!(report(directory.path(), None).status.code(), Some(0));
-}
-
-#[test]
-fn report_leaves_the_journal_unchanged() {
-    let (directory, _run) = &*ENDED;
-    let journal = directory.path().join("outputs/journal.jsonl");
-    let before = fs::read(&journal).unwrap();
-    report(directory.path(), None);
-    assert_eq!(fs::read(&journal).unwrap(), before);
+    assert_eq!(report(directory.path()).status.code(), Some(0));
 }

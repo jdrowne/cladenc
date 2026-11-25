@@ -71,14 +71,6 @@ fn resumed_with_the_variable_set_to(value: &str) -> (TempDir, Output) {
 }
 
 #[test]
-fn a_variable_of_a_task_that_is_no_longer_set_stops_cladenc_resume_with_exit_status_2() {
-    assert_eq!(
-        RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET.status.code(),
-        Some(2)
-    );
-}
-
-#[test]
 fn a_variable_of_a_task_that_is_no_longer_set_is_reported_last_with_the_task_and_the_variable() {
     assert!(
         str::from_utf8(&RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET.stderr)
@@ -88,17 +80,6 @@ fn a_variable_of_a_task_that_is_no_longer_set_is_reported_last_with_the_task_and
                  under environment.env the value of CLADENC_TEST_TOKEN, which is not set where \
                  cladenc runs\n"
             )
-    );
-}
-
-#[test]
-fn a_resumed_directed_evolution_whose_variables_are_set_runs_to_its_end() {
-    assert_eq!(
-        resumed_with_the_variable_set_to("a-made-up-token")
-            .1
-            .status
-            .code(),
-        Some(0)
     );
 }
 

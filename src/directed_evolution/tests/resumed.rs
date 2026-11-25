@@ -55,6 +55,12 @@ fn the_containers_that_were_removed_are_told() {
 }
 
 #[test]
+fn nothing_is_told_of_containers_where_none_was_left_running() {
+    let said = resumed_by(Double::default()).said;
+    assert!(!said.contains("removed"));
+}
+
+#[test]
 fn a_directed_evolution_whose_containers_cannot_be_listed_is_not_resumed() {
     let docker = Double::default().answering(&["ps"], &[REFUSED]);
     assert!(matches!(
@@ -106,6 +112,12 @@ fn the_journal_of_a_directed_evolution_holds_the_file_of_the_key_and_not_the_key
         ),
         (false, true)
     );
+}
+
+#[test]
+fn a_directed_evolution_says_its_key_nowhere() {
+    let said = given::started(Double::default(), with_a_key).said;
+    assert!(!said.contains("a-made-up-key"));
 }
 
 #[test]

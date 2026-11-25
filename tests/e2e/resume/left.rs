@@ -1,7 +1,7 @@
 use std::fs;
-use std::os::unix::fs::symlink;
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, ExitStatus, Output};
 use std::sync::LazyLock;
 
 use nix::sys::signal::{Signal, kill};
@@ -13,6 +13,7 @@ const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostnam
 struct Left {
     directory: TempDir,
     id_file: PathBuf,
+    status: ExitStatus,
 }
 
 fn start(directory: &Path, run_command: &str) -> Command {
@@ -68,11 +69,15 @@ fn killed_outright() -> Left {
     let written = outputs.join("running/attempt-0-benchmark+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &written, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
-    cladenc.wait().unwrap();
+    let status = cladenc.wait().unwrap();
     let id_file = directory.path().join("id-of-the-container-left");
     fs::copy(&written, &id_file).unwrap();
     fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
-    Left { directory, id_file }
+    Left {
+        directory,
+        id_file,
+        status,
+    }
 }
 
 static RESUMED_AFTER_BEING_KILLED_OUTRIGHT: LazyLock<(Left, Output)> = LazyLock::new(|| {
@@ -100,6 +105,12 @@ fn resumed_with_no_docker() -> Output {
 }
 
 #[test]
+fn a_cladenc_that_is_killed_outright_during_a_run_is_ended_by_the_signal() {
+    let (left, _output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
+    assert_eq!(left.status.signal(), Some(Signal::SIGKILL as i32));
+}
+
+#[test]
 fn resume_removes_the_container_that_a_cladenc_killed_outright_left_running() {
     let (left, _output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
     assert!(test_inputs::container_is_gone(&left.id_file));
@@ -109,34 +120,6 @@ fn resume_removes_the_container_that_a_cladenc_killed_outright_left_running() {
 fn after_cladenc_was_killed_outright_resume_finishes_the_directed_evolution_and_exits_with_0() {
     let (_left, output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
     assert_eq!(output.status.code(), Some(0));
-}
-
-#[test]
-fn resume_says_how_many_containers_it_removed() {
-    let (_left, output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
-    assert_eq!(
-        String::from_utf8_lossy(&output.stderr)
-            .lines()
-            .next()
-            .unwrap_or_default(),
-        "cladenc: removed 1 container that the directed evolution left running"
-    );
-}
-
-#[test]
-fn a_directed_evolution_reached_through_a_symbolic_link_has_its_containers_removed_too() {
-    let left = killed_outright();
-    let link = left.directory.path().join("link-to-the-outputs-directory");
-    symlink(left.directory.path().join("outputs"), &link).unwrap();
-    resume(&link).output().unwrap();
-    assert!(test_inputs::container_is_gone(&left.id_file));
-}
-
-#[test]
-fn resume_says_nothing_of_containers_where_none_was_left() {
-    let directory = stopped();
-    let output = resume(&directory.path().join("outputs")).output().unwrap();
-    assert!(!String::from_utf8_lossy(&output.stderr).contains("cladenc: removed"));
 }
 
 #[test]

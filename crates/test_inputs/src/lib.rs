@@ -201,10 +201,6 @@ pub fn benchmark_in(files: &dyn Files, directory: &Path, tasks: &[&str]) -> Path
     benchmark_named_in(files, directory, "benchmark", tasks)
 }
 
-pub fn benchmark_named(directory: &Path, name: &str, tasks: &[&str]) -> PathBuf {
-    benchmark_named_in(&Disk, directory, name, tasks)
-}
-
 pub fn benchmark_named_in(
     files: &dyn Files,
     directory: &Path,
@@ -373,13 +369,12 @@ pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
     fs::remove_file(marker).expect("the marker can be removed");
 }
 
-pub fn grader(directory: &Path, task: &str, command: &str) {
-    let grader = directory.join("benchmark").join(task).join("tests/test.sh");
-    fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
-}
-
 pub fn kept_grader(outputs_directory: &Path, task: &str, command: &str) {
-    grader(&outputs_directory.join("benchmarks"), task, command);
+    let grader = outputs_directory
+        .join("benchmarks/benchmark")
+        .join(task)
+        .join("tests/test.sh");
+    fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

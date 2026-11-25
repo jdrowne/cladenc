@@ -261,3 +261,16 @@ fn an_outputs_directory_that_does_not_exist_prints_nothing_on_standard_output() 
 fn an_outputs_directory_with_no_path_gives_exit_status_2() {
     assert_eq!(ran(&Memory::default(), PathBuf::new(), false).status, 2);
 }
+
+#[test]
+fn a_report_leaves_the_journal_unchanged() {
+    let outputs_directory = outputs_directory_of(&ended());
+    let journal = journal::path(outputs_directory.path());
+    let before = outputs_directory.read_to_string(&journal).unwrap();
+    let _shown = ran(
+        &outputs_directory,
+        outputs_directory.path().to_owned(),
+        false,
+    );
+    assert_eq!(outputs_directory.read_to_string(&journal).unwrap(), before);
+}

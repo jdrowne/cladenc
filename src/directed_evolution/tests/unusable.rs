@@ -64,6 +64,20 @@ fn an_outputs_directory_in_use_cannot_be_resumed() {
 }
 
 #[test]
+fn an_outputs_directory_in_use_has_nothing_asked_of_docker() {
+    let directory = holding("");
+    let _in_use = Journal::open(&directory, directory.path()).unwrap();
+    let docker = Double::default().on(&directory);
+    let _refused = directed_evolution::resume(
+        docker.outside(),
+        directory.path(),
+        &AtomicBool::new(false),
+        &mut io::sink(),
+    );
+    assert!(docker.asked().is_empty());
+}
+
+#[test]
 fn an_outputs_directory_whose_journal_cannot_be_read_cannot_be_resumed() {
     assert!(matches!(
         resumed(&holding("not a record\n")),

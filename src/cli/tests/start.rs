@@ -13,6 +13,27 @@ fn ran(change: impl FnOnce(&Memory, &mut StartOptions)) -> Ran {
     given::executed(Double::default(), &directory, start)
 }
 
+fn outputs_directory_is_left_by(change: impl FnOnce(&Memory, &mut StartOptions)) -> bool {
+    let directory = Memory::default();
+    let mut options = given::options(&directory);
+    change(&directory, &mut options);
+    let outputs_directory = options.outputs_dir.clone();
+    let start = Command::Start(Box::new(options));
+    let _refused = given::executed(Double::default(), &directory, start);
+    directory.exists(outputs_directory)
+}
+
+fn with_a_task_that_lacks_its_grader(directory: &Memory, options: &mut StartOptions) {
+    directory
+        .remove_dir_all(options.benchmark[0].join("t1/tests"))
+        .unwrap();
+}
+
+fn with_percentages_that_together_hold_out_every_task(_: &Memory, options: &mut StartOptions) {
+    options.selection_tasks_percentage = 50.0;
+    options.corroboration_tasks_percentage = 25.0;
+}
+
 fn with_a_missing_benchmark(directory: &Memory, options: &mut StartOptions) {
     options.benchmark = vec![directory.path().join("missing")];
 }
@@ -217,5 +238,54 @@ fn a_percentage_that_leaves_no_corroboration_task_is_refused_before_the_outputs_
         ran(with_a_percentage_that_leaves_no_corroboration_task)
             .errors
             .starts_with("cladenc: --corroboration-tasks-percentage takes ")
+    );
+}
+
+#[test]
+fn a_benchmark_that_is_refused_leaves_no_outputs_directory() {
+    assert!(!outputs_directory_is_left_by(
+        with_a_task_that_lacks_its_grader
+    ));
+}
+
+#[test]
+fn a_dockerfile_that_is_refused_leaves_no_outputs_directory() {
+    assert!(!outputs_directory_is_left_by(with_a_missing_dockerfile));
+}
+
+#[test]
+fn a_selection_tasks_percentage_that_is_refused_leaves_no_outputs_directory() {
+    assert!(!outputs_directory_is_left_by(
+        with_a_percentage_that_leaves_no_selection_task
+    ));
+}
+
+#[test]
+fn a_corroboration_tasks_percentage_that_is_refused_leaves_no_outputs_directory() {
+    assert!(!outputs_directory_is_left_by(
+        with_a_percentage_that_leaves_no_corroboration_task
+    ));
+}
+
+#[test]
+fn percentages_that_together_hold_out_every_task_leave_no_outputs_directory() {
+    assert!(!outputs_directory_is_left_by(
+        with_percentages_that_together_hold_out_every_task
+    ));
+}
+
+#[test]
+fn a_directed_evolution_that_finishes_leaves_its_outputs_directory() {
+    assert!(outputs_directory_is_left_by(|_, _| {}));
+}
+
+#[test]
+fn every_line_of_standard_error_up_to_the_report_is_a_sentence_of_cladenc() {
+    assert!(
+        ran(|_, _| {})
+            .errors
+            .lines()
+            .take_while(|line| !line.starts_with("model "))
+            .all(|line| line.starts_with("cladenc: "))
     );
 }

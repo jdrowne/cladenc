@@ -21,6 +21,7 @@ mod readme;
 mod readme_of_collect;
 mod readme_of_graders;
 mod readme_of_paths;
+mod refused;
 mod report;
 mod resume;
 mod start;
