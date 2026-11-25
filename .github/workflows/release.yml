@@ -7,12 +7,12 @@ defaults:
     shell: bash
 env:
   IMAGES: debian:stable-slim goreleaser/nfpm
-  TESTS_OF_THE_SHARE: |-
+  TESTS_OF_THE_SHARD: |-
     sub(/: test$/, "") {
       file = $0
       sub(/::[^:]*$/, "", file)
       if (!(file in dealt)) dealt[file] = files++
-      if (dealt[file] % shares == share) print
+      if (dealt[file] % shards == shard) print
     }
 jobs:
   assert-coverage:
@@ -769,7 +769,7 @@ jobs:
           tar -xf debug.tar
           target/debug/test-e2e --test-threads 8
   integration-test-coverage:
-    name: integration-test-coverage-share-${{ matrix.share }}
+    name: integration-test-coverage-shard-${{ matrix.shard }}
     needs:
       - build-coverage
       - cache-images
@@ -790,38 +790,38 @@ jobs:
       - name: Load the images
         run: docker load --input images.tar
       - env:
-          SHARE: ${{ matrix.share }}
-          SHARES: ${{ strategy.job-total }}
-          SHARE_INDEX: ${{ strategy.job-index }}
+          SHARD: ${{ matrix.shard }}
+          SHARDS: ${{ strategy.job-total }}
+          SHARD_INDEX: ${{ strategy.job-index }}
         name: Integration tests, keeping their profiles
         run: |
           tar -xPf coverage.tar
           source coverage.env
-          profiles="$PWD/target/integration-$SHARE-%p-%m.profraw"
+          profiles="$PWD/target/integration-$SHARD-%p-%m.profraw"
           export LLVM_PROFILE_FILE="$profiles"
           tests="$(cat target/test-integration)"
           "$tests" --list --format terse |
-            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
-              "$TESTS_OF_THE_SHARE" > share.txt
+            awk -v shard="$SHARD_INDEX" -v shards="$SHARDS" \
+              "$TESTS_OF_THE_SHARD" > shard.txt
           xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
-            < share.txt
-          tar -cf "profiles-integration-$SHARE.tar" target/*.profraw
+            < shard.txt
+          tar -cf "profiles-integration-$SHARD.tar" target/*.profraw
       - name: Hand on the profiles
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-integration-${{ matrix.share }}
-          path: profiles-integration-${{ matrix.share }}.tar
+          name: coverage-integration-${{ matrix.shard }}
+          path: profiles-integration-${{ matrix.shard }}.tar
           retention-days: 1
     strategy:
       fail-fast: false
       matrix:
-        share:
+        shard:
           - 1
           - 2
           - 3
           - 4
   integration-test-debug:
-    name: integration-test-debug-share-${{ matrix.share }}
+    name: integration-test-debug-shard-${{ matrix.shard }}
     needs:
       - build-debug
       - cache-images
@@ -842,21 +842,21 @@ jobs:
       - name: Load the images
         run: docker load --input images.tar
       - env:
-          SHARES: ${{ strategy.job-total }}
-          SHARE_INDEX: ${{ strategy.job-index }}
+          SHARDS: ${{ strategy.job-total }}
+          SHARD_INDEX: ${{ strategy.job-index }}
         name: Integration tests
         run: |
           tar -xf debug.tar
           tests=target/debug/test-integration
           "$tests" --list --format terse |
-            awk -v share="$SHARE_INDEX" -v shares="$SHARES" \
-              "$TESTS_OF_THE_SHARE" > share.txt
+            awk -v shard="$SHARD_INDEX" -v shards="$SHARDS" \
+              "$TESTS_OF_THE_SHARD" > shard.txt
           xargs --no-run-if-empty "$tests" --test-threads 8 --exact \
-            < share.txt
+            < shard.txt
     strategy:
       fail-fast: false
       matrix:
-        share:
+        shard:
           - 1
           - 2
           - 3

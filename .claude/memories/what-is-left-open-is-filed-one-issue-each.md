@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 3d48163d-c206-4cff-b95e-db6e83b6a501
-  modified: 2026-11-25T03:14:47.027Z
+  modified: 2026-11-25T13:23:12.863Z
 ---
 
 # What is left open is filed, one issue each
@@ -17,7 +17,7 @@ When work ends with things the user has to weigh, such as a rule the session cho
 **How to apply:**
 
 - Write each issue for a reader who did not follow the work: what happened, what comes of it, what a person has to decide, the choices, and a recommendation marked as the session's, per [[before-an-issue-is-labelled-needs-decision]] and [[one-indivisible-problem-per-issue]].
-- Before filing, find out what comes of the thing, with numbers where there are any: one of the five, shares of tests that are not even, cost almost nothing once it was measured. A thing of which nothing comes and which is nobody's to decide is left out.
+- Before filing, find out what comes of the thing, with numbers where there are any: one of the five, shards of tests that are not even, cost almost nothing once it was measured. A thing of which nothing comes and which is nobody's to decide is left out.
 - In the reply, give the count, one line for each issue, and which one to take first. Write an order as edges, per [[a-blocked-by-edge-sets-the-order-of-the-work]].
 - A thing the session can settle within the work at hand is settled there, per [[room-to-be-creative]], and is not filed.
 
