@@ -112,12 +112,12 @@ impl OutputsDirectory {
             .map(|()| environment)
     }
 
-    pub fn grader_environment(&self, task: &str) -> PathBuf {
-        self.environment(task).join("grader")
+    pub fn verifier_environment(&self, task: &str) -> PathBuf {
+        self.environment(task).join("verifier")
     }
 
-    pub(crate) fn start_grader_environment(&self, task: &str) -> io::Result<PathBuf> {
-        let environment = self.grader_environment(task);
+    pub(crate) fn start_verifier_environment(&self, task: &str) -> io::Result<PathBuf> {
+        let environment = self.verifier_environment(task);
         self.files
             .make_directories(&environment)
             .map(|()| environment)
@@ -299,7 +299,7 @@ impl OutputsDirectory {
         files
             .list(&self.harness(harness))
             .and_then(|_| files.make_directory(&running))
-            .and_then(|()| files.make_directories(&running.join("grader/logs/verifier")))
+            .and_then(|()| files.make_directories(&running.join("verifier/logs/verifier")))
             .and_then(|()| {
                 files.copy(
                     &self.task(task).join(SPECIFICATION),

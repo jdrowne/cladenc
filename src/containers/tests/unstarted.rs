@@ -18,7 +18,7 @@ const LAUNCH: Launch<'static> = Launch {
         key: None,
     },
     procreation_timeout: 30,
-    max_grader_health_check_retries: 0,
+    max_verifier_health_check_retries: 0,
     max_task_health_check_retries: 0,
 };
 

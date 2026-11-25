@@ -6,12 +6,12 @@ use std::time::Duration;
 use super::DirectedEvolutionError;
 use super::said::{Environments, Said, say};
 use crate::benchmark::{self, EnvironmentConfiguration, TaskConfiguration};
-use crate::containers::{self, ContainerError, Docker, Environment, GraderImage, Host, Machine};
+use crate::containers::{self, ContainerError, Docker, Environment, Host, Machine, VerifierImage};
 use crate::journal::Settings;
 
-const OF_THE_GRADER: &str = "-grader";
+const OF_THE_VERIFIER: &str = "-verifier";
 const OF_THE_TASK: [&str; 2] = ["cpus", "memory_mb"];
-const OF_ITS_GRADER: [&str; 2] = [
+const OF_ITS_VERIFIER: [&str; 2] = [
     "verifier.environment.cpus",
     "verifier.environment.memory_mb",
 ];
@@ -28,7 +28,7 @@ impl<'a> Built<'a> {
             images: settings
                 .environments()
                 .into_iter()
-                .flat_map(|(_task, image)| [of_the_grader(&image), image])
+                .flat_map(|(_task, image)| [of_the_verifier(&image), image])
                 .collect(),
         }
     }
@@ -40,14 +40,14 @@ impl Drop for Built<'_> {
     }
 }
 
-pub(super) fn of_the_grader(image: &str) -> String {
-    format!("{image}{OF_THE_GRADER}")
+pub(super) fn of_the_verifier(image: &str) -> String {
+    format!("{image}{OF_THE_VERIFIER}")
 }
 
 #[derive(Clone, Copy)]
 pub(super) enum Whose {
     TheTask,
-    TheGrader,
+    TheVerifier,
 }
 
 pub(super) struct Making<'a> {
@@ -84,7 +84,7 @@ pub(super) fn made(
             megabytes(configuration.memory_megabytes),
         ];
         making.fits(&task, OF_THE_TASK, asked)?;
-        let named = of_the_grader(&image);
+        let named = of_the_verifier(&image);
         let image = match configuration.docker_image.clone() {
             Some(given) => making.take(Whose::TheTask, &task, given)?,
             None => {
@@ -93,15 +93,15 @@ pub(super) fn made(
                 making.build(Whose::TheTask, &task, image, time_limit)?
             }
         };
-        let grader = configuration
-            .grader_environment
+        let verifier = configuration
+            .verifier_environment
             .as_ref()
-            .map(|own| making.grader(&task, own, [&image, &named]))
+            .map(|own| making.verifier(&task, own, [&image, &named]))
             .transpose()?;
         let environment = Environment {
             image,
             configuration,
-            grader,
+            verifier,
         };
         environments.insert(task, environment);
     }
@@ -168,7 +168,7 @@ impl Making<'_> {
                 task,
                 image: &image,
             },
-            Whose::TheGrader => Environments::GraderTaking {
+            Whose::TheVerifier => Environments::VerifierTaking {
                 task,
                 image: &image,
             },
@@ -180,8 +180,8 @@ impl Making<'_> {
             (Err(error), Whose::TheTask) => {
                 Err(DirectedEvolutionError::NotOnTheMachine { task, image, error })
             }
-            (Err(error), Whose::TheGrader) => {
-                Err(DirectedEvolutionError::GraderNotOnTheMachine { task, image, error })
+            (Err(error), Whose::TheVerifier) => {
+                Err(DirectedEvolutionError::VerifierNotOnTheMachine { task, image, error })
             }
         }
     }
@@ -198,7 +198,7 @@ impl Making<'_> {
                 task,
                 image: &image,
             },
-            Whose::TheGrader => Environments::GraderBuilding {
+            Whose::TheVerifier => Environments::VerifierBuilding {
                 task,
                 image: &image,
             },
@@ -209,8 +209,8 @@ impl Making<'_> {
             Whose::TheTask => {
                 containers::build_environment(host, task, &image, time_limit, self.stop)
             }
-            Whose::TheGrader => {
-                containers::build_grader_environment(host, task, &image, time_limit, self.stop)
+            Whose::TheVerifier => {
+                containers::build_verifier_environment(host, task, &image, time_limit, self.stop)
             }
         };
         match built {
@@ -233,7 +233,7 @@ impl Making<'_> {
                 error: &error,
                 outputs_directory,
             },
-            Whose::TheGrader => Environments::GraderNotBuilt {
+            Whose::TheVerifier => Environments::VerifierNotBuilt {
                 task,
                 error: &error,
                 outputs_directory,
@@ -243,42 +243,42 @@ impl Making<'_> {
         let task = task.to_owned();
         match whose {
             Whose::TheTask => DirectedEvolutionError::Environment { task, error },
-            Whose::TheGrader => DirectedEvolutionError::GraderEnvironment { task, error },
+            Whose::TheVerifier => DirectedEvolutionError::VerifierEnvironment { task, error },
         }
     }
 
-    fn grader(
+    fn verifier(
         &mut self,
         task: &str,
         own: &EnvironmentConfiguration,
         [image, named]: [&str; 2],
-    ) -> Result<GraderImage, DirectedEvolutionError> {
+    ) -> Result<VerifierImage, DirectedEvolutionError> {
         let asked = [own.cpus, megabytes(own.memory_megabytes)];
-        self.fits(task, OF_ITS_GRADER, asked)?;
+        self.fits(task, OF_ITS_VERIFIER, asked)?;
         if let Some(given) = own.docker_image.clone() {
-            self.take(Whose::TheGrader, task, given)
-                .map(|name| GraderImage {
+            self.take(Whose::TheVerifier, task, given)
+                .map(|name| VerifierImage {
                     name,
-                    holds_grader: true,
+                    holds_verifier: true,
                 })
-        } else if benchmark::holds_grader_dockerfile(
+        } else if benchmark::holds_verifier_dockerfile(
             self.host.outputs_directory.files(),
             &self.host.outputs_directory.task(task),
         ) {
             self.build(
-                Whose::TheGrader,
+                Whose::TheVerifier,
                 task,
                 named.to_owned(),
                 own.build_time_limit,
             )
-            .map(|name| GraderImage {
+            .map(|name| VerifierImage {
                 name,
-                holds_grader: true,
+                holds_verifier: true,
             })
         } else {
-            Ok(GraderImage {
+            Ok(VerifierImage {
                 name: image.to_owned(),
-                holds_grader: false,
+                holds_verifier: false,
             })
         }
     }

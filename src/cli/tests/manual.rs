@@ -207,9 +207,9 @@ fn the_manual_of_start_says_that_a_build_is_not_told_the_model() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_grader_is_not_told_the_model() {
+fn the_manual_of_start_says_that_a_verifier_is_not_told_the_model() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A grader calls no model, and is given none of the three variables of the model."
+        "A verifier calls no model, and is given none of the three variables of the model."
     ));
 }
 

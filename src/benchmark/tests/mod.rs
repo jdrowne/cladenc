@@ -1,7 +1,6 @@
 mod artifacts;
 mod collect;
 mod configuration;
-mod grader_environment;
 mod health_check;
 mod named;
 mod published;
@@ -9,4 +8,5 @@ mod refused;
 mod several;
 mod tasks;
 mod valid;
+mod verifier_environment;
 mod worded;

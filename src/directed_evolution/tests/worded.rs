@@ -142,26 +142,26 @@ fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_s
 }
 
 #[test]
-fn an_image_of_a_grader_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
+fn a_verifier_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
     assert_eq!(
-        worded(DirectedEvolutionError::GraderNotOnTheMachine {
+        worded(DirectedEvolutionError::VerifierNotOnTheMachine {
             task: "benchmark/t1".to_owned(),
-            image: "grader:3".to_owned(),
-            error: io::Error::other("No such image: grader:3"),
+            image: "verifier:3".to_owned(),
+            error: io::Error::other("No such image: verifier:3"),
         }),
-        "the environment of the grader of task benchmark/t1 is not on the machine: its task.toml \
-         names the image grader:3, and cladenc fetches no image: No such image: grader:3"
+        "the verifier environment of task benchmark/t1 is not on the machine: its task.toml \
+         names the image verifier:3, and cladenc fetches no image: No such image: verifier:3"
     );
 }
 
 #[test]
-fn an_environment_of_a_grader_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
+fn a_verifier_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
     assert_eq!(
-        worded(DirectedEvolutionError::GraderEnvironment {
+        worded(DirectedEvolutionError::VerifierEnvironment {
             task: "benchmark/t1".to_owned(),
             error: ContainerError::Exit(1),
         }),
-        "the environment of the grader of task benchmark/t1 was not built: its build exited with \
+        "the verifier environment of task benchmark/t1 was not built: its build exited with \
          status 1"
     );
 }
@@ -276,22 +276,22 @@ fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_har
 }
 
 #[test]
-fn a_directed_evolution_that_a_grader_s_health_check_stopped_says_precisely_what_happened() {
+fn a_directed_evolution_that_a_verifier_s_health_check_stopped_says_precisely_what_happened() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
             action: Started::Attempt {
                 harness: 3,
                 task: "parsing/t1".to_owned()
             },
-            error: ContainerError::GraderHealthCheck {
+            error: ContainerError::VerifierHealthCheck {
                 tries: 4,
-                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/grader/health-check"),
+                kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/verifier/health-check"),
             }
         }),
         "the directed evolution stopped before its end: the attempt of harness 3 on task \
-         parsing/t1 was not graded: the health check of the container of its grader did not \
-         pass in 4 tries, so the grader was not run, and \
-         /outputs/running/attempt-3-parsing+t1/grader/health-check holds what the health check \
+         parsing/t1 was not verified: the health check of its verifier container did not \
+         pass in 4 tries, so the verifier was not run, and \
+         /outputs/running/attempt-3-parsing+t1/verifier/health-check holds what the health check \
          printed the last time it ran"
     );
 }

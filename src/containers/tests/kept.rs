@@ -30,7 +30,7 @@ fn kept_with(directories: &[&str], files: &[&str]) -> (Memory, PathBuf) {
 
 fn to_be_given() -> (Memory, PathBuf) {
     let directory = Memory::default();
-    let given = directory.path().join("given-to-the-grader");
+    let given = directory.path().join("given-to-the-verifier");
     (directory, given)
 }
 
@@ -75,7 +75,7 @@ fn no_directory_above_the_directory_of_the_artifacts_is_removed_however_empty() 
 }
 
 #[test]
-fn a_file_made_to_be_given_to_the_grader_is_removed() {
+fn a_file_made_to_be_given_to_the_verifier_is_removed() {
     let (directory, given) = to_be_given();
     directory.write(&given, "").unwrap();
     artifacts::remove(&directory, &given);
@@ -83,7 +83,7 @@ fn a_file_made_to_be_given_to_the_grader_is_removed() {
 }
 
 #[test]
-fn a_directory_made_to_be_given_to_the_grader_is_removed_with_all_it_holds() {
+fn a_directory_made_to_be_given_to_the_verifier_is_removed_with_all_it_holds() {
     let (directory, given) = to_be_given();
     directory.create_dir_all(given.join("app")).unwrap();
     directory.write(given.join("app/report"), "").unwrap();

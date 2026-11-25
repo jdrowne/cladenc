@@ -1,5 +1,5 @@
 use crate::benchmark::{
-    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, GRADER, SPECIFICATION, TESTS,
+    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, SPECIFICATION, TESTS, VERIFIER,
 };
 use crate::file_system::tests::double::Memory;
 
@@ -90,7 +90,7 @@ fn a_task_that_holds_no_directory_named_workspace_is_a_task() {
 #[test]
 fn the_things_a_task_holds_are_named_instruction_md_tests_and_test_sh() {
     assert_eq!(
-        [SPECIFICATION, TESTS, GRADER],
+        [SPECIFICATION, TESTS, VERIFIER],
         ["instruction.md", "tests", "test.sh"]
     );
 }

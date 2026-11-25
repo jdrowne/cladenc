@@ -14,7 +14,7 @@ const ENVIRONMENTS_BUILT: [&str; 2] = [
      OUTPUTS/benchmarks/benchmark/t2/environment",
 ];
 
-const GRADER_BUILT: &str = "docker build --tag cladenc-environments-0123456789abcdef:0-grader \
+const VERIFIER_BUILT: &str = "docker build --tag cladenc-environments-0123456789abcdef:0-verifier \
                             --label cladenc.task=benchmark/t1 --label \
                             cladenc.directed-evolution=OUTPUTS \
                             OUTPUTS/benchmarks/benchmark/t1/tests";
@@ -23,7 +23,7 @@ const REFUSED: Answer = Answer::Refused("docker is not there");
 const MACHINE: Answer = Answer::Printed("8 16777216000\n");
 const IMAGE_GIVEN: &str = "[environment]\ndocker_image = \"an-image:given\"\n";
 const TWO_CPUS: &str = "[environment]\ncpus = 2\n";
-const GRADER_GIVEN: &str = "[verifier.environment]\ndocker_image = \"a-grader:given\"\n";
+const VERIFIER_GIVEN: &str = "[verifier.environment]\ndocker_image = \"a-verifier:given\"\n";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 
 fn of_t1(configuration: &'static str) -> impl FnOnce(&Memory, &mut Settings) {
@@ -37,7 +37,7 @@ fn of_each_task(configuration: &'static str) -> impl FnOnce(&Memory, &mut Settin
     }
 }
 
-fn with_a_dockerfile_of_the_grader(directory: &Memory, _: &mut Settings) {
+fn with_a_dockerfile_of_the_verifier(directory: &Memory, _: &mut Settings) {
     given::configured(directory, "t1", SEPARATE);
     directory
         .write(
@@ -61,9 +61,9 @@ fn on_a_machine(configuration: &'static str) -> Evolved {
     given::started(docker, of_t1(configuration))
 }
 
-fn grader_not_built() -> Evolved {
-    let docker = Double::default().answering(&["build", "grader"], &[Answer::Exited(1)]);
-    given::started(docker, with_a_dockerfile_of_the_grader)
+fn verifier_not_built() -> Evolved {
+    let docker = Double::default().answering(&["build", "verifier"], &[Answer::Exited(1)]);
+    given::started(docker, with_a_dockerfile_of_the_verifier)
 }
 
 #[test]
@@ -208,44 +208,44 @@ fn a_machine_that_cannot_be_asked_what_it_has_ends_the_directed_evolution() {
 }
 
 #[test]
-fn an_image_that_a_task_names_as_the_environment_of_its_grader_is_told() {
-    let said = given::started(Double::default(), of_t1(GRADER_GIVEN)).said;
+fn an_image_that_a_task_names_as_its_verifier_environment_is_told() {
+    let said = given::started(Double::default(), of_t1(VERIFIER_GIVEN)).said;
     assert!(said.contains(
-        "taking the image a-grader:given as the environment of the grader of task benchmark/t1"
+        "taking the image a-verifier:given as the verifier environment of task benchmark/t1"
     ));
 }
 
 #[test]
-fn an_image_of_a_grader_that_the_machine_lacks_ends_the_directed_evolution() {
-    let docker = Double::default().answering(&["inspect", "a-grader:given"], &[REFUSED]);
-    let evolved = given::started(docker, of_t1(GRADER_GIVEN));
+fn a_verifier_image_that_the_machine_lacks_ends_the_directed_evolution() {
+    let docker = Double::default().answering(&["inspect", "a-verifier:given"], &[REFUSED]);
+    let evolved = given::started(docker, of_t1(VERIFIER_GIVEN));
     assert!(matches!(
         evolved.result,
-        Err(DirectedEvolutionError::GraderNotOnTheMachine { task, image, .. })
-            if task == "benchmark/t1" && image == "a-grader:given"
+        Err(DirectedEvolutionError::VerifierNotOnTheMachine { task, image, .. })
+            if task == "benchmark/t1" && image == "a-verifier:given"
     ));
 }
 
 #[test]
-fn the_environment_of_a_grader_with_a_dockerfile_of_its_own_is_built_from_the_tests() {
-    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
-    assert_eq!(evolved.count_of(GRADER_BUILT), 1);
+fn a_verifier_environment_with_a_dockerfile_of_its_own_is_built_from_the_tests() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_verifier);
+    assert_eq!(evolved.count_of(VERIFIER_BUILT), 1);
 }
 
 #[test]
-fn the_container_of_a_grader_built_from_the_tests_is_a_container_of_that_image() {
-    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
+fn a_verifier_container_built_from_the_tests_is_a_container_of_that_image() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_verifier);
     assert_eq!(
-        evolved.count_of(" --detach cladenc-environments-0123456789abcdef:0-grader sleep "),
+        evolved.count_of(" --detach cladenc-environments-0123456789abcdef:0-verifier sleep "),
         1
     );
 }
 
 #[test]
-fn an_environment_of_a_grader_whose_build_fails_ends_the_directed_evolution_with_the_cause() {
+fn a_verifier_environment_whose_build_fails_ends_the_directed_evolution_with_the_cause() {
     assert!(matches!(
-        grader_not_built().result,
-        Err(DirectedEvolutionError::GraderEnvironment {
+        verifier_not_built().result,
+        Err(DirectedEvolutionError::VerifierEnvironment {
             task,
             error: ContainerError::Exit(1),
         }) if task == "benchmark/t1"
@@ -253,21 +253,21 @@ fn an_environment_of_a_grader_whose_build_fails_ends_the_directed_evolution_with
 }
 
 #[test]
-fn an_environment_of_a_grader_whose_build_fails_is_told_with_the_cause() {
-    let said = grader_not_built().said;
+fn a_verifier_environment_whose_build_fails_is_told_with_the_cause() {
+    let said = verifier_not_built().said;
     assert!(said.contains(
-        "the build of the environment of the grader of task benchmark/t1 exited with status 1"
+        "the build of the verifier environment of task benchmark/t1 exited with status 1"
     ));
 }
 
 #[test]
-fn a_grader_with_no_dockerfile_of_its_own_gets_a_container_of_the_image_of_its_task() {
+fn a_verifier_with_no_dockerfile_of_its_own_gets_a_container_of_the_image_of_its_task() {
     let evolved = given::started(Double::default(), of_t1(SEPARATE));
     assert_eq!(evolved.count_of("--detach"), 3);
 }
 
 #[test]
-fn a_grader_that_asks_for_more_processors_than_the_machine_has_ends_the_directed_evolution() {
+fn a_verifier_that_asks_for_more_processors_than_the_machine_has_ends_the_directed_evolution() {
     assert!(matches!(
         on_a_machine("[verifier.environment]\ncpus = 16\n").result,
         Err(DirectedEvolutionError::TooLarge {
@@ -406,33 +406,33 @@ fn a_directed_evolution_that_runs_to_its_end_holds_a_journal() {
 }
 
 #[test]
-fn the_environment_of_a_grader_is_told_to_be_built_with_the_image_it_is_built_as() {
-    let said = given::started(Double::default(), with_a_dockerfile_of_the_grader).said;
+fn a_verifier_environment_is_told_to_be_built_with_the_image_it_is_built_as() {
+    let said = given::started(Double::default(), with_a_dockerfile_of_the_verifier).said;
     assert!(said.contains(
-        "cladenc: building the environment of the grader of task benchmark/t1 as the image \
-         cladenc-environments-0123456789abcdef:0-grader\n"
+        "cladenc: building the verifier environment of task benchmark/t1 as the image \
+         cladenc-environments-0123456789abcdef:0-verifier\n"
     ));
 }
 
 #[test]
-fn the_environment_of_a_grader_is_built_after_that_of_its_task_and_before_that_of_the_next() {
-    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_grader);
+fn a_verifier_environment_is_built_after_that_of_its_task_and_before_that_of_the_next() {
+    let evolved = given::started(Double::default(), with_a_dockerfile_of_the_verifier);
     let starts = [
         "cladenc: building the environment of task benchmark/t1 ",
-        "cladenc: building the environment of the grader of task benchmark/t1 ",
+        "cladenc: building the verifier environment of task benchmark/t1 ",
         "cladenc: building the environment of task benchmark/t2 ",
     ];
     assert_eq!(places_of(&evolved, &starts), [Some(3), Some(4), Some(5)]);
 }
 
 #[test]
-fn a_grader_that_runs_in_a_copy_of_the_environment_of_its_task_has_no_environment_built() {
+fn a_verifier_that_runs_in_a_copy_of_the_environment_of_its_task_has_no_environment_built() {
     let said = given::started(Double::default(), of_t1(SEPARATE)).said;
-    assert!(!said.contains("environment of the grader"));
+    assert!(!said.contains("verifier environment"));
 }
 
 #[test]
-fn a_grader_that_asks_for_more_memory_than_the_machine_has_ends_the_directed_evolution() {
+fn a_verifier_that_asks_for_more_memory_than_the_machine_has_ends_the_directed_evolution() {
     assert!(matches!(
         on_a_machine("[verifier.environment]\nmemory_mb = 32000\n").result,
         Err(DirectedEvolutionError::TooLarge {

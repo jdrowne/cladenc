@@ -15,7 +15,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--max-procreations", "800"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--max-grader-health-check-retries", "3"),
+    ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),
@@ -276,33 +276,33 @@ fn the_primogenitor_has_no_second_name() {
 }
 
 #[test]
-fn the_most_retries_of_the_health_check_of_a_grader_are_the_number_given() {
+fn the_most_retries_of_the_health_check_of_a_verifier_are_the_number_given() {
     assert!(matches!(
-        with("--max-grader-health-check-retries", "5").unwrap().command,
-        Command::Start(options) if options.max_grader_health_check_retries == 5
+        with("--max-verifier-health-check-retries", "5").unwrap().command,
+        Command::Start(options) if options.max_verifier_health_check_retries == 5
     ));
 }
 
 #[test]
-fn the_most_retries_of_the_health_check_of_a_grader_being_0_is_accepted() {
+fn the_most_retries_of_the_health_check_of_a_verifier_being_0_is_accepted() {
     assert!(matches!(
-        with("--max-grader-health-check-retries", "0").unwrap().command,
-        Command::Start(options) if options.max_grader_health_check_retries == 0
+        with("--max-verifier-health-check-retries", "0").unwrap().command,
+        Command::Start(options) if options.max_verifier_health_check_retries == 0
     ));
 }
 
 #[test]
-fn the_most_retries_of_the_health_check_of_a_grader_being_below_0_is_an_error() {
+fn the_most_retries_of_the_health_check_of_a_verifier_being_below_0_is_an_error() {
     assert_eq!(
-        refusal("--max-grader-health-check-retries", "-1"),
+        refusal("--max-verifier-health-check-retries", "-1"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn the_most_retries_of_the_health_check_of_a_grader_not_being_a_number_is_an_error() {
+fn the_most_retries_of_the_health_check_of_a_verifier_not_being_a_number_is_an_error() {
     assert_eq!(
-        refusal("--max-grader-health-check-retries", "many"),
+        refusal("--max-verifier-health-check-retries", "many"),
         ErrorKind::ValueValidation
     );
 }

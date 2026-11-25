@@ -35,7 +35,7 @@ fn prepared(task_toml: &str) -> Prepared {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", FINISHED);
+    test_inputs::kept_verifier(&path, "t1", FINISHED);
     let configuration = TaskConfiguration::read(&Disk, &outputs_directory.task(TASK)).unwrap();
     let built = test_inputs::image();
     containers::build_environment(
@@ -52,7 +52,7 @@ fn prepared(task_toml: &str) -> Prepared {
     let environment = Environment {
         image: built.name.clone(),
         configuration,
-        grader: None,
+        verifier: None,
     };
     Prepared {
         _directory: directory,
@@ -88,7 +88,7 @@ fn containers_at_each_retry(task_toml: &str, max_retries: u64) -> Vec<usize> {
             key: None,
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: max_retries,
     };
     let counted = RefCell::new(Vec::new());

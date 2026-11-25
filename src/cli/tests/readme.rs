@@ -501,8 +501,8 @@ fn the_section_of_cladenc_start_says_that_an_image_that_is_not_on_the_machine_st
 fn the_section_of_cladenc_start_says_what_of_a_task_toml_takes_the_place_of_what_the_image_names() {
     assert!(what_is_said_of("start").contains(
         "`workdir` under `environment` is the working directory of the harness and of the \
-         grader, `user` under `agent` is the user the harness runs as, and `user` under \
-         `verifier` is the user the grader runs as, each user a name or a number."
+         verifier, `user` under `agent` is the user the harness runs as, and `user` under \
+         `verifier` is the user the verifier runs as, each user a name or a number."
     ));
 }
 
@@ -510,7 +510,7 @@ fn the_section_of_cladenc_start_says_what_of_a_task_toml_takes_the_place_of_what
 fn the_section_of_cladenc_start_says_who_is_given_the_variables_of_a_task_toml() {
     assert!(what_is_said_of("start").contains(
         "The variables under `env` under `environment` are given to the container, so to the \
-         harness and the grader alike, and those under `env` under `verifier` to the grader \
+         harness and the verifier alike, and those under `env` under `verifier` to the verifier \
          alone."
     ));
 }
@@ -533,12 +533,12 @@ fn the_section_of_cladenc_start_says_that_the_value_of_a_variable_is_kept_off_co
 }
 
 #[test]
-fn the_section_of_cladenc_start_says_what_time_limits_the_harness_and_the_grader_have() {
+fn the_section_of_cladenc_start_says_what_time_limits_the_harness_and_the_verifier_have() {
     assert!(what_is_said_of("start").contains(
         "The harness has the time limit that the task's `task.toml` gives, as `timeout_sec` \
          under `agent`, and no time limit where it gives none. A harness that runs past its \
          time limit is stopped, with every process it left running, and what it left is judged \
-         all the same. The grader has a time limit of its own, `timeout_sec` under `verifier`, \
+         all the same. The verifier has a time limit of its own, `timeout_sec` under `verifier`, \
          or 600 seconds where the task gives none, counted from the moment the harness ended or \
          was stopped. No flag gives a time limit of an attempt."
     ));
@@ -566,8 +566,8 @@ fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_wa
     assert!(readme().contains(
         "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
          TPU, Windows, MCP servers, a skills directory, a path or a command of a container \
-         other than that of the harness, or the whole container of the harness in the \
-         container of a grader that runs separately."
+         other than that of the harness, or the whole container of the harness in a \
+         verifier container."
     ));
 }
 
@@ -606,7 +606,7 @@ fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
         "The directory of a task holds its task specification in a file named \
          `instruction.md`, [Harbor's task \
          configuration](https://docs.harborframework.com/tasks/configuration) in a file named \
-         `task.toml`, its grader in an executable file named `test.sh` in a directory named \
+         `task.toml`, its verifier in an executable file named `test.sh` in a directory named \
          `tests`,"
     ));
 }
@@ -631,7 +631,7 @@ fn the_flag_of_the_benchmark_says_that_the_paths_a_task_lists_under_artifacts_ar
 fn the_steps_of_cladenc_start_say_when_and_where_the_paths_under_artifacts_are_kept() {
     assert!(what_is_said_of("start").contains(
         "Where the task's `task.toml` lists paths under `artifacts`, `cladenc` keeps each \
-         with the attempt as the harness left it, before the grader is run: at the place the \
+         with the attempt as the harness left it, before the verifier is run: at the place the \
          entry gives as `destination`, or at the path itself without its leading `/`, and, of \
          a directory, without what the patterns the entry lists as `exclude` match."
     ));

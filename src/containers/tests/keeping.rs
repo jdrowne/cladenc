@@ -73,15 +73,15 @@ fn what_the_patterns_of_a_path_match_is_left_out_of_what_is_kept_of_it() {
 }
 
 #[test]
-fn the_paths_a_task_names_are_copied_out_before_its_grader_runs() {
+fn the_paths_a_task_names_are_copied_out_before_its_verifier_runs() {
     let commands = attempted(Double::default(), naming(&[OUT], &[])).commands();
     let copied = commands
         .iter()
         .rposition(|command| command.contains(" cp --follow-link "));
-    let graded = commands
+    let verified = commands
         .iter()
         .position(|command| command.contains(" /tests/test.sh "));
-    assert!(matches!((copied, graded), (Some(copied), Some(graded)) if copied < graded));
+    assert!(matches!((copied, verified), (Some(copied), Some(verified)) if copied < verified));
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn the_published_place_that_a_task_names_is_kept_at_the_destination_the_task_giv
 #[test]
 fn an_attempt_goes_on_where_a_path_the_task_names_cannot_be_copied_out() {
     let docker = Double::default()
-        .grading(|_| true)
+        .verifying(|_| true)
         .answering(&COPIED_OUT, &[REFUSED]);
     let tried = attempted(docker, naming(&[NEVER_MADE], &[]));
     assert_eq!(

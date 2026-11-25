@@ -52,7 +52,7 @@ fn started_from(
         build_command: None,
         model: MODEL,
         procreation_timeout: time_limit,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     containers::run_procreation(
@@ -120,7 +120,7 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
             ..MODEL
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let _ = containers::run_procreation(

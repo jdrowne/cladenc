@@ -62,10 +62,10 @@ fn environment_built_by(docker: Double) -> Built {
     }
 }
 
-fn grader_environment_built_by(docker: Double) -> Built {
+fn verifier_environment_built_by(docker: Double) -> Built {
     let (directory, outputs_directory) = given::made();
     let docker = docker.on(&directory);
-    let result = containers::build_grader_environment(
+    let result = containers::build_verifier_environment(
         given::host(&docker, &outputs_directory),
         TASK,
         IMAGE,
@@ -195,8 +195,8 @@ fn a_build_of_an_environment_that_is_stopped_was_stopped() {
 }
 
 #[test]
-fn the_environment_of_a_grader_is_built_from_the_tests_of_its_task() {
-    let built = grader_environment_built_by(Double::default());
+fn a_verifier_environment_is_built_from_the_tests_of_its_task() {
+    let built = verifier_environment_built_by(Double::default());
     assert_eq!(
         built.commands(),
         [
@@ -207,28 +207,28 @@ fn the_environment_of_a_grader_is_built_from_the_tests_of_its_task() {
 }
 
 #[test]
-fn what_the_build_of_the_environment_of_a_grader_prints_is_kept_with_that_environment() {
-    let built = grader_environment_built_by(Double::default());
+fn what_the_build_of_a_verifier_environment_prints_is_kept_with_that_environment() {
+    let built = verifier_environment_built_by(Double::default());
     assert_eq!(
         built.docker.asked()[0].kept,
-        built.outputs_directory.grader_environment(TASK)
+        built.outputs_directory.verifier_environment(TASK)
     );
 }
 
 #[test]
-fn a_build_of_the_environment_of_a_grader_that_exits_with_zero_has_built_it() {
+fn a_build_of_a_verifier_environment_that_exits_with_zero_has_built_it() {
     assert!(
-        grader_environment_built_by(Double::default())
+        verifier_environment_built_by(Double::default())
             .result
             .is_ok()
     );
 }
 
 #[test]
-fn a_build_of_the_environment_of_a_grader_that_exits_with_another_status_fails_with_it() {
+fn a_build_of_a_verifier_environment_that_exits_with_another_status_fails_with_it() {
     let docker = Double::default().answering(&BUILD, &[Answer::Exited(1)]);
     assert!(matches!(
-        grader_environment_built_by(docker).result,
+        verifier_environment_built_by(docker).result,
         Err(ContainerError::Exit(1))
     ));
 }

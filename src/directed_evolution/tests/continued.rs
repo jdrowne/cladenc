@@ -25,7 +25,7 @@ fn twice(directory: &Memory, settings: &mut Settings) {
 fn working() -> Double {
     Double::default()
         .changing()
-        .grading(|attempt| attempt.starts_with("attempt-1-"))
+        .verifying(|attempt| attempt.starts_with("attempt-1-"))
 }
 
 fn unbroken() -> Evolved {

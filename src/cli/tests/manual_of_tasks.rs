@@ -33,35 +33,33 @@ fn the_manual_of_start_says_as_whom_and_where_the_harness_of_an_attempt_runs() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_grader_runs_where_and_as_whom_the_harness_ran() {
-    assert!(
-        manual_on_one_line("cladenc-start").contains(
-            "its grader is run there, in the same working directory and as the same user,"
-        )
-    );
+fn the_manual_of_start_says_that_the_verifier_runs_where_and_as_whom_the_harness_ran() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "its verifier is run there, in the same working directory and as the same user,"
+    ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_harness_can_neither_read_nor_change_the_grader() {
+fn the_manual_of_start_says_that_the_harness_can_neither_read_nor_change_the_verifier() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("so it can neither read nor change the grader.")
+            .contains("so it can neither read nor change the verifier.")
     );
 }
 
 #[test]
-fn the_manual_of_start_shows_how_the_grader_of_a_task_is_called() {
+fn the_manual_of_start_shows_how_the_verifier_of_a_task_is_called() {
     assert!(manual_on_one_line("cladenc-start").contains("sh -c <TIMER> /tests/test.sh <SECONDS>"));
 }
 
 #[test]
-fn the_manual_of_start_names_what_a_grader_is_given() {
+fn the_manual_of_start_names_what_a_verifier_is_given() {
     let help = manual_on_one_line("cladenc-start");
     let given = [
         "/tests a symbolic link to /var/opt/cladenc/harbor/tests, which",
         "holds a copy of the tests directory of the task, and",
         "nothing that the harness left there",
-        "/logs/verifier an empty directory, for the score of the grader",
+        "/logs/verifier an empty directory, for the score of the verifier",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
 }
@@ -70,7 +68,7 @@ fn the_manual_of_start_names_what_a_grader_is_given() {
 fn the_manual_of_start_names_what_cladenc_makes_before_the_harness_of_an_attempt_is_started() {
     let help = manual_on_one_line("cladenc-start");
     let made = [
-        "change the grader. Before the harness is started, cladenc makes",
+        "change the verifier. Before the harness is started, cladenc makes",
         "/logs a symbolic link to /var/log/cladenc/harbor",
         "/logs/artifacts an empty directory, for what the harness saves to be",
         "kept with the attempt",
@@ -128,19 +126,19 @@ fn the_manual_of_start_says_that_what_was_left_at_tests_is_removed_before_the_li
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_grader_writes_its_score() {
+fn the_manual_of_start_says_where_the_verifier_writes_its_score() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The grader writes its score in /logs/verifier/reward.txt, a single number, or in \
+        "The verifier writes its score in /logs/verifier/reward.txt, a single number, or in \
          /logs/verifier/reward.json, an object of labelled numbers, which is read in place of \
          reward.txt where both are there."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_exit_status_of_the_grader_decides_nothing_more() {
+fn the_manual_of_start_says_that_the_exit_status_of_the_verifier_decides_nothing_more() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("The exit status of the grader decides nothing more.")
+            .contains("The exit status of the verifier decides nothing more.")
     );
 }
 
@@ -168,10 +166,10 @@ fn the_manual_of_start_says_what_each_way_an_attempt_ends_gives() {
          task",
         "exit status 125 of either step or of the health check Docker did not start the container: \
          the directed evolution stops",
-        "a health check of the task, or of the container of the grader, that passes in none of its \
+        "a health check of the task, or of the verifier container, that passes in none of its \
          tries no result is recorded: the directed evolution stops, and cladenc resume carries out \
          the attempt again",
-        "the time limit of the grader the container is removed",
+        "the time limit of the verifier the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
 }
@@ -196,8 +194,8 @@ fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_an_attempt() {
         "container, one to a line after A, C or D",
         "stdout the standard output of the harness",
         "stderr the standard error of the harness",
-        "grader the standard output and the standard error of the grader,",
-        "in stdout and stderr, and in logs/verifier what the grader",
+        "verifier the standard output and the standard error of the verifier,",
+        "in stdout and stderr, and in logs/verifier what the verifier",
     ];
     assert!(kept.iter().all(|line| help.contains(line)));
 }
@@ -455,28 +453,28 @@ fn the_manual_of_start_says_how_a_harness_is_kept_from_reaching_further_than_the
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_grader_may_trust_what_the_harness_left() {
+fn the_manual_of_start_says_that_a_verifier_may_trust_what_the_harness_left() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A grader may trust what the harness left. The grader is started in the container as the \
-         harness left it, and everything there was the harness's to change: tests, build files, \
-         any program the grader starts from the working directory, and the processes the harness \
-         left running."
+        "A verifier may trust what the harness left. The verifier is started in the container as \
+         the harness left it, and everything there was the harness's to change: tests, build \
+         files, any program the verifier starts from the working directory, and the processes the \
+         harness left running."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_which_grader_a_harness_that_changed_the_tests_passes() {
+fn the_manual_of_start_says_which_verifier_a_harness_that_changed_the_tests_passes() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A grader that runs the tests it finds in the working directory is passed by a harness \
+        "A verifier that runs the tests it finds in the working directory is passed by a harness \
          that changed those tests, on a holdout task as on any other."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_which_harness_can_pass_a_grader_that_trusts_nothing_it_left() {
+fn the_manual_of_start_says_which_harness_can_pass_a_verifier_that_trusts_nothing_it_left() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The tests directory of the task is never given to a harness: a grader that keeps what it \
-         relies on there, and takes nothing from the working directory on trust, can be passed \
+        "The tests directory of the task is never given to a harness: a verifier that keeps what \
+         it relies on there, and takes nothing from the working directory on trust, can be passed \
          that way only by a harness that left a process running to change the copy of that \
          directory, or the score, once they are made."
     ));

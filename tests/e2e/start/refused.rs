@@ -19,7 +19,7 @@ fn options(directory: &Path) -> Vec<String> {
         ("--max-procreations", "1".into()),
         ("--max-concurrent-containers", "1".into()),
         ("--procreation-timeout", "30".into()),
-        ("--max-grader-health-check-retries", "0".into()),
+        ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
         ("--selection-tasks-percentage", "25".into()),
         ("--corroboration-tasks-percentage", "25".into()),
@@ -40,7 +40,7 @@ fn refused(options: impl FnOnce(&Path) -> Vec<String>) -> (TempDir, Output) {
     (directory, refused)
 }
 
-fn with_a_task_that_lacks_its_grader(directory: &Path) -> Vec<String> {
+fn with_a_task_that_lacks_its_verifier(directory: &Path) -> Vec<String> {
     let options = options(directory);
     fs::remove_dir_all(directory.join("benchmark/t1/tests")).unwrap();
     options
@@ -54,8 +54,8 @@ fn with_quiet(directory: &Path) -> Vec<String> {
 }
 
 #[test]
-fn a_benchmark_with_a_task_that_lacks_its_grader_exits_with_2() {
-    let (_directory, refused) = refused(with_a_task_that_lacks_its_grader);
+fn a_benchmark_with_a_task_that_lacks_its_verifier_exits_with_2() {
+    let (_directory, refused) = refused(with_a_task_that_lacks_its_verifier);
     assert_eq!(refused.status.code(), Some(2));
 }
 

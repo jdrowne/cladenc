@@ -188,10 +188,10 @@ fn the_instruction_says_where_what_the_commands_of_the_task_printed_is() {
 }
 
 #[test]
-fn the_instruction_says_where_what_the_grader_printed_and_left_is() {
+fn the_instruction_says_where_what_the_verifier_printed_and_left_is() {
     assert!(containers::INSTRUCTION.contains(
-        "the files named stdout and stderr hold what you printed, the directory named grader \
-         holds what the grader of the task printed, in the files named stdout and stderr, and \
+        "the files named stdout and stderr hold what you printed, the directory named verifier \
+         holds what the verifier of the task printed, in the files named stdout and stderr, and \
          the files it left in logs/verifier, "
     ));
 }
@@ -205,10 +205,10 @@ fn the_instruction_says_where_what_the_health_check_printed_is() {
 }
 
 #[test]
-fn the_instruction_says_how_the_grader_judged_the_attempt() {
+fn the_instruction_says_how_the_verifier_judged_the_attempt() {
     assert!(containers::INSTRUCTION.contains(
-        " Once you had ended or were stopped, the grader ran the tests of the task, which you \
-         are not shown, on what you left, or, where the task has its grader run in a container \
+        " Once you had ended or were stopped, the verifier ran the tests of the task, which you \
+         are not shown, on what you left, or, where the task has its verifier run in a container \
          of its own, on nothing but what the directory named artifacts holds, and wrote its \
          score in logs/verifier/reward.txt, or one score for each label in \
          logs/verifier/reward.json: the task was completed where every score is 1. "
@@ -239,29 +239,29 @@ fn a_program_ended_by_a_signal_is_worded() {
 }
 
 #[test]
-fn a_grader_that_was_never_run_is_worded_with_the_tries_and_where_the_health_check_is_kept() {
+fn a_verifier_that_was_never_run_is_worded_with_the_tries_and_where_the_health_check_is_kept() {
     assert_eq!(
-        worded(ContainerError::GraderHealthCheck {
+        worded(ContainerError::VerifierHealthCheck {
             tries: 4,
-            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/grader/health-check"),
+            kept: PathBuf::from("/outputs/running/attempt-3-parsing+t1/verifier/health-check"),
         }),
-        "was not graded: the health check of the container of its grader did not pass in 4 \
-         tries, so the grader was not run, and \
-         /outputs/running/attempt-3-parsing+t1/grader/health-check holds what the health check \
+        "was not verified: the health check of its verifier container did not pass in 4 \
+         tries, so the verifier was not run, and \
+         /outputs/running/attempt-3-parsing+t1/verifier/health-check holds what the health check \
          printed the last time it ran"
     );
 }
 
 #[test]
-fn one_try_of_the_health_check_of_a_grader_is_not_worded_as_several() {
+fn one_try_of_the_health_check_of_a_verifier_is_not_worded_as_several() {
     assert!(
-        worded(ContainerError::GraderHealthCheck {
+        worded(ContainerError::VerifierHealthCheck {
             tries: 1,
             kept: PathBuf::from("/kept"),
         })
         .starts_with(
-            "was not graded: the health check of the container of its grader did not pass in 1 \
-             try, so the grader was not run, "
+            "was not verified: the health check of its verifier container did not pass in 1 \
+             try, so the verifier was not run, "
         )
     );
 }

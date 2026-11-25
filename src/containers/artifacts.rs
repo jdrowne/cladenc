@@ -7,7 +7,7 @@ use crate::benchmark::Artifact;
 use crate::file_system::{FileSystem, Found, Kind};
 
 const KEPT: &str = ".";
-const GIVEN: &str = "given-to-the-grader";
+const GIVEN: &str = "given-to-the-verifier";
 const READ_WRITTEN_AND_RUN: u32 = 0o777;
 
 enum Token {

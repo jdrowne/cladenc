@@ -18,7 +18,7 @@ struct Tried {
 fn tried_with(first_wait: Duration, max_retries: u64, failures: u64) -> Tried {
     let stop = AtomicBool::new(false);
     let backoff = Backoff {
-        checked: Checked::Grader,
+        checked: Checked::Verifier,
         first_wait,
         max_retries,
         stop: &stop,
@@ -103,13 +103,13 @@ fn each_retry_is_told_with_its_number_the_most_retries_and_its_wait() {
         never_passing(A_MILLISECOND, 2).told,
         [
             Retry {
-                checked: Checked::Grader,
+                checked: Checked::Verifier,
                 number: 1,
                 most: 2,
                 wait: A_MILLISECOND,
             },
             Retry {
-                checked: Checked::Grader,
+                checked: Checked::Verifier,
                 number: 2,
                 most: 2,
                 wait: A_MILLISECOND * 2,
@@ -178,7 +178,7 @@ fn no_wait_follows_the_last_retry() {
 fn a_try_that_could_not_be_made_is_an_error() {
     let stop = AtomicBool::new(false);
     let backoff = Backoff {
-        checked: Checked::Grader,
+        checked: Checked::Verifier,
         first_wait: Duration::ZERO,
         max_retries: 3,
         stop: &stop,
@@ -191,7 +191,7 @@ fn a_try_that_could_not_be_made_is_an_error() {
 fn a_retry_that_waits_when_cladenc_is_asked_to_stop_is_stopped() {
     let stop = AtomicBool::new(true);
     let backoff = Backoff {
-        checked: Checked::Grader,
+        checked: Checked::Verifier,
         first_wait: Duration::from_secs(600),
         max_retries: 3,
         stop: &stop,

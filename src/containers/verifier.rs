@@ -7,18 +7,18 @@ use super::docker::Host;
 use super::health_check::{self, Backoff};
 use super::program::{Ending, Limits};
 use super::{
-    ARTIFACTS, Attempt, Checked, ContainerError, GraderImage, HEALTH_CHECK, Retry, artifacts,
+    ARTIFACTS, Attempt, Checked, ContainerError, HEALTH_CHECK, Retry, VerifierImage, artifacts,
     harbor, reward,
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::AttemptResult;
 
-const GRADER: Shell<'static> = Shell {
-    command: harbor::GRADER,
+const VERIFIER: Shell<'static> = Shell {
+    command: harbor::VERIFIER,
     environment: &[],
 };
 
-pub(super) struct Grading<'a> {
+pub(super) struct Verifying<'a> {
     pub(super) host: Host<'a>,
     pub(super) attempt: &'a Attempt<'a>,
     pub(super) running: &'a Path,
@@ -27,9 +27,9 @@ pub(super) struct Grading<'a> {
     pub(super) retrying: &'a dyn Fn(Retry),
 }
 
-impl<'a> Grading<'a> {
+impl<'a> Verifying<'a> {
     pub(super) fn run(&self, up: Up<'_>) -> Result<AttemptResult, ContainerError> {
-        match &self.attempt.environment.grader {
+        match &self.attempt.environment.verifier {
             None => self.run_in(&up, true),
             Some(image) => {
                 drop(up);
@@ -38,37 +38,37 @@ impl<'a> Grading<'a> {
         }
     }
 
-    fn run_apart(&self, image: &GraderImage) -> Result<AttemptResult, ContainerError> {
+    fn run_apart(&self, image: &VerifierImage) -> Result<AttemptResult, ContainerError> {
         let configuration = &self.attempt.environment.configuration;
         let up = self.brought_up(image)?;
-        let user = configuration.grader_user.as_deref().unwrap_or(up.user());
+        let user = configuration.verifier_user.as_deref().unwrap_or(up.user());
         let paths = self.running.join(ARTIFACTS);
         harbor::link_logs(&up)
             .and_then(|()| artifacts::give(&up, &configuration.artifacts, &paths, user))?;
-        self.run_in(&up, !image.holds_grader)
+        self.run_in(&up, !image.holds_verifier)
     }
 
-    fn brought_up(&self, image: &GraderImage) -> Result<Up<'a>, ContainerError> {
+    fn brought_up(&self, image: &VerifierImage) -> Result<Up<'a>, ContainerError> {
         let configuration = &self.attempt.environment.configuration;
-        let grader = self.running.join("grader");
-        let bringing = Bringing::of_the_grader(&image.name, configuration);
+        let verifier = self.running.join("verifier");
+        let bringing = Bringing::of_the_verifier(&image.name, configuration);
         let health_check = configuration
-            .grader_environment
+            .verifier_environment
             .as_ref()
             .and_then(|own| own.health_check.as_ref());
-        let kept = grader.join(HEALTH_CHECK);
+        let kept = verifier.join(HEALTH_CHECK);
         let backoff = Backoff {
-            checked: Checked::Grader,
+            checked: Checked::Verifier,
             first_wait: health_check.map_or(Duration::ZERO, |health_check| health_check.interval),
             max_retries: self.max_retries,
             stop: self.stop,
         };
         let healthy = health_check::retried(&backoff, self.retrying, || {
-            let up = Up::start(self.host, &bringing, &grader)?;
+            let up = Up::start(self.host, &bringing, &verifier)?;
             health_check::passes_where_given(&up, health_check, &kept, self.stop)
                 .map(|passes| passes.then_some(up))
         })?;
-        healthy.ok_or(ContainerError::GraderHealthCheck {
+        healthy.ok_or(ContainerError::VerifierHealthCheck {
             tries: self.max_retries.saturating_add(1),
             kept,
         })
@@ -76,18 +76,18 @@ impl<'a> Grading<'a> {
 
     fn run_in(&self, up: &Up<'_>, tests_are_given: bool) -> Result<AttemptResult, ContainerError> {
         let configuration = &self.attempt.environment.configuration;
-        let limits = Limits::within(configuration.grader_time_limit, self.stop);
-        let grader = self.running.join("grader");
-        let verifier = grader.join("logs/verifier");
+        let limits = Limits::within(configuration.verifier_time_limit, self.stop);
+        let verifier = self.running.join("verifier");
+        let logs = verifier.join("logs/verifier");
         let tests = self
             .host
             .outputs_directory
             .task(self.attempt.task)
             .join(TESTS);
         let run = Run {
-            shell: &GRADER,
-            user: configuration.grader_user.as_deref().unwrap_or(up.user()),
-            variables: &configuration.grader_variables,
+            shell: &VERIFIER,
+            user: configuration.verifier_user.as_deref().unwrap_or(up.user()),
+            variables: &configuration.verifier_variables,
         };
         let given = if tests_are_given {
             harbor::give_tests(up, &tests, run.user)
@@ -96,12 +96,12 @@ impl<'a> Grading<'a> {
         };
         given
             .and_then(|()| harbor::empty_verifier(up, run.user))
-            .and_then(|()| up.run(&run, &grader, limits))
+            .and_then(|()| up.run(&run, &verifier, limits))
             .map(|ending| {
-                up.copy_out_of(harbor::VERIFIER, &verifier);
+                up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
                 match ending {
                     Ending::TimedOut => AttemptResult::TimedOut,
-                    Ending::Exited(_) if reward::completed(up.files(), &verifier) => {
+                    Ending::Exited(_) if reward::completed(up.files(), &logs) => {
                         AttemptResult::Completed
                     }
                     Ending::Exited(_) => AttemptResult::NotCompleted,

@@ -48,16 +48,16 @@ fn a_directed_evolution_goes_on_once_the_health_check_of_a_task_passes() {
     assert_eq!(best, Some(0));
 }
 
-const GRADER_CHECKED: &str = "[verifier.environment.healthcheck]\ncommand = \"test -e \
-                              /graded\"\ninterval_sec = 0.0\nretries = 1\n";
+const VERIFIER_CHECKED: &str = "[verifier.environment.healthcheck]\ncommand = \"test -e \
+                              /verified\"\ninterval_sec = 0.0\nretries = 1\n";
 const STARTED: &str = r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#;
 const FINISHED: &str = r#"{"record":"attempt_finished","harness":0,"task":"benchmark/t1""#;
 const STARTED_AGAIN: &str =
     "cladenc: started again the attempt of harness 0 on task benchmark/t1\n";
 
-fn with_a_health_check_of_the_grader(directory: &Memory, settings: &mut Settings) {
-    settings.max_grader_health_check_retries = 1;
-    given::configured(directory, "t1", GRADER_CHECKED);
+fn with_a_health_check_of_the_verifier(directory: &Memory, settings: &mut Settings) {
+    settings.max_verifier_health_check_retries = 1;
+    given::configured(directory, "t1", VERIFIER_CHECKED);
 }
 
 fn never_ready() -> Evolved {
@@ -65,9 +65,9 @@ fn never_ready() -> Evolved {
     given::started(docker, with_a_health_check)
 }
 
-fn with_a_grader_that_is_never_ready() -> Evolved {
-    let docker = Double::default().answering(&["exec", "test -e /graded"], &[Answer::Exited(1)]);
-    given::started(docker, with_a_health_check_of_the_grader)
+fn with_a_verifier_that_is_never_ready() -> Evolved {
+    let docker = Double::default().answering(&["exec", "test -e /verified"], &[Answer::Exited(1)]);
+    given::started(docker, with_a_health_check_of_the_verifier)
 }
 
 fn journaled(evolved: &Evolved) -> [bool; 2] {
@@ -124,63 +124,63 @@ fn a_directed_evolution_resumed_once_the_task_is_ready_runs_to_its_end() {
 }
 
 #[test]
-fn a_grader_that_is_never_ready_stops_the_directed_evolution_naming_the_attempt_and_the_tries() {
+fn a_verifier_that_is_never_ready_stops_the_directed_evolution_naming_the_attempt_and_the_tries() {
     assert!(matches!(
-        with_a_grader_that_is_never_ready().result,
+        with_a_verifier_that_is_never_ready().result,
         Err(DirectedEvolutionError::Action {
             action: Started::Attempt { harness: 0, task },
-            error: ContainerError::GraderHealthCheck { tries: 2, .. },
+            error: ContainerError::VerifierHealthCheck { tries: 2, .. },
         }) if task == "benchmark/t1"
     ));
 }
 
 #[test]
-fn a_grader_that_is_brought_up_again_for_its_health_check_is_told_with_the_number_of_the_retry() {
-    let said = with_a_grader_that_is_never_ready().said;
+fn a_verifier_that_is_brought_up_again_for_its_health_check_is_told_with_the_number_of_the_retry() {
+    let said = with_a_verifier_that_is_never_ready().said;
     assert!(said.contains(
-        "cladenc: the attempt of harness 0 on task benchmark/t1 is not graded yet: the health \
-         check of the container of its grader did not pass, and cladenc tries again in a new \
+        "cladenc: the attempt of harness 0 on task benchmark/t1 is not verified yet: the health \
+         check of its verifier container did not pass, and cladenc tries again in a new \
          container after 0 seconds, retry 1 of 1\n"
     ));
 }
 
 #[test]
-fn a_grader_that_was_never_run_is_said_with_the_tries_and_where_its_health_check_is_kept() {
-    let evolved = with_a_grader_that_is_never_ready();
+fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_check_is_kept() {
+    let evolved = with_a_verifier_that_is_never_ready();
     assert!(evolved.said.contains(&format!(
-        "cladenc: the attempt of harness 0 on task benchmark/t1 was not graded: the health \
-         check of the container of its grader did not pass in 2 tries, so the grader was not \
+        "cladenc: the attempt of harness 0 on task benchmark/t1 was not verified: the health \
+         check of its verifier container did not pass in 2 tries, so the verifier was not \
          run, and {} holds what the health check printed the last time it ran\n",
         evolved
             .outputs()
-            .join("running/attempt-0-benchmark+t1/grader/health-check")
+            .join("running/attempt-0-benchmark+t1/verifier/health-check")
             .display()
     )));
 }
 
 #[test]
-fn an_attempt_whose_grader_was_never_run_is_not_said_to_be_one_the_harness_did_not_complete() {
-    let said = with_a_grader_that_is_never_ready().said;
+fn an_attempt_whose_verifier_was_never_run_is_not_said_to_be_one_the_harness_did_not_complete() {
+    let said = with_a_verifier_that_is_never_ready().said;
     assert!(!said.contains("did not complete task benchmark/t1"));
 }
 
 #[test]
-fn an_attempt_whose_grader_was_never_run_is_journaled_as_started_and_not_as_finished() {
+fn an_attempt_whose_verifier_was_never_run_is_journaled_as_started_and_not_as_finished() {
     assert_eq!(
-        journaled(&with_a_grader_that_is_never_ready()),
+        journaled(&with_a_verifier_that_is_never_ready()),
         [true, false]
     );
 }
 
 #[test]
-fn an_attempt_whose_grader_was_never_run_is_carried_out_again_when_resumed() {
-    let resumed = given::resumed(with_a_grader_that_is_never_ready(), Double::default());
+fn an_attempt_whose_verifier_was_never_run_is_carried_out_again_when_resumed() {
+    let resumed = given::resumed(with_a_verifier_that_is_never_ready(), Double::default());
     assert!(resumed.said.contains(STARTED_AGAIN));
 }
 
 #[test]
-fn a_directed_evolution_resumed_once_the_grader_is_ready_runs_to_its_end() {
-    let resumed = given::resumed(with_a_grader_that_is_never_ready(), Double::default());
+fn a_directed_evolution_resumed_once_the_verifier_is_ready_runs_to_its_end() {
+    let resumed = given::resumed(with_a_verifier_that_is_never_ready(), Double::default());
     assert!(resumed.result.is_ok());
 }
 
@@ -194,10 +194,10 @@ fn what_the_health_check_of_a_task_that_was_never_ready_printed_is_kept_where_cl
 }
 
 #[test]
-fn what_the_health_check_of_a_grader_that_was_never_run_printed_is_kept_where_cladenc_says() {
-    let evolved = with_a_grader_that_is_never_ready();
+fn what_the_health_check_of_a_verifier_that_was_never_run_printed_is_kept_where_cladenc_says() {
+    let evolved = with_a_verifier_that_is_never_ready();
     let kept = evolved
         .outputs()
-        .join("running/attempt-0-benchmark+t1/grader/health-check");
+        .join("running/attempt-0-benchmark+t1/verifier/health-check");
     assert!(evolved.files().is_dir(kept));
 }

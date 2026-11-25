@@ -53,9 +53,9 @@ fn a_task_with_no_specification_is_said_with_its_id() {
 }
 
 #[test]
-fn a_task_with_no_grader_is_said_with_its_id() {
+fn a_task_with_no_verifier_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::NoGrader { task: task() }.to_string(),
+        BenchmarkError::NoVerifier { task: task() }.to_string(),
         "task fix-the-parser holds no directory named tests with an executable file named \
          test.sh in it"
     );
@@ -84,11 +84,11 @@ fn a_task_toml_that_is_not_there_is_said_not_to_be_there() {
 }
 
 #[test]
-fn a_grader_said_to_share_an_environment_and_to_have_its_own_is_said_as_both() {
+fn a_verifier_said_to_share_an_environment_and_to_have_its_own_is_said_as_both() {
     assert_eq!(
         ConfigurationError::SharedAndSeparate.to_string(),
-        "says under verifier that the grader shares the environment of the harness, as \
-         environment_mode, and gives the grader an environment of its own, as environment"
+        "says under verifier that the verifier shares the environment of the harness, as \
+         environment_mode, and gives the verifier an environment of its own, as environment"
     );
 }
 

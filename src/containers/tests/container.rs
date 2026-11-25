@@ -4,7 +4,7 @@ use crate::benchmark::{EnvironmentConfiguration, HealthCheck, TaskConfiguration}
 use crate::containers::Environment;
 use crate::containers::container::{self, Bringing};
 
-const IMAGE_OF_THE_GRADER: &str = "registry.example/graders/parser:3";
+const IMAGE_OF_THE_VERIFIER: &str = "registry.example/verifiers/parser:3";
 
 fn checked() -> HealthCheck {
     HealthCheck {
@@ -17,7 +17,7 @@ fn checked() -> HealthCheck {
     }
 }
 
-fn with_a_grader_of_its_own() -> TaskConfiguration {
+fn with_a_verifier_of_its_own() -> TaskConfiguration {
     TaskConfiguration {
         working_directory: Some("/app".to_owned()),
         variables: vec![("MODE".to_owned(), "of the task".to_owned())],
@@ -25,10 +25,10 @@ fn with_a_grader_of_its_own() -> TaskConfiguration {
         memory_megabytes: Some(4096),
         health_check: Some(checked()),
         harness_time_limit: Some(Duration::from_secs(1800)),
-        grader_time_limit: Duration::from_secs(120),
-        grader_environment: Some(EnvironmentConfiguration {
-            working_directory: Some("/grading".to_owned()),
-            variables: vec![("MODE".to_owned(), "of the grader".to_owned())],
+        verifier_time_limit: Duration::from_secs(120),
+        verifier_environment: Some(EnvironmentConfiguration {
+            working_directory: Some("/verifying".to_owned()),
+            variables: vec![("MODE".to_owned(), "of the verifier".to_owned())],
             cpus: Some(0.5),
             memory_megabytes: Some(512),
             ..EnvironmentConfiguration::default()
@@ -38,9 +38,9 @@ fn with_a_grader_of_its_own() -> TaskConfiguration {
 }
 
 #[test]
-fn the_container_of_a_task_stays_for_its_harness_its_grader_its_health_check_and_ten_minutes() {
+fn the_container_of_a_task_stays_for_its_harness_its_verifier_its_health_check_and_ten_minutes() {
     let environment = Environment {
-        configuration: with_a_grader_of_its_own(),
+        configuration: with_a_verifier_of_its_own(),
         ..Environment::default()
     };
     assert_eq!(
@@ -50,82 +50,82 @@ fn the_container_of_a_task_stays_for_its_harness_its_grader_its_health_check_and
 }
 
 #[test]
-fn the_container_of_a_grader_stays_for_the_time_limit_of_the_grader_and_ten_minutes_more() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_stays_for_the_time_limit_of_the_verifier_and_ten_minutes_more() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).stays,
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).stays,
         Duration::from_secs(120 + 600)
     );
 }
 
 #[test]
-fn the_container_of_a_grader_stays_for_the_longest_its_own_health_check_can_take_as_well() {
+fn a_verifier_container_stays_for_the_longest_its_own_health_check_can_take_as_well() {
     let configuration = TaskConfiguration {
-        grader_time_limit: Duration::from_secs(120),
-        grader_environment: Some(EnvironmentConfiguration {
+        verifier_time_limit: Duration::from_secs(120),
+        verifier_environment: Some(EnvironmentConfiguration {
             health_check: Some(checked()),
             ..EnvironmentConfiguration::default()
         }),
         ..TaskConfiguration::default()
     };
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).stays,
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).stays,
         Duration::from_secs(120 + 110 + 600)
     );
 }
 
 #[test]
-fn the_container_of_a_grader_is_of_the_image_of_the_grader() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_is_of_the_verifier_image() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).image,
-        IMAGE_OF_THE_GRADER
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).image,
+        IMAGE_OF_THE_VERIFIER
     );
 }
 
 #[test]
-fn the_container_of_a_grader_has_the_working_directory_of_the_environment_of_the_grader() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_has_the_working_directory_of_the_verifier_environment() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).working_directory,
-        Some("/grading")
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).working_directory,
+        Some("/verifying")
     );
 }
 
 #[test]
-fn the_container_of_a_grader_has_the_cpus_of_the_environment_of_the_grader() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_has_the_cpus_of_the_verifier_environment() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).cpus,
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).cpus,
         Some(0.5)
     );
 }
 
 #[test]
-fn the_container_of_a_grader_has_the_memory_of_the_environment_of_the_grader() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_has_the_memory_of_the_verifier_environment() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).memory_megabytes,
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).memory_megabytes,
         Some(512)
     );
 }
 
 #[test]
-fn the_container_of_a_grader_is_given_the_variables_of_the_environment_of_the_grader() {
-    let configuration = with_a_grader_of_its_own();
+fn a_verifier_container_is_given_the_variables_of_the_verifier_environment() {
+    let configuration = with_a_verifier_of_its_own();
     assert_eq!(
-        Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration).variables,
-        [("MODE".to_owned(), "of the grader".to_owned())]
+        Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration).variables,
+        [("MODE".to_owned(), "of the verifier".to_owned())]
     );
 }
 
 #[test]
-fn the_container_of_a_grader_whose_environment_sets_nothing_is_given_nothing_of_the_task() {
+fn a_verifier_container_whose_environment_sets_nothing_is_given_nothing_of_the_task() {
     let configuration = TaskConfiguration {
-        grader_environment: Some(EnvironmentConfiguration::default()),
-        ..with_a_grader_of_its_own()
+        verifier_environment: Some(EnvironmentConfiguration::default()),
+        ..with_a_verifier_of_its_own()
     };
-    let bringing = Bringing::of_the_grader(IMAGE_OF_THE_GRADER, &configuration);
+    let bringing = Bringing::of_the_verifier(IMAGE_OF_THE_VERIFIER, &configuration);
     assert_eq!(
         (
             bringing.working_directory,
@@ -138,10 +138,10 @@ fn the_container_of_a_grader_whose_environment_sets_nothing_is_given_nothing_of_
 }
 
 #[test]
-fn the_container_of_a_task_is_given_the_settings_of_the_task_and_not_those_of_its_grader() {
+fn the_container_of_a_task_is_given_the_settings_of_the_task_and_not_those_of_its_verifier() {
     let environment = Environment {
         image: test_inputs::IMAGE.to_owned(),
-        configuration: with_a_grader_of_its_own(),
+        configuration: with_a_verifier_of_its_own(),
         ..Environment::default()
     };
     let bringing = Bringing::of_the_task(&environment);

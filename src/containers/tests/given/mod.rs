@@ -40,7 +40,7 @@ pub(super) const LAUNCH: Launch<'static> = Launch {
         key: None,
     },
     procreation_timeout: 30,
-    max_grader_health_check_retries: 0,
+    max_verifier_health_check_retries: 0,
     max_task_health_check_retries: 0,
 };
 
@@ -124,7 +124,7 @@ pub(super) fn environment(configuration: TaskConfiguration) -> Environment {
     Environment {
         image: test_inputs::IMAGE.to_owned(),
         configuration,
-        grader: None,
+        verifier: None,
     }
 }
 

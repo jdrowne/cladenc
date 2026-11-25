@@ -13,7 +13,7 @@ const PROCREATION: [&str; 2] = ["run", "run a harness"];
 fn solving() -> Double {
     Double::default()
         .changing()
-        .grading(|attempt| attempt.starts_with("attempt-1-"))
+        .verifying(|attempt| attempt.starts_with("attempt-1-"))
 }
 
 fn over_one_holdout_task(directory: &Memory, settings: &mut Settings) {

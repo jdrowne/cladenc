@@ -41,7 +41,7 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Image) 
         Environment {
             image: image.name.clone(),
             configuration,
-            grader: None,
+            verifier: None,
         },
         image,
     )
@@ -58,7 +58,7 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", COMPLETE);
+    test_inputs::kept_verifier(&path, "t1", COMPLETE);
     let (environment, built) = environment_of(&outputs_directory);
     let launch = Launch {
         image: test_inputs::IMAGE,
@@ -70,7 +70,7 @@ fn attempted(task_toml: &str, run_command: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let _ = containers::run_attempt(
@@ -181,7 +181,7 @@ fn a_directory_no_one_can_read_is_left_out_where_a_pattern_matches_it() {
 }
 
 #[test]
-fn nothing_of_the_grader_is_among_what_is_kept_of_the_paths_the_task_lists() {
+fn nothing_of_the_verifier_is_among_what_is_kept_of_the_paths_the_task_lists() {
     let attempted = attempted(
         "artifacts = [\"/tests\", \"/logs/verifier\"]\n",
         WRITE_A_REPORT,

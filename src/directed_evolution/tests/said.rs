@@ -395,42 +395,42 @@ fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker
 }
 
 #[test]
-fn the_environment_of_a_grader_is_said_to_be_being_built_with_the_image_it_is_built_as() {
+fn a_verifier_environment_is_said_to_be_being_built_with_the_image_it_is_built_as() {
     assert_eq!(
-        Said::Environments(Environments::GraderBuilding {
+        Said::Environments(Environments::VerifierBuilding {
             task: "benchmark/t1",
-            image: "cladenc-environments-0123456789abcdef:0-grader",
+            image: "cladenc-environments-0123456789abcdef:0-verifier",
         })
         .to_string(),
-        "building the environment of the grader of task benchmark/t1 as the image \
-         cladenc-environments-0123456789abcdef:0-grader"
+        "building the verifier environment of task benchmark/t1 as the image \
+         cladenc-environments-0123456789abcdef:0-verifier"
     );
 }
 
 #[test]
-fn an_image_that_a_task_names_for_its_grader_is_said_to_be_taken_as_its_environment() {
+fn an_image_that_a_task_names_for_its_verifier_is_said_to_be_taken_as_its_environment() {
     assert_eq!(
-        Said::Environments(Environments::GraderTaking {
+        Said::Environments(Environments::VerifierTaking {
             task: "benchmark/t1",
-            image: "registry.example/graders/parser:3",
+            image: "registry.example/verifiers/parser:3",
         })
         .to_string(),
-        "taking the image registry.example/graders/parser:3 as the environment of the grader of \
+        "taking the image registry.example/verifiers/parser:3 as the verifier environment of \
          task benchmark/t1, as its task.toml says"
     );
 }
 
 #[test]
-fn an_environment_of_a_grader_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
+fn a_verifier_environment_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
-        Said::Environments(Environments::GraderNotBuilt {
+        Said::Environments(Environments::VerifierNotBuilt {
             task: "benchmark/t1",
             error: &ContainerError::Exit(1),
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
-        "the build of the environment of the grader of task benchmark/t1 exited with status 1: \
-         what Docker printed is kept in /outputs/environments/benchmark/t1/grader"
+        "the build of the verifier environment of task benchmark/t1 exited with status 1: \
+         what Docker printed is kept in /outputs/environments/benchmark/t1/verifier"
     );
 }
 
@@ -627,10 +627,10 @@ fn a_harness_that_did_not_complete_a_task_is_said_not_to_have_completed_it() {
 }
 
 #[test]
-fn a_harness_whose_grader_timed_out_is_said_not_to_have_completed_the_task_for_it() {
+fn a_harness_whose_verifier_timed_out_is_said_not_to_have_completed_the_task_for_it() {
     assert_eq!(
         attempted(AttemptResult::TimedOut),
-        "harness 3 did not complete task fix-the-parser, as the grader ran past its time \
+        "harness 3 did not complete task fix-the-parser, as the verifier ran past its time \
          limit: what the attempt left is kept in /outputs/attempts/3/fix-the-parser"
     );
 }
@@ -701,7 +701,7 @@ fn retrying(checked: Checked, wait: Duration) -> String {
 }
 
 fn retrying_after(wait: Duration) -> String {
-    retrying(Checked::Grader, wait)
+    retrying(Checked::Verifier, wait)
 }
 
 #[test]
@@ -723,11 +723,11 @@ fn a_wait_of_1_second_before_a_retry_of_the_health_check_of_a_task_is_not_said_a
 }
 
 #[test]
-fn a_retry_of_the_health_check_of_a_grader_is_said_with_its_attempt_its_wait_and_its_number() {
+fn a_retry_of_the_health_check_of_a_verifier_is_said_with_its_attempt_its_wait_and_its_number() {
     assert_eq!(
         retrying_after(Duration::from_secs(10)),
-        "the attempt of harness 3 on task parsing/fix-the-parser is not graded yet: the health \
-         check of the container of its grader did not pass, and cladenc tries again in a new \
+        "the attempt of harness 3 on task parsing/fix-the-parser is not verified yet: the health \
+         check of its verifier container did not pass, and cladenc tries again in a new \
          container after 10 seconds, retry 2 of 5"
     );
 }
@@ -749,19 +749,19 @@ fn a_wait_of_a_part_of_a_second_before_a_retry_is_said_with_the_part() {
 }
 
 #[test]
-fn a_grader_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
+fn a_verifier_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
     assert_eq!(
         Said::Failed {
             action: &attempt(),
-            error: &ContainerError::GraderHealthCheck {
+            error: &ContainerError::VerifierHealthCheck {
                 tries: 1,
-                kept: "/outputs/running/attempt-3-fix-the-parser/grader/health-check".into(),
+                kept: "/outputs/running/attempt-3-fix-the-parser/verifier/health-check".into(),
             },
         }
         .to_string(),
-        "the attempt of harness 3 on task fix-the-parser was not graded: the health check of \
-         the container of its grader did not pass in 1 try, so the grader was not run, and \
-         /outputs/running/attempt-3-fix-the-parser/grader/health-check holds what the health \
+        "the attempt of harness 3 on task fix-the-parser was not verified: the health check of \
+         its verifier container did not pass in 1 try, so the verifier was not run, and \
+         /outputs/running/attempt-3-fix-the-parser/verifier/health-check holds what the health \
          check printed the last time it ran"
     );
 }

@@ -12,7 +12,7 @@ metadata:
 
 That a harness of a directed evolution completes more tasks than its progenitor does not show that it improved. Every task `cladenc` counts is a task that progenitors read about, so what the count shows is what overfitting to the benchmark produces too. As `cladenc` stands, it is not said to lead to recursive self-improvement.
 
-**Why:** The harnesses are expected to overfit to the benchmarks, not to improve, and a sentence that says they improve themselves is without support. A progenitor reads the task specification, its own work and what the grader printed for each task, a change fitted to one task is a surer gain than a change to how the child works in general, and `cladenc` then chooses by the same tasks.
+**Why:** The harnesses are expected to overfit to the benchmarks, not to improve, and a sentence that says they improve themselves is without support. A progenitor reads the task specification, its own work and what the verifier printed for each task, a change fitted to one task is a surer gain than a change to how the child works in general, and `cladenc` then chooses by the same tasks.
 
 **How to apply:**
 

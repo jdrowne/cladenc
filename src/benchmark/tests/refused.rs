@@ -16,8 +16,8 @@ fn no_specification() -> BenchmarkError {
     }
 }
 
-fn no_grader() -> BenchmarkError {
-    BenchmarkError::NoGrader {
+fn no_verifier() -> BenchmarkError {
+    BenchmarkError::NoVerifier {
         task: "t2".to_owned(),
     }
 }
@@ -167,29 +167,29 @@ fn a_task_whose_specification_holds_a_nul_is_refused() {
 }
 
 #[test]
-fn a_task_with_no_grader_is_refused() {
+fn a_task_with_no_verifier_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| directory
             .remove_file(benchmark.join("t2/tests/test.sh"))
             .unwrap()),
-        no_grader()
+        no_verifier()
     );
 }
 
 #[test]
-fn a_task_whose_grader_is_not_executable_is_refused() {
+fn a_task_whose_verifier_is_not_executable_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
                 .set_mode(benchmark.join("t2/tests/test.sh"), 0o640)
                 .unwrap();
         }),
-        no_grader()
+        no_verifier()
     );
 }
 
 #[test]
-fn a_task_whose_grader_is_a_directory_is_refused() {
+fn a_task_whose_verifier_is_a_directory_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
@@ -199,7 +199,7 @@ fn a_task_whose_grader_is_a_directory_is_refused() {
                 .create_dir(benchmark.join("t2/tests/test.sh"))
                 .unwrap();
         }),
-        no_grader()
+        no_verifier()
     );
 }
 
@@ -209,7 +209,7 @@ fn a_task_with_no_directory_named_tests_is_refused() {
         refused(|directory, benchmark| directory
             .remove_dir_all(benchmark.join("t2/tests"))
             .unwrap()),
-        no_grader()
+        no_verifier()
     );
 }
 
@@ -224,22 +224,22 @@ fn a_task_whose_tests_are_a_symbolic_link_to_a_directory_is_refused() {
                 .symlink("../t1/tests", benchmark.join("t2/tests"))
                 .unwrap();
         }),
-        no_grader()
+        no_verifier()
     );
 }
 
 #[test]
-fn a_task_whose_grader_is_an_executable_file_named_grader_is_refused() {
+fn a_task_whose_verifier_is_an_executable_file_named_verifier_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
                 .rename(
                     benchmark.join("t2/tests/test.sh"),
-                    benchmark.join("t2/grader"),
+                    benchmark.join("t2/verifier"),
                 )
                 .unwrap();
         }),
-        no_grader()
+        no_verifier()
     );
 }
 
@@ -401,7 +401,7 @@ fn a_task_with_a_compose_file_beside_its_environment_is_not_refused_for_it() {
 }
 
 #[test]
-fn a_task_with_no_grader_and_no_environment_is_refused_for_its_grader() {
+fn a_task_with_no_verifier_and_no_environment_is_refused_for_its_verifier() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
@@ -411,7 +411,7 @@ fn a_task_with_no_grader_and_no_environment_is_refused_for_its_grader() {
                 .remove_dir_all(benchmark.join("t2/environment"))
                 .unwrap();
         }),
-        no_grader()
+        no_verifier()
     );
 }
 
@@ -441,7 +441,7 @@ fn the_first_task_that_cannot_be_used_is_the_one_refused() {
                 .remove_file(benchmark.join("t2/instruction.md"))
                 .unwrap();
         }),
-        BenchmarkError::NoGrader {
+        BenchmarkError::NoVerifier {
             task: "t1".to_owned()
         }
     );

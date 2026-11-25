@@ -25,7 +25,7 @@ fn twice_over_three_tasks(directory: &Memory, settings: &mut Settings) {
 fn working() -> Double {
     Double::default()
         .changing()
-        .grading(|attempt| attempt == "attempt-2-benchmark+t3")
+        .verifying(|attempt| attempt == "attempt-2-benchmark+t3")
 }
 
 fn experimented() -> Evolved {

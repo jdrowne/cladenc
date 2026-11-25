@@ -10,9 +10,9 @@ cladenc\-start \- start a new directed evolution and print the directory of its 
     \fB\-\-harness\-run\-command\fP <COMMAND>
     [\fB\-\-help\fP]
     \fB\-\-max\-concurrent\-containers\fP <COUNT>
-    \fB\-\-max\-grader\-health\-check\-retries\fP <COUNT>
     \fB\-\-max\-procreations\fP <COUNT>
     \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
+    \fB\-\-max\-verifier\-health\-check\-retries\fP <COUNT>
     \fB\-\-model\fP <NAME>
     [\fB\-\-model\-key\-file\fP <FILE>]
     \fB\-\-model\-url\fP <URL>
@@ -60,15 +60,15 @@ Print help.
 \fB\-\-max\-concurrent\-containers\fP <COUNT>
 The most containers running at once.
 .TP
-\fB\-\-max\-grader\-health\-check\-retries\fP <COUNT>
-The most times the container of a grader is brought up again, where its health
-check does not pass, 0 or more.
-.TP
 \fB\-\-max\-procreations\fP <COUNT>
 The most procreations to start.
 .TP
 \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
 The most times the container of a task is brought up again, where its health
+check does not pass, 0 or more.
+.TP
+\fB\-\-max\-verifier\-health\-check\-retries\fP <COUNT>
+The most times a verifier container is brought up again, where its health
 check does not pass, 0 or more.
 .TP
 \fB\-\-model\fP <NAME>
@@ -560,8 +560,8 @@ a file of text, the task configuration of Harbor, which says how the task is
 to be attempted
 .TP 16n
 \fBtests\fP
-a directory that holds test.sh, an executable file, the grader of the task,
-and whatever else the grader uses
+a directory that holds test.sh, an executable file, the verifier of the task,
+and whatever else the verifier uses
 .TP 16n
 \fBenvironment\fP
 a directory that holds a file named Dockerfile, which describes the
@@ -578,9 +578,9 @@ be built.
 A task whose task.toml names an image needs neither the Dockerfile nor the
 environment directory.
 .PP
-A task whose grader runs in a container of its own, as said below, is refused
+A task whose verifier runs in a container of its own, as said below, is refused
 as well for a Compose file in its tests directory.
-Where the image of that container holds the grader, the task needs no test.sh.
+Where the image of that container holds the verifier, the task needs no test.sh.
 .PP
 \fB\-\-benchmark\fP is given once for each benchmark of the directed
 evolution.
@@ -724,7 +724,7 @@ sleep <SECONDS>
 .RE
 .TP 11n
 \fB<SECONDS>\fP
-the time limit of the harness and the time limit of the grader together, the
+the time limit of the harness and the time limit of the verifier together, the
 longest the health check of the task can take, and ten minutes more, for what
 cladenc copies in and out
 .PP
@@ -735,7 +735,7 @@ user and the working directory its Dockerfile names, and root and / where it
 names none.
 CLADENC_INSTRUCTION holds the task specification.
 The harness is given nothing else of the task, so it can neither read nor
-change the grader.
+change the verifier.
 Before the harness is started, cladenc makes
 .TP 17n
 \fB/logs\fP
@@ -745,9 +745,9 @@ a symbolic link to /var/log/cladenc/harbor
 an empty directory, for what the harness saves to be kept with the attempt
 .PP
 When the harness has ended, with whatever exit status, the tests directory of
-the task is copied into the same container, and its grader is run there, in
+the task is copied into the same container, and its verifier is run there, in
 the same working directory and as the same user, unless the task.toml of the
-task names a user for the grader, as
+task names a user for the verifier, as
 .PP
 .RS 4
 .EX
@@ -760,12 +760,12 @@ a symbolic link to /var/opt/cladenc/harbor/tests, which holds a copy of the
 tests directory of the task, and nothing that the harness left there
 .TP 16n
 \fB/logs/verifier\fP
-an empty directory, for the score of the grader
+an empty directory, for the score of the verifier
 .PP
-The grader finds the container as the harness left it: the files the harness
+The verifier finds the container as the harness left it: the files the harness
 left outside /tests and /logs/verifier, and the processes it left running, are
 there as well.
-A grader calls no model, and is given none of the three variables of the
+A verifier calls no model, and is given none of the three variables of the
 model.
 The container is removed once the attempt has ended.
 .PP
@@ -791,7 +791,7 @@ timeout_sec under agent, and no time limit where it gives none, as in Harbor.
 A harness that runs past its time limit is stopped, and every process it left
 running is ended, as by \fBkill \-9 \-1\fP.
 What it left is judged all the same.
-The grader has a time limit of its own, timeout_sec under verifier, or 600
+The verifier has a time limit of its own, timeout_sec under verifier, or 600
 seconds where the task gives none, counted from the moment the harness ended
 or was stopped.
 No flag gives a time limit of an attempt.
@@ -881,16 +881,16 @@ they then are.
 collection\-hooks in the directory of the attempt keeps what each command
 printed, in a directory named after the place of the command in the list,
 counted from 1.
-.SH GRADERS IN A CONTAINER OF THEIR OWN
-Where the task.toml of a task says that its grader runs separately, cladenc
-runs the grader in a container of its own, which holds nothing of the
+.SH VERIFIERS IN A CONTAINER OF THEIR OWN
+Where the task.toml of a task says that its verifier runs separately, cladenc
+runs the verifier in a container of its own, which holds nothing of the
 container of the harness but the paths the task lists under artifacts.
 A task says so with environment_mode under verifier, written as separate, or
 with a table named environment under verifier, which says so by being there.
 A task that gives neither, or writes environment_mode as shared, has its
-grader run in the container of the harness, as said above.
+verifier run in the container of the harness, as said above.
 .PP
-The container of the grader is a container of the first of these that the task
+The verifier container is a container of the first of these that the task
 gives:
 .TP 4n
 \fB1.\fP
@@ -904,46 +904,46 @@ task, with that directory as the build context
 \fB3.\fP
 the environment of the task, as it is before a harness works in it
 .PP
-An image of 1 or 2 holds the grader, at /tests/test.sh: cladenc copies no
+An image of 1 or 2 holds the verifier, at /tests/test.sh: cladenc copies no
 tests directory into its container and makes nothing at /tests, and the task
 needs no test.sh.
 Into a container of 3 the tests directory of the task is copied, and /tests is
 a symbolic link to the copy, as said above.
 cladenc builds an image of 2 when it builds the environments of the tasks, and
 as it builds those, under the name of the environment of the task with
-\-grader after it, and removes it when it removes them.
-environments/<BENCHMARK>/<TASK>/grader in the outputs directory keeps what
+\-verifier after it, and removes it when it removes them.
+environments/<BENCHMARK>/<TASK>/verifier in the outputs directory keeps what
 Docker printed.
 An image of 1 that is not on the machine, and an image of 2 that is not built,
 stop the directed evolution with exit status 2.
 .PP
-Where the task.toml holds the table environment under verifier, the container
-of the grader follows that table and nothing of environment: workdir, env,
+Where the task.toml holds the table environment under verifier, the verifier
+container follows that table and nothing of environment: workdir, env,
 cpus, memory_mb, healthcheck and build_timeout_sec are obeyed there as they
 are under environment, and a setting the table leaves out is left out.
-Where the task.toml holds no such table, the container of the grader follows
+Where the task.toml holds no such table, the verifier container follows
 environment.
 What is refused under environment is refused under verifier.environment as
 well.
 .PP
 Once the harness has ended or was stopped, and the paths under artifacts are
 kept, cladenc removes the container of the harness and brings up that of the
-grader, so that an attempt is one container at a time.
-Where the settings of the grader give a health check, cladenc runs it there as
+verifier, so that an attempt is one container at a time.
+Where the settings of the verifier give a health check, cladenc runs it there as
 it runs that of the task, and nothing else is done in the container until the
 health check has passed.
 /logs is then made the symbolic link that it is in the container of the
 harness, and each path that was kept is copied to the same path in the
-container of the grader, the path of its entry and not destination, without
+verifier container, the path of its entry and not destination, without
 what exclude left out.
 A directory takes the place of what the image holds at that path.
 .PP
-Where the health check of the container of the grader does not pass, no grader
+Where the health check of the verifier container does not pass, no verifier
 has judged what the harness left, so cladenc does not record that the harness
 did not complete the task.
-It removes the container, waits, brings up a new container of the grader and
+It removes the container, waits, brings up a new verifier container and
 runs the health check there again, as many times as
-\fB\-\-max\-grader\-health\-check\-retries\fP gives.
+\fB\-\-max\-verifier\-health\-check\-retries\fP gives.
 Before the first retry it waits interval_sec of the health check, or 5 seconds
 where the task gives none, and before each retry after that twice as long as
 before the last: 5 seconds, then 10, then 20.
@@ -951,7 +951,7 @@ It says each retry on standard error.
 Where the health check passes in no container, the directed evolution stops
 with exit status 1, and no result is recorded for the attempt.
 cladenc then names the harness and the task, says that the health check of the
-container of the grader did not pass and in how many tries, and names the
+verifier container did not pass and in how many tries, and names the
 directory that holds what the health check printed the last time it ran.
 That directory is under running in the outputs directory, and stays there
 until \fBcladenc resume\fP carries out the attempt again.
@@ -960,14 +960,14 @@ What is copied in is not trusted.
 No file keeps a setuid or a setgid bit.
 A file that is not a regular file, a directory or a symbolic link is left out,
 and so is a symbolic link that points outside the path it was kept with.
-What is copied in belongs to the user the grader runs as.
+What is copied in belongs to the user the verifier runs as.
 .PP
-Then the tests directory is copied in where the image holds no grader,
-/logs/verifier is emptied, and the grader is run as said above, in the working
+Then the tests directory is copied in where the image holds no verifier,
+/logs/verifier is emptied, and the verifier is run as said above, in the working
 directory and as the user of its own container, unless the task.toml names a
-user for the grader.
+user for the verifier.
 Its time limit is counted from then.
-The container of the grader is started as
+The verifier container is started as
 .PP
 .RS 4
 .EX
@@ -976,16 +976,16 @@ sleep <SECONDS>
 .RE
 .TP 11n
 \fB<SECONDS>\fP
-the time limit of the grader, the longest the health check of the grader can
+the time limit of the verifier, the longest the health check of the verifier can
 take, and ten minutes more
 .PP
-and is removed once the grader has ended.
-The image of a grader has to hold what the environment of a task has to: sh,
+and is removed once the verifier has ended.
+A verifier image has to hold what the environment of a task has to: sh,
 sleep, rm, mkdir, chown and ln.
 .SH CPUS AND MEMORY
 The container of an attempt is given no more CPUs and no more memory than its
 task asks for, as \fB\-\-cpus\fP and \fB\-\-memory\fP of \fBdocker run\fP, so
-the harness and the grader have them between them.
+the harness and the verifier have them between them.
 A task that asks for neither is given what Docker gives any container.
 The older spelling of the memory, memory under environment, a number and one
 of G, M and K, such as 4G, is read as Harbor reads it, and a task that gives
@@ -1009,35 +1009,35 @@ cladenc obeys what it says of the environment of the task:
 the image that is the environment, in place of one built from the Dockerfile
 .TP 7n
 \fBworkdir under environment\fP
-the working directory of the harness and of the grader, in place of the one
+the working directory of the harness and of the verifier, in place of the one
 the image names
 .TP 7n
 \fBenv under environment\fP
-variables that the container is given, so the harness and the grader alike
+variables that the container is given, so the harness and the verifier alike
 .TP 7n
 \fBuser under agent\fP
 the user the harness runs as, a name or a number, in place of the user the
 image names
 .TP 7n
 \fBuser under verifier\fP
-the user the grader runs as, in the same way
+the user the verifier runs as, in the same way
 .TP 7n
 \fBenv under verifier\fP
-variables that the grader alone is given
+variables that the verifier alone is given
 .TP 7n
 \fBtimeout_sec under agent\fP
 the time limit of the harness, in seconds
 .TP 7n
 \fBtimeout_sec under verifier\fP
-the time limit of the grader, in seconds
+the time limit of the verifier, in seconds
 .TP 7n
 \fBenvironment_mode under verifier\fP
-separate where the grader runs in a container of its own, and shared where it
+separate where the verifier runs in a container of its own, and shared where it
 runs in that of the harness
 .TP 7n
 \fBenvironment under verifier\fP
-what environment says of the container of the harness, said of the container
-of the grader
+what environment says of the container of the harness, said of the verifier
+container
 .TP 7n
 \fBcollect under verifier\fP
 commands that are run in the container once the harness has ended, before the
@@ -1066,7 +1066,7 @@ A setting that is left out, or written with nothing between its quotation
 marks, changes nothing.
 The source code of the harness and /logs/artifacts belong to the user the
 harness runs as, and the copy of the tests directory and /logs/verifier belong
-to the user the grader runs as.
+to the user the verifier runs as.
 .PP
 In the value of a variable, ${NAME} stands for the value that the variable
 NAME has where cladenc runs, and ${NAME:\-TEXT} for that value, or for TEXT
@@ -1087,8 +1087,8 @@ A task.toml is not valid where it is not TOML, where it gives a setting a
 value of another kind than the setting takes, or a value that is not one of
 those the setting takes, where a table lacks a key it has to hold, such as
 command under environment.healthcheck, or where it says under verifier that
-the grader shares the environment of the harness, as environment_mode, and
-gives the grader an environment of its own, as environment.
+the verifier shares the environment of the harness, as environment_mode, and
+gives the verifier an environment of its own, as environment.
 cladenc checks every setting that Harbor's documentation of the task
 configuration names, those it does not obey among them, and lets through a
 setting that the documentation does not name.
@@ -1111,15 +1111,15 @@ to give: several steps, as [[steps]]; a GPU, as gpus under environment above
 directory, as skills_dir; a path or a command of a container other than that
 of the harness, as service of an entry under artifacts or under
 verifier.collect that is not main; or the whole container of the harness in
-the container of the grader, as an entry under artifacts whose path names no
-file or directory, where the grader runs separately.
+the verifier container, as an entry under artifacts whose path names no
+file or directory, where the verifier runs separately.
 The refusal names the task and what it asks for.
 .SH RESULTS
-The grader writes its score in /logs/verifier/reward.txt, a single number, or
+The verifier writes its score in /logs/verifier/reward.txt, a single number, or
 in /logs/verifier/reward.json, an object of labelled numbers, which is read in
 place of reward.txt where both are there.
 /tests and /logs/verifier are the paths of Harbor's task layout, which a
-grader expects.
+verifier expects.
 .PP
 How an attempt ends decides its result:
 .TP 7n
@@ -1129,7 +1129,7 @@ the harness completed the task
 \fBany other score, a file that cannot be read, or no score\fP
 the harness did not complete the task
 .TP 7n
-\fBa health check of the task, or of the container of the grader, that passes in none of its tries\fP
+\fBa health check of the task, or of the verifier container, that passes in none of its tries\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the attempt again
 .TP 7n
@@ -1137,11 +1137,11 @@ carries out the attempt again
 Docker did not start the container: the directed evolution stops, and
 \fBcladenc resume\fP carries out the attempt again
 .TP 7n
-\fBthe time limit of the grader\fP
+\fBthe time limit of the verifier\fP
 the container is removed, and the harness did not complete the task, which is
 recorded as timed_out
 .PP
-The exit status of the grader decides nothing more.
+The exit status of the verifier decides nothing more.
 .SH CAVEATS
 A task that is recorded as completed means that the harness did the work only
 as far as three things hold, and cladenc sees to none of them.
@@ -1156,13 +1156,13 @@ To keep every harness from reaching further than the model, carry out the
 directed evolution on a machine that has no other connection, with the model
 served on that machine.
 .PP
-A grader may trust what the harness left.
-The grader is started in the container as the harness left it, and everything
-there was the harness's to change: tests, build files, any program the grader
+A verifier may trust what the harness left.
+The verifier is started in the container as the harness left it, and everything
+there was the harness's to change: tests, build files, any program the verifier
 starts from the working directory, and the processes the harness left running.
-A grader that runs the tests it finds in the working directory is passed by a
+A verifier that runs the tests it finds in the working directory is passed by a
 harness that changed those tests, on a holdout task as on any other.
-The tests directory of the task is never given to a harness: a grader that
+The tests directory of the task is never given to a harness: a verifier that
 keeps what it relies on there, and takes nothing from the working directory on
 trust, can be passed that way only by a harness that left a process running to
 change the copy of that directory, or the score, once they are made.
@@ -1208,10 +1208,10 @@ the standard output of the harness
 \fBstderr\fP
 the standard error of the harness
 .TP 18n
-\fBgrader\fP
-the standard output and the standard error of the grader, in stdout and
-stderr, and in logs/verifier what the grader left in /logs/verifier, its score
-among them; where the grader ran in a container of its own with a health
+\fBverifier\fP
+the standard output and the standard error of the verifier, in stdout and
+stderr, and in logs/verifier what the verifier left in /logs/verifier, its score
+among them; where the verifier ran in a container of its own with a health
 check, what the last run of that printed, in health\-check
 .TP 18n
 \fBhealth\-check\fP

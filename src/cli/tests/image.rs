@@ -14,7 +14,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--max-procreations", "800"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--max-grader-health-check-retries", "3"),
+    ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),

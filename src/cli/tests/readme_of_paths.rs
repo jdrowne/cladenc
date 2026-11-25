@@ -43,7 +43,7 @@ fn the_readme_says_that_tests_is_a_symbolic_link_to_the_copy_of_the_tests_of_the
     assert!(readme().contains(
         "Once the harness has ended, the task's `tests` directory is copied into the same \
          container, where `/tests` is a symbolic link to the copy, at \
-         `/var/opt/cladenc/harbor/tests`, and the grader, `/tests/test.sh`, writes its score"
+         `/var/opt/cladenc/harbor/tests`, and the verifier, `/tests/test.sh`, writes its score"
     ));
 }
 

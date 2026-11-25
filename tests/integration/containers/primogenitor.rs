@@ -34,7 +34,7 @@ fn built(build_command: &str) -> Built {
         build_command: Some(build_command),
         model: MODEL,
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let result = containers::build_primogenitor(

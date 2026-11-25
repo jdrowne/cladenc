@@ -81,14 +81,14 @@ impl<'a> Bringing<'a> {
                 .harness_time_limit
                 .unwrap_or(FOREVER)
                 .min(FOREVER)
-                .saturating_add(configuration.grader_time_limit.min(FOREVER))
+                .saturating_add(configuration.verifier_time_limit.min(FOREVER))
                 .saturating_add(longest(configuration.health_check.as_ref()))
                 .saturating_add(COPYING),
         }
     }
 
-    pub(super) fn of_the_grader(image: &'a str, configuration: &'a TaskConfiguration) -> Self {
-        let own = configuration.grader_environment.as_ref();
+    pub(super) fn of_the_verifier(image: &'a str, configuration: &'a TaskConfiguration) -> Self {
+        let own = configuration.verifier_environment.as_ref();
         Self {
             image,
             working_directory: own.and_then(|own| own.working_directory.as_deref()),
@@ -96,7 +96,7 @@ impl<'a> Bringing<'a> {
             memory_megabytes: own.and_then(|own| own.memory_megabytes),
             variables: own.map_or(&[][..], |own| own.variables.as_slice()),
             stays: configuration
-                .grader_time_limit
+                .verifier_time_limit
                 .min(FOREVER)
                 .saturating_add(longest(own.and_then(|own| own.health_check.as_ref())))
                 .saturating_add(COPYING),

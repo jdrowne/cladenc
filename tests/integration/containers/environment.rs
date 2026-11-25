@@ -68,7 +68,7 @@ fn built(steps: &str) -> Built {
 
 static BUILT: LazyLock<Built> = LazyLock::new(|| built(MADE));
 
-static GRADER_BUILT: LazyLock<Built> = LazyLock::new(|| grader_built(HELD));
+static VERIFIER_BUILT: LazyLock<Built> = LazyLock::new(|| verifier_built(HELD));
 
 fn printed_by_docker(built: &Built) -> String {
     ["stdout", "stderr"]
@@ -160,7 +160,7 @@ fn an_environment_with_a_step_that_fails_is_not_built() {
     ));
 }
 
-fn grader_built(steps: &str) -> Built {
+fn verifier_built(steps: &str) -> Built {
     let (directory, outputs_directory) = made();
     let tests = outputs_directory.task(TASK).join("tests");
     fs::write(tests.join("notes.txt"), "from the tests of the task\n").unwrap();
@@ -170,7 +170,7 @@ fn grader_built(steps: &str) -> Built {
     )
     .unwrap();
     let image = test_inputs::image();
-    let result = containers::build_grader_environment(
+    let result = containers::build_verifier_environment(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -188,23 +188,29 @@ fn grader_built(steps: &str) -> Built {
     }
 }
 
-fn printed_by_docker_for_the_grader(built: &Built) -> String {
+fn printed_by_docker_for_the_verifier(built: &Built) -> String {
     ["stdout", "stderr"]
         .iter()
         .map(|file| {
-            fs::read_to_string(built.outputs_directory.grader_environment(TASK).join(file)).unwrap()
+            fs::read_to_string(
+                built
+                    .outputs_directory
+                    .verifier_environment(TASK)
+                    .join(file),
+            )
+            .unwrap()
         })
         .collect()
 }
 
 #[test]
-fn the_environment_of_a_grader_is_built_from_the_dockerfile_in_the_tests_of_its_task() {
-    assert!(GRADER_BUILT.result.is_ok());
+fn a_verifier_environment_is_built_from_the_dockerfile_in_the_tests_of_its_task() {
+    assert!(VERIFIER_BUILT.result.is_ok());
 }
 
 #[test]
-fn the_environment_of_a_grader_is_built_with_the_tests_of_its_task_as_its_build_context() {
-    let built = &*GRADER_BUILT;
+fn a_verifier_environment_is_built_with_the_tests_of_its_task_as_its_build_context() {
+    let built = &*VERIFIER_BUILT;
     assert_eq!(
         test_inputs::printed_in_a_container_of(&built.image.name, "cat /tests/notes.txt"),
         "from the tests of the task\n"
@@ -212,13 +218,13 @@ fn the_environment_of_a_grader_is_built_with_the_tests_of_its_task_as_its_build_
 }
 
 #[test]
-fn what_docker_printed_while_it_built_the_environment_of_a_grader_is_kept_in_grader() {
-    assert!(printed_by_docker_for_the_grader(&GRADER_BUILT).contains("COPY notes.txt"));
+fn what_docker_printed_while_it_built_a_verifier_environment_is_kept_in_verifier() {
+    assert!(printed_by_docker_for_the_verifier(&VERIFIER_BUILT).contains("COPY notes.txt"));
 }
 
 #[test]
-fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_task() {
-    let built = &*GRADER_BUILT;
+fn the_image_of_a_verifier_environment_is_labelled_with_its_task() {
+    let built = &*VERIFIER_BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.task"),
         "benchmark/t1\n"
@@ -226,8 +232,8 @@ fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_task() {
 }
 
 #[test]
-fn the_image_of_the_environment_of_a_grader_is_labelled_with_its_directed_evolution() {
-    let built = &*GRADER_BUILT;
+fn the_image_of_a_verifier_environment_is_labelled_with_its_directed_evolution() {
+    let built = &*VERIFIER_BUILT;
     assert_eq!(
         label_of(&built.image.name, "cladenc.directed-evolution"),
         format!(

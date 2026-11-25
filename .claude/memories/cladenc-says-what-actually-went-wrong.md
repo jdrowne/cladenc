@@ -7,7 +7,7 @@ metadata:
 
 # cladenc says what actually went wrong
 
-`cladenc` is held to precision. When something goes wrong, what `cladenc` prints and what it records say what actually went wrong. Giving no reason is incorrect behaviour, and so is recording an outcome that reads as something else having happened, such as a harness not completing a task when in fact the grader never ran.
+`cladenc` is held to precision. When something goes wrong, what `cladenc` prints and what it records say what actually went wrong. Giving no reason is incorrect behaviour, and so is recording an outcome that reads as something else having happened, such as a harness not completing a task when in fact the verifier never ran.
 
 **Why:** A person and a progenitor act on what `cladenc` reports, and artificial selection counts the recorded results. A vague or wrong record misleads all three.
 

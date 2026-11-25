@@ -21,7 +21,7 @@ const KEYED: Launch<'static> = Launch {
 };
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
-const GRADER: [&str; 2] = ["exec", "/tests/test.sh"];
+const VERIFIER: [&str; 2] = ["exec", "/tests/test.sh"];
 const COLLECT: [&str; 2] = ["exec", "ls /app"];
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const REMOVED: &str = "docker rm --force NAME";
@@ -88,7 +88,7 @@ fn collecting(users: &[Option<&str>]) -> TaskConfiguration {
 }
 
 #[test]
-fn an_attempt_brings_up_a_container_of_the_task_that_stays_past_the_harness_and_the_grader() {
+fn an_attempt_brings_up_a_container_of_the_task_that_stays_past_the_harness_and_the_verifier() {
     let tried = attempted_by(Double::default());
     assert_eq!(
         tried.commands()[0],
@@ -174,7 +174,7 @@ fn the_tests_of_the_task_are_put_in_the_container_only_once_the_harness_has_ende
 }
 
 #[test]
-fn the_grader_runs_on_an_emptied_place_for_its_logs_which_are_then_copied_out() {
+fn the_verifier_runs_on_an_emptied_place_for_its_logs_which_are_then_copied_out() {
     let tried = attempted_by(Double::default());
     assert_eq!(
         tried.commands()[14..17],
@@ -187,41 +187,41 @@ fn the_grader_runs_on_an_emptied_place_for_its_logs_which_are_then_copied_out() 
                 "docker exec --env-file /dev/stdin --user 0 NAME sh -c {TIMER} /tests/test.sh 605"
             ),
             "docker cp NAME:/logs/verifier/. \
-             OUTPUTS/running/attempt-0-benchmark+t1/grader/logs/verifier"
+             OUTPUTS/running/attempt-0-benchmark+t1/verifier/logs/verifier"
                 .to_owned(),
         ]
     );
 }
 
 #[test]
-fn the_container_of_an_attempt_is_removed_once_its_grader_has_run_and_nothing_more_is_asked() {
+fn the_container_of_an_attempt_is_removed_once_its_verifier_has_run_and_nothing_more_is_asked() {
     let tried = attempted_by(Double::default());
     assert_eq!(tried.commands()[17..], [REMOVED]);
 }
 
 #[test]
-fn an_attempt_whose_grader_writes_a_reward_of_one_completed_the_task() {
-    let tried = attempted_by(Double::default().grading(|_| true));
+fn an_attempt_whose_verifier_writes_a_reward_of_one_completed_the_task() {
+    let tried = attempted_by(Double::default().verifying(|_| true));
     assert_eq!(result_of(&tried), Some(AttemptResult::Completed));
 }
 
 #[test]
-fn an_attempt_whose_grader_writes_another_reward_did_not_complete_the_task() {
-    let tried = attempted_by(Double::default().grading(|_| false));
+fn an_attempt_whose_verifier_writes_another_reward_did_not_complete_the_task() {
+    let tried = attempted_by(Double::default().verifying(|_| false));
     assert_eq!(result_of(&tried), Some(AttemptResult::NotCompleted));
 }
 
 #[test]
-fn an_attempt_whose_grader_writes_no_reward_did_not_complete_the_task() {
+fn an_attempt_whose_verifier_writes_no_reward_did_not_complete_the_task() {
     let tried = attempted_by(Double::default());
     assert_eq!(result_of(&tried), Some(AttemptResult::NotCompleted));
 }
 
 #[test]
-fn the_reward_decides_whatever_status_the_grader_exits_with() {
+fn the_reward_decides_whatever_status_the_verifier_exits_with() {
     let docker = Double::default()
-        .grading(|_| true)
-        .answering(&GRADER, &[Answer::Exited(1)]);
+        .verifying(|_| true)
+        .answering(&VERIFIER, &[Answer::Exited(1)]);
     assert_eq!(
         result_of(&attempted_by(docker)),
         Some(AttemptResult::Completed)
@@ -229,10 +229,10 @@ fn the_reward_decides_whatever_status_the_grader_exits_with() {
 }
 
 #[test]
-fn an_attempt_whose_grader_runs_past_its_time_limit_timed_out() {
+fn an_attempt_whose_verifier_runs_past_its_time_limit_timed_out() {
     let docker = Double::default()
-        .grading(|_| true)
-        .answering(&GRADER, &[Answer::TimedOut]);
+        .verifying(|_| true)
+        .answering(&VERIFIER, &[Answer::TimedOut]);
     assert_eq!(
         result_of(&attempted_by(docker)),
         Some(AttemptResult::TimedOut)
@@ -240,8 +240,8 @@ fn an_attempt_whose_grader_runs_past_its_time_limit_timed_out() {
 }
 
 #[test]
-fn the_logs_of_the_grader_are_copied_into_the_directory_of_the_running_attempt() {
-    let docker = Double::default().grading(|attempt| attempt == "attempt-0-benchmark+t1");
+fn the_logs_of_the_verifier_are_copied_into_the_directory_of_the_running_attempt() {
+    let docker = Double::default().verifying(|attempt| attempt == "attempt-0-benchmark+t1");
     assert_eq!(
         result_of(&attempted_by(docker)),
         Some(AttemptResult::Completed)
@@ -249,9 +249,9 @@ fn the_logs_of_the_grader_are_copied_into_the_directory_of_the_running_attempt()
 }
 
 #[test]
-fn an_attempt_whose_harness_exits_with_a_status_other_than_zero_is_graded_all_the_same() {
+fn an_attempt_whose_harness_exits_with_a_status_other_than_zero_is_verified_all_the_same() {
     let docker = Double::default()
-        .grading(|_| true)
+        .verifying(|_| true)
         .answering(&HARNESS, &[Answer::Exited(3)]);
     assert_eq!(
         result_of(&attempted_by(docker)),
@@ -260,19 +260,19 @@ fn an_attempt_whose_harness_exits_with_a_status_other_than_zero_is_graded_all_th
 }
 
 #[test]
-fn the_reward_of_the_grader_is_kept_with_the_attempt() {
-    let tried = attempted_by(Double::default().grading(|_| true));
+fn the_reward_of_the_verifier_is_kept_with_the_attempt() {
+    let tried = attempted_by(Double::default().verifying(|_| true));
     assert_eq!(
-        kept(&tried, "grader/logs/verifier/reward.txt").as_deref(),
+        kept(&tried, "verifier/logs/verifier/reward.txt").as_deref(),
         Some("1")
     );
 }
 
 #[test]
-fn the_grader_of_a_holdout_task_decides_the_result_of_its_attempt() {
+fn the_verifier_of_a_holdout_task_decides_the_result_of_its_attempt() {
     let (directory, outputs_directory) = given::made();
     let outputs_directory = outputs_directory.holding_out(&[TASK.to_owned()]);
-    let docker = Double::default().grading(|_| true).on(&directory);
+    let docker = Double::default().verifying(|_| true).on(&directory);
     let environment = given::environment(TaskConfiguration::default());
     let attempt = Attempt {
         harness: 0,
@@ -294,7 +294,7 @@ fn the_grader_of_a_holdout_task_decides_the_result_of_its_attempt() {
 
 #[test]
 fn the_result_of_an_attempt_is_kept_with_it() {
-    let tried = attempted_by(Double::default().grading(|_| true));
+    let tried = attempted_by(Double::default().verifying(|_| true));
     assert_eq!(kept(&tried, "result").as_deref(), Some("completed\n"));
 }
 
@@ -332,9 +332,9 @@ fn everything_in_the_container_is_ended_once_the_harness_ran_past_its_time_limit
 }
 
 #[test]
-fn an_attempt_whose_harness_was_stopped_is_graded_all_the_same() {
+fn an_attempt_whose_harness_was_stopped_is_verified_all_the_same() {
     let docker = Double::default()
-        .grading(|_| true)
+        .verifying(|_| true)
         .answering(&HARNESS, &[Answer::TimedOut]);
     assert_eq!(
         result_of(&attempted_by(docker)),
@@ -403,9 +403,9 @@ fn the_harness_runs_as_the_user_of_the_image_where_the_task_names_none() {
 }
 
 #[test]
-fn the_grader_runs_as_the_user_the_task_names_for_it() {
+fn the_verifier_runs_as_the_user_the_task_names_for_it() {
     let configuration = TaskConfiguration {
-        grader_user: Some("checker".to_owned()),
+        verifier_user: Some("checker".to_owned()),
         ..TaskConfiguration::default()
     };
     let tried = attempted_with(with_a_user_of_the_image(), configuration);
@@ -416,7 +416,7 @@ fn the_grader_runs_as_the_user_the_task_names_for_it() {
 }
 
 #[test]
-fn the_grader_runs_as_the_user_of_the_image_where_the_task_names_none() {
+fn the_verifier_runs_as_the_user_of_the_image_where_the_task_names_none() {
     let tried = attempted_by(with_a_user_of_the_image());
     assert_eq!(
         given::following("--user", &tried.commands()[15]),
@@ -472,9 +472,9 @@ fn the_variables_of_the_task_are_given_to_its_container() {
 }
 
 #[test]
-fn the_variables_the_task_sets_for_its_grader_are_given_to_the_grader_and_not_to_the_harness() {
+fn the_variables_the_task_sets_for_its_verifier_are_given_to_the_verifier_and_not_to_the_harness() {
     let configuration = TaskConfiguration {
-        grader_variables: vec![("MODE".to_owned(), "strict".to_owned())],
+        verifier_variables: vec![("MODE".to_owned(), "strict".to_owned())],
         ..TaskConfiguration::default()
     };
     let asked = attempted_with(Double::default(), configuration)
@@ -497,7 +497,7 @@ fn the_harness_is_given_the_time_limit_the_task_sets_for_it() {
 }
 
 #[test]
-fn the_container_of_a_task_with_a_time_limit_stays_for_the_harness_the_grader_and_the_copying() {
+fn the_container_of_a_task_with_a_time_limit_stays_for_the_harness_the_verifier_and_the_copying() {
     let configuration = TaskConfiguration {
         harness_time_limit: Some(Duration::from_secs(60)),
         ..TaskConfiguration::default()
@@ -507,9 +507,9 @@ fn the_container_of_a_task_with_a_time_limit_stays_for_the_harness_the_grader_an
 }
 
 #[test]
-fn the_grader_is_given_the_time_limit_the_task_sets_for_it() {
+fn the_verifier_is_given_the_time_limit_the_task_sets_for_it() {
     let configuration = TaskConfiguration {
-        grader_time_limit: Duration::from_secs(120),
+        verifier_time_limit: Duration::from_secs(120),
         ..TaskConfiguration::default()
     };
     let tried = attempted_with(Double::default(), configuration);
@@ -517,7 +517,7 @@ fn the_grader_is_given_the_time_limit_the_task_sets_for_it() {
 }
 
 #[test]
-fn the_time_limit_of_the_grader_is_counted_from_the_moment_the_harness_ends() {
+fn the_time_limit_of_the_verifier_is_counted_from_the_moment_the_harness_ends() {
     let tried = attempted_by(taking(&HARNESS, 1100));
     assert_eq!(last_word_of(&tried.commands()[15]), Some("605"));
 }
@@ -529,8 +529,8 @@ fn the_seconds_of_an_attempt_are_those_its_harness_ran() {
 }
 
 #[test]
-fn the_seconds_of_an_attempt_leave_out_those_its_grader_ran() {
-    let tried = attempted_by(taking(&GRADER, 500));
+fn the_seconds_of_an_attempt_leave_out_those_its_verifier_ran() {
+    let tried = attempted_by(taking(&VERIFIER, 500));
     assert!(seconds_of(&tried).is_some_and(|seconds| seconds < 0.5));
 }
 
@@ -553,11 +553,11 @@ fn what_the_harness_prints_is_kept_in_the_directory_of_the_running_attempt() {
 }
 
 #[test]
-fn what_the_grader_prints_is_kept_in_the_directory_of_the_grader_of_the_attempt() {
+fn what_the_verifier_prints_is_kept_in_the_directory_of_the_verifier_of_the_attempt() {
     let tried = attempted_by(Double::default());
     assert_eq!(
         tried.docker.asked()[15].kept,
-        tried.running().join("grader")
+        tried.running().join("verifier")
     );
 }
 
@@ -711,14 +711,14 @@ fn an_attempt_that_is_stopped_stays_among_the_running_ones() {
 }
 
 #[test]
-fn an_attempt_whose_tests_cannot_be_given_to_the_grader_is_not_carried_out() {
+fn an_attempt_whose_tests_cannot_be_given_to_the_verifier_is_not_carried_out() {
     let owned = ["chown", "/var/opt/cladenc/harbor/tests"];
     let tried = attempted_by(Double::default().answering(&owned, &[REFUSED]));
     assert!(matches!(tried.result, Err(ContainerError::Io(_))));
 }
 
 #[test]
-fn an_attempt_whose_place_for_the_logs_of_the_grader_cannot_be_emptied_is_not_carried_out() {
+fn an_attempt_whose_place_for_the_logs_of_the_verifier_cannot_be_emptied_is_not_carried_out() {
     let docker = Double::default().answering(&["exec", "/logs/verifier"], &[REFUSED]);
     assert!(matches!(
         attempted_by(docker).result,
@@ -727,14 +727,14 @@ fn an_attempt_whose_place_for_the_logs_of_the_grader_cannot_be_emptied_is_not_ca
 }
 
 #[test]
-fn an_attempt_whose_grader_docker_does_not_run_names_the_file_that_holds_what_docker_said() {
-    let tried = attempted_by(Double::default().answering(&GRADER, &[Answer::Exited(125)]));
-    let said = tried.running().join("grader/stderr");
+fn an_attempt_whose_verifier_docker_does_not_run_names_the_file_that_holds_what_docker_said() {
+    let tried = attempted_by(Double::default().answering(&VERIFIER, &[Answer::Exited(125)]));
+    let said = tried.running().join("verifier/stderr");
     assert!(matches!(&tried.result, Err(ContainerError::Docker(kept)) if *kept == said));
 }
 
 #[test]
-fn an_attempt_that_is_stopped_while_its_grader_runs_was_stopped() {
-    let tried = attempted_by(Double::default().answering(&GRADER, &[Answer::Stopped]));
+fn an_attempt_that_is_stopped_while_its_verifier_runs_was_stopped() {
+    let tried = attempted_by(Double::default().answering(&VERIFIER, &[Answer::Stopped]));
     assert!(matches!(tried.result, Err(ContainerError::Stopped)));
 }

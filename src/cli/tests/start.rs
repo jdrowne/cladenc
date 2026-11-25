@@ -23,7 +23,7 @@ fn outputs_directory_is_left_by(change: impl FnOnce(&Memory, &mut StartOptions))
     directory.exists(outputs_directory)
 }
 
-fn with_a_task_that_lacks_its_grader(directory: &Memory, options: &mut StartOptions) {
+fn with_a_task_that_lacks_its_verifier(directory: &Memory, options: &mut StartOptions) {
     directory
         .remove_dir_all(options.benchmark[0].join("t1/tests"))
         .unwrap();
@@ -244,7 +244,7 @@ fn a_percentage_that_leaves_no_corroboration_task_is_refused_before_the_outputs_
 #[test]
 fn a_benchmark_that_is_refused_leaves_no_outputs_directory() {
     assert!(!outputs_directory_is_left_by(
-        with_a_task_that_lacks_its_grader
+        with_a_task_that_lacks_its_verifier
     ));
 }
 

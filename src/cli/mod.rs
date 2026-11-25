@@ -100,13 +100,6 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "The most times the container of a grader is brought up again, where its health \
-                check does not pass, 0 or more"
-    )]
-    max_grader_health_check_retries: u64,
-    #[arg(
-        long,
-        value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
         help = "The most procreations to start"
     )]
@@ -118,6 +111,13 @@ pub struct StartOptions {
                 check does not pass, 0 or more"
     )]
     max_task_health_check_retries: u64,
+    #[arg(
+        long,
+        value_name = "COUNT",
+        help = "The most times a verifier container is brought up again, where its health \
+                check does not pass, 0 or more"
+    )]
+    max_verifier_health_check_retries: u64,
     #[arg(
         long,
         value_name = "NAME",
@@ -362,8 +362,8 @@ fn stopped(error: DirectedEvolutionError) -> (u8, String) {
         | DirectedEvolutionError::NotStarted
         | DirectedEvolutionError::TooLarge { .. }
         | DirectedEvolutionError::Environment { .. }
-        | DirectedEvolutionError::GraderNotOnTheMachine { .. }
-        | DirectedEvolutionError::GraderEnvironment { .. } => 2,
+        | DirectedEvolutionError::VerifierNotOnTheMachine { .. }
+        | DirectedEvolutionError::VerifierEnvironment { .. } => 2,
         DirectedEvolutionError::Journal(_)
         | DirectedEvolutionError::Asked
         | DirectedEvolutionError::Build(_)

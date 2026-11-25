@@ -42,7 +42,7 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
         build_command: Some(build_command),
         model: MODEL,
         procreation_timeout: time_limit,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
@@ -71,7 +71,7 @@ fn stopped_while_its_child_is_built() -> Procreated {
         build_command: Some("hostname > id; sleep 300"),
         model: MODEL,
         procreation_timeout: 60,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let id_file = outputs_directory.running_procreation(1).join("child/id");
@@ -106,7 +106,7 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
             ..MODEL
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let _ = containers::run_procreation(

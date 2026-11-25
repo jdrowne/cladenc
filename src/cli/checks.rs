@@ -86,7 +86,7 @@ impl StartOptions {
             max_procreations: self.max_procreations,
             max_concurrent_containers: self.max_concurrent_containers,
             procreation_timeout: self.procreation_timeout,
-            max_grader_health_check_retries: self.max_grader_health_check_retries,
+            max_verifier_health_check_retries: self.max_verifier_health_check_retries,
             max_task_health_check_retries: self.max_task_health_check_retries,
             seed,
         })
@@ -214,7 +214,7 @@ fn refused_benchmark(reason: String) -> Refused {
         accepted: "the directory of a benchmark, in which every directory is a task that holds \
                    a file of text named instruction.md, a file named task.toml that is valid as \
                    the task configuration of Harbor, a directory named tests with an executable \
-                   file named test.sh in it, or a grader in an image of its own, and a directory \
+                   file named test.sh in it, or a verifier in an image of its own, and a directory \
                    named environment with a file named Dockerfile and no Compose file in it, or, \
                    in place of the Dockerfile, an image named in its task.toml",
         reason: Some(reason),

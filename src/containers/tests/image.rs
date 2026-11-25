@@ -55,9 +55,9 @@ fn an_environment_whose_directory_in_the_outputs_directory_cannot_be_made_is_not
 }
 
 #[test]
-fn an_environment_of_a_grader_whose_directory_cannot_be_made_is_not_built() {
+fn a_verifier_environment_whose_directory_cannot_be_made_is_not_built() {
     let (_directory, outputs_directory) = with_a_file_where_the_environments_are_kept();
-    let result = image::build_grader_environment(
+    let result = image::build_verifier_environment(
         Host {
             docker: &Double::default(),
             outputs_directory: &outputs_directory,

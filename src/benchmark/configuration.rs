@@ -14,7 +14,7 @@ use crate::file_system::FileSystem;
 pub(super) const CONFIGURATION: &str = "task.toml";
 const VERIFIER: &str = "verifier";
 const SEPARATE: &str = "separate";
-const EVERYTHING: &str = "the whole container of the harness in the container of the grader";
+const EVERYTHING: &str = "the whole container of the harness in the verifier container";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
 const COLLECT_TIME_LIMIT: Duration = Duration::from_secs(60);
 const ELSEWHERE: &str = "a command in a container other than that of the harness";
@@ -74,7 +74,7 @@ macro_rules! keys {
 }
 
 const OF_THE_TASK: Keys = keys!("environment");
-const OF_THE_GRADER: Keys = keys!("verifier.environment");
+const OF_THE_VERIFIER: Keys = keys!("verifier.environment");
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct EnvironmentConfiguration {
@@ -119,10 +119,10 @@ pub struct TaskConfiguration {
     pub health_check: Option<HealthCheck>,
     pub harness_user: Option<String>,
     pub harness_time_limit: Option<Duration>,
-    pub grader_user: Option<String>,
-    pub grader_variables: Vec<(String, String)>,
-    pub grader_time_limit: Duration,
-    pub grader_environment: Option<EnvironmentConfiguration>,
+    pub verifier_user: Option<String>,
+    pub verifier_variables: Vec<(String, String)>,
+    pub verifier_time_limit: Duration,
+    pub verifier_environment: Option<EnvironmentConfiguration>,
     pub collect_commands: Vec<CollectCommand>,
     pub artifacts: Vec<Artifact>,
 }
@@ -139,10 +139,10 @@ impl Default for TaskConfiguration {
             health_check: None,
             harness_user: None,
             harness_time_limit: None,
-            grader_user: None,
-            grader_variables: Vec::new(),
-            grader_time_limit: TIME_LIMIT_LEFT_OUT,
-            grader_environment: None,
+            verifier_user: None,
+            verifier_variables: Vec::new(),
+            verifier_time_limit: TIME_LIMIT_LEFT_OUT,
+            verifier_environment: None,
             collect_commands: Vec::new(),
             artifacts: Vec::new(),
         }
@@ -209,8 +209,8 @@ impl Display for ConfigurationError {
             }
             Self::SharedAndSeparate => write!(
                 formatter,
-                "says under verifier that the grader shares the environment of the harness, as \
-                 environment_mode, and gives the grader an environment of its own, as environment"
+                "says under verifier that the verifier shares the environment of the harness, as \
+                 environment_mode, and gives the verifier an environment of its own, as environment"
             ),
             Self::NotAName { table, name } => write!(
                 formatter,
@@ -390,9 +390,9 @@ pub(super) fn read_with(
         return Err(ConfigurationError::Needs { what });
     }
     let of_the_task = settings(&OF_THE_TASK, environment, set)?;
-    let grader = time_limit("verifier.timeout_sec", verifier.timeout_sec)?;
-    let grader_environment = match own {
-        Some(own) => Some(settings(&OF_THE_GRADER, own, set)?),
+    let limit = time_limit("verifier.timeout_sec", verifier.timeout_sec)?;
+    let verifier_environment = match own {
+        Some(own) => Some(settings(&OF_THE_VERIFIER, own, set)?),
         None => (verifier.environment_mode.as_deref() == Some(SEPARATE)).then(|| {
             EnvironmentConfiguration {
                 docker_image: None,
@@ -401,7 +401,7 @@ pub(super) fn read_with(
         }),
     };
     let artifacts = artifacts::read(artifacts)?;
-    if grader_environment.is_some() && artifacts.iter().any(|artifact| artifact.path() == "/") {
+    if verifier_environment.is_some() && artifacts.iter().any(|artifact| artifact.path() == "/") {
         return Err(ConfigurationError::Needs { what: EVERYTHING });
     }
     Ok(TaskConfiguration {
@@ -414,10 +414,10 @@ pub(super) fn read_with(
         health_check: of_the_task.health_check,
         harness_user: given(agent.user.map(User::named)),
         harness_time_limit: time_limit("agent.timeout_sec", agent.timeout_sec)?,
-        grader_user: given(verifier.user.map(User::named)),
-        grader_variables: variables(VERIFIER, verifier.env, set)?,
-        grader_time_limit: grader.unwrap_or(TIME_LIMIT_LEFT_OUT),
-        grader_environment,
+        verifier_user: given(verifier.user.map(User::named)),
+        verifier_variables: variables(VERIFIER, verifier.env, set)?,
+        verifier_time_limit: limit.unwrap_or(TIME_LIMIT_LEFT_OUT),
+        verifier_environment,
         collect_commands: collect_commands(verifier.collect)?,
         artifacts,
     })

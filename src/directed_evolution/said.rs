@@ -252,7 +252,7 @@ impl Display for Said<'_> {
                     AttemptResult::NotCompleted => ("did not complete", ""),
                     AttemptResult::TimedOut => (
                         "did not complete",
-                        ", as the grader ran past its time limit",
+                        ", as the verifier ran past its time limit",
                     ),
                 };
                 let stopped = match ending {
@@ -316,15 +316,15 @@ pub(super) enum Environments<'a> {
         error: &'a ContainerError,
         outputs_directory: &'a OutputsDirectory,
     },
-    GraderBuilding {
+    VerifierBuilding {
         task: &'a str,
         image: &'a str,
     },
-    GraderTaking {
+    VerifierTaking {
         task: &'a str,
         image: &'a str,
     },
-    GraderNotBuilt {
+    VerifierNotBuilt {
         task: &'a str,
         error: &'a ContainerError,
         outputs_directory: &'a OutputsDirectory,
@@ -374,24 +374,24 @@ impl Display for Environments<'_> {
                  in {}",
                 outputs_directory.environment(task).display()
             ),
-            Self::GraderBuilding { task, image } => write!(
+            Self::VerifierBuilding { task, image } => write!(
                 formatter,
-                "building the environment of the grader of task {task} as the image {image}"
+                "building the verifier environment of task {task} as the image {image}"
             ),
-            Self::GraderTaking { task, image } => write!(
+            Self::VerifierTaking { task, image } => write!(
                 formatter,
-                "taking the image {image} as the environment of the grader of task {task}, as \
+                "taking the image {image} as the verifier environment of task {task}, as \
                  its task.toml says"
             ),
-            Self::GraderNotBuilt {
+            Self::VerifierNotBuilt {
                 task,
                 error,
                 outputs_directory,
             } => write!(
                 formatter,
-                "the build of the environment of the grader of task {task} {error}: what Docker \
+                "the build of the verifier environment of task {task} {error}: what Docker \
                  printed is kept in {}",
-                outputs_directory.grader_environment(task).display()
+                outputs_directory.verifier_environment(task).display()
             ),
         }
     }
@@ -412,8 +412,8 @@ impl Display for Retrying<'_> {
             wait,
         } = self.retry;
         let (not_yet, of) = match checked {
-            Checked::Task => ("carried out", "task"),
-            Checked::Grader => ("graded", "container of its grader"),
+            Checked::Task => ("carried out", "the task"),
+            Checked::Verifier => ("verified", "its verifier container"),
         };
         let wait = if wait == Duration::from_secs(1) {
             "1 second".to_owned()
@@ -423,7 +423,7 @@ impl Display for Retrying<'_> {
         write!(
             formatter,
             "the attempt of harness {} on task {} is not {not_yet} yet: the health check of \
-             the {of} did not pass, and cladenc tries again in a new container after {wait}, \
+             {of} did not pass, and cladenc tries again in a new container after {wait}, \
              retry {number} of {most}",
             self.harness, self.task
         )

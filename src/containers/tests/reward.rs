@@ -40,7 +40,7 @@ fn a_reward_txt_that_holds_two_numbers_is_not_completed() {
 }
 
 #[test]
-fn a_grader_that_left_no_score_did_not_complete_the_task() {
+fn a_verifier_that_left_no_score_did_not_complete_the_task() {
     assert!(!completed_on(&[]));
 }
 

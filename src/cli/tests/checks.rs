@@ -32,7 +32,7 @@ fn options(directory: &Memory) -> StartOptions {
         max_procreations: 800,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        max_grader_health_check_retries: 3,
+        max_verifier_health_check_retries: 3,
         max_task_health_check_retries: 2,
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,
@@ -73,7 +73,7 @@ fn flags_refused(change: impl FnOnce(&Memory, &mut StartOptions)) -> &'static [&
     checked(change).unwrap_err().flags
 }
 
-fn with_no_grader_in_a_task() -> Refused {
+fn with_no_verifier_in_a_task() -> Refused {
     checked(|directory, options| {
         directory
             .remove_dir_all(options.benchmark[0].join("t2/tests"))
@@ -107,7 +107,7 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             max_procreations: 800,
             max_concurrent_containers: 8,
             procreation_timeout: 3600,
-            max_grader_health_check_retries: 3,
+            max_verifier_health_check_retries: 3,
             max_task_health_check_retries: 2,
             selection_tasks_percentage: 30.0,
             holdout_tasks: settings.holdout_tasks.clone(),
@@ -340,11 +340,11 @@ fn a_refused_value_is_said_with_its_flag_and_what_the_flag_takes() {
 
 #[test]
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
-    assert!(with_no_grader_in_a_task().to_string().starts_with(
+    assert!(with_no_verifier_in_a_task().to_string().starts_with(
         "--benchmark takes the directory of a benchmark, in which every directory is a task that \
          holds a file of text named instruction.md, a file named task.toml that is valid as the \
          task configuration of Harbor, a directory named tests with an executable file named \
-         test.sh in it, or a grader in an image of its own, and a directory named environment \
+         test.sh in it, or a verifier in an image of its own, and a directory named environment \
          with a file named Dockerfile and no Compose file in it, or, in place of the Dockerfile, \
          an image named in its task.toml: /"
     ));

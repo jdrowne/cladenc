@@ -16,8 +16,8 @@ fn the_manual_of_start_names_each_setting_of_a_task_toml_that_cladenc_obeys() {
         "workdir under environment the working directory of the harness",
         "env under environment variables that the container is given,",
         "user under agent the user the harness runs as, a name or",
-        "user under verifier the user the grader runs as, in the",
-        "env under verifier variables that the grader alone is",
+        "user under verifier the user the verifier runs as, in the",
+        "env under verifier variables that the verifier alone is",
     ];
     assert!(settings.iter().all(|line| help.contains(line)));
 }
@@ -37,9 +37,9 @@ fn the_manual_of_start_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_g
          Windows, as os; MCP servers, as mcp_servers; a skills directory, as skills_dir; a path or \
          a command of a container other than that of the harness, as service of an entry under \
          artifacts or under verifier.collect that is not main; or the whole container of the \
-         harness in the container of the grader, as an entry under artifacts whose path names no \
-         file or directory, where the grader runs separately. The refusal names the task and what \
-         it asks for."
+         harness in the verifier container, as an entry under artifacts whose path names no \
+         file or directory, where the verifier runs separately. The refusal names the task and \
+         what it asks for."
     ));
 }
 
@@ -55,8 +55,8 @@ fn the_manual_of_start_says_that_a_setting_that_is_left_out_changes_nothing() {
 fn the_manual_of_start_says_to_whom_what_cladenc_copies_into_the_container_belongs() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The source code of the harness and /logs/artifacts belong to the user the harness runs \
-         as, and the copy of the tests directory and /logs/verifier belong to the user the grader \
-         runs as."
+         as, and the copy of the tests directory and /logs/verifier belong to the user the \
+         verifier runs as."
     ));
 }
 
@@ -107,8 +107,8 @@ fn the_manual_of_start_says_what_makes_a_task_toml_not_valid() {
         "A task.toml is not valid where it is not TOML, where it gives a setting a value of \
          another kind than the setting takes, or a value that is not one of those the setting \
          takes, where a table lacks a key it has to hold, such as command under \
-         environment.healthcheck, or where it says under verifier that the grader shares the \
-         environment of the harness, as environment_mode, and gives the grader an environment of \
+         environment.healthcheck, or where it says under verifier that the verifier shares the \
+         environment of the harness, as environment_mode, and gives the verifier an environment of \
          its own, as environment."
     ));
 }
@@ -131,9 +131,9 @@ fn the_manual_of_start_says_which_variable_of_a_task_toml_has_its_task_refused()
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_grader_runs_as_the_user_the_task_toml_names_for_it() {
+fn the_manual_of_start_says_that_the_verifier_runs_as_the_user_the_task_toml_names_for_it() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "as the same user, unless the task.toml of the task names a user for the grader, as"
+        "as the same user, unless the task.toml of the task names a user for the verifier, as"
     ));
 }
 
@@ -191,7 +191,7 @@ fn the_manual_of_start_names_the_time_limits_of_a_task_toml_that_cladenc_obeys()
     let help = manual_on_one_line("cladenc-start");
     let settings = [
         "timeout_sec under agent the time limit of the harness, in seconds",
-        "timeout_sec under verifier the time limit of the grader, in seconds",
+        "timeout_sec under verifier the time limit of the verifier, in seconds",
         "build_timeout_sec under environment the time limit of the build of the environment, in \
          seconds",
     ];
@@ -215,10 +215,10 @@ fn the_manual_of_start_says_that_what_a_stopped_harness_left_is_judged_all_the_s
 }
 
 #[test]
-fn the_manual_of_start_says_what_time_limit_the_grader_has_and_from_when_it_is_counted() {
+fn the_manual_of_start_says_what_time_limit_the_verifier_has_and_from_when_it_is_counted() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The grader has a time limit of its own, timeout_sec under verifier, or 600 seconds where \
-         the task gives none, counted from the moment the harness ended or was stopped."
+        "The verifier has a time limit of its own, timeout_sec under verifier, or 600 seconds \
+         where the task gives none, counted from the moment the harness ended or was stopped."
     ));
 }
 
@@ -241,7 +241,7 @@ fn the_manual_of_start_says_that_a_container_with_no_time_limit_does_not_end_its
 #[test]
 fn the_manual_of_start_says_how_long_the_container_of_an_attempt_sleeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "<SECONDS> the time limit of the harness and the time limit of the grader together, the \
+        "<SECONDS> the time limit of the harness and the time limit of the verifier together, the \
          longest the health check of the task can take, and ten minutes more, for what cladenc \
          copies in and out"
     ));
@@ -275,7 +275,7 @@ fn the_manual_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc
 fn the_manual_of_start_says_that_an_attempt_is_given_no_more_than_its_task_asks_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The container of an attempt is given no more CPUs and no more memory than its task asks \
-         for, as --cpus and --memory of docker run, so the harness and the grader have them \
+         for, as --cpus and --memory of docker run, so the harness and the verifier have them \
          between them."
     ));
 }

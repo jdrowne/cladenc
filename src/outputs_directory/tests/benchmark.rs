@@ -51,7 +51,7 @@ fn the_copy_of_a_benchmark_holds_the_environment_of_each_task() {
 }
 
 #[test]
-fn the_grader_of_a_task_stays_executable_in_the_copy() {
+fn the_verifier_of_a_task_stays_executable_in_the_copy() {
     let (directory, path, _) = copied(&["t1", "t2", "t3"]);
     let mode = directory.mode(path.join("benchmarks/benchmark/t1/tests/test.sh"));
     assert_eq!(mode & 0o777, 0o750);

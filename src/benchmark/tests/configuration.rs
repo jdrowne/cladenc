@@ -133,17 +133,17 @@ fn a_time_limit_may_be_a_part_of_a_second() {
 }
 
 #[test]
-fn the_time_limit_of_the_grader_is_read_from_timeout_sec_under_verifier() {
+fn the_time_limit_of_the_verifier_is_read_from_timeout_sec_under_verifier() {
     assert_eq!(
-        says("[verifier]\ntimeout_sec = 120\n").grader_time_limit,
+        says("[verifier]\ntimeout_sec = 120\n").verifier_time_limit,
         Duration::from_secs(120)
     );
 }
 
 #[test]
-fn a_task_that_gives_the_grader_no_time_limit_gives_it_600_seconds() {
+fn a_task_that_gives_the_verifier_no_time_limit_gives_it_600_seconds() {
     assert_eq!(
-        says("[agent]\ntimeout_sec = 90\n").grader_time_limit,
+        says("[agent]\ntimeout_sec = 90\n").verifier_time_limit,
         Duration::from_secs(600)
     );
 }
@@ -165,11 +165,11 @@ fn a_task_that_gives_the_build_of_its_environment_no_time_limit_gives_it_600_sec
 }
 
 #[test]
-fn the_settings_of_a_task_that_sets_none_give_the_grader_and_the_build_600_seconds_each() {
+fn the_settings_of_a_task_that_sets_none_give_the_verifier_and_the_build_600_seconds_each() {
     let configuration = TaskConfiguration::default();
     assert_eq!(
         (
-            configuration.grader_time_limit,
+            configuration.verifier_time_limit,
             configuration.build_time_limit
         ),
         (Duration::from_secs(600), Duration::from_secs(600))
@@ -473,28 +473,28 @@ fn a_user_given_as_a_number_is_read_as_that_number() {
 }
 
 #[test]
-fn the_user_of_the_grader_is_read_from_user_under_verifier() {
+fn the_user_of_the_verifier_is_read_from_user_under_verifier() {
     assert_eq!(
-        says("[verifier]\nuser = \"judge\"\n").grader_user,
+        says("[verifier]\nuser = \"judge\"\n").verifier_user,
         Some("judge".to_owned())
     );
 }
 
 #[test]
-fn the_user_of_the_harness_is_not_the_user_of_the_grader() {
-    assert_eq!(says("[agent]\nuser = \"worker\"\n").grader_user, None);
+fn the_user_of_the_harness_is_not_the_user_of_the_verifier() {
+    assert_eq!(says("[agent]\nuser = \"worker\"\n").verifier_user, None);
 }
 
 #[test]
-fn the_variables_of_the_grader_are_read_from_env_under_verifier() {
+fn the_variables_of_the_verifier_are_read_from_env_under_verifier() {
     assert_eq!(
-        says("[verifier.env]\nJUDGE = \"strict\"\n").grader_variables,
+        says("[verifier.env]\nJUDGE = \"strict\"\n").verifier_variables,
         variables(&[("JUDGE", "strict")])
     );
 }
 
 #[test]
-fn the_variables_of_the_grader_are_not_those_of_the_environment() {
+fn the_variables_of_the_verifier_are_not_those_of_the_environment() {
     assert_eq!(
         says("[verifier.env]\nJUDGE = \"strict\"\n").variables,
         variables(&[])
@@ -519,7 +519,7 @@ fn a_working_directory_named_with_nothing_is_left_out() {
 
 #[test]
 fn a_user_named_with_nothing_is_left_out() {
-    assert_eq!(says("[verifier]\nuser = \"\"\n").grader_user, None);
+    assert_eq!(says("[verifier]\nuser = \"\"\n").verifier_user, None);
 }
 
 #[test]
@@ -531,9 +531,9 @@ fn a_variable_written_with_braces_is_given_the_value_it_has_where_cladenc_runs()
 }
 
 #[test]
-fn a_variable_of_the_grader_is_given_the_value_it_has_where_cladenc_runs() {
+fn a_variable_of_the_verifier_is_given_the_value_it_has_where_cladenc_runs() {
     assert_eq!(
-        says("[verifier.env]\nAPI_TOKEN = \"${TOKEN}\"\n").grader_variables,
+        says("[verifier.env]\nAPI_TOKEN = \"${TOKEN}\"\n").verifier_variables,
         variables(&[("API_TOKEN", "a-made-up-token")])
     );
 }
@@ -599,7 +599,7 @@ fn a_variable_that_is_not_set_and_has_no_default_is_refused() {
 }
 
 #[test]
-fn a_variable_of_the_grader_that_is_not_set_is_refused_under_verifier() {
+fn a_variable_of_the_verifier_that_is_not_set_is_refused_under_verifier() {
     assert_eq!(
         read("[verifier.env]\nAPI_TOKEN = \"${ELSEWHERE}\"\n"),
         Err(ConfigurationError::NotSet {
@@ -839,7 +839,7 @@ fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
 }
 
 #[test]
-fn a_task_with_no_grader_and_no_task_toml_is_refused_for_its_grader() {
+fn a_task_with_no_verifier_and_no_task_toml_is_refused_for_its_verifier() {
     let directory = Memory::default();
     let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
     directory
@@ -850,7 +850,7 @@ fn a_task_with_no_grader_and_no_task_toml_is_refused_for_its_grader() {
         .unwrap();
     assert_eq!(
         benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoGrader {
+        Err(BenchmarkError::NoVerifier {
             task: "t2".to_owned()
         })
     );
@@ -921,7 +921,7 @@ fn a_task_whose_task_toml_names_an_image_is_still_refused_for_a_compose_file() {
 }
 
 #[test]
-fn a_task_with_no_grader_and_a_task_toml_that_cannot_be_obeyed_is_refused_for_its_grader() {
+fn a_task_with_no_verifier_and_a_task_toml_that_cannot_be_obeyed_is_refused_for_its_verifier() {
     let directory = Memory::default();
     let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
     directory
@@ -932,7 +932,7 @@ fn a_task_with_no_grader_and_a_task_toml_that_cannot_be_obeyed_is_refused_for_it
         .unwrap();
     assert_eq!(
         benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoGrader {
+        Err(BenchmarkError::NoVerifier {
             task: "t2".to_owned()
         })
     );

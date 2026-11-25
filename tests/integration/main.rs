@@ -32,11 +32,11 @@ mod directed_evolution {
     mod configuration;
     mod environment;
     mod experiment;
-    mod grader;
     mod held_out;
     mod image;
     mod keyed;
     mod stopped;
+    mod verifier;
 }
 
 mod file_system {

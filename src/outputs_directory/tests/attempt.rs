@@ -66,38 +66,38 @@ fn a_started_attempt_holds_the_specification_of_its_task() {
 }
 
 #[test]
-fn a_started_attempt_holds_a_directory_for_the_grader_with_nothing_in_it_but_its_logs() {
+fn a_started_attempt_holds_a_directory_for_the_verifier_with_nothing_in_it_but_its_logs() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         entries(
             &directory,
             outputs_directory
                 .running_attempt(0, "benchmark/t1")
-                .join("grader")
+                .join("verifier")
         ),
         1
     );
 }
 
 #[test]
-fn a_started_attempt_holds_an_empty_directory_for_what_the_grader_leaves_in_logs_verifier() {
+fn a_started_attempt_holds_an_empty_directory_for_what_the_verifier_leaves_in_logs_verifier() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         entries(
             &directory,
             outputs_directory
                 .running_attempt(0, "benchmark/t1")
-                .join("grader/logs/verifier")
+                .join("verifier/logs/verifier")
         ),
         0
     );
 }
 
 #[test]
-fn a_started_attempt_holds_nothing_but_the_specification_and_a_directory_for_the_grader() {
+fn a_started_attempt_holds_nothing_but_the_specification_and_a_directory_for_the_verifier() {
     let (directory, outputs_directory) = started();
     let names = directory.names_in(outputs_directory.running_attempt(0, "benchmark/t1"));
-    assert_eq!(names, ["grader", "specification"]);
+    assert_eq!(names, ["specification", "verifier"]);
 }
 
 #[test]

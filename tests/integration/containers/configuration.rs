@@ -16,7 +16,7 @@ const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt";
 const TASK: &str = "benchmark/t1";
 const AS_1000: &str = "[agent]\nuser = 1000\n";
-const GRADED_AS_1000: &str = "[verifier]\nuser = 1000\n";
+const VERIFIED_AS_1000: &str = "[verifier]\nuser = 1000\n";
 const ELSEWHERE: &str = "[environment]\nworkdir = \"/srv/elsewhere\"\n";
 const WITH_A_MODE: &str = "[environment.env]\nMODE = \"strict\"\n";
 const WITH_A_JUDGE: &str = "[verifier.env]\nJUDGE = \"strict\"\n";
@@ -32,7 +32,7 @@ struct Attempted {
 struct Asked {
     attempted: Attempted,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 }
 
 fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<Image>) {
@@ -61,13 +61,13 @@ fn environment_of(outputs_directory: &OutputsDirectory) -> (Environment, Option<
         Environment {
             image,
             configuration,
-            grader: None,
+            verifier: None,
         },
         built,
     )
 }
 
-fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
+fn attempted(task_toml: &str, run_command: &str, verifier: &str) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -78,7 +78,7 @@ fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", grader);
+    test_inputs::kept_verifier(&path, "t1", verifier);
     let (environment, built) = environment_of(&outputs_directory);
     let launch = Launch {
         image: test_inputs::IMAGE,
@@ -90,7 +90,7 @@ fn attempted(task_toml: &str, run_command: &str, grader: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let result = containers::run_attempt(
@@ -123,23 +123,23 @@ fn printed_by_the_harness(task_toml: &str, run_command: &str) -> String {
     kept(&attempted(task_toml, run_command, FINISHED), "stdout")
 }
 
-fn printed_by_the_grader(task_toml: &str, grader: &str) -> String {
-    kept(&attempted(task_toml, FINISH, grader), "grader/stdout")
+fn printed_by_the_verifier(task_toml: &str, verifier: &str) -> String {
+    kept(&attempted(task_toml, FINISH, verifier), "verifier/stdout")
 }
 
 fn asked(
     task_toml: &str,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 ) -> Asked {
     Asked {
         attempted: attempted(
             task_toml,
             &test_inputs::one_after_another(of_the_harness),
-            &test_inputs::one_after_another(of_the_grader),
+            &test_inputs::one_after_another(of_the_verifier),
         ),
         of_the_harness,
-        of_the_grader,
+        of_the_verifier,
     }
 }
 
@@ -151,9 +151,9 @@ static WITH_A_USER_FOR_THE_HARNESS: LazyLock<Asked> = LazyLock::new(|| {
     )
 });
 
-static WITH_A_USER_FOR_THE_GRADER: LazyLock<Asked> = LazyLock::new(|| {
+static WITH_A_USER_FOR_THE_VERIFIER: LazyLock<Asked> = LazyLock::new(|| {
     asked(
-        GRADED_AS_1000,
+        VERIFIED_AS_1000,
         &["id -u", FINISH],
         &["id -u", "stat -c %u /tests/test.sh", FINISHED],
     )
@@ -165,7 +165,7 @@ static WITH_A_WORKING_DIRECTORY: LazyLock<Asked> =
 static WITH_A_VARIABLE_OF_THE_ENVIRONMENT: LazyLock<Asked> =
     LazyLock::new(|| asked(WITH_A_MODE, &["echo \"$MODE\""], &["echo \"$MODE\""]));
 
-static WITH_A_VARIABLE_FOR_THE_GRADER: LazyLock<Asked> = LazyLock::new(|| {
+static WITH_A_VARIABLE_FOR_THE_VERIFIER: LazyLock<Asked> = LazyLock::new(|| {
     asked(
         WITH_A_JUDGE,
         &["echo \"${JUDGE-not given}\""],
@@ -184,11 +184,11 @@ fn found_by_the_harness(asked: &Asked, command: &str) -> String {
     )
 }
 
-fn found_by_the_grader(asked: &Asked, command: &str) -> String {
+fn found_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
-        asked.of_the_grader,
-        &kept(&asked.attempted, "grader/stdout"),
+        asked.of_the_verifier,
+        &kept(&asked.attempted, "verifier/stdout"),
     )
 }
 
@@ -220,43 +220,43 @@ fn the_source_code_of_the_harness_belongs_to_the_user_the_task_names() {
 }
 
 #[test]
-fn the_grader_of_a_task_that_names_a_user_for_the_harness_alone_runs_as_the_user_of_the_environment()
+fn the_verifier_of_a_task_that_names_a_user_for_the_harness_alone_runs_as_the_user_of_the_environment()
  {
     assert_eq!(
-        found_by_the_grader(&WITH_A_USER_FOR_THE_HARNESS, "id -u"),
+        found_by_the_verifier(&WITH_A_USER_FOR_THE_HARNESS, "id -u"),
         "0\n"
     );
 }
 
 #[test]
-fn the_grader_runs_as_the_user_the_task_names_for_it() {
+fn the_verifier_runs_as_the_user_the_task_names_for_it() {
     assert_eq!(
-        found_by_the_grader(&WITH_A_USER_FOR_THE_GRADER, "id -u"),
+        found_by_the_verifier(&WITH_A_USER_FOR_THE_VERIFIER, "id -u"),
         "1000\n"
     );
 }
 
 #[test]
-fn the_harness_of_a_task_that_names_a_user_for_the_grader_alone_runs_as_the_user_of_the_environment()
+fn the_harness_of_a_task_that_names_a_user_for_the_verifier_alone_runs_as_the_user_of_the_environment()
  {
     assert_eq!(
-        found_by_the_harness(&WITH_A_USER_FOR_THE_GRADER, "id -u"),
+        found_by_the_harness(&WITH_A_USER_FOR_THE_VERIFIER, "id -u"),
         "0\n"
     );
 }
 
 #[test]
-fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_grader() {
+fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_verifier() {
     assert_eq!(
-        found_by_the_grader(&WITH_A_USER_FOR_THE_GRADER, "stat -c %u /tests/test.sh"),
+        found_by_the_verifier(&WITH_A_USER_FOR_THE_VERIFIER, "stat -c %u /tests/test.sh"),
         "1000\n"
     );
 }
 
 #[test]
-fn a_grader_that_runs_as_another_user_than_the_harness_can_score() {
+fn a_verifier_that_runs_as_another_user_than_the_harness_can_score() {
     assert!(matches!(
-        WITH_A_USER_FOR_THE_GRADER.attempted.result,
+        WITH_A_USER_FOR_THE_VERIFIER.attempted.result,
         Ok(containers::Attempted {
             result: AttemptResult::Completed,
             ..
@@ -281,9 +281,9 @@ fn the_harness_works_in_the_working_directory_the_task_names() {
 }
 
 #[test]
-fn the_grader_works_in_the_working_directory_the_task_names() {
+fn the_verifier_works_in_the_working_directory_the_task_names() {
     assert_eq!(
-        found_by_the_grader(&WITH_A_WORKING_DIRECTORY, "pwd"),
+        found_by_the_verifier(&WITH_A_WORKING_DIRECTORY, "pwd"),
         "/srv/elsewhere\n"
     );
 }
@@ -305,26 +305,26 @@ fn the_harness_is_given_the_variables_of_the_environment_of_the_task() {
 }
 
 #[test]
-fn the_grader_is_given_the_variables_of_the_environment_of_the_task() {
+fn the_verifier_is_given_the_variables_of_the_environment_of_the_task() {
     assert_eq!(
-        found_by_the_grader(&WITH_A_VARIABLE_OF_THE_ENVIRONMENT, "echo \"$MODE\""),
+        found_by_the_verifier(&WITH_A_VARIABLE_OF_THE_ENVIRONMENT, "echo \"$MODE\""),
         "strict\n"
     );
 }
 
 #[test]
-fn the_grader_is_given_the_variables_the_task_names_for_it() {
+fn the_verifier_is_given_the_variables_the_task_names_for_it() {
     assert_eq!(
-        found_by_the_grader(&WITH_A_VARIABLE_FOR_THE_GRADER, "echo \"$JUDGE\""),
+        found_by_the_verifier(&WITH_A_VARIABLE_FOR_THE_VERIFIER, "echo \"$JUDGE\""),
         "strict\n"
     );
 }
 
 #[test]
-fn the_harness_is_not_given_the_variables_the_task_names_for_the_grader() {
+fn the_harness_is_not_given_the_variables_the_task_names_for_the_verifier() {
     assert_eq!(
         found_by_the_harness(
-            &WITH_A_VARIABLE_FOR_THE_GRADER,
+            &WITH_A_VARIABLE_FOR_THE_VERIFIER,
             "echo \"${JUDGE-not given}\""
         ),
         "not given\n"
@@ -332,9 +332,9 @@ fn the_harness_is_not_given_the_variables_the_task_names_for_the_grader() {
 }
 
 #[test]
-fn a_variable_the_task_names_for_the_grader_takes_the_place_of_one_of_the_environment() {
+fn a_variable_the_task_names_for_the_verifier_takes_the_place_of_one_of_the_environment() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             "[environment.env]\nMODE = \"strict\"\n[verifier.env]\nMODE = \"lenient\"\n",
             "echo \"$MODE\""
         ),
@@ -392,8 +392,8 @@ fn an_attempt_is_carried_out_in_the_image_the_task_names() {
 }
 
 #[test]
-fn the_grader_of_a_task_that_names_an_image_runs_in_a_container_of_that_image() {
-    assert_eq!(found_by_the_grader(&WITH_AN_IMAGE, "pwd"), "/\n");
+fn the_verifier_of_a_task_that_names_an_image_runs_in_a_container_of_that_image() {
+    assert_eq!(found_by_the_verifier(&WITH_AN_IMAGE, "pwd"), "/\n");
 }
 
 #[test]
@@ -405,9 +405,9 @@ fn the_harness_is_given_no_more_cpus_than_its_task_asks_for() {
 }
 
 #[test]
-fn the_grader_is_given_no_more_cpus_than_its_task_asks_for() {
+fn the_verifier_is_given_no_more_cpus_than_its_task_asks_for() {
     assert_eq!(
-        printed_by_the_grader("[environment]\ncpus = 2\n", "cat /sys/fs/cgroup/cpu.max"),
+        printed_by_the_verifier("[environment]\ncpus = 2\n", "cat /sys/fs/cgroup/cpu.max"),
         "200000 100000\n"
     );
 }
@@ -424,9 +424,9 @@ fn the_harness_is_given_no_more_memory_than_its_task_asks_for() {
 }
 
 #[test]
-fn the_grader_is_given_no_more_memory_than_its_task_asks_for_in_the_older_spelling() {
+fn the_verifier_is_given_no_more_memory_than_its_task_asks_for_in_the_older_spelling() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             "[environment]\nmemory = '256M'\n",
             "cat /sys/fs/cgroup/memory.max"
         ),

@@ -3,8 +3,8 @@ use std::path::Path;
 use super::ContainerError;
 use super::container::Up;
 
-pub(super) const GRADER: &str = "/tests/test.sh";
-pub(super) const VERIFIER: &str = "/logs/verifier";
+pub(super) const VERIFIER: &str = "/tests/test.sh";
+pub(super) const VERIFIER_LOGS: &str = "/logs/verifier";
 
 const LOGS: &str = "/logs";
 const KEPT_LOGS: &str = "/var/log/cladenc/harbor";
@@ -31,7 +31,7 @@ pub(super) fn make_artifacts(up: &Up<'_>, owner: &str) -> Result<(), ContainerEr
 pub(super) fn empty_verifier(up: &Up<'_>, owner: &str) -> Result<(), ContainerError> {
     up.run_as_root(
         &format!("{LINKED_WHERE_NOTHING_IS} && {EMPTIED}"),
-        &[LOGS, KEPT_LOGS, VERIFIER, owner],
+        &[LOGS, KEPT_LOGS, VERIFIER_LOGS, owner],
     )
 }
 

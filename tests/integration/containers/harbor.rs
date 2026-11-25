@@ -36,10 +36,10 @@ struct Attempted {
 struct Asked {
     attempted: Attempted,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 }
 
-fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
+fn attempted_in(steps: &str, run_command: &str, verifier: &str) -> Attempted {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
     let path = directory.path().join("outputs");
@@ -49,7 +49,7 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", grader);
+    test_inputs::kept_verifier(&path, "t1", verifier);
     fs::write(
         outputs_directory.task(TASK).join("environment/Dockerfile"),
         format!("FROM {}\n{steps}", test_inputs::IMAGE),
@@ -78,17 +78,17 @@ fn attempted_in(steps: &str, run_command: &str, grader: &str) -> Attempted {
             key: None,
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let environment = containers::Environment {
         image: image.name.clone(),
         configuration: TaskConfiguration {
             harness_time_limit: Some(Duration::from_secs(30)),
-            grader_time_limit: Duration::from_secs(30),
+            verifier_time_limit: Duration::from_secs(30),
             ..TaskConfiguration::default()
         },
-        grader: None,
+        verifier: None,
     };
     let result = containers::run_attempt(
         Host {
@@ -119,16 +119,16 @@ fn kept(attempted: &Attempted, file: &str) -> String {
 fn asked_in(
     steps: &str,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 ) -> Asked {
     Asked {
         attempted: attempted_in(
             steps,
             &test_inputs::one_after_another(of_the_harness),
-            &test_inputs::one_after_another(of_the_grader),
+            &test_inputs::one_after_another(of_the_verifier),
         ),
         of_the_harness,
-        of_the_grader,
+        of_the_verifier,
     }
 }
 
@@ -194,16 +194,19 @@ fn printed_by_the_harness(asked: &Asked, command: &str) -> String {
     )
 }
 
-fn printed_by_the_grader(asked: &Asked, command: &str) -> String {
+fn printed_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
-        asked.of_the_grader,
-        &kept(&asked.attempted, "grader/stdout"),
+        asked.of_the_verifier,
+        &kept(&asked.attempted, "verifier/stdout"),
     )
 }
 
-fn printed_by_the_grader_in(steps: &str, run_command: &str, grader: &str) -> String {
-    kept(&attempted_in(steps, run_command, grader), "grader/stdout")
+fn printed_by_the_verifier_in(steps: &str, run_command: &str, verifier: &str) -> String {
+    kept(
+        &attempted_in(steps, run_command, verifier),
+        "verifier/stdout",
+    )
 }
 
 fn result_of(attempted: &Attempted) -> Option<AttemptResult> {
@@ -290,7 +293,7 @@ fn nothing_is_made_under_var_log_where_the_environment_of_the_task_holds_logs() 
 }
 
 #[test]
-fn the_grader_scores_in_the_logs_that_the_environment_of_the_task_holds() {
+fn the_verifier_scores_in_the_logs_that_the_environment_of_the_task_holds() {
     assert_eq!(
         result_of(&HOLDING_LOGS_AND_LOOKED_AT.attempted),
         Some(AttemptResult::Completed)
@@ -298,9 +301,9 @@ fn the_grader_scores_in_the_logs_that_the_environment_of_the_task_holds() {
 }
 
 #[test]
-fn the_grader_finds_logs_verifier_under_var_log_beside_logs_artifacts() {
+fn the_verifier_finds_logs_verifier_under_var_log_beside_logs_artifacts() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             &AS_ROOT_AND_LOOKED_AT,
             "find /var/log/cladenc/harbor | sort"
         ),
@@ -310,9 +313,9 @@ fn the_grader_finds_logs_verifier_under_var_log_beside_logs_artifacts() {
 }
 
 #[test]
-fn logs_verifier_belongs_to_the_user_the_grader_runs_as() {
+fn logs_verifier_belongs_to_the_user_the_verifier_runs_as() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             &AS_A_USER_AND_LOOKED_AT,
             "stat -c %u /var/log/cladenc/harbor/verifier"
         ),
@@ -321,17 +324,17 @@ fn logs_verifier_belongs_to_the_user_the_grader_runs_as() {
 }
 
 #[test]
-fn the_grader_finds_logs_a_symbolic_link_again_where_the_harness_removed_it() {
+fn the_verifier_finds_logs_a_symbolic_link_again_where_the_harness_removed_it() {
     assert_eq!(
-        printed_by_the_grader_in(AS_ROOT, "rm /logs", "readlink /logs"),
+        printed_by_the_verifier_in(AS_ROOT, "rm /logs", "readlink /logs"),
         "/var/log/cladenc/harbor\n"
     );
 }
 
 #[test]
-fn the_grader_finds_tests_a_symbolic_link_to_a_directory_under_var_opt() {
+fn the_verifier_finds_tests_a_symbolic_link_to_a_directory_under_var_opt() {
     assert_eq!(
-        printed_by_the_grader(&AS_ROOT_AND_LOOKED_AT, "readlink /tests"),
+        printed_by_the_verifier(&AS_ROOT_AND_LOOKED_AT, "readlink /tests"),
         "/var/opt/cladenc/harbor/tests\n"
     );
 }
@@ -339,16 +342,16 @@ fn the_grader_finds_tests_a_symbolic_link_to_a_directory_under_var_opt() {
 #[test]
 fn the_directory_that_tests_points_to_holds_the_tests_of_the_task_and_nothing_else() {
     assert_eq!(
-        printed_by_the_grader(&AS_ROOT_AND_LOOKED_AT, "find /var/opt/cladenc/harbor"),
+        printed_by_the_verifier(&AS_ROOT_AND_LOOKED_AT, "find /var/opt/cladenc/harbor"),
         "/var/opt/cladenc/harbor\n/var/opt/cladenc/harbor/tests\n\
          /var/opt/cladenc/harbor/tests/test.sh\n"
     );
 }
 
 #[test]
-fn the_tests_of_the_task_belong_to_the_user_the_grader_runs_as() {
+fn the_tests_of_the_task_belong_to_the_user_the_verifier_runs_as() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             &AS_A_USER_AND_LOOKED_AT,
             "stat -c %u /var/opt/cladenc/harbor/tests /tests/test.sh"
         ),
@@ -357,25 +360,25 @@ fn the_tests_of_the_task_belong_to_the_user_the_grader_runs_as() {
 }
 
 #[test]
-fn a_file_the_harness_left_where_tests_points_is_not_found_by_the_grader() {
+fn a_file_the_harness_left_where_tests_points_is_not_found_by_the_verifier() {
     assert_eq!(
-        printed_by_the_grader(&AS_ROOT_AND_WRITTEN_TO, "ls -A /tests"),
+        printed_by_the_verifier(&AS_ROOT_AND_WRITTEN_TO, "ls -A /tests"),
         "test.sh\n"
     );
 }
 
 #[test]
-fn what_the_environment_of_the_task_holds_at_tests_is_not_found_by_the_grader() {
+fn what_the_environment_of_the_task_holds_at_tests_is_not_found_by_the_verifier() {
     assert_eq!(
-        printed_by_the_grader_in(HOLDS_TESTS, FINISH, "ls -A /tests"),
+        printed_by_the_verifier_in(HOLDS_TESTS, FINISH, "ls -A /tests"),
         "test.sh\n"
     );
 }
 
 #[test]
-fn the_grader_finds_logs_and_tests_at_the_top_of_the_filesystem_as_symbolic_links() {
+fn the_verifier_finds_logs_and_tests_at_the_top_of_the_filesystem_as_symbolic_links() {
     assert_eq!(
-        printed_by_the_grader(
+        printed_by_the_verifier(
             &AS_ROOT_AND_LOOKED_AT,
             "[ -L /logs ] && [ -L /tests ] && echo links"
         ),

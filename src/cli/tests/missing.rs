@@ -13,7 +13,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--max-procreations", "800"),
     ("--max-concurrent-containers", "8"),
     ("--procreation-timeout", "3600"),
-    ("--max-grader-health-check-retries", "3"),
+    ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
     ("--corroboration-tasks-percentage", "15"),
@@ -113,9 +113,9 @@ fn leaving_out_the_limit_of_concurrent_containers_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_most_retries_of_the_health_check_of_a_grader_is_an_error() {
+fn leaving_out_the_most_retries_of_the_health_check_of_a_verifier_is_an_error() {
     assert_eq!(
-        refusal_without("--max-grader-health-check-retries"),
+        refusal_without("--max-verifier-health-check-retries"),
         ErrorKind::MissingRequiredArgument
     );
 }

@@ -151,9 +151,9 @@ fn an_attempt_whose_task_has_no_health_check_keeps_nothing_of_one() {
 }
 
 #[test]
-fn the_most_retries_of_the_health_check_of_a_grader_are_not_those_of_that_of_a_task() {
+fn the_most_retries_of_the_health_check_of_a_verifier_are_not_those_of_that_of_a_task() {
     let launch = Launch {
-        max_grader_health_check_retries: 3,
+        max_verifier_health_check_retries: 3,
         ..LAUNCH
     };
     let environment = given::environment(with(given::checked(1)));

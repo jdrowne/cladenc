@@ -6,9 +6,9 @@ use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
 
 const IMAGES_REMOVED: &str = "docker image rm --force \
-                              cladenc-environments-0123456789abcdef:0-grader \
+                              cladenc-environments-0123456789abcdef:0-verifier \
                               cladenc-environments-0123456789abcdef:0 \
-                              cladenc-environments-0123456789abcdef:1-grader \
+                              cladenc-environments-0123456789abcdef:1-verifier \
                               cladenc-environments-0123456789abcdef:1";
 
 const SHOWN_THE_PRIMOGENITOR: &str = "/attempts/0:/var/log/cladenc/attempts:ro";
@@ -46,7 +46,7 @@ fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
 fn selected() -> Evolved {
     let docker = Double::default()
         .changing()
-        .grading(|attempt| attempt.starts_with("attempt-1-"));
+        .verifying(|attempt| attempt.starts_with("attempt-1-"));
     given::started(docker, with_a_selection_task)
 }
 

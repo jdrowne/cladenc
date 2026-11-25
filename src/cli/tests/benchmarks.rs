@@ -8,7 +8,7 @@ use crate::journal::Settings;
 const TAKES: &str = "the directory of a benchmark, in which every directory is a task that holds \
                      a file of text named instruction.md, a file named task.toml that is valid as \
                      the task configuration of Harbor, a directory named tests with an executable \
-                     file named test.sh in it, or a grader in an image of its own, and a \
+                     file named test.sh in it, or a verifier in an image of its own, and a \
                      directory named environment with a file named Dockerfile and no Compose file \
                      in it, or, in place of the Dockerfile, an image named in its task.toml";
 
@@ -32,7 +32,7 @@ fn options(directory: &Memory) -> StartOptions {
         max_procreations: 800,
         max_concurrent_containers: 8,
         procreation_timeout: 3600,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 30.0,
         corroboration_tasks_percentage: 30.0,

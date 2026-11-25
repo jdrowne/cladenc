@@ -33,7 +33,7 @@ fn tasks_kept_under(evolved: &Evolved, kept: &str) -> [Vec<String>; 2] {
 fn best_harness_where_the_child_completes(task: &'static str) -> Option<u64> {
     let docker = Double::default()
         .changing()
-        .grading(move |attempt| attempt == format!("attempt-1-benchmark+{task}"));
+        .verifying(move |attempt| attempt == format!("attempt-1-benchmark+{task}"));
     given::started(docker, holding_out).best_harness()
 }
 

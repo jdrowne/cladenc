@@ -34,12 +34,12 @@ pub enum DirectedEvolutionError {
         task: String,
         error: ContainerError,
     },
-    GraderNotOnTheMachine {
+    VerifierNotOnTheMachine {
         task: String,
         image: String,
         error: io::Error,
     },
-    GraderEnvironment {
+    VerifierEnvironment {
         task: String,
         error: ContainerError,
     },
@@ -100,14 +100,14 @@ impl Display for DirectedEvolutionError {
                 formatter,
                 "the environment of task {task} was not built: its build {error}"
             ),
-            Self::GraderNotOnTheMachine { task, image, error } => write!(
+            Self::VerifierNotOnTheMachine { task, image, error } => write!(
                 formatter,
-                "the environment of the grader of task {task} is not on the machine: its \
+                "the verifier environment of task {task} is not on the machine: its \
                  task.toml names the image {image}, and cladenc fetches no image: {error}"
             ),
-            Self::GraderEnvironment { task, error } => write!(
+            Self::VerifierEnvironment { task, error } => write!(
                 formatter,
-                "the environment of the grader of task {task} was not built: its build {error}"
+                "the verifier environment of task {task} was not built: its build {error}"
             ),
             Self::Journal(error) => write!(
                 formatter,

@@ -100,8 +100,8 @@ fn a_directed_evolution_with_an_environment_that_is_not_built_ends_with_status_t
 }
 
 #[test]
-fn a_directed_evolution_with_a_grader_whose_image_is_not_on_the_machine_ends_with_status_two() {
-    let error = DirectedEvolutionError::GraderNotOnTheMachine {
+fn a_directed_evolution_with_a_verifier_whose_image_is_not_on_the_machine_ends_with_status_two() {
+    let error = DirectedEvolutionError::VerifierNotOnTheMachine {
         task: TASK.to_owned(),
         image: IMAGE.to_owned(),
         error: no_such_image(),
@@ -110,8 +110,8 @@ fn a_directed_evolution_with_a_grader_whose_image_is_not_on_the_machine_ends_wit
 }
 
 #[test]
-fn a_directed_evolution_with_a_grader_whose_environment_is_not_built_ends_with_status_two() {
-    let error = DirectedEvolutionError::GraderEnvironment {
+fn a_directed_evolution_with_a_verifier_whose_environment_is_not_built_ends_with_status_two() {
+    let error = DirectedEvolutionError::VerifierEnvironment {
         task: TASK.to_owned(),
         error: ContainerError::Exit(1),
     };

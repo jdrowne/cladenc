@@ -153,7 +153,10 @@ impl Double {
         })
     }
 
-    pub(crate) fn grading(self, completes: impl Fn(&str) -> bool + Send + Sync + 'static) -> Self {
+    pub(crate) fn verifying(
+        self,
+        completes: impl Fn(&str) -> bool + Send + Sync + 'static,
+    ) -> Self {
         self.doing(&["cp"], move |files, asked| {
             let from_the_verifier = asked
                 .arguments

@@ -19,7 +19,7 @@ pub use configuration::{
 
 pub(crate) const SPECIFICATION: &str = "instruction.md";
 pub(crate) const TESTS: &str = "tests";
-const GRADER: &str = "test.sh";
+const VERIFIER: &str = "test.sh";
 pub(crate) const ENVIRONMENT: &str = "environment";
 const DOCKERFILE: &str = "Dockerfile";
 const COMPOSE_FILES: [&str; 4] = [
@@ -103,7 +103,7 @@ pub enum BenchmarkError {
     NoSpecification {
         task: String,
     },
-    NoGrader {
+    NoVerifier {
         task: String,
     },
     NoConfiguration {
@@ -119,7 +119,7 @@ pub enum BenchmarkError {
     ManyContainers {
         task: String,
     },
-    ManyGraderContainers {
+    ManyVerifierContainers {
         task: String,
     },
     OtherFiles {
@@ -167,10 +167,10 @@ impl Display for BenchmarkError {
                 formatter,
                 "task {task} holds no file of text named {SPECIFICATION}"
             ),
-            Self::NoGrader { task } => write!(
+            Self::NoVerifier { task } => write!(
                 formatter,
                 "task {task} holds no directory named {TESTS} with an executable file named \
-                 {GRADER} in it"
+                 {VERIFIER} in it"
             ),
             Self::NoConfiguration { task } => {
                 write!(formatter, "task {task} holds no file named {CONFIGURATION}")
@@ -191,9 +191,9 @@ impl Display for BenchmarkError {
                 "task {task} holds a Compose file in its directory named {ENVIRONMENT}, and an \
                  environment of more than one container cannot be built"
             ),
-            Self::ManyGraderContainers { task } => write!(
+            Self::ManyVerifierContainers { task } => write!(
                 formatter,
-                "task {task} has its grader run in a container of its own and holds a Compose \
+                "task {task} has its verifier run in a container of its own and holds a Compose \
                  file in its directory named {TESTS}, and an environment of more than one \
                  container cannot be built"
             ),
@@ -217,7 +217,7 @@ fn tasks(files: &dyn FileSystem, benchmark: &Path) -> Result<Vec<String>, Benchm
         .filter(|entry| leads_to_a_directory(files, entry))
         .collect();
     directories.sort();
-    if is_specification(files, &benchmark.join(SPECIFICATION)) && is_grader(files, benchmark) {
+    if is_specification(files, &benchmark.join(SPECIFICATION)) && is_verifier(files, benchmark) {
         return Err(BenchmarkError::OneTask);
     }
     if directories.is_empty() {
@@ -253,9 +253,9 @@ fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, BenchmarkErr
     let configuration = TaskConfiguration::read(files, directory);
     let in_an_image = configuration
         .as_ref()
-        .is_ok_and(|configuration| grader_is_in_an_image(files, configuration, directory));
-    if !in_an_image && !is_grader(files, directory) {
-        return Err(BenchmarkError::NoGrader { task });
+        .is_ok_and(|configuration| verifier_is_in_an_image(files, configuration, directory));
+    if !in_an_image && !is_verifier(files, directory) {
+        return Err(BenchmarkError::NoVerifier { task });
     }
     let configuration = match configuration {
         Ok(configuration) => configuration,
@@ -268,10 +268,10 @@ fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, BenchmarkErr
     if holds_compose_file(files, &directory.join(ENVIRONMENT)) {
         return Err(BenchmarkError::ManyContainers { task });
     }
-    if configuration.grader_environment.is_some()
+    if configuration.verifier_environment.is_some()
         && holds_compose_file(files, &directory.join(TESTS))
     {
-        return Err(BenchmarkError::ManyGraderContainers { task });
+        return Err(BenchmarkError::ManyVerifierContainers { task });
     }
     if !can_be_copied(files, directory) {
         return Err(BenchmarkError::OtherFiles { task });
@@ -297,16 +297,16 @@ fn is_a(files: &dyn FileSystem, path: &Path, kind: Kind) -> bool {
     files.found(path).is_ok_and(|found| found.kind == kind)
 }
 
-fn is_grader(files: &dyn FileSystem, task: &Path) -> bool {
+fn is_verifier(files: &dyn FileSystem, task: &Path) -> bool {
     let tests = task.join(TESTS);
-    is_a(files, &tests, Kind::Directory) && is_program(files, &tests.join(GRADER))
+    is_a(files, &tests, Kind::Directory) && is_program(files, &tests.join(VERIFIER))
 }
 
 fn is_environment(files: &dyn FileSystem, task: &Path) -> bool {
     holds_dockerfile(files, &task.join(ENVIRONMENT))
 }
 
-pub(crate) fn holds_grader_dockerfile(files: &dyn FileSystem, task: &Path) -> bool {
+pub(crate) fn holds_verifier_dockerfile(files: &dyn FileSystem, task: &Path) -> bool {
     holds_dockerfile(files, &task.join(TESTS))
 }
 
@@ -314,15 +314,15 @@ fn holds_dockerfile(files: &dyn FileSystem, directory: &Path) -> bool {
     is_a(files, directory, Kind::Directory) && is_a(files, &directory.join(DOCKERFILE), Kind::File)
 }
 
-fn grader_is_in_an_image(
+fn verifier_is_in_an_image(
     files: &dyn FileSystem,
     configuration: &TaskConfiguration,
     task: &Path,
 ) -> bool {
     configuration
-        .grader_environment
+        .verifier_environment
         .as_ref()
-        .is_some_and(|own| own.docker_image.is_some() || holds_grader_dockerfile(files, task))
+        .is_some_and(|own| own.docker_image.is_some() || holds_verifier_dockerfile(files, task))
 }
 
 fn holds_compose_file(files: &dyn FileSystem, directory: &Path) -> bool {
@@ -334,7 +334,7 @@ fn holds_compose_file(files: &dyn FileSystem, directory: &Path) -> bool {
 fn is_program(files: &dyn FileSystem, file: &Path) -> bool {
     files
         .found(file)
-        .is_ok_and(|grader| grader.kind == Kind::File && grader.mode & 0o111 != 0)
+        .is_ok_and(|verifier| verifier.kind == Kind::File && verifier.mode & 0o111 != 0)
 }
 
 fn can_be_copied(files: &dyn FileSystem, task: &Path) -> bool {

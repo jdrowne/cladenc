@@ -45,7 +45,7 @@ struct Attempted {
 struct Asked {
     attempted: Attempted,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 }
 
 #[derive(Clone, Copy)]
@@ -58,7 +58,7 @@ enum Environment<'a> {
 struct Attempt<'a> {
     environment: Environment<'a>,
     run_command: &'a str,
-    grader: &'a str,
+    verifier: &'a str,
     key: Option<&'a str>,
     harness_time_limit: Option<u64>,
     unreadable_in_the_harness: bool,
@@ -69,7 +69,7 @@ impl Default for Attempt<'_> {
         Self {
             environment: Environment::OfTheTask,
             run_command: FINISH,
-            grader: FINISHED,
+            verifier: FINISHED,
             key: None,
             harness_time_limit: Some(30),
             unreadable_in_the_harness: false,
@@ -123,7 +123,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     outputs_directory
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
-    test_inputs::kept_grader(&path, "t1", attempt.grader);
+    test_inputs::kept_verifier(&path, "t1", attempt.verifier);
     if attempt.unreadable_in_the_harness {
         let unreadable = outputs_directory.harness(0).join("unreadable");
         fs::write(&unreadable, "unread").unwrap();
@@ -140,7 +140,7 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
             key: attempt.key,
         },
         procreation_timeout: 30,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
@@ -148,10 +148,10 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
         image: environment_image.clone(),
         configuration: TaskConfiguration {
             harness_time_limit: attempt.harness_time_limit.map(Duration::from_secs),
-            grader_time_limit: Duration::from_secs(30),
+            verifier_time_limit: Duration::from_secs(30),
             ..TaskConfiguration::default()
         },
-        grader: None,
+        verifier: None,
     };
     let result = containers::run_attempt(
         Host {
@@ -176,28 +176,32 @@ fn attempted_as(attempt: &Attempt<'_>) -> Attempted {
     }
 }
 
-fn attempted(run_command: &str, grader: &str) -> Attempted {
+fn attempted(run_command: &str, verifier: &str) -> Attempted {
     attempted_as(&Attempt {
         run_command,
-        grader,
+        verifier,
         ..Attempt::default()
     })
 }
 
-fn within(time_limit: u64, run_command: &str, grader: &str) -> Attempted {
+fn within(time_limit: u64, run_command: &str, verifier: &str) -> Attempted {
     attempted_as(&Attempt {
         run_command,
-        grader,
+        verifier,
         harness_time_limit: Some(time_limit),
         ..Attempt::default()
     })
 }
 
-fn in_the_environment(environment: Environment<'_>, run_command: &str, grader: &str) -> Attempted {
+fn in_the_environment(
+    environment: Environment<'_>,
+    run_command: &str,
+    verifier: &str,
+) -> Attempted {
     attempted_as(&Attempt {
         environment,
         run_command,
-        grader,
+        verifier,
         ..Attempt::default()
     })
 }
@@ -206,18 +210,18 @@ fn asked_as(
     environment: Environment<'_>,
     key: Option<&str>,
     of_the_harness: &'static [&'static str],
-    of_the_grader: &'static [&'static str],
+    of_the_verifier: &'static [&'static str],
 ) -> Asked {
     Asked {
         attempted: attempted_as(&Attempt {
             environment,
             run_command: &test_inputs::one_after_another(of_the_harness),
-            grader: &test_inputs::one_after_another(of_the_grader),
+            verifier: &test_inputs::one_after_another(of_the_verifier),
             key,
             ..Attempt::default()
         }),
         of_the_harness,
-        of_the_grader,
+        of_the_verifier,
     }
 }
 
@@ -297,11 +301,11 @@ fn found_by_the_harness(asked: &Asked, command: &str) -> String {
     )
 }
 
-fn found_by_the_grader(asked: &Asked, command: &str) -> String {
+fn found_by_the_verifier(asked: &Asked, command: &str) -> String {
     test_inputs::printed_by(
         command,
-        asked.of_the_grader,
-        &kept(&asked.attempted, "grader/stdout"),
+        asked.of_the_verifier,
+        &kept(&asked.attempted, "verifier/stdout"),
     )
 }
 
@@ -475,7 +479,7 @@ fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_rem
 }
 
 #[test]
-fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
+fn a_verifier_that_scores_1_on_what_the_harness_left_gives_completed() {
     assert!(with_its_result(
         &LOOKED_AT.attempted,
         AttemptResult::Completed
@@ -483,20 +487,23 @@ fn a_grader_that_scores_1_on_what_the_harness_left_gives_completed() {
 }
 
 #[test]
-fn what_the_grader_leaves_in_logs_verifier_is_kept_with_the_attempt() {
+fn what_the_verifier_leaves_in_logs_verifier_is_kept_with_the_attempt() {
     assert_eq!(
-        kept(&LOOKED_AT.attempted, "grader/logs/verifier/notes.txt"),
+        kept(&LOOKED_AT.attempted, "verifier/logs/verifier/notes.txt"),
         "seen\n"
     );
 }
 
 #[test]
-fn the_grader_finds_logs_verifier_empty() {
-    assert_eq!(found_by_the_grader(&LOOKED_AT, "ls -A /logs/verifier"), "");
+fn the_verifier_finds_logs_verifier_empty() {
+    assert_eq!(
+        found_by_the_verifier(&LOOKED_AT, "ls -A /logs/verifier"),
+        ""
+    );
 }
 
 #[test]
-fn a_score_the_harness_left_in_logs_verifier_is_not_found_by_the_grader() {
+fn a_score_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
     assert!(with_its_result(
         &attempted(
             "mkdir -p /logs/verifier && echo 1 > /logs/verifier/reward.txt",
@@ -507,29 +514,29 @@ fn a_score_the_harness_left_in_logs_verifier_is_not_found_by_the_grader() {
 }
 
 #[test]
-fn a_file_the_harness_left_in_tests_is_not_found_by_the_grader() {
+fn a_file_the_harness_left_in_tests_is_not_found_by_the_verifier() {
     let attempted = attempted(
         "mkdir -p /tests && echo planted > /tests/planted.sh",
         "ls -A /tests",
     );
-    assert_eq!(kept(&attempted, "grader/stdout"), "test.sh\n");
+    assert_eq!(kept(&attempted, "verifier/stdout"), "test.sh\n");
 }
 
 #[test]
-fn the_grader_works_in_the_working_directory_the_harness_worked_in() {
-    assert_eq!(found_by_the_grader(&LOOKED_AT, "pwd"), "/app\n");
+fn the_verifier_works_in_the_working_directory_the_harness_worked_in() {
+    assert_eq!(found_by_the_verifier(&LOOKED_AT, "pwd"), "/app\n");
 }
 
 #[test]
-fn the_grader_runs_as_the_user_the_harness_ran_as() {
+fn the_verifier_runs_as_the_user_the_harness_ran_as() {
     assert_eq!(
-        found_by_the_grader(&AS_A_USER_AND_LOOKED_AT, "id -u"),
+        found_by_the_verifier(&AS_A_USER_AND_LOOKED_AT, "id -u"),
         "1000\n"
     );
 }
 
 #[test]
-fn the_grader_of_an_environment_with_a_user_can_score() {
+fn the_verifier_of_an_environment_with_a_user_can_score() {
     assert!(with_its_result(
         &AS_A_USER_AND_LOOKED_AT.attempted,
         AttemptResult::Completed
@@ -537,12 +544,15 @@ fn the_grader_of_an_environment_with_a_user_can_score() {
 }
 
 #[test]
-fn the_grader_finds_the_tests_of_its_task_at_tests() {
-    assert_eq!(found_by_the_grader(&LOOKED_AT, "ls -A /tests"), "test.sh\n");
+fn the_verifier_finds_the_tests_of_its_task_at_tests() {
+    assert_eq!(
+        found_by_the_verifier(&LOOKED_AT, "ls -A /tests"),
+        "test.sh\n"
+    );
 }
 
 #[test]
-fn the_grader_cannot_change_the_tests_of_its_task() {
+fn the_verifier_cannot_change_the_tests_of_its_task() {
     let attempted = attempted(FINISH, "echo changed > /tests/test.sh");
     assert_eq!(
         fs::read_to_string(attempted.outputs_directory.task(TASK).join("tests/test.sh")).unwrap(),
@@ -551,31 +561,32 @@ fn the_grader_cannot_change_the_tests_of_its_task() {
 }
 
 #[test]
-fn the_grader_that_is_run_is_the_test_sh_of_the_tests_of_its_task() {
+fn the_verifier_that_is_run_is_the_test_sh_of_the_tests_of_its_task() {
     assert_eq!(
-        found_by_the_grader(&LOOKED_AT, "echo \"$0\""),
+        found_by_the_verifier(&LOOKED_AT, "echo \"$0\""),
         "/tests/test.sh\n"
     );
 }
 
 #[test]
-fn the_grader_finds_at_the_top_of_the_filesystem_what_the_environment_holds_with_logs_and_tests() {
+fn the_verifier_finds_at_the_top_of_the_filesystem_what_the_environment_holds_with_logs_and_tests()
+{
     assert_eq!(
-        found_by_the_grader(&LOOKED_AT, "ls /"),
+        found_by_the_verifier(&LOOKED_AT, "ls /"),
         the_top_of_the_filesystem_of(&LOOKED_AT.attempted, &["logs", "tests"])
     );
 }
 
 #[test]
-fn the_grader_is_given_no_variable_of_cladenc() {
+fn the_verifier_is_given_no_variable_of_cladenc() {
     assert_eq!(
-        found_by_the_grader(&LOOKED_AT, "env | grep -c ^CLADENC_"),
+        found_by_the_verifier(&LOOKED_AT, "env | grep -c ^CLADENC_"),
         "0\n"
     );
 }
 
 #[test]
-fn the_grader_finds_what_the_harness_left_outside_the_working_directory() {
+fn the_verifier_finds_what_the_harness_left_outside_the_working_directory() {
     assert!(with_its_result(
         &attempted(
             "echo done > /tmp/left",
@@ -586,7 +597,7 @@ fn the_grader_finds_what_the_harness_left_outside_the_working_directory() {
 }
 
 #[test]
-fn the_grader_finds_a_process_that_the_harness_left_running() {
+fn the_verifier_finds_a_process_that_the_harness_left_running() {
     assert!(with_its_result(
         &attempted(LEAVE_A_PROCESS_RUNNING, THE_PROCESS_STILL_RUNS),
         AttemptResult::Completed
@@ -594,9 +605,9 @@ fn the_grader_finds_a_process_that_the_harness_left_running() {
 }
 
 #[test]
-fn the_grader_runs_in_the_container_the_harness_ran_in() {
+fn the_verifier_runs_in_the_container_the_harness_ran_in() {
     assert_eq!(
-        found_by_the_grader(&LOOKED_AT, "hostname"),
+        found_by_the_verifier(&LOOKED_AT, "hostname"),
         found_by_the_harness(&LOOKED_AT, "hostname")
     );
 }
@@ -639,7 +650,7 @@ fn what_a_harness_that_ran_past_its_time_limit_left_is_still_judged() {
 }
 
 #[test]
-fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_grader_runs() {
+fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_verifier_runs() {
     assert!(with_its_result(
         &within(
             3,

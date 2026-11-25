@@ -70,32 +70,32 @@ fn an_environment_whose_directory_cannot_be_made_cannot_be_kept() {
 }
 
 #[test]
-fn what_is_kept_of_the_environment_of_a_grader_is_in_grader_beside_that_of_its_task() {
+fn what_is_kept_of_a_verifier_environment_is_in_verifier_beside_that_of_its_task() {
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
-            .grader_environment(TASK),
-        Path::new("/outputs/environments/benchmark/t1/grader")
+            .verifier_environment(TASK),
+        Path::new("/outputs/environments/benchmark/t1/verifier")
     );
 }
 
 #[test]
-fn starting_the_build_of_the_environment_of_a_grader_returns_the_directory_that_keeps_it() {
+fn starting_the_build_of_a_verifier_environment_returns_the_directory_that_keeps_it() {
     let (_directory, outputs_directory) = made();
     assert_eq!(
-        outputs_directory.start_grader_environment(TASK).unwrap(),
-        outputs_directory.grader_environment(TASK)
+        outputs_directory.start_verifier_environment(TASK).unwrap(),
+        outputs_directory.verifier_environment(TASK)
     );
 }
 
 #[test]
-fn starting_the_build_of_the_environment_of_a_grader_makes_the_directory_that_keeps_it() {
+fn starting_the_build_of_a_verifier_environment_makes_the_directory_that_keeps_it() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_grader_environment(TASK).unwrap();
-    assert!(directory.is_dir(outputs_directory.grader_environment(TASK)));
+    outputs_directory.start_verifier_environment(TASK).unwrap();
+    assert!(directory.is_dir(outputs_directory.verifier_environment(TASK)));
 }
 
 #[test]
-fn the_build_of_the_environment_of_a_grader_leaves_what_is_kept_of_that_of_its_task() {
+fn the_build_of_a_verifier_environment_leaves_what_is_kept_of_that_of_its_task() {
     let (directory, outputs_directory) = made();
     outputs_directory.start_environment(TASK).unwrap();
     directory
@@ -104,15 +104,15 @@ fn the_build_of_the_environment_of_a_grader_leaves_what_is_kept_of_that_of_its_t
             "built\n",
         )
         .unwrap();
-    outputs_directory.start_grader_environment(TASK).unwrap();
+    outputs_directory.start_verifier_environment(TASK).unwrap();
     assert!(directory.is_file(outputs_directory.environment(TASK).join("stdout")));
 }
 
 #[test]
-fn an_environment_of_a_grader_whose_directory_cannot_be_made_cannot_be_kept() {
+fn a_verifier_environment_whose_directory_cannot_be_made_cannot_be_kept() {
     let (directory, outputs_directory) = made();
     directory
         .write(outputs_directory.path().join("environments"), "")
         .unwrap();
-    assert!(outputs_directory.start_grader_environment(TASK).is_err());
+    assert!(outputs_directory.start_verifier_environment(TASK).is_err());
 }

@@ -135,7 +135,7 @@ fn a_setting_under_a_health_check_that_harbor_does_not_name_is_let_through() {
 }
 
 #[test]
-fn the_health_check_of_an_environment_of_the_grader_is_not_the_health_check_of_the_task() {
+fn the_health_check_of_a_verifier_environment_is_not_the_health_check_of_the_task() {
     assert_eq!(
         read("[verifier.environment.healthcheck]\ncommand = \"test -e /ready\"\n"),
         Ok(None)

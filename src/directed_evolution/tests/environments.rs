@@ -40,10 +40,10 @@ fn an_environment_that_is_not_built_is_an_error_of_the_environment_of_its_task()
 }
 
 #[test]
-fn an_environment_of_a_grader_that_is_not_built_is_an_error_of_the_grader_of_its_task() {
+fn a_verifier_environment_that_is_not_built_is_an_error_of_the_verifier_of_its_task() {
     assert!(matches!(
-        not_built(Whose::TheGrader).0,
-        DirectedEvolutionError::GraderEnvironment {
+        not_built(Whose::TheVerifier).0,
+        DirectedEvolutionError::VerifierEnvironment {
             task,
             error: ContainerError::Exit(1)
         } if task == TASK
@@ -60,11 +60,11 @@ fn an_environment_that_is_not_built_is_said_with_where_what_docker_printed_is_ke
 }
 
 #[test]
-fn an_environment_of_a_grader_that_is_not_built_is_said_with_where_what_docker_printed_is_kept() {
+fn a_verifier_environment_that_is_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
-        not_built(Whose::TheGrader).1,
-        "cladenc: the build of the environment of the grader of task benchmark/t1 exited with \
-         status 1: what Docker printed is kept in /outputs/environments/benchmark/t1/grader\n"
+        not_built(Whose::TheVerifier).1,
+        "cladenc: the build of the verifier environment of task benchmark/t1 exited with \
+         status 1: what Docker printed is kept in /outputs/environments/benchmark/t1/verifier\n"
     );
 }
 
@@ -79,9 +79,9 @@ fn a_task_that_asks_for_no_memory_asks_for_no_megabytes() {
 }
 
 #[test]
-fn the_image_of_the_grader_of_a_task_is_named_after_the_image_of_the_task() {
+fn the_verifier_image_of_a_task_is_named_after_the_image_of_the_task() {
     assert_eq!(
-        environments::of_the_grader("cladenc-environments-0123456789abcdef:t1"),
-        "cladenc-environments-0123456789abcdef:t1-grader"
+        environments::of_the_verifier("cladenc-environments-0123456789abcdef:t1"),
+        "cladenc-environments-0123456789abcdef:t1-verifier"
     );
 }

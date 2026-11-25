@@ -3,7 +3,6 @@ mod build;
 mod collect;
 mod container;
 mod docker;
-mod grader;
 mod harbor;
 mod health_check;
 mod image;
@@ -11,6 +10,7 @@ mod left;
 mod program;
 mod reward;
 mod shown;
+mod verifier;
 
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -29,15 +29,15 @@ use crate::outputs_directory::{holds_only_harness_files, same_tree};
 pub use build::build_primogenitor;
 use container::{Bringing, Container, Mount, Run, Shell, Up};
 pub use docker::{Docker, Host, Outside};
-use grader::Grading;
 use health_check::Backoff;
 pub use image::{
-    Machine, build_environment, build_grader_environment, build_image, find_image, machine,
+    Machine, build_environment, build_image, build_verifier_environment, find_image, machine,
     remove_images,
 };
 pub use left::remove_left_behind;
 pub use program::{Ending, Limits, Program};
 use program::{FOREVER, seconds_since};
+use verifier::Verifying;
 
 pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
     copy of your own source code. Improve that source code, so that the harness it makes completes \
@@ -54,32 +54,31 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     collection-hooks holds what the commands that the task runs before those paths are kept \
     printed, one directory for each, where it runs any, the files named stdout and stderr hold \
     what you printed, the \
-    directory named grader holds what the grader of the task printed, in the files named stdout \
-    and stderr, and the files it left in logs/verifier, and the directory named health-check \
-    holds what the health check of the environment of the task printed the last time it ran, in \
-    the files named stdout and stderr. Once you had ended or were stopped, the grader ran the \
-    tests of the task, which you are not shown, on what you left, or, where the task has its \
-    grader run in a container of its own, on nothing but what the directory named artifacts \
-    holds, and wrote its score in \
-    logs/verifier/reward.txt, or one score for each label in logs/verifier/reward.json: the task \
-    was completed where every score is 1. /var/log/cladenc/line holds one directory for each \
-    harness you descend from, named by its id, and /var/log/cladenc/children one for each harness \
-    you made before, created or not. In the directory of such a harness, the directory named \
-    harness holds its source code, the directory named attempts holds its attempts, laid out as \
-    yours are, the directory named procreation holds what the harness that made it printed, in the \
-    files named stdout and stderr, with the id of that harness in the file named progenitor and \
-    one word in the file named outcome, created, unchanged, failed, build_failed or timed_out, and \
-    the directory named build holds what its build printed. A directory that would hold nothing is \
-    not there. Use all of them to find what to improve, and to see what was changed before and \
-    what came of it. Make a change to how the harness works on any task: one that answers \
-    something you saw in several of your attempts, not in one. Leave nothing in the source code \
-    that names a task, a file of a task or the answer to one. Taking out what does not help is an \
-    improvement as well. Change files in the current directory only: what it holds when you end \
-    becomes a new harness, which attempts tasks in its turn. It may then be asked, as you are now, \
-    to improve a copy of its own source code, so a change that makes it better at that counts as \
-    well. Where you leave the current directory as it was, no new harness is made: a change that \
-    you only print in your answer changes no file. The new harness is judged by tasks that you are \
-    not shown.";
+    directory named verifier holds what the verifier of the task printed, in the files named \
+    stdout and stderr, and the files it left in logs/verifier, and the directory named \
+    health-check holds what the health check of the environment of the task printed the last time \
+    it ran, in the files named stdout and stderr. Once you had ended or were stopped, the verifier \
+    ran the tests of the task, which you are not shown, on what you left, or, where the task has \
+    its verifier run in a container of its own, on nothing but what the directory named artifacts \
+    holds, and wrote its score in logs/verifier/reward.txt, or one score for each label in \
+    logs/verifier/reward.json: the task was completed where every score is 1. \
+    /var/log/cladenc/line holds one directory for each harness you descend from, named by its id, \
+    and /var/log/cladenc/children one for each harness you made before, created or not. In the \
+    directory of such a harness, the directory named harness holds its source code, the directory \
+    named attempts holds its attempts, laid out as yours are, the directory named procreation \
+    holds what the harness that made it printed, in the files named stdout and stderr, with the id \
+    of that harness in the file named progenitor and one word in the file named outcome, created, \
+    unchanged, failed, build_failed or timed_out, and the directory named build holds what its \
+    build printed. A directory that would hold nothing is not there. Use all of them to find what \
+    to improve, and to see what was changed before and what came of it. Make a change to how the \
+    harness works on any task: one that answers something you saw in several of your attempts, not \
+    in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
+    one. Taking out what does not help is an improvement as well. Change files in the current \
+    directory only: what it holds when you end becomes a new harness, which attempts tasks in its \
+    turn. It may then be asked, as you are now, to improve a copy of its own source code, so a \
+    change that makes it better at that counts as well. Where you leave the current directory as \
+    it was, no new harness is made: a change that you only print in your answer changes no file. \
+    The new harness is judged by tasks that you are not shown.";
 
 const HARNESS: &str = "/var/opt/cladenc/harness";
 const WORK: &str = "/var/opt/cladenc/work";
@@ -95,7 +94,7 @@ pub struct Launch<'a> {
     pub build_command: Option<&'a str>,
     pub model: Model<'a>,
     pub procreation_timeout: u64,
-    pub max_grader_health_check_retries: u64,
+    pub max_verifier_health_check_retries: u64,
     pub max_task_health_check_retries: u64,
 }
 
@@ -103,13 +102,13 @@ pub struct Launch<'a> {
 pub struct Environment {
     pub image: String,
     pub configuration: TaskConfiguration,
-    pub grader: Option<GraderImage>,
+    pub verifier: Option<VerifierImage>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GraderImage {
+pub struct VerifierImage {
     pub name: String,
-    pub holds_grader: bool,
+    pub holds_verifier: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -134,7 +133,7 @@ pub(crate) enum HarnessEnding {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Checked {
     Task,
-    Grader,
+    Verifier,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -162,7 +161,7 @@ pub enum ContainerError {
     TimeLimit,
     OtherFiles,
     TaskHealthCheck { tries: u64, kept: PathBuf },
-    GraderHealthCheck { tries: u64, kept: PathBuf },
+    VerifierHealthCheck { tries: u64, kept: PathBuf },
 }
 
 impl Display for ContainerError {
@@ -191,10 +190,10 @@ impl Display for ContainerError {
                 if *tries == 1 { "try" } else { "tries" },
                 kept.display()
             ),
-            Self::GraderHealthCheck { tries, kept } => write!(
+            Self::VerifierHealthCheck { tries, kept } => write!(
                 formatter,
-                "was not graded: the health check of the container of its grader did not pass \
-                 in {tries} {}, so the grader was not run, and {} holds what the health check \
+                "was not verified: the health check of its verifier container did not pass \
+                 in {tries} {}, so the verifier was not run, and {} holds what the health check \
                  printed the last time it ran",
                 if *tries == 1 { "try" } else { "tries" },
                 kept.display()
@@ -472,15 +471,15 @@ impl Attempting<'_> {
             &environment.configuration.artifacts,
             &self.running.join(ARTIFACTS),
         );
-        let grading = Grading {
+        let verifying = Verifying {
             host,
             attempt: &self.attempt,
             running: self.running,
             stop,
-            max_retries: launch.max_grader_health_check_retries,
+            max_retries: launch.max_verifier_health_check_retries,
             retrying,
         };
-        let result = grading.run(up)?;
+        let result = verifying.run(up)?;
         Ok(Attempted {
             result,
             seconds,

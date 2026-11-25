@@ -165,7 +165,7 @@ fn a_network_mode_of_the_harness_that_harbor_does_not_name_is_refused() {
 }
 
 #[test]
-fn a_network_mode_of_the_grader_that_harbor_does_not_name_is_refused() {
+fn a_network_mode_of_the_verifier_that_harbor_does_not_name_is_refused() {
     assert_eq!(
         read("[verifier]\nnetwork_mode = \"private\"\n"),
         not_valid(2, NOT_ONE_OF_THE_NETWORK_MODES)
@@ -415,7 +415,7 @@ fn what_an_artifact_leaves_out_is_refused_where_it_is_not_a_list() {
 }
 
 #[test]
-fn an_environment_mode_of_the_grader_that_harbor_does_not_name_is_refused() {
+fn an_environment_mode_of_the_verifier_that_harbor_does_not_name_is_refused() {
     assert_eq!(
         read("[verifier]\nenvironment_mode = \"apart\"\n"),
         not_valid(
@@ -426,7 +426,7 @@ fn an_environment_mode_of_the_grader_that_harbor_does_not_name_is_refused() {
 }
 
 #[test]
-fn a_setting_of_the_environment_of_the_grader_is_checked_as_one_of_the_environment_is() {
+fn a_setting_of_the_verifier_environment_is_checked_as_one_of_the_environment_is() {
     assert_eq!(
         read("[verifier.environment]\ncpus = \"two\"\n"),
         not_valid(2, "invalid type: string \"two\", expected f64")
@@ -434,7 +434,7 @@ fn a_setting_of_the_environment_of_the_grader_is_checked_as_one_of_the_environme
 }
 
 #[test]
-fn an_environment_of_the_grader_that_is_not_a_table_is_refused() {
+fn a_verifier_environment_that_is_not_a_table_is_refused() {
     assert_eq!(
         read("[verifier]\nenvironment = \"debian:stable-slim\"\n"),
         not_valid(
@@ -445,7 +445,7 @@ fn an_environment_of_the_grader_that_is_not_a_table_is_refused() {
 }
 
 #[test]
-fn a_grader_said_to_share_the_environment_and_given_its_own_is_refused() {
+fn a_verifier_said_to_share_the_environment_and_given_its_own_is_refused() {
     assert_eq!(
         read(
             "[verifier]\nenvironment_mode = \"shared\"\n\n[verifier.environment]\ndocker_image \
@@ -456,7 +456,7 @@ fn a_grader_said_to_share_the_environment_and_given_its_own_is_refused() {
 }
 
 #[test]
-fn a_grader_said_to_have_a_separate_environment_and_given_one_is_valid() {
+fn a_verifier_said_to_have_a_separate_environment_and_given_one_is_valid() {
     assert!(
         read(
             "[verifier]\nenvironment_mode = \"separate\"\n\n[verifier.environment]\ndocker_image \
@@ -467,7 +467,7 @@ fn a_grader_said_to_have_a_separate_environment_and_given_one_is_valid() {
 }
 
 #[test]
-fn a_grader_said_to_share_the_environment_and_given_none_is_valid() {
+fn a_verifier_said_to_share_the_environment_and_given_none_is_valid() {
     assert_eq!(
         read("[verifier]\nenvironment_mode = \"shared\"\n"),
         left_out()
@@ -475,7 +475,7 @@ fn a_grader_said_to_share_the_environment_and_given_none_is_valid() {
 }
 
 #[test]
-fn a_grader_given_an_environment_and_no_environment_mode_is_valid() {
+fn a_verifier_given_an_environment_and_no_environment_mode_is_valid() {
     assert!(read("[verifier.environment]\ndocker_image = \"debian:stable-slim\"\n").is_ok());
 }
 

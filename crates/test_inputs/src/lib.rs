@@ -221,7 +221,7 @@ pub fn task(benchmark: &Path, id: &str) -> PathBuf {
 
 pub fn task_in(files: &dyn Files, benchmark: &Path, id: &str) -> PathBuf {
     let task = benchmark.join(id);
-    let grader = task.join("tests/test.sh");
+    let verifier = task.join("tests/test.sh");
     files.make_directories(&task.join("tests"));
     files.make_directories(&task.join("environment/workspace"));
     files.write(
@@ -235,13 +235,13 @@ pub fn task_in(files: &dyn Files, benchmark: &Path, id: &str) -> PathBuf {
     files.write(&task.join("task.toml"), "schema_version = \"1.4\"\n");
     files.write(&task.join("environment/workspace/work.txt"), "to do\n");
     files.write(
-        &grader,
+        &verifier,
         &format!(
             "#!/bin/sh\nif grep -q -x -e {id} solved; then echo 1; else echo 0; fi \
              > /logs/verifier/reward.txt\n"
         ),
     );
-    files.set_mode(&grader, 0o750);
+    files.set_mode(&verifier, 0o750);
     task
 }
 
@@ -369,12 +369,12 @@ pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
     fs::remove_file(marker).expect("the marker can be removed");
 }
 
-pub fn kept_grader(outputs_directory: &Path, task: &str, command: &str) {
-    let grader = outputs_directory
+pub fn kept_verifier(outputs_directory: &Path, task: &str, command: &str) {
+    let verifier = outputs_directory
         .join("benchmarks/benchmark")
         .join(task)
         .join("tests/test.sh");
-    fs::write(grader, format!("#!/bin/sh\n{command}\n")).expect("the grader can be written");
+    fs::write(verifier, format!("#!/bin/sh\n{command}\n")).expect("the verifier can be written");
 }
 
 pub fn model_key_file(directory: &Path, text: &str) -> PathBuf {

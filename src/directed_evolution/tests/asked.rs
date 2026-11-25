@@ -18,7 +18,7 @@ const COMMAND: &str = "docker exec ";
 const AS_ROOT: &str = "docker exec --user 0 ";
 const STAYS: &str = " --detach ";
 const HARNESS: &str = " run a harness ";
-const GRADER: &str = " /tests/test.sh ";
+const VERIFIER: &str = " /tests/test.sh ";
 
 fn with_a_key(directory: &Memory, settings: &mut Settings) {
     let key = format!("{}\n", test_inputs::MODEL_KEY);
@@ -178,10 +178,10 @@ fn the_timer_of_a_procreation_is_given_the_run_command_and_five_seconds_more_tha
 }
 
 #[test]
-fn the_timer_of_a_grader_is_given_the_grader_of_the_task() {
+fn the_timer_of_a_verifier_is_given_the_verifier_of_the_task() {
     let commands = evolved().commands();
     assert!(each_holds(
-        &run_in_a_container(&commands, GRADER),
+        &run_in_a_container(&commands, VERIFIER),
         &format!(" sh -c {TIMER} /tests/test.sh ")
     ));
 }
@@ -214,12 +214,13 @@ fn docker_reads_the_variables_of_the_container_of_an_attempt_from_its_standard_i
 }
 
 #[test]
-fn the_harness_and_the_grader_of_a_task_are_started_as_the_users_the_task_names() {
+fn the_harness_and_the_verifier_of_a_task_are_started_as_the_users_the_task_names() {
     let commands = obeyed().commands();
     let started: Vec<&String> = commands
         .iter()
         .filter(|command| {
-            command.starts_with(COMMAND) && (command.contains(HARNESS) || command.contains(GRADER))
+            command.starts_with(COMMAND)
+                && (command.contains(HARNESS) || command.contains(VERIFIER))
         })
         .collect();
     assert_eq!(following("--user", &started), ["0", "0", "1000", "2000"]);
@@ -244,10 +245,10 @@ fn the_timer_of_a_harness_is_given_the_time_limit_its_task_gives_it_and_five_sec
 }
 
 #[test]
-fn the_timer_of_a_grader_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
+fn the_timer_of_a_verifier_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
     let commands = obeyed().commands();
     assert_eq!(
-        last_words(&run_in_a_container(&commands, GRADER)),
+        last_words(&run_in_a_container(&commands, VERIFIER)),
         ["605", "25"]
     );
 }

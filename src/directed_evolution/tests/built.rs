@@ -108,7 +108,7 @@ fn a_child_is_built_once_in_the_copy_that_its_progenitor_changed() {
 fn a_directed_evolution_that_builds_its_harnesses_finds_the_best_among_them() {
     let docker = Double::default()
         .changing()
-        .grading(|attempt| attempt.starts_with("attempt-1-"));
+        .verifying(|attempt| attempt.starts_with("attempt-1-"));
     assert_eq!(
         given::started(docker, with_a_selection_task).best_harness(),
         Some(1)

@@ -68,7 +68,7 @@ fn launch(run_command: &str) -> Launch<'_> {
         build_command: None,
         model: MODEL,
         procreation_timeout: 60,
-        max_grader_health_check_retries: 0,
+        max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     }
 }
@@ -96,7 +96,7 @@ fn timed_out() -> Attempted {
             harness_time_limit: Some(Duration::from_secs(3)),
             ..TaskConfiguration::default()
         },
-        grader: None,
+        verifier: None,
     };
     let stop = AtomicBool::new(false);
     let result = containers::run_attempt(
@@ -133,9 +133,9 @@ fn stopped_while_its_harness_runs() -> Attempted {
     (directory, outputs_directory, result)
 }
 
-fn stopped_while_its_grader_runs() -> Attempted {
+fn stopped_while_its_verifier_runs() -> Attempted {
     let (directory, outputs_directory) = made();
-    test_inputs::kept_grader(
+    test_inputs::kept_verifier(
         &directory.path().join("outputs"),
         "t1",
         SAY_THE_CONTAINER_OF_THE_ATTEMPT_AND_STAY,
@@ -143,7 +143,7 @@ fn stopped_while_its_grader_runs() -> Attempted {
     let launch = launch("true");
     let id_file = outputs_directory
         .running_attempt(0, "benchmark/t1")
-        .join("grader/stdout");
+        .join("verifier/stdout");
     let result = stopped_once_written(&id_file, |stop| {
         containers::run_attempt(
             Host {
@@ -197,12 +197,12 @@ fn an_attempt_whose_stop_flag_is_set_leaves_no_container_behind() {
 }
 
 #[test]
-fn an_attempt_stopped_while_its_grader_runs_leaves_no_container_behind() {
-    let (_directory, outputs_directory, _result) = stopped_while_its_grader_runs();
+fn an_attempt_stopped_while_its_verifier_runs_leaves_no_container_behind() {
+    let (_directory, outputs_directory, _result) = stopped_while_its_verifier_runs();
     assert!(test_inputs::container_is_gone(
         &outputs_directory
             .running_attempt(0, "benchmark/t1")
-            .join("grader/stdout")
+            .join("verifier/stdout")
     ));
 }
 

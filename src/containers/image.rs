@@ -53,7 +53,7 @@ pub fn build_environment(
         })
 }
 
-pub fn build_grader_environment(
+pub fn build_verifier_environment(
     host: Host<'_>,
     task: &str,
     image: &str,
@@ -62,7 +62,7 @@ pub fn build_grader_environment(
 ) -> Result<(), ContainerError> {
     let context = host.outputs_directory.task(task).join(TESTS);
     host.outputs_directory
-        .start_grader_environment(task)
+        .start_verifier_environment(task)
         .map_err(ContainerError::Io)
         .and_then(|kept| {
             let limits = Limits::within(time_limit, stop);
