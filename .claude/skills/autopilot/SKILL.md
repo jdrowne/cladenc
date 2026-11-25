@@ -87,7 +87,7 @@ Each file is under `.claude/memories/`.
 | An issue states a functional requirement, seen from outside `cladenc`. | `an-issue-states-a-functional-requirement.md` |
 | An issue about a memory, a reminder or the skill carries the label `memories` or `autopilot`. | `issues-about-the-sessions-rules-are-labelled.md` |
 | An issue has no fixed form and owes no section that other issues carry. | `issues-have-no-fixed-form.md` |
-| A `blocked_by` edge is written only where the block is real. | `a-blocked-by-edge-states-a-real-block.md` |
+| An order the session recommends between issues is written as `blocked_by` edges. | `a-blocked-by-edge-sets-the-order-of-the-work.md` |
 | The work is clean-room. | `the-work-is-clean-room.md` |
 | The tests of a change are written before its code. | `tests-are-written-before-code.md` |
 | The goal is a `cladenc` that is right, and CI is a tool that says whether it is: a first push that passes, few runs and little time are not goals. | `ci-says-whether-the-code-is-right.md` |
