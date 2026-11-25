@@ -109,14 +109,14 @@ fn a_progenitor_is_given_a_directory_for_each_harness_it_descends_from() {
 
 #[test]
 fn a_progenitor_that_has_made_no_child_is_given_no_directory_of_children() {
-    assert_eq!(found_by(3, "ls /var/log/cladenc"), "trials\nline\n");
+    assert_eq!(found_by(3, "ls /var/log/cladenc"), "line\ntrials\n");
 }
 
 #[test]
 fn the_primogenitor_is_given_the_children_it_made_created_or_not_and_no_line() {
     assert_eq!(
         found_by(0, "{ ls /var/log/cladenc; ls /var/log/cladenc/children; }"),
-        "trials\nchildren\n1\n2\n"
+        "children\ntrials\n1\n2\n"
     );
 }
 
@@ -135,7 +135,7 @@ fn a_progenitor_is_given_no_harness_that_is_neither_of_its_line_nor_its_child() 
 fn of_a_harness_that_was_made_and_built_a_progenitor_is_given_all_four_directories() {
     assert_eq!(
         found_by(3, "ls /var/log/cladenc/line/1"),
-        "trials\nbuild\nharness\nprocreation\n"
+        "build\nharness\nprocreation\ntrials\n"
     );
 }
 
@@ -143,7 +143,7 @@ fn of_a_harness_that_was_made_and_built_a_progenitor_is_given_all_four_directori
 fn of_the_primogenitor_a_progenitor_is_given_its_source_code_and_its_trials_alone() {
     assert_eq!(
         found_by(3, "ls /var/log/cladenc/line/0"),
-        "trials\nharness\n"
+        "harness\ntrials\n"
     );
 }
 

@@ -172,7 +172,7 @@ fn a_harness_for_which_no_seconds_are_given_is_shown_with_none_spent() {
             .lines()
             .nth(8)
             .unwrap()
-            .ends_with(&format!("  0.0{}-", " ".repeat(14)))
+            .ends_with(&format!("  0.0{}-", " ".repeat(12)))
     );
 }
 

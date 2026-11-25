@@ -148,8 +148,8 @@ fn the_instruction_says_that_a_current_directory_left_as_it_was_makes_no_new_har
 }
 
 #[test]
-fn the_instruction_does_not_say_that_every_task_the_harness_trialled_is_there() {
-    assert!(!containers::INSTRUCTION.contains("each task you have trialled"));
+fn the_instruction_does_not_say_that_every_task_the_harness_had_a_trial_on_is_there() {
+    assert!(!containers::INSTRUCTION.contains("each task you have had a trial on"));
 }
 
 #[test]

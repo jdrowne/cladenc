@@ -263,7 +263,7 @@ fn the_manual_of_start_says_that_a_trial_keeps_whether_its_harness_was_stopped()
 fn the_manual_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc_obeys() {
     let help = manual_on_one_line("cladenc-start");
     let settings = [
-        "cpus under environment the most CPUs the container of an",
+        "cpus under environment the most CPUs the container of a",
         "memory_mb under environment the most memory that container is",
     ];
     assert!(settings.iter().all(|line| help.contains(line)));

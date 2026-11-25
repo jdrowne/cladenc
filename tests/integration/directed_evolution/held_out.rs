@@ -91,7 +91,7 @@ fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_trials_and_n
 #[test]
 fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
     assert!(
-        ["trials\nchildren\n", "trials\nline\n"]
+        ["children\ntrials\n", "line\ntrials\n"]
             .contains(&GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[1].as_str())
     );
 }
