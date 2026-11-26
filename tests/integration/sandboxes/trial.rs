@@ -1,11 +1,8 @@
 use std::fs;
 use std::io;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
-use std::process::Command;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
-use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
@@ -33,7 +30,8 @@ const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
 const REMOVE_LOGS_VERIFIER: &str = "rm -rf /logs/verifier";
 const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN_BESIDE_A_VERDICT: &str = "cd /logs/verifier && mkdir \
     locked && echo noted > locked/file && chmod 500 locked && echo 1 > reward.txt";
-const SAY_THE_SANDBOX_AND_STAY: &str = "hostname; sleep 300";
+const PUT_LOGS_VERIFIER_WHERE_DOCKER_COPIES_NOTHING_FROM: &str =
+    "rm -rf /logs/verifier && ln -s /proc/1 /logs/verifier";
 const LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES: &str =
     "mkdir left && echo done > left/work.txt && mkfifo left/pipe && ln left/pipe left/twin";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
@@ -71,7 +69,6 @@ struct Trial<'a> {
     key: Option<&'a str>,
     harness_time_limit: Option<u64>,
     unreadable_in_the_harness: bool,
-    sandbox_removed_under_the_verifier: bool,
 }
 
 impl Default for Trial<'_> {
@@ -83,7 +80,6 @@ impl Default for Trial<'_> {
             key: None,
             harness_time_limit: Some(30),
             unreadable_in_the_harness: false,
-            sandbox_removed_under_the_verifier: false,
         }
     }
 }
@@ -170,28 +166,20 @@ fn trialled_as(trial: &Trial<'_>) -> Trialled {
         },
         verifier: None,
     };
-    let said = outputs_directory
-        .running_trial(0, TASK)
-        .join("verifier/stdout");
-    let result = thread::scope(|scope| {
-        if trial.sandbox_removed_under_the_verifier {
-            scope.spawn(|| remove_the_sandbox_that_says_its_name_in(&said));
-        }
-        sandboxes::run_trial(
-            Host {
-                docker: &Program,
-                outputs_directory: &outputs_directory,
-            },
-            &launch,
-            sandboxes::Trial {
-                harness: 0,
-                task: TASK,
-                environment: &environment,
-            },
-            &stop,
-            &|_| (),
-        )
-    });
+    let result = sandboxes::run_trial(
+        Host {
+            docker: &Program,
+            outputs_directory: &outputs_directory,
+        },
+        &launch,
+        sandboxes::Trial {
+            harness: 0,
+            task: TASK,
+            environment: &environment,
+        },
+        &stop,
+        &|_| (),
+    );
     Trialled {
         _directory: directory,
         _built: built,
@@ -199,16 +187,6 @@ fn trialled_as(trial: &Trial<'_>) -> Trialled {
         outputs_directory,
         result,
     }
-}
-
-fn remove_the_sandbox_that_says_its_name_in(said: &Path) {
-    let name = (0..12)
-        .filter(|_| test_inputs::within_ten_seconds(|| test_inputs::line_is_written(said)))
-        .find_map(|_| fs::read_to_string(said).ok())
-        .unwrap_or_default();
-    let _ = Command::new("docker")
-        .args(["rm", "--force", name.trim()])
-        .output();
 }
 
 fn trialled(run_command: &str, verifier: &str) -> Trialled {
@@ -582,13 +560,8 @@ fn a_verifier_that_removed_logs_verifier_left_no_verdict() {
 
 #[test]
 fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_sandbox_is_given_no_result() {
-    let trialled = trialled_as(&Trial {
-        verifier: SAY_THE_SANDBOX_AND_STAY,
-        sandbox_removed_under_the_verifier: true,
-        ..Trial::default()
-    });
     assert!(matches!(
-        trialled.result,
+        trialled(FINISH, PUT_LOGS_VERIFIER_WHERE_DOCKER_COPIES_NOTHING_FROM).result,
         Err(SandboxError::NotCopiedOut(_))
     ));
 }
