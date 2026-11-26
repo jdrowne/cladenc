@@ -421,6 +421,16 @@ fn a_verifier_whose_sandbox_docker_does_not_bring_up_names_the_file_that_holds_w
 }
 
 #[test]
+fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_verifier_sandbox_is_given_no_result() {
+    let kept = given::kept_verifier_logs();
+    let docker = Double::default().answering(&["cp", kept.as_str()], &[REFUSED]);
+    assert!(matches!(
+        verified_apart(docker).result,
+        Err(SandboxError::NotCopiedOut(_))
+    ));
+}
+
+#[test]
 fn a_trial_whose_logs_cannot_be_linked_in_its_verifier_sandbox_is_not_carried_out() {
     let docker = Double::default().answering(&["exec", LOGS_LINKED], &[REFUSED]);
     assert!(matches!(

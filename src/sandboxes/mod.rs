@@ -168,6 +168,7 @@ pub enum SandboxError {
     OtherFiles,
     TaskHealthCheck { tries: u64, kept: PathBuf },
     VerifierHealthCheck { tries: u64, kept: PathBuf },
+    NotCopiedOut(io::Error),
 }
 
 impl Display for SandboxError {
@@ -203,6 +204,12 @@ impl Display for SandboxError {
                  printed the last time it ran",
                 if *tries == 1 { "try" } else { "tries" },
                 kept.display()
+            ),
+            Self::NotCopiedOut(error) => write!(
+                formatter,
+                "was not given a result: what its verifier left in {} could not be copied out \
+                 of its sandbox: {error}",
+                harbor::VERIFIER_LOGS
             ),
         }
     }

@@ -97,12 +97,15 @@ impl<'a> Verifying<'a> {
         given
             .and_then(|()| harbor::empty_verifier(up, run.user))
             .and_then(|()| up.run(&run, &verifier, limits))
-            .map(|ending| {
-                up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
-                match ending {
-                    Ending::TimedOut => TrialResult::Inconclusive(Cause::TimedOut),
-                    Ending::Exited(_) => verdict::result(up.files(), &logs),
+            .and_then(|ending| match ending {
+                Ending::TimedOut => {
+                    up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
+                    Ok(TrialResult::Inconclusive(Cause::TimedOut))
                 }
+                Ending::Exited(_) => up
+                    .take_out_of(harbor::VERIFIER_LOGS, &logs)
+                    .map(|()| verdict::result(up.files(), &logs))
+                    .map_err(SandboxError::NotCopiedOut),
             })
     }
 }

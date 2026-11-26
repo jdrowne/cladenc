@@ -1164,6 +1164,10 @@ the result is inconclusive, and its cause is recorded as no_verdict
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the trial again
 .TP 7n
+\fB/logs/verifier, where it cannot be copied out of the sandbox\fP
+the verdict is not known, and no result is recorded: the directed evolution
+stops, and \fBcladenc resume\fP carries out the trial again
+.TP 7n
 \fBexit status 125 of either step or of the health check\fP
 Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP carries out the trial again
@@ -1188,6 +1192,17 @@ end and wrote no verdict that can be read: the verifier may have broken by
 itself, or what the harness left may have broken it, and cladenc has no way to
 tell which.
 What the verifier printed and left is kept with the trial.
+.PP
+Once the verifier has ended, cladenc copies /logs/verifier out of the sandbox
+and reads the verdict in the copy.
+Where the copy fails, the verdict is not known, so cladenc does not record
+that the verifier left no verdict: the directed evolution stops with exit
+status 1, and no result is recorded for the trial.
+cladenc then names the harness and the task, and says what Docker said of the
+copy.
+Where the verifier removed /logs/verifier, or put something that is not a
+directory in its place, there is nothing to copy: the verifier left no verdict,
+and the cause of the inconclusive trial is recorded as no_verdict.
 .PP
 At the end of a trial, \fBcladenc start\fP says on standard error whether the
 trial passed, failed or was inconclusive, and of an inconclusive trial whether

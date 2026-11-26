@@ -173,6 +173,9 @@ fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
         "a health check of the task, or of the verifier sandbox, that passes in none of its \
          tries no result is recorded: the directed evolution stops, and cladenc resume carries out \
          the trial again",
+        "/logs/verifier, where it cannot be copied out of the sandbox the verdict is not known, \
+         and no result is recorded: the directed evolution stops, and cladenc resume carries out \
+         the trial again",
         "the time limit of the verifier the sandbox is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
@@ -234,6 +237,26 @@ fn the_manual_of_start_says_where_a_person_reads_why_a_verifier_left_no_verdict(
         manual_on_one_line("cladenc-start")
             .contains("What the verifier printed and left is kept with the trial.")
     );
+}
+
+#[test]
+fn the_manual_of_start_says_what_cladenc_does_where_the_copy_of_logs_verifier_fails() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Once the verifier has ended, cladenc copies /logs/verifier out of the sandbox and reads \
+         the verdict in the copy. Where the copy fails, the verdict is not known, so cladenc does \
+         not record that the verifier left no verdict: the directed evolution stops with exit \
+         status 1, and no result is recorded for the trial. cladenc then names the harness and \
+         the task, and says what Docker said of the copy."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_verifier_that_removed_logs_verifier_left_no_verdict() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Where the verifier removed /logs/verifier, or put something that is not a directory in \
+         its place, there is nothing to copy: the verifier left no verdict, and the cause of the \
+         inconclusive trial is recorded as no_verdict."
+    ));
 }
 
 #[test]

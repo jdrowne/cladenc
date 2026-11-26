@@ -75,6 +75,14 @@ pub(super) fn made() -> (Memory, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
+pub(crate) fn kept_verifier_logs() -> String {
+    Memory::default()
+        .path()
+        .join("outputs/running/trial-0-benchmark+t1/verifier/logs/verifier")
+        .to_string_lossy()
+        .into_owned()
+}
+
 pub(super) fn host<'a>(docker: &'a Double, outputs_directory: &'a OutputsDirectory) -> Host<'a> {
     Host {
         docker,

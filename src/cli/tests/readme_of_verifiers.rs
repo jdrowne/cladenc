@@ -218,6 +218,25 @@ fn the_readme_says_that_an_inconclusive_trial_is_a_finished_trial() {
 }
 
 #[test]
+fn the_readme_says_what_cladenc_does_where_the_copy_of_logs_verifier_fails() {
+    assert!(readme().contains(
+        "Once the verifier has ended, `cladenc` copies `/logs/verifier` out of the sandbox and \
+         reads the verdict in the copy. Where the copy fails, the verdict is not known, so no \
+         result is recorded for the trial: the directed evolution stops with exit status 1, \
+         `cladenc` names the harness and the task and says what Docker said of the copy, and \
+         `cladenc resume` carries out the trial again."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_verifier_that_removed_logs_verifier_left_no_verdict() {
+    assert!(readme().contains(
+        "A verifier that removed `/logs/verifier` left nothing to copy, and so no verdict: the \
+         trial is inconclusive, and its cause is recorded as `no_verdict`."
+    ));
+}
+
+#[test]
 fn the_readme_says_which_three_counts_the_report_gives_of_each_set_of_tasks() {
     assert!(readme().contains(
         "how many of its trials on the selection tasks passed, how many failed and how many \

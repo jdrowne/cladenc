@@ -1,5 +1,6 @@
 use std::ffi::OsString;
 use std::fmt::Write;
+use std::io;
 use std::path::Path;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -26,6 +27,8 @@ const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
 const END_EVERYTHING: &str = "kill -9 -1";
 const COPYING: Duration = Duration::from_secs(600);
 const FOLLOW_LINK: &str = "--follow-link";
+const NO_DIRECTORY: &str = r#"[ -d "$1" ] || echo none"#;
+const NONE: &str = "none";
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -283,22 +286,41 @@ impl<'a> Up<'a> {
     }
 
     pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
-        self.copy(&[], &format!("{from}/."), to);
+        let _ = self.copy(&[], &format!("{from}/."), to);
     }
 
     pub(super) fn copy_what_is_at(&self, from: &str, to: &Path) {
-        self.copy(&[FOLLOW_LINK], from, to);
+        let _ = self.copy(&[FOLLOW_LINK], from, to);
     }
 
-    fn copy(&self, flags: &[&str], from: &str, to: &Path) {
+    pub(super) fn take_out_of(&self, from: &str, to: &Path) -> io::Result<()> {
+        self.copy(&[], &format!("{from}/."), to).or_else(|error| {
+            if self.holds_no_directory_at(from) {
+                Ok(())
+            } else {
+                Err(error)
+            }
+        })
+    }
+
+    fn holds_no_directory_at(&self, path: &str) -> bool {
+        let mut docker = self.as_root();
+        docker.args(["sh", "-c", NO_DIRECTORY, "sh", path]);
+        self.docker
+            .print(docker)
+            .is_ok_and(|printed| printed.trim() == NONE)
+    }
+
+    fn copy(&self, flags: &[&str], from: &str, to: &Path) -> io::Result<()> {
         let mut docker = Command::new("docker");
         docker
             .arg("cp")
             .args(flags)
             .arg(format!("{}:{from}", self.name))
             .arg(to);
-        let _ = self.docker.print(docker);
+        let copied = self.docker.print(docker).map(drop);
         make_removable(self.files, to);
+        copied
     }
 
     fn as_root(&self) -> Command {

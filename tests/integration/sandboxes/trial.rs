@@ -27,6 +27,9 @@ const THE_PROCESS_NO_LONGER_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
     [ \"$(wc -l < beats)\" -eq \"$before\" ] && echo 1 > /logs/verifier/reward.txt";
 const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
     "mkdir -p locked/inner && touch locked/inner/file && chmod 500 locked/inner locked";
+const REMOVE_LOGS_VERIFIER: &str = "rm -rf /logs/verifier";
+const LEAVE_WHAT_CANNOT_BE_COPIED_OUT: &str = "cd /logs/verifier && mkdir locked && \
+    touch locked/file && chmod 500 locked && echo 1 > reward.txt";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const LOOK_FOR_THE_TESTS: &str = "ls -d /tests /var/opt/cladenc/harbor/tests \
     /var/log/cladenc/trials 2> /dev/null";
@@ -500,6 +503,22 @@ fn a_verdict_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
             "true"
         ),
         TrialResult::Inconclusive(Cause::NoVerdict)
+    ));
+}
+
+#[test]
+fn a_verifier_that_removed_logs_verifier_left_no_verdict() {
+    assert!(with_its_result(
+        &trialled(FINISH, REMOVE_LOGS_VERIFIER),
+        TrialResult::Inconclusive(Cause::NoVerdict)
+    ));
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_sandbox_is_given_no_result() {
+    assert!(matches!(
+        trialled(FINISH, LEAVE_WHAT_CANNOT_BE_COPIED_OUT).result,
+        Err(SandboxError::NotCopiedOut(_))
     ));
 }
 

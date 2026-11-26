@@ -260,6 +260,17 @@ fn a_verifier_that_was_never_run_is_worded_with_the_tries_and_where_the_health_c
 }
 
 #[test]
+fn verifier_logs_that_were_not_copied_out_are_worded_with_the_place_and_what_docker_said() {
+    assert_eq!(
+        worded(SandboxError::NotCopiedOut(io::Error::other(
+            "No such container: cladenc-0123456789abcdef"
+        ))),
+        "was not given a result: what its verifier left in /logs/verifier could not be copied \
+         out of its sandbox: No such container: cladenc-0123456789abcdef"
+    );
+}
+
+#[test]
 fn one_try_of_the_health_check_of_a_verifier_is_not_worded_as_several() {
     assert!(
         worded(SandboxError::VerifierHealthCheck {

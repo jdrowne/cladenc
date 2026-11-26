@@ -6,14 +6,25 @@ use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::journal::Started;
 use crate::sandboxes::SandboxError;
 use crate::sandboxes::tests::double::{Answer, Double};
+use crate::sandboxes::tests::given::kept_verifier_logs;
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
 const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
 const FIRST_TRIAL_STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#;
+const STARTED_AGAIN: &str = "cladenc: started again the trial of harness 0 on task benchmark/t1\n";
 
 fn refused() -> Evolved {
     let refused = [Answer::Refused("docker is not there")];
     let docker = Double::default().answering(&["--detach"], &refused);
+    given::started(docker, given::unchanged)
+}
+
+fn not_copied_out() -> Evolved {
+    let kept = kept_verifier_logs();
+    let refused = [Answer::Refused("no space left on device")];
+    let docker = Double::default()
+        .verifying(|_| true)
+        .answering(&["cp", kept.as_str()], &refused);
     given::started(docker, given::unchanged)
 }
 
@@ -129,4 +140,51 @@ fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stop
 fn a_directed_evolution_whose_harnesses_all_run_out_of_time_runs_to_its_end() {
     let docker = Double::default().answering(&HARNESS, &[Answer::TimedOut]);
     assert!(given::started(docker, given::unchanged).result.is_ok());
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_were_not_copied_out_ends_the_directed_evolution_with_its_cause() {
+    assert!(matches!(
+        not_copied_out().result,
+        Err(DirectedEvolutionError::Action {
+            action: Started::Trial { harness: 0, task },
+            error: SandboxError::NotCopiedOut(_),
+        }) if task == "benchmark/t1"
+    ));
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_were_not_copied_out_is_told_with_what_docker_said() {
+    let said = not_copied_out().said;
+    assert!(said.contains(
+        "cladenc: the trial of harness 0 on task benchmark/t1 was not given a result: what its \
+         verifier left in /logs/verifier could not be copied out of its sandbox: no space left on \
+         device\n"
+    ));
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_were_not_copied_out_is_not_said_to_be_inconclusive() {
+    let said = not_copied_out().said;
+    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_were_not_copied_out_is_journaled_as_started_and_not_as_finished() {
+    assert_eq!(
+        not_copied_out().journal().lines().last(),
+        Some(FIRST_TRIAL_STARTED)
+    );
+}
+
+#[test]
+fn a_trial_whose_verifier_logs_were_not_copied_out_is_carried_out_again_when_resumed() {
+    let resumed = given::resumed(not_copied_out(), Double::default());
+    assert!(resumed.said.contains(STARTED_AGAIN));
+}
+
+#[test]
+fn a_directed_evolution_resumed_once_the_verifier_logs_can_be_copied_out_runs_to_its_end() {
+    let resumed = given::resumed(not_copied_out(), Double::default());
+    assert!(resumed.result.is_ok());
 }

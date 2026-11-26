@@ -3,6 +3,7 @@ mod artifacts;
 mod build;
 mod built;
 mod collected;
+mod copied_out;
 mod diversified;
 pub(crate) mod double;
 mod ended;
