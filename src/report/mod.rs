@@ -33,7 +33,7 @@ const HEADER: [&str; COLUMNS] = [
     "non-holdout not completed",
     "clade completed",
     "clade not completed",
-    "clade score",
+    "clade completion rate",
     "trial seconds",
     "diversification seconds",
 ];
@@ -72,7 +72,7 @@ struct HarnessReport {
     non_holdout_not_completed: u64,
     clade_completed: u64,
     clade_not_completed: u64,
-    clade_score: Option<f64>,
+    clade_completion_rate: Option<f64>,
     trial_seconds: f64,
     diversification_seconds: Option<f64>,
 }
@@ -224,7 +224,7 @@ impl HarnessReport {
             non_holdout_not_completed: harness.non_holdout_not_completed(),
             clade_completed: harness.clade_completed(),
             clade_not_completed: harness.clade_not_completed(),
-            clade_score: harness.clade_score(),
+            clade_completion_rate: harness.clade_completion_rate(),
             trial_seconds: (seconds.trials * 1000.0).round() / 1000.0,
             diversification_seconds: seconds.diversification,
         }
@@ -253,7 +253,7 @@ impl HarnessReport {
             self.non_holdout_not_completed.to_string(),
             self.clade_completed.to_string(),
             self.clade_not_completed.to_string(),
-            shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
+            shown(self.clade_completion_rate.map(|rate| format!("{rate:.3}"))),
             format!("{:.1}", self.trial_seconds),
             shown(
                 self.diversification_seconds

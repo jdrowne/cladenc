@@ -99,15 +99,15 @@ fn report(genealogy: &Genealogy) -> Report {
 }
 
 #[test]
-fn a_clade_with_no_finished_trial_has_no_clade_score() {
+fn a_clade_with_no_finished_trial_has_no_clade_completion_rate() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
-    assert_eq!(report.harnesses[0].clade_score, None);
+    assert_eq!(report.harnesses[0].clade_completion_rate, None);
 }
 
 #[test]
-fn the_clade_score_of_a_harness_counts_its_descendants() {
+fn the_clade_completion_rate_of_a_harness_counts_its_descendants() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(report.harnesses[0].clade_score, Some(0.5));
+    assert_eq!(report.harnesses[0].clade_completion_rate, Some(0.5));
 }
 
 #[test]

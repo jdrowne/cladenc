@@ -113,7 +113,7 @@ impl Harness {
         self.clade_not_completed
     }
 
-    pub(crate) fn clade_score(&self) -> Option<f64> {
+    pub(crate) fn clade_completion_rate(&self) -> Option<f64> {
         let finished = self.clade_completed + self.clade_not_completed;
         (finished > 0).then(|| self.clade_completed as f64 / finished as f64)
     }

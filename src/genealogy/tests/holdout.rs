@@ -185,9 +185,9 @@ fn a_trial_not_completed_at_a_corroboration_task_reaches_no_clade_not_completed(
 }
 
 #[test]
-fn a_clade_that_finished_only_corroboration_tasks_has_no_clade_score() {
+fn a_clade_that_finished_only_corroboration_tasks_has_no_clade_completion_rate() {
     let genealogy = after(1, CORROBORATION, TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
 #[test]
@@ -207,9 +207,9 @@ fn a_trial_not_completed_at_a_task_that_is_not_held_out_reaches_no_clade_not_com
 }
 
 #[test]
-fn a_clade_that_finished_only_tasks_that_are_not_held_out_has_no_clade_score() {
+fn a_clade_that_finished_only_tasks_that_are_not_held_out_has_no_clade_completion_rate() {
     let genealogy = after(1, SHOWN, TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
 #[test]

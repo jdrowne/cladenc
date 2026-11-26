@@ -168,35 +168,38 @@ fn the_clade_of_the_primogenitor_is_the_whole_genealogy() {
 }
 
 #[test]
-fn the_clade_score_is_the_share_completed() {
+fn the_clade_completion_rate_is_the_share_completed() {
     let mut genealogy = family();
     finish(&mut genealogy, 0, TrialResult::Completed);
     finish(&mut genealogy, 1, TrialResult::Completed);
     finish(&mut genealogy, 2, TrialResult::Completed);
     finish(&mut genealogy, 3, TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[0].clade_score(), Some(0.75));
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), Some(0.75));
 }
 
 #[test]
-fn the_clade_score_of_a_clade_with_nothing_completed_is_zero() {
+fn the_clade_completion_rate_of_a_clade_with_nothing_completed_is_zero() {
     let genealogy = family_after(2, TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[1].clade_score(), Some(0.0));
+    assert_eq!(genealogy.harnesses()[1].clade_completion_rate(), Some(0.0));
 }
 
 #[test]
-fn the_clade_score_has_no_value_in_a_new_genealogy() {
-    assert_eq!(Genealogy::new().harnesses()[0].clade_score(), None);
+fn the_clade_completion_rate_has_no_value_in_a_new_genealogy() {
+    assert_eq!(
+        Genealogy::new().harnesses()[0].clade_completion_rate(),
+        None
+    );
 }
 
 #[test]
-fn the_clade_score_has_no_value_while_the_only_trial_runs() {
+fn the_clade_completion_rate_has_no_value_while_the_only_trial_runs() {
     let mut genealogy = Genealogy::new();
     genealogy.start_trial(0, "a").unwrap();
-    assert_eq!(genealogy.harnesses()[0].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
 #[test]
-fn the_clade_score_has_no_value_for_a_clade_the_results_fall_outside() {
+fn the_clade_completion_rate_has_no_value_for_a_clade_the_results_fall_outside() {
     let genealogy = family_after(3, TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[1].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[1].clade_completion_rate(), None);
 }

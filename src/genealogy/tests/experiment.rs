@@ -215,19 +215,19 @@ fn a_selection_task_the_singleton_control_group_harness_completed_is_counted_for
 #[test]
 fn the_singleton_control_group_harness_is_counted_in_no_clade_of_its_own() {
     let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[3].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[3].clade_completion_rate(), None);
 }
 
 #[test]
 fn the_singleton_control_group_harness_is_not_counted_in_the_clade_of_the_progenitor() {
     let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[1].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[1].clade_completion_rate(), None);
 }
 
 #[test]
 fn the_singleton_control_group_harness_is_not_counted_in_the_clade_of_the_primogenitor() {
     let genealogy = after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].clade_score(), None);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
 #[test]

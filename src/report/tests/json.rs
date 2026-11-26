@@ -68,13 +68,13 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""selection_completed":1,"selection_not_completed":0,"#,
             r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
-            r#""clade_completed":1,"clade_not_completed":0,"clade_score":1.0,"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_completion_rate":1.0,"#,
             r#""trial_seconds":4.5,"diversification_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"experiment":null,"state":"being_created","#,
             r#""selection_completed":0,"selection_not_completed":0,"#,
             r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":0,"#,
-            r#""clade_completed":0,"clade_not_completed":0,"clade_score":null,"#,
+            r#""clade_completed":0,"clade_not_completed":0,"clade_completion_rate":null,"#,
             r#""trial_seconds":0.0,"diversification_seconds":null}]}"#
         )
     );
@@ -115,5 +115,14 @@ fn the_object_gives_no_lower_bound() {
         !Report::of(&settings(), &Genealogy::new(), &[], Some(0))
             .json()
             .contains("lower_bound")
+    );
+}
+
+#[test]
+fn the_object_names_no_score() {
+    assert!(
+        !Report::of(&settings(), &Genealogy::new(), &[], Some(0))
+            .json()
+            .contains("score")
     );
 }

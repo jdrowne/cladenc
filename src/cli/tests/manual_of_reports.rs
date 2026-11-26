@@ -100,3 +100,11 @@ fn the_manual_of_resume_says_what_resume_prints_of_a_directed_evolution_that_had
          that the directed evolution had finished."
     ));
 }
+
+#[test]
+fn the_manual_of_report_says_what_the_clade_completion_rate_is() {
+    assert!(manual_on_one_line("cladenc-report").contains(
+        "the clade completion rate, which is the part of the finished trials of the clade on the \
+         selection tasks in which the task was completed,"
+    ));
+}

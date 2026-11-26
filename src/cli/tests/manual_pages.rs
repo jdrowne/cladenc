@@ -190,14 +190,14 @@ fn the_manual_page_of_cladenc_says_that_nothing_is_chosen_by_the_corroboration_t
 }
 
 #[test]
-fn no_manual_page_says_of_a_harness_that_it_is_scored() {
+fn no_manual_page_names_a_score_or_says_of_a_harness_that_it_is_scored() {
     let pages: Vec<String> = commands()
         .iter()
         .map(|(page, _)| page.clone())
         .filter(|page| {
             manual(page)
                 .split(|letter: char| !letter.is_alphabetic())
-                .any(|word| matches!(word, "scored" | "scores" | "scoring"))
+                .any(|word| matches!(word, "score" | "scored" | "scores" | "scoring"))
         })
         .collect();
     assert_eq!(pages, Vec::<String>::new());

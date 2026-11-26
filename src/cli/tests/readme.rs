@@ -858,10 +858,18 @@ fn the_flag_of_the_corroboration_tasks_says_that_nothing_is_chosen_by_them() {
 }
 
 #[test]
-fn the_readme_says_of_no_harness_that_it_is_scored() {
+fn the_readme_names_no_score_and_says_of_no_harness_that_it_is_scored() {
     assert!(
         !readme()
             .split(|letter: char| !letter.is_alphabetic())
-            .any(|word| matches!(word, "scored" | "scores" | "scoring"))
+            .any(|word| matches!(word, "score" | "scored" | "scores" | "scoring"))
     );
+}
+
+#[test]
+fn the_section_of_cladenc_report_says_what_the_clade_completion_rate_is() {
+    assert!(what_is_said_of("report").contains(
+        "the clade completion rate, which is the part of the finished trials of the clade on the \
+         selection tasks in which the task was completed,"
+    ));
 }

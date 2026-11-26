@@ -75,9 +75,9 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  diversification seconds\n\
-         0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000        4.5            -\n\
-         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n"
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade completion rate  trial seconds  diversification seconds\n\
+         0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000                  4.5            -\n\
+         1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -                      0.0            -\n"
     );
 }
 
@@ -115,9 +115,9 @@ fn a_failed_harness_is_shown_as_failed() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  diversification seconds\n\
-         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n\
-         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0            30.3\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade completion rate  trial seconds  diversification seconds\n\
+         0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -                      0.0            -\n\
+         1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -                      0.0            30.3\n"
     );
 }
 
@@ -193,7 +193,7 @@ fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_t
 }
 
 #[test]
-fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_score() {
+fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_completion_rate() {
     let table = table(|genealogy| {
         trialled(genealogy, "benchmark/t1", TrialResult::NotCompleted);
         trialled(genealogy, "benchmark/t4", TrialResult::Completed);
@@ -212,4 +212,20 @@ fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_cor
 #[test]
 fn the_table_has_no_column_of_the_holdout_tasks_together() {
     assert!(!table(|_| {}).contains("  holdout"));
+}
+
+#[test]
+fn the_table_names_no_score() {
+    assert!(!table(|_| {}).contains("score"));
+}
+
+#[test]
+fn the_header_names_the_completion_rate_of_the_clade_after_its_two_counts() {
+    assert!(
+        table(|_| {})
+            .lines()
+            .nth(7)
+            .unwrap()
+            .contains("  clade completed  clade not completed  clade completion rate  ")
+    );
 }
