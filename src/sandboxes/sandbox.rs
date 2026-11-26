@@ -271,15 +271,13 @@ impl<'a> Up<'a> {
         let _ = self.docker.print(docker);
     }
 
-    pub(super) fn changes(&self) -> Vec<String> {
+    pub(super) fn changes(&self) -> Result<Vec<String>, SandboxError> {
         let mut docker = Command::new("docker");
         docker.args(["diff", &self.name]);
         self.docker
             .print(docker)
-            .unwrap_or_default()
-            .lines()
-            .map(str::to_owned)
-            .collect()
+            .map(|printed| printed.lines().map(str::to_owned).collect())
+            .map_err(SandboxError::ChangesNotListed)
     }
 
     pub(super) fn keep_work(&self, work: &Path) -> Result<(), SandboxError> {

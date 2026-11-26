@@ -836,6 +836,15 @@ there: a directory, for the working directory of the harness and for
 says.
 Where it is not there, nothing is kept and the trial goes on.
 .PP
+The list of what the harness changed is what \fBdocker diff\fP lists as changed
+in the sandbox once the harness has ended or was stopped, without what it
+listed before the harness was started.
+Where Docker does not list the changes of the sandbox, at either time, cladenc
+keeps no list as though it were what the harness changed: no result is
+recorded for the trial, and the directed evolution stops with exit status 1.
+cladenc then names the harness and the task, and says what Docker said.
+\fBcladenc resume\fP carries out the trial again.
+.PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
 cladenc makes no directory there, as the Filesystem Hierarchy Standard asks of
@@ -1224,6 +1233,14 @@ stops, and \fBcladenc resume\fP carries out the trial again
 \fBwhat the harness left, where it cannot be copied out of the sandbox\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the trial again
+.TP 7n
+\fBthe changes of the sandbox, where Docker does not list them\fP
+no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
+carries out the trial again
+.TP 7n
+\fBa path that was kept, where it cannot be copied in full for the verifier sandbox\fP
+no verifier is run, and no result is recorded: the directed evolution stops,
+and \fBcladenc resume\fP carries out the trial again
 .TP 7n
 \fBexit status 125 of either step or of the health check\fP
 Docker did not start the sandbox: the directed evolution stops, and

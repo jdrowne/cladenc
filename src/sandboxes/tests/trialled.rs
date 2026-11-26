@@ -372,6 +372,55 @@ fn only_what_changed_while_the_harness_ran_is_kept_as_its_changes() {
 }
 
 #[test]
+fn a_trial_whose_changes_cannot_be_listed_before_its_harness_is_started_is_given_no_result() {
+    let tried = trialled_by(Double::default().answering(&["diff"], &[REFUSED]));
+    assert!(matches!(
+        tried.result,
+        Err(SandboxError::ChangesNotListed(_))
+    ));
+}
+
+#[test]
+fn no_harness_is_started_in_a_sandbox_whose_changes_cannot_be_listed() {
+    let tried = trialled_by(Double::default().answering(&["diff"], &[REFUSED]));
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains("run a harness"))
+    );
+}
+
+#[test]
+fn a_trial_whose_changes_cannot_be_listed_once_its_harness_has_ended_is_given_no_result() {
+    let listed = [Answer::Printed("C /app\n"), REFUSED];
+    let tried = trialled_by(Double::default().answering(&["diff"], &listed));
+    assert!(matches!(
+        tried.result,
+        Err(SandboxError::ChangesNotListed(_))
+    ));
+}
+
+#[test]
+fn no_list_of_changes_is_kept_where_docker_does_not_list_them_once_the_harness_has_ended() {
+    let listed = [Answer::Printed("C /app\n"), REFUSED];
+    let tried = trialled_by(Double::default().answering(&["diff"], &listed));
+    assert!(!tried.directory.exists(tried.running().join("changes")));
+}
+
+#[test]
+fn no_verifier_is_run_in_a_sandbox_whose_changes_cannot_be_listed() {
+    let listed = [Answer::Printed("C /app\n"), REFUSED];
+    let tried = trialled_by(Double::default().answering(&["diff"], &listed));
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains("/tests/test.sh"))
+    );
+}
+
+#[test]
 fn a_harness_that_changes_nothing_in_the_sandbox_has_no_change_kept() {
     let tried = trialled_by(Double::default());
     assert_eq!(kept(&tried, "changes").as_deref(), Some(""));

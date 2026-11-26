@@ -313,6 +313,17 @@ fn a_path_that_was_not_copied_for_the_verifier_is_worded_with_the_path_and_the_r
 }
 
 #[test]
+fn changes_that_were_not_listed_are_worded_with_what_docker_said() {
+    assert_eq!(
+        worded(SandboxError::ChangesNotListed(io::Error::other(
+            "No such container: cladenc-0123456789abcdef"
+        ))),
+        "was not given a result: Docker did not list what was changed in its sandbox: No such \
+         container: cladenc-0123456789abcdef"
+    );
+}
+
+#[test]
 fn one_try_of_the_health_check_of_a_verifier_is_not_worded_as_several() {
     assert!(
         worded(SandboxError::VerifierHealthCheck {

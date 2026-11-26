@@ -104,3 +104,14 @@ fn the_readme_says_what_cladenc_does_where_a_copy_out_of_a_sandbox_fails() {
          carries out the trial again."
     ));
 }
+
+#[test]
+fn the_readme_says_what_cladenc_does_where_docker_does_not_list_the_changes_of_a_sandbox() {
+    assert!(readme().contains(
+        "Where Docker does not list what was changed in the sandbox, before the harness is \
+         started or once it has ended, no list is kept as though it were what the harness \
+         changed: no result is recorded for the trial either, the directed evolution stops with \
+         exit status 1, `cladenc` says what Docker said, and `cladenc resume` carries out the \
+         trial again."
+    ));
+}

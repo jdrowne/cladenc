@@ -171,6 +171,7 @@ pub enum SandboxError {
     VerifierHealthCheck { tries: u64, kept: PathBuf },
     NotCopiedOut { left: Copied, error: io::Error },
     NotGivenToVerifier { left: String, error: io::Error },
+    ChangesNotListed(io::Error),
 }
 
 #[derive(Debug)]
@@ -238,6 +239,11 @@ impl Display for SandboxError {
                 formatter,
                 "was not given a result: what the harness left at {left} could not be copied in \
                  full for its verifier sandbox: {error}"
+            ),
+            Self::ChangesNotListed(error) => write!(
+                formatter,
+                "was not given a result: Docker did not list what was changed in its sandbox: \
+                 {error}"
             ),
         }
     }
@@ -480,7 +486,7 @@ impl Trialling<'_> {
             run.user,
         )
         .and_then(|()| harbor::make_artifacts(&up, run.user))?;
-        let before: BTreeSet<String> = up.changes().into_iter().collect();
+        let before: BTreeSet<String> = up.changes()?.into_iter().collect();
         let time_limit = environment.configuration.harness_time_limit;
         let limits = Limits::within(time_limit.unwrap_or(FOREVER), stop);
         let ending = up.run(&run, self.running, limits)?;
@@ -494,7 +500,7 @@ impl Trialling<'_> {
         let files = host.outputs_directory.files();
         keep(files, &self.running.join("ending"), word);
         let changes: String = up
-            .changes()
+            .changes()?
             .into_iter()
             .filter(|change| !before.contains(change))
             .map(|change| change + "\n")

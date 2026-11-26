@@ -149,3 +149,40 @@ fn the_manual_of_start_says_that_a_path_that_cannot_be_copied_out_gives_the_tria
          never given part of what the harness left."
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_what_the_list_of_what_a_harness_changed_is() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "The list of what the harness changed is what docker diff lists as changed in the \
+         sandbox once the harness has ended or was stopped, without what it listed before the \
+         harness was started."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_cladenc_does_where_docker_does_not_list_the_changes() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Where Docker does not list the changes of the sandbox, at either time, cladenc keeps \
+         no list as though it were what the harness changed: no result is recorded for the \
+         trial, and the directed evolution stops with exit status 1. cladenc then names the \
+         harness and the task, and says what Docker said. cladenc resume carries out the trial \
+         again."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_lists_changes_that_are_not_listed_among_what_gives_no_result() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "the changes of the sandbox, where Docker does not list them no result is recorded: the \
+         directed evolution stops, and cladenc resume carries out the trial again"
+    ));
+}
+
+#[test]
+fn the_manual_of_start_lists_a_kept_path_not_copied_in_full_among_what_gives_no_result() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "a path that was kept, where it cannot be copied in full for the verifier sandbox no \
+         verifier is run, and no result is recorded: the directed evolution stops, and cladenc \
+         resume carries out the trial again"
+    ));
+}

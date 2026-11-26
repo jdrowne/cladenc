@@ -462,15 +462,29 @@ fn the_changes_of_a_sandbox_are_the_lines_docker_prints() {
     let docker = Double::default().answering(&["diff"], &printed);
     let outputs_directory = outputs();
     let up = brought_up(&docker, &outputs_directory);
-    assert_eq!(up.changes(), ["C /app", "A /app/new"]);
+    assert_eq!(up.changes().unwrap(), ["C /app", "A /app/new"]);
 }
 
 #[test]
-fn a_sandbox_whose_changes_docker_does_not_print_is_taken_to_have_none() {
+fn a_sandbox_whose_changes_docker_does_not_print_is_not_taken_to_have_none() {
     let docker = Double::default().answering(&["diff"], &[REFUSED]);
     let outputs_directory = outputs();
     let up = brought_up(&docker, &outputs_directory);
-    assert!(up.changes().is_empty());
+    assert!(matches!(
+        up.changes(),
+        Err(SandboxError::ChangesNotListed(_))
+    ));
+}
+
+#[test]
+fn changes_that_docker_does_not_print_are_told_with_what_docker_said() {
+    let docker = Double::default().answering(&["diff"], &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(matches!(
+        up.changes(),
+        Err(SandboxError::ChangesNotListed(error)) if error.to_string() == "docker is not there"
+    ));
 }
 
 #[test]
