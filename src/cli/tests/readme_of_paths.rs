@@ -93,3 +93,14 @@ fn the_readme_says_how_cladenc_copies_out_of_a_sandbox_and_what_it_keeps() {
          is not kept."
     ));
 }
+
+#[test]
+fn the_readme_says_what_cladenc_does_where_a_copy_out_of_a_sandbox_fails() {
+    assert!(readme().contains(
+        "Where a copy out of a sandbox fails though what it would copy is in the sandbox, \
+         `cladenc` does not keep part of what was left as though it were all of it: no result is \
+         recorded for the trial, the directed evolution stops with exit status 1, `cladenc` \
+         names the harness and the task, says which copy failed and why, and `cladenc resume` \
+         carries out the trial again."
+    ));
+}

@@ -417,8 +417,21 @@ fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_verifier_sandbox_is_g
     let docker = Double::default().answering(&["cp", kept.as_str()], &[REFUSED]);
     assert!(matches!(
         verified_apart(docker).result,
-        Err(SandboxError::NotCopiedOut(_))
+        Err(SandboxError::NotCopiedOut { .. })
     ));
+}
+
+#[test]
+fn no_verifier_sandbox_is_brought_up_where_what_it_would_be_given_was_not_copied_out() {
+    let tried = verified_apart(Double::default().answering(&COPIED, &[REFUSED]));
+    assert_eq!(
+        tried
+            .commands()
+            .iter()
+            .filter(|command| command.starts_with(BROUGHT_UP))
+            .count(),
+        1
+    );
 }
 
 #[test]

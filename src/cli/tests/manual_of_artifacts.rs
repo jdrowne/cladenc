@@ -118,3 +118,34 @@ fn the_manual_of_start_says_which_files_are_not_copied_out_of_a_sandbox() {
          or a device, is not copied out, and neither is another name of such a file."
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_what_cladenc_does_where_a_copy_out_of_a_sandbox_fails() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Where a copy out of a sandbox fails though what it would copy is in the sandbox, \
+         cladenc does not keep part of what was left as though it were all of it: no result is \
+         recorded for the trial, and the directed evolution stops with exit status 1. cladenc \
+         then names the harness and the task, and says which copy failed and why: what Docker \
+         said of it, or what kept cladenc from unpacking what Docker printed. cladenc resume \
+         carries out the trial again."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_how_a_failed_copy_is_told_from_a_path_that_is_not_in_the_sandbox() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Once a copy has failed, cladenc asks the sandbox whether what it would copy is there: a \
+         directory, for the working directory of the harness and for /logs/verifier, and \
+         anything at all, for a path that is kept as ARTIFACTS says. Where it is not there, \
+         nothing is kept and the trial goes on."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_path_that_cannot_be_copied_out_gives_the_trial_no_result() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A path that is in the sandbox and cannot be copied out of it gives the trial no result, \
+         as TRIALS says, and no verifier is run: a verifier that runs in a sandbox of its own is \
+         never given part of what the harness left."
+    ));
+}

@@ -148,7 +148,7 @@ fn a_trial_whose_verifier_logs_were_not_copied_out_ends_the_directed_evolution_w
         not_copied_out().result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
-            error: SandboxError::NotCopiedOut(_),
+            error: SandboxError::NotCopiedOut { .. },
         }) if task == "benchmark/t1"
     ));
 }

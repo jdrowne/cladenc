@@ -7,8 +7,8 @@ use super::health_check::{self, Backoff};
 use super::program::{Ending, Limits};
 use super::sandbox::{Bringing, Run, Shell, Up};
 use super::{
-    ARTIFACTS, Checked, HEALTH_CHECK, Retry, SandboxError, Trial, VerifierImage, artifacts, harbor,
-    verdict,
+    ARTIFACTS, Checked, Copied, HEALTH_CHECK, Retry, SandboxError, Trial, VerifierImage, artifacts,
+    harbor, verdict,
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::{Cause, TrialResult};
@@ -97,15 +97,16 @@ impl<'a> Verifying<'a> {
         given
             .and_then(|()| harbor::empty_verifier(up, run.user))
             .and_then(|()| up.run(&run, &verifier, limits))
-            .and_then(|ending| match ending {
-                Ending::TimedOut => {
-                    up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
-                    Ok(TrialResult::Inconclusive(Cause::TimedOut))
-                }
-                Ending::Exited(_) => up
-                    .take_out_of(harbor::VERIFIER_LOGS, &logs)
-                    .map(|()| verdict::result(up.files(), &logs))
-                    .map_err(SandboxError::NotCopiedOut),
+            .and_then(|ending| {
+                up.take_out_of(harbor::VERIFIER_LOGS, &logs)
+                    .map(|()| match ending {
+                        Ending::TimedOut => TrialResult::Inconclusive(Cause::TimedOut),
+                        Ending::Exited(_) => verdict::result(up.files(), &logs),
+                    })
+                    .map_err(|error| SandboxError::NotCopiedOut {
+                        left: Copied::VerifierLogs,
+                        error,
+                    })
             })
     }
 }

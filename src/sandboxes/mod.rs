@@ -169,7 +169,29 @@ pub enum SandboxError {
     OtherFiles,
     TaskHealthCheck { tries: u64, kept: PathBuf },
     VerifierHealthCheck { tries: u64, kept: PathBuf },
-    NotCopiedOut(io::Error),
+    NotCopiedOut { left: Copied, error: io::Error },
+}
+
+#[derive(Debug)]
+pub enum Copied {
+    Work(String),
+    Artifact(String),
+    VerifierLogs,
+}
+
+impl Display for Copied {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Work(directory) => write!(
+                formatter,
+                "the harness left in its working directory, {directory},"
+            ),
+            Self::Artifact(path) => write!(formatter, "the harness left at {path}"),
+            Self::VerifierLogs => {
+                write!(formatter, "its verifier left in {}", harbor::VERIFIER_LOGS)
+            }
+        }
+    }
 }
 
 impl Display for SandboxError {
@@ -206,11 +228,10 @@ impl Display for SandboxError {
                 if *tries == 1 { "try" } else { "tries" },
                 kept.display()
             ),
-            Self::NotCopiedOut(error) => write!(
+            Self::NotCopiedOut { left, error } => write!(
                 formatter,
-                "was not given a result: what its verifier left in {} could not be copied out \
-                 of its sandbox: {error}",
-                harbor::VERIFIER_LOGS
+                "was not given a result: what {left} could not be copied out of its sandbox: \
+                 {error}"
             ),
         }
     }
@@ -473,7 +494,7 @@ impl Trialling<'_> {
             .map(|change| change + "\n")
             .collect();
         keep(files, &self.running.join("changes"), &changes);
-        up.keep_work(&self.running.join("work"));
+        up.keep_work(&self.running.join("work"))?;
         collect::run(
             &up,
             &environment.configuration.collect_commands,
@@ -484,7 +505,7 @@ impl Trialling<'_> {
             &up,
             &environment.configuration.artifacts,
             &self.running.join(ARTIFACTS),
-        );
+        )?;
         let verifying = Verifying {
             host,
             trial: &self.trial,

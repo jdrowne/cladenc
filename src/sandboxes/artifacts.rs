@@ -1,8 +1,8 @@
 use std::iter;
 use std::path::{Component, Path, PathBuf};
 
-use super::SandboxError;
 use super::sandbox::Up;
+use super::{Copied, SandboxError};
 use crate::benchmark::Artifact;
 use crate::file_system::{FileSystem, Found, Kind};
 
@@ -44,27 +44,32 @@ impl Set {
     }
 }
 
-pub(super) fn keep(up: &Up<'_>, artifacts: &[Artifact], kept: &Path) {
+pub(super) fn keep(up: &Up<'_>, artifacts: &[Artifact], kept: &Path) -> Result<(), SandboxError> {
     let files = up.files();
     for artifact in artifacts {
-        let place = keep_one(up, artifact, kept);
+        let place = keep_one(up, artifact, kept)?;
         remove_above_where_empty(files, &place, kept);
     }
     if let Some(published) = Artifact::published(artifacts) {
-        let place = keep_one(up, &published, kept);
+        let place = keep_one(up, &published, kept)?;
         let _ = files.remove_directory(&place);
         remove_above_where_empty(files, &place, kept);
     }
+    Ok(())
 }
 
-fn keep_one(up: &Up<'_>, artifact: &Artifact, kept: &Path) -> PathBuf {
+fn keep_one(up: &Up<'_>, artifact: &Artifact, kept: &Path) -> Result<PathBuf, SandboxError> {
     let place = place_of(artifact, kept);
     let _ = place
         .parent()
         .map(|above| up.files().make_directories(above));
-    up.copy_what_is_at(&artifact.source, &kept.with_file_name(TAKEN), &place);
+    up.copy_what_is_at(&artifact.source, &kept.with_file_name(TAKEN), &place)
+        .map_err(|error| SandboxError::NotCopiedOut {
+            left: Copied::Artifact(artifact.source.clone()),
+            error,
+        })?;
     leave_out(up.files(), &place, &artifact.exclude);
-    place
+    Ok(place)
 }
 
 pub(super) fn remove_above_where_empty(files: &dyn FileSystem, place: &Path, kept: &Path) {

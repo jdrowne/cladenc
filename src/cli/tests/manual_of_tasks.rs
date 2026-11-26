@@ -176,6 +176,8 @@ fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
         "/logs/verifier, where it cannot be copied out of the sandbox the verdict is not known, \
          and no result is recorded: the directed evolution stops, and cladenc resume carries out \
          the trial again",
+        "what the harness left, where it cannot be copied out of the sandbox no result is \
+         recorded: the directed evolution stops, and cladenc resume carries out the trial again",
         "the time limit of the verifier the sandbox is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
@@ -248,6 +250,14 @@ fn the_manual_of_start_says_what_cladenc_does_where_the_copy_of_logs_verifier_fa
          status 1, and no result is recorded for the trial. cladenc then names the harness and \
          the task, and says why the copy failed: what Docker said of it, or what kept cladenc \
          from unpacking what Docker printed."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_a_failed_copy_of_the_logs_of_a_timed_out_verifier_gives() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "What a verifier that ran past its time limit left in /logs/verifier is copied out in \
+         the same way, and where that copy fails, no result is recorded for the trial either."
     ));
 }
 

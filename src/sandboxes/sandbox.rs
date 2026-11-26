@@ -10,7 +10,7 @@ use nix::unistd::{Gid, Uid};
 use super::docker::{Docker, Host};
 use super::left;
 use super::program::{Ending, FOREVER, LEEWAY, Limits};
-use super::{Environment, SandboxError};
+use super::{Copied, Environment, SandboxError};
 use crate::benchmark::{HealthCheck, TaskConfiguration};
 use crate::file_system::FileSystem;
 use crate::outputs_directory::{OutputsDirectory, make_removable};
@@ -29,7 +29,9 @@ const COPYING: Duration = Duration::from_secs(600);
 const FOLLOW_LINK: &str = "--follow-link";
 const ARCHIVE: &str = "-";
 const NO_DIRECTORY: &str = r#"[ -d "$1" ] || echo none"#;
+const NOTHING: &str = r#"[ -e "$1" ] || echo none"#;
 const NONE: &str = "none";
+const TOP: &str = "/";
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -280,19 +282,24 @@ impl<'a> Up<'a> {
             .collect()
     }
 
-    pub(super) fn keep_work(&self, work: &Path) {
-        if self.working_directory != "/" {
-            self.copy_out_of(&self.working_directory, work);
-        }
+    pub(super) fn keep_work(&self, work: &Path) -> Result<(), SandboxError> {
+        let from = &self.working_directory;
+        let kept = if from == TOP {
+            Ok(())
+        } else {
+            self.take_out_of(from, work)
+        };
+        kept.map_err(|error| SandboxError::NotCopiedOut {
+            left: Copied::Work(from.clone()),
+            error,
+        })
     }
 
-    pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
-        let _ = self.unpack(&[], &format!("{from}/."), to);
-    }
-
-    pub(super) fn copy_what_is_at(&self, from: &str, through: &Path, to: &Path) {
+    pub(super) fn copy_what_is_at(&self, from: &str, through: &Path, to: &Path) -> io::Result<()> {
         let _ = self.files.remove_tree(through);
-        let _ = self.unpack(&[FOLLOW_LINK], from, through);
+        let copied = self
+            .unpack(&[FOLLOW_LINK], from, through)
+            .or_else(|error| self.unless_absent(NOTHING, from, error));
         let _ = self
             .files
             .list(through)
@@ -300,24 +307,25 @@ impl<'a> Up<'a> {
             .and_then(|names| names.into_iter().next())
             .map(|name| self.files.rename(&through.join(name), to));
         let _ = self.files.remove_tree(through);
+        copied
     }
 
     pub(super) fn take_out_of(&self, from: &str, to: &Path) -> io::Result<()> {
-        self.unpack(&[], &format!("{from}/."), to).or_else(|error| {
-            if self.holds_no_directory_at(from) {
-                Ok(())
-            } else {
-                Err(error)
-            }
-        })
+        self.unpack(&[], &format!("{from}/."), to)
+            .or_else(|error| self.unless_absent(NO_DIRECTORY, from, error))
     }
 
-    fn holds_no_directory_at(&self, path: &str) -> bool {
-        let mut docker = self.as_root();
-        docker.args(["sh", "-c", NO_DIRECTORY, "sh", path]);
-        self.docker
-            .print(docker)
-            .is_ok_and(|printed| printed.trim() == NONE)
+    fn unless_absent(&self, absent: &str, path: &str, error: io::Error) -> io::Result<()> {
+        let mut docker = Command::new("docker");
+        docker
+            .args(["exec", "--workdir", TOP, "--user", ROOT, &self.name])
+            .args(["sh", "-c", absent, "sh", path]);
+        let said = self.docker.print(docker);
+        if said.is_ok_and(|printed| printed.trim() == NONE) {
+            Ok(())
+        } else {
+            Err(error)
+        }
     }
 
     fn unpack(&self, flags: &[&str], from: &str, into: &Path) -> io::Result<()> {

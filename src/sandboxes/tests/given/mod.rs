@@ -76,9 +76,18 @@ pub(super) fn made() -> (Memory, OutputsDirectory) {
 }
 
 pub(crate) fn kept_verifier_logs() -> String {
+    kept_of_the_running_trial("verifier/logs/verifier")
+}
+
+pub(super) fn kept_work() -> String {
+    kept_of_the_running_trial("work")
+}
+
+fn kept_of_the_running_trial(kept: &str) -> String {
     Memory::default()
         .path()
-        .join("outputs/running/trial-0-benchmark+t1/verifier/logs/verifier")
+        .join("outputs/running/trial-0-benchmark+t1")
+        .join(kept)
         .to_string_lossy()
         .into_owned()
 }

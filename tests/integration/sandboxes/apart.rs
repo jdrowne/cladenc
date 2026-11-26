@@ -13,7 +13,7 @@ use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use cladenc::sandboxes::{
-    self, Environment, Host, Launch, Program, Retry, SandboxError, VerifierImage,
+    self, Copied, Environment, Host, Launch, Program, Retry, SandboxError, VerifierImage,
 };
 use tempfile::TempDir;
 use test_inputs::Image;
@@ -26,6 +26,7 @@ const OUT: &str = "artifacts = [\"/app/out\"]\n";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
 const CHANGE_THE_WORK_AND_WRITE_A_REPORT: &str = "echo done > work.txt; echo found > report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
+const PUT_OUT_WHERE_DOCKER_COPIES_NOTHING_FROM: &str = "ln -s /proc/1 out";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
                            1\"\ninterval_sec = 0\nretries = 1\n";
@@ -477,6 +478,19 @@ fn what_the_patterns_of_the_task_left_out_is_not_given_to_the_verifier() {
         ),
         "a.txt\n"
     );
+}
+
+#[test]
+fn a_trial_is_given_no_result_where_a_path_its_verifier_would_be_given_cannot_be_copied_out() {
+    let trialled = trialled(
+        &separate_and(OUT),
+        PUT_OUT_WHERE_DOCKER_COPIES_NOTHING_FROM,
+        "true",
+    );
+    assert!(matches!(
+        trialled.result,
+        Err(SandboxError::NotCopiedOut { left: Copied::Artifact(path), .. }) if path == "/app/out"
+    ));
 }
 
 #[test]

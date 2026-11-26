@@ -822,6 +822,20 @@ A file that is not a regular file, a directory or a symbolic link, such as a
 named pipe or a device, is not copied out, and neither is another name of such
 a file.
 .PP
+Where a copy out of a sandbox fails though what it would copy is in the
+sandbox, cladenc does not keep part of what was left as though it were all of
+it: no result is recorded for the trial, and the directed evolution stops with
+exit status 1.
+cladenc then names the harness and the task, and says which copy failed and
+why: what Docker said of it, or what kept cladenc from unpacking what Docker
+printed.
+\fBcladenc resume\fP carries out the trial again.
+Once a copy has failed, cladenc asks the sandbox whether what it would copy is
+there: a directory, for the working directory of the harness and for
+/logs/verifier, and anything at all, for a path that is kept as ARTIFACTS
+says.
+Where it is not there, nothing is kept and the trial goes on.
+.PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
 cladenc makes no directory there, as the Filesystem Hierarchy Standard asks of
@@ -897,6 +911,9 @@ where the table gives none or the entry is a path alone: /app/out/report.json
 is kept as artifacts/app/out/report.json.
 A symbolic link at the path is followed.
 A path that is not in the sandbox keeps nothing, and the trial goes on.
+A path that is in the sandbox and cannot be copied out of it gives the trial
+no result, as TRIALS says, and no verifier is run: a verifier that runs in a
+sandbox of its own is never given part of what the harness left.
 Where two entries would be kept at the same place, or one inside the other,
 the first is kept and the other is not.
 .PP
@@ -1193,6 +1210,10 @@ carries out the trial again
 the verdict is not known, and no result is recorded: the directed evolution
 stops, and \fBcladenc resume\fP carries out the trial again
 .TP 7n
+\fBwhat the harness left, where it cannot be copied out of the sandbox\fP
+no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
+carries out the trial again
+.TP 7n
 \fBexit status 125 of either step or of the health check\fP
 Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP carries out the trial again
@@ -1229,6 +1250,9 @@ printed.
 Where the verifier removed /logs/verifier, or put something that is not a
 directory in its place, there is nothing to copy: the verifier left no verdict,
 and the cause of the inconclusive trial is recorded as no_verdict.
+What a verifier that ran past its time limit left in /logs/verifier is copied
+out in the same way, and where that copy fails, no result is recorded for the
+trial either.
 .PP
 At the end of a trial, \fBcladenc start\fP says on standard error whether the
 trial passed, failed or was inconclusive, and of an inconclusive trial whether

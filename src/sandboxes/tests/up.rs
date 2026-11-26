@@ -1,19 +1,24 @@
+use std::io;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
-use crate::sandboxes::SandboxError;
 use crate::sandboxes::program::{Ending, Limits};
 use crate::sandboxes::sandbox::{Bringing, Run, Shell, Up};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{self, EMPTIED, TIMER};
+use crate::sandboxes::{Copied, SandboxError};
 
 const RUNNING: &str = "/running";
 const REMOVED: &str = "docker rm --force NAME";
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const COPIED_OUT: [&str; 2] = ["cp", "--follow-link"];
+const NO_DIRECTORY: &str = r#"[ -d "$1" ] || echo none"#;
+const NOTHING: &str = r#"[ -e "$1" ] || echo none"#;
+const NONE: Answer = Answer::Printed("none\n");
+const WORKING_IN_APP: Answer = Answer::Printed("harness\n/app\n");
 const THROUGH: &str = "/directory/taken";
 const KEPT: &str = "/directory/kept";
 
@@ -96,8 +101,16 @@ fn kept_of_what_is_at_a_path(leaving: impl FnOnce(Double) -> Double) -> Memory {
     let docker = leaving(Double::default().on(&directory));
     let outputs_directory = OutputsDirectory::at(directory.shared(), Path::new("/outputs"));
     let up = brought_up(&docker, &outputs_directory);
-    up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
+    let _copied = up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
     directory
+}
+
+fn working_in_app() -> Double {
+    Double::default().answering(&["inspect"], &[WORKING_IN_APP])
+}
+
+fn reason_of(copied: io::Result<()>) -> Option<String> {
+    copied.err().map(|error| error.to_string())
 }
 
 #[test]
@@ -234,10 +247,9 @@ fn the_user_of_a_sandbox_whose_image_sets_none_is_root() {
 
 #[test]
 fn the_work_of_a_sandbox_is_copied_out_of_the_working_directory_its_image_sets() {
-    let docker = Double::default().answering(&["inspect"], &[Answer::Printed("harness\n/app\n")]);
-    let outputs_directory = outputs();
+    let (docker, outputs_directory) = (working_in_app(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.keep_work(Path::new("/running/work"));
+    up.keep_work(Path::new("/running/work")).unwrap();
     assert_eq!(
         docker.commands(&outputs_directory)[2],
         "docker cp NAME:/app/. -"
@@ -246,10 +258,9 @@ fn the_work_of_a_sandbox_is_copied_out_of_the_working_directory_its_image_sets()
 
 #[test]
 fn the_work_of_a_sandbox_is_unpacked_where_it_is_kept() {
-    let docker = Double::default().answering(&["inspect"], &[Answer::Printed("harness\n/app\n")]);
-    let outputs_directory = outputs();
+    let (docker, outputs_directory) = (working_in_app(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.keep_work(Path::new("/running/work"));
+    up.keep_work(Path::new("/running/work")).unwrap();
     assert_eq!(docker.asked()[2].kept, Path::new("/running/work"));
 }
 
@@ -257,8 +268,41 @@ fn the_work_of_a_sandbox_is_unpacked_where_it_is_kept() {
 fn no_work_is_copied_out_of_a_sandbox_whose_working_directory_is_the_root() {
     let (docker, outputs_directory) = (Double::default(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.keep_work(Path::new("/running/work"));
+    up.keep_work(Path::new("/running/work")).unwrap();
     assert_eq!(docker.asked().len(), 2);
+}
+
+#[test]
+fn work_that_docker_does_not_copy_out_of_a_sandbox_is_an_error_that_names_the_working_directory() {
+    let docker = working_in_app().answering(&["cp"], &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(matches!(
+        up.keep_work(Path::new("/running/work")),
+        Err(SandboxError::NotCopiedOut { left: Copied::Work(directory), .. }) if directory == "/app"
+    ));
+}
+
+#[test]
+fn a_sandbox_is_asked_whether_its_working_directory_is_there_once_its_work_was_not_copied_out() {
+    let docker = working_in_app().answering(&["cp"], &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    let _kept = up.keep_work(Path::new("/running/work"));
+    assert_eq!(
+        docker.commands(&outputs_directory)[3],
+        format!("docker exec --workdir / --user 0 NAME sh -c {NO_DIRECTORY} sh /app")
+    );
+}
+
+#[test]
+fn a_sandbox_whose_working_directory_is_gone_keeps_no_work_and_that_is_no_error() {
+    let docker = working_in_app()
+        .answering(&["cp"], &[REFUSED])
+        .answering(&["exec", NO_DIRECTORY], &[NONE]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(up.keep_work(Path::new("/running/work")).is_ok());
 }
 
 #[test]
@@ -433,7 +477,8 @@ fn a_sandbox_whose_changes_docker_does_not_print_is_taken_to_have_none() {
 fn docker_is_asked_to_print_an_archive_of_what_a_directory_of_a_sandbox_holds() {
     let (docker, outputs_directory) = (Double::default(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.copy_out_of("/logs/verifier", Path::new("/running/verifier"));
+    up.take_out_of("/logs/verifier", Path::new("/running/verifier"))
+        .unwrap();
     assert_eq!(
         docker.commands(&outputs_directory)[2],
         "docker cp NAME:/logs/verifier/. -"
@@ -444,8 +489,42 @@ fn docker_is_asked_to_print_an_archive_of_what_a_directory_of_a_sandbox_holds() 
 fn what_a_directory_of_a_sandbox_holds_is_unpacked_where_it_is_kept() {
     let (docker, outputs_directory) = (Double::default(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.copy_out_of("/logs/verifier", Path::new("/running/verifier"));
+    up.take_out_of("/logs/verifier", Path::new("/running/verifier"))
+        .unwrap();
     assert_eq!(docker.asked()[2].kept, Path::new("/running/verifier"));
+}
+
+#[test]
+fn a_directory_that_docker_does_not_copy_out_of_a_sandbox_that_holds_it_is_an_error() {
+    let docker = Double::default().answering(&["cp"], &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    let taken = up.take_out_of("/logs/verifier", Path::new("/running/verifier"));
+    assert_eq!(reason_of(taken).as_deref(), Some("docker is not there"));
+}
+
+#[test]
+fn a_directory_that_is_not_in_a_sandbox_is_no_error() {
+    let docker = Double::default()
+        .answering(&["cp"], &[REFUSED])
+        .answering(&["exec", NO_DIRECTORY], &[NONE]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(
+        up.take_out_of("/logs/verifier", Path::new("/running/verifier"))
+            .is_ok()
+    );
+}
+
+#[test]
+fn a_sandbox_that_cannot_be_asked_what_it_holds_gives_the_reason_of_the_copy() {
+    let docker = Double::default()
+        .answering(&["cp"], &[REFUSED])
+        .answering(&["exec"], &[Answer::Refused("the sandbox is gone")]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    let taken = up.take_out_of("/logs/verifier", Path::new("/running/verifier"));
+    assert_eq!(reason_of(taken).as_deref(), Some("docker is not there"));
 }
 
 #[test]
@@ -456,7 +535,8 @@ fn docker_is_asked_to_print_an_archive_of_what_is_at_a_path_of_a_sandbox_with_a_
         "/logs/artifacts",
         Path::new("/running/taken"),
         Path::new("/running/artifacts"),
-    );
+    )
+    .unwrap();
     assert_eq!(
         docker.commands(&outputs_directory)[2],
         "docker cp --follow-link NAME:/logs/artifacts -"
@@ -471,7 +551,8 @@ fn what_is_at_a_path_of_a_sandbox_is_unpacked_apart_from_where_it_is_kept() {
         "/logs/artifacts",
         Path::new("/running/taken"),
         Path::new("/running/artifacts"),
-    );
+    )
+    .unwrap();
     assert_eq!(docker.asked()[2].kept, Path::new("/running/taken"));
 }
 
@@ -519,6 +600,48 @@ fn what_was_left_where_a_path_of_a_sandbox_is_unpacked_is_not_kept_in_its_place(
 fn a_path_that_docker_does_not_copy_out_of_a_sandbox_keeps_nothing() {
     let directory = kept_of_what_is_at_a_path(|docker| docker.answering(&COPIED_OUT, &[REFUSED]));
     assert!(!directory.exists(KEPT));
+}
+
+#[test]
+fn a_path_that_docker_does_not_copy_out_of_a_sandbox_that_holds_it_is_an_error() {
+    let docker = Double::default().answering(&COPIED_OUT, &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    let copied = up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
+    assert_eq!(reason_of(copied).as_deref(), Some("docker is not there"));
+}
+
+#[test]
+fn a_sandbox_is_asked_whether_anything_is_at_a_path_that_was_not_copied_out() {
+    let docker = Double::default().answering(&COPIED_OUT, &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    let _copied = up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
+    assert_eq!(
+        docker.commands(&outputs_directory)[3],
+        format!("docker exec --workdir / --user 0 NAME sh -c {NOTHING} sh /app/out")
+    );
+}
+
+#[test]
+fn a_path_that_is_not_in_a_sandbox_is_no_error() {
+    let docker = Double::default()
+        .answering(&COPIED_OUT, &[REFUSED])
+        .answering(&["exec", NOTHING], &[NONE]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(
+        up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT))
+            .is_ok()
+    );
+}
+
+#[test]
+fn what_was_unpacked_of_a_path_before_its_copy_failed_is_kept_in_its_place() {
+    let directory = kept_of_what_is_at_a_path(|docker| {
+        leaving_a_directory(docker).answering(&COPIED_OUT, &[REFUSED])
+    });
+    assert_eq!(directory.names_in(KEPT), ["a.txt"]);
 }
 
 #[test]

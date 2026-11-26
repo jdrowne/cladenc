@@ -245,3 +245,12 @@ fn the_readme_says_which_three_counts_the_report_gives_of_each_set_of_tasks() {
          harness and all its descendants together,"
     ));
 }
+
+#[test]
+fn the_readme_says_that_no_verifier_judges_part_of_what_the_harness_left() {
+    assert!(readme().contains(
+        "Where a path is in the sandbox of the harness and cannot be copied out of it, no result \
+         is recorded for the trial, as said above, and no verifier is run: a verifier never \
+         judges part of what the harness left."
+    ));
+}

@@ -10,7 +10,7 @@ use cladenc::file_system::Disk;
 use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
-use cladenc::sandboxes::{self, Host, Launch, Program, SandboxError};
+use cladenc::sandboxes::{self, Copied, Host, Launch, Program, SandboxError};
 use tempfile::TempDir;
 use test_inputs::Image;
 
@@ -32,6 +32,8 @@ const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN_BESIDE_A_VERDICT: &str = "cd /logs/v
     locked && echo noted > locked/file && chmod 500 locked && echo 1 > reward.txt";
 const PUT_LOGS_VERIFIER_WHERE_DOCKER_COPIES_NOTHING_FROM: &str =
     "rm -rf /logs/verifier && ln -s /proc/1 /logs/verifier";
+const PUT_THE_WORKING_DIRECTORY_WHERE_DOCKER_COPIES_NOTHING_FROM: &str =
+    "cd / && rm -rf /app && ln -s /proc/1 /app";
 const LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES: &str =
     "mkdir left && echo done > left/work.txt && mkfifo left/pipe && ln left/pipe left/twin";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
@@ -562,7 +564,23 @@ fn a_verifier_that_removed_logs_verifier_left_no_verdict() {
 fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_sandbox_is_given_no_result() {
     assert!(matches!(
         trialled(FINISH, PUT_LOGS_VERIFIER_WHERE_DOCKER_COPIES_NOTHING_FROM).result,
-        Err(SandboxError::NotCopiedOut(_))
+        Err(SandboxError::NotCopiedOut {
+            left: Copied::VerifierLogs,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn a_trial_whose_work_cannot_be_copied_out_of_its_sandbox_is_given_no_result() {
+    let trialled = trialled(
+        PUT_THE_WORKING_DIRECTORY_WHERE_DOCKER_COPIES_NOTHING_FROM,
+        FINISHED,
+    );
+    assert!(matches!(
+        trialled.result,
+        Err(SandboxError::NotCopiedOut { left: Copied::Work(directory), .. })
+            if directory == "/app"
     ));
 }
 

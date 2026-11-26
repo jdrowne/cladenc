@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 
-use crate::sandboxes::{self, SandboxError};
+use crate::sandboxes::{self, Copied, SandboxError};
 
 fn worded(error: impl Error) -> String {
     error.to_string()
@@ -262,11 +262,36 @@ fn a_verifier_that_was_never_run_is_worded_with_the_tries_and_where_the_health_c
 #[test]
 fn verifier_logs_that_were_not_copied_out_are_worded_with_the_place_and_what_docker_said() {
     assert_eq!(
-        worded(SandboxError::NotCopiedOut(io::Error::other(
-            "No such container: cladenc-0123456789abcdef"
-        ))),
+        worded(SandboxError::NotCopiedOut {
+            left: Copied::VerifierLogs,
+            error: io::Error::other("No such container: cladenc-0123456789abcdef"),
+        }),
         "was not given a result: what its verifier left in /logs/verifier could not be copied \
          out of its sandbox: No such container: cladenc-0123456789abcdef"
+    );
+}
+
+#[test]
+fn work_that_was_not_copied_out_is_worded_with_the_working_directory_and_the_reason() {
+    assert_eq!(
+        worded(SandboxError::NotCopiedOut {
+            left: Copied::Work("/app".to_owned()),
+            error: io::Error::other("no space left on device"),
+        }),
+        "was not given a result: what the harness left in its working directory, /app, could \
+         not be copied out of its sandbox: no space left on device"
+    );
+}
+
+#[test]
+fn a_path_that_was_not_copied_out_is_worded_with_the_path_and_the_reason() {
+    assert_eq!(
+        worded(SandboxError::NotCopiedOut {
+            left: Copied::Artifact("/app/out".to_owned()),
+            error: io::Error::other("no space left on device"),
+        }),
+        "was not given a result: what the harness left at /app/out could not be copied out of \
+         its sandbox: no space left on device"
     );
 }
 
