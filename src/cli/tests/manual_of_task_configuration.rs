@@ -255,7 +255,7 @@ fn the_manual_of_start_says_that_a_time_limit_that_is_not_above_0_is_refused() {
 #[test]
 fn the_manual_of_start_says_that_a_trial_keeps_whether_its_harness_was_stopped() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "ending one word: ended, or stopped where the harness ran past its time limit specification"
+        "ending one word: ended, or stopped where the harness ran past its time limit instruction"
     ));
 }
 

@@ -306,7 +306,7 @@ directory
 .TP 21n
 \fBCLADENC_INSTRUCTION\fP
 what the harness is asked to do: in a diversification the diversification
-prompt, and in a trial the task specification of its task
+prompt, and in a trial the instruction of its task
 .TP 21n
 \fBCLADENC_MODEL\fP
 the name of the model, the value of \fB\-\-model\fP
@@ -353,7 +353,7 @@ The diversification prompt is a text that cladenc holds itself, the same in
 every diversification: it says what the harness is asked to do, and what the
 harness is given to read.
 No benchmark brings the diversification prompt: the text that a task brings is
-the task specification of the task, which a harness is given in a trial.
+the instruction of the task, which a harness is given in a trial.
 In a diversification, CLADENC_INSTRUCTION holds the diversification prompt.
 /var/log/cladenc/trials holds the finished trials of the progenitor on the
 non-holdout tasks, to read: one directory for each benchmark, and in it one
@@ -574,7 +574,7 @@ The name of a task's directory is the id of the task, made of letters, digits,
 dots, underscores and hyphens, and the directory holds
 .TP 16n
 \fBinstruction.md\fP
-a file of text, the task specification, which says what is to be done
+a file of text, the instruction of the task, which says what is to be done
 .TP 16n
 \fBtask.toml\fP
 a file of text, the task configuration of Harbor, which says how a trial on the task is carried
@@ -656,8 +656,8 @@ Every harness is benchmarked on the holdout tasks as on the non-holdout tasks,
 selection tasks and corroboration tasks alike, and nothing a harness is given
 in a trial says which of the sets its task is in.
 A harness that diversifies a clone is given the trials of the progenitor on
-the non-holdout tasks, and nothing of the holdout tasks: no task
-specification, no work, no result, and no count of them.
+the non-holdout tasks, and nothing of the holdout tasks: no instruction, no
+work, no result, and no count of them.
 .PP
 Artificial selection goes by the selection tasks and by no others.
 cladenc chooses which harness is cloned by the selection tasks that the
@@ -756,7 +756,7 @@ First the source code of the harness is copied into that container, at
 diversification, in the working directory of the environment and as its user:
 the user and the working directory its Dockerfile names, and root and / where
 it names none.
-CLADENC_INSTRUCTION holds the task specification.
+CLADENC_INSTRUCTION holds the instruction of the task.
 The harness is given nothing else of the task, so it can neither read nor
 change the verifier.
 Before the harness is started, cladenc makes
@@ -1206,8 +1206,8 @@ one word: completed, not_completed or timed_out
 \fBending\fP
 one word: ended, or stopped where the harness ran past its time limit
 .TP 18n
-\fBspecification\fP
-the task specification
+\fBinstruction\fP
+the instruction of the task
 .TP 18n
 \fBwork\fP
 what the harness left in the working directory of the environment, not kept

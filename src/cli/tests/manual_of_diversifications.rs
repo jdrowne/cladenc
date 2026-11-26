@@ -89,8 +89,8 @@ fn the_manual_of_start_says_what_the_diversification_prompt_is() {
 #[test]
 fn the_manual_of_start_tells_the_diversification_prompt_from_the_text_of_a_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "No benchmark brings the diversification prompt: the text that a task brings is the task \
-         specification of the task, which a harness is given in a trial."
+        "No benchmark brings the diversification prompt: the text that a task brings is the \
+         instruction of the task, which a harness is given in a trial."
     ));
 }
 

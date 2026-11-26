@@ -67,7 +67,7 @@ fn the_end_of_a_diversification_of_this_format_that_holds_no_seconds_is_not_a_re
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":32,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":33,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }

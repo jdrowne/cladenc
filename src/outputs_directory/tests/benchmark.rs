@@ -29,7 +29,7 @@ fn names_in(files: &Memory, path: PathBuf) -> Vec<String> {
 }
 
 #[test]
-fn the_copy_of_a_benchmark_holds_the_specification_of_each_task() {
+fn the_copy_of_a_benchmark_holds_the_instruction_of_each_task() {
     let (directory, path, _) = copied(&["t1", "t2", "t3"]);
     assert_eq!(
         directory

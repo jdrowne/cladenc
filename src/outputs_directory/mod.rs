@@ -6,7 +6,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::benchmark::{Benchmark, SPECIFICATION};
+use crate::benchmark::{Benchmark, INSTRUCTION};
 use crate::file_system::FileSystem;
 use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 
@@ -302,8 +302,8 @@ impl OutputsDirectory {
             .and_then(|()| files.make_directories(&running.join("verifier/logs/verifier")))
             .and_then(|()| {
                 files.copy(
-                    &self.task(task).join(SPECIFICATION),
-                    &running.join("specification"),
+                    &self.task(task).join(INSTRUCTION),
+                    &running.join("instruction"),
                 )
             })
             .and_then(|()| {

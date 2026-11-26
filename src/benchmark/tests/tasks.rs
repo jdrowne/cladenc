@@ -1,5 +1,5 @@
 use crate::benchmark::{
-    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, SPECIFICATION, TESTS, VERIFIER,
+    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, INSTRUCTION, TESTS, VERIFIER,
 };
 use crate::file_system::tests::double::Memory;
 
@@ -62,7 +62,7 @@ fn a_directory_given_through_a_symbolic_link_is_a_task() {
 }
 
 #[test]
-fn a_task_may_hold_more_than_its_specification_its_tests_and_its_environment() {
+fn a_task_may_hold_more_than_its_instruction_its_tests_and_its_environment() {
     let directory = Memory::default();
     let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
     directory
@@ -90,7 +90,7 @@ fn a_task_that_holds_no_directory_named_workspace_is_a_task() {
 #[test]
 fn the_things_a_task_holds_are_named_instruction_md_tests_and_test_sh() {
     assert_eq!(
-        [SPECIFICATION, TESTS, VERIFIER],
+        [INSTRUCTION, TESTS, VERIFIER],
         ["instruction.md", "tests", "test.sh"]
     );
 }

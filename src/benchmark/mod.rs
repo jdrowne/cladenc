@@ -17,7 +17,7 @@ pub use configuration::{
     CollectCommand, ConfigurationError, EnvironmentConfiguration, HealthCheck, TaskConfiguration,
 };
 
-pub(crate) const SPECIFICATION: &str = "instruction.md";
+pub(crate) const INSTRUCTION: &str = "instruction.md";
 pub(crate) const TESTS: &str = "tests";
 const VERIFIER: &str = "test.sh";
 pub(crate) const ENVIRONMENT: &str = "environment";
@@ -100,7 +100,7 @@ pub enum BenchmarkError {
     NotAnId {
         directory: String,
     },
-    NoSpecification {
+    NoInstruction {
         task: String,
     },
     NoVerifier {
@@ -163,9 +163,9 @@ impl Display for BenchmarkError {
                 "the directory `{directory}` in it is not named with letters, digits, dots, \
                  underscores and hyphens alone, as a task is"
             ),
-            Self::NoSpecification { task } => write!(
+            Self::NoInstruction { task } => write!(
                 formatter,
-                "task {task} holds no file of text named {SPECIFICATION}"
+                "task {task} holds no file of text named {INSTRUCTION}"
             ),
             Self::NoVerifier { task } => write!(
                 formatter,
@@ -217,7 +217,7 @@ fn tasks(files: &dyn FileSystem, benchmark: &Path) -> Result<Vec<String>, Benchm
         .filter(|entry| leads_to_a_directory(files, entry))
         .collect();
     directories.sort();
-    if is_specification(files, &benchmark.join(SPECIFICATION)) && is_verifier(files, benchmark) {
+    if is_instruction(files, &benchmark.join(INSTRUCTION)) && is_verifier(files, benchmark) {
         return Err(BenchmarkError::OneTask);
     }
     if directories.is_empty() {
@@ -247,8 +247,8 @@ fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, BenchmarkErr
     if !is_name(&task) {
         return Err(BenchmarkError::NotAnId { directory: task });
     }
-    if !is_specification(files, &directory.join(SPECIFICATION)) {
-        return Err(BenchmarkError::NoSpecification { task });
+    if !is_instruction(files, &directory.join(INSTRUCTION)) {
+        return Err(BenchmarkError::NoInstruction { task });
     }
     let configuration = TaskConfiguration::read(files, directory);
     let in_an_image = configuration
@@ -286,7 +286,7 @@ fn is_name(name: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character))
 }
 
-fn is_specification(files: &dyn FileSystem, file: &Path) -> bool {
+fn is_instruction(files: &dyn FileSystem, file: &Path) -> bool {
     is_a(files, file, Kind::File)
         && files
             .read_text(file)

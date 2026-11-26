@@ -2,7 +2,7 @@ use crate::file_system::tests::double::Memory;
 use crate::journal::{self, JournalError};
 
 pub(super) const RUN: &str = concat!(
-    r#"{"record":"run","format":32,"primogenitor":"/abs/harness","model":"a-model","#,
+    r#"{"record":"run","format":33,"primogenitor":"/abs/harness","model":"a-model","#,
     r#""model_url":"http://models.example/v1","model_key_file":null,"docker_image":"image","#,
     r#""dockerfile":null,"docker_build_timeout":null,"#,
     r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,

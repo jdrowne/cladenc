@@ -383,7 +383,7 @@ fn the_source_code_of_the_harness_belongs_to_the_user_of_the_environment() {
 }
 
 #[test]
-fn the_harness_is_asked_to_do_what_the_specification_of_the_task_says() {
+fn the_harness_is_asked_to_do_what_the_instruction_of_the_task_says() {
     assert_eq!(
         found_by_the_harness(&LOOKED_AT, "echo \"$CLADENC_INSTRUCTION\""),
         "Finish the work of t1.\n\n"

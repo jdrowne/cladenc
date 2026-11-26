@@ -4,7 +4,7 @@ use test_inputs::manual_on_one_line;
 fn the_manual_of_start_says_what_the_harness_of_a_trial_is_given_of_its_task() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("CLADENC_INSTRUCTION holds the task specification. The")
+            .contains("CLADENC_INSTRUCTION holds the instruction of the task. The")
     );
 }
 
@@ -185,7 +185,7 @@ fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_a_trial() {
     let help = manual_on_one_line("cladenc-start");
     let kept = [
         "result one word: completed, not_completed or timed_out",
-        "specification the task specification",
+        "instruction the instruction of the task",
         "work what the harness left in the working directory of the",
         "environment, not kept where that directory is /",
         "changes every path the harness added, changed or removed in the",
@@ -210,7 +210,7 @@ fn the_manual_of_start_says_that_a_benchmark_holds_a_directory_for_each_task() {
 fn the_manual_of_start_names_what_the_directory_of_a_task_holds() {
     let help = manual_on_one_line("cladenc-start");
     let held = [
-        "instruction.md a file of text, the task specification, which says what",
+        "instruction.md a file of text, the instruction of the task, which says",
         "task.toml a file of text, the task configuration of Harbor, which",
         "tests a directory that holds test.sh, an executable file, the",
         "environment a directory that holds a file named Dockerfile, which",
@@ -388,8 +388,8 @@ fn the_manual_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_t
 fn the_manual_of_start_says_that_a_harness_that_diversifies_a_clone_is_given_no_holdout_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "A harness that diversifies a clone is given the trials of the progenitor on the \
-         non-holdout tasks, and nothing of the holdout tasks: no task specification, no work, no \
-         result, and no count of them."
+         non-holdout tasks, and nothing of the holdout tasks: no instruction, no work, no result, \
+         and no count of them."
     ));
 }
 

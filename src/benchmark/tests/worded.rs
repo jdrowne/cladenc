@@ -45,9 +45,9 @@ fn a_directory_that_is_not_named_as_a_task_is_said_with_its_name() {
 }
 
 #[test]
-fn a_task_with_no_specification_is_said_with_its_id() {
+fn a_task_with_no_instruction_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::NoSpecification { task: task() }.to_string(),
+        BenchmarkError::NoInstruction { task: task() }.to_string(),
         "task fix-the-parser holds no file of text named instruction.md"
     );
 }

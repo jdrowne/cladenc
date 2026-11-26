@@ -82,8 +82,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_32() {
-    assert_eq!(journal::FORMAT, 32);
+fn the_format_of_the_journal_is_33() {
+    assert_eq!(journal::FORMAT, 33);
 }
 
 #[test]
@@ -91,7 +91,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":32,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":33,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,

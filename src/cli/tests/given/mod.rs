@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicBool;
 use crate::cli::{self, Cli, Command, StartOptions};
 use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
+use crate::journal;
 
 pub(super) struct Ran {
     pub(super) status: u8,
@@ -53,4 +54,14 @@ pub(super) fn executed(docker: Double, directory: &Memory, command: Command) -> 
         output: String::from_utf8(output).unwrap(),
         errors: String::from_utf8(errors).unwrap(),
     }
+}
+
+pub(super) fn of_format_32(outputs_directory: Memory) -> Memory {
+    let journal = journal::path(outputs_directory.path());
+    let older = outputs_directory
+        .read_to_string(&journal)
+        .unwrap()
+        .replace(r#""format":33"#, r#""format":32"#);
+    outputs_directory.write(journal, older).unwrap();
+    outputs_directory
 }

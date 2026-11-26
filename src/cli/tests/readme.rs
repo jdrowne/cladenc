@@ -602,7 +602,7 @@ fn the_section_of_cladenc_start_says_that_the_environments_it_built_are_removed_
 #[test]
 fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
     assert!(readme().contains(
-        "The directory of a task holds its task specification in a file named \
+        "The directory of a task holds its instruction in a file named \
          `instruction.md`, [Harbor's task \
          configuration](https://docs.harborframework.com/tasks/configuration) in a file named \
          `task.toml`, its verifier in an executable file named `test.sh` in a directory named \
@@ -810,8 +810,8 @@ fn the_steps_of_cladenc_start_say_what_the_diversification_prompt_is() {
 #[test]
 fn the_steps_of_cladenc_start_tell_the_diversification_prompt_from_the_text_of_a_task() {
     assert!(what_is_said_of("start").contains(
-        "No benchmark brings the diversification prompt: the text that a task brings is the task \
-         specification of the task, which a harness is given in a trial."
+        "No benchmark brings the diversification prompt: the text that a task brings is the \
+         instruction of the task, which a harness is given in a trial."
     ));
 }
 

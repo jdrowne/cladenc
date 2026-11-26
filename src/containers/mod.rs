@@ -45,7 +45,7 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     harness it makes completes more coding tasks than you do. /var/log/cladenc/trials holds the \
     trials you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
-    task, the file named specification says what you were asked to do, the file named result reads \
+    task, the file named instruction says what you were asked to do, the file named result reads \
     completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
     you ran past the time limit of the task and were stopped, the directory named work holds what \
     you left in the \
@@ -371,14 +371,14 @@ pub fn run_trial(
 ) -> Result<Trialled, ContainerError> {
     let outputs_directory = host.outputs_directory;
     let running = outputs_directory.running_trial(trial.harness, trial.task);
-    let specification = outputs_directory
+    let instruction = outputs_directory
         .start_trial(trial.harness, trial.task)
-        .and_then(|()| read_specification(outputs_directory.files(), &running))
+        .and_then(|()| read_instruction(outputs_directory.files(), &running))
         .map_err(ContainerError::Io)?;
     let trialling = Trialling {
         trial,
         running: &running,
-        specification: &specification,
+        instruction: &instruction,
     };
     let trialled = trialling.run(host, launch, stop, retrying)?;
     outputs_directory
@@ -387,8 +387,8 @@ pub fn run_trial(
         .map_err(ContainerError::Io)
 }
 
-fn read_specification(files: &dyn FileSystem, running: &Path) -> io::Result<String> {
-    files.read_text(&running.join("specification"))
+fn read_instruction(files: &dyn FileSystem, running: &Path) -> io::Result<String> {
+    files.read_text(&running.join("instruction"))
 }
 
 fn keep(files: &dyn FileSystem, file: &Path, text: &str) {
@@ -402,7 +402,7 @@ fn make_directory(files: &dyn FileSystem, directory: &Path) {
 struct Trialling<'a> {
     trial: Trial<'a>,
     running: &'a Path,
-    specification: &'a str,
+    instruction: &'a str,
 }
 
 impl Trialling<'_> {
@@ -415,7 +415,7 @@ impl Trialling<'_> {
     ) -> Result<Trialled, ContainerError> {
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
-            ("CLADENC_INSTRUCTION", self.specification),
+            ("CLADENC_INSTRUCTION", self.instruction),
         ]
         .into_iter()
         .chain(launch.model.environment())

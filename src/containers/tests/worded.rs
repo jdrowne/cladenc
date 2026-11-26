@@ -157,7 +157,7 @@ fn the_diversification_prompt_does_not_say_that_every_task_the_harness_had_a_tri
 #[test]
 fn the_diversification_prompt_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
     assert!(containers::DIVERSIFICATION_PROMPT.contains(
-        "the file named specification says what you were asked to do, the file named result \
+        "the file named instruction says what you were asked to do, the file named result \
          reads completed, not_completed or timed_out, the file named ending reads ended, or \
          stopped where you ran past the time limit of the task and were stopped, the directory \
          named work holds what you left in the working directory of the task, the file named \

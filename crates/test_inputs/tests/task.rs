@@ -33,7 +33,7 @@ fn a_task_is_the_directory_named_by_its_id() {
 }
 
 #[test]
-fn the_task_specification_names_the_task() {
+fn the_instruction_of_a_task_names_the_task() {
     assert_eq!(written_in("instruction.md"), "Finish the work of t1.\n");
 }
 

@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
+use crate::cli::tests::given;
 use crate::cli::{self, Cli, Command, ResumeOptions};
 use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
@@ -240,4 +241,23 @@ fn the_report_that_resume_prints_names_the_best_harness() {
 #[test]
 fn a_directed_evolution_that_cannot_be_resumed_prints_no_report() {
     assert_eq!(ran(&Memory::default(), missing()).errors.lines().count(), 1);
+}
+
+#[test]
+fn resuming_an_outputs_directory_whose_journal_is_of_format_32_is_refused_for_its_format() {
+    let outputs_directory = given::of_format_32(ended());
+    assert_eq!(
+        ran(&outputs_directory, outputs_directory.path().to_owned()).errors,
+        "cladenc: the outputs directory cannot be used: its journal has format 32, which this \
+         cladenc does not read\n"
+    );
+}
+
+#[test]
+fn resuming_an_outputs_directory_whose_journal_is_of_format_32_gives_exit_status_2() {
+    let outputs_directory = given::of_format_32(ended());
+    assert_eq!(
+        ran(&outputs_directory, outputs_directory.path().to_owned()).status,
+        2
+    );
 }

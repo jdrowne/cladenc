@@ -108,7 +108,7 @@ fn a_new_outputs_directory_holds_no_trial_on_a_holdout_task() {
 }
 
 #[test]
-fn a_started_trial_on_a_holdout_task_holds_the_specification_of_its_task() {
+fn a_started_trial_on_a_holdout_task_holds_the_instruction_of_its_task() {
     let (directory, outputs_directory) = made();
     outputs_directory.start_trial(0, HELD_OUT).unwrap();
     assert_eq!(
@@ -116,7 +116,7 @@ fn a_started_trial_on_a_holdout_task_holds_the_specification_of_its_task() {
             .read_to_string(
                 outputs_directory
                     .running_trial(0, HELD_OUT)
-                    .join("specification")
+                    .join("instruction")
             )
             .unwrap(),
         "Finish the work of t2.\n"

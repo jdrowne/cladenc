@@ -58,9 +58,9 @@ fn entries(files: &Memory, path: PathBuf) -> usize {
 }
 
 #[test]
-fn a_started_trial_holds_the_specification_of_its_task() {
+fn a_started_trial_holds_the_instruction_of_its_task() {
     assert_eq!(
-        held_while_running("specification"),
+        held_while_running("instruction"),
         "Finish the work of t1.\n"
     );
 }
@@ -94,10 +94,10 @@ fn a_started_trial_holds_an_empty_directory_for_what_the_verifier_leaves_in_logs
 }
 
 #[test]
-fn a_started_trial_holds_nothing_but_the_specification_and_a_directory_for_the_verifier() {
+fn a_started_trial_holds_nothing_but_the_instruction_and_a_directory_for_the_verifier() {
     let (directory, outputs_directory) = started();
     let names = directory.names_in(outputs_directory.running_trial(0, "benchmark/t1"));
-    assert_eq!(names, ["specification", "verifier"]);
+    assert_eq!(names, ["instruction", "verifier"]);
 }
 
 #[test]
@@ -169,13 +169,13 @@ fn an_ended_trial_keeps_what_was_left_in_the_directory_of_the_running_trial() {
 }
 
 #[test]
-fn an_ended_trial_keeps_the_specification_of_its_task() {
+fn an_ended_trial_keeps_the_instruction_of_its_task() {
     let (directory, outputs_directory) = ended(TrialResult::Completed);
     assert!(
         directory.is_file(
             outputs_directory
                 .trial(0, "benchmark/t1")
-                .join("specification")
+                .join("instruction")
         )
     );
 }

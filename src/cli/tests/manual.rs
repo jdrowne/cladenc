@@ -184,7 +184,7 @@ fn the_manual_of_start_names_what_a_harness_is_told() {
 fn the_manual_of_start_says_which_text_a_harness_is_given_in_which_container() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "CLADENC_INSTRUCTION what the harness is asked to do: in a diversification the \
-         diversification prompt, and in a trial the task specification of its task CLADENC_MODEL"
+         diversification prompt, and in a trial the instruction of its task CLADENC_MODEL"
     ));
 }
 

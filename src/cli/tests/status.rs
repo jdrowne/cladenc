@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
+use crate::cli::tests::given;
 use crate::cli::{self, Cli, Command, StatusOptions};
 use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
@@ -258,4 +259,19 @@ fn status_leaves_the_journal_unchanged() {
         false,
     );
     assert_eq!(outputs_directory.read_to_string(&journal).unwrap(), before);
+}
+
+#[test]
+fn the_status_of_an_outputs_directory_whose_journal_is_of_format_32_is_refused_for_its_format() {
+    let outputs_directory = given::of_format_32(outputs_directory_of(&started()));
+    assert_eq!(
+        ran(
+            &outputs_directory,
+            outputs_directory.path().to_owned(),
+            false,
+        )
+        .errors,
+        "cladenc: the outputs directory cannot be used: its journal has format 32, which this \
+         cladenc does not read\n"
+    );
 }

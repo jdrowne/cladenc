@@ -10,8 +10,8 @@ fn refused(change: impl FnOnce(&Memory, &Path)) -> BenchmarkError {
     benchmark::tasks(&directory, &benchmark).unwrap_err()
 }
 
-fn no_specification() -> BenchmarkError {
-    BenchmarkError::NoSpecification {
+fn no_instruction() -> BenchmarkError {
+    BenchmarkError::NoInstruction {
         task: "t2".to_owned(),
     }
 }
@@ -84,30 +84,30 @@ fn a_directory_with_a_space_in_its_name_is_refused() {
 }
 
 #[test]
-fn a_task_with_no_specification_is_refused() {
+fn a_task_with_no_instruction_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| directory
             .remove_file(benchmark.join("t2/instruction.md"))
             .unwrap()),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_is_in_a_file_named_specification_is_refused() {
+fn a_task_whose_instruction_is_in_a_file_named_instruction_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             let task = benchmark.join("t2");
             directory
-                .rename(task.join("instruction.md"), task.join("specification"))
+                .rename(task.join("instruction.md"), task.join("instruction"))
                 .unwrap();
         }),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_is_a_directory_is_refused() {
+fn a_task_whose_instruction_is_a_directory_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
@@ -117,12 +117,12 @@ fn a_task_whose_specification_is_a_directory_is_refused() {
                 .create_dir(benchmark.join("t2/instruction.md"))
                 .unwrap();
         }),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_is_a_symbolic_link_is_refused() {
+fn a_task_whose_instruction_is_a_symbolic_link_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| {
             directory
@@ -132,37 +132,37 @@ fn a_task_whose_specification_is_a_symbolic_link_is_refused() {
                 .symlink("../t1/instruction.md", benchmark.join("t2/instruction.md"))
                 .unwrap();
         }),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_says_nothing_is_refused() {
+fn a_task_whose_instruction_says_nothing_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| directory
             .write(benchmark.join("t2/instruction.md"), " \n\n")
             .unwrap()),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_is_not_text_is_refused() {
+fn a_task_whose_instruction_is_not_text_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| directory
             .write(benchmark.join("t2/instruction.md"), [0xff, 0xfe])
             .unwrap()),
-        no_specification()
+        no_instruction()
     );
 }
 
 #[test]
-fn a_task_whose_specification_holds_a_nul_is_refused() {
+fn a_task_whose_instruction_holds_a_nul_is_refused() {
     assert_eq!(
         refused(|directory, benchmark| directory
             .write(benchmark.join("t2/instruction.md"), "Fix\0it.\n")
             .unwrap()),
-        no_specification()
+        no_instruction()
     );
 }
 
