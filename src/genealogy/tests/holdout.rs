@@ -97,6 +97,14 @@ fn a_trial_not_completed_at_a_selection_task_adds_one_to_the_selection_not_compl
 }
 
 #[test]
+fn a_result_of_no_verdict_at_a_selection_task_counts_as_selection_not_completed() {
+    assert_eq!(
+        counts_of_the_child(&after(1, SELECTION, TrialResult::NoVerdict)),
+        [0, 1, 0, 0, 0, 0]
+    );
+}
+
+#[test]
 fn a_result_of_timed_out_at_a_selection_task_counts_as_selection_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, SELECTION, TrialResult::TimedOut)),
@@ -121,6 +129,14 @@ fn a_trial_not_completed_at_a_corroboration_task_adds_one_to_the_corroboration_n
 }
 
 #[test]
+fn a_result_of_no_verdict_at_a_corroboration_task_counts_as_corroboration_not_completed() {
+    assert_eq!(
+        counts_of_the_child(&after(1, CORROBORATION, TrialResult::NoVerdict)),
+        [0, 0, 0, 1, 0, 0]
+    );
+}
+
+#[test]
 fn a_result_of_timed_out_at_a_corroboration_task_counts_as_corroboration_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, CORROBORATION, TrialResult::TimedOut)),
@@ -140,6 +156,14 @@ fn a_completed_trial_on_a_task_not_held_out_adds_one_to_the_non_holdout_complete
 fn a_trial_not_completed_at_a_task_not_held_out_adds_one_to_the_non_holdout_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, TrialResult::NotCompleted)),
+        [0, 0, 0, 0, 0, 1]
+    );
+}
+
+#[test]
+fn a_result_of_no_verdict_at_a_task_not_held_out_counts_as_non_holdout_not_completed() {
+    assert_eq!(
+        counts_of_the_child(&after(1, SHOWN, TrialResult::NoVerdict)),
         [0, 0, 0, 0, 0, 1]
     );
 }

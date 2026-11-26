@@ -1153,8 +1153,11 @@ How a trial ends decides its result:
 \fBa verdict of 1, or 1 for every label of reward.json\fP
 the harness completed the task
 .TP 7n
-\fBany other verdict, a file that cannot be read, or no verdict\fP
-the harness did not complete the task
+\fBany other verdict, or a reward.json in which a verdict is not 1\fP
+the harness did not complete the task, which is recorded as not_completed
+.TP 7n
+\fBno verdict, or a file that cannot be read as one\fP
+the harness did not complete the task, which is recorded as no_verdict
 .TP 7n
 \fBa health check of the task, or of the verifier sandbox, that passes in none of its tries\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
@@ -1169,6 +1172,25 @@ the sandbox is removed, and the harness did not complete the task, which is
 recorded as timed_out
 .PP
 The exit status of the verifier decides nothing more.
+.PP
+A file cannot be read as a verdict where reward.txt holds anything but one
+number, where reward.json holds anything but an object of one labelled number
+or more, and where either is not a regular file.
+Where a trial is recorded as no_verdict, the verifier ran to its end and wrote
+no verdict that can be read: the verifier may have broken by itself, or what
+the harness left may have broken it, and cladenc has no way to tell which.
+What the verifier printed and left is kept with the trial.
+.PP
+At the end of a trial in which the task was not completed, \fBcladenc start\fP
+says on standard error which of the three it was: that the verifier wrote a
+verdict that is not 1, that it left no verdict that can be read, or that it ran
+past its time limit.
+A task whose trial is recorded as no_verdict or as timed_out counts among the
+tasks the harness did not complete, as one recorded as not_completed does: in
+artificial selection, and in what \fBcladenc report\fP and
+\fBcladenc status\fP print.
+Every harness is so counted over the same tasks, and a harness gains nothing by
+leaving what breaks a verifier.
 .SH CAVEATS
 A task that is recorded as completed means that the harness did the work only
 as far as three things hold, and cladenc sees to none of them.
@@ -1205,7 +1227,7 @@ held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 .TP 18n
 \fBresult\fP
-one word: completed, not_completed or timed_out
+one word: completed, not_completed, no_verdict or timed_out
 .TP 18n
 \fBending\fP
 one word: ended, or stopped where the harness ran past its time limit

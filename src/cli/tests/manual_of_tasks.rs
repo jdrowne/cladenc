@@ -160,8 +160,10 @@ fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
     let help = manual_on_one_line("cladenc-start");
     let endings = [
         "a verdict of 1, or 1 for every label of reward.json the harness completed the task",
-        "any other verdict, a file that cannot be read, or no verdict the harness did not \
-         complete the task",
+        "any other verdict, or a reward.json in which a verdict is not 1 the harness did not \
+         complete the task, which is recorded as not_completed",
+        "no verdict, or a file that cannot be read as one the harness did not complete the \
+         task, which is recorded as no_verdict",
         "exit status 125 of either step or of the health check Docker did not start the sandbox: \
          the directed evolution stops",
         "a health check of the task, or of the verifier sandbox, that passes in none of its \
@@ -181,10 +183,62 @@ fn the_manual_of_start_says_that_the_time_limit_gives_not_completed_recorded_as_
 }
 
 #[test]
+fn the_manual_of_start_says_which_files_cannot_be_read_as_a_verdict() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A file cannot be read as a verdict where reward.txt holds anything but one number, \
+         where reward.json holds anything but an object of one labelled number or more, and \
+         where either is not a regular file."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_a_result_of_no_verdict_leaves_unknown() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Where a trial is recorded as no_verdict, the verifier ran to its end and wrote no \
+         verdict that can be read: the verifier may have broken by itself, or what the harness \
+         left may have broken it, and cladenc has no way to tell which."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_where_a_person_reads_why_a_verifier_left_no_verdict() {
+    assert!(
+        manual_on_one_line("cladenc-start")
+            .contains("What the verifier printed and left is kept with the trial.")
+    );
+}
+
+#[test]
+fn the_manual_of_start_says_that_start_says_why_a_task_was_not_completed() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "At the end of a trial in which the task was not completed, cladenc start says on \
+         standard error which of the three it was: that the verifier wrote a verdict that is \
+         not 1, that it left no verdict that can be read, or that it ran past its time limit."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_no_verdict_and_timed_out_count_as_not_completed() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A task whose trial is recorded as no_verdict or as timed_out counts among the tasks \
+         the harness did not complete, as one recorded as not_completed does: in artificial \
+         selection, and in what cladenc report and cladenc status print."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_why_a_trial_without_a_verdict_is_counted() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Every harness is so counted over the same tasks, and a harness gains nothing by \
+         leaving what breaks a verifier."
+    ));
+}
+
+#[test]
 fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_a_trial() {
     let help = manual_on_one_line("cladenc-start");
     let kept = [
-        "result one word: completed, not_completed or timed_out",
+        "result one word: completed, not_completed, no_verdict or timed_out",
         "instruction the instruction of the task",
         "work what the harness left in the working directory of the",
         "environment, not kept where that directory is /",

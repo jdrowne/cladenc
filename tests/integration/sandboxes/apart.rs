@@ -427,7 +427,7 @@ fn a_harness_completes_a_task_whose_verifier_runs_separately_by_what_was_kept() 
 fn a_harness_does_not_complete_a_task_by_work_that_its_separate_verifier_is_not_given() {
     assert_eq!(
         result_of(&VERIFIED_SEPARATELY.trialled),
-        Some(TrialResult::NotCompleted)
+        Some(TrialResult::NoVerdict)
     );
 }
 

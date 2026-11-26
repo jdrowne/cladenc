@@ -37,6 +37,11 @@ fn a_task_that_was_trialled_and_not_completed_is_completed_by_no_harness() {
 }
 
 #[test]
+fn a_task_whose_verifier_left_no_verdict_is_completed_by_no_harness() {
+    assert!(!after(0, TrialResult::NoVerdict).completed_by_any("a"));
+}
+
+#[test]
 fn a_task_whose_trial_ran_past_its_time_limit_is_completed_by_no_harness() {
     assert!(!after(0, TrialResult::TimedOut).completed_by_any("a"));
 }

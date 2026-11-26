@@ -169,7 +169,9 @@ impl Harness {
     pub(super) fn count_in_clade(&mut self, result: TrialResult) {
         match result {
             TrialResult::Completed => self.clade_completed += 1,
-            TrialResult::NotCompleted | TrialResult::TimedOut => self.clade_not_completed += 1,
+            TrialResult::NotCompleted | TrialResult::NoVerdict | TrialResult::TimedOut => {
+                self.clade_not_completed += 1;
+            }
         }
     }
 }

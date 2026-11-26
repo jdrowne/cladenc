@@ -208,9 +208,9 @@ fn a_trial_whose_verifier_writes_another_reward_did_not_complete_the_task() {
 }
 
 #[test]
-fn a_trial_whose_verifier_writes_no_reward_did_not_complete_the_task() {
+fn a_trial_whose_verifier_writes_no_reward_has_a_result_of_no_verdict() {
     let tried = trialled_by(Double::default());
-    assert_eq!(result_of(&tried), Some(TrialResult::NotCompleted));
+    assert_eq!(result_of(&tried), Some(TrialResult::NoVerdict));
 }
 
 #[test]
@@ -587,9 +587,11 @@ fn what_a_collect_command_prints_is_kept_in_a_directory_named_by_its_place_among
 
 #[test]
 fn a_collect_command_that_exits_with_a_status_other_than_zero_does_not_end_the_trial() {
-    let docker = Double::default().answering(&COLLECT, &[Answer::Exited(3)]);
+    let docker = Double::default()
+        .verifying(|_| true)
+        .answering(&COLLECT, &[Answer::Exited(3)]);
     let tried = trialled_with(docker, collecting(&[None]));
-    assert_eq!(result_of(&tried), Some(TrialResult::NotCompleted));
+    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
 }
 
 #[test]

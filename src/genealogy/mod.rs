@@ -27,6 +27,7 @@ pub enum CreationOutcome {
 pub enum TrialResult {
     Completed,
     NotCompleted,
+    NoVerdict,
     TimedOut,
 }
 

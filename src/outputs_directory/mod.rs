@@ -317,6 +317,7 @@ impl OutputsDirectory {
         let word = match result {
             TrialResult::Completed => "completed\n",
             TrialResult::NotCompleted => "not_completed\n",
+            TrialResult::NoVerdict => "no_verdict\n",
             TrialResult::TimedOut => "timed_out\n",
         };
         self.note(&running.join("result"), word)

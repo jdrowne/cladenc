@@ -158,7 +158,9 @@ fn the_diversification_prompt_does_not_say_that_every_task_the_harness_had_a_tri
 fn the_diversification_prompt_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
     assert!(sandboxes::DIVERSIFICATION_PROMPT.contains(
         "the file named instruction says what you were asked to do, the file named result \
-         reads completed, not_completed or timed_out, the file named ending reads ended, or \
+         reads completed, not_completed where the verifier of the task wrote a verdict that is \
+         not 1, no_verdict where it left no verdict that can be read, or timed_out where it ran \
+         past its time limit, the file named ending reads ended, or \
          stopped where you ran past the time limit of the task and were stopped, the directory \
          named work holds what you left in the working directory of the task, the file named \
          changes lists every path you added, changed or removed in the sandbox of the task, \

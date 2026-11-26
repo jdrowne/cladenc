@@ -139,6 +139,11 @@ fn a_trial_not_completed_leaves_the_word_not_completed_as_its_result() {
 }
 
 #[test]
+fn a_trial_whose_verifier_left_no_verdict_leaves_the_word_no_verdict_as_its_result() {
+    assert_eq!(result_written(TrialResult::NoVerdict), "no_verdict\n");
+}
+
+#[test]
 fn a_harness_whose_trial_timed_out_leaves_the_word_timed_out_as_its_result() {
     assert_eq!(result_written(TrialResult::TimedOut), "timed_out\n");
 }

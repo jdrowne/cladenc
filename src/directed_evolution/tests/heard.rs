@@ -296,8 +296,9 @@ fn a_trial_that_did_not_complete_its_task_is_said_not_to_have_completed_it() {
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: harness 0 did not complete task benchmark/t1: what the trial left is \
-             kept in /outputs/trials/0/benchmark/t1"
+            "cladenc: harness 0 did not complete task benchmark/t1, as the verifier wrote a \
+             verdict that is not 1: what the trial left is kept in \
+             /outputs/trials/0/benchmark/t1"
         )
     );
 }

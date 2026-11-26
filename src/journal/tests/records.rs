@@ -129,6 +129,14 @@ fn the_end_of_a_trial_is_written_with_a_result_of_not_completed() {
 }
 
 #[test]
+fn the_end_of_a_trial_is_written_with_a_result_of_no_verdict() {
+    assert_eq!(
+        line(&trial_finished(TrialResult::NoVerdict)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"no_verdict","seconds":3.25}"#
+    );
+}
+
+#[test]
 fn the_end_of_a_trial_is_written_with_a_result_of_timed_out() {
     assert_eq!(
         line(&trial_finished(TrialResult::TimedOut)),
@@ -171,6 +179,12 @@ fn the_start_of_a_trial_survives_being_written_and_read_back() {
 #[test]
 fn the_end_of_a_trial_survives_being_written_and_read_back() {
     let record = trial_finished(TrialResult::TimedOut);
+    assert_eq!(read_back(&record), record);
+}
+
+#[test]
+fn the_end_of_a_trial_whose_verifier_left_no_verdict_survives_being_written_and_read_back() {
+    let record = trial_finished(TrialResult::NoVerdict);
     assert_eq!(read_back(&record), record);
 }
 

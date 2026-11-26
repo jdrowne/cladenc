@@ -150,3 +150,24 @@ fn the_readme_says_that_a_verifier_that_never_ran_stops_the_directed_evolution()
          again."
     ));
 }
+
+#[test]
+fn the_readme_says_that_a_verdict_that_is_not_1_and_no_verdict_are_told_apart() {
+    assert!(readme().contains(
+        "Where the verifier writes a verdict that is not 1, the harness did not complete the \
+         task. Where the verifier ends and leaves no verdict, or a file that cannot be read as \
+         one, the harness did not complete the task either, and `cladenc` tells the two apart: \
+         it says which of the two it was on standard error at the end of the trial, and records \
+         the first as `not_completed` and the second as `no_verdict`."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_task_whose_verifier_left_no_verdict_counts_as_not_completed() {
+    assert!(readme().contains(
+        "The verifier may have broken by itself, or what the harness left may have broken it, \
+         and `cladenc` has no way to tell which, so a task whose verifier left no verdict \
+         counts among the tasks the harness did not complete, in artificial selection and in \
+         what `cladenc report` and `cladenc status` print."
+    ));
+}

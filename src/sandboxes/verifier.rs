@@ -101,10 +101,7 @@ impl<'a> Verifying<'a> {
                 up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
                 match ending {
                     Ending::TimedOut => TrialResult::TimedOut,
-                    Ending::Exited(_) if verdict::completed(up.files(), &logs) => {
-                        TrialResult::Completed
-                    }
-                    Ending::Exited(_) => TrialResult::NotCompleted,
+                    Ending::Exited(_) => verdict::result(up.files(), &logs),
                 }
             })
     }

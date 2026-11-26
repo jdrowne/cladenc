@@ -67,6 +67,18 @@ fn a_trial_not_completed_reaches_the_clade_not_completed_of_the_primogenitor() {
 }
 
 #[test]
+fn a_result_of_no_verdict_reaches_the_clade_not_completed_of_the_primogenitor() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);
+}
+
+#[test]
+fn a_result_of_no_verdict_adds_nothing_to_the_clade_completed() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].clade_completed(), 0);
+}
+
+#[test]
 fn a_result_of_timed_out_reaches_the_clade_not_completed_of_the_primogenitor() {
     let genealogy = family_after(2, TrialResult::TimedOut);
     assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);

@@ -247,14 +247,7 @@ impl Display for Said<'_> {
                 ending,
                 outputs_directory,
             } => {
-                let (how, why) = match result {
-                    TrialResult::Completed => ("completed", ""),
-                    TrialResult::NotCompleted => ("did not complete", ""),
-                    TrialResult::TimedOut => (
-                        "did not complete",
-                        ", as the verifier ran past its time limit",
-                    ),
-                };
+                let (how, why) = how_and_why(*result);
                 let stopped = match ending {
                     HarnessEnding::Ended => "",
                     HarnessEnding::Stopped => ", after it was stopped at its time limit",
@@ -475,6 +468,24 @@ impl Kept<'_> {
 
 pub(super) fn say(writer: &mut dyn Write, said: &Said<'_>) {
     let _ = writeln!(writer, "cladenc: {said}");
+}
+
+fn how_and_why(result: TrialResult) -> (&'static str, &'static str) {
+    match result {
+        TrialResult::Completed => ("completed", ""),
+        TrialResult::NotCompleted => (
+            "did not complete",
+            ", as the verifier wrote a verdict that is not 1",
+        ),
+        TrialResult::NoVerdict => (
+            "did not complete",
+            ", as the verifier left no verdict that can be read",
+        ),
+        TrialResult::TimedOut => (
+            "did not complete",
+            ", as the verifier ran past its time limit",
+        ),
+    }
 }
 
 fn counted(count: u64, one: &str, several: &str) -> String {

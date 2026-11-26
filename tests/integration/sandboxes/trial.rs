@@ -499,7 +499,7 @@ fn a_verdict_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
             "mkdir -p /logs/verifier && echo 1 > /logs/verifier/reward.txt",
             "true"
         ),
-        TrialResult::NotCompleted
+        TrialResult::NoVerdict
     ));
 }
 

@@ -46,7 +46,9 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     trials you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named instruction says what you were asked to do, the file named result reads \
-    completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
+    completed, not_completed where the verifier of the task wrote a verdict that is not 1, \
+    no_verdict where it left no verdict that can be read, or timed_out where it ran past its \
+    time limit, the file named ending reads ended, or stopped where \
     you ran past the time limit of the task and were stopped, the directory named work holds what \
     you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \

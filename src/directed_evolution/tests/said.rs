@@ -182,7 +182,18 @@ fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is
     assert_eq!(
         trialled_by_a_harness_that_ran_out_of_time(TrialResult::NotCompleted),
         "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
-         limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+         limit, as the verifier wrote a verdict that is not 1: what the trial left is kept in \
+         /outputs/trials/3/fix-the-parser"
+    );
+}
+
+#[test]
+fn a_harness_that_was_stopped_at_its_time_limit_and_was_given_no_verdict_is_said_with_both() {
+    assert_eq!(
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::NoVerdict),
+        "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
+         limit, as the verifier left no verdict that can be read: what the trial left is kept \
+         in /outputs/trials/3/fix-the-parser"
     );
 }
 
@@ -620,11 +631,20 @@ fn a_harness_that_completed_a_task_is_said_with_where_what_the_trial_left_is_kep
 }
 
 #[test]
-fn a_harness_that_did_not_complete_a_task_is_said_not_to_have_completed_it() {
+fn a_harness_whose_verdict_was_not_1_is_said_not_to_have_completed_the_task_for_it() {
     assert_eq!(
         trialled(TrialResult::NotCompleted),
-        "harness 3 did not complete task fix-the-parser: what the trial left is kept \
-         in /outputs/trials/3/fix-the-parser"
+        "harness 3 did not complete task fix-the-parser, as the verifier wrote a verdict that \
+         is not 1: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+    );
+}
+
+#[test]
+fn a_harness_whose_verifier_left_no_verdict_is_said_not_to_have_completed_the_task_for_it() {
+    assert_eq!(
+        trialled(TrialResult::NoVerdict),
+        "harness 3 did not complete task fix-the-parser, as the verifier left no verdict that \
+         can be read: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
