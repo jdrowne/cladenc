@@ -11,4 +11,4 @@ metadata:
 
 **Why:** A person and a progenitor act on what `cladenc` reports, and artificial selection counts the recorded results. A vague or wrong record misleads all three.
 
-**How to apply:** Treat a silent or mislabelled failure as a bug, not as a design choice. When laying out the options for a decision about a failure, leaving the failure unexplained is not one of them. Where a failure can be transient, retrying with exponential backoff belongs among the options, ahead of recording any outcome. Related: [[cladenc-runs-any-benchmark]], [[more-tasks-completed-is-not-shown-to-be-an-improvement]].
+**How to apply:** Treat a silent or mislabelled failure as a bug, not as a design choice. When laying out the options for a decision about a failure, leaving the failure unexplained is not one of them. Where a failure can be transient, retrying with exponential backoff belongs among the options, ahead of recording any outcome. Related: [[cladenc-runs-any-dataset]], [[more-tasks-completed-is-not-shown-to-be-an-improvement]].

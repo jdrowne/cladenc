@@ -1,6 +1,6 @@
 ---
 name: how-long-a-directed-evolution-takes-does-not-matter
-description: "the hours or days a directed evolution takes are never a reason to bring less of a benchmark, fewer diversifications or a weaker model"
+description: "the hours or days a directed evolution takes are never a reason to bring less of a dataset, fewer diversifications or a weaker model"
 metadata:
   node_type: memory
   type: feedback
@@ -10,8 +10,8 @@ metadata:
 
 # How long a directed evolution takes does not matter
 
-How long a directed evolution takes to run, one run by hand to try `cladenc` out among them, is not a cost to weigh. Never propose bringing part of a benchmark, a lower `--max-diversifications` or a smaller model to make one finish sooner, and never write run time into an issue as something a person has to decide.
+How long a directed evolution takes to run, one run by hand to try `cladenc` out among them, is not a cost to weigh. Never propose bringing part of a dataset, a lower `--max-diversifications` or a smaller model to make one finish sooner, and never write run time into an issue as something a person has to decide.
 
 **Why:** the user does not mind a directed evolution running for days; only what it shows matters.
 
-**How to apply:** bring the whole benchmark and size such a run by what it has to show. Memory, disk and the model's ability still count; time does not. See [[every-harness-is-benchmarked-in-full]].
+**How to apply:** bring the whole dataset and size such a run by what it has to show. Memory, disk and the model's ability still count; time does not. See [[every-harness-is-evaluated-in-full]].

@@ -10,7 +10,7 @@ metadata:
 
 # A harness is not called a coding agent
 
-The thing `cladenc` takes in and improves is a coding harness, or an agentic coding harness. It is not called a coding agent, in conversation or in anything written. It is not called an agent either, though agent is Harbor's word for a program that completes tasks and `cladenc` uses Harbor's terminology, per [[the-words-about-benchmarks]].
+The thing `cladenc` takes in and improves is a coding harness, or an agentic coding harness. It is not called a coding agent, in conversation or in anything written. It is not called an agent either, though agent is Harbor's word for a program that completes tasks and `cladenc` uses Harbor's terminology, per [[the-words-about-datasets]].
 
 **Why:** Coding harness and agentic coding harness name the thing `cladenc` improves. A harness is not defined as a coding agent either. On 2026-11-25 the user decided that harness stays where Harbor says agent. Harness names what `cladenc` changes, which is the program around a model and not the model.
 

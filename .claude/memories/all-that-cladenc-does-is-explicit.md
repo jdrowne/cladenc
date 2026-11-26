@@ -19,6 +19,6 @@ Everything `cladenc` does is explicit. What `cladenc` hands to a program it star
 - Never propose an environment variable as the way `cladenc` hands a value to a sandbox, a harness or any other program. Propose a flag with its value, per [[the-simplest-design-is-offered-first]].
 - A secret is still kept off every command line: it goes in a file, and a flag names the file, per [[a-key-is-given-in-a-file]].
 - Where the code depends on something that is not written on a command line or in a file that a flag names, that is a problem to solve, not a design to defend. Say what it is and how it becomes explicit, in a few lines.
-- The variables that a task's own `task.toml` names are the task's and are obeyed, per [[cladenc-runs-any-benchmark]]: they are written in a file of the benchmark.
+- The variables that a task's own `task.toml` names are the task's and are obeyed, per [[cladenc-runs-any-dataset]]: they are written in a file of the dataset.
 
 Related: [[no-flag-has-a-default]], [[an-explanation-names-the-literal-thing]], [[cladenc-is-run-by-a-session-the-user-or-a-program]].
