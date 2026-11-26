@@ -838,3 +838,30 @@ fn the_first_paragraph_says_that_a_sandbox_of_cladenc_is_a_docker_container() {
         )
     }));
 }
+
+#[test]
+fn the_first_paragraph_says_that_nothing_is_chosen_by_the_corroboration_tasks() {
+    assert!(readme().split("\n\n").nth(1).is_some_and(|first| {
+        first.contains(
+            "Nothing is chosen by the corroboration tasks, so they say how far the best harness \
+             is ahead of the primogenitor on tasks that had no part in the choosing.",
+        )
+    }));
+}
+
+#[test]
+fn the_flag_of_the_corroboration_tasks_says_that_nothing_is_chosen_by_them() {
+    assert!(readme().contains(
+        "such as 15 or 12.5. `cladenc` chooses nothing by the corroboration tasks. The \
+         corroboration tasks and the selection tasks together are the holdout tasks,"
+    ));
+}
+
+#[test]
+fn the_readme_says_of_no_harness_that_it_is_scored() {
+    assert!(
+        !readme()
+            .split(|letter: char| !letter.is_alphabetic())
+            .any(|word| matches!(word, "scored" | "scores" | "scoring"))
+    );
+}

@@ -593,7 +593,7 @@ fn a_corroboration_tasks_percentage_just_below_100_is_accepted() {
 }
 
 #[test]
-fn the_part_of_the_tasks_that_is_only_scored_has_no_flag_under_another_name() {
+fn the_part_of_the_tasks_that_nothing_is_chosen_by_has_no_flag_under_another_name() {
     assert_eq!(
         and(Some("--corroboration-percentage=25".to_owned()))
             .unwrap_err()

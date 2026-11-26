@@ -180,3 +180,25 @@ fn the_package_installs_every_manual_page_where_the_standard_puts_those_of_an_ad
         .collect();
     assert_eq!(not_installed, Vec::<String>::new());
 }
+
+#[test]
+fn the_manual_page_of_cladenc_says_that_nothing_is_chosen_by_the_corroboration_tasks() {
+    assert!(manual_on_one_line("cladenc").contains(
+        "Nothing is chosen by the corroboration tasks, so they say how far the best harness is \
+         ahead of the primogenitor on tasks that had no part in the choosing."
+    ));
+}
+
+#[test]
+fn no_manual_page_says_of_a_harness_that_it_is_scored() {
+    let pages: Vec<String> = commands()
+        .iter()
+        .map(|(page, _)| page.clone())
+        .filter(|page| {
+            manual(page)
+                .split(|letter: char| !letter.is_alphabetic())
+                .any(|word| matches!(word, "scored" | "scores" | "scoring"))
+        })
+        .collect();
+    assert_eq!(pages, Vec::<String>::new());
+}
