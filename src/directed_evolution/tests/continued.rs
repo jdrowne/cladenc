@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
 const A_DIVERSIFICATION: [&str; 2] = ["run a harness", "diversification-1"];
@@ -77,12 +77,12 @@ fn journal_of(evolved: &Evolved) -> String {
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_a_trial_stops_the_directed_evolution_naming_it() {
+fn a_sandbox_that_ends_with_status_125_at_a_trial_stops_the_directed_evolution_naming_it() {
     assert!(matches!(
         stopped_at(&A_TRIAL).result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
-            error: ContainerError::Docker(_),
+            error: SandboxError::Docker(_),
         }) if task == TASK
     ));
 }
@@ -96,8 +96,8 @@ fn a_directed_evolution_a_trial_stopped_continues_to_the_journal_an_unbroken_one
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_a_diversification_stops_the_directed_evolution_naming_it()
- {
+fn a_sandbox_that_ends_with_status_125_at_a_diversification_stops_the_directed_evolution_naming_it()
+{
     assert!(matches!(
         stopped_at(&A_DIVERSIFICATION).result,
         Err(DirectedEvolutionError::Action {
@@ -105,7 +105,7 @@ fn a_container_that_ends_with_status_125_at_a_diversification_stops_the_directed
                 child: 1,
                 progenitor: 0
             },
-            error: ContainerError::Docker(_),
+            error: SandboxError::Docker(_),
         })
     ));
 }
@@ -120,12 +120,12 @@ fn a_directed_evolution_a_diversification_stopped_continues_to_the_journal_an_un
 }
 
 #[test]
-fn a_directed_evolution_resumed_while_docker_still_does_not_start_the_container_stops_again() {
+fn a_directed_evolution_resumed_while_docker_still_does_not_start_the_sandbox_stops_again() {
     assert!(matches!(
         stopped_again_at(&A_TRIAL).result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { .. },
-            error: ContainerError::Docker(_),
+            error: SandboxError::Docker(_),
         })
     ));
 }
@@ -159,7 +159,7 @@ fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its
 fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
     assert!(stopped_at(&A_TRIAL).said.contains(
         "cladenc: the trial of harness 0 on task benchmark/t2 could not be carried out: Docker \
-         did not start its container, and "
+         did not start its sandbox, and "
     ));
 }
 
@@ -167,7 +167,7 @@ fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
 fn a_directed_evolution_that_an_action_stops_says_last_that_it_is_stopping() {
     assert_eq!(
         stopped_at(&A_TRIAL).lines().last().map(String::as_str),
-        Some("cladenc: stopping the directed evolution, with 0 containers running")
+        Some("cladenc: stopping the directed evolution, with 0 sandboxes running")
     );
 }
 

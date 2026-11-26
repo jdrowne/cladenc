@@ -1,11 +1,11 @@
 use std::path::Path;
 
 use crate::benchmark::ConfigurationError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
 const IMAGE_GIVEN: &str = "[environment]\ndocker_image = \"an-image:given\"\n";

@@ -1,9 +1,9 @@
 use std::sync::atomic::AtomicBool;
 
 use crate::cli::{self, Cli, Command, StartOptions};
-use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
 use crate::journal;
+use crate::sandboxes::tests::double::Double;
 
 pub(super) struct Ran {
     pub(super) status: u8,
@@ -29,7 +29,7 @@ pub(super) fn options(directory: &Memory) -> StartOptions {
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.path().join("outputs"),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -56,12 +56,12 @@ pub(super) fn executed(docker: Double, directory: &Memory, command: Command) -> 
     }
 }
 
-pub(super) fn of_format_32(outputs_directory: Memory) -> Memory {
+pub(super) fn of_format_33(outputs_directory: Memory) -> Memory {
     let journal = journal::path(outputs_directory.path());
     let older = outputs_directory
         .read_to_string(&journal)
         .unwrap()
-        .replace(r#""format":33"#, r#""format":32"#);
+        .replace(r#""format":34"#, r#""format":33"#);
     outputs_directory.write(journal, older).unwrap();
     outputs_directory
 }

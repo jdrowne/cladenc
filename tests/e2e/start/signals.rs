@@ -5,7 +5,7 @@ use std::process::{Command, Stdio};
 use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 
-const SAY_THE_CONTAINER_AND_STAY_WHILE_HELD: &str =
+const SAY_THE_SANDBOX_AND_STAY_WHILE_HELD: &str =
     "[ -e hold ] || exit 0; hostname; while [ -e hold ]; do sleep 1; done";
 
 fn start(directory: &Path, run_command: &str) -> Vec<String> {
@@ -21,7 +21,7 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-diversifications", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
+        ("--max-concurrent-sandboxes", "1".into()),
         ("--diversification-timeout", "60".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
@@ -38,7 +38,7 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
 #[test]
 fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
     let directory = test_inputs::temporary_directory();
-    let arguments = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_WHILE_HELD);
+    let arguments = start(directory.path(), SAY_THE_SANDBOX_AND_STAY_WHILE_HELD);
     fs::write(
         directory
             .path()

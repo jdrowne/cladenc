@@ -10,7 +10,7 @@ const OWN: &str = "[verifier.environment]\n";
 const CHECKED: &str = "[verifier.environment.healthcheck]\ncommand = \"test -e /ready\"\n";
 const NAMED: &str =
     "[verifier.environment]\ndocker_image = \"registry.example/verifiers/parser:3\"\n";
-const EVERYTHING: &str = "the whole container of the harness in the verifier container";
+const EVERYTHING: &str = "the whole sandbox of the harness in the verifier sandbox";
 
 fn read(written: &str) -> Result<TaskConfiguration, ConfigurationError> {
     let directory = Memory::default();
@@ -111,7 +111,7 @@ fn the_working_directory_of_the_verifier_is_read_from_workdir_under_verifier_env
 }
 
 #[test]
-fn the_variables_of_the_verifier_container_are_read_from_env_under_verifier_environment() {
+fn the_variables_of_the_verifier_sandbox_are_read_from_env_under_verifier_environment() {
     assert_eq!(
         own("env = { MODE = \"strict\" }\n").variables,
         [("MODE".to_owned(), "strict".to_owned())]
@@ -119,7 +119,7 @@ fn the_variables_of_the_verifier_container_are_read_from_env_under_verifier_envi
 }
 
 #[test]
-fn a_variable_of_the_verifier_container_is_given_the_value_it_has_where_cladenc_runs() {
+fn a_variable_of_the_verifier_sandbox_is_given_the_value_it_has_where_cladenc_runs() {
     assert_eq!(
         own("env = { KEY = \"${TOKEN}\" }\n").variables,
         [("KEY".to_owned(), "a-made-up-token".to_owned())]
@@ -140,17 +140,17 @@ fn the_build_of_the_verifier_environment_is_given_600_seconds_where_the_task_giv
 }
 
 #[test]
-fn the_cpus_of_the_verifier_container_are_read_from_cpus_under_verifier_environment() {
+fn the_cpus_of_the_verifier_sandbox_are_read_from_cpus_under_verifier_environment() {
     assert_eq!(own("cpus = 0.5\n").cpus, Some(0.5));
 }
 
 #[test]
-fn the_memory_of_the_verifier_container_is_read_in_megabytes() {
+fn the_memory_of_the_verifier_sandbox_is_read_in_megabytes() {
     assert_eq!(own("memory_mb = 512\n").memory_megabytes, Some(512));
 }
 
 #[test]
-fn the_memory_of_the_verifier_container_is_read_from_the_older_spelling() {
+fn the_memory_of_the_verifier_sandbox_is_read_from_the_older_spelling() {
     assert_eq!(own("memory = \"2G\"\n").memory_megabytes, Some(2048));
 }
 
@@ -329,7 +329,7 @@ fn retries_of_0_for_the_health_check_of_the_verifier_are_refused() {
 }
 
 #[test]
-fn a_variable_of_the_verifier_container_named_otherwise_is_refused_under_its_table() {
+fn a_variable_of_the_verifier_sandbox_named_otherwise_is_refused_under_its_table() {
     assert_eq!(
         refused(&format!("{OWN}env = {{ \"A B\" = \"strict\" }}\n")),
         Some(ConfigurationError::NotAName {
@@ -340,7 +340,7 @@ fn a_variable_of_the_verifier_container_named_otherwise_is_refused_under_its_tab
 }
 
 #[test]
-fn a_variable_of_the_verifier_container_that_is_not_set_is_refused_under_its_table() {
+fn a_variable_of_the_verifier_sandbox_that_is_not_set_is_refused_under_its_table() {
     assert_eq!(
         refused(&format!("{OWN}env = {{ KEY = \"${{MISSING}}\" }}\n")),
         Some(ConfigurationError::NotSet {
@@ -373,7 +373,7 @@ fn a_verifier_whose_environment_asks_for_0_gpus_is_not_refused() {
 }
 
 #[test]
-fn a_task_that_lists_the_whole_container_for_a_verifier_that_runs_separately_is_refused() {
+fn a_task_that_lists_the_whole_sandbox_for_a_verifier_that_runs_separately_is_refused() {
     assert_eq!(
         refused(&format!("artifacts = [\"/\"]\n\n{SEPARATE}")),
         Some(ConfigurationError::Needs { what: EVERYTHING })
@@ -381,7 +381,7 @@ fn a_task_that_lists_the_whole_container_for_a_verifier_that_runs_separately_is_
 }
 
 #[test]
-fn a_path_that_names_nothing_below_the_top_is_the_whole_container() {
+fn a_path_that_names_nothing_below_the_top_is_the_whole_sandbox() {
     assert_eq!(
         refused(&format!("artifacts = [\"/./\"]\n\n{OWN}")),
         Some(ConfigurationError::Needs { what: EVERYTHING })
@@ -389,7 +389,7 @@ fn a_path_that_names_nothing_below_the_top_is_the_whole_container() {
 }
 
 #[test]
-fn a_task_that_lists_the_whole_container_for_a_verifier_that_shares_it_is_not_refused() {
+fn a_task_that_lists_the_whole_sandbox_for_a_verifier_that_shares_it_is_not_refused() {
     assert_eq!(refused("artifacts = [\"/\"]\n"), None);
 }
 
@@ -514,17 +514,17 @@ fn a_task_whose_verifier_needs_more_than_one_container_is_said_with_its_id() {
             task: "fix-the-parser".to_owned()
         }
         .to_string(),
-        "task fix-the-parser has its verifier run in a container of its own and holds a Compose \
+        "task fix-the-parser has its verifier run in a sandbox of its own and holds a Compose \
          file in its directory named tests, and an environment of more than one container cannot \
          be built"
     );
 }
 
 #[test]
-fn a_task_that_lists_the_whole_container_for_its_verifier_is_said_with_what_it_asks_for() {
+fn a_task_that_lists_the_whole_sandbox_for_its_verifier_is_said_with_what_it_asks_for() {
     assert_eq!(
         ConfigurationError::Needs { what: EVERYTHING }.to_string(),
-        "asks for the whole container of the harness in the verifier container, which \
+        "asks for the whole sandbox of the harness in the verifier sandbox, which \
          cladenc has no way to give"
     );
 }

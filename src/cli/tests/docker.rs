@@ -1,13 +1,13 @@
 use crate::cli::tests::given::{self, Ran};
 use crate::cli::{Command, ResumeOptions};
-use crate::containers::tests::double::{Answer, Double};
 use crate::file_system::tests::double::Memory;
 use crate::journal;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const UNREACHABLE: Answer = Answer::Refused("Cannot connect to the Docker daemon");
 const LEFT: Answer = Answer::Printed("0123456789ab\n");
-const UNREMOVED: Answer = Answer::Refused("cannot remove container 0123456789ab");
+const UNREMOVED: Answer = Answer::Refused("cannot remove sandbox 0123456789ab");
 const ASKS_FOR_A_CPU: &str = "schema_version = \"1.4\"\n\n[environment]\ncpus = 1\n";
 
 fn started_with(docker: Double, directory: &Memory) -> Ran {
@@ -65,7 +65,7 @@ fn a_resume_whose_docker_cannot_be_asked_gives_exit_status_2() {
 fn a_resume_whose_docker_cannot_be_asked_says_what_docker_said() {
     assert_eq!(
         said_last(&resumed_with(unreachable(), &stopped())),
-        "cladenc: the containers that the directed evolution left running cannot be removed: \
+        "cladenc: the sandboxes that the directed evolution left running cannot be removed: \
          Cannot connect to the Docker daemon"
     );
 }
@@ -88,16 +88,16 @@ fn a_resume_whose_docker_cannot_be_asked_continues_nothing() {
 }
 
 #[test]
-fn a_resume_whose_docker_does_not_remove_a_container_gives_exit_status_2() {
+fn a_resume_whose_docker_does_not_remove_a_sandbox_gives_exit_status_2() {
     assert_eq!(resumed_with(unremoving(), &stopped()).status, 2);
 }
 
 #[test]
-fn a_resume_whose_docker_does_not_remove_a_container_says_what_docker_said() {
+fn a_resume_whose_docker_does_not_remove_a_sandbox_says_what_docker_said() {
     assert_eq!(
         said_last(&resumed_with(unremoving(), &stopped())),
-        "cladenc: the containers that the directed evolution left running cannot be removed: \
-         cannot remove container 0123456789ab"
+        "cladenc: the sandboxes that the directed evolution left running cannot be removed: \
+         cannot remove sandbox 0123456789ab"
     );
 }
 

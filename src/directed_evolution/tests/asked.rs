@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 
-use crate::containers::tests::double::Double;
-use crate::containers::tests::given::TIMER;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
+use crate::sandboxes::tests::double::Double;
+use crate::sandboxes::tests::given::TIMER;
 
 const TOKEN: &str = "a-made-up-token";
 const OBEYED: &str = "[agent]\nuser = 1000\ntimeout_sec = 30\n\n[verifier]\nuser = \
@@ -13,7 +13,7 @@ const OBEYED: &str = "[agent]\nuser = 1000\ntimeout_sec = 30\n\n[verifier]\nuser
                       [environment]\nworkdir = \"/srv/elsewhere\"\n\n[environment.env]\n\
                       API_TOKEN = \
                       \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET:-a-made-up-token}\"\n";
-const CONTAINER: &str = "docker run ";
+const SANDBOX: &str = "docker run ";
 const COMMAND: &str = "docker exec ";
 const AS_ROOT: &str = "docker exec --user 0 ";
 const STAYS: &str = " --detach ";
@@ -42,21 +42,21 @@ fn obeyed() -> Evolved {
     given::started(Double::default(), with_a_task_that_sets_all_it_can)
 }
 
-fn containers(commands: &[String]) -> Vec<&String> {
+fn sandboxes(commands: &[String]) -> Vec<&String> {
     commands
         .iter()
-        .filter(|command| command.starts_with(CONTAINER))
+        .filter(|command| command.starts_with(SANDBOX))
         .collect()
 }
 
-fn containers_of_the_trials(commands: &[String]) -> Vec<&String> {
+fn sandboxes_of_the_trials(commands: &[String]) -> Vec<&String> {
     commands
         .iter()
         .filter(|command| command.contains(STAYS))
         .collect()
 }
 
-fn run_in_a_container<'a>(commands: &'a [String], run: &str) -> Vec<&'a String> {
+fn run_in_a_sandbox<'a>(commands: &'a [String], run: &str) -> Vec<&'a String> {
     commands
         .iter()
         .filter(|command| command.starts_with(COMMAND) && command.contains(run))
@@ -67,7 +67,7 @@ fn under_a_timer(commands: &[String]) -> Vec<&String> {
     commands
         .iter()
         .filter(|command| {
-            let alone = command.starts_with(CONTAINER) && !command.contains(STAYS);
+            let alone = command.starts_with(SANDBOX) && !command.contains(STAYS);
             let beside = command.starts_with(COMMAND) && !command.starts_with(AS_ROOT);
             alone || beside
         })
@@ -111,28 +111,28 @@ fn the_key_is_on_no_command_line_of_docker() {
 }
 
 #[test]
-fn every_container_is_told_never_to_fetch_its_image() {
+fn every_sandbox_is_told_never_to_fetch_its_image() {
     let commands = evolved().commands();
     assert!(each_holds(
-        &containers(&commands),
+        &sandboxes(&commands),
         "docker run --rm --pull never "
     ));
 }
 
 #[test]
-fn every_container_is_started_so_that_it_can_name_the_machine_cladenc_runs_on() {
+fn every_sandbox_is_started_so_that_it_can_name_the_machine_cladenc_runs_on() {
     let commands = evolved().commands();
     assert!(each_holds(
-        &containers(&commands),
+        &sandboxes(&commands),
         " --add-host host.docker.internal:host-gateway "
     ));
 }
 
 #[test]
-fn every_container_carries_the_label_of_its_directed_evolution() {
+fn every_sandbox_carries_the_label_of_its_directed_evolution() {
     let commands = evolved().commands();
     assert!(each_holds(
-        &containers(&commands),
+        &sandboxes(&commands),
         " --name NAME --label cladenc.directed-evolution=OUTPUTS "
     ));
 }
@@ -147,16 +147,16 @@ fn every_command_is_started_under_a_timer_that_ends_it() {
 }
 
 #[test]
-fn the_container_of_a_trial_whose_task_gives_no_time_limit_sleeps_without_end() {
+fn the_sandbox_of_a_trial_whose_task_gives_no_time_limit_sleeps_without_end() {
     let commands = evolved().commands();
     assert_eq!(
-        last_words(&containers_of_the_trials(&commands)),
+        last_words(&sandboxes_of_the_trials(&commands)),
         ["4294968495", "4294968495"]
     );
 }
 
 #[test]
-fn the_containers_of_the_trials_are_started_from_the_images_built_from_the_environments() {
+fn the_sandboxes_of_the_trials_are_started_from_the_images_built_from_the_environments() {
     let commands = evolved().commands();
     let all: Vec<&String> = commands.iter().collect();
     let started: BTreeSet<String> = following("--detach", &all).into_iter().collect();
@@ -168,7 +168,7 @@ fn the_containers_of_the_trials_are_started_from_the_images_built_from_the_envir
 fn the_timer_of_a_diversification_is_given_the_run_command_and_five_seconds_more_than_its_time_limit()
  {
     let commands = evolved().commands();
-    let diversifications: Vec<&String> = containers(&commands)
+    let diversifications: Vec<&String> = sandboxes(&commands)
         .into_iter()
         .filter(|command| !command.contains(STAYS))
         .collect();
@@ -182,7 +182,7 @@ fn the_timer_of_a_diversification_is_given_the_run_command_and_five_seconds_more
 fn the_timer_of_a_verifier_is_given_the_verifier_of_the_task() {
     let commands = evolved().commands();
     assert!(each_holds(
-        &run_in_a_container(&commands, VERIFIER),
+        &run_in_a_sandbox(&commands, VERIFIER),
         &format!(" sh -c {TIMER} /tests/test.sh ")
     ));
 }
@@ -196,9 +196,9 @@ fn the_value_of_a_variable_of_a_task_is_given_to_docker_on_its_standard_input_al
 }
 
 #[test]
-fn the_container_of_a_trial_is_started_in_the_working_directory_its_task_names() {
+fn the_sandbox_of_a_trial_is_started_in_the_working_directory_its_task_names() {
     let commands = obeyed().commands();
-    let named: Vec<bool> = containers_of_the_trials(&commands)
+    let named: Vec<bool> = sandboxes_of_the_trials(&commands)
         .iter()
         .map(|command| command.contains(" --workdir /srv/elsewhere "))
         .collect();
@@ -206,10 +206,10 @@ fn the_container_of_a_trial_is_started_in_the_working_directory_its_task_names()
 }
 
 #[test]
-fn docker_reads_the_variables_of_the_container_of_a_trial_from_its_standard_input() {
+fn docker_reads_the_variables_of_the_sandbox_of_a_trial_from_its_standard_input() {
     let commands = obeyed().commands();
     assert!(each_holds(
-        &containers_of_the_trials(&commands),
+        &sandboxes_of_the_trials(&commands),
         " --env-file /dev/stdin "
     ));
 }
@@ -228,10 +228,10 @@ fn the_harness_and_the_verifier_of_a_task_are_started_as_the_users_the_task_name
 }
 
 #[test]
-fn the_container_of_a_trial_sleeps_for_both_time_limits_of_its_task_and_ten_minutes_more() {
+fn the_sandbox_of_a_trial_sleeps_for_both_time_limits_of_its_task_and_ten_minutes_more() {
     let commands = obeyed().commands();
     assert_eq!(
-        last_words(&containers_of_the_trials(&commands)),
+        last_words(&sandboxes_of_the_trials(&commands)),
         ["4294968495", "650"]
     );
 }
@@ -240,7 +240,7 @@ fn the_container_of_a_trial_sleeps_for_both_time_limits_of_its_task_and_ten_minu
 fn the_timer_of_a_harness_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
     let commands = obeyed().commands();
     assert_eq!(
-        last_words(&run_in_a_container(&commands, HARNESS)),
+        last_words(&run_in_a_sandbox(&commands, HARNESS)),
         ["4294967300", "35"]
     );
 }
@@ -249,7 +249,7 @@ fn the_timer_of_a_harness_is_given_the_time_limit_its_task_gives_it_and_five_sec
 fn the_timer_of_a_verifier_is_given_the_time_limit_its_task_gives_it_and_five_seconds_more() {
     let commands = obeyed().commands();
     assert_eq!(
-        last_words(&run_in_a_container(&commands, VERIFIER)),
+        last_words(&run_in_a_sandbox(&commands, VERIFIER)),
         ["605", "25"]
     );
 }

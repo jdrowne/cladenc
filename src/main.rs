@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use cladenc::cli::{self, Cli, Command};
-use cladenc::containers::{Outside, Program};
 use cladenc::file_system::{Disk, FileSystem};
+use cladenc::sandboxes::{Outside, Program};
 use clap::Parser;
 use signal_hook::consts::{SIGHUP, SIGINT, SIGQUIT, SIGTERM};
 use signal_hook::flag;

@@ -39,7 +39,7 @@ fn settings(directory: &Path, task_tomls: &[(&str, &str)]) -> Settings {
         harness_build_command: None,
         harness_run_command: SAY_THE_MODE.to_owned(),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -91,7 +91,7 @@ fn a_directed_evolution_in_which_every_task_names_an_image_runs_to_its_end() {
 }
 
 #[test]
-fn a_trial_on_a_task_that_names_an_image_is_carried_out_in_a_container_of_that_image() {
+fn a_trial_on_a_task_that_names_an_image_is_carried_out_in_a_sandbox_of_that_image() {
     let evolved = with_t2_in(test_inputs::IMAGE);
     let trial = test_inputs::kept_trial(&outputs_of(&evolved), 0, "benchmark/t2");
     assert!(!trial.join("work").exists());

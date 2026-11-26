@@ -1,13 +1,13 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::said::{Environments, Retrying};
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{Checked, HarnessEnding, Retry, SandboxError};
 
 fn outputs_directory() -> OutputsDirectory {
     OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
@@ -203,23 +203,23 @@ fn a_trial_on_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps
     );
 }
 
-fn removed(containers: u64) -> String {
-    Said::Removed { containers }.to_string()
+fn removed(sandboxes: u64) -> String {
+    Said::Removed { sandboxes }.to_string()
 }
 
 #[test]
-fn the_containers_a_directed_evolution_left_running_are_said_to_be_removed_with_their_number() {
+fn the_sandboxes_a_directed_evolution_left_running_are_said_to_be_removed_with_their_number() {
     assert_eq!(
         removed(2),
-        "removed 2 containers that the directed evolution left running"
+        "removed 2 sandboxes that the directed evolution left running"
     );
 }
 
 #[test]
-fn one_container_is_not_said_to_be_several() {
+fn one_sandbox_is_not_said_to_be_several() {
     assert_eq!(
         removed(1),
-        "removed 1 container that the directed evolution left running"
+        "removed 1 sandbox that the directed evolution left running"
     );
 }
 
@@ -291,7 +291,7 @@ fn an_image_is_said_to_be_built_with_where_what_docker_printed_is_kept() {
 fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::ImageNotBuilt {
-            error: &ContainerError::Exit(1),
+            error: &SandboxError::Exit(1),
             outputs_directory: &outputs_directory(),
         }
         .to_string(),
@@ -385,7 +385,7 @@ fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker
     assert_eq!(
         Said::Environments(Environments::NotBuilt {
             task: "benchmark/t1",
-            error: &ContainerError::Exit(1),
+            error: &SandboxError::Exit(1),
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
@@ -425,7 +425,7 @@ fn a_verifier_environment_that_was_not_built_is_said_with_where_what_docker_prin
     assert_eq!(
         Said::Environments(Environments::VerifierNotBuilt {
             task: "benchmark/t1",
-            error: &ContainerError::Exit(1),
+            error: &SandboxError::Exit(1),
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
@@ -448,7 +448,7 @@ fn the_primogenitor_is_said_to_be_built() {
 fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is_kept() {
     assert_eq!(
         Said::BuildFailed {
-            error: &ContainerError::Exit(2),
+            error: &SandboxError::Exit(2),
             outputs_directory: &outputs_directory(),
         }
         .to_string(),
@@ -642,7 +642,7 @@ fn an_action_that_stops_the_directed_evolution_is_said_with_what_became_of_it() 
     assert_eq!(
         Said::Failed {
             action: &trial(),
-            error: &ContainerError::Exit(2),
+            error: &SandboxError::Exit(2),
         }
         .to_string(),
         "the trial of harness 3 on task fix-the-parser exited with status 2"
@@ -650,14 +650,14 @@ fn an_action_that_stops_the_directed_evolution_is_said_with_what_became_of_it() 
 }
 
 #[test]
-fn a_directed_evolution_asked_to_stop_is_said_with_the_number_of_containers_running() {
+fn a_directed_evolution_asked_to_stop_is_said_with_the_number_of_sandboxes_running() {
     assert_eq!(
         Said::Stopping {
             asked: true,
             running: 2,
         }
         .to_string(),
-        "asked to stop, with 2 containers running"
+        "asked to stop, with 2 sandboxes running"
     );
 }
 
@@ -669,7 +669,7 @@ fn a_directed_evolution_that_stops_over_a_failure_is_said_to_be_stopping() {
             running: 1,
         }
         .to_string(),
-        "stopping the directed evolution, with 1 container running"
+        "stopping the directed evolution, with 1 sandbox running"
     );
 }
 
@@ -711,7 +711,7 @@ fn a_retry_of_the_health_check_of_a_task_is_said_with_its_trial_its_wait_and_its
     assert_eq!(
         retrying(Checked::Task, Duration::from_secs(10)),
         "the trial of harness 3 on task parsing/fix-the-parser is not carried out yet: the \
-         health check of the task did not pass, and cladenc tries again in a new container \
+         health check of the task did not pass, and cladenc tries again in a new sandbox \
          after 10 seconds, retry 2 of 5"
     );
 }
@@ -720,7 +720,7 @@ fn a_retry_of_the_health_check_of_a_task_is_said_with_its_trial_its_wait_and_its
 fn a_wait_of_1_second_before_a_retry_of_the_health_check_of_a_task_is_not_said_as_several() {
     assert!(
         retrying(Checked::Task, Duration::from_secs(1))
-            .ends_with(" in a new container after 1 second, retry 2 of 5")
+            .ends_with(" in a new sandbox after 1 second, retry 2 of 5")
     );
 }
 
@@ -729,8 +729,8 @@ fn a_retry_of_the_health_check_of_a_verifier_is_said_with_its_trial_its_wait_and
     assert_eq!(
         retrying_after(Duration::from_secs(10)),
         "the trial of harness 3 on task parsing/fix-the-parser is not verified yet: the health \
-         check of its verifier container did not pass, and cladenc tries again in a new \
-         container after 10 seconds, retry 2 of 5"
+         check of its verifier sandbox did not pass, and cladenc tries again in a new \
+         sandbox after 10 seconds, retry 2 of 5"
     );
 }
 
@@ -738,7 +738,7 @@ fn a_retry_of_the_health_check_of_a_verifier_is_said_with_its_trial_its_wait_and
 fn a_wait_of_1_second_before_a_retry_is_not_said_as_several() {
     assert!(
         retrying_after(Duration::from_secs(1))
-            .ends_with(" in a new container after 1 second, retry 2 of 5")
+            .ends_with(" in a new sandbox after 1 second, retry 2 of 5")
     );
 }
 
@@ -746,7 +746,7 @@ fn a_wait_of_1_second_before_a_retry_is_not_said_as_several() {
 fn a_wait_of_a_part_of_a_second_before_a_retry_is_said_with_the_part() {
     assert!(
         retrying_after(Duration::from_millis(200))
-            .ends_with(" in a new container after 0.2 seconds, retry 2 of 5")
+            .ends_with(" in a new sandbox after 0.2 seconds, retry 2 of 5")
     );
 }
 
@@ -755,14 +755,14 @@ fn a_verifier_that_was_never_run_is_said_with_what_stopped_it_from_being_run() {
     assert_eq!(
         Said::Failed {
             action: &trial(),
-            error: &ContainerError::VerifierHealthCheck {
+            error: &SandboxError::VerifierHealthCheck {
                 tries: 1,
                 kept: "/outputs/running/trial-3-fix-the-parser/verifier/health-check".into(),
             },
         }
         .to_string(),
         "the trial of harness 3 on task fix-the-parser was not verified: the health check of \
-         its verifier container did not pass in 1 try, so the verifier was not run, and \
+         its verifier sandbox did not pass in 1 try, so the verifier was not run, and \
          /outputs/running/trial-3-fix-the-parser/verifier/health-check holds what the health \
          check printed the last time it ran"
     );
@@ -773,7 +773,7 @@ fn a_harness_that_was_never_started_is_said_with_what_stopped_it_from_being_star
     assert_eq!(
         Said::Failed {
             action: &trial(),
-            error: &ContainerError::TaskHealthCheck {
+            error: &SandboxError::TaskHealthCheck {
                 tries: 1,
                 kept: "/outputs/running/trial-3-fix-the-parser/health-check".into(),
             },

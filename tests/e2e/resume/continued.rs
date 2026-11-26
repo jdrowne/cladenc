@@ -7,7 +7,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
+const SAY_THE_SANDBOX_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
@@ -22,7 +22,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-diversifications", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
+        ("--max-concurrent-sandboxes", "1".into()),
         ("--diversification-timeout", "60".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
@@ -57,7 +57,7 @@ static RESUMED_AFTER_AN_INTERRUPT: LazyLock<(TempDir, Output)> = LazyLock::new(|
 
 fn stopped_by_an_interrupt() -> TempDir {
     let directory = test_inputs::temporary_directory();
-    let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
+    let mut start = start(directory.path(), SAY_THE_SANDBOX_AND_STAY_IF_HELD);
     fs::write(
         directory
             .path()

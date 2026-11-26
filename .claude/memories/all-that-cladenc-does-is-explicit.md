@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 1aed5bc3-ee66-48b9-a0d7-7bd822cb7b45
-  modified: 2026-11-26T01:20:26.153Z
+  modified: 2026-11-26T03:55:37.000Z
 ---
 
 # All that cladenc does is explicit
@@ -16,7 +16,7 @@ Everything `cladenc` does is explicit. What `cladenc` hands to a program it star
 
 **How to apply:**
 
-- Never propose an environment variable as the way `cladenc` hands a value to a container, a harness or any other program. Propose a flag with its value, per [[the-simplest-design-is-offered-first]].
+- Never propose an environment variable as the way `cladenc` hands a value to a sandbox, a harness or any other program. Propose a flag with its value, per [[the-simplest-design-is-offered-first]].
 - A secret is still kept off every command line: it goes in a file, and a flag names the file, per [[a-key-is-given-in-a-file]].
 - Where the code depends on something that is not written on a command line or in a file that a flag names, that is a problem to solve, not a design to defend. Say what it is and how it becomes explicit, in a few lines.
 - The variables that a task's own `task.toml` names are the task's and are obeyed, per [[cladenc-runs-any-benchmark]]: they are written in a file of the benchmark.

@@ -30,7 +30,7 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
                               key-given"
             .to_owned(),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,

@@ -5,7 +5,7 @@ fn the_manual_of_start_says_when_the_environment_of_every_task_is_built() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "cladenc builds the environment of every task of every benchmark when the directed \
          evolution is started, and again each time it is resumed, before it brings up any \
-         container, as"
+         sandbox, as"
     ));
 }
 
@@ -28,7 +28,7 @@ fn the_manual_of_start_says_what_path_the_label_of_an_environment_holds() {
 fn the_manual_of_start_says_what_the_labels_of_an_environment_are() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The two labels are Docker labels, each a name and a value that Docker keeps with an \
-         image. The second is the label that every container of the directed evolution carries."
+         image. The second is the label that every sandbox of the directed evolution carries."
     ));
 }
 
@@ -93,9 +93,9 @@ fn the_manual_of_start_says_that_the_base_image_of_an_environment_has_to_be_on_t
 #[test]
 fn the_manual_of_resume_says_that_it_builds_the_environments_again_under_the_same_names() {
     assert!(manual_on_one_line("cladenc-resume").contains(
-        "Once the containers are removed, cladenc resume builds the environment of every task \
+        "Once the sandboxes are removed, cladenc resume builds the environment of every task \
          again, from the copy of the task in the outputs directory and under the name it was given \
-         when the directed evolution was started, before it brings up any container."
+         when the directed evolution was started, before it brings up any sandbox."
     ));
 }
 

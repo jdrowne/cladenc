@@ -5,7 +5,6 @@ use std::sync::atomic::AtomicBool;
 
 use crate::artificial_selection::Action;
 use crate::benchmark::Benchmark;
-use crate::containers::{Creation, HarnessEnding, Trialled};
 use crate::directed_evolution::Said;
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
@@ -13,6 +12,7 @@ use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment, Genealogy, TrialResult};
 use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{Creation, HarnessEnding, Trialled};
 
 const FIRST: &str = "benchmark/t1";
 const SECOND: &str = "benchmark/t2";
@@ -33,7 +33,7 @@ fn settings() -> Settings {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         max_diversifications: 2,
-        max_concurrent_containers: 8,
+        max_concurrent_sandboxes: 8,
         diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -441,7 +441,7 @@ fn once_the_baseline_of_an_experiment_is_taken_the_action_chosen_next_is_taken()
 }
 
 #[test]
-fn no_container_is_running_before_an_action_is_set_running() {
+fn no_sandbox_is_running_before_an_action_is_set_running() {
     assert_eq!(returned(&settings(), |progress| progress.running()), 0);
 }
 
@@ -455,7 +455,7 @@ fn an_action_that_is_taken_is_not_yet_running() {
 }
 
 #[test]
-fn an_action_set_running_is_one_more_container_running() {
+fn an_action_set_running_is_one_more_sandbox_running() {
     let running = returned(&settings(), |mut progress| {
         start(&mut progress);
         start(&mut progress);
@@ -532,7 +532,7 @@ fn an_action_whose_start_could_not_be_journaled_is_not_to_be_carried_out() {
 }
 
 #[test]
-fn an_action_whose_start_could_not_be_journaled_is_no_container_running() {
+fn an_action_whose_start_could_not_be_journaled_is_no_sandbox_running() {
     let running = returned(&settings(), |mut progress| {
         let (action, again) = progress.take().unwrap();
         progress.record(&unwritable());

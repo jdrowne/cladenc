@@ -1,9 +1,9 @@
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Settings};
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const ENVIRONMENTS_BUILT: [&str; 2] = [
     "docker build --tag cladenc-environments-0123456789abcdef:0 --label \
@@ -83,7 +83,7 @@ fn an_environment_whose_build_fails_ends_the_directed_evolution_with_the_cause()
         not_built().result,
         Err(DirectedEvolutionError::Environment {
             task,
-            error: ContainerError::Exit(1),
+            error: SandboxError::Exit(1),
         }) if task == "benchmark/t1"
     ));
 }
@@ -233,7 +233,7 @@ fn a_verifier_environment_with_a_dockerfile_of_its_own_is_built_from_the_tests()
 }
 
 #[test]
-fn a_verifier_container_built_from_the_tests_is_a_container_of_that_image() {
+fn a_verifier_sandbox_built_from_the_tests_is_a_sandbox_of_that_image() {
     let evolved = given::started(Double::default(), with_a_dockerfile_of_the_verifier);
     assert_eq!(
         evolved.count_of(" --detach cladenc-environments-0123456789abcdef:0-verifier sleep "),
@@ -247,7 +247,7 @@ fn a_verifier_environment_whose_build_fails_ends_the_directed_evolution_with_the
         verifier_not_built().result,
         Err(DirectedEvolutionError::VerifierEnvironment {
             task,
-            error: ContainerError::Exit(1),
+            error: SandboxError::Exit(1),
         }) if task == "benchmark/t1"
     ));
 }
@@ -261,7 +261,7 @@ fn a_verifier_environment_whose_build_fails_is_told_with_the_cause() {
 }
 
 #[test]
-fn a_verifier_with_no_dockerfile_of_its_own_gets_a_container_of_the_image_of_its_task() {
+fn a_verifier_with_no_dockerfile_of_its_own_gets_a_sandbox_of_the_image_of_its_task() {
     let evolved = given::started(Double::default(), of_t1(SEPARATE));
     assert_eq!(evolved.count_of("--detach"), 3);
 }
@@ -364,7 +364,7 @@ fn an_environment_whose_build_runs_past_the_time_limit_of_its_task_ends_the_dire
         built_for_too_long().result,
         Err(DirectedEvolutionError::Environment {
             task,
-            error: ContainerError::TimeLimit,
+            error: SandboxError::TimeLimit,
         }) if task == "benchmark/t1"
     ));
 }

@@ -13,7 +13,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-diversifications", "800"),
-    ("--max-concurrent-containers", "8"),
+    ("--max-concurrent-sandboxes", "8"),
     ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
@@ -234,33 +234,35 @@ fn a_confidence_is_an_argument_that_is_not_expected() {
 }
 
 #[test]
-fn a_limit_of_0_concurrent_containers_is_an_error() {
+fn a_limit_of_0_concurrent_sandboxes_is_an_error() {
     assert_eq!(
-        refusal("--max-concurrent-containers", "0"),
+        refusal("--max-concurrent-sandboxes", "0"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn a_limit_of_concurrent_containers_that_is_not_a_number_is_an_error() {
+fn a_limit_of_concurrent_sandboxes_that_is_not_a_number_is_an_error() {
     assert_eq!(
-        refusal("--max-concurrent-containers", "many"),
+        refusal("--max-concurrent-sandboxes", "many"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn the_limit_of_concurrent_containers_is_the_number_given() {
+fn the_limit_of_concurrent_sandboxes_is_the_number_given() {
     assert!(matches!(
-        with("--max-concurrent-containers", "3").unwrap().command,
-        Command::Start(options) if options.max_concurrent_containers == 3
+        with("--max-concurrent-sandboxes", "3").unwrap().command,
+        Command::Start(options) if options.max_concurrent_sandboxes == 3
     ));
 }
 
 #[test]
-fn the_limit_of_concurrent_containers_has_no_second_name() {
+fn the_limit_of_concurrent_sandboxes_has_no_second_name() {
     assert_eq!(
-        and(Some("--workers=8".to_owned())).unwrap_err().kind(),
+        and(Some("--max-concurrent-containers=8".to_owned()))
+            .unwrap_err()
+            .kind(),
         ErrorKind::UnknownArgument
     );
 }

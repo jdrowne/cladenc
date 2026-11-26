@@ -4,11 +4,11 @@ use std::sync::atomic::AtomicBool;
 use crate::benchmark::Benchmark;
 use crate::cli::tests::given;
 use crate::cli::{self, Cli, Command, ResumeOptions};
-use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
 use crate::report;
+use crate::sandboxes::tests::double::Double;
 use clap::Parser;
 use clap::error::ErrorKind;
 
@@ -133,7 +133,7 @@ fn ended() -> Memory {
                 harness_build_command: None,
                 harness_run_command: "run a harness".to_owned(),
                 max_diversifications: 1,
-                max_concurrent_containers: 1,
+                max_concurrent_sandboxes: 1,
                 diversification_timeout: 60,
                 max_verifier_health_check_retries: 0,
                 max_task_health_check_retries: 0,
@@ -244,18 +244,18 @@ fn a_directed_evolution_that_cannot_be_resumed_prints_no_report() {
 }
 
 #[test]
-fn resuming_an_outputs_directory_whose_journal_is_of_format_32_is_refused_for_its_format() {
-    let outputs_directory = given::of_format_32(ended());
+fn resuming_an_outputs_directory_whose_journal_is_of_format_33_is_refused_for_its_format() {
+    let outputs_directory = given::of_format_33(ended());
     assert_eq!(
         ran(&outputs_directory, outputs_directory.path().to_owned()).errors,
-        "cladenc: the outputs directory cannot be used: its journal has format 32, which this \
+        "cladenc: the outputs directory cannot be used: its journal has format 33, which this \
          cladenc does not read\n"
     );
 }
 
 #[test]
-fn resuming_an_outputs_directory_whose_journal_is_of_format_32_gives_exit_status_2() {
-    let outputs_directory = given::of_format_32(ended());
+fn resuming_an_outputs_directory_whose_journal_is_of_format_33_gives_exit_status_2() {
+    let outputs_directory = given::of_format_33(ended());
     assert_eq!(
         ran(&outputs_directory, outputs_directory.path().to_owned()).status,
         2

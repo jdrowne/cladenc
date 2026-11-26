@@ -3,10 +3,10 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::containers::{Checked, ContainerError, HarnessEnding, Retry};
 use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{Checked, HarnessEnding, Retry, SandboxError};
 
 pub(super) enum Said<'a> {
     Making {
@@ -32,12 +32,12 @@ pub(super) enum Said<'a> {
         outputs_directory: &'a OutputsDirectory,
     },
     ImageNotBuilt {
-        error: &'a ContainerError,
+        error: &'a SandboxError,
         outputs_directory: &'a OutputsDirectory,
     },
     Environments(Environments<'a>),
     Removed {
-        containers: u64,
+        sandboxes: u64,
     },
     Continuing {
         outputs_directory: &'a Path,
@@ -52,7 +52,7 @@ pub(super) enum Said<'a> {
     Building,
     Built,
     BuildFailed {
-        error: &'a ContainerError,
+        error: &'a SandboxError,
         outputs_directory: &'a OutputsDirectory,
     },
     Started {
@@ -83,7 +83,7 @@ pub(super) enum Said<'a> {
     Retrying(Retrying<'a>),
     Failed {
         action: &'a Started,
-        error: &'a ContainerError,
+        error: &'a SandboxError,
     },
     Stopping {
         asked: bool,
@@ -151,10 +151,10 @@ impl Display for Said<'_> {
                 outputs_directory.image().display()
             ),
             Self::Environments(said) => said.fmt(formatter),
-            Self::Removed { containers } => write!(
+            Self::Removed { sandboxes } => write!(
                 formatter,
                 "removed {} that the directed evolution left running",
-                counted(*containers, "container", "containers")
+                counted(*sandboxes, "sandbox", "sandboxes")
             ),
             Self::Continuing {
                 outputs_directory,
@@ -277,7 +277,7 @@ impl Display for Said<'_> {
                 write!(
                     formatter,
                     "{why}, with {} running",
-                    counted(*running, "container", "containers")
+                    counted(*running, "sandbox", "sandboxes")
                 )
             }
             Self::Finished {
@@ -313,7 +313,7 @@ pub(super) enum Environments<'a> {
     },
     NotBuilt {
         task: &'a str,
-        error: &'a ContainerError,
+        error: &'a SandboxError,
         outputs_directory: &'a OutputsDirectory,
     },
     VerifierBuilding {
@@ -326,7 +326,7 @@ pub(super) enum Environments<'a> {
     },
     VerifierNotBuilt {
         task: &'a str,
-        error: &'a ContainerError,
+        error: &'a SandboxError,
         outputs_directory: &'a OutputsDirectory,
     },
 }
@@ -413,7 +413,7 @@ impl Display for Retrying<'_> {
         } = self.retry;
         let (not_yet, of) = match checked {
             Checked::Task => ("carried out", "the task"),
-            Checked::Verifier => ("verified", "its verifier container"),
+            Checked::Verifier => ("verified", "its verifier sandbox"),
         };
         let wait = if wait == Duration::from_secs(1) {
             "1 second".to_owned()
@@ -423,7 +423,7 @@ impl Display for Retrying<'_> {
         write!(
             formatter,
             "the trial of harness {} on task {} is not {not_yet} yet: the health check of \
-             {of} did not pass, and cladenc tries again in a new container after {wait}, \
+             {of} did not pass, and cladenc tries again in a new sandbox after {wait}, \
              retry {number} of {most}",
             self.harness, self.task
         )

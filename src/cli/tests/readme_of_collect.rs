@@ -14,7 +14,7 @@ fn the_readme_says_that_what_a_harness_left_in_logs_artifacts_is_kept() {
 fn the_readme_says_when_the_commands_a_task_lists_under_collect_are_run() {
     assert!(readme().contains(
         "Where the task's `task.toml` lists commands under `verifier.collect`, which Harbor calls \
-         collection hooks, `cladenc` runs each in the container once the harness has ended or \
+         collection hooks, `cladenc` runs each in the sandbox once the harness has ended or \
          was stopped, before it keeps any path, with the time limit that the entry gives as \
          `timeout_sec`, or 60 seconds where it gives none."
     ));

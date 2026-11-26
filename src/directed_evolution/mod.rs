@@ -13,11 +13,11 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
-use crate::containers::{self, ContainerError, Docker, Environment, Host, Launch, Outside};
 use crate::genealogy::HarnessId;
 use crate::holdout::TaskSet;
 use crate::journal::{self, Journal, Record, Settings, State};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{self, Docker, Environment, Host, Launch, Outside, SandboxError};
 
 use action::Told;
 use environments::Built;
@@ -51,7 +51,7 @@ struct Made<'a> {
 
 fn not_started(error: DirectedEvolutionError) -> DirectedEvolutionError {
     match error {
-        DirectedEvolutionError::Asked | DirectedEvolutionError::Image(ContainerError::Stopped) => {
+        DirectedEvolutionError::Asked | DirectedEvolutionError::Image(SandboxError::Stopped) => {
             DirectedEvolutionError::NotStarted
         }
         other => other,
@@ -150,7 +150,7 @@ fn build_image(
     };
     let image = &settings.docker_image;
     say(writer, &Said::BuildingImage { image, dockerfile });
-    match containers::build_image(host, dockerfile, image, time_limit, stop) {
+    match sandboxes::build_image(host, dockerfile, image, time_limit, stop) {
         Ok(()) => {
             say(
                 writer,
@@ -214,14 +214,9 @@ pub fn resume(
                 outputs_directory: &outputs_directory,
             };
             let removed =
-                containers::remove_left_behind(host).map_err(DirectedEvolutionError::Left)?;
+                sandboxes::remove_left_behind(host).map_err(DirectedEvolutionError::Left)?;
             if removed > 0 {
-                say(
-                    writer,
-                    &Said::Removed {
-                        containers: removed,
-                    },
-                );
+                say(writer, &Said::Removed { sandboxes: removed });
             }
             let key = settings
                 .model_key(files)
@@ -271,8 +266,8 @@ fn carry_on(
             docker,
             outputs_directory: &outputs_directory,
         };
-        containers::build_primogenitor(host, &launch, stop).map_err(|error| match error {
-            ContainerError::Stopped => DirectedEvolutionError::Asked,
+        sandboxes::build_primogenitor(host, &launch, stop).map_err(|error| match error {
+            SandboxError::Stopped => DirectedEvolutionError::Asked,
             error => {
                 progress.say(&Said::BuildFailed {
                     error: &error,
@@ -295,7 +290,7 @@ fn carry_on(
     thread::scope(|scope| {
         loop {
             while !progress.halted(stop)
-                && progress.running() < settings.max_concurrent_containers
+                && progress.running() < settings.max_concurrent_sandboxes
                 && let Some((action, again)) = progress.take()
             {
                 progress.hand_over(action, again, &shared, scope);

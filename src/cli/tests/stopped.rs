@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use crate::benchmark::ConfigurationError;
 use crate::cli;
-use crate::containers::ContainerError;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::journal::{JournalError, Started};
+use crate::sandboxes::SandboxError;
 
 const TASK: &str = "benchmark/t2";
 const IMAGE: &str = "parser:3";
@@ -27,7 +27,7 @@ fn a_directed_evolution_whose_journal_cannot_be_written_ends_with_status_one() {
 
 #[test]
 fn a_directed_evolution_whose_primogenitor_is_not_built_ends_with_status_one() {
-    let error = DirectedEvolutionError::Build(ContainerError::Exit(1));
+    let error = DirectedEvolutionError::Build(SandboxError::Exit(1));
     assert_eq!(cli::stopped(error).0, 1);
 }
 
@@ -38,7 +38,7 @@ fn a_directed_evolution_one_of_whose_actions_fails_ends_with_status_one() {
             harness: 3,
             task: "benchmark/t1".to_owned(),
         },
-        error: ContainerError::TimeLimit,
+        error: SandboxError::TimeLimit,
     };
     assert_eq!(cli::stopped(error).0, 1);
 }
@@ -56,7 +56,7 @@ fn a_directed_evolution_whose_key_cannot_be_read_ends_with_status_two() {
 
 #[test]
 fn a_directed_evolution_whose_image_is_not_built_ends_with_status_two() {
-    let error = DirectedEvolutionError::Image(ContainerError::Exit(1));
+    let error = DirectedEvolutionError::Image(SandboxError::Exit(1));
     assert_eq!(cli::stopped(error).0, 2);
 }
 
@@ -94,7 +94,7 @@ fn a_directed_evolution_with_a_task_that_asks_for_more_than_the_machine_has_ends
 fn a_directed_evolution_with_an_environment_that_is_not_built_ends_with_status_two() {
     let error = DirectedEvolutionError::Environment {
         task: TASK.to_owned(),
-        error: ContainerError::Exit(1),
+        error: SandboxError::Exit(1),
     };
     assert_eq!(cli::stopped(error).0, 2);
 }
@@ -113,7 +113,7 @@ fn a_directed_evolution_with_a_verifier_whose_image_is_not_on_the_machine_ends_w
 fn a_directed_evolution_with_a_verifier_whose_environment_is_not_built_ends_with_status_two() {
     let error = DirectedEvolutionError::VerifierEnvironment {
         task: TASK.to_owned(),
-        error: ContainerError::Exit(1),
+        error: SandboxError::Exit(1),
     };
     assert_eq!(cli::stopped(error).0, 2);
 }

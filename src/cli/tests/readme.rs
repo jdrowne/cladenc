@@ -330,7 +330,7 @@ fn the_readme_names_no_budget() {
 }
 
 #[test]
-fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
+fn the_readme_names_no_directory_at_the_top_of_the_filesystem_of_a_sandbox() {
     assert_eq!(
         ["`/harness`", "`/work`", "`/task`", "`/trials`"]
             .into_iter()
@@ -454,10 +454,10 @@ fn the_steps_of_cladenc_start_end_with_what_it_prints() {
 }
 
 #[test]
-fn the_steps_of_cladenc_start_build_the_environment_of_every_task_before_any_container() {
+fn the_steps_of_cladenc_start_build_the_environment_of_every_task_before_any_sandbox() {
     assert!(what_is_said_of("start").contains(
         "\n4. It builds the environment of every task of every benchmark, before it brings up any \
-         container: "
+         sandbox: "
     ));
 }
 
@@ -509,7 +509,7 @@ fn the_section_of_cladenc_start_says_what_of_a_task_toml_takes_the_place_of_what
 #[test]
 fn the_section_of_cladenc_start_says_who_is_given_the_variables_of_a_task_toml() {
     assert!(what_is_said_of("start").contains(
-        "The variables under `env` under `environment` are given to the container, so to the \
+        "The variables under `env` under `environment` are given to the sandbox, so to the \
          harness and the verifier alike, and those under `env` under `verifier` to the verifier \
          alone."
     ));
@@ -555,7 +555,7 @@ fn the_section_of_cladenc_start_says_what_time_limit_the_build_of_an_environment
 #[test]
 fn the_section_of_cladenc_start_says_that_a_trial_is_given_no_more_than_its_task_asks_for() {
     assert!(what_is_said_of("start").contains(
-        "The container of a trial is given no more CPUs and no more memory than the task's \
+        "The sandbox of a trial is given no more CPUs and no more memory than the task's \
          `task.toml` asks for, as `cpus` and `memory_mb` under `environment`, and a task that \
          asks for more of either than Docker has stops the directed evolution with exit status 2."
     ));
@@ -566,13 +566,13 @@ fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_wa
     assert!(readme().contains(
         "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
          TPU, Windows, MCP servers, a skills directory, a path or a command of a container \
-         other than that of the harness, or the whole container of the harness in a \
-         verifier container."
+         other than that of the harness, or the whole sandbox of the harness in a \
+         verifier sandbox."
     ));
 }
 
 #[test]
-fn the_flag_of_the_image_says_which_containers_are_started_from_the_image() {
+fn the_flag_of_the_image_says_which_sandboxes_are_started_from_the_image() {
     assert!(readme().contains(
         "| `--diversification-docker-image <IMAGE>` | Not Required | The Docker image every \
          diversification and every build of a harness is carried out in. No trial is carried out \
@@ -637,10 +637,10 @@ fn the_steps_of_cladenc_start_say_when_and_where_the_paths_under_artifacts_are_k
 }
 
 #[test]
-fn the_steps_of_cladenc_start_say_what_a_path_that_is_not_in_the_container_keeps() {
+fn the_steps_of_cladenc_start_say_what_a_path_that_is_not_in_the_sandbox_keeps() {
     assert!(
         what_is_said_of("start")
-            .contains("A path that is not in the container keeps nothing, and the trial goes on.")
+            .contains("A path that is not in the sandbox keeps nothing, and the trial goes on.")
     );
 }
 
@@ -648,7 +648,7 @@ fn the_steps_of_cladenc_start_say_what_a_path_that_is_not_in_the_container_keeps
 fn the_steps_of_cladenc_start_say_when_the_health_check_of_a_task_is_run() {
     assert!(what_is_said_of("start").contains(
         "Where the task's `task.toml` gives a health check, as `command` under \
-         `environment.healthcheck`, `cladenc` runs that command in the container before it \
+         `environment.healthcheck`, `cladenc` runs that command in the sandbox before it \
          copies the harness in, and runs it again after each failure, as the settings beside \
          the command say. The harness is started once the command has exited with status 0."
     ));
@@ -658,8 +658,8 @@ fn the_steps_of_cladenc_start_say_when_the_health_check_of_a_task_is_run() {
 fn the_steps_of_cladenc_start_say_that_a_health_check_that_does_not_pass_is_tried_again() {
     assert!(what_is_said_of("start").contains(
         "Where the health check does not pass, the harness was never started, so `cladenc` does \
-         not record that the harness did not complete the task: it removes the container, \
-         waits, brings up a new container of the task and runs the health check there again, as \
+         not record that the harness did not complete the task: it removes the sandbox, \
+         waits, brings up a new sandbox of the task and runs the health check there again, as \
          many times as `--max-task-health-check-retries` gives."
     ));
 }
@@ -677,7 +677,7 @@ fn the_steps_of_cladenc_start_say_how_long_cladenc_waits_before_a_retry_of_a_tas
 fn the_steps_of_cladenc_start_say_that_a_task_that_is_never_ready_stops_the_directed_evolution() {
     assert!(what_is_said_of("start").contains(
         "the task gives none, and twice as long before each retry after that, and says each \
-         retry on standard error. Where the health check passes in no container, the directed \
+         retry on standard error. Where the health check passes in no sandbox, the directed \
          evolution stops with exit status 1 and no result is recorded for the trial: \
          `cladenc` names the harness, the task, the number of tries and the directory that \
          holds what the health check printed the last time it ran, and `cladenc resume` \
@@ -693,12 +693,12 @@ fn the_readme_names_no_trial_whose_harness_was_not_started() {
 #[test]
 fn the_flag_of_the_most_retries_of_a_task_says_all_that_a_retry_is() {
     assert!(readme().contains(
-        "| `--max-task-health-check-retries <COUNT>` | Required | The most times the container \
+        "| `--max-task-health-check-retries <COUNT>` | Required | The most times the sandbox \
          of a task is brought up again, where its health check does not pass, 0 or more. It \
          counts for a task whose `task.toml` gives a health check. Each retry is a new \
-         container, and `cladenc` waits before it: the `interval_sec` of the health check \
+         sandbox, and `cladenc` waits before it: the `interval_sec` of the health check \
          before the first retry, and twice as long before each retry after that. Where the \
-         health check passes in no container, the directed evolution stops and no result is \
+         health check passes in no sandbox, the directed evolution stops and no result is \
          recorded for the trial. |\n"
     ));
 }
@@ -826,4 +826,15 @@ fn the_steps_of_cladenc_start_say_that_the_primogenitor_is_given_the_diversifica
 #[test]
 fn the_readme_names_no_growth() {
     assert!(!readme().contains("growth"));
+}
+
+#[test]
+fn the_first_paragraph_says_that_a_sandbox_of_cladenc_is_a_docker_container() {
+    assert!(readme().split("\n\n").nth(1).is_some_and(|first| {
+        first.contains(
+            "Every harness and every verifier runs in a sandbox, which is Harbor's word for the \
+             isolated place a task is run in, and every sandbox of `cladenc` is a Docker \
+             container.",
+        )
+    }));
 }

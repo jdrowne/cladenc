@@ -30,7 +30,7 @@ fn the_manual_of_start_says_what_a_task_that_lists_logs_artifacts_itself_gets() 
 fn the_manual_of_start_says_when_the_commands_under_collect_are_run() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the task.toml of a task lists commands under verifier.collect, which Harbor calls \
-         collection hooks, cladenc runs each in the container of the harness once the harness has \
+         collection hooks, cladenc runs each in the sandbox of the harness once the harness has \
          ended or was stopped, before it keeps any path, in the order the task lists them."
     ));
 }
@@ -71,7 +71,7 @@ fn the_manual_of_start_says_where_what_a_command_under_collect_printed_is_kept()
 #[test]
 fn the_manual_of_start_names_the_commands_under_collect_among_what_cladenc_obeys() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "collect under verifier commands that are run in the container once the harness has ended, \
+        "collect under verifier commands that are run in the sandbox once the harness has ended, \
          before the paths under artifacts are kept"
     ));
 }

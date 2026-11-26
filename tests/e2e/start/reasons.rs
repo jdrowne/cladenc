@@ -14,7 +14,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-diversifications", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
+        ("--max-concurrent-sandboxes", "1".into()),
         ("--diversification-timeout", "60".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),

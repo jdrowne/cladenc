@@ -1,9 +1,9 @@
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const BUILD: [&str; 2] = ["run", "make"];
 const BUILD_OF_THE_CHILD: [&str; 2] = ["make", "builds/1"];
@@ -37,7 +37,7 @@ fn a_primogenitor_that_is_built_trials_every_task() {
 fn a_primogenitor_whose_build_fails_ends_the_directed_evolution_with_the_cause() {
     assert!(matches!(
         not_built().result,
-        Err(DirectedEvolutionError::Build(ContainerError::Exit(1)))
+        Err(DirectedEvolutionError::Build(SandboxError::Exit(1)))
     ));
 }
 

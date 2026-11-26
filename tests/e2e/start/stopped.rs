@@ -7,7 +7,7 @@ use nix::unistd::Pid;
 
 use crate::shared::STOPPED;
 
-const SAY_THE_CONTAINER_AND_STAY: &str = "hostname; sleep 300";
+const SAY_THE_SANDBOX_AND_STAY: &str = "hostname; sleep 300";
 
 fn start(directory: &Path, run_command: &str) -> Command {
     let options = [
@@ -22,7 +22,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-diversifications", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
+        ("--max-concurrent-sandboxes", "1".into()),
         ("--diversification-timeout", "60".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
@@ -40,7 +40,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
 
 fn signalled(signal: Signal) -> ExitStatus {
     let directory = test_inputs::temporary_directory();
-    let mut cladenc = start(directory.path(), SAY_THE_CONTAINER_AND_STAY)
+    let mut cladenc = start(directory.path(), SAY_THE_SANDBOX_AND_STAY)
         .spawn()
         .unwrap();
     let id_file = directory
@@ -72,6 +72,6 @@ fn a_quit_during_a_run_gives_exit_status_1() {
 }
 
 #[test]
-fn a_container_that_docker_does_not_start_gives_exit_status_1() {
+fn a_sandbox_that_docker_does_not_start_gives_exit_status_1() {
     assert_eq!(STOPPED.1.status.code(), Some(1));
 }

@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::containers::tests::double::Double;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
+use crate::sandboxes::tests::double::Double;
 
 const IMAGES_REMOVED: &str = "docker image rm --force \
                               cladenc-environments-0123456789abcdef:0-verifier \
@@ -63,7 +63,7 @@ fn the_best_harness_is_found_among_the_harnesses_of_the_outputs_directory() {
 }
 
 #[test]
-fn the_primogenitor_trials_each_task_in_a_container_of_its_own() {
+fn the_primogenitor_trials_each_task_in_a_sandbox_of_its_own() {
     assert_eq!(evolved().count_of("--detach"), 2);
 }
 

@@ -1,9 +1,9 @@
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Settings};
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const IMAGE_BUILT: &str = "timeout -s KILL 35 docker build --tag debian:stable-slim --file \
                            OUTPUTS/image/Dockerfile OUTPUTS/image/context";
@@ -48,7 +48,7 @@ fn a_directed_evolution_given_no_dockerfile_builds_no_image_of_its_harnesses() {
 fn an_image_whose_build_fails_ends_the_directed_evolution_with_the_cause() {
     assert!(matches!(
         not_built().result,
-        Err(DirectedEvolutionError::Image(ContainerError::Exit(2)))
+        Err(DirectedEvolutionError::Image(SandboxError::Exit(2)))
     ));
 }
 
@@ -73,7 +73,7 @@ fn a_directed_evolution_that_is_stopped_while_its_image_is_built_has_not_started
 }
 
 #[test]
-fn the_container_of_a_diversification_is_started_from_the_image_that_was_built() {
+fn the_sandbox_of_a_diversification_is_started_from_the_image_that_was_built() {
     let evolved = given::started(Double::default(), with_a_dockerfile_of_an_image_of_its_own);
     let built = evolved.count_of(" docker build --tag an-image:built --file ");
     let started_from = evolved.count_of(" an-image:built sh -c ");
@@ -86,15 +86,15 @@ fn the_image_is_built_once_and_the_environment_of_each_task_once() {
 }
 
 #[test]
-fn every_container_is_told_never_to_fetch_the_image_that_was_built() {
+fn every_sandbox_is_told_never_to_fetch_the_image_that_was_built() {
     let commands = imaged_by(Double::default()).commands();
-    let containers = commands
+    let sandboxes = commands
         .iter()
         .filter(|command| command.starts_with("docker run "));
     let told_never = commands
         .iter()
         .filter(|command| command.starts_with("docker run --rm --pull never "));
-    assert_eq!((containers.count(), told_never.count()), (3, 3));
+    assert_eq!((sandboxes.count(), told_never.count()), (3, 3));
 }
 
 fn stopped_at_a_trial() -> Evolved {

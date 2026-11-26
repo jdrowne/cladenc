@@ -23,7 +23,7 @@ fn settings(directory: &Path, build_command: &str) -> Settings {
         harness_build_command: Some(build_command.to_owned()),
         harness_run_command: test_inputs::SOLVE_ONE_MORE.to_owned(),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -53,9 +53,9 @@ fn stopped_while_its_primogenitor_is_built() -> TempDir {
 }
 
 #[test]
-fn a_directed_evolution_asked_to_stop_while_its_primogenitor_is_built_leaves_no_container_behind() {
+fn a_directed_evolution_asked_to_stop_while_its_primogenitor_is_built_leaves_no_sandbox_behind() {
     let directory = stopped_while_its_primogenitor_is_built();
-    assert!(test_inputs::container_is_gone(
+    assert!(test_inputs::sandbox_is_gone(
         &directory.path().join("outputs/harnesses/0/id")
     ));
 }

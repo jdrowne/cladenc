@@ -1,7 +1,7 @@
 use std::fs;
 use std::process::Command;
 
-use test_inputs::{IMAGE, dockerfile, image, printed_in_a_container_of, temporary_directory};
+use test_inputs::{IMAGE, dockerfile, image, printed_in_a_sandbox_of, temporary_directory};
 
 #[test]
 fn a_dockerfile_is_the_file_named_dockerfile_in_the_directory() {
@@ -41,7 +41,7 @@ fn an_image_built_from_a_dockerfile_holds_what_the_steps_made() {
         .output()
         .expect("docker can be called");
     assert_eq!(
-        printed_in_a_container_of(&built.name, "ls /made-here"),
+        printed_in_a_sandbox_of(&built.name, "ls /made-here"),
         "/made-here\n"
     );
 }

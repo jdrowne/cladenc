@@ -2,11 +2,11 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 use crate::benchmark::Benchmark;
-use crate::containers::tests::double::Double;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Record, Settings};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::tests::double::Double;
 
 pub(super) struct Evolved {
     directory: Memory,
@@ -108,7 +108,7 @@ pub(super) fn settings(directory: &Memory) -> Settings {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,

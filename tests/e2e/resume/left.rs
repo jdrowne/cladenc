@@ -8,7 +8,7 @@ use nix::sys::signal::{Signal, kill};
 use nix::unistd::Pid;
 use tempfile::TempDir;
 
-const SAY_THE_CONTAINER_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
+const SAY_THE_SANDBOX_AND_STAY_IF_HELD: &str = "[ -e hold ] || exit 0; hostname; sleep 300";
 
 struct Left {
     directory: TempDir,
@@ -29,7 +29,7 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--harness-run-command", run_command.into()),
         ("--outputs-dir", directory.join("outputs")),
         ("--max-diversifications", "1".into()),
-        ("--max-concurrent-containers", "1".into()),
+        ("--max-concurrent-sandboxes", "1".into()),
         ("--diversification-timeout", "600".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
@@ -56,7 +56,7 @@ fn resume(outputs_directory: &Path) -> Command {
 
 fn killed_outright() -> Left {
     let directory = test_inputs::temporary_directory();
-    let mut start = start(directory.path(), SAY_THE_CONTAINER_AND_STAY_IF_HELD);
+    let mut start = start(directory.path(), SAY_THE_SANDBOX_AND_STAY_IF_HELD);
     fs::write(
         directory
             .path()
@@ -70,7 +70,7 @@ fn killed_outright() -> Left {
     test_inputs::wait_for_a_line(&mut cladenc, &written, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGKILL).unwrap();
     let status = cladenc.wait().unwrap();
-    let id_file = directory.path().join("id-of-the-container-left");
+    let id_file = directory.path().join("id-of-the-sandbox-left");
     fs::copy(&written, &id_file).unwrap();
     fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
     Left {
@@ -111,9 +111,9 @@ fn a_cladenc_that_is_killed_outright_during_a_run_is_ended_by_the_signal() {
 }
 
 #[test]
-fn resume_removes_the_container_that_a_cladenc_killed_outright_left_running() {
+fn resume_removes_the_sandbox_that_a_cladenc_killed_outright_left_running() {
     let (left, _output) = &*RESUMED_AFTER_BEING_KILLED_OUTRIGHT;
-    assert!(test_inputs::container_is_gone(&left.id_file));
+    assert!(test_inputs::sandbox_is_gone(&left.id_file));
 }
 
 #[test]

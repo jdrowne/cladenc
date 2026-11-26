@@ -6,8 +6,8 @@ use std::time::Duration;
 use super::DirectedEvolutionError;
 use super::said::{Environments, Said, say};
 use crate::benchmark::{self, EnvironmentConfiguration, TaskConfiguration};
-use crate::containers::{self, ContainerError, Docker, Environment, Host, Machine, VerifierImage};
 use crate::journal::Settings;
+use crate::sandboxes::{self, Docker, Environment, Host, Machine, SandboxError, VerifierImage};
 
 const OF_THE_VERIFIER: &str = "-verifier";
 const OF_THE_TASK: [&str; 2] = ["cpus", "memory_mb"];
@@ -36,7 +36,7 @@ impl<'a> Built<'a> {
 
 impl Drop for Built<'_> {
     fn drop(&mut self) {
-        containers::remove_images(self.docker, &self.images);
+        sandboxes::remove_images(self.docker, &self.images);
     }
 }
 
@@ -133,7 +133,7 @@ impl Making<'_> {
         let machine = match self.machine {
             Some(machine) => machine,
             None => *self.machine.insert(
-                containers::machine(self.host.docker).map_err(DirectedEvolutionError::Machine)?,
+                sandboxes::machine(self.host.docker).map_err(DirectedEvolutionError::Machine)?,
             ),
         };
         let has = [machine.cpus, machine.memory_megabytes as f64];
@@ -175,7 +175,7 @@ impl Making<'_> {
         };
         say(self.writer, &Said::Environments(taking));
         let task = task.to_owned();
-        match (containers::find_image(self.host.docker, &image), whose) {
+        match (sandboxes::find_image(self.host.docker, &image), whose) {
             (Ok(()), _) => Ok(image),
             (Err(error), Whose::TheTask) => {
                 Err(DirectedEvolutionError::NotOnTheMachine { task, image, error })
@@ -207,15 +207,15 @@ impl Making<'_> {
         let host = self.host;
         let built = match whose {
             Whose::TheTask => {
-                containers::build_environment(host, task, &image, time_limit, self.stop)
+                sandboxes::build_environment(host, task, &image, time_limit, self.stop)
             }
             Whose::TheVerifier => {
-                containers::build_verifier_environment(host, task, &image, time_limit, self.stop)
+                sandboxes::build_verifier_environment(host, task, &image, time_limit, self.stop)
             }
         };
         match built {
             Ok(()) => Ok(image),
-            Err(ContainerError::Stopped) => Err(DirectedEvolutionError::Asked),
+            Err(SandboxError::Stopped) => Err(DirectedEvolutionError::Asked),
             Err(error) => Err(self.not_built(whose, task, error)),
         }
     }
@@ -224,7 +224,7 @@ impl Making<'_> {
         &mut self,
         whose: Whose,
         task: &str,
-        error: ContainerError,
+        error: SandboxError,
     ) -> DirectedEvolutionError {
         let outputs_directory = self.host.outputs_directory;
         let not_built = match whose {

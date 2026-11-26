@@ -1,8 +1,8 @@
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::Settings;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const REFUSED: Answer = Answer::Refused("docker is not there");
 
@@ -42,26 +42,26 @@ fn a_trial_that_had_not_ended_is_started_again() {
 }
 
 #[test]
-fn the_containers_that_were_left_running_are_removed() {
+fn the_sandboxes_that_were_left_running_are_removed() {
     let docker = Double::default().answering(&["ps"], &[Answer::Printed("a\nb\n")]);
     assert_eq!(resumed_by(docker).count_of("docker rm --force a b"), 1);
 }
 
 #[test]
-fn the_containers_that_were_removed_are_told() {
+fn the_sandboxes_that_were_removed_are_told() {
     let docker = Double::default().answering(&["ps"], &[Answer::Printed("a\nb\n")]);
     let said = resumed_by(docker).said;
-    assert!(said.contains("removed 2 containers that the directed evolution left running"));
+    assert!(said.contains("removed 2 sandboxes that the directed evolution left running"));
 }
 
 #[test]
-fn nothing_is_told_of_containers_where_none_was_left_running() {
+fn nothing_is_told_of_sandboxes_where_none_was_left_running() {
     let said = resumed_by(Double::default()).said;
     assert!(!said.contains("removed"));
 }
 
 #[test]
-fn a_directed_evolution_whose_containers_cannot_be_listed_is_not_resumed() {
+fn a_directed_evolution_whose_sandboxes_cannot_be_listed_is_not_resumed() {
     let docker = Double::default().answering(&["ps"], &[REFUSED]);
     assert!(matches!(
         resumed_by(docker).result,
@@ -94,7 +94,7 @@ fn a_directed_evolution_whose_environments_cannot_be_built_again_is_not_resumed(
 }
 
 #[test]
-fn a_resume_first_asks_docker_for_the_containers_that_carry_the_label_of_its_directed_evolution() {
+fn a_resume_first_asks_docker_for_the_sandboxes_that_carry_the_label_of_its_directed_evolution() {
     let commands = resumed_by(Double::default()).commands();
     assert_eq!(
         commands.first().map(String::as_str),

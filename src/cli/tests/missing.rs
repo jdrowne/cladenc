@@ -11,7 +11,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-diversifications", "800"),
-    ("--max-concurrent-containers", "8"),
+    ("--max-concurrent-sandboxes", "8"),
     ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
@@ -105,9 +105,9 @@ fn leaving_out_the_most_diversifications_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_limit_of_concurrent_containers_is_an_error() {
+fn leaving_out_the_limit_of_concurrent_sandboxes_is_an_error() {
     assert_eq!(
-        refusal_without("--max-concurrent-containers"),
+        refusal_without("--max-concurrent-sandboxes"),
         ErrorKind::MissingRequiredArgument
     );
 }

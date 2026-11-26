@@ -1,11 +1,11 @@
 use crate::benchmark::Benchmark;
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{Record, Settings, Started};
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const A_BASELINE: [&str; 2] = ["run a harness", "baseline-3"];
 const THE_BASELINE: &str = "the creation of harness 3, the singleton control group harness, by \
@@ -133,7 +133,7 @@ fn a_directed_evolution_says_last_how_many_harnesses_it_holds_with_the_singleton
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_a_baseline_stops_the_directed_evolution() {
+fn a_sandbox_that_ends_with_status_125_at_a_baseline_stops_the_directed_evolution() {
     assert!(matches!(
         stopped_at_its_baseline().result,
         Err(DirectedEvolutionError::Action {
@@ -142,7 +142,7 @@ fn a_container_that_ends_with_status_125_at_a_baseline_stops_the_directed_evolut
                 child: 2,
                 progenitor: 1
             },
-            error: ContainerError::Docker(_),
+            error: SandboxError::Docker(_),
         })
     ));
 }

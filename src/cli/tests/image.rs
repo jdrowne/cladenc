@@ -12,7 +12,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-diversifications", "800"),
-    ("--max-concurrent-containers", "8"),
+    ("--max-concurrent-sandboxes", "8"),
     ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),

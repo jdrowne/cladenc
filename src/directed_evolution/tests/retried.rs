@@ -1,9 +1,9 @@
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{Settings, Started};
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const CHECKED: &str = "[environment.healthcheck]\ncommand = \"test -e /ready\"\ninterval_sec = \
                        0.0\nretries = 1\n";
@@ -35,7 +35,7 @@ fn a_task_that_is_brought_up_again_is_told_with_the_number_of_the_retry() {
 }
 
 #[test]
-fn a_task_that_is_brought_up_again_gets_a_new_container() {
+fn a_task_that_is_brought_up_again_gets_a_new_sandbox() {
     assert_eq!(brought_up_again().count_of("--detach"), 3);
 }
 
@@ -80,7 +80,7 @@ fn a_task_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_and_
         never_ready().result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
-            error: ContainerError::TaskHealthCheck { tries: 2, .. },
+            error: SandboxError::TaskHealthCheck { tries: 2, .. },
         }) if task == "benchmark/t1"
     ));
 }
@@ -128,7 +128,7 @@ fn a_verifier_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_
         with_a_verifier_that_is_never_ready().result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
-            error: ContainerError::VerifierHealthCheck { tries: 2, .. },
+            error: SandboxError::VerifierHealthCheck { tries: 2, .. },
         }) if task == "benchmark/t1"
     ));
 }
@@ -138,8 +138,8 @@ fn a_verifier_that_is_brought_up_again_for_its_health_check_is_told_with_the_num
     let said = with_a_verifier_that_is_never_ready().said;
     assert!(said.contains(
         "cladenc: the trial of harness 0 on task benchmark/t1 is not verified yet: the health \
-         check of its verifier container did not pass, and cladenc tries again in a new \
-         container after 0 seconds, retry 1 of 1\n"
+         check of its verifier sandbox did not pass, and cladenc tries again in a new \
+         sandbox after 0 seconds, retry 1 of 1\n"
     ));
 }
 
@@ -148,7 +148,7 @@ fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_che
     let evolved = with_a_verifier_that_is_never_ready();
     assert!(evolved.said.contains(&format!(
         "cladenc: the trial of harness 0 on task benchmark/t1 was not verified: the health \
-         check of its verifier container did not pass in 2 tries, so the verifier was not \
+         check of its verifier sandbox did not pass in 2 tries, so the verifier was not \
          run, and {} holds what the health check printed the last time it ran\n",
         evolved
             .outputs()

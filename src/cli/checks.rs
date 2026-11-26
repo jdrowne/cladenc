@@ -84,7 +84,7 @@ impl StartOptions {
             corroboration_tasks_percentage: self.corroboration_tasks_percentage,
             corroboration_tasks: drawn.corroboration_tasks,
             max_diversifications: self.max_diversifications,
-            max_concurrent_containers: self.max_concurrent_containers,
+            max_concurrent_sandboxes: self.max_concurrent_sandboxes,
             diversification_timeout: self.diversification_timeout,
             max_verifier_health_check_retries: self.max_verifier_health_check_retries,
             max_task_health_check_retries: self.max_task_health_check_retries,

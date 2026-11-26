@@ -1,7 +1,6 @@
 mod artificial_selection;
 pub mod benchmark;
 pub mod cli;
-pub mod containers;
 pub mod directed_evolution;
 pub mod file_system;
 pub mod genealogy;
@@ -10,3 +9,4 @@ pub mod journal;
 pub mod model;
 pub mod outputs_directory;
 pub mod report;
+pub mod sandboxes;

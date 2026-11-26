@@ -14,7 +14,7 @@ use crate::file_system::FileSystem;
 pub(super) const CONFIGURATION: &str = "task.toml";
 const VERIFIER: &str = "verifier";
 const SEPARATE: &str = "separate";
-const EVERYTHING: &str = "the whole container of the harness in the verifier container";
+const EVERYTHING: &str = "the whole sandbox of the harness in the verifier sandbox";
 const TIME_LIMIT_LEFT_OUT: Duration = Duration::from_secs(600);
 const COLLECT_TIME_LIMIT: Duration = Duration::from_secs(60);
 const ELSEWHERE: &str = "a command in a container other than that of the harness";
@@ -229,7 +229,7 @@ impl Display for ConfigurationError {
             Self::NotOneLine { table, name } => write!(
                 formatter,
                 "gives {name} under {table}.env a value that is not one line of text, which a \
-                 container cannot be given"
+                 sandbox cannot be given"
             ),
             Self::NotATimeLimit { key } => write!(
                 formatter,

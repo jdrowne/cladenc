@@ -15,7 +15,7 @@ has ended, and nothing else there.
 It says on standard error what it is doing.
 It is stopped in the way \fBcladenc start\fP is, and then prints no report.
 .PP
-Before it does anything else, it removes the containers that the directed
+Before it does anything else, it removes the sandboxes that the directed
 evolution left running, and then builds the environment of every task again.
 It then starts again each diversification, that of an experiment among them,
 and each trial that was under way when the directed evolution stopped, and
@@ -28,15 +28,15 @@ Print help.
 .TP
 \fB\-\-outputs\-dir\fP <DIR>
 The outputs directory of the directed evolution to continue.
-.SH CONTAINERS LEFT RUNNING
+.SH SANDBOXES LEFT RUNNING
 A cladenc that is killed outright, as by \fBkill \-9\fP, ends none of its
-containers, and each goes on until its time limit has passed.
-Before it does anything else, \fBcladenc resume\fP removes the containers that
+sandboxes, and each goes on until its time limit has passed.
+Before it does anything else, \fBcladenc resume\fP removes the sandboxes that
 the directed evolution left running, so that it never works beside one of
 them.
 .PP
-Every container of a directed evolution carries a Docker label, a name and a
-value that Docker keeps with a container:
+Every sandbox of a directed evolution is a Docker container, and carries a
+Docker label, a name and a value that Docker keeps with a container:
 .PP
 .RS 4
 .EX
@@ -47,11 +47,11 @@ cladenc.directed\-evolution=<DIR>
 where <DIR> is the path of the outputs directory, with every symbolic link in
 it resolved.
 Once it has the outputs directory to itself, \fBcladenc resume\fP asks Docker
-for the containers that carry the label of its directed evolution, removes
+for the sandboxes that carry the label of its directed evolution, removes
 them, and says how many it removed.
 Where Docker cannot be asked, it exits with status 2 and continues nothing.
 .PP
-Where the directed evolution is not resumed, its containers are removed by
+Where the directed evolution is not resumed, its sandboxes are removed by
 hand.
 .PP
 .RS 4
@@ -61,13 +61,13 @@ docker ps \-\-filter label=cladenc.directed\-evolution=<DIR>
 .RE
 .PP
 lists them, their names begin cladenc\-, and \fBdocker kill\fP with a name
-ends that container.
-Docker removes a container of cladenc once it has ended.
+ends that sandbox.
+Docker removes a sandbox of cladenc once it has ended.
 .SH ENVIRONMENTS
-Once the containers are removed, \fBcladenc resume\fP builds the environment
+Once the sandboxes are removed, \fBcladenc resume\fP builds the environment
 of every task again, from the copy of the task in the outputs directory and
 under the name it was given when the directed evolution was started, before it
-brings up any container.
+brings up any sandbox.
 The image that the Dockerfile of each task starts from has to be on the
 machine: Docker fetches one that is not, from the registry of its name.
 A task whose environment is not built stops \fBcladenc resume\fP with exit

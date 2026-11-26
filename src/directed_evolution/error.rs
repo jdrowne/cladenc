@@ -4,8 +4,8 @@ use std::io;
 use std::path::PathBuf;
 
 use crate::benchmark::ConfigurationError;
-use crate::containers::ContainerError;
 use crate::journal::{JournalError, Started};
+use crate::sandboxes::SandboxError;
 
 #[derive(Debug)]
 pub enum DirectedEvolutionError {
@@ -13,7 +13,7 @@ pub enum DirectedEvolutionError {
     Unusable(JournalError),
     Key(PathBuf),
     Left(io::Error),
-    Image(ContainerError),
+    Image(SandboxError),
     Configuration {
         task: String,
         error: ConfigurationError,
@@ -32,7 +32,7 @@ pub enum DirectedEvolutionError {
     },
     Environment {
         task: String,
-        error: ContainerError,
+        error: SandboxError,
     },
     VerifierNotOnTheMachine {
         task: String,
@@ -41,15 +41,15 @@ pub enum DirectedEvolutionError {
     },
     VerifierEnvironment {
         task: String,
-        error: ContainerError,
+        error: SandboxError,
     },
     Journal(JournalError),
     NotStarted,
     Asked,
-    Build(ContainerError),
+    Build(SandboxError),
     Action {
         action: Started,
-        error: ContainerError,
+        error: SandboxError,
     },
 }
 
@@ -68,7 +68,7 @@ impl Display for DirectedEvolutionError {
             ),
             Self::Left(error) => write!(
                 formatter,
-                "the containers that the directed evolution left running cannot be removed: {error}"
+                "the sandboxes that the directed evolution left running cannot be removed: {error}"
             ),
             Self::Image(error) => write!(
                 formatter,

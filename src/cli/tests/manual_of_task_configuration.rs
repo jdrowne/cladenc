@@ -14,7 +14,7 @@ fn the_manual_of_start_names_each_setting_of_a_task_toml_that_cladenc_obeys() {
     let settings = [
         "docker_image under environment the image that is the environment, in",
         "workdir under environment the working directory of the harness",
-        "env under environment variables that the container is given,",
+        "env under environment variables that the sandbox is given,",
         "user under agent the user the harness runs as, a name or",
         "user under verifier the user the verifier runs as, in the",
         "env under verifier variables that the verifier alone is",
@@ -36,8 +36,8 @@ fn the_manual_of_start_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_g
          several steps, as [[steps]]; a GPU, as gpus under environment above 0, or a TPU, as tpu; \
          Windows, as os; MCP servers, as mcp_servers; a skills directory, as skills_dir; a path or \
          a command of a container other than that of the harness, as service of an entry under \
-         artifacts or under verifier.collect that is not main; or the whole container of the \
-         harness in the verifier container, as an entry under artifacts whose path names no \
+         artifacts or under verifier.collect that is not main; or the whole sandbox of the \
+         harness in the verifier sandbox, as an entry under artifacts whose path names no \
          file or directory, where the verifier runs separately. The refusal names the task and \
          what it asks for."
     ));
@@ -52,7 +52,7 @@ fn the_manual_of_start_says_that_a_setting_that_is_left_out_changes_nothing() {
 }
 
 #[test]
-fn the_manual_of_start_says_to_whom_what_cladenc_copies_into_the_container_belongs() {
+fn the_manual_of_start_says_to_whom_what_cladenc_copies_into_the_sandbox_belongs() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The source code of the harness and /logs/artifacts belong to the user the harness runs \
          as, and the copy of the tests directory and /logs/verifier belong to the user the \
@@ -228,16 +228,16 @@ fn the_manual_of_start_says_that_no_flag_gives_a_time_limit_of_a_trial() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_container_with_no_time_limit_does_not_end_itself() {
+fn the_manual_of_start_says_that_a_sandbox_with_no_time_limit_does_not_end_itself() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where a task gives its harness no time limit, the container of a trial does not end \
+        "Where a task gives its harness no time limit, the sandbox of a trial does not end \
          itself: a cladenc that was killed outright leaves it running until cladenc resume removes \
          it, or a person does."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_how_long_the_container_of_a_trial_sleeps() {
+fn the_manual_of_start_says_how_long_the_sandbox_of_a_trial_sleeps() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "<SECONDS> the time limit of the harness and the time limit of the verifier together, the \
          longest the health check of the task can take, and ten minutes more, for what cladenc \
@@ -263,8 +263,8 @@ fn the_manual_of_start_says_that_a_trial_keeps_whether_its_harness_was_stopped()
 fn the_manual_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc_obeys() {
     let help = manual_on_one_line("cladenc-start");
     let settings = [
-        "cpus under environment the most CPUs the container of a",
-        "memory_mb under environment the most memory that container is",
+        "cpus under environment the most CPUs the sandbox of a",
+        "memory_mb under environment the most memory that sandbox is",
     ];
     assert!(settings.iter().all(|line| help.contains(line)));
 }
@@ -272,7 +272,7 @@ fn the_manual_of_start_names_the_cpus_and_the_memory_of_a_task_toml_that_cladenc
 #[test]
 fn the_manual_of_start_says_that_a_trial_is_given_no_more_than_its_task_asks_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The container of a trial is given no more CPUs and no more memory than its task asks \
+        "The sandbox of a trial is given no more CPUs and no more memory than its task asks \
          for, as --cpus and --memory of docker run, so the harness and the verifier have them \
          between them."
     ));

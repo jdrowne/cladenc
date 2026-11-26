@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: a00ea0c7-d6bd-4711-a4cb-3f7fb2827078
-  modified: 2026-11-15T15:40:19.165Z
+  modified: 2026-11-26T03:55:37.000Z
 ---
 
 # cladenc takes a primogenitor and a model
@@ -18,8 +18,8 @@ metadata:
 
 What `cladenc` does with them:
 
-- It starts every harness itself, in a Docker container. `cladenc` knows about Docker, and Docker is a dependency of the `.deb` package.
-- How a harness is built and run is given in plain flags: `--diversification-docker-image` for the image the containers that make harnesses start from, `--harness-run-command` for how a harness is run, and a flag for how one is built, which is given only where a harness has to be built.
+- It starts every harness itself, in a sandbox, which is a Docker container. `cladenc` knows about Docker, and Docker is a dependency of the `.deb` package.
+- How a harness is built and run is given in plain flags: `--diversification-docker-image` for the image the sandboxes that make harnesses start from, `--harness-run-command` for how a harness is run, and a flag for how one is built, which is given only where a harness has to be built.
 - The source code of every child is kept, whether or not it builds, all in one folder, and `cladenc`'s own record says which built.
 - It hands the model to the harnesses it starts and calls no model itself. Work that calls for `cladenc` to call a model would be an issue of its own.
 - A key reaches it in a file, per [[a-key-is-given-in-a-file]].

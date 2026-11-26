@@ -21,7 +21,7 @@ fn settings() -> Settings {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         max_diversifications: 800,
-        max_concurrent_containers: 8,
+        max_concurrent_sandboxes: 8,
         diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,

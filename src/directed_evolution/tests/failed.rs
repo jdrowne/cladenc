@@ -1,11 +1,11 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::containers::ContainerError;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::journal::Started;
+use crate::sandboxes::SandboxError;
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
 const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
@@ -32,7 +32,7 @@ fn a_trial_that_cannot_be_carried_out_ends_the_directed_evolution_with_its_cause
         refused().result,
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
-            error: ContainerError::Io(_),
+            error: SandboxError::Io(_),
         }) if task == "benchmark/t1"
     ));
 }
@@ -99,18 +99,18 @@ fn a_directed_evolution_that_is_asked_to_stop_journals_nothing_for_the_action_th
 }
 
 #[test]
-fn a_directed_evolution_that_is_asked_to_stop_says_so_last_with_the_containers_running() {
+fn a_directed_evolution_that_is_asked_to_stop_says_so_last_with_the_sandboxes_running() {
     let said = stopped().said;
-    assert!(said.ends_with("cladenc: asked to stop, with 1 container running\n"));
+    assert!(said.ends_with("cladenc: asked to stop, with 1 sandbox running\n"));
 }
 
 #[test]
-fn a_diversification_whose_container_docker_does_not_start_is_told_when_it_happens() {
+fn a_diversification_whose_sandbox_docker_does_not_start_is_told_when_it_happens() {
     let docker = Double::default().answering(&DIVERSIFICATION, &[Answer::Exited(125)]);
     let said = given::started(docker, given::unchanged).said;
     assert!(said.contains(
         "cladenc: the diversification of harness 1 by harness 0 could not be carried out: Docker \
-         did not start its container"
+         did not start its sandbox"
     ));
 }
 

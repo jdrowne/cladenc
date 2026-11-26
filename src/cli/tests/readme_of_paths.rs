@@ -22,9 +22,9 @@ fn the_readme_says_where_the_source_code_of_the_harness_of_a_trial_is() {
 }
 
 #[test]
-fn the_readme_says_where_the_source_code_and_the_copy_are_in_the_container_of_a_diversification() {
+fn the_readme_says_where_the_source_code_and_the_copy_are_in_the_sandbox_of_a_diversification() {
     assert!(readme().contains(
-        "In the container of a diversification, the source code of the progenitor is at \
+        "In the sandbox of a diversification, the source code of the progenitor is at \
          `/var/opt/cladenc/harness`, and the clone that the progenitor diversifies is at \
          `/var/opt/cladenc/work`, the working directory."
     ));
@@ -42,7 +42,7 @@ fn the_readme_says_what_the_environment_of_every_task_has_to_hold() {
 fn the_readme_says_that_tests_is_a_symbolic_link_to_the_copy_of_the_tests_of_the_task() {
     assert!(readme().contains(
         "Once the harness has ended, the task's `tests` directory is copied into the same \
-         container, where `/tests` is a symbolic link to the copy, at \
+         sandbox, where `/tests` is a symbolic link to the copy, at \
          `/var/opt/cladenc/harbor/tests`, and the verifier, `/tests/test.sh`, writes its score"
     ));
 }

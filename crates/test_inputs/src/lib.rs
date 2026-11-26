@@ -163,12 +163,12 @@ pub fn dockerfile_in(files: &dyn Files, directory: &Path, steps: &str) -> PathBu
     file
 }
 
-pub fn printed_in_a_container_of(image: &str, command: &str) -> String {
+pub fn printed_in_a_sandbox_of(image: &str, command: &str) -> String {
     let ran = Command::new("docker")
         .args(["run", "--rm", image, "sh", "-c", command])
         .output()
         .expect("docker can be called");
-    String::from_utf8(ran.stdout).expect("what the container printed is text")
+    String::from_utf8(ran.stdout).expect("what the sandbox printed is text")
 }
 
 pub fn temporary_directory() -> TempDir {
@@ -333,8 +333,8 @@ pub fn wait_for_a_line(program: &mut Child, file: &Path, printed: &Path) {
     }
 }
 
-pub fn container_is_gone(id_file: &Path) -> bool {
-    let id = fs::read_to_string(id_file).expect("the file of the container id can be read");
+pub fn sandbox_is_gone(id_file: &Path) -> bool {
+    let id = fs::read_to_string(id_file).expect("the file of the sandbox id can be read");
     let filter = format!("id={}", id.trim());
     within_ten_seconds(|| {
         Command::new("docker")
@@ -344,8 +344,8 @@ pub fn container_is_gone(id_file: &Path) -> bool {
     })
 }
 
-pub fn container_is_running(id_file: &Path) -> bool {
-    let id = fs::read_to_string(id_file).expect("the file of the container id can be read");
+pub fn sandbox_is_running(id_file: &Path) -> bool {
+    let id = fs::read_to_string(id_file).expect("the file of the sandbox id can be read");
     let filter = format!("id={}", id.trim());
     Command::new("docker")
         .args(["ps", "--quiet", "--filter", &filter])

@@ -7,10 +7,10 @@ use std::sync::atomic::AtomicBool;
 use clap::builder::NonEmptyStringValueParser;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
-use crate::containers::Outside;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::file_system::FileSystem;
 use crate::report::{self, Report};
+use crate::sandboxes::Outside;
 
 const HAS_NOT_ENDED: &str = "the directed evolution has not ended: call `cladenc status` to read \
                              its state so far";
@@ -112,23 +112,23 @@ pub struct StartOptions {
         long,
         value_name = "COMMAND",
         value_parser = NonEmptyStringValueParser::new(),
-        help = "The shell command that builds a harness in a container, where one has to be built"
+        help = "The shell command that builds a harness in a sandbox, where one has to be built"
     )]
     harness_build_command: Option<String>,
     #[arg(
         long,
         value_name = "COMMAND",
         value_parser = NonEmptyStringValueParser::new(),
-        help = "The shell command that runs a harness in a container"
+        help = "The shell command that runs a harness in a sandbox"
     )]
     harness_run_command: String,
     #[arg(
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The most containers running at once"
+        help = "The most sandboxes running at once"
     )]
-    max_concurrent_containers: u64,
+    max_concurrent_sandboxes: u64,
     #[arg(
         long,
         value_name = "COUNT",
@@ -139,14 +139,14 @@ pub struct StartOptions {
     #[arg(
         long,
         value_name = "COUNT",
-        help = "The most times the container of a task is brought up again, where its health \
+        help = "The most times the sandbox of a task is brought up again, where its health \
                 check does not pass, 0 or more"
     )]
     max_task_health_check_retries: u64,
     #[arg(
         long,
         value_name = "COUNT",
-        help = "The most times a verifier container is brought up again, where its health \
+        help = "The most times a verifier sandbox is brought up again, where its health \
                 check does not pass, 0 or more"
     )]
     max_verifier_health_check_retries: u64,

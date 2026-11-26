@@ -23,7 +23,7 @@ fn settings(directory: &Path) -> Settings {
         harness_build_command: None,
         harness_run_command: "hostname; sleep 300".to_owned(),
         max_diversifications: 1,
-        max_concurrent_containers: 1,
+        max_concurrent_sandboxes: 1,
         diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -53,9 +53,9 @@ fn stopped_by_its_flag() -> TempDir {
 }
 
 #[test]
-fn a_directed_evolution_stopped_by_its_flag_leaves_no_container_behind() {
+fn a_directed_evolution_stopped_by_its_flag_leaves_no_sandbox_behind() {
     let directory = stopped_by_its_flag();
-    assert!(test_inputs::container_is_gone(
+    assert!(test_inputs::sandbox_is_gone(
         &directory
             .path()
             .join("outputs/running/trial-0-benchmark+t1/stdout")

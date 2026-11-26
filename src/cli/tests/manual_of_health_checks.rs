@@ -12,7 +12,7 @@ fn the_manual_of_start_names_the_health_check_among_what_cladenc_obeys() {
 fn the_manual_of_start_says_when_and_as_whom_a_health_check_is_run() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the task.toml of a task gives a health check, as command under \
-         environment.healthcheck, cladenc runs that command in the container before it copies the \
+         environment.healthcheck, cladenc runs that command in the sandbox before it copies the \
          source code of the harness in, under the same timer, as the user of the environment and \
          in its working directory."
     ));
@@ -68,9 +68,9 @@ fn the_manual_of_start_says_that_a_harness_that_was_never_started_is_given_no_re
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_health_check_of_a_task_is_tried_again_in_a_new_container() {
+fn the_manual_of_start_says_that_the_health_check_of_a_task_is_tried_again_in_a_new_sandbox() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "It removes the container, waits, brings up a new container of the task and runs the \
+        "It removes the sandbox, waits, brings up a new sandbox of the task and runs the \
          health check there again, as many times as --max-task-health-check-retries gives."
     ));
 }
@@ -95,7 +95,7 @@ fn the_manual_of_start_says_that_each_retry_of_the_health_check_of_a_task_is_sai
 #[test]
 fn the_manual_of_start_says_that_a_task_that_is_never_ready_stops_the_directed_evolution() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where the health check passes in no container, the directed evolution stops with exit \
+        "Where the health check passes in no sandbox, the directed evolution stops with exit \
          status 1, and no result is recorded for the trial."
     ));
 }

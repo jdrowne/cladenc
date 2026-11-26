@@ -1,12 +1,12 @@
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use crate::containers::tests::double::Double;
-use crate::containers::{ContainerError, Host};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::environments::{self, Making, Whose};
 use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::tests::double::Double;
+use crate::sandboxes::{Host, SandboxError};
 
 const TASK: &str = "benchmark/t1";
 
@@ -24,7 +24,7 @@ fn not_built(whose: Whose) -> (DirectedEvolutionError, String) {
         writer: &mut written,
         machine: None,
     };
-    let error = making.not_built(whose, TASK, ContainerError::Exit(1));
+    let error = making.not_built(whose, TASK, SandboxError::Exit(1));
     (error, String::from_utf8(written).unwrap())
 }
 
@@ -34,7 +34,7 @@ fn an_environment_that_is_not_built_is_an_error_of_the_environment_of_its_task()
         not_built(Whose::TheTask).0,
         DirectedEvolutionError::Environment {
             task,
-            error: ContainerError::Exit(1)
+            error: SandboxError::Exit(1)
         } if task == TASK
     ));
 }
@@ -45,7 +45,7 @@ fn a_verifier_environment_that_is_not_built_is_an_error_of_the_verifier_of_its_t
         not_built(Whose::TheVerifier).0,
         DirectedEvolutionError::VerifierEnvironment {
             task,
-            error: ContainerError::Exit(1)
+            error: SandboxError::Exit(1)
         } if task == TASK
     ));
 }

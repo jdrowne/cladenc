@@ -13,7 +13,7 @@ cladenc\-start \- start a new directed evolution and print the directory of its 
     [\fB\-\-harness\-build\-command\fP <COMMAND>]
     \fB\-\-harness\-run\-command\fP <COMMAND>
     [\fB\-\-help\fP]
-    \fB\-\-max\-concurrent\-containers\fP <COUNT>
+    \fB\-\-max\-concurrent\-sandboxes\fP <COUNT>
     \fB\-\-max\-diversifications\fP <COUNT>
     \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
     \fB\-\-max\-verifier\-health\-check\-retries\fP <COUNT>
@@ -31,8 +31,12 @@ else there.
 It says on standard error what it is doing, and when the directed evolution
 ends it prints there what \fBcladenc report\fP prints.
 .PP
+Every harness and every verifier runs in a sandbox, which is Harbor's word for
+the isolated place a task is run in, and every sandbox of cladenc is a Docker
+container.
+.PP
 Ctrl-C, or one of the signals SIGINT, SIGTERM, SIGQUIT and SIGHUP, stops it
-sooner: it removes the containers it has running, prints no report and exits
+sooner: it removes the sandboxes it has running, prints no report and exits
 with status 1, and \fBcladenc resume\fP continues the directed evolution from
 there.
 While the directed evolution has not ended, \fBcladenc status\fP prints its
@@ -64,27 +68,27 @@ build of a harness from, in place of
 The time limit of one diversification.
 .TP
 \fB\-\-harness\-build\-command\fP <COMMAND>
-The shell command that builds a harness in a container, where one has to be
+The shell command that builds a harness in a sandbox, where one has to be
 built.
 .TP
 \fB\-\-harness\-run\-command\fP <COMMAND>
-The shell command that runs a harness in a container.
+The shell command that runs a harness in a sandbox.
 .TP
 \fB\-h\fP, \fB\-\-help\fP
 Print help.
 .TP
-\fB\-\-max\-concurrent\-containers\fP <COUNT>
-The most containers running at once.
+\fB\-\-max\-concurrent\-sandboxes\fP <COUNT>
+The most sandboxes running at once.
 .TP
 \fB\-\-max\-diversifications\fP <COUNT>
 The most diversifications to start.
 .TP
 \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
-The most times the container of a task is brought up again, where its health
+The most times the sandbox of a task is brought up again, where its health
 check does not pass, 0 or more.
 .TP
 \fB\-\-max\-verifier\-health\-check\-retries\fP <COUNT>
-The most times a verifier container is brought up again, where its health
+The most times a verifier sandbox is brought up again, where its health
 check does not pass, 0 or more.
 .TP
 \fB\-\-model\fP <NAME>
@@ -108,8 +112,8 @@ The percentage of each benchmark's tasks that are selection tasks, above 0 and
 below 100.
 .SH THE IMAGE OF THE DIRECTED EVOLUTION
 Every diversification, and every build of a harness, is carried out in a
-container of one image, the image of the directed evolution.
-The diversification of an experiment is carried out in a container of that
+sandbox of one image, the image of the directed evolution.
+The diversification of an experiment is carried out in a sandbox of that
 image as well, and no trial is: a trial is carried out in the environment of
 its task.
 The image of the directed evolution is the image that
@@ -160,8 +164,8 @@ The image that \fB\-\-diversification\-docker\-image\fP names has to be on the
 machine before the directed evolution: fetched there with \fBdocker pull\fP,
 carried there as a file with \fBdocker save\fP and \fBdocker load\fP, or built
 there.
-cladenc tells Docker never to fetch the image of a container, so a directed
-evolution whose image is not on the machine stops at the first container of
+cladenc tells Docker never to fetch the image of a sandbox, so a directed
+evolution whose image is not on the machine stops at the first sandbox of
 that image, and \fBcladenc resume\fP continues it once the image is there.
 A Dockerfile whose base image is on the machine, and whose steps fetch
 nothing, is built with no connection to the internet.
@@ -171,7 +175,7 @@ name.
 .SH ENVIRONMENTS
 cladenc builds the environment of every task of every benchmark when the
 directed evolution is started, and again each time it is resumed, before it
-brings up any container, as
+brings up any sandbox, as
 .PP
 .RS 4
 .EX
@@ -198,7 +202,7 @@ the build context of its Dockerfile
 .PP
 The two labels are Docker labels, each a name and a value that Docker keeps
 with an image.
-The second is the label that every container of the directed evolution
+The second is the label that every sandbox of the directed evolution
 carries.
 It makes the environments of two directed evolutions two images, even where
 both are built from one task of one benchmark, so that removing those of one
@@ -258,7 +262,7 @@ and a task whose image is not on the machine stops the directed evolution with
 exit status 2.
 \fBcladenc start\fP then leaves it no journal.
 .SH HARNESSES
-A harness is started in a container, of the image of the directed evolution
+A harness is started in a sandbox, of the image of the directed evolution
 for a diversification and of the environment of its task for a trial, as
 .PP
 .RS 4
@@ -279,23 +283,23 @@ seconds, and five seconds more
 .PP
 The timer is a line of shell that starts the command, ends it once the seconds
 have passed, and hands on its exit status.
-Every container of a directed evolution is started under it, or, for a
-trial, under sleep, so that a container ends itself once its time limit has
+Every sandbox of a directed evolution is started under it, or, for a
+trial, under sleep, so that a sandbox ends itself once its time limit has
 passed, also when cladenc was killed outright, as by \fBkill \-9\fP, and is
 not there to remove it.
 The image of the directed evolution has to hold sh and sleep, and the
 environment of every task sh, sleep, rm, mkdir, chown and ln.
 .PP
-Until then a container that was left goes on.
-\fBcladenc resume\fP removes the containers that the directed evolution left
+Until then a sandbox that was left goes on.
+\fBcladenc resume\fP removes the sandboxes that the directed evolution left
 running before it does anything else, and \fBcladenc\-resume\fP(1) says how
 they are found, and how they are removed by hand where the directed evolution
 is not resumed.
 .PP
-In the container of a harness,
+In the sandbox of a harness,
 .TP 7n
 \fB/var/opt/cladenc/harness\fP
-holds the source code of the harness, a copy made for this container
+holds the source code of the harness, a copy made for this sandbox
 .TP 7n
 \fB/var/opt/cladenc/work\fP
 in a diversification, the clone that the harness diversifies, and the working
@@ -326,7 +330,7 @@ error are kept.
 .SH THE MODEL
 cladenc calls no model.
 A harness calls the model itself, at the address it is told.
-In every container, host.docker.internal names the machine cladenc runs on, so
+In every sandbox, host.docker.internal names the machine cladenc runs on, so
 a model served on that machine at port 11434 is named by
 .PP
 .RS 4
@@ -335,7 +339,7 @@ a model served on that machine at port 11434 is named by
 .EE
 .RE
 .PP
-and is reached as long as its server listens on an address a container can
+and is reached as long as its server listens on an address a sandbox can
 reach.
 The key is read from its file when a directed evolution is started, and again
 each time the directed evolution is resumed.
@@ -346,7 +350,7 @@ A new harness is made in two steps, a cloning and a diversification.
 In the cloning, cladenc copies the source code of a harness, the progenitor,
 as it is kept under harnesses in the outputs directory: the copy is the
 progenitor's clone.
-In the diversification, the progenitor is started in a container, where
+In the diversification, the progenitor is started in a sandbox, where
 /var/opt/cladenc/work holds its clone, and the diversification prompt asks the
 progenitor to improve the clone: what the progenitor leaves there is its child.
 The diversification prompt is a text that cladenc holds itself, the same in
@@ -440,8 +444,8 @@ harness completed in hand.
 A singleton control group harness is not waited for, since it is never cloned:
 the diversification of its experiment and its trials go on beside a
 diversification.
-While a diversification runs, no container of another child is started, so
-fewer containers run than \fB\-\-max\-concurrent\-containers\fP allows.
+While a diversification runs, no sandbox of another child is started, so
+fewer sandboxes run than \fB\-\-max\-concurrent\-sandboxes\fP allows.
 .PP
 How the harness ends decides what is recorded:
 .TP 18n
@@ -450,14 +454,14 @@ the diversification created a harness, or is recorded as unchanged where the
 harness changed nothing
 .TP 18n
 \fBexit status 125\fP
-Docker did not start the container: the directed evolution stops, and
+Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP carries out the diversification again
 .TP 18n
 \fBany other status\fP
 the diversification failed
 .TP 18n
 \fBthe time limit\fP
-the container is removed, and the diversification is recorded as timed out
+the sandbox is removed, and the diversification is recorded as timed out
 .PP
 A diversification in which the progenitor leaves its clone as it was creates
 no child, and is recorded as unchanged.
@@ -488,7 +492,7 @@ To conduct the experiment, cladenc establishes a baseline: it clones the
 progenitor a second time, and has the primogenitor diversify the second clone.
 The harness the primogenitor creates by diversifying the second clone of the
 progenitor is the singleton control group harness.
-cladenc brings up one container more for that diversification, in which
+cladenc brings up one sandbox more for that diversification, in which
 .TP 7n
 \fB/var/opt/cladenc/harness\fP
 holds a copy of the source code of the primogenitor, which is what runs
@@ -527,7 +531,7 @@ the progenitor's child in the file named child, and how the diversification
 ended in the file named outcome.
 .SH BUILDS
 Where \fB\-\-harness\-build\-command\fP is given, a harness is built before it
-is run for the first time, in a container of the same image, as
+is run for the first time, in a sandbox of the same image, as
 .PP
 .RS 4
 .EX
@@ -555,7 +559,7 @@ How a build ends decides what is recorded:
 the harness is built
 .TP 18n
 \fBexit status 125\fP
-Docker did not start the container: the directed evolution stops, and
+Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP builds again
 .TP 18n
 \fBany other status\fP
@@ -563,7 +567,7 @@ a child is recorded as build_failed, and is not created; for the primogenitor
 the directed evolution stops, and \fBcladenc resume\fP builds it again
 .TP 18n
 \fBthe time limit\fP
-the container is removed, and for a child the diversification is recorded as
+the sandbox is removed, and for a child the diversification is recorded as
 timed out; for the primogenitor the directed evolution stops
 .PP
 A build that leaves anything but regular files, directories and symbolic links
@@ -590,7 +594,7 @@ environment of the task, the image its trials are carried out in with the
 files the work starts from, and whatever else the Dockerfile uses
 .PP
 as in Harbor's task layout, and may hold more, such as solution, which no
-container is ever given.
+sandbox is ever given.
 A file that is in the benchmark and in no task is left alone.
 A benchmark that holds no task is refused, and so is one with a task that
 lacks one of the four, or whose environment directory holds a Compose file,
@@ -599,9 +603,9 @@ be built.
 A task whose task.toml names an image needs neither the Dockerfile nor the
 environment directory.
 .PP
-A task whose verifier runs in a container of its own, as said below, is refused
+A task whose verifier runs in a sandbox of its own, as said below, is refused
 as well for a Compose file in its tests directory.
-Where the image of that container holds the verifier, the task needs no test.sh.
+Where the image of that sandbox holds the verifier, the task needs no test.sh.
 .PP
 \fB\-\-benchmark\fP is given once for each benchmark of the directed
 evolution.
@@ -738,7 +742,7 @@ beside the count of the best harness of the other directed evolution, which
 had one trial on each task.
 .SH TRIALS
 A trial is one harness working on one task, once, and cladenc carries it
-out in two steps, in one container of the environment of the task, started as
+out in two steps, in one sandbox of the environment of the task, started as
 .PP
 .RS 4
 .EX
@@ -751,7 +755,7 @@ the time limit of the harness and the time limit of the verifier together, the
 longest the health check of the task can take, and ten minutes more, for what
 cladenc copies in and out
 .PP
-First the source code of the harness is copied into that container, at
+First the source code of the harness is copied into that sandbox, at
 /var/opt/cladenc/harness, and the harness is started there, as it is for a
 diversification, in the working directory of the environment and as its user:
 the user and the working directory its Dockerfile names, and root and / where
@@ -768,7 +772,7 @@ a symbolic link to /var/log/cladenc/harbor
 an empty directory, for what the harness saves to be kept with the trial
 .PP
 When the harness has ended, with whatever exit status, the tests directory of
-the task is copied into the same container, and its verifier is run there, in
+the task is copied into the same sandbox, and its verifier is run there, in
 the same working directory and as the same user, unless the task.toml of the
 task names a user for the verifier, as
 .PP
@@ -785,12 +789,12 @@ tests directory of the task, and nothing that the harness left there
 \fB/logs/verifier\fP
 an empty directory, for the score of the verifier
 .PP
-The verifier finds the container as the harness left it: the files the harness
+The verifier finds the sandbox as the harness left it: the files the harness
 left outside /tests and /logs/verifier, and the processes it left running, are
 there as well.
 A verifier calls no model, and is given none of the three variables of the
 model.
-The container is removed once the trial has ended.
+The sandbox is removed once the trial has ended.
 .PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
@@ -798,10 +802,10 @@ cladenc makes no directory there, as the Filesystem Hierarchy Standard asks of
 an application: each of the two is a symbolic link.
 /logs is a link to /var/log/cladenc/harbor, since /var/log/cladenc holds the
 records cladenc keeps, and /tests is a link to /var/opt/cladenc/harbor/tests,
-since /var/opt/cladenc holds what cladenc gives a container to work with.
+since /var/opt/cladenc holds what cladenc gives a sandbox to work with.
 So /logs/artifacts is /var/log/cladenc/harbor/artifacts, and /logs/verifier is
 /var/log/cladenc/harbor/verifier.
-While the harness runs, the container holds neither /tests nor the directory
+While the harness runs, the sandbox holds neither /tests nor the directory
 that /tests is a link to.
 Where the image of the environment already holds something at /logs, cladenc
 makes no link and leaves what is there, and makes /logs/artifacts and
@@ -818,12 +822,12 @@ The verifier has a time limit of its own, timeout_sec under verifier, or 600
 seconds where the task gives none, counted from the moment the harness ended
 or was stopped.
 No flag gives a time limit of a trial.
-Where a task gives its harness no time limit, the container of a trial does
+Where a task gives its harness no time limit, the sandbox of a trial does
 not end itself: a cladenc that was killed outright leaves it running until
 \fBcladenc resume\fP removes it, or a person does.
 .SH HEALTH CHECKS
 Where the task.toml of a task gives a health check, as command under
-environment.healthcheck, cladenc runs that command in the container before it
+environment.healthcheck, cladenc runs that command in the sandbox before it
 copies the source code of the harness in, under the same timer, as the user of
 the environment and in its working directory.
 The harness is started only once the command has exited with status 0.
@@ -840,14 +844,14 @@ start_interval_sec, or 5 seconds where the task gives none.
 .PP
 Where the health check of a task does not pass, the harness was never started,
 so cladenc does not record that the harness did not complete the task.
-It removes the container, waits, brings up a new container of the task and
+It removes the sandbox, waits, brings up a new sandbox of the task and
 runs the health check there again, as many times as
 \fB\-\-max\-task\-health\-check\-retries\fP gives.
 Before the first retry it waits interval_sec of the health check, or 5 seconds
 where the task gives none, and before each retry after that twice as long as
 before the last: 5 seconds, then 10, then 20.
 It says each retry on standard error.
-Where the health check passes in no container, the directed evolution stops
+Where the health check passes in no sandbox, the directed evolution stops
 with exit status 1, and no result is recorded for the trial.
 cladenc then names the harness and the task, says that the health check of the
 task did not pass and in how many tries, and names the directory that holds
@@ -857,16 +861,16 @@ until \fBcladenc resume\fP carries out the trial again.
 .SH ARTIFACTS
 Where the task.toml of a task lists paths under artifacts, cladenc keeps each
 with the trial, a file or a directory with all it holds, as the harness left
-it: it copies them out of the container once the harness has ended or was
+it: it copies them out of the sandbox once the harness has ended or was
 stopped, before the tests directory is copied in.
-An entry of the list is a path in the container, or a table that names the
+An entry of the list is a path in the sandbox, or a table that names the
 path as source.
 The path is kept in artifacts in the directory of the trial, at the place
 the table gives as destination, and at the path itself without its leading /
 where the table gives none or the entry is a path alone: /app/out/report.json
 is kept as artifacts/app/out/report.json.
 A symbolic link at the path is followed.
-A path that is not in the container keeps nothing, and the trial goes on.
+A path that is not in the sandbox keeps nothing, and the trial goes on.
 Where two entries would be kept at the same place, or one inside the other,
 the first is kept and the other is not.
 .PP
@@ -890,7 +894,7 @@ A task that lists /logs/artifacts itself, or a path that is kept at the same
 place, has that entry obeyed in its place.
 .PP
 Where the task.toml of a task lists commands under verifier.collect, which
-Harbor calls collection hooks, cladenc runs each in the container of the
+Harbor calls collection hooks, cladenc runs each in the sandbox of the
 harness once the harness has ended or was stopped, before it keeps any path,
 in the order the task lists them.
 A command is run as the harness is, under the same timer and in the working
@@ -904,16 +908,16 @@ they then are.
 collection\-hooks in the directory of the trial keeps what each command
 printed, in a directory named after the place of the command in the list,
 counted from 1.
-.SH VERIFIERS IN A CONTAINER OF THEIR OWN
+.SH VERIFIERS IN A SANDBOX OF THEIR OWN
 Where the task.toml of a task says that its verifier runs separately, cladenc
-runs the verifier in a container of its own, which holds nothing of the
-container of the harness but the paths the task lists under artifacts.
+runs the verifier in a sandbox of its own, which holds nothing of the
+sandbox of the harness but the paths the task lists under artifacts.
 A task says so with environment_mode under verifier, written as separate, or
 with a table named environment under verifier, which says so by being there.
 A task that gives neither, or writes environment_mode as shared, has its
-verifier run in the container of the harness, as said above.
+verifier run in the sandbox of the harness, as said above.
 .PP
-The verifier container is a container of the first of these that the task
+The verifier sandbox is a sandbox of the first of these that the task
 gives:
 .TP 4n
 \fB1.\fP
@@ -928,9 +932,9 @@ task, with that directory as the build context
 the environment of the task, as it is before a harness works in it
 .PP
 An image of 1 or 2 holds the verifier, at /tests/test.sh: cladenc copies no
-tests directory into its container and makes nothing at /tests, and the task
+tests directory into its sandbox and makes nothing at /tests, and the task
 needs no test.sh.
-Into a container of 3 the tests directory of the task is copied, and /tests is
+Into a sandbox of 3 the tests directory of the task is copied, and /tests is
 a symbolic link to the copy, as said above.
 cladenc builds an image of 2 when it builds the environments of the tasks, and
 as it builds those, under the name of the environment of the task with
@@ -941,40 +945,40 @@ An image of 1 that is not on the machine, and an image of 2 that is not built,
 stop the directed evolution with exit status 2.
 .PP
 Where the task.toml holds the table environment under verifier, the verifier
-container follows that table and nothing of environment: workdir, env,
+sandbox follows that table and nothing of environment: workdir, env,
 cpus, memory_mb, healthcheck and build_timeout_sec are obeyed there as they
 are under environment, and a setting the table leaves out is left out.
-Where the task.toml holds no such table, the verifier container follows
+Where the task.toml holds no such table, the verifier sandbox follows
 environment.
 What is refused under environment is refused under verifier.environment as
 well.
 .PP
 Once the harness has ended or was stopped, and the paths under artifacts are
-kept, cladenc removes the container of the harness and brings up that of the
-verifier, so that a trial is one container at a time.
+kept, cladenc removes the sandbox of the harness and brings up that of the
+verifier, so that a trial is one sandbox at a time.
 Where the settings of the verifier give a health check, cladenc runs it there as
-it runs that of the task, and nothing else is done in the container until the
+it runs that of the task, and nothing else is done in the sandbox until the
 health check has passed.
-/logs is then made the symbolic link that it is in the container of the
+/logs is then made the symbolic link that it is in the sandbox of the
 harness, and each path that was kept is copied to the same path in the
-verifier container, the path of its entry and not destination, without
+verifier sandbox, the path of its entry and not destination, without
 what exclude left out.
 A directory takes the place of what the image holds at that path.
 .PP
-Where the health check of the verifier container does not pass, no verifier
+Where the health check of the verifier sandbox does not pass, no verifier
 has judged what the harness left, so cladenc does not record that the harness
 did not complete the task.
-It removes the container, waits, brings up a new verifier container and
+It removes the sandbox, waits, brings up a new verifier sandbox and
 runs the health check there again, as many times as
 \fB\-\-max\-verifier\-health\-check\-retries\fP gives.
 Before the first retry it waits interval_sec of the health check, or 5 seconds
 where the task gives none, and before each retry after that twice as long as
 before the last: 5 seconds, then 10, then 20.
 It says each retry on standard error.
-Where the health check passes in no container, the directed evolution stops
+Where the health check passes in no sandbox, the directed evolution stops
 with exit status 1, and no result is recorded for the trial.
 cladenc then names the harness and the task, says that the health check of the
-verifier container did not pass and in how many tries, and names the
+verifier sandbox did not pass and in how many tries, and names the
 directory that holds what the health check printed the last time it ran.
 That directory is under running in the outputs directory, and stays there
 until \fBcladenc resume\fP carries out the trial again.
@@ -987,10 +991,10 @@ What is copied in belongs to the user the verifier runs as.
 .PP
 Then the tests directory is copied in where the image holds no verifier,
 /logs/verifier is emptied, and the verifier is run as said above, in the working
-directory and as the user of its own container, unless the task.toml names a
+directory and as the user of its own sandbox, unless the task.toml names a
 user for the verifier.
 Its time limit is counted from then.
-The verifier container is started as
+The verifier sandbox is started as
 .PP
 .RS 4
 .EX
@@ -1006,7 +1010,7 @@ and is removed once the verifier has ended.
 A verifier image has to hold what the environment of a task has to: sh,
 sleep, rm, mkdir, chown and ln.
 .SH CPUS AND MEMORY
-The container of a trial is given no more CPUs and no more memory than its
+The sandbox of a trial is given no more CPUs and no more memory than its
 task asks for, as \fB\-\-cpus\fP and \fB\-\-memory\fP of \fBdocker run\fP, so
 the harness and the verifier have them between them.
 A task that asks for neither is given what Docker gives any container.
@@ -1036,7 +1040,7 @@ the working directory of the harness and of the verifier, in place of the one
 the image names
 .TP 7n
 \fBenv under environment\fP
-variables that the container is given, so the harness and the verifier alike
+variables that the sandbox is given, so the harness and the verifier alike
 .TP 7n
 \fBuser under agent\fP
 the user the harness runs as, a name or a number, in place of the user the
@@ -1055,33 +1059,33 @@ the time limit of the harness, in seconds
 the time limit of the verifier, in seconds
 .TP 7n
 \fBenvironment_mode under verifier\fP
-separate where the verifier runs in a container of its own, and shared where it
+separate where the verifier runs in a sandbox of its own, and shared where it
 runs in that of the harness
 .TP 7n
 \fBenvironment under verifier\fP
-what environment says of the container of the harness, said of the verifier
-container
+what environment says of the sandbox of the harness, said of the verifier
+sandbox
 .TP 7n
 \fBcollect under verifier\fP
-commands that are run in the container once the harness has ended, before the
+commands that are run in the sandbox once the harness has ended, before the
 paths under artifacts are kept
 .TP 7n
 \fBbuild_timeout_sec under environment\fP
 the time limit of the build of the environment, in seconds
 .TP 7n
 \fBcpus under environment\fP
-the most CPUs the container of a trial is given, a whole number or a part
+the most CPUs the sandbox of a trial is given, a whole number or a part
 of one
 .TP 7n
 \fBmemory_mb under environment\fP
-the most memory that container is given, in megabytes
+the most memory that sandbox is given, in megabytes
 .TP 7n
 \fBhealthcheck under environment\fP
 a command that has to pass before the harness is started, and how often it is
 run
 .TP 7n
 \fBartifacts\fP
-paths in the container that are kept with the trial once the harness has
+paths in the sandbox that are kept with the trial once the harness has
 ended
 .PP
 cladenc obeys nothing else of a task.toml.
@@ -1133,8 +1137,8 @@ to give: several steps, as [[steps]]; a GPU, as gpus under environment above
 0, or a TPU, as tpu; Windows, as os; MCP servers, as mcp_servers; a skills
 directory, as skills_dir; a path or a command of a container other than that
 of the harness, as service of an entry under artifacts or under
-verifier.collect that is not main; or the whole container of the harness in
-the verifier container, as an entry under artifacts whose path names no
+verifier.collect that is not main; or the whole sandbox of the harness in
+the verifier sandbox, as an entry under artifacts whose path names no
 file or directory, where the verifier runs separately.
 The refusal names the task and what it asks for.
 .SH RESULTS
@@ -1152,16 +1156,16 @@ the harness completed the task
 \fBany other score, a file that cannot be read, or no score\fP
 the harness did not complete the task
 .TP 7n
-\fBa health check of the task, or of the verifier container, that passes in none of its tries\fP
+\fBa health check of the task, or of the verifier sandbox, that passes in none of its tries\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the trial again
 .TP 7n
 \fBexit status 125 of either step or of the health check\fP
-Docker did not start the container: the directed evolution stops, and
+Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP carries out the trial again
 .TP 7n
 \fBthe time limit of the verifier\fP
-the container is removed, and the harness did not complete the task, which is
+the sandbox is removed, and the harness did not complete the task, which is
 recorded as timed_out
 .PP
 The exit status of the verifier decides nothing more.
@@ -1170,17 +1174,17 @@ A task that is recorded as completed means that the harness did the work only
 as far as three things hold, and cladenc sees to none of them.
 .PP
 A harness reaches the network.
-Every container is started on the usual network of Docker, and reaches the
+Every sandbox is started on the usual network of Docker, and reaches the
 machine cladenc runs on and whatever that machine reaches.
 Where a task was made from something public, its answer may be one fetch away,
-and a harness can leave something outside its container for a later harness to
+and a harness can leave something outside its sandbox for a later harness to
 find, which holding tasks out does not guard against.
 To keep every harness from reaching further than the model, carry out the
 directed evolution on a machine that has no other connection, with the model
 served on that machine.
 .PP
 A verifier may trust what the harness left.
-The verifier is started in the container as the harness left it, and everything
+The verifier is started in the sandbox as the harness left it, and everything
 there was the harness's to change: tests, build files, any program the verifier
 starts from the working directory, and the processes the harness left running.
 A verifier that runs the tests it finds in the working directory is passed by a
@@ -1214,7 +1218,7 @@ what the harness left in the working directory of the environment, not kept
 where that directory is /
 .TP 18n
 \fBchanges\fP
-every path the harness added, changed or removed in the container, one to a
+every path the harness added, changed or removed in the sandbox, one to a
 line after A, C or D
 .TP 18n
 \fBartifacts\fP
@@ -1234,7 +1238,7 @@ the standard error of the harness
 \fBverifier\fP
 the standard output and the standard error of the verifier, in stdout and
 stderr, and in logs/verifier what the verifier left in /logs/verifier, its score
-among them; where the verifier ran in a container of its own with a health
+among them; where the verifier ran in a sandbox of its own with a health
 check, what the last run of that printed, in health\-check
 .TP 18n
 \fBhealth\-check\fP

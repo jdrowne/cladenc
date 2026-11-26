@@ -5,7 +5,6 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use crate::benchmark::Benchmark;
-use crate::containers::{Checked, ContainerError, Creation, HarnessEnding, Retry, Trialled};
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
 use crate::directed_evolution::{DirectedEvolutionError, Found};
@@ -13,6 +12,7 @@ use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment, TrialResult};
 use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{Checked, Creation, HarnessEnding, Retry, SandboxError, Trialled};
 
 const FIRST: &str = "benchmark/t1";
 const SECOND: &str = "benchmark/t2";
@@ -39,7 +39,7 @@ fn settings() -> Settings {
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         max_diversifications: 2,
-        max_concurrent_containers: 8,
+        max_concurrent_sandboxes: 8,
         diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
@@ -173,7 +173,7 @@ fn end_of(action: Started, well: bool) -> Told {
     })
 }
 
-fn failed(action: Started, error: ContainerError) -> Told {
+fn failed(action: Started, error: SandboxError) -> Told {
     Told::Ended(Ended::Failed { action, error })
 }
 
@@ -211,18 +211,15 @@ fn stop_the_first_trial(progress: &mut Progress<'_>) {
 
 fn fail_the_first_trial(progress: &mut Progress<'_>) {
     let action = start(progress);
-    progress.hear(
-        failed(action, ContainerError::Exit(3)),
-        &outputs_directory(),
-    );
+    progress.hear(failed(action, SandboxError::Exit(3)), &outputs_directory());
 }
 
 fn fail_both_trials(progress: &mut Progress<'_>) {
     let first = start(progress);
     let second = start(progress);
-    progress.hear(failed(first, ContainerError::Exit(3)), &outputs_directory());
+    progress.hear(failed(first, SandboxError::Exit(3)), &outputs_directory());
     progress.hear(
-        failed(second, ContainerError::TimeLimit),
+        failed(second, SandboxError::TimeLimit),
         &outputs_directory(),
     );
 }
@@ -306,7 +303,7 @@ fn a_trial_that_did_not_complete_its_task_is_said_not_to_have_completed_it() {
 }
 
 #[test]
-fn a_trial_that_ended_is_one_container_fewer_running() {
+fn a_trial_that_ended_is_one_sandbox_fewer_running() {
     let running = returned(&settings(), |mut progress| {
         start(&mut progress);
         carry_out(&mut progress, 1, &[]);
@@ -431,7 +428,7 @@ fn a_baseline_that_created_the_singleton_control_group_harness_is_said_with_wher
 }
 
 #[test]
-fn an_action_that_was_stopped_is_one_container_fewer_running() {
+fn an_action_that_was_stopped_is_one_sandbox_fewer_running() {
     let running = returned(&settings(), |mut progress| {
         stop_the_first_trial(&mut progress);
         progress.running()
@@ -456,7 +453,7 @@ fn nothing_is_said_of_an_action_that_was_stopped() {
 }
 
 #[test]
-fn a_trial_that_is_tried_again_in_a_new_container_is_said() {
+fn a_trial_that_is_tried_again_in_a_new_sandbox_is_said() {
     let said = said(&settings(), |mut progress| {
         progress.hear(retrying(), &outputs_directory());
     });
@@ -464,14 +461,14 @@ fn a_trial_that_is_tried_again_in_a_new_container_is_said() {
         said,
         [
             "cladenc: the trial of harness 0 on task benchmark/t1 is not carried out yet: the \
-             health check of the task did not pass, and cladenc tries again in a new container \
+             health check of the task did not pass, and cladenc tries again in a new sandbox \
              after 1 second, retry 1 of 3"
         ]
     );
 }
 
 #[test]
-fn a_trial_that_is_tried_again_in_a_new_container_is_not_journaled() {
+fn a_trial_that_is_tried_again_in_a_new_sandbox_is_not_journaled() {
     let journaled = journaled(&settings(), |mut progress| {
         progress.hear(retrying(), &outputs_directory());
     });
@@ -479,7 +476,7 @@ fn a_trial_that_is_tried_again_in_a_new_container_is_not_journaled() {
 }
 
 #[test]
-fn a_trial_that_is_tried_again_in_a_new_container_is_still_a_container_running() {
+fn a_trial_that_is_tried_again_in_a_new_sandbox_is_still_a_sandbox_running() {
     let running = returned(&settings(), |mut progress| {
         start(&mut progress);
         progress.hear(retrying(), &outputs_directory());
@@ -497,7 +494,7 @@ fn an_action_that_failed_is_said_with_what_went_wrong() {
 }
 
 #[test]
-fn an_action_that_failed_is_one_container_fewer_running() {
+fn an_action_that_failed_is_one_sandbox_fewer_running() {
     let running = returned(&settings(), |mut progress| {
         fail_the_first_trial(&mut progress);
         progress.running()
@@ -601,7 +598,7 @@ fn a_directed_evolution_that_ends_with_a_failure_is_not_said_to_have_finished() 
 }
 
 #[test]
-fn a_directed_evolution_that_is_asked_to_stop_says_so_with_the_containers_running() {
+fn a_directed_evolution_that_is_asked_to_stop_says_so_with_the_sandboxes_running() {
     let said = said(&settings(), |mut progress| {
         start(&mut progress);
         progress.stopping();
@@ -610,7 +607,7 @@ fn a_directed_evolution_that_is_asked_to_stop_says_so_with_the_containers_runnin
         said,
         [
             STARTED_THE_FIRST_TRIAL,
-            "cladenc: asked to stop, with 1 container running"
+            "cladenc: asked to stop, with 1 sandbox running"
         ]
     );
 }
@@ -621,20 +618,20 @@ fn a_directed_evolution_says_once_that_it_is_stopping() {
         progress.stopping();
         progress.stopping();
     });
-    assert_eq!(said, ["cladenc: asked to stop, with 0 containers running"]);
+    assert_eq!(said, ["cladenc: asked to stop, with 0 sandboxes running"]);
 }
 
 #[test]
-fn a_directed_evolution_that_stops_for_a_failure_says_so_with_the_containers_running() {
+fn a_directed_evolution_that_stops_for_a_failure_says_so_with_the_sandboxes_running() {
     let said = said(&settings(), |mut progress| {
         let first = start(&mut progress);
         start(&mut progress);
-        progress.hear(failed(first, ContainerError::Exit(3)), &outputs_directory());
+        progress.hear(failed(first, SandboxError::Exit(3)), &outputs_directory());
         progress.stopping();
     });
     assert_eq!(
         said.last().map(String::as_str),
-        Some("cladenc: stopping the directed evolution, with 1 container running")
+        Some("cladenc: stopping the directed evolution, with 1 sandbox running")
     );
 }
 

@@ -10,7 +10,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-diversifications", "800"),
-    ("--max-concurrent-containers", "8"),
+    ("--max-concurrent-sandboxes", "8"),
     ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
@@ -83,9 +83,10 @@ fn initial_diversifications_which_are_no_flag_of_start_are_refused_as_an_argumen
 }
 
 #[test]
-fn the_limit_of_concurrent_containers_under_a_name_it_does_not_have_is_refused_for_the_name() {
+fn the_limit_of_concurrent_sandboxes_under_a_name_it_does_not_have_is_refused_for_the_name() {
     assert!(
-        said_with(&["--workers=8"]).starts_with("error: unexpected argument '--workers' found\n")
+        said_with(&["--max-concurrent-containers=8"])
+            .starts_with("error: unexpected argument '--max-concurrent-containers' found\n")
     );
 }
 

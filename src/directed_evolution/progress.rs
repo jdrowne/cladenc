@@ -7,10 +7,10 @@ use super::action::{Ended, Told, carry_out};
 use super::said::{Retrying, say};
 use super::{DirectedEvolutionError, Found, Said, Shared};
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::containers::{ContainerError, Creation, Trialled};
 use crate::genealogy::{Experiment, Genealogy};
 use crate::journal::{Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{Creation, SandboxError, Trialled};
 
 pub(super) struct Progress<'a> {
     artificial_selection: ArtificialSelection,
@@ -230,7 +230,7 @@ impl<'a> Progress<'a> {
         }
     }
 
-    fn failed(&mut self, action: Started, error: ContainerError) {
+    fn failed(&mut self, action: Started, error: SandboxError) {
         self.say(&Said::Failed {
             action: &action,
             error: &error,

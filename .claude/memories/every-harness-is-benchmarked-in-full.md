@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 3ac128cd-9432-4e14-bf1c-720fe0e77c5a
-  modified: 2026-11-21T18:46:58.989Z
+  modified: 2026-11-26T03:55:37.000Z
 ---
 
 # Every harness is benchmarked in full
@@ -23,7 +23,7 @@ A harness can be the progenitor of a diversification only once it has been bench
 - Do not offer a count of trials as the number a person gives, and do not propose leaving a harness after some of its tasks to save trials.
 - Do not propose a value, a flag or a mode that only benchmarks a harness and starts no diversification, as a way to learn a score or otherwise.
 - Do not propose one task, another number of tasks, or a flag that gives the number, as what a harness needs before it is cloned. Where a harness that has had a trial on some of the tasks is meant, say how many tasks it has had a trial on.
-- Being benchmarked in full is not being run in one container.
+- Being benchmarked in full is not being run in one sandbox.
 - Code, help, README or an issue that has `--budget`, that counts in trials how long a directed evolution goes on, or that has artificial selection choose which harness has a trial on which task, is older than this design and is brought to it, per [[an-issue-is-brought-up-to-date-before-work]].
 
 Related: [[the-words-about-benchmarks]], [[the-paper-is-a-starting-point]], [[no-flag-has-a-default]].

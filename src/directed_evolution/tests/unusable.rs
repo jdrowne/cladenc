@@ -1,10 +1,10 @@
 use std::io;
 use std::sync::atomic::AtomicBool;
 
-use crate::containers::tests::double::Double;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Journal, JournalError};
+use crate::sandboxes::tests::double::Double;
 
 fn resumed(directory: &Memory) -> Result<Found, DirectedEvolutionError> {
     directed_evolution::resume(

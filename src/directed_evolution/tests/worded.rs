@@ -3,9 +3,9 @@ use std::io;
 use std::path::PathBuf;
 
 use crate::benchmark::ConfigurationError;
-use crate::containers::ContainerError;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::journal::{JournalError, Started};
+use crate::sandboxes::SandboxError;
 
 fn worded(error: impl Error) -> String {
     error.to_string()
@@ -37,12 +37,12 @@ fn a_key_that_cannot_be_read_is_worded_with_its_file_and_what_the_file_has_to_ho
 }
 
 #[test]
-fn containers_that_cannot_be_removed_are_worded_with_what_docker_said() {
+fn sandboxes_that_cannot_be_removed_are_worded_with_what_docker_said() {
     assert_eq!(
         worded(DirectedEvolutionError::Left(io::Error::other(
             "Cannot connect to the Docker daemon"
         ))),
-        "the containers that the directed evolution left running cannot be removed: Cannot \
+        "the sandboxes that the directed evolution left running cannot be removed: Cannot \
          connect to the Docker daemon"
     );
 }
@@ -69,7 +69,7 @@ fn a_directed_evolution_that_was_asked_to_stop_is_worded() {
 #[test]
 fn an_image_that_was_not_built_is_worded_with_how_its_build_ended() {
     assert_eq!(
-        worded(DirectedEvolutionError::Image(ContainerError::Exit(1))),
+        worded(DirectedEvolutionError::Image(SandboxError::Exit(1))),
         "the image of the directed evolution was not built: its build exited with status 1"
     );
 }
@@ -77,7 +77,7 @@ fn an_image_that_was_not_built_is_worded_with_how_its_build_ended() {
 #[test]
 fn an_image_whose_build_took_too_long_is_worded_with_its_time_limit() {
     assert_eq!(
-        worded(DirectedEvolutionError::Image(ContainerError::TimeLimit)),
+        worded(DirectedEvolutionError::Image(SandboxError::TimeLimit)),
         "the image of the directed evolution was not built: its build ran past its time limit"
     );
 }
@@ -85,7 +85,7 @@ fn an_image_whose_build_took_too_long_is_worded_with_its_time_limit() {
 #[test]
 fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
-        worded(DirectedEvolutionError::Image(ContainerError::Stopped)),
+        worded(DirectedEvolutionError::Image(SandboxError::Stopped)),
         "the image of the directed evolution was not built: its build was stopped"
     );
 }
@@ -95,7 +95,7 @@ fn an_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_e
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
             task: "benchmark/t1".to_owned(),
-            error: ContainerError::Exit(1),
+            error: SandboxError::Exit(1),
         }),
         "the environment of task benchmark/t1 was not built: its build exited with status 1"
     );
@@ -159,7 +159,7 @@ fn a_verifier_environment_that_was_not_built_is_worded_with_its_task_and_how_its
     assert_eq!(
         worded(DirectedEvolutionError::VerifierEnvironment {
             task: "benchmark/t1".to_owned(),
-            error: ContainerError::Exit(1),
+            error: SandboxError::Exit(1),
         }),
         "the verifier environment of task benchmark/t1 was not built: its build exited with \
          status 1"
@@ -204,7 +204,7 @@ fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
             task: "benchmark/t1".to_owned(),
-            error: ContainerError::Stopped,
+            error: SandboxError::Stopped,
         }),
         "the environment of task benchmark/t1 was not built: its build was stopped"
     );
@@ -213,7 +213,7 @@ fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
 #[test]
 fn a_directed_evolution_the_build_of_its_primogenitor_stopped_says_how_the_build_ended() {
     assert_eq!(
-        worded(DirectedEvolutionError::Build(ContainerError::Exit(2))),
+        worded(DirectedEvolutionError::Build(SandboxError::Exit(2))),
         "the directed evolution stopped before its end: the build of the primogenitor exited with \
          status 2"
     );
@@ -222,7 +222,7 @@ fn a_directed_evolution_the_build_of_its_primogenitor_stopped_says_how_the_build
 #[test]
 fn a_directed_evolution_whose_primogenitor_took_too_long_to_build_says_so() {
     assert_eq!(
-        worded(DirectedEvolutionError::Build(ContainerError::TimeLimit)),
+        worded(DirectedEvolutionError::Build(SandboxError::TimeLimit)),
         "the directed evolution stopped before its end: \
          the build of the primogenitor ran past its time limit"
     );
@@ -236,7 +236,7 @@ fn a_directed_evolution_a_trial_stopped_names_the_harness_and_the_task() {
                 harness: 0,
                 task: "t1".to_owned()
             },
-            error: ContainerError::Exit(2)
+            error: SandboxError::Exit(2)
         }),
         "the directed evolution stopped before its end: \
          the trial of harness 0 on task t1 exited with status 2"
@@ -251,7 +251,7 @@ fn a_directed_evolution_a_diversification_stopped_names_the_progenitor_and_the_c
                 child: 3,
                 progenitor: 0
             },
-            error: ContainerError::Signal(9)
+            error: SandboxError::Signal(9)
         }),
         "the directed evolution stopped before its end: \
          the diversification of harness 3 by harness 0 was ended by signal 9"
@@ -267,7 +267,7 @@ fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_har
                 child: 3,
                 progenitor: 1
             },
-            error: ContainerError::Exit(2)
+            error: SandboxError::Exit(2)
         }),
         "the directed evolution stopped before its end: the creation of harness 4, the \
          singleton control group harness, by the primogenitor from a second clone of harness 1 \
@@ -283,13 +283,13 @@ fn a_directed_evolution_that_a_verifier_s_health_check_stopped_says_precisely_wh
                 harness: 3,
                 task: "parsing/t1".to_owned()
             },
-            error: ContainerError::VerifierHealthCheck {
+            error: SandboxError::VerifierHealthCheck {
                 tries: 4,
                 kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/verifier/health-check"),
             }
         }),
         "the directed evolution stopped before its end: the trial of harness 3 on task \
-         parsing/t1 was not verified: the health check of its verifier container did not \
+         parsing/t1 was not verified: the health check of its verifier sandbox did not \
          pass in 4 tries, so the verifier was not run, and \
          /outputs/running/trial-3-parsing+t1/verifier/health-check holds what the health check \
          printed the last time it ran"
@@ -304,7 +304,7 @@ fn a_directed_evolution_that_a_task_s_health_check_stopped_says_precisely_what_h
                 harness: 3,
                 task: "parsing/t1".to_owned()
             },
-            error: ContainerError::TaskHealthCheck {
+            error: SandboxError::TaskHealthCheck {
                 tries: 4,
                 kept: PathBuf::from("/outputs/running/trial-3-parsing+t1/health-check"),
             }

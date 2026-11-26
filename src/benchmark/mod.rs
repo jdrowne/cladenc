@@ -193,7 +193,7 @@ impl Display for BenchmarkError {
             ),
             Self::ManyVerifierContainers { task } => write!(
                 formatter,
-                "task {task} has its verifier run in a container of its own and holds a Compose \
+                "task {task} has its verifier run in a sandbox of its own and holds a Compose \
                  file in its directory named {TESTS}, and an environment of more than one \
                  container cannot be built"
             ),

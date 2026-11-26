@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use crate::cli::tests::given::{self, Ran};
 use crate::cli::{Command, StartOptions};
-use crate::containers::tests::double::Double;
 use crate::file_system::tests::double::Memory;
+use crate::sandboxes::tests::double::Double;
 
 fn ran(change: impl FnOnce(&Memory, &mut StartOptions)) -> Ran {
     let directory = Memory::default();

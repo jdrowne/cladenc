@@ -11,7 +11,7 @@ fn the_manual_of_start_says_what_the_harness_of_a_trial_is_given_of_its_task() {
 #[test]
 fn the_manual_of_start_says_that_a_trial_is_carried_out_in_the_environment_of_its_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "and cladenc carries it out in two steps, in one container of the environment of the task, \
+        "and cladenc carries it out in two steps, in one sandbox of the environment of the task, \
          started as"
     ));
 }
@@ -19,7 +19,7 @@ fn the_manual_of_start_says_that_a_trial_is_carried_out_in_the_environment_of_it
 #[test]
 fn the_manual_of_start_says_where_the_source_code_of_the_harness_of_a_trial_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "First the source code of the harness is copied into that container, at \
+        "First the source code of the harness is copied into that sandbox, at \
          /var/opt/cladenc/harness,"
     ));
 }
@@ -90,7 +90,7 @@ fn the_manual_of_start_says_where_the_two_links_point_and_why() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "/logs is a link to /var/log/cladenc/harbor, since /var/log/cladenc holds the records \
          cladenc keeps, and /tests is a link to /var/opt/cladenc/harbor/tests, since \
-         /var/opt/cladenc holds what cladenc gives a container to work with."
+         /var/opt/cladenc holds what cladenc gives a sandbox to work with."
     ));
 }
 
@@ -105,7 +105,7 @@ fn the_manual_of_start_says_where_logs_artifacts_and_logs_verifier_are() {
 #[test]
 fn the_manual_of_start_says_that_the_harness_finds_nothing_of_the_tests() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "While the harness runs, the container holds neither /tests nor the directory that /tests \
+        "While the harness runs, the sandbox holds neither /tests nor the directory that /tests \
          is a link to."
     ));
 }
@@ -143,10 +143,10 @@ fn the_manual_of_start_says_that_the_exit_status_of_the_verifier_decides_nothing
 }
 
 #[test]
-fn the_manual_of_start_says_that_no_container_is_given_the_solution_of_a_task() {
+fn the_manual_of_start_says_that_no_sandbox_is_given_the_solution_of_a_task() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("such as solution, which no container is ever given.")
+            .contains("such as solution, which no sandbox is ever given.")
     );
 }
 
@@ -162,12 +162,12 @@ fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
         "a score of 1, or 1 for every label of reward.json the harness completed the task",
         "any other score, a file that cannot be read, or no score the harness did not complete the \
          task",
-        "exit status 125 of either step or of the health check Docker did not start the container: \
+        "exit status 125 of either step or of the health check Docker did not start the sandbox: \
          the directed evolution stops",
-        "a health check of the task, or of the verifier container, that passes in none of its \
+        "a health check of the task, or of the verifier sandbox, that passes in none of its \
          tries no result is recorded: the directed evolution stops, and cladenc resume carries out \
          the trial again",
-        "the time limit of the verifier the container is removed",
+        "the time limit of the verifier the sandbox is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
 }
@@ -189,7 +189,7 @@ fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_a_trial() {
         "work what the harness left in the working directory of the",
         "environment, not kept where that directory is /",
         "changes every path the harness added, changed or removed in the",
-        "container, one to a line after A, C or D",
+        "sandbox, one to a line after A, C or D",
         "stdout the standard output of the harness",
         "stderr the standard error of the harness",
         "verifier the standard output and the standard error of the verifier,",
@@ -428,7 +428,7 @@ fn the_manual_of_start_says_that_a_completed_task_means_the_work_only_as_far_as_
 #[test]
 fn the_manual_of_start_says_that_a_harness_reaches_the_network() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness reaches the network. Every container is started on the usual network of Docker, \
+        "A harness reaches the network. Every sandbox is started on the usual network of Docker, \
          and reaches the machine cladenc runs on and whatever that machine reaches."
     ));
 }
@@ -437,7 +437,7 @@ fn the_manual_of_start_says_that_a_harness_reaches_the_network() {
 fn the_manual_of_start_says_what_a_harness_that_reaches_the_network_can_do() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where a task was made from something public, its answer may be one fetch away, and a \
-         harness can leave something outside its container for a later harness to find, which \
+         harness can leave something outside its sandbox for a later harness to find, which \
          holding tasks out does not guard against."
     ));
 }
@@ -454,7 +454,7 @@ fn the_manual_of_start_says_how_a_harness_is_kept_from_reaching_further_than_the
 #[test]
 fn the_manual_of_start_says_that_a_verifier_may_trust_what_the_harness_left() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A verifier may trust what the harness left. The verifier is started in the container as \
+        "A verifier may trust what the harness left. The verifier is started in the sandbox as \
          the harness left it, and everything there was the harness's to change: tests, build \
          files, any program the verifier starts from the working directory, and the processes the \
          harness left running."

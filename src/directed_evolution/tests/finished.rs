@@ -2,11 +2,11 @@ use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 
 use crate::benchmark::Benchmark;
-use crate::containers::tests::double::{Answer, Double};
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Record, Settings};
+use crate::sandboxes::tests::double::{Answer, Double};
 
 const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
 
@@ -89,7 +89,7 @@ fn trials_started(evolved: &Evolved) -> Vec<(u64, String)> {
 }
 
 #[test]
-fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_the_same_journal() {
+fn one_sandbox_at_a_time_two_directed_evolutions_of_the_same_settings_write_the_same_journal() {
     let [first, second] = [(), ()].map(|()| {
         let evolved = given::started(solving(), with_three_diversifications);
         test_inputs::without_seconds(&evolved.journal())

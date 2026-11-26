@@ -67,7 +67,7 @@ fn the_end_of_a_diversification_of_this_format_that_holds_no_seconds_is_not_a_re
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":33,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":34,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -228,9 +228,9 @@ fn the_end_of_a_trial_of_this_format_whose_result_is_success_is_not_a_record() {
 }
 
 #[test]
-fn a_run_record_of_this_format_whose_limit_of_containers_has_another_key_is_not_a_record() {
+fn a_run_record_of_this_format_whose_limit_of_sandboxes_has_another_key_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""max_concurrent_containers":8"#, r#""workers":8"#)]),
+        error_of(&[&RUN.replace(r#""max_concurrent_sandboxes":8"#, r#""workers":8"#)]),
         JournalError::NotARecord { line: 1 }
     ));
 }

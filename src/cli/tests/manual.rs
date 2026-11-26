@@ -1,23 +1,23 @@
 use test_inputs::manual_on_one_line;
 
 #[test]
-fn the_manual_of_resume_says_that_a_cladenc_killed_outright_ends_none_of_its_containers() {
+fn the_manual_of_resume_says_that_a_cladenc_killed_outright_ends_none_of_its_sandboxes() {
     assert!(manual_on_one_line("cladenc-resume").contains(
-        "A cladenc that is killed outright, as by kill -9, ends none of its containers, and each \
+        "A cladenc that is killed outright, as by kill -9, ends none of its sandboxes, and each \
          goes on until its time limit has passed."
     ));
 }
 
 #[test]
-fn the_manual_of_resume_says_that_it_first_removes_the_containers_that_were_left_running() {
+fn the_manual_of_resume_says_that_it_first_removes_the_sandboxes_that_were_left_running() {
     assert!(manual_on_one_line("cladenc-resume").contains(
-        "Before it does anything else, cladenc resume removes the containers that the directed \
+        "Before it does anything else, cladenc resume removes the sandboxes that the directed \
          evolution left running, so that it never works beside one of them."
     ));
 }
 
 #[test]
-fn the_manual_of_resume_shows_the_label_that_every_container_of_a_directed_evolution_carries() {
+fn the_manual_of_resume_shows_the_label_that_every_sandbox_of_a_directed_evolution_carries() {
     assert!(manual_on_one_line("cladenc-resume").contains(
         "cladenc.directed-evolution=<DIR> where <DIR> is the path of the outputs directory, with \
          every symbolic link in it resolved."
@@ -25,10 +25,10 @@ fn the_manual_of_resume_shows_the_label_that_every_container_of_a_directed_evolu
 }
 
 #[test]
-fn the_manual_of_resume_says_that_the_containers_are_removed_once_no_other_cladenc_is_there() {
+fn the_manual_of_resume_says_that_the_sandboxes_are_removed_once_no_other_cladenc_is_there() {
     assert!(manual_on_one_line("cladenc-resume").contains(
         "Once it has the outputs directory to itself, cladenc resume asks Docker for the \
-         containers that carry the label of its directed evolution, removes them, and says how \
+         sandboxes that carry the label of its directed evolution, removes them, and says how \
          many it removed."
     ));
 }
@@ -43,25 +43,25 @@ fn the_manual_of_resume_says_what_it_does_where_docker_cannot_be_asked() {
 }
 
 #[test]
-fn the_manual_of_resume_shows_how_the_containers_of_a_directed_evolution_are_listed_by_hand() {
+fn the_manual_of_resume_shows_how_the_sandboxes_of_a_directed_evolution_are_listed_by_hand() {
     assert!(manual_on_one_line("cladenc-resume").contains(
-        "Where the directed evolution is not resumed, its containers are removed by hand. docker \
+        "Where the directed evolution is not resumed, its sandboxes are removed by hand. docker \
          ps --filter label=cladenc.directed-evolution=<DIR> lists them"
     ));
 }
 
 #[test]
-fn the_manual_of_resume_says_how_a_container_is_ended_by_hand() {
+fn the_manual_of_resume_says_how_a_sandbox_is_ended_by_hand() {
     assert!(manual_on_one_line("cladenc-resume").contains(
-        "their names begin cladenc-, and docker kill with a name ends that container. Docker \
-         removes a container of cladenc once it has ended."
+        "their names begin cladenc-, and docker kill with a name ends that sandbox. Docker \
+         removes a sandbox of cladenc once it has ended."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_resume_removes_the_containers_that_were_left_running() {
+fn the_manual_of_start_says_that_resume_removes_the_sandboxes_that_were_left_running() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Until then a container that was left goes on. cladenc resume removes the containers that \
+        "Until then a sandbox that was left goes on. cladenc resume removes the sandboxes that \
          the directed evolution left running before it does anything else, and cladenc-resume(1) \
          says how they are found, and how they are removed by hand where the directed evolution is \
          not resumed."
@@ -89,7 +89,7 @@ fn the_manual_of_start_says_which_command_the_timer_of_a_harness_starts() {
 }
 
 #[test]
-fn the_manual_of_start_says_how_long_the_timer_of_a_container_waits() {
+fn the_manual_of_start_says_how_long_the_timer_of_a_sandbox_waits() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "<SECONDS> what is left of the time limit of the command when it is started, in whole \
          seconds, and five seconds more"
@@ -105,17 +105,17 @@ fn the_manual_of_start_says_what_the_timer_does() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_container_ends_itself_when_cladenc_was_killed_outright() {
+fn the_manual_of_start_says_that_a_sandbox_ends_itself_when_cladenc_was_killed_outright() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "that a container ends itself once its time limit has passed, also when cladenc was killed \
+        "that a sandbox ends itself once its time limit has passed, also when cladenc was killed \
          outright, as by kill -9, and is not there to remove it."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_container_of_a_trial_is_started_under_sleep() {
+fn the_manual_of_start_says_that_the_sandbox_of_a_trial_is_started_under_sleep() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every container of a directed evolution is started under it, or, for a trial, under \
+        "Every sandbox of a directed evolution is started under it, or, for a trial, under \
          sleep,"
     ));
 }
@@ -139,7 +139,7 @@ fn the_manual_of_start_says_what_the_environment_of_every_task_has_to_hold() {
 #[test]
 fn the_manual_of_start_says_in_which_image_the_harness_of_a_trial_is_started() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness is started in a container, of the image of the directed evolution for a \
+        "A harness is started in a sandbox, of the image of the directed evolution for a \
          diversification and of the environment of its task for a trial, as"
     ));
 }
@@ -155,7 +155,7 @@ fn the_manual_of_start_says_as_which_user_the_command_of_a_harness_runs() {
 #[test]
 fn the_manual_of_start_says_what_the_image_of_the_directed_evolution_is_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every diversification, and every build of a harness, is carried out in a container of one \
+        "Every diversification, and every build of a harness, is carried out in a sandbox of one \
          image, the image of the directed evolution."
     ));
 }
@@ -163,7 +163,7 @@ fn the_manual_of_start_says_what_the_image_of_the_directed_evolution_is_for() {
 #[test]
 fn the_manual_of_start_shows_how_a_harness_is_built() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "in a container of the same image, as sh -c <TIMER> <COMMAND> <SECONDS> where <COMMAND> is \
+        "in a sandbox of the same image, as sh -c <TIMER> <COMMAND> <SECONDS> where <COMMAND> is \
          the value of that flag and the timer is the same one,"
     ));
 }
@@ -181,7 +181,7 @@ fn the_manual_of_start_names_what_a_harness_is_told() {
 }
 
 #[test]
-fn the_manual_of_start_says_which_text_a_harness_is_given_in_which_container() {
+fn the_manual_of_start_says_which_text_a_harness_is_given_in_which_sandbox() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "CLADENC_INSTRUCTION what the harness is asked to do: in a diversification the \
          diversification prompt, and in a trial the instruction of its task CLADENC_MODEL"
@@ -290,10 +290,10 @@ fn the_manual_of_start_says_how_an_image_is_brought_to_the_machine() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_container() {
+fn the_manual_of_start_says_that_docker_is_told_never_to_fetch_the_image_of_a_sandbox() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "cladenc tells Docker never to fetch the image of a container, so a directed evolution \
-         whose image is not on the machine stops at the first container of that image, and cladenc \
+        "cladenc tells Docker never to fetch the image of a sandbox, so a directed evolution \
+         whose image is not on the machine stops at the first sandbox of that image, and cladenc \
          resume continues it once the image is there."
     ));
 }
@@ -328,9 +328,9 @@ fn the_manual_of_start_says_what_each_way_a_harness_ends_means() {
     let endings = [
         "exit status 0 the diversification created a harness, or is recorded as unchanged where \
          the harness changed nothing",
-        "exit status 125 Docker did not start the container: the directed evolution stops",
+        "exit status 125 Docker did not start the sandbox: the directed evolution stops",
         "any other status the diversification failed",
-        "the time limit the container is removed",
+        "the time limit the sandbox is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
 }
@@ -351,9 +351,9 @@ fn the_manual_of_start_says_what_each_way_a_build_ends_means() {
     let help = manual_on_one_line("cladenc-start");
     let endings = [
         "exit status 0 the harness is built",
-        "exit status 125 Docker did not start the container: the directed evolution stops",
+        "exit status 125 Docker did not start the sandbox: the directed evolution stops",
         "any other status a child is recorded as build_failed",
-        "the time limit the container is removed",
+        "the time limit the sandbox is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
 }
@@ -377,7 +377,7 @@ fn the_manual_of_start_names_no_directory_under_var_lib() {
 }
 
 #[test]
-fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_container() {
+fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_sandbox() {
     assert_eq!(
         manual_on_one_line("cladenc-start")
             .split_whitespace()
@@ -392,9 +392,9 @@ fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_cont
 }
 
 #[test]
-fn the_manual_of_start_says_which_containers_are_started_from_the_image() {
+fn the_manual_of_start_says_which_sandboxes_are_started_from_the_image() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The diversification of an experiment is carried out in a container of that image as well, \
+        "The diversification of an experiment is carried out in a sandbox of that image as well, \
          and no trial is: a trial is carried out in the environment of its task."
     ));
 }
@@ -406,4 +406,28 @@ fn the_manual_of_start_names_the_flags_of_the_image_by_what_the_image_is_for() {
          names, or the image that cladenc builds when the directed evolution is started, from the \
          Dockerfile that --diversification-dockerfile names, as"
     ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_sandbox_of_cladenc_is_a_docker_container() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Every harness and every verifier runs in a sandbox, which is Harbor's word for the \
+         isolated place a task is run in, and every sandbox of cladenc is a Docker container."
+    ));
+}
+
+#[test]
+fn the_manual_of_resume_says_that_a_sandbox_is_a_docker_container_that_carries_a_label() {
+    assert!(manual_on_one_line("cladenc-resume").contains(
+        "Every sandbox of a directed evolution is a Docker container, and carries a Docker label, \
+         a name and a value that Docker keeps with a container:"
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_a_task_that_asks_for_no_cpus_and_no_memory_is_given() {
+    assert!(
+        manual_on_one_line("cladenc-start")
+            .contains("A task that asks for neither is given what Docker gives any container.")
+    );
 }

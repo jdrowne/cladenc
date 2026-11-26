@@ -1,11 +1,11 @@
-use crate::containers::tests::double::Double;
 use crate::directed_evolution::tests::given;
 use crate::file_system::tests::double::Memory;
 use crate::journal::{Record, Settings};
+use crate::sandboxes::tests::double::Double;
 
 fn three_at_once(directory: &Memory, settings: &mut Settings) {
     given::over_five_tasks(directory, settings);
-    settings.max_concurrent_containers = 3;
+    settings.max_concurrent_sandboxes = 3;
 }
 
 fn three_at_once_with_two_diversifications(directory: &Memory, settings: &mut Settings) {
@@ -15,7 +15,7 @@ fn three_at_once_with_two_diversifications(directory: &Memory, settings: &mut Se
 
 fn two_at_once(directory: &Memory, settings: &mut Settings) {
     given::over_five_tasks(directory, settings);
-    settings.max_concurrent_containers = 2;
+    settings.max_concurrent_sandboxes = 2;
 }
 
 fn records(change: impl FnOnce(&Memory, &mut Settings)) -> Vec<Record> {

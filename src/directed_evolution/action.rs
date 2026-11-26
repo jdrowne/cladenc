@@ -1,10 +1,10 @@
 use std::io;
 
 use super::Shared;
-use crate::containers::{self, ContainerError, Creation, Host, Retry, Trial, Trialled};
 use crate::genealogy::{Experiment, HarnessId};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
+use crate::sandboxes::{self, Creation, Host, Retry, SandboxError, Trial, Trialled};
 
 pub(super) enum Told {
     Ended(Ended),
@@ -34,7 +34,7 @@ pub(super) enum Ended {
     Stopped,
     Failed {
         action: Started,
-        error: ContainerError,
+        error: SandboxError,
     },
 }
 
@@ -49,11 +49,11 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     } else {
         Ok(())
     };
-    let cleared = cleared.map_err(ContainerError::Io);
+    let cleared = cleared.map_err(SandboxError::Io);
     let result = match action.clone() {
         Started::Diversification { child, progenitor } => cleared
             .and_then(|()| {
-                containers::run_diversification(
+                sandboxes::run_diversification(
                     host,
                     &shared.launch,
                     child,
@@ -74,13 +74,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
             let experiment = Experiment { child, progenitor };
             cleared
                 .and_then(|()| {
-                    containers::run_baseline(
-                        host,
-                        &shared.launch,
-                        harness,
-                        experiment,
-                        &shared.halt,
-                    )
+                    sandboxes::run_baseline(host, &shared.launch, harness, experiment, &shared.halt)
                 })
                 .map(|creation| Ended::Established {
                     harness,
@@ -103,7 +97,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
                         retry,
                     });
                 };
-                containers::run_trial(host, &shared.launch, trial, &shared.halt, &retrying)
+                sandboxes::run_trial(host, &shared.launch, trial, &shared.halt, &retrying)
             })
             .map(|trialled| Ended::Trialled {
                 harness,
@@ -113,7 +107,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     };
     match result {
         Ok(ended) => ended,
-        Err(ContainerError::Stopped) => Ended::Stopped,
+        Err(SandboxError::Stopped) => Ended::Stopped,
         Err(error) => Ended::Failed { action, error },
     }
 }

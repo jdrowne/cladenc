@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
 use crate::benchmark::Benchmark;
-use crate::containers::Launch;
 use crate::file_system::FileSystem;
 use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 use crate::holdout::TaskSet;
 use crate::model::{self, Model};
+use crate::sandboxes::Launch;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Settings {
@@ -29,7 +29,7 @@ pub struct Settings {
     pub corroboration_tasks_percentage: f64,
     pub corroboration_tasks: Vec<String>,
     pub max_diversifications: u64,
-    pub max_concurrent_containers: u64,
+    pub max_concurrent_sandboxes: u64,
     pub diversification_timeout: u64,
     pub max_verifier_health_check_retries: u64,
     pub max_task_health_check_retries: u64,

@@ -30,7 +30,7 @@ fn options(directory: &Memory) -> StartOptions {
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.path().join("outputs"),
         max_diversifications: 800,
-        max_concurrent_containers: 8,
+        max_concurrent_sandboxes: 8,
         diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,

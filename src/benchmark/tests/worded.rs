@@ -242,7 +242,7 @@ fn a_variable_whose_value_is_not_one_line_is_said_with_its_table_and_its_name() 
         }
         .to_string(),
         "gives NOTE under environment.env a value that is not one line of text, which a \
-         container cannot be given"
+         sandbox cannot be given"
     );
 }
 

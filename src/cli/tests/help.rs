@@ -105,13 +105,13 @@ fn the_help_of_start_names_the_flag_that_names_the_file_of_the_key() {
 }
 
 #[test]
-fn the_help_of_start_names_the_flag_that_limits_the_containers_running_at_once() {
-    assert!(help_of("start").contains("--max-concurrent-containers <COUNT>"));
+fn the_help_of_start_names_the_flag_that_limits_the_sandboxes_running_at_once() {
+    assert!(help_of("start").contains("--max-concurrent-sandboxes <COUNT>"));
 }
 
 #[test]
-fn the_help_of_start_says_that_the_limit_is_the_most_containers_running_at_once() {
-    assert!(help_of("start").contains("The most containers running at once"));
+fn the_help_of_start_says_that_the_limit_is_the_most_sandboxes_running_at_once() {
+    assert!(help_of("start").contains("The most sandboxes running at once"));
 }
 
 #[test]
@@ -146,7 +146,7 @@ fn the_help_of_start_names_the_flag_that_gives_the_most_retries_of_a_verifier_s_
 
 #[test]
 fn the_help_of_start_says_what_the_flag_of_the_most_retries_counts() {
-    assert!(help_of("start").contains("The most times a verifier container"));
+    assert!(help_of("start").contains("The most times a verifier sandbox"));
 }
 
 #[test]
@@ -156,7 +156,7 @@ fn the_help_of_start_names_the_flag_that_gives_the_most_retries_of_a_task_s_heal
 
 #[test]
 fn the_help_of_start_says_what_the_flag_of_the_most_retries_of_a_task_counts() {
-    assert!(help_of("start").contains("The most times the container of a task"));
+    assert!(help_of("start").contains("The most times the sandbox of a task"));
 }
 
 #[test]

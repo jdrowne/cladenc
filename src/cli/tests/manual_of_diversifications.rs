@@ -222,10 +222,10 @@ fn the_manual_of_start_says_that_a_singleton_control_group_harness_is_not_waited
 }
 
 #[test]
-fn the_manual_of_start_says_that_fewer_containers_run_while_a_diversification_runs() {
+fn the_manual_of_start_says_that_fewer_sandboxes_run_while_a_diversification_runs() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "While a diversification runs, no container of another child is started, so fewer \
-         containers run than --max-concurrent-containers allows."
+        "While a diversification runs, no sandbox of another child is started, so fewer \
+         sandboxes run than --max-concurrent-sandboxes allows."
     ));
 }
 
