@@ -29,6 +29,12 @@ const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const PUT_OUT_WHERE_DOCKER_COPIES_NOTHING_FROM: &str = "ln -s /proc/1 out";
 const LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT: &str =
     "mkdir out && echo found > out/report.txt && chmod 000 out/report.txt";
+const LEAVE_PERMISSION_BITS_IN_OUT: &str = "mkdir -p out/private out/open out/shut && echo found > \
+                                            out/secret && chmod 700 out/private && chmod 1777 \
+                                            out/open && chmod 000 out/shut out/secret && chmod \
+                                            750 out";
+const SAY_THE_PERMISSION_BITS_IN_OUT: &str =
+    "cd /app && stat -c '%a %n' out out/private out/open out/shut out/secret";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
                            1\"\ninterval_sec = 0\nretries = 1\n";
@@ -245,6 +251,18 @@ fn printed_by_the_verifier(task_toml: &str, run_command: &str, verifier: &str) -
         &trialled(task_toml, run_command, verifier),
         "verifier/stdout",
     )
+}
+
+static BITS_FOUND_BY_THE_VERIFIER: LazyLock<String> = LazyLock::new(|| {
+    printed_by_the_verifier(
+        &separate_and(OUT),
+        LEAVE_PERMISSION_BITS_IN_OUT,
+        SAY_THE_PERMISSION_BITS_IN_OUT,
+    )
+});
+
+fn found_by_the_verifier_with_its_bits(said: &str) -> bool {
+    BITS_FOUND_BY_THE_VERIFIER.lines().any(|line| line == said)
 }
 
 static VERIFIED_SEPARATELY: LazyLock<Asked> = LazyLock::new(|| {
@@ -742,4 +760,29 @@ fn a_path_that_cannot_be_put_in_the_verifier_sandbox_is_an_error() {
         COMPLETE,
     );
     assert!(matches!(trialled.result, Err(SandboxError::Io(_))));
+}
+
+#[test]
+fn a_verifier_in_a_sandbox_of_its_own_finds_the_bits_the_harness_left_on_a_kept_directory() {
+    assert!(found_by_the_verifier_with_its_bits("750 out"));
+}
+
+#[test]
+fn a_verifier_in_a_sandbox_of_its_own_finds_the_bits_of_a_directory_inside_a_kept_one() {
+    assert!(found_by_the_verifier_with_its_bits("700 out/private"));
+}
+
+#[test]
+fn a_verifier_in_a_sandbox_of_its_own_finds_the_sticky_bit_the_harness_left_on_a_directory() {
+    assert!(found_by_the_verifier_with_its_bits("1777 out/open"));
+}
+
+#[test]
+fn a_verifier_in_a_sandbox_of_its_own_finds_a_directory_no_one_may_list_as_it_was_left() {
+    assert!(found_by_the_verifier_with_its_bits("0 out/shut"));
+}
+
+#[test]
+fn a_verifier_in_a_sandbox_of_its_own_finds_a_file_no_one_may_read_as_it_was_left() {
+    assert!(found_by_the_verifier_with_its_bits("0 out/secret"));
 }

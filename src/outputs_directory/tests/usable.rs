@@ -132,3 +132,43 @@ fn making_a_tree_usable_changes_no_file_a_symbolic_link_in_it_leads_to() {
     make_usable(&directory, &tree);
     assert_eq!(mode_of(&directory, &outside), 0o000);
 }
+
+#[test]
+fn making_a_tree_usable_tells_which_bits_a_directory_no_one_may_list_had() {
+    let (directory, tree) = tree();
+    with_mode(&directory, &tree.join("inside"), 0o050);
+    assert_eq!(
+        make_usable(&directory, &tree),
+        [(tree.join("inside"), 0o050)]
+    );
+}
+
+#[test]
+fn making_a_tree_usable_tells_which_bits_a_file_no_one_may_read_had() {
+    let (directory, tree) = tree();
+    with_mode(&directory, &tree.join("inside/file"), 0o000);
+    assert_eq!(
+        make_usable(&directory, &tree),
+        [(tree.join("inside/file"), 0o000)]
+    );
+}
+
+#[test]
+fn making_a_tree_usable_tells_of_a_directory_before_what_it_holds() {
+    let (directory, tree) = tree();
+    with_mode(&directory, &tree.join("inside/file"), 0o000);
+    with_mode(&directory, &tree.join("inside"), 0o000);
+    assert_eq!(
+        make_usable(&directory, &tree),
+        [
+            (tree.join("inside"), 0o000),
+            (tree.join("inside/file"), 0o000)
+        ]
+    );
+}
+
+#[test]
+fn making_usable_a_tree_that_its_owner_can_use_tells_of_no_change() {
+    let (directory, tree) = tree();
+    assert!(make_usable(&directory, &tree).is_empty());
+}

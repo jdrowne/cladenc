@@ -525,12 +525,13 @@ impl Trialling<'_> {
             &self.running.join(COLLECTION_HOOKS),
             stop,
         )?;
-        artifacts::keep(
+        let left = artifacts::keep(
             &up,
             &environment.configuration.artifacts,
             &self.running.join(ARTIFACTS),
         )?;
         let verifying = Verifying {
+            left: &left,
             host,
             trial: &self.trial,
             running: self.running,

@@ -24,6 +24,9 @@ pub(super) const ARTIFACTS_MADE: &str = r#"mkdir -p "$3" && chown "$4" "$3""#;
 
 pub(super) const VERIFIER_EMPTIED: &str = r#"rm -rf "$3" && mkdir -p "$3" && chown "$4" "$3""#;
 
+pub(super) const BITS_SET: &str =
+    r#"while [ $# -gt 1 ]; do chmod "$1" "$2" || exit; shift 2; done"#;
+
 pub(super) const TESTS_LINKED: &str = r#"rm -rf "$1" && ln -s "$2" "$1""#;
 
 pub(super) const HEALTH_CHECK: &str = "test -e /ready";

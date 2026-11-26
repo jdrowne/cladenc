@@ -86,8 +86,8 @@ impl Build<'_> {
             command: self.command,
             environment: &[("CLADENC_HARNESS", HARNESS)],
         };
-        sandbox
-            .run(&shell, &kept, limits)
-            .inspect(|_| make_usable(host.outputs_directory.files(), self.source))
+        sandbox.run(&shell, &kept, limits).inspect(|_| {
+            make_usable(host.outputs_directory.files(), self.source);
+        })
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::io::{self, ErrorKind};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::file_system::{FileSystem, Kind};
 
@@ -36,19 +36,26 @@ pub(super) fn copy_tree(files: &dyn FileSystem, from: &Path, to: &Path) -> io::R
     }
 }
 
-pub(crate) fn make_usable(files: &dyn FileSystem, tree: &Path) {
-    match files.found(tree) {
-        Ok(found) if found.kind == Kind::Directory => {
-            let _ = files.set_mode(tree, found.mode | READ_WRITTEN_AND_ENTERED_BY_ITS_OWNER);
-            for name in files.list(tree).unwrap_or_default() {
-                make_usable(files, &tree.join(name));
-            }
-        }
-        Ok(found) if found.kind == Kind::File && found.mode & READ_BY_ITS_OWNER == 0 => {
-            let _ = files.set_mode(tree, found.mode | READ_BY_ITS_OWNER);
-        }
-        _ => {}
+pub(crate) fn make_usable(files: &dyn FileSystem, tree: &Path) -> Vec<(PathBuf, u32)> {
+    let Ok(found) = files.found(tree) else {
+        return Vec::new();
+    };
+    let needed = match found.kind {
+        Kind::Directory => READ_WRITTEN_AND_ENTERED_BY_ITS_OWNER,
+        Kind::File => READ_BY_ITS_OWNER,
+        Kind::SymbolicLink | Kind::Other => 0,
+    };
+    let mut changed = Vec::new();
+    if found.mode & needed != needed {
+        let _ = files.set_mode(tree, found.mode | needed);
+        changed.push((tree.to_owned(), found.mode));
     }
+    if found.kind == Kind::Directory {
+        for name in files.list(tree).unwrap_or_default() {
+            changed.extend(make_usable(files, &tree.join(name)));
+        }
+    }
+    changed
 }
 
 pub(crate) fn holds_only_harness_files(files: &dyn FileSystem, tree: &Path) -> io::Result<bool> {

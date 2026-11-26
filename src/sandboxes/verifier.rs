@@ -24,6 +24,7 @@ pub(super) struct Verifying<'a> {
     pub(super) running: &'a Path,
     pub(super) stop: &'a AtomicBool,
     pub(super) max_retries: u64,
+    pub(super) left: &'a artifacts::Bits,
     pub(super) retrying: &'a dyn Fn(Retry),
 }
 
@@ -43,8 +44,9 @@ impl<'a> Verifying<'a> {
         let up = self.brought_up(image)?;
         let user = configuration.verifier_user.as_deref().unwrap_or(up.user());
         let paths = self.running.join(ARTIFACTS);
-        harbor::link_logs(&up)
-            .and_then(|()| artifacts::give(&up, &configuration.artifacts, &paths, user))?;
+        harbor::link_logs(&up).and_then(|()| {
+            artifacts::give(&up, &configuration.artifacts, &paths, user, self.left)
+        })?;
         self.run_in(&up, !image.holds_verifier)
     }
 

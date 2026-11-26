@@ -213,6 +213,26 @@ fn the_manual_of_start_says_what_a_kept_path_that_cannot_be_copied_for_a_verifie
 }
 
 #[test]
+fn the_manual_of_start_says_that_a_verifier_finds_the_permission_bits_the_harness_left() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Apart from the setuid and setgid bits, each file and each directory in the verifier \
+         sandbox has the permission bits that the harness left on it. The copy carries most of \
+         them. Once a path is copied in, cladenc sets the others with chmod, as root in the \
+         verifier sandbox: the bits of the directory at the path itself, of a directory that \
+         its owner could not list, write in or enter, and of a file that its owner could not \
+         read."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_verifier_image_has_to_hold_chmod() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "It has to hold chmod as well, with which cladenc sets permission bits on what it \
+         copies in."
+    ));
+}
+
+#[test]
 fn the_manual_of_start_says_how_the_verifier_is_run_in_a_sandbox_of_its_own() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Then the tests directory is copied in where the image holds no verifier, /logs/verifier \

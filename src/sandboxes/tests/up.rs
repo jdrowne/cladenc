@@ -1,5 +1,5 @@
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -8,7 +8,7 @@ use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::program::{Ending, Limits};
 use crate::sandboxes::sandbox::{Bringing, Run, Shell, Up};
 use crate::sandboxes::tests::double::{Answer, Double};
-use crate::sandboxes::tests::given::{self, EMPTIED, TIMER};
+use crate::sandboxes::tests::given::{self, BITS_SET, EMPTIED, TIMER};
 use crate::sandboxes::{Copied, SandboxError};
 
 const RUNNING: &str = "/running";
@@ -109,7 +109,7 @@ fn working_in_app() -> Double {
     Double::default().answering(&["inspect"], &[WORKING_IN_APP])
 }
 
-fn reason_of(copied: io::Result<()>) -> Option<String> {
+fn reason_of<T>(copied: io::Result<T>) -> Option<String> {
     copied.err().map(|error| error.to_string())
 }
 
@@ -656,6 +656,62 @@ fn what_was_unpacked_of_a_path_before_its_copy_failed_is_kept_in_its_place() {
         leaving_a_directory(docker).answering(&COPIED_OUT, &[REFUSED])
     });
     assert_eq!(directory.names_in(KEPT), ["a.txt"]);
+}
+
+#[test]
+fn what_is_copied_from_a_path_is_told_with_the_bits_that_were_changed_to_keep_it() {
+    let directory = Memory::default();
+    let docker = leaving_a_directory(Double::default().on(&directory));
+    let outputs_directory = OutputsDirectory::at(directory.shared(), Path::new("/outputs"));
+    let up = brought_up(&docker, &outputs_directory);
+    let changed = up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
+    assert_eq!(changed.unwrap(), [(PathBuf::from(KEPT), 0o500)]);
+}
+
+#[test]
+fn the_bits_of_what_was_copied_into_a_sandbox_are_set_as_root_from_the_top_of_it() {
+    let (docker, outputs_directory) = (Double::default(), outputs());
+    let up = brought_up(&docker, &outputs_directory);
+    let bits = [
+        (PathBuf::from("locked/file"), 0o000),
+        (PathBuf::new(), 0o1750),
+    ];
+    up.set_bits("/app/out", &bits).unwrap();
+    assert_eq!(
+        docker.commands(&outputs_directory)[2],
+        format!(
+            "docker exec --workdir / --user 0 NAME sh -c {BITS_SET} sh 0 /app/out/locked/file \
+             1750 /app/out"
+        )
+    );
+}
+
+#[test]
+fn nothing_is_asked_of_a_sandbox_where_no_bits_are_to_be_set() {
+    let (docker, outputs_directory) = (Double::default(), outputs());
+    let up = brought_up(&docker, &outputs_directory);
+    up.set_bits("/app/out", &[]).unwrap();
+    assert_eq!(docker.commands(&outputs_directory).len(), 2);
+}
+
+#[test]
+fn bits_are_set_in_a_sandbox_five_hundred_at_a_time() {
+    let (docker, outputs_directory) = (Double::default(), outputs());
+    let up = brought_up(&docker, &outputs_directory);
+    let bits = vec![(PathBuf::from("file"), 0o600); 501];
+    up.set_bits("/app/out", &bits).unwrap();
+    assert_eq!(docker.commands(&outputs_directory).len(), 4);
+}
+
+#[test]
+fn bits_that_cannot_be_set_in_a_sandbox_are_an_error() {
+    let docker = Double::default().answering(&["exec", BITS_SET], &[REFUSED]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    assert!(matches!(
+        up.set_bits("/app/out", &[(PathBuf::new(), 0o755)]),
+        Err(SandboxError::Io(_))
+    ));
 }
 
 #[test]

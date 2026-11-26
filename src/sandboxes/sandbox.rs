@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::fmt::Write;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -32,6 +32,8 @@ const NO_DIRECTORY: &str = r#"[ -d "$1" ] || echo none"#;
 const NOTHING: &str = r#"[ -e "$1" ] || echo none"#;
 const NONE: &str = "none";
 const TOP: &str = "/";
+const BITS_SET: &str = r#"while [ $# -gt 1 ]; do chmod "$1" "$2" || exit; shift 2; done"#;
+const SET_AT_ONCE: usize = 500;
 
 pub(super) struct Mount<'a> {
     pub(super) from: &'a Path,
@@ -240,6 +242,20 @@ impl<'a> Up<'a> {
         self.place(ROOM_MADE, from, to, owner)
     }
 
+    pub(super) fn set_bits(&self, at: &str, bits: &[(PathBuf, u32)]) -> Result<(), SandboxError> {
+        bits.chunks(SET_AT_ONCE)
+            .try_for_each(|some| {
+                let mut docker = self.as_root();
+                docker.args(["sh", "-c", BITS_SET, "sh"]);
+                for (below, bits) in some {
+                    let path: PathBuf = Path::new(at).join(below).components().collect();
+                    docker.arg(format!("{bits:o}")).arg(path);
+                }
+                self.docker.print(docker).map(drop)
+            })
+            .map_err(SandboxError::Io)
+    }
+
     fn place(&self, room: &str, from: &Path, to: &str, owner: &str) -> Result<(), SandboxError> {
         let mut emptied = self.as_root();
         emptied.args(["sh", "-c", room, "sh", to]);
@@ -293,23 +309,41 @@ impl<'a> Up<'a> {
         })
     }
 
-    pub(super) fn copy_what_is_at(&self, from: &str, through: &Path, to: &Path) -> io::Result<()> {
+    pub(super) fn copy_what_is_at(
+        &self,
+        from: &str,
+        through: &Path,
+        to: &Path,
+    ) -> io::Result<Vec<(PathBuf, u32)>> {
         let _ = self.files.remove_tree(through);
-        let copied = self
-            .unpack(&[FOLLOW_LINK], from, through)
-            .or_else(|error| self.unless_absent(NOTHING, from, error));
-        let _ = self
+        let copied = self.unpack(&[FOLLOW_LINK], from, through).or_else(|error| {
+            self.unless_absent(NOTHING, from, error)
+                .map(|()| Vec::new())
+        });
+        let taken = self
             .files
             .list(through)
             .ok()
             .and_then(|names| names.into_iter().next())
-            .map(|name| self.files.rename(&through.join(name), to));
+            .map(|name| through.join(name));
+        let _ = taken.as_ref().map(|taken| self.files.rename(taken, to));
         let _ = self.files.remove_tree(through);
-        copied
+        copied.map(|changed| {
+            changed
+                .into_iter()
+                .filter_map(|(path, bits)| {
+                    taken
+                        .as_ref()
+                        .and_then(|taken| path.strip_prefix(taken).ok())
+                        .map(|below| (to.join(below), bits))
+                })
+                .collect()
+        })
     }
 
     pub(super) fn take_out_of(&self, from: &str, to: &Path) -> io::Result<()> {
         self.unpack(&[], &format!("{from}/."), to)
+            .map(drop)
             .or_else(|error| self.unless_absent(NO_DIRECTORY, from, error))
     }
 
@@ -324,7 +358,7 @@ impl<'a> Up<'a> {
         }
     }
 
-    fn unpack(&self, flags: &[&str], from: &str, into: &Path) -> io::Result<()> {
+    fn unpack(&self, flags: &[&str], from: &str, into: &Path) -> io::Result<Vec<(PathBuf, u32)>> {
         let mut docker = Command::new("docker");
         docker
             .arg("cp")
@@ -332,8 +366,8 @@ impl<'a> Up<'a> {
             .arg(format!("{}:{from}", self.name))
             .arg(ARCHIVE);
         let unpacked = self.docker.unpack(docker, into);
-        make_usable(self.files, into);
-        unpacked
+        let changed = make_usable(self.files, into);
+        unpacked.map(|()| changed)
     }
 
     fn as_root(&self) -> Command {

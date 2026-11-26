@@ -1057,6 +1057,14 @@ A file that is not a regular file, a directory or a symbolic link is left out,
 and so is a symbolic link that points outside the path it was kept with.
 What is copied in belongs to the user the verifier runs as.
 .PP
+Apart from the setuid and setgid bits, each file and each directory in the
+verifier sandbox has the permission bits that the harness left on it.
+The copy carries most of them.
+Once a path is copied in, cladenc sets the others with chmod, as root in the
+verifier sandbox: the bits of the directory at the path itself, of a directory
+that its owner could not list, write in or enter, and of a file that its owner
+could not read.
+.PP
 Apart from what is left out so, a path that was kept is copied in full or not
 at all.
 cladenc first makes a copy of the path in the outputs directory, without what
@@ -1088,6 +1096,8 @@ take, and ten minutes more
 and is removed once the verifier has ended.
 A verifier image has to hold what the environment of a task has to: sh,
 sleep, rm, mkdir, chown and ln.
+It has to hold chmod as well, with which cladenc sets permission bits on what
+it copies in.
 .SH CPUS AND MEMORY
 The sandbox of a trial is given no more CPUs and no more memory than its
 task asks for, as \fB\-\-cpus\fP and \fB\-\-memory\fP of \fBdocker run\fP, so

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::io::{self, ErrorKind};
 use std::iter;
 use std::path::{Component, Path, PathBuf};
@@ -11,6 +12,21 @@ const KEPT: &str = ".";
 const GIVEN: &str = "given-to-the-verifier";
 const TAKEN: &str = "taken-out-of-the-sandbox";
 const READ_WRITTEN_AND_RUN: u32 = 0o777;
+const BITS_OF_A_DIRECTORY: u32 = 0o1777;
+
+pub(super) type Bits = BTreeMap<PathBuf, u32>;
+
+#[derive(Debug, Eq, PartialEq)]
+pub(super) struct Given {
+    pub(super) directory: bool,
+    pub(super) bits: Vec<(PathBuf, u32)>,
+}
+
+struct Copying<'a> {
+    files: &'a dyn FileSystem,
+    left: &'a Bits,
+    top: &'a Path,
+}
 
 enum Token {
     AnyRun,
@@ -45,30 +61,38 @@ impl Set {
     }
 }
 
-pub(super) fn keep(up: &Up<'_>, artifacts: &[Artifact], kept: &Path) -> Result<(), SandboxError> {
+pub(super) fn keep(up: &Up<'_>, artifacts: &[Artifact], kept: &Path) -> Result<Bits, SandboxError> {
     let files = up.files();
+    let mut left = Bits::new();
     for artifact in artifacts {
-        let place = keep_one(up, artifact, kept)?;
+        let place = keep_one(up, artifact, kept, &mut left)?;
         remove_above_where_empty(files, &place, kept);
     }
     if let Some(published) = Artifact::published(artifacts) {
-        let place = keep_one(up, &published, kept)?;
+        let place = keep_one(up, &published, kept, &mut left)?;
         let _ = files.remove_directory(&place);
         remove_above_where_empty(files, &place, kept);
     }
-    Ok(())
+    Ok(left)
 }
 
-fn keep_one(up: &Up<'_>, artifact: &Artifact, kept: &Path) -> Result<PathBuf, SandboxError> {
+fn keep_one(
+    up: &Up<'_>,
+    artifact: &Artifact,
+    kept: &Path,
+    left: &mut Bits,
+) -> Result<PathBuf, SandboxError> {
     let place = place_of(artifact, kept);
     let _ = place
         .parent()
         .map(|above| up.files().make_directories(above));
-    up.copy_what_is_at(&artifact.source, &kept.with_file_name(TAKEN), &place)
+    let changed = up
+        .copy_what_is_at(&artifact.source, &kept.with_file_name(TAKEN), &place)
         .map_err(|error| SandboxError::NotCopiedOut {
             left: Copied::Artifact(artifact.source.clone()),
             error,
         })?;
+    left.extend(changed);
     leave_out(up.files(), &place, &artifact.exclude);
     Ok(place)
 }
@@ -96,21 +120,27 @@ pub(super) fn give(
     artifacts: &[Artifact],
     kept: &Path,
     owner: &str,
+    bits: &Bits,
 ) -> Result<(), SandboxError> {
     let files = up.files();
     let given = kept.with_file_name(GIVEN);
     let published = Artifact::published(artifacts);
     let gave = artifacts.iter().chain(&published).try_for_each(|artifact| {
         remove(files, &given);
-        let copied = trusted(files, &place_of(artifact, kept), &given).map_err(|error| {
+        let copied = trusted(files, &place_of(artifact, kept), &given, bits).map_err(|error| {
             SandboxError::NotGivenToVerifier {
                 left: artifact.source.clone(),
                 error,
             }
         })?;
+        let path = artifact.path();
         match copied {
-            Some(true) => up.put(&given, &artifact.path(), owner),
-            Some(false) => up.put_file(&given, &artifact.path(), owner),
+            Some(copy) if copy.directory => up
+                .put(&given, &path, owner)
+                .and_then(|()| up.set_bits(&path, &copy.bits)),
+            Some(copy) => up
+                .put_file(&given, &path, owner)
+                .and_then(|()| up.set_bits(&path, &copy.bits)),
             None => Ok(()),
         }
     });
@@ -124,10 +154,23 @@ pub(super) fn remove(files: &dyn FileSystem, given: &Path) {
         .or_else(|_| files.remove_tree(given));
 }
 
-pub(super) fn trusted(files: &dyn FileSystem, from: &Path, to: &Path) -> io::Result<Option<bool>> {
+pub(super) fn trusted(
+    files: &dyn FileSystem,
+    from: &Path,
+    to: &Path,
+    left: &Bits,
+) -> io::Result<Option<Given>> {
     match files.found(from) {
         Ok(found) if matches!(found.kind, Kind::Directory | Kind::File) => {
-            copy_trusted(files, from, found, to, 0).map(|()| Some(found.kind == Kind::Directory))
+            let copying = Copying {
+                files,
+                left,
+                top: from,
+            };
+            let directory = found.kind == Kind::Directory;
+            copying
+                .copy(from, found, to, 0)
+                .map(|bits| Some(Given { directory, bits }))
         }
         Ok(_) => Ok(None),
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
@@ -135,43 +178,76 @@ pub(super) fn trusted(files: &dyn FileSystem, from: &Path, to: &Path) -> io::Res
     }
 }
 
-fn copy_trusted(
-    files: &dyn FileSystem,
-    from: &Path,
-    found: Found,
-    to: &Path,
-    depth: usize,
-) -> io::Result<()> {
-    let copied = match found.kind {
-        Kind::Directory => files.make_directory(to).and_then(|()| files.list(from)),
-        Kind::File => {
-            let mode = found.mode & READ_WRITTEN_AND_RUN;
-            files
+impl Copying<'_> {
+    fn copy(
+        &self,
+        from: &Path,
+        found: Found,
+        to: &Path,
+        depth: usize,
+    ) -> io::Result<Vec<(PathBuf, u32)>> {
+        let files = self.files;
+        let copied = match found.kind {
+            Kind::Directory => files
+                .make_directory(to)
+                .and_then(|()| files.set_mode(to, found.mode & BITS_OF_A_DIRECTORY))
+                .and_then(|()| files.list(from)),
+            Kind::File => files
                 .copy(from, to)
-                .and_then(|()| files.set_mode(to, mode))
-                .map(|()| Vec::new())
-        }
-        Kind::SymbolicLink => files
-            .target(from)
-            .and_then(|target| {
-                if stays_inside(&target, depth) {
-                    files.link(&target, to)
-                } else {
-                    Ok(())
-                }
+                .and_then(|()| files.set_mode(to, found.mode & READ_WRITTEN_AND_RUN))
+                .map(|()| Vec::new()),
+            Kind::SymbolicLink => files
+                .target(from)
+                .and_then(|target| self.link_inside(&target, to, depth))
+                .map(|()| Vec::new()),
+            Kind::Other => Ok(Vec::new()),
+        };
+        copied
+            .map_err(naming(from))
+            .and_then(|names| {
+                names.into_iter().try_fold(Vec::new(), |bits, name| {
+                    let (from, to) = (from.join(&name), to.join(&name));
+                    files
+                        .found(&from)
+                        .map_err(naming(&from))
+                        .and_then(|found| self.copy(&from, found, &to, depth + 1))
+                        .map(|below| with(bits, below))
+                })
             })
-            .map(|()| Vec::new()),
-        Kind::Other => Ok(Vec::new()),
-    };
-    copied.map_err(naming(from)).and_then(|names| {
-        names.into_iter().try_for_each(|name| {
-            let (from, to) = (from.join(&name), to.join(&name));
-            files
-                .found(&from)
-                .map_err(naming(&from))
-                .and_then(|found| copy_trusted(files, &from, found, &to, depth + 1))
-        })
-    })
+            .map(|bits| with(bits, self.left_on(from, found)))
+    }
+
+    fn link_inside(&self, target: &Path, to: &Path, depth: usize) -> io::Result<()> {
+        if stays_inside(target, depth) {
+            self.files.link(target, to)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn left_on(&self, from: &Path, found: Found) -> Option<(PathBuf, u32)> {
+        let below = from.strip_prefix(self.top).unwrap_or(Path::new(""));
+        let (kept_with, all) = match found.kind {
+            Kind::Directory => (
+                below.as_os_str().is_empty().then_some(found.mode),
+                BITS_OF_A_DIRECTORY,
+            ),
+            _ => (None, READ_WRITTEN_AND_RUN),
+        };
+        self.left
+            .get(from)
+            .copied()
+            .or(kept_with)
+            .map(|bits| (below.to_owned(), bits & all))
+    }
+}
+
+fn with(
+    mut bits: Vec<(PathBuf, u32)>,
+    more: impl IntoIterator<Item = (PathBuf, u32)>,
+) -> Vec<(PathBuf, u32)> {
+    bits.extend(more);
+    bits
 }
 
 fn naming(path: &Path) -> impl Fn(io::Error) -> io::Error {

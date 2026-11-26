@@ -5,7 +5,7 @@ use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConf
 use crate::genealogy::{Cause, TrialResult};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{
-    self, EMPTIED, HEALTH_CHECK, LAUNCH, LOGS_LINKED, TASK, TESTS_LINKED, TIMER, Tried,
+    self, BITS_SET, EMPTIED, HEALTH_CHECK, LAUNCH, LOGS_LINKED, TASK, TESTS_LINKED, TIMER, Tried,
     VERIFIER_EMPTIED,
 };
 use crate::sandboxes::{Checked, Environment, Launch, Retry, SandboxError, VerifierImage};
@@ -461,6 +461,66 @@ fn a_trial_whose_verifier_would_be_given_part_of_a_kept_path_is_given_no_result(
     assert!(matches!(
         verified_apart(with_a_kept_file_that_can_no_longer_be_read()).result,
         Err(SandboxError::NotGivenToVerifier { left, .. }) if left == "/logs/artifacts"
+    ));
+}
+
+#[test]
+fn the_bits_of_a_kept_directory_are_set_in_the_verifier_sandbox_once_it_is_copied_in() {
+    let tried = verified_apart(leaving_a_directory());
+    assert_eq!(
+        tried.commands()[17],
+        format!("docker exec --workdir / --user 0 NAME sh -c {BITS_SET} sh 755 /logs/artifacts")
+    );
+}
+
+#[test]
+fn the_bits_a_harness_left_on_a_file_no_one_may_read_are_set_in_the_verifier_sandbox() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    assert_eq!(
+        tried.commands()[17],
+        format!(
+            "docker exec --workdir / --user 0 NAME sh -c {BITS_SET} sh 0 \
+             /logs/artifacts/made.txt 755 /logs/artifacts"
+        )
+    );
+}
+
+#[test]
+fn no_bits_are_set_in_the_verifier_sandbox_for_a_kept_file_that_was_kept_as_it_was_left() {
+    let tried = verified_apart(leaving_a_file());
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains(BITS_SET))
+    );
+}
+
+#[test]
+fn a_trial_whose_bits_cannot_be_set_in_its_verifier_sandbox_is_not_carried_out() {
+    let docker = leaving_a_directory().answering(&["exec", BITS_SET], &[REFUSED]);
+    assert!(matches!(
+        verified_apart(docker).result,
+        Err(SandboxError::Io(_))
+    ));
+}
+
+#[test]
+fn a_trial_whose_bits_cannot_be_set_on_a_kept_file_is_not_carried_out() {
+    let docker = Double::default()
+        .doing(&COPIED, |directory, asked| {
+            directory.create_dir_all(&asked.kept).unwrap();
+            directory
+                .write(asked.kept.join("artifacts"), "made\n")
+                .unwrap();
+            directory
+                .set_mode(asked.kept.join("artifacts"), 0o000)
+                .unwrap();
+        })
+        .answering(&["exec", BITS_SET], &[REFUSED]);
+    assert!(matches!(
+        verified_apart(docker).result,
+        Err(SandboxError::Io(_))
     ));
 }
 

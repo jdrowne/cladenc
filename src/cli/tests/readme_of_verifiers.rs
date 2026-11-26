@@ -100,6 +100,16 @@ fn the_readme_says_that_a_kept_path_is_copied_to_a_verifier_in_full_or_not_at_al
 }
 
 #[test]
+fn the_readme_says_that_a_verifier_finds_the_permission_bits_the_harness_left() {
+    assert!(readme().contains(
+        "Apart from those two bits, each file and each directory in the verifier sandbox has \
+         the permission bits that the harness left on it: once a path is copied in, `cladenc` \
+         sets with `chmod`, as root, the bits that the copy does not carry, so the image of the \
+         verifier has to hold `chmod`."
+    ));
+}
+
+#[test]
 fn the_flag_of_the_most_retries_says_what_is_retried_and_that_0_is_taken() {
     assert!(readme().contains(
         "| `--max-verifier-health-check-retries <COUNT>` | Required | The most times a \
