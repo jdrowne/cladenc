@@ -82,8 +82,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_34() {
-    assert_eq!(journal::FORMAT, 34);
+fn the_format_of_the_journal_is_35() {
+    assert_eq!(journal::FORMAT, 35);
 }
 
 #[test]
