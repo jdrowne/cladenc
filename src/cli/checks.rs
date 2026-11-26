@@ -66,15 +66,15 @@ impl StartOptions {
                 .map(|given| model_key_file(files, given))
                 .transpose()?,
             docker_image: self
-                .procreation_docker_image
+                .diversification_docker_image
                 .clone()
                 .unwrap_or_else(image_name),
             dockerfile: self
-                .procreation_dockerfile
+                .diversification_dockerfile
                 .as_deref()
                 .map(|given| dockerfile(files, given))
                 .transpose()?,
-            docker_build_timeout: self.procreation_docker_image_build_timeout,
+            docker_build_timeout: self.diversification_docker_image_build_timeout,
             environment_image_repository: environment_image_repository(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
@@ -83,9 +83,9 @@ impl StartOptions {
             holdout_tasks: drawn.holdout_tasks,
             corroboration_tasks_percentage: self.corroboration_tasks_percentage,
             corroboration_tasks: drawn.corroboration_tasks,
-            max_procreations: self.max_procreations,
+            max_diversifications: self.max_diversifications,
             max_concurrent_containers: self.max_concurrent_containers,
-            procreation_timeout: self.procreation_timeout,
+            diversification_timeout: self.diversification_timeout,
             max_verifier_health_check_retries: self.max_verifier_health_check_retries,
             max_task_health_check_retries: self.max_task_health_check_retries,
             seed,
@@ -181,7 +181,7 @@ fn dockerfile(files: &dyn FileSystem, given: &Path) -> Result<PathBuf, Refused> 
         .ok()
         .filter(|file| file.to_str().is_some() && leads_to(files, file, Kind::File))
         .ok_or(Refused {
-            flags: &["--procreation-dockerfile"],
+            flags: &["--diversification-dockerfile"],
             accepted: "an existing file",
             reason: None,
         })

@@ -287,9 +287,9 @@ fn the_manual_of_start_says_that_artificial_selection_goes_by_the_selection_task
 }
 
 #[test]
-fn the_manual_of_start_says_by_which_tasks_the_harness_that_procreates_is_chosen() {
+fn the_manual_of_start_says_by_which_tasks_the_harness_that_is_cloned_is_chosen() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "cladenc chooses which harness procreates by the selection tasks that the harness and its \
+        "cladenc chooses which harness is cloned by the selection tasks that the harness and its \
          descendants completed and did not complete,"
     ));
 }
@@ -385,10 +385,11 @@ fn the_manual_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_t
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_harness_that_procreates_is_given_no_holdout_task() {
+fn the_manual_of_start_says_that_a_harness_that_diversifies_a_clone_is_given_no_holdout_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness that procreates is given its trials on the non-holdout tasks, and nothing of \
-         the holdout tasks: no task specification, no work, no result, and no count of them."
+        "A harness that diversifies a clone is given the trials of the progenitor on the \
+         non-holdout tasks, and nothing of the holdout tasks: no task specification, no work, no \
+         result, and no count of them."
     ));
 }
 
@@ -404,7 +405,7 @@ fn the_manual_of_start_says_where_the_trials_on_the_holdout_tasks_are_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "holdout in the outputs directory keeps the trials on the holdout tasks, selection tasks \
          and corroboration tasks together, in the same way, apart from the others, so that the \
-         directory a harness that procreates is given holds none of them."
+         directory a harness that diversifies a clone is given holds none of them."
     ));
 }
 
@@ -536,7 +537,7 @@ fn the_manual_of_start_says_that_a_benchmark_of_fewer_than_three_tasks_is_refuse
 fn the_manual_of_start_says_that_nothing_is_chosen_by_the_corroboration_tasks() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "cladenc counts for every harness the corroboration tasks it completed, and chooses \
-         nothing by them: not the harness that procreates, and never the best harness."
+         nothing by them: not the harness that is cloned, and never the best harness."
     ));
 }
 

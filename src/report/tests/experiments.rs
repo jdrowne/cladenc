@@ -24,9 +24,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 20.0,
@@ -59,8 +59,8 @@ fn experiment_on(
     progenitor: HarnessId,
     outcomes: (CreationOutcome, CreationOutcome),
 ) -> (HarnessId, HarnessId) {
-    let child = genealogy.start_procreation(progenitor).unwrap();
-    genealogy.end_procreation(child, outcomes.0).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
+    genealogy.end_diversification(child, outcomes.0).unwrap();
     let singleton_control_group_harness = genealogy
         .start_baseline(Experiment { child, progenitor })
         .unwrap();
@@ -72,8 +72,8 @@ fn experiment_on(
 
 fn with_a_child_of_the_primogenitor() -> Genealogy {
     let mut genealogy = settings().genealogy();
-    let child = genealogy.start_procreation(0).unwrap();
-    genealogy.end_procreation(child, CREATED).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
+    genealogy.end_diversification(child, CREATED).unwrap();
     genealogy
 }
 
@@ -142,7 +142,7 @@ fn line_of(genealogy: &Genealogy, line: usize) -> String {
 }
 
 #[test]
-fn a_directed_evolution_in_which_only_the_primogenitor_procreated_conducted_no_experiment() {
+fn a_directed_evolution_in_which_only_the_primogenitor_was_cloned_conducted_no_experiment() {
     let report = report_of(&with_a_child_of_the_primogenitor());
     assert_eq!(report.experiments.conducted, 0);
 }
@@ -247,8 +247,11 @@ fn where_no_experiment_created_both_harnesses_there_is_no_likelihood() {
 }
 
 #[test]
-fn a_baseline_is_not_reported_as_a_procreation_that_was_started() {
-    assert_eq!(report_of(&after_two_experiments()).procreations_started, 3);
+fn a_baseline_is_not_reported_as_a_diversification_that_was_started() {
+    assert_eq!(
+        report_of(&after_two_experiments()).diversifications_started,
+        3
+    );
 }
 
 #[test]

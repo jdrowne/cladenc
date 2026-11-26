@@ -37,11 +37,11 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
             test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
         ),
         (
-            "--procreation-dockerfile",
+            "--diversification-dockerfile",
             test_inputs::dockerfile(directory, steps),
         ),
         (
-            "--procreation-docker-image-build-timeout",
+            "--diversification-docker-image-build-timeout",
             build_timeout.into(),
         ),
         (
@@ -49,9 +49,9 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
             test_inputs::SOLVE_WHAT_THE_IMAGE_SOLVES.into(),
         ),
         ("--outputs-dir", directory.join("outputs")),
-        ("--max-procreations", "1".into()),
+        ("--max-diversifications", "1".into()),
         ("--max-concurrent-containers", "1".into()),
-        ("--procreation-timeout", "30".into()),
+        ("--diversification-timeout", "30".into()),
         ("--max-verifier-health-check-retries", "0".into()),
         ("--max-task-health-check-retries", "0".into()),
         ("--selection-tasks-percentage", "25".into()),

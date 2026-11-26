@@ -9,7 +9,7 @@ fn run_command_the_manual_gives(command: &str) -> String {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_procreation_finds_its_trials_by_benchmark() {
+fn the_manual_of_start_says_that_a_diversification_finds_its_trials_by_benchmark() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "one directory for each benchmark, and in it one for each task, holding what the trial on \
          that task kept."
@@ -17,20 +17,20 @@ fn the_manual_of_start_says_that_a_procreation_finds_its_trials_by_benchmark() {
 }
 
 #[test]
-fn the_manual_of_start_says_where_a_procreation_finds_its_trials() {
+fn the_manual_of_start_says_where_a_diversification_finds_its_trials() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "/var/log/cladenc/trials holds the finished trials of the harness on the non-holdout \
+        "/var/log/cladenc/trials holds the finished trials of the progenitor on the non-holdout \
          tasks, to read:"
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_of_which_harnesses_a_harness_that_procreates_is_given_more() {
+fn the_manual_of_start_says_of_which_harnesses_a_progenitor_is_given_more() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness that procreates is given more to read, and nothing more to change: what was \
-         kept of each harness it descends from, back to the primogenitor, and of each harness it \
-         made in an earlier procreation that has ended, whether that one was created or not. It is \
-         given nothing of any other harness."
+        "A progenitor is given more to read, and nothing more to change: what was kept of each \
+         harness it descends from, back to the primogenitor, and of each harness it made in an \
+         earlier diversification that has ended, whether that one was created or not. It is given \
+         nothing of any other harness."
     ));
 }
 
@@ -50,7 +50,7 @@ fn the_manual_of_start_names_what_is_given_of_a_harness_of_the_line_or_a_child()
     let given = [
         "harness the source code of that harness",
         "trials its trials on the non-holdout tasks, laid out",
-        "procreation what the harness that made it printed, in stdout and",
+        "diversification what the harness that made it printed, in stdout and",
         "progenitor and one word in the file named outcome:",
         "created, unchanged, failed, build_failed or timed_out",
         "build what its build printed, in stdout and stderr",
@@ -61,28 +61,28 @@ fn the_manual_of_start_names_what_is_given_of_a_harness_of_the_line_or_a_child()
 #[test]
 fn the_manual_of_start_says_which_directory_of_such_a_harness_is_not_there() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A directory that would hold nothing is not there: the primogenitor has no procreation, a \
-         harness that was not created has no trials, and a harness that was not built has no \
-         build. Nothing of a holdout task is in any of them."
+        "A directory that would hold nothing is not there: the primogenitor has no \
+         diversification, a harness that was not created has no trials, and a harness that was not \
+         built has no build. Nothing of a holdout task is in any of them."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_what_the_outputs_directory_keeps_of_a_procreation() {
+fn the_manual_of_start_says_what_the_outputs_directory_keeps_of_a_diversification() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "procreations in the outputs directory keeps, in a directory named after the child, the \
-         standard output and standard error of the harness that made it, the id of that harness in \
-         the file named progenitor, and how the procreation ended in the file named outcome."
+        "diversifications in the outputs directory keeps, in a directory named after the child, \
+         the standard output and standard error of the harness that made it, the id of that \
+         harness in the file named progenitor, and how the diversification ended in the file named \
+         outcome."
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_what_kind_of_change_the_instruction_asks_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The instruction asks the harness that procreates for a change to how its child works on \
-         any task: one that answers something it saw in several of its trials, not in one, and \
-         that leaves in the source code nothing that names a task, a file of a task or the answer \
-         to one."
+        "The instruction asks the progenitor for a change to how its child works on any task: one \
+         that answers something it saw in several of its trials, not in one, and that leaves in \
+         the source code nothing that names a task, a file of a task or the answer to one."
     ));
 }
 
@@ -95,18 +95,20 @@ fn the_manual_of_start_says_that_the_instruction_counts_taking_out_as_an_improve
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_instruction_tells_of_the_child_procreating_in_its_turn() {
+fn the_manual_of_start_says_that_the_instruction_tells_of_the_child_diversifying_a_clone_in_its_turn()
+ {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "that the child may be asked in its turn to improve a copy of its own source code, so that \
-         making the child better at that counts,"
+        "that the child may be asked in its turn to improve a clone of its own, so that making the \
+         child better at that counts,"
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_that_the_instruction_tells_how_the_child_is_judged() {
-    assert!(manual_on_one_line("cladenc-start").contains(
-        "and that the child is judged by tasks the harness that procreates is not shown."
-    ));
+    assert!(
+        manual_on_one_line("cladenc-start")
+            .contains("and that the child is judged by tasks the progenitor is not shown.")
+    );
 }
 
 #[test]
@@ -118,26 +120,27 @@ fn the_manual_of_start_says_that_an_instruction_is_a_request_cladenc_does_not_en
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_harness_procreates_only_once_benchmarked_in_full() {
+fn the_manual_of_start_says_that_a_harness_is_cloned_only_once_benchmarked_in_full() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness procreates only once it has been benchmarked in full, on every task of every \
+        "A harness is cloned only once it has been benchmarked in full, on every task of every \
          benchmark of the directed evolution, so that it finds every non-holdout task in \
          /var/log/cladenc/trials."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_primogenitor_is_benchmarked_before_the_first_procreation() {
+fn the_manual_of_start_says_that_the_primogenitor_is_benchmarked_before_the_first_diversification()
+{
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("The primogenitor is benchmarked in full before the first procreation.")
+            .contains("The primogenitor is benchmarked in full before the first diversification.")
     );
 }
 
 #[test]
 fn the_manual_of_start_says_that_every_harness_is_benchmarked_in_full() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every harness is benchmarked in full once it is created, whether it procreates or not."
+        "Every harness is benchmarked in full once it is created, whether it is cloned or not."
     ));
 }
 
@@ -150,10 +153,10 @@ fn the_manual_of_start_says_which_harness_trials_next() {
 }
 
 #[test]
-fn the_manual_of_start_says_what_the_most_procreations_counts() {
+fn the_manual_of_start_says_what_the_most_diversifications_counts() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "--max-procreations gives the most procreations a directed evolution starts. A procreation \
-         counts once it is started, whether or not it creates its child."
+        "--max-diversifications gives the most diversifications a directed evolution starts. A \
+         diversification counts once it is started, whether or not it creates its child."
     ));
 }
 
@@ -166,18 +169,18 @@ fn the_manual_of_start_says_when_a_directed_evolution_ends() {
 }
 
 #[test]
-fn the_manual_of_start_says_when_a_procreation_starts() {
+fn the_manual_of_start_says_when_a_diversification_starts() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A procreation starts only once no trial is left to start, no trial is running and no \
-         other procreation is under way: every harness created so far has been benchmarked in \
-         full, the child of the procreation before among them."
+        "A diversification starts only once no trial is left to start, no trial is running and no \
+         other diversification is under way: every harness created so far has been benchmarked in \
+         full, the child of the diversification before among them."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_what_each_harness_that_procreates_is_chosen_with() {
+fn the_manual_of_start_says_what_each_harness_that_is_cloned_is_chosen_with() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "So cladenc chooses each harness that procreates with what every created harness completed \
+        "So cladenc chooses each harness that is cloned with what every created harness completed \
          in hand."
     ));
 }
@@ -185,16 +188,16 @@ fn the_manual_of_start_says_what_each_harness_that_procreates_is_chosen_with() {
 #[test]
 fn the_manual_of_start_says_that_a_singleton_control_group_harness_is_not_waited_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A singleton control group harness is not waited for, since it never procreates: its \
-         creation and its trials go on beside a procreation."
+        "A singleton control group harness is not waited for, since it is never cloned: the \
+         diversification of its experiment and its trials go on beside a diversification."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_fewer_containers_run_while_a_procreation_runs() {
+fn the_manual_of_start_says_that_fewer_containers_run_while_a_diversification_runs() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "While a procreation runs, no container of another child is started, so fewer containers \
-         run than --max-concurrent-containers allows."
+        "While a diversification runs, no container of another child is started, so fewer \
+         containers run than --max-concurrent-containers allows."
     ));
 }
 
@@ -218,16 +221,16 @@ fn the_manual_of_start_says_how_a_directed_evolution_of_harnesses_that_work_alik
         "How many more selection tasks the best of many harnesses that are all alike completes is \
          measured by a directed evolution in which every harness works as the primogenitor does: \
          one carried out with the values of the directed evolution it is set beside, and with a \
-         run command that, where the harness is started for a procreation, calls no model and adds \
-         one line to a file that no harness reads, as"
+         run command that, where the harness is started for a diversification, calls no model and \
+         adds one line to a file that no harness reads, as"
     ));
 }
 
 #[test]
-fn the_manual_of_start_gives_a_run_command_that_adds_one_line_in_a_procreation() {
+fn the_manual_of_start_gives_a_run_command_that_adds_one_line_in_a_diversification() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "--harness-run-command 'if [ -d /var/log/cladenc/trials ] then echo >> procreated; else \
-         <COMMAND>; fi' where <COMMAND> is the run command of the other, and procreated is a name \
+        "--harness-run-command 'if [ -d /var/log/cladenc/trials ] then echo >> diversified; else \
+         <COMMAND>; fi' where <COMMAND> is the run command of the other, and diversified is a name \
          that no file of the primogenitor has."
     ));
 }
@@ -236,30 +239,30 @@ fn the_manual_of_start_gives_a_run_command_that_adds_one_line_in_a_procreation()
 fn the_run_command_the_manual_gives_starts_the_command_of_the_other_only_for_a_trial() {
     assert_eq!(
         run_command_the_manual_gives("sh harness.sh"),
-        "if [ -d /var/log/cladenc/trials ]\n    then echo >> procreated; else sh harness.sh; fi"
+        "if [ -d /var/log/cladenc/trials ]\n    then echo >> diversified; else sh harness.sh; fi"
     );
 }
 
 #[test]
 fn the_manual_of_start_says_what_a_child_made_with_that_run_command_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "/var/log/cladenc/trials is there for a procreation and not for a trial, so every \
-         procreation calls no model, and creates a child that is the source code of its progenitor \
-         with one line more in the file named procreated."
+        "/var/log/cladenc/trials is there for a diversification and not for a trial, so every \
+         diversification calls no model, and creates a child that is the source code of its \
+         progenitor with one line more in the file named diversified."
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_why_that_run_command_adds_a_line() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The line is added because a procreation that changes nothing creates no child."
+        "The line is added because a diversification that changes nothing creates no child."
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_what_a_directed_evolution_of_harnesses_that_work_alike_holds() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Such a directed evolution holds as many children as --max-procreations gives, each of \
+        "Such a directed evolution holds as many children as --max-diversifications gives, each of \
          them benchmarked in full."
     ));
 }
@@ -301,20 +304,21 @@ fn the_manual_of_start_says_how_that_count_is_read_where_every_harness_works_ali
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_procreation_that_changes_nothing_creates_no_child() {
+fn the_manual_of_start_says_that_a_diversification_that_changes_nothing_creates_no_child() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A procreation whose harness leaves /var/opt/cladenc/work as it was creates no child, and \
-         is recorded as unchanged."
+        "A diversification in which the progenitor leaves its clone as it was creates no child, \
+         and is recorded as unchanged."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_what_is_compared_to_find_a_procreation_unchanged() {
+fn the_manual_of_start_says_what_is_compared_to_find_a_diversification_unchanged() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "cladenc compares what the harness left with the source code of that harness, as it is \
-         kept under harnesses in the outputs directory. The two are the same where they hold the \
-         same files, directories and symbolic links, each file with the same contents and the same \
-         permission bits, and each symbolic link with the same target."
+        "cladenc compares what the progenitor left in /var/opt/cladenc/work with the source code \
+         of the progenitor, as it is kept under harnesses in the outputs directory. The two are \
+         the same where they hold the same files, directories and symbolic links, each file with \
+         the same contents and the same permission bits, and each symbolic link with the same \
+         target."
     ));
 }
 
@@ -323,7 +327,7 @@ fn the_manual_of_start_says_why_an_unchanged_child_is_not_benchmarked() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Such a child would be its progenitor over again, and a model does not answer the same way \
          twice, so what the child completed would differ from what its progenitor completed by \
-         luck alone. It is not built and not benchmarked, and it is never chosen to procreate."
+         luck alone. It is not built and not benchmarked, and it is never chosen to be cloned."
     ));
 }
 

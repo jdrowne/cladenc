@@ -9,15 +9,15 @@ fn tasks(count: usize) -> Vec<String> {
 
 fn artificial_selection(seed: u64, task_count: usize) -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations: 1000,
+        max_diversifications: 1000,
         tasks: tasks(task_count),
         seed,
     }
 }
 
 fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
-    let child = genealogy.start_procreation(progenitor).unwrap();
-    genealogy.end_procreation(child, outcome).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
+    genealogy.end_diversification(child, outcome).unwrap();
 }
 
 fn trialled(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result: TrialResult) {
@@ -40,7 +40,7 @@ fn trial(genealogy: &Genealogy, seed: u64, task_count: usize) -> Option<(Harness
         .next_action(genealogy, 0)
         .and_then(|action| match action {
             Action::Trial { harness, task } => Some((harness, task)),
-            Action::Procreation { .. } => None,
+            Action::Diversification { .. } => None,
         })
 }
 
@@ -62,21 +62,21 @@ fn tasks_trialled(genealogy: &Genealogy, task_count: usize) -> BTreeSet<String> 
 }
 
 #[test]
-fn a_trial_is_the_next_action_when_no_procreation_is_due() {
+fn a_trial_is_the_next_action_when_no_diversification_is_due() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, CreationOutcome::Failed);
     assert_eq!(trialling(&genealogy, 0, 20), Some(0));
 }
 
 #[test]
-fn a_procreation_is_not_a_trial() {
+fn a_diversification_is_not_a_trial() {
     let mut genealogy = Genealogy::new();
     trialled(&mut genealogy, 0, 2, TrialResult::Completed);
     assert_eq!(trialling(&genealogy, 0, 2), None);
 }
 
 #[test]
-fn a_trial_takes_the_place_of_a_procreation_that_no_harness_is_benchmarked_in_full_for() {
+fn a_trial_takes_the_place_of_a_diversification_that_no_harness_is_benchmarked_in_full_for() {
     assert_eq!(trialling(&Genealogy::new(), 0, 20), Some(0));
 }
 
@@ -106,7 +106,7 @@ fn a_harness_with_no_task_left_never_trials_a_task() {
 #[test]
 fn a_harness_that_is_being_created_never_trials_a_task() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     trialled(&mut genealogy, 0, 2, TrialResult::NotCompleted);
     assert_eq!(times_trialling(&genealogy, 0, 20), 200);
 }

@@ -7,7 +7,7 @@ fn tasks() -> Vec<String> {
 
 fn best(genealogy: &Genealogy) -> HarnessId {
     let artificial_selection = ArtificialSelection {
-        max_procreations: 100,
+        max_diversifications: 100,
         tasks: tasks(),
         seed: 0,
     };
@@ -15,8 +15,8 @@ fn best(genealogy: &Genealogy) -> HarnessId {
 }
 
 fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
-    let child = genealogy.start_procreation(progenitor).unwrap();
-    genealogy.end_procreation(child, outcome).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
+    genealogy.end_diversification(child, outcome).unwrap();
 }
 
 fn trial(genealogy: &mut Genealogy, harness: HarnessId, count: usize, completed: usize) {
@@ -117,7 +117,7 @@ fn a_failed_harness_is_never_the_best() {
 #[test]
 fn a_harness_that_is_being_created_is_never_the_best() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     benchmarked_in_full(&mut genealogy, 0, 0);
     assert_eq!(best(&genealogy), 0);
 }

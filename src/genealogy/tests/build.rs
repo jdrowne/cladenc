@@ -56,9 +56,9 @@ fn building_a_primogenitor_twice_is_refused() {
 }
 
 #[test]
-fn a_primogenitor_that_awaits_its_build_cannot_procreate() {
+fn a_primogenitor_that_awaits_its_build_cannot_be_cloned() {
     assert_eq!(
-        Genealogy::unbuilt().start_procreation(0),
+        Genealogy::unbuilt().start_diversification(0),
         Err(GenealogyError::ProgenitorNotCreated { progenitor: 0 })
     );
 }
@@ -72,6 +72,6 @@ fn a_primogenitor_that_awaits_its_build_cannot_trial_a_task() {
 }
 
 #[test]
-fn a_primogenitor_that_was_built_can_procreate() {
-    assert_eq!(built().start_procreation(0), Ok(1));
+fn a_primogenitor_that_was_built_can_be_cloned() {
+    assert_eq!(built().start_diversification(0), Ok(1));
 }

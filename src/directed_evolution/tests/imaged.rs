@@ -73,7 +73,7 @@ fn a_directed_evolution_that_is_stopped_while_its_image_is_built_has_not_started
 }
 
 #[test]
-fn the_container_of_a_procreation_is_started_from_the_image_that_was_built() {
+fn the_container_of_a_diversification_is_started_from_the_image_that_was_built() {
     let evolved = given::started(Double::default(), with_a_dockerfile_of_an_image_of_its_own);
     let built = evolved.count_of(" docker build --tag an-image:built --file ");
     let started_from = evolved.count_of(" an-image:built sh -c ");

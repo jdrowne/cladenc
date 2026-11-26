@@ -1,6 +1,6 @@
 ---
 name: the-first-harness-is-the-primogenitor
-description: "The harness a directed evolution starts from is the primogenitor, and a progenitor is the harness that procreates in a procreation; the two words are told apart, and parent is not used for either"
+description: "The harness a directed evolution starts from is the primogenitor, and a progenitor is the harness that is cloned, the one whose clone a diversification changes; the two words are told apart, and parent is not used for either"
 metadata:
   node_type: memory
   type: feedback
@@ -13,12 +13,12 @@ metadata:
 Two words, two things:
 
 - The primogenitor is the harness a directed evolution starts from. It is the one harness that is no child.
-- A progenitor is the harness that procreates in a procreation. Any created harness can be one, the primogenitor among them.
+- A progenitor is the harness that is cloned. It diversifies its own clone, and in an experiment the primogenitor diversifies a second clone of it. Any created harness can be one, the primogenitor among them.
 
-Parent is not the word for either. The harness that procreates is the progenitor.
+Parent is not the word for either. The harness that is cloned is the progenitor.
 
-**Why:** With progenitor used for the first harness, a reader cannot tell whether a sentence is about the first harness or about the harness that procreates in the procreation at hand.
+**Why:** With progenitor used for the first harness, a reader cannot tell whether a sentence is about the first harness or about the harness that is cloned for the diversification at hand.
 
-**How to apply:** Say primogenitor and progenitor in replies, issues, commits, the README, the help, what `cladenc` prints and the names in the code: the flag `--primogenitor`, the key `progenitor` of the journal's `procreation_started` record, the column `progenitor` of `cladenc report`. Never write progenitor for the first harness as such, and never write parent for the harness that procreates.
+**How to apply:** Say primogenitor and progenitor in replies, issues, commits, the README, the help, what `cladenc` prints and the names in the code: the flag `--primogenitor`, the key `progenitor` of the journal's `diversification_started` record, the column `progenitor` of `cladenc report`. Never write progenitor for the first harness as such, and never write parent for the harness that is cloned.
 
-`Path::parent` of the standard library keeps its name, since it names a directory and no harness. Related: [[a-procreation-has-a-progenitor-a-copy-and-a-child]], [[the-paper-is-a-starting-point]], [[cladenc-takes-a-primogenitor-and-a-model]], [[a-harness-is-not-called-a-coding-agent]].
+`Path::parent` of the standard library keeps its name, since it names a directory and no harness. Related: [[a-diversification-has-a-progenitor-a-clone-and-a-child]], [[the-paper-is-a-starting-point]], [[cladenc-takes-a-primogenitor-and-a-model]], [[a-harness-is-not-called-a-coding-agent]].

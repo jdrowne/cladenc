@@ -43,7 +43,7 @@ fn report_prints_the_table() {
     assert_eq!(
         up_to_the_seconds(&table_of(directory.path())),
         "model a-model at http://models.example/v1\n\
-         started 1 of 1 procreation, best harness 1\n\
+         started 1 of 1 diversification, best harness 1\n\
          completed by at least one harness: selection tasks 1 of 1, corroboration tasks 1 of 1, non-holdout tasks 1 of 1\n\
          on the corroboration tasks: only the best harness completed 1, only the primogenitor completed 0, and luck alone gives a lead at least as large with likelihood 0.500\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\

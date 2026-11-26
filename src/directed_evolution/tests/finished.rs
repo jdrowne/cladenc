@@ -8,7 +8,7 @@ use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Record, Settings};
 
-const PROCREATION: [&str; 2] = ["run", "run a harness"];
+const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
 
 fn solving() -> Double {
     Double::default()
@@ -21,18 +21,18 @@ fn over_one_holdout_task(directory: &Memory, settings: &mut Settings) {
     settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
 }
 
-fn with_three_procreations(directory: &Memory, settings: &mut Settings) {
+fn with_three_diversifications(directory: &Memory, settings: &mut Settings) {
     over_one_holdout_task(directory, settings);
-    settings.max_procreations = 3;
+    settings.max_diversifications = 3;
 }
 
-fn with_two_procreations(_: &Memory, settings: &mut Settings) {
-    settings.max_procreations = 2;
+fn with_two_diversifications(_: &Memory, settings: &mut Settings) {
+    settings.max_diversifications = 2;
 }
 
-fn with_two_procreations_over_one_task(directory: &Memory, settings: &mut Settings) {
+fn with_two_diversifications_over_one_task(directory: &Memory, settings: &mut Settings) {
     given::over_one_task(directory, settings);
-    settings.max_procreations = 2;
+    settings.max_diversifications = 2;
 }
 
 fn over_two_benchmarks(directory: &Memory, settings: &mut Settings) {
@@ -58,8 +58,8 @@ fn kinds_of_starts(evolved: &Evolved) -> Vec<String> {
         .into_iter()
         .filter(|start| !start.starts_with("baseline"))
         .map(|start| {
-            if start.starts_with("procreation") {
-                "procreation".to_owned()
+            if start.starts_with("diversification") {
+                "diversification".to_owned()
             } else {
                 start
             }
@@ -91,7 +91,7 @@ fn trials_started(evolved: &Evolved) -> Vec<(u64, String)> {
 #[test]
 fn one_container_at_a_time_two_directed_evolutions_of_the_same_settings_write_the_same_journal() {
     let [first, second] = [(), ()].map(|()| {
-        let evolved = given::started(solving(), with_three_procreations);
+        let evolved = given::started(solving(), with_three_diversifications);
         test_inputs::without_seconds(&evolved.journal())
     });
     assert_eq!(first, second);
@@ -132,17 +132,17 @@ fn a_directed_evolution_copies_no_task_of_its_benchmark_that_is_not_one_of_its_o
 }
 
 #[test]
-fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
-    let evolved = given::started(Double::default().changing(), with_two_procreations);
+fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
+    let evolved = given::started(Double::default().changing(), with_two_diversifications);
     assert_eq!(
         kinds_of_starts(&evolved)[..8],
         [
             "trial of 0",
             "trial of 0",
-            "procreation",
+            "diversification",
             "trial of 1",
             "trial of 1",
-            "procreation",
+            "diversification",
             "trial of 2",
             "trial of 2",
         ]
@@ -150,7 +150,7 @@ fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
 }
 
 #[test]
-fn given_two_benchmarks_the_primogenitor_procreates_once_benchmarked_on_both() {
+fn given_two_benchmarks_the_primogenitor_is_cloned_once_benchmarked_on_both() {
     let evolved = given::started(Double::default().changing(), over_two_benchmarks);
     assert_eq!(
         evolved.starts()[..6],
@@ -159,23 +159,23 @@ fn given_two_benchmarks_the_primogenitor_procreates_once_benchmarked_on_both() {
             "trial of 0",
             "trial of 0",
             "trial of 0",
-            "procreation of 1 by 0",
+            "diversification of 1 by 0",
             "trial of 1",
         ]
     );
 }
 
 #[test]
-fn a_directed_evolution_starts_exactly_as_many_procreations_as_the_most_it_was_given() {
-    let evolved = given::started(Double::default().changing(), with_three_procreations);
-    assert_eq!(started(&evolved, "procreation"), 3);
+fn a_directed_evolution_starts_exactly_as_many_diversifications_as_the_most_it_was_given() {
+    let evolved = given::started(Double::default().changing(), with_three_diversifications);
+    assert_eq!(started(&evolved, "diversification"), 3);
 }
 
 #[test]
-fn a_procreation_that_fails_is_one_of_the_most_a_directed_evolution_starts() {
-    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(1)]);
-    let evolved = given::started(docker, with_two_procreations_over_one_task);
-    assert_eq!(started(&evolved, "procreation"), 2);
+fn a_diversification_that_fails_is_one_of_the_most_a_directed_evolution_starts() {
+    let docker = Double::default().answering(&DIVERSIFICATION, &[Answer::Exited(1)]);
+    let evolved = given::started(docker, with_two_diversifications_over_one_task);
+    assert_eq!(started(&evolved, "diversification"), 2);
 }
 
 #[test]
@@ -244,7 +244,7 @@ fn a_directed_evolution_says_a_trial_it_starts_with_no_number() {
 fn a_directed_evolution_says_each_action_as_it_starts() {
     assert_eq!(
         said_over_one_task().lines()[7],
-        "cladenc: started the procreation of harness 1 by harness 0, procreation 1 of 1"
+        "cladenc: started the diversification of harness 1 by harness 0, diversification 1 of 1"
     );
 }
 
@@ -262,10 +262,10 @@ fn a_directed_evolution_says_as_many_starts_as_its_journal_records() {
 }
 
 #[test]
-fn a_directed_evolution_says_how_a_procreation_ended_and_where_its_child_is_kept() {
+fn a_directed_evolution_says_how_a_diversification_ended_and_where_its_child_is_kept() {
     let evolved = said_over_one_task();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: the procreation of harness 1 by harness 0 created harness 1, kept in {}",
+        "cladenc: the diversification of harness 1 by harness 0 created harness 1, kept in {}",
         evolved.outputs().join("harnesses/1").display()
     )));
 }

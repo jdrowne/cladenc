@@ -9,17 +9,17 @@ fn tasks() -> Vec<String> {
     (0..2).map(|number| format!("task-{number}")).collect()
 }
 
-fn artificial_selection(max_procreations: u64) -> ArtificialSelection {
+fn artificial_selection(max_diversifications: u64) -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations,
+        max_diversifications,
         tasks: tasks(),
         seed: 7,
     }
 }
 
 fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
-    let child = genealogy.start_procreation(progenitor).unwrap();
-    genealogy.end_procreation(child, outcome).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
+    genealogy.end_diversification(child, outcome).unwrap();
 }
 
 fn singleton_control_group_harness_of(
@@ -67,7 +67,7 @@ fn with_every_harness_benchmarked_in_full_and_the_singleton_control_group_harnes
     genealogy
 }
 
-fn with_a_harness_whose_last_two_procreations_created_no_child() -> Genealogy {
+fn with_a_harness_whose_last_two_diversifications_created_no_child() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     child_of(&mut genealogy, 0, CREATED);
     for child in [2, 4] {
@@ -101,7 +101,7 @@ fn a_singleton_control_group_harness_with_a_task_left_is_given_it_as_a_child_is(
 }
 
 #[test]
-fn a_singleton_control_group_harness_is_not_chosen_to_procreate_though_it_alone_is_benchmarked_in_full()
+fn a_singleton_control_group_harness_is_not_chosen_to_be_cloned_though_it_alone_is_benchmarked_in_full()
  {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
@@ -125,7 +125,7 @@ fn a_singleton_control_group_harness_is_not_named_the_best_harness_though_it_com
 }
 
 #[test]
-fn the_trials_of_a_singleton_control_group_harness_make_no_procreation_due() {
+fn the_trials_of_a_singleton_control_group_harness_make_no_diversification_due() {
     let mut genealogy = after_an_experiment();
     benchmark_in_full(&mut genealogy, 0, TrialResult::NotCompleted);
     benchmark_in_full(&mut genealogy, 3, TrialResult::NotCompleted);
@@ -139,7 +139,7 @@ fn the_trials_of_a_singleton_control_group_harness_make_no_procreation_due() {
 }
 
 #[test]
-fn a_singleton_control_group_harness_is_not_one_of_the_harnesses_a_procreation_waits_for() {
+fn a_singleton_control_group_harness_is_not_one_of_the_harnesses_a_diversification_waits_for() {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
         benchmark_in_full(&mut genealogy, harness, TrialResult::NotCompleted);
@@ -147,12 +147,12 @@ fn a_singleton_control_group_harness_is_not_one_of_the_harnesses_a_procreation_w
     trial(&mut genealogy, 3, "task-0", TrialResult::NotCompleted);
     assert!(matches!(
         artificial_selection(1000).next_action(&genealogy, 0),
-        Some(Action::Procreation { .. })
+        Some(Action::Diversification { .. })
     ));
 }
 
 #[test]
-fn a_procreation_is_due_while_a_singleton_control_group_harness_is_still_being_created() {
+fn a_diversification_is_due_while_a_singleton_control_group_harness_is_still_being_created() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     child_of(&mut genealogy, 0, CREATED);
     child_of(&mut genealogy, 1, CREATED);
@@ -167,12 +167,12 @@ fn a_procreation_is_due_while_a_singleton_control_group_harness_is_still_being_c
     }
     assert!(matches!(
         artificial_selection(1000).next_action(&genealogy, 0),
-        Some(Action::Procreation { .. })
+        Some(Action::Diversification { .. })
     ));
 }
 
 #[test]
-fn a_harness_is_left_out_by_the_number_of_a_procreation_and_not_by_the_id_of_a_harness() {
-    let genealogy = with_a_harness_whose_last_two_procreations_created_no_child();
+fn a_harness_is_left_out_by_the_number_of_a_diversification_and_not_by_the_id_of_a_harness() {
+    let genealogy = with_a_harness_whose_last_two_diversifications_created_no_child();
     assert!(Waits::of(&genealogy).has_one_for(&genealogy.harnesses()[1]));
 }

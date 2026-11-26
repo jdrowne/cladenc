@@ -2,10 +2,7 @@ use test_inputs::{manual, manual_on_one_line, text_of_roff};
 
 #[test]
 fn a_line_of_text_is_kept_as_it_is() {
-    assert_eq!(
-        text_of_roff("A harness procreates."),
-        "A harness procreates."
-    );
+    assert_eq!(text_of_roff("A harness is cloned."), "A harness is cloned.");
 }
 
 #[test]
@@ -64,7 +61,7 @@ fn the_manual_of_a_command_is_read_from_its_page() {
 #[test]
 fn the_manual_keeps_the_lines_of_an_example() {
     assert!(manual("cladenc-start").contains(
-        "--harness-run-command 'if [ -d /var/log/cladenc/trials ]\n    then echo >> procreated; \
+        "--harness-run-command 'if [ -d /var/log/cladenc/trials ]\n    then echo >> diversified; \
          else <COMMAND>; fi'"
     ));
 }

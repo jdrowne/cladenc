@@ -36,9 +36,9 @@ fn settings(directory: &Path) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: run_command_the_manual_gives("echo trialled > trialled"),
-        max_procreations: 2,
+        max_diversifications: 2,
         max_concurrent_containers: 1,
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 33.5,
@@ -89,7 +89,7 @@ fn source_code_without_the_file_the_run_command_adds_to(
 ) -> Vec<String> {
     source_code_of(directory, harness)
         .into_iter()
-        .filter(|kept| !kept.starts_with("procreated: "))
+        .filter(|kept| !kept.starts_with("diversified: "))
         .collect()
 }
 
@@ -98,12 +98,12 @@ fn journal_of(directory: &TempDir) -> String {
 }
 
 #[test]
-fn with_the_run_command_the_manual_gives_every_procreation_creates_its_child() {
+fn with_the_run_command_the_manual_gives_every_diversification_creates_its_child() {
     let directory = &*EVOLVED;
     assert_eq!(
         journal_of(directory)
             .lines()
-            .filter(|line| line.contains(r#""record":"procreation_finished""#))
+            .filter(|line| line.contains(r#""record":"diversification_finished""#))
             .filter(|line| line.contains(r#""outcome":"created""#))
             .count(),
         2
@@ -129,7 +129,7 @@ fn with_the_run_command_the_manual_gives_a_child_of_the_primogenitor_holds_a_fil
 {
     let directory = &*EVOLVED;
     assert_eq!(
-        fs::read_to_string(directory.path().join("outputs/harnesses/1/procreated")).unwrap(),
+        fs::read_to_string(directory.path().join("outputs/harnesses/1/diversified")).unwrap(),
         "\n"
     );
 }

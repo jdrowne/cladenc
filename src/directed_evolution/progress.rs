@@ -131,8 +131,8 @@ impl<'a> Progress<'a> {
                 &Said::Started {
                     action,
                     again,
-                    procreations: self.genealogy.procreations_started(),
-                    max_procreations: self.artificial_selection.max_procreations,
+                    diversifications: self.genealogy.diversifications_started(),
+                    max_diversifications: self.artificial_selection.max_diversifications,
                 },
             );
             self.running += 1;
@@ -158,20 +158,20 @@ impl<'a> Progress<'a> {
     fn end(&mut self, ended: Ended, outputs_directory: &OutputsDirectory) {
         self.running -= 1;
         match ended {
-            Ended::Procreated {
+            Ended::Diversified {
                 child,
                 progenitor,
                 creation: Creation { outcome, seconds },
             } => {
                 self.genealogy
-                    .end_procreation(child, outcome)
-                    .expect("a procreation that ended was started");
-                self.record(&Record::ProcreationFinished {
+                    .end_diversification(child, outcome)
+                    .expect("a diversification that ended was started");
+                self.record(&Record::DiversificationFinished {
                     child,
                     outcome,
                     seconds,
                 });
-                self.say(&Said::Procreated {
+                self.say(&Said::Diversified {
                     child,
                     progenitor,
                     outcome,
@@ -268,13 +268,13 @@ impl<'a> Progress<'a> {
 
     fn start(&mut self, action: Action) -> Started {
         let started = match action {
-            Action::Procreation { progenitor } => {
+            Action::Diversification { progenitor } => {
                 let child = self
                     .genealogy
-                    .start_procreation(progenitor)
-                    .expect("the progenitor of a procreation is a created harness");
-                self.record(&Record::ProcreationStarted { child, progenitor });
-                Started::Procreation { child, progenitor }
+                    .start_diversification(progenitor)
+                    .expect("the progenitor of a diversification is a created harness");
+                self.record(&Record::DiversificationStarted { child, progenitor });
+                Started::Diversification { child, progenitor }
             }
             Action::Trial { harness, task } => {
                 self.genealogy.start_trial(harness, &task).expect(

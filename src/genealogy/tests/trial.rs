@@ -26,9 +26,9 @@ fn started_keeps_counting_a_trial_that_has_ended() {
 #[test]
 fn started_counts_the_trials_of_every_harness() {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     genealogy.start_trial(0, "a").unwrap();
     genealogy.start_trial(0, "b").unwrap();

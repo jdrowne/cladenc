@@ -107,7 +107,7 @@ impl Genealogy {
         self.started
     }
 
-    pub(crate) fn procreations_started(&self) -> u64 {
+    pub(crate) fn diversifications_started(&self) -> u64 {
         self.harnesses
             .iter()
             .filter(|harness| harness.progenitor().is_some())
@@ -115,7 +115,7 @@ impl Genealogy {
     }
 
     pub(crate) fn actions_started(&self) -> u64 {
-        self.procreations_started() + self.started
+        self.diversifications_started() + self.started
             - self.started_by_singleton_control_group_harnesses
     }
 
@@ -132,7 +132,7 @@ impl Genealogy {
             .collect()
     }
 
-    pub(crate) fn start_procreation(
+    pub(crate) fn start_diversification(
         &mut self,
         progenitor: HarnessId,
     ) -> Result<HarnessId, GenealogyError> {
@@ -151,7 +151,7 @@ impl Genealogy {
         Ok(child)
     }
 
-    pub(crate) fn end_procreation(
+    pub(crate) fn end_diversification(
         &mut self,
         child: HarnessId,
         outcome: CreationOutcome,

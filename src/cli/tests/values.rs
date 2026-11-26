@@ -9,12 +9,12 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
-    ("--procreation-docker-image", "image"),
+    ("--diversification-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
-    ("--max-procreations", "800"),
+    ("--max-diversifications", "800"),
     ("--max-concurrent-containers", "8"),
-    ("--procreation-timeout", "3600"),
+    ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
@@ -59,7 +59,7 @@ fn refusal(changed: &str, given: &str) -> ErrorKind {
 
 #[test]
 fn an_empty_docker_image_is_an_error() {
-    assert!(with("--procreation-docker-image", "").is_err());
+    assert!(with("--diversification-docker-image", "").is_err());
 }
 
 #[test]
@@ -176,33 +176,33 @@ fn an_empty_benchmark_is_an_error() {
 }
 
 #[test]
-fn the_most_procreations_being_0_is_an_error() {
+fn the_most_diversifications_being_0_is_an_error() {
     assert_eq!(
-        refusal("--max-procreations", "0"),
+        refusal("--max-diversifications", "0"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn the_most_procreations_being_1_is_accepted() {
+fn the_most_diversifications_being_1_is_accepted() {
     assert!(matches!(
-        with("--max-procreations", "1").unwrap().command,
-        Command::Start(options) if options.max_procreations == 1
+        with("--max-diversifications", "1").unwrap().command,
+        Command::Start(options) if options.max_diversifications == 1
     ));
 }
 
 #[test]
-fn the_most_procreations_being_below_0_is_an_error() {
+fn the_most_diversifications_being_below_0_is_an_error() {
     assert_eq!(
-        refusal("--max-procreations", "-1"),
+        refusal("--max-diversifications", "-1"),
         ErrorKind::ValueValidation
     );
 }
 
 #[test]
-fn the_most_procreations_not_being_a_number_is_an_error() {
+fn the_most_diversifications_not_being_a_number_is_an_error() {
     assert_eq!(
-        refusal("--max-procreations", "many"),
+        refusal("--max-diversifications", "many"),
         ErrorKind::ValueValidation
     );
 }
@@ -340,9 +340,9 @@ fn the_most_retries_of_the_health_check_of_a_task_not_being_a_number_is_an_error
 }
 
 #[test]
-fn a_procreation_timeout_of_0_is_an_error() {
+fn a_diversification_timeout_of_0_is_an_error() {
     assert_eq!(
-        refusal("--procreation-timeout", "0"),
+        refusal("--diversification-timeout", "0"),
         ErrorKind::ValueValidation
     );
 }
@@ -396,9 +396,9 @@ fn the_seed_is_no_flag_of_start() {
 }
 
 #[test]
-fn initial_procreations_are_no_flag_of_start() {
+fn initial_diversifications_are_no_flag_of_start() {
     assert_eq!(
-        and(Some("--initial-procreations=5".to_owned()))
+        and(Some("--initial-diversifications=5".to_owned()))
             .unwrap_err()
             .kind(),
         ErrorKind::UnknownArgument

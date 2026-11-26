@@ -1,8 +1,8 @@
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Journal, JournalError, Record};
 
-const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}"#;
-const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
+const FIRST: &str = r#"{"record":"diversification_started","child":1,"progenitor":0}"#;
+const SECOND: &str = r#"{"record":"diversification_started","child":2,"progenitor":0}"#;
 
 fn holding(text: &str) -> Memory {
     let directory = Memory::default();
@@ -15,7 +15,7 @@ fn holding(text: &str) -> Memory {
 fn after_appending_the_second(directory: &Memory) -> String {
     Journal::open_existing(directory, directory.path())
         .unwrap()
-        .append(&Record::ProcreationStarted {
+        .append(&Record::DiversificationStarted {
             child: 2,
             progenitor: 0,
         })
@@ -61,7 +61,7 @@ fn a_record_appended_to_an_existing_journal_goes_after_the_records_it_holds() {
 
 #[test]
 fn a_cut_short_last_line_of_an_existing_journal_is_gone_after_the_next_record_is_appended() {
-    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"procreation_fin"));
+    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"diversification_fin"));
     assert_eq!(
         after_appending_the_second(&cut_short),
         format!("{FIRST}\n{SECOND}\n")

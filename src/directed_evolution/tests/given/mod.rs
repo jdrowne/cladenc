@@ -50,8 +50,8 @@ impl Evolved {
             .into_iter()
             .filter_map(|record| match record {
                 Record::TrialStarted { harness, .. } => Some(format!("trial of {harness}")),
-                Record::ProcreationStarted { child, progenitor } => {
-                    Some(format!("procreation of {child} by {progenitor}"))
+                Record::DiversificationStarted { child, progenitor } => {
+                    Some(format!("diversification of {child} by {progenitor}"))
                 }
                 Record::BaselineStarted {
                     harness,
@@ -107,9 +107,9 @@ pub(super) fn settings(directory: &Memory) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 1,
+        max_diversifications: 1,
         max_concurrent_containers: 1,
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,

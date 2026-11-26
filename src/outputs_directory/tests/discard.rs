@@ -21,13 +21,13 @@ fn made() -> (Memory, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn with_a_procreation_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
+fn with_a_diversification_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
     outputs_directory
-        .end_procreation(1, 0, CreationOutcome::Created)
+        .end_diversification(1, 0, CreationOutcome::Created)
         .unwrap();
-    outputs_directory.discard_procreation(1).unwrap();
+    outputs_directory.discard_diversification(1).unwrap();
     (directory, outputs_directory)
 }
 
@@ -46,60 +46,60 @@ fn entries(files: &Memory, path: PathBuf) -> usize {
 }
 
 #[test]
-fn discarding_a_procreation_that_is_running_leaves_nothing_running() {
+fn discarding_a_diversification_that_is_running_leaves_nothing_running() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
-    outputs_directory.discard_procreation(1).unwrap();
-    assert!(!directory.exists(outputs_directory.running_procreation(1)));
+    outputs_directory.start_diversification(1, 0).unwrap();
+    outputs_directory.discard_diversification(1).unwrap();
+    assert!(!directory.exists(outputs_directory.running_diversification(1)));
 }
 
 #[test]
-fn a_discarded_procreation_can_be_started_again() {
+fn a_discarded_diversification_can_be_started_again() {
     let (_directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
-    outputs_directory.discard_procreation(1).unwrap();
-    assert!(outputs_directory.start_procreation(1, 0).is_ok());
+    outputs_directory.start_diversification(1, 0).unwrap();
+    outputs_directory.discard_diversification(1).unwrap();
+    assert!(outputs_directory.start_diversification(1, 0).is_ok());
 }
 
 #[test]
-fn discarding_a_procreation_that_ended_leaves_no_harness() {
-    let (directory, outputs_directory) = with_a_procreation_discarded_after_it_ended();
+fn discarding_a_diversification_that_ended_leaves_no_harness() {
+    let (directory, outputs_directory) = with_a_diversification_discarded_after_it_ended();
     assert!(!directory.exists(outputs_directory.harness(1)));
 }
 
 #[test]
-fn discarding_a_procreation_that_ended_leaves_no_directory_of_the_procreation() {
-    let (directory, outputs_directory) = with_a_procreation_discarded_after_it_ended();
-    assert!(!directory.exists(outputs_directory.procreation(1)));
+fn discarding_a_diversification_that_ended_leaves_no_directory_of_the_diversification() {
+    let (directory, outputs_directory) = with_a_diversification_discarded_after_it_ended();
+    assert!(!directory.exists(outputs_directory.diversification(1)));
 }
 
 #[test]
-fn discarding_a_procreation_that_ended_leaves_no_directory_for_the_trials_of_its_child() {
-    let (directory, outputs_directory) = with_a_procreation_discarded_after_it_ended();
+fn discarding_a_diversification_that_ended_leaves_no_directory_for_the_trials_of_its_child() {
+    let (directory, outputs_directory) = with_a_diversification_discarded_after_it_ended();
     assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
-fn discarding_a_procreation_leaves_no_build_of_its_child() {
+fn discarding_a_diversification_leaves_no_build_of_its_child() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
     outputs_directory.start_build(1).unwrap();
-    outputs_directory.discard_procreation(1).unwrap();
+    outputs_directory.discard_diversification(1).unwrap();
     assert!(!directory.exists(outputs_directory.build(1)));
 }
 
 #[test]
-fn discarding_a_procreation_leaves_the_build_of_another_harness_as_it_was() {
+fn discarding_a_diversification_leaves_the_build_of_another_harness_as_it_was() {
     let (directory, outputs_directory) = made();
     outputs_directory.start_build(0).unwrap();
-    outputs_directory.start_procreation(1, 0).unwrap();
-    outputs_directory.discard_procreation(1).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
+    outputs_directory.discard_diversification(1).unwrap();
     assert!(directory.is_dir(outputs_directory.build(0)));
 }
 
 #[test]
-fn discarding_a_procreation_leaves_the_progenitor_as_it_was() {
-    let (directory, outputs_directory) = with_a_procreation_discarded_after_it_ended();
+fn discarding_a_diversification_leaves_the_progenitor_as_it_was() {
+    let (directory, outputs_directory) = with_a_diversification_discarded_after_it_ended();
     assert!(directory.is_file(outputs_directory.harness(0).join("harness.sh")));
 }
 
@@ -139,7 +139,7 @@ fn a_discarded_trial_can_be_started_again() {
 }
 
 #[test]
-fn discarding_a_procreation_that_left_nothing_is_not_an_error() {
+fn discarding_a_diversification_that_left_nothing_is_not_an_error() {
     let (_directory, outputs_directory) = made();
-    assert!(outputs_directory.discard_procreation(1).is_ok());
+    assert!(outputs_directory.discard_diversification(1).is_ok());
 }

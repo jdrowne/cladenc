@@ -31,7 +31,7 @@ pub fn build_primogenitor(
         harness: 0,
         source: &source,
     };
-    let limits = Limits::starting_now(launch.procreation_timeout, stop);
+    let limits = Limits::starting_now(launch.diversification_timeout, stop);
     match build.run(host, limits)? {
         Ending::Exited(0) if holds_only_harness_files(files, &source).unwrap_or(false) => Ok(()),
         Ending::Exited(0) => Err(ContainerError::OtherFiles),

@@ -21,9 +21,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
@@ -42,9 +42,9 @@ fn trialled(genealogy: &mut Genealogy, harness: u64, task: &str, result: TrialRe
 
 fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     let mut genealogy = settings().genealogy();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::NotCompleted);
     trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::Completed);
@@ -72,11 +72,11 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
 
 fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let failed = genealogy.start_procreation(0).unwrap();
+    let failed = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(failed, CreationOutcome::Failed)
+        .end_diversification(failed, CreationOutcome::Failed)
         .unwrap();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     genealogy.start_trial(0, "benchmark/t1").unwrap();
     genealogy
 }
@@ -85,11 +85,11 @@ fn seconds() -> [Seconds; 2] {
     [
         Seconds {
             trials: 0.1 + 0.2,
-            procreation: None,
+            diversification: None,
         },
         Seconds {
             trials: 7.5,
-            procreation: Some(30.25),
+            diversification: Some(30.25),
         },
     ]
 }
@@ -226,21 +226,21 @@ fn the_model_reported_is_the_one_the_directed_evolution_was_started_with() {
 }
 
 #[test]
-fn the_procreations_started_count_one_that_failed_and_one_that_has_not_ended() {
+fn the_diversifications_started_count_one_that_failed_and_one_that_has_not_ended() {
     let report = report(&a_child_that_is_being_created_and_one_that_failed());
-    assert_eq!(report.procreations_started, 2);
+    assert_eq!(report.diversifications_started, 2);
 }
 
 #[test]
-fn no_procreation_has_started_where_the_primogenitor_is_alone() {
+fn no_diversification_has_started_where_the_primogenitor_is_alone() {
     let report = report(&Genealogy::new());
-    assert_eq!(report.procreations_started, 0);
+    assert_eq!(report.diversifications_started, 0);
 }
 
 #[test]
-fn the_most_procreations_is_that_of_the_run() {
+fn the_most_diversifications_is_that_of_the_run() {
     let report = report(&Genealogy::new());
-    assert_eq!(report.max_procreations, 800);
+    assert_eq!(report.max_diversifications, 800);
 }
 
 #[test]
@@ -263,7 +263,7 @@ fn the_primogenitor_has_no_progenitor() {
 }
 
 #[test]
-fn the_progenitor_of_a_child_is_the_harness_that_procreated_it() {
+fn the_progenitor_of_a_child_is_the_harness_it_is_a_clone_of() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.harnesses[1].progenitor, Some(0));
 }
@@ -308,15 +308,15 @@ fn the_seconds_of_the_trials_of_a_harness_are_reported_to_the_millisecond() {
 }
 
 #[test]
-fn the_seconds_of_the_procreation_that_made_a_harness_are_reported() {
+fn the_seconds_of_the_diversification_that_made_a_harness_are_reported() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(report.harnesses[1].procreation_seconds, Some(30.25));
+    assert_eq!(report.harnesses[1].diversification_seconds, Some(30.25));
 }
 
 #[test]
-fn the_primogenitor_was_made_by_no_procreation_and_has_no_seconds_of_one() {
+fn the_primogenitor_was_made_by_no_diversification_and_has_no_seconds_of_one() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
-    assert_eq!(report.harnesses[0].procreation_seconds, None);
+    assert_eq!(report.harnesses[0].diversification_seconds, None);
 }
 
 #[test]
@@ -325,7 +325,7 @@ fn a_harness_for_which_no_seconds_are_given_is_reported_with_none_spent() {
     assert_eq!(
         (
             report.harnesses[2].trial_seconds,
-            report.harnesses[2].procreation_seconds
+            report.harnesses[2].diversification_seconds
         ),
         (0.0, None)
     );
@@ -396,9 +396,9 @@ fn a_task_that_no_harness_completed_is_not_counted_as_completed_by_one_at_least(
 #[test]
 fn a_task_that_two_harnesses_completed_is_counted_once() {
     let mut genealogy = a_child_that_succeeds_where_its_progenitor_fails();
-    let another = genealogy.start_procreation(0).unwrap();
+    let another = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(another, CreationOutcome::Created)
+        .end_diversification(another, CreationOutcome::Created)
         .unwrap();
     trialled(
         &mut genealogy,

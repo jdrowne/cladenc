@@ -23,15 +23,15 @@ fn options(directory: &Memory) -> StartOptions {
             directory.path(),
             &["t3", "t2", "t1"],
         )],
-        procreation_docker_image: Some("image".to_owned()),
-        procreation_dockerfile: None,
-        procreation_docker_image_build_timeout: None,
+        diversification_docker_image: Some("image".to_owned()),
+        diversification_dockerfile: None,
+        diversification_docker_image_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
         outputs_dir: directory.path().join("outputs"),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 8,
-        procreation_timeout: 3600,
+        diversification_timeout: 3600,
         max_verifier_health_check_retries: 3,
         max_task_health_check_retries: 2,
         selection_tasks_percentage: 30.0,
@@ -40,13 +40,13 @@ fn options(directory: &Memory) -> StartOptions {
 }
 
 fn with_a_dockerfile(directory: &Memory, options: &mut StartOptions) {
-    options.procreation_docker_image = None;
-    options.procreation_dockerfile = Some(test_inputs::dockerfile_in(
+    options.diversification_docker_image = None;
+    options.diversification_dockerfile = Some(test_inputs::dockerfile_in(
         directory,
         directory.path(),
         "RUN touch /made-here\n",
     ));
-    options.procreation_docker_image_build_timeout = Some(600);
+    options.diversification_docker_image_build_timeout = Some(600);
 }
 
 fn is_named_by_cladenc(image: &str) -> bool {
@@ -104,9 +104,9 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             docker_build_timeout: None,
             harness_build_command: None,
             harness_run_command: "run a harness".to_owned(),
-            max_procreations: 800,
+            max_diversifications: 800,
             max_concurrent_containers: 8,
-            procreation_timeout: 3600,
+            diversification_timeout: 3600,
             max_verifier_health_check_retries: 3,
             max_task_health_check_retries: 2,
             selection_tasks_percentage: 30.0,
@@ -174,7 +174,7 @@ fn a_primogenitor_that_holds_a_socket_is_refused() {
 #[test]
 fn the_image_and_the_run_command_are_settings_as_they_were_given() {
     let settings = checked(|_, options| {
-        options.procreation_docker_image = Some("registry.example/harness:1".to_owned());
+        options.diversification_docker_image = Some("registry.example/harness:1".to_owned());
         options.harness_run_command = "sh \"$CLADENC_HARNESS/harness.sh\"".to_owned();
     })
     .unwrap();
@@ -245,9 +245,9 @@ fn a_dockerfile_that_does_not_exist_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.procreation_dockerfile = Some(directory.path().join("missing"));
+            options.diversification_dockerfile = Some(directory.path().join("missing"));
         }),
-        ["--procreation-dockerfile"]
+        ["--diversification-dockerfile"]
     );
 }
 
@@ -256,9 +256,9 @@ fn a_dockerfile_that_is_a_directory_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.procreation_dockerfile = Some(options.primogenitor.clone());
+            options.diversification_dockerfile = Some(options.primogenitor.clone());
         }),
-        ["--procreation-dockerfile"]
+        ["--diversification-dockerfile"]
     );
 }
 
@@ -267,9 +267,9 @@ fn a_dockerfile_with_no_path_is_refused() {
     assert_eq!(
         flags_refused(|directory, options| {
             with_a_dockerfile(directory, options);
-            options.procreation_dockerfile = Some(PathBuf::new());
+            options.diversification_dockerfile = Some(PathBuf::new());
         }),
-        ["--procreation-dockerfile"]
+        ["--diversification-dockerfile"]
     );
 }
 
@@ -277,11 +277,11 @@ fn a_dockerfile_with_no_path_is_refused() {
 fn a_dockerfile_that_is_refused_is_said_with_what_the_flag_takes() {
     let refused = checked(|directory, options| {
         with_a_dockerfile(directory, options);
-        options.procreation_dockerfile = Some(directory.path().join("missing"));
+        options.diversification_dockerfile = Some(directory.path().join("missing"));
     });
     assert_eq!(
         refused.unwrap_err().to_string(),
-        "--procreation-dockerfile takes an existing file"
+        "--diversification-dockerfile takes an existing file"
     );
 }
 
@@ -293,7 +293,7 @@ fn a_dockerfile_given_from_the_working_directory_is_made_absolute() {
         directory
             .write("/tests/samples/Dockerfile", "FROM scratch\n")
             .unwrap();
-        options.procreation_dockerfile = Some(PathBuf::from("tests/samples/Dockerfile"));
+        options.diversification_dockerfile = Some(PathBuf::from("tests/samples/Dockerfile"));
     })
     .unwrap();
     assert!(settings.dockerfile.unwrap().is_absolute());
@@ -307,7 +307,7 @@ fn a_dockerfile_given_through_a_symbolic_link_is_the_file_it_leads_to() {
         directory
             .symlink(directory.path().join("Dockerfile"), &link)
             .unwrap();
-        options.procreation_dockerfile = Some(link);
+        options.diversification_dockerfile = Some(link);
     })
     .unwrap();
     assert!(settings.dockerfile.unwrap().ends_with("Dockerfile"));
@@ -328,13 +328,13 @@ fn the_build_command_is_a_setting_as_it_was_given() {
 #[test]
 fn a_refused_value_is_said_with_its_flag_and_what_the_flag_takes() {
     let refused = Refused {
-        flags: &["--procreation-dockerfile"],
+        flags: &["--diversification-dockerfile"],
         accepted: "an existing file",
         reason: None,
     };
     assert_eq!(
         refused.to_string(),
-        "--procreation-dockerfile takes an existing file"
+        "--diversification-dockerfile takes an existing file"
     );
 }
 

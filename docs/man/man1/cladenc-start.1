@@ -6,11 +6,15 @@ cladenc\-start \- start a new directed evolution and print the directory of its 
 \fBcladenc start\fP
     \fB\-\-benchmark\fP <DIR>...
     \fB\-\-corroboration\-tasks\-percentage\fP <NUMBER>
+    [\fB\-\-diversification\-docker\-image\fP <IMAGE>]
+    [\fB\-\-diversification\-docker\-image\-build\-timeout\fP <SECONDS>]
+    [\fB\-\-diversification\-dockerfile\fP <FILE>]
+    \fB\-\-diversification\-timeout\fP <SECONDS>
     [\fB\-\-harness\-build\-command\fP <COMMAND>]
     \fB\-\-harness\-run\-command\fP <COMMAND>
     [\fB\-\-help\fP]
     \fB\-\-max\-concurrent\-containers\fP <COUNT>
-    \fB\-\-max\-procreations\fP <COUNT>
+    \fB\-\-max\-diversifications\fP <COUNT>
     \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
     \fB\-\-max\-verifier\-health\-check\-retries\fP <COUNT>
     \fB\-\-model\fP <NAME>
@@ -18,10 +22,6 @@ cladenc\-start \- start a new directed evolution and print the directory of its 
     \fB\-\-model\-url\fP <URL>
     \fB\-\-outputs\-dir\fP <DIR>
     \fB\-\-primogenitor\fP <DIR>
-    [\fB\-\-procreation\-docker\-image\fP <IMAGE>]
-    [\fB\-\-procreation\-docker\-image\-build\-timeout\fP <SECONDS>]
-    [\fB\-\-procreation\-dockerfile\fP <FILE>]
-    \fB\-\-procreation\-timeout\fP <SECONDS>
     \fB\-\-selection\-tasks\-percentage\fP <NUMBER>
 .fi
 .SH DESCRIPTION
@@ -47,6 +47,22 @@ once for each benchmark.
 The percentage of each benchmark's tasks that are corroboration tasks, above 0
 and below 100.
 .TP
+\fB\-\-diversification\-docker\-image\fP <IMAGE>
+The Docker image every diversification and every build of a harness is
+carried out in, where \fB\-\-diversification\-dockerfile\fP is not given.
+.TP
+\fB\-\-diversification\-docker\-image\-build\-timeout\fP <SECONDS>
+The time limit of the build of the image, given with
+\fB\-\-diversification\-dockerfile\fP.
+.TP
+\fB\-\-diversification\-dockerfile\fP <FILE>
+The Dockerfile cladenc builds the image of every diversification and every
+build of a harness from, in place of
+\fB\-\-diversification\-docker\-image\fP.
+.TP
+\fB\-\-diversification\-timeout\fP <SECONDS>
+The time limit of one diversification.
+.TP
 \fB\-\-harness\-build\-command\fP <COMMAND>
 The shell command that builds a harness in a container, where one has to be
 built.
@@ -60,8 +76,8 @@ Print help.
 \fB\-\-max\-concurrent\-containers\fP <COUNT>
 The most containers running at once.
 .TP
-\fB\-\-max\-procreations\fP <COUNT>
-The most procreations to start.
+\fB\-\-max\-diversifications\fP <COUNT>
+The most diversifications to start.
 .TP
 \fB\-\-max\-task\-health\-check\-retries\fP <COUNT>
 The most times the container of a task is brought up again, where its health
@@ -87,34 +103,19 @@ The outputs directory, which start creates.
 \fB\-\-primogenitor\fP <DIR>
 The directory of source code copied to make the primogenitor.
 .TP
-\fB\-\-procreation\-docker\-image\fP <IMAGE>
-The Docker image every procreation and every build of a harness is carried out
-in, where \fB\-\-procreation\-dockerfile\fP is not given.
-.TP
-\fB\-\-procreation\-docker\-image\-build\-timeout\fP <SECONDS>
-The time limit of the build of the image, given with
-\fB\-\-procreation\-dockerfile\fP.
-.TP
-\fB\-\-procreation\-dockerfile\fP <FILE>
-The Dockerfile cladenc builds the image of every procreation and every build
-of a harness from, in place of \fB\-\-procreation\-docker\-image\fP.
-.TP
-\fB\-\-procreation\-timeout\fP <SECONDS>
-The time limit of one procreation.
-.TP
 \fB\-\-selection\-tasks\-percentage\fP <NUMBER>
 The percentage of each benchmark's tasks that are selection tasks, above 0 and
 below 100.
 .SH THE IMAGE OF THE DIRECTED EVOLUTION
-Every procreation, and every build of a harness, is carried out in a container
-of one image, the image of the directed evolution.
-The creation of a singleton control group harness is carried out in a
-container of that image as well, and no trial is: a trial is carried out
-in the environment of its task.
+Every diversification, and every build of a harness, is carried out in a
+container of one image, the image of the directed evolution.
+The diversification of an experiment is carried out in a container of that
+image as well, and no trial is: a trial is carried out in the environment of
+its task.
 The image of the directed evolution is the image that
-\fB\-\-procreation\-docker\-image\fP names, or the image that cladenc builds
-when the directed evolution is started, from the Dockerfile that
-\fB\-\-procreation\-dockerfile\fP names, as
+\fB\-\-diversification\-docker\-image\fP names, or the image that cladenc
+builds when the directed evolution is started, from the Dockerfile that
+\fB\-\-diversification\-dockerfile\fP names, as
 .PP
 .RS 4
 .EX
@@ -123,8 +124,8 @@ timeout \-s KILL <SECONDS> docker build \-\-tag <NAME> \-\-file <FILE> <DIR>
 .RE
 .TP 11n
 \fB<SECONDS>\fP
-the value of \fB\-\-procreation\-docker\-image\-build\-timeout\fP, and five
-seconds more
+the value of \fB\-\-diversification\-docker\-image\-build\-timeout\fP, and
+five seconds more
 .TP 11n
 \fB<NAME>\fP
 the name cladenc gives the image: cladenc\- and sixteen random hexadecimal
@@ -137,8 +138,8 @@ a copy of the Dockerfile, kept in image in the outputs directory
 an empty directory, so the Dockerfile has no file to copy into the image
 .PP
 The build has the time limit that
-\fB\-\-procreation\-docker\-image\-build\-timeout\fP gives, and image in the
-outputs directory keeps what Docker printed.
+\fB\-\-diversification\-docker\-image\-build\-timeout\fP gives, and image in
+the outputs directory keeps what Docker printed.
 cladenc ends a build that runs past its time limit, and the build ends itself
 five seconds later where cladenc was killed outright, as by \fBkill \-9\fP,
 and is not there to end it.
@@ -147,15 +148,15 @@ brings.
 An image that is not built stops \fBcladenc start\fP with exit status 2,
 before the directed evolution has a journal.
 The image stays on the machine when the directed evolution ends: \fBcladenc
-resume\fP carries out its procreations and builds in it, and does not build it
-again.
+resume\fP carries out its diversifications and builds in it, and does not
+build it again.
 .PP
 cladenc fetches no image, and has no flag for a registry, the server that
 Docker fetches an image from.
 The name of an image says which registry it is of, as
 registry.example:5000/tools/harness:1 does, and a name that says none is of
 Docker Hub.
-The image that \fB\-\-procreation\-docker\-image\fP names has to be on the
+The image that \fB\-\-diversification\-docker\-image\fP names has to be on the
 machine before the directed evolution: fetched there with \fBdocker pull\fP,
 carried there as a file with \fBdocker save\fP and \fBdocker load\fP, or built
 there.
@@ -243,7 +244,7 @@ A task whose task.toml names an image, as docker_image under environment, has
 that image as its environment: cladenc builds nothing for the task, and the
 task needs no environment directory.
 The image has to be on the machine before the directed evolution, as the image
-that \fB\-\-procreation\-docker\-image\fP names has to be.
+that \fB\-\-diversification\-docker\-image\fP names has to be.
 cladenc looks for it when the directed evolution is started, and again each
 time it is resumed, as
 .PP
@@ -258,7 +259,7 @@ exit status 2.
 \fBcladenc start\fP then leaves it no journal.
 .SH HARNESSES
 A harness is started in a container, of the image of the directed evolution
-for a procreation and of the environment of its task for a trial, as
+for a diversification and of the environment of its task for a trial, as
 .PP
 .RS 4
 .EX
@@ -297,7 +298,7 @@ In the container of a harness,
 holds the source code of the harness, a copy made for this container
 .TP 7n
 \fB/var/opt/cladenc/work\fP
-in a procreation, the directory the harness works in, and the working
+in a diversification, the clone that the harness diversifies, and the working
 directory
 .TP 21n
 \fBCLADENC_HARNESS\fP
@@ -316,7 +317,7 @@ the address the model is served at, the value of \fB\-\-model\-url\fP
 the key the model is called with, read from the file that
 \fB\-\-model\-key\-file\fP names, and not set where that flag is not given
 .PP
-In a procreation the command runs as the user cladenc runs as, and in a
+In a diversification the command runs as the user cladenc runs as, and in a
 trial as the user of the environment of the task, or as the user that the
 task.toml of the task names.
 It is given nothing on standard input, and its standard output and standard
@@ -339,19 +340,27 @@ The key is read from its file when a directed evolution is started, and again
 each time the directed evolution is resumed.
 cladenc keeps the key off every command line, out of the journal and out of
 what it prints.
-.SH PROCREATIONS
-A procreation is carried out by the harness that procreates.
-/var/opt/cladenc/work holds a second copy of its source code, and the
-instruction asks the harness to improve that copy: what the harness leaves
-there is its child.
-/var/log/cladenc/trials holds the finished trials of the harness on the
+.SH DIVERSIFICATIONS
+A new harness is made in two steps, a cloning and a diversification.
+In the cloning, cladenc copies the source code of a harness, the progenitor,
+as it is kept under harnesses in the outputs directory: the copy is the
+progenitor's clone.
+In the diversification, the progenitor is started in a container, where
+/var/opt/cladenc/work holds its clone, and the instruction asks the progenitor
+to improve the clone: what the progenitor leaves there is its child.
+/var/log/cladenc/trials holds the finished trials of the progenitor on the
 non-holdout tasks, to read: one directory for each benchmark, and in it one
 for each task, holding what the trial on that task kept.
 .PP
-A harness that procreates is given more to read, and nothing more to change:
-what was kept of each harness it descends from, back to the primogenitor, and
-of each harness it made in an earlier procreation that has ended, whether that
-one was created or not.
+What this section says of a diversification, it says of one in which a
+progenitor diversifies its own clone.
+The diversification of an experiment, in which the primogenitor diversifies a
+second clone of the progenitor, is said under EXPERIMENTS.
+.PP
+A progenitor is given more to read, and nothing more to change: what was kept
+of each harness it descends from, back to the primogenitor, and of each
+harness it made in an earlier diversification that has ended, whether that one
+was created or not.
 It is given nothing of any other harness.
 .TP 7n
 \fB/var/log/cladenc/line/<ID>\fP
@@ -361,139 +370,144 @@ a harness it descends from
 a harness it made before
 .PP
 Each of these directories is named by the id of its harness, and holds
-.TP 13n
+.TP 17n
 \fBharness\fP
 the source code of that harness
-.TP 13n
+.TP 17n
 \fBtrials\fP
 its trials on the non-holdout tasks, laid out as /var/log/cladenc/trials
 is
-.TP 13n
-\fBprocreation\fP
+.TP 17n
+\fBdiversification\fP
 what the harness that made it printed, in stdout and stderr, with the id of
 that harness in the file named progenitor and one word in the file named
 outcome: created, unchanged, failed, build_failed or timed_out
-.TP 13n
+.TP 17n
 \fBbuild\fP
 what its build printed, in stdout and stderr
 .PP
 A directory that would hold nothing is not there: the primogenitor has no
-procreation, a harness that was not created has no trials, and a harness
+diversification, a harness that was not created has no trials, and a harness
 that was not built has no build.
 Nothing of a holdout task is in any of them.
 .PP
-The instruction asks the harness that procreates for a change to how its child
-works on any task: one that answers something it saw in several of its
-trials, not in one, and that leaves in the source code nothing that names a
-task, a file of a task or the answer to one.
+The instruction asks the progenitor for a change to how its child works on any
+task: one that answers something it saw in several of its trials, not in one,
+and that leaves in the source code nothing that names a task, a file of a task
+or the answer to one.
 It says that taking out what does not help is an improvement as well, that the
-child may be asked in its turn to improve a copy of its own source code, so
-that making the child better at that counts, and that the child is judged by
-tasks the harness that procreates is not shown.
+child may be asked in its turn to improve a clone of its own, so that making
+the child better at that counts, and that the child is judged by tasks the
+progenitor is not shown.
 An instruction is a request: cladenc enforces none of it.
 .PP
-A harness procreates only once it has been benchmarked in full, on every task
+A harness is cloned only once it has been benchmarked in full, on every task
 of every benchmark of the directed evolution, so that it finds every
 non-holdout task in /var/log/cladenc/trials.
-The primogenitor is benchmarked in full before the first procreation.
+The primogenitor is benchmarked in full before the first diversification.
 .PP
-Every harness is benchmarked in full once it is created, whether it procreates
+Every harness is benchmarked in full once it is created, whether it is cloned
 or not.
-cladenc chooses which harness procreates, partly by chance.
+cladenc chooses which harness is cloned, partly by chance.
 It does not choose which trial starts next: the created harness with the
 lowest id that has a task left starts a trial on it.
 .PP
-\fB\-\-max\-procreations\fP gives the most procreations a directed evolution
-starts.
-A procreation counts once it is started, whether or not it creates its child.
+\fB\-\-max\-diversifications\fP gives the most diversifications a directed
+evolution starts.
+A diversification counts once it is started, whether or not it creates its
+child.
+The diversification of an experiment is not counted.
 The directed evolution ends once that many have been started, each of them has
 ended, and every created harness has been benchmarked in full.
-With one benchmark of 5 tasks and \fB\-\-max\-procreations\fP 1, the
-primogenitor is benchmarked on the 5 tasks and procreates, and its child is
-benchmarked on the 5 tasks where the procreation created it.
+With one benchmark of 5 tasks and \fB\-\-max\-diversifications\fP 1, the
+primogenitor is benchmarked on the 5 tasks, is cloned and diversifies its
+clone, and its child is benchmarked on the 5 tasks where the diversification
+created it.
 .PP
-A procreation starts only once no trial is left to start, no trial is
-running and no other procreation is under way: every harness created so far
-has been benchmarked in full, the child of the procreation before among them.
-So cladenc chooses each harness that procreates with what every created
+A diversification starts only once no trial is left to start, no trial is
+running and no other diversification is under way: every harness created so
+far has been benchmarked in full, the child of the diversification before
+among them.
+So cladenc chooses each harness that is cloned with what every created
 harness completed in hand.
-A singleton control group harness is not waited for, since it never
-procreates: its creation and its trials go on beside a procreation.
-While a procreation runs, no container of another child is started, so fewer
-containers run than \fB\-\-max\-concurrent\-containers\fP allows.
+A singleton control group harness is not waited for, since it is never cloned:
+the diversification of its experiment and its trials go on beside a
+diversification.
+While a diversification runs, no container of another child is started, so
+fewer containers run than \fB\-\-max\-concurrent\-containers\fP allows.
 .PP
 How the harness ends decides what is recorded:
 .TP 18n
 \fBexit status 0\fP
-the procreation created a harness, or is recorded as unchanged where the
+the diversification created a harness, or is recorded as unchanged where the
 harness changed nothing
 .TP 18n
 \fBexit status 125\fP
 Docker did not start the container: the directed evolution stops, and
-\fBcladenc resume\fP carries out the procreation again
+\fBcladenc resume\fP carries out the diversification again
 .TP 18n
 \fBany other status\fP
-the procreation failed
+the diversification failed
 .TP 18n
 \fBthe time limit\fP
-the container is removed, and the procreation is recorded as timed out
+the container is removed, and the diversification is recorded as timed out
 .PP
-A procreation whose harness leaves /var/opt/cladenc/work as it was creates no
-child, and is recorded as unchanged.
-cladenc compares what the harness left with the source code of that harness,
-as it is kept under harnesses in the outputs directory.
+A diversification in which the progenitor leaves its clone as it was creates
+no child, and is recorded as unchanged.
+cladenc compares what the progenitor left in /var/opt/cladenc/work with the
+source code of the progenitor, as it is kept under harnesses in the outputs
+directory.
 The two are the same where they hold the same files, directories and symbolic
 links, each file with the same contents and the same permission bits, and each
 symbolic link with the same target.
 Such a child would be its progenitor over again, and a model does not answer
 the same way twice, so what the child completed would differ from what its
 progenitor completed by luck alone.
-It is not built and not benchmarked, and it is never chosen to procreate.
+It is not built and not benchmarked, and it is never chosen to be cloned.
 .PP
 A child that holds anything but regular files, directories and symbolic links
-is a failed procreation.
+is a failed diversification.
 The source code of every child is kept under harnesses in the outputs
 directory, created or not.
-procreations in the outputs directory keeps, in a directory named after the
-child, the standard output and standard error of the harness that made it, the
-id of that harness in the file named progenitor, and how the procreation ended
-in the file named outcome.
+diversifications in the outputs directory keeps, in a directory named after
+the child, the standard output and standard error of the harness that made it,
+the id of that harness in the file named progenitor, and how the
+diversification ended in the file named outcome.
 .SH EXPERIMENTS
-At each procreation of a harness other than the primogenitor, cladenc conducts
-an experiment to test whether a progenitor is better at procreating better
+Where the progenitor is not the primogenitor, cladenc conducts an experiment
+to test whether a progenitor is better at diversifying clones into better
 harnesses than the primogenitor.
-To conduct the experiment, cladenc establishes a baseline: it has the
-primogenitor create a harness from the same source code that the progenitor
-uses to procreate the progenitor's child.
-The harness the primogenitor creates from the source code of the progenitor is
-the singleton control group harness.
-cladenc brings up one container more for it, in which
+To conduct the experiment, cladenc establishes a baseline: it clones the
+progenitor a second time, and has the primogenitor diversify the second clone.
+The harness the primogenitor creates by diversifying the second clone of the
+progenitor is the singleton control group harness.
+cladenc brings up one container more for that diversification, in which
 .TP 7n
 \fB/var/opt/cladenc/harness\fP
 holds a copy of the source code of the primogenitor, which is what runs
 .TP 7n
 \fB/var/opt/cladenc/work\fP
-holds a second copy of the source code of the progenitor, which is what is
-changed
+holds the second clone of the progenitor, which is what is diversified
 .PP
 The primogenitor is given the instruction the progenitor is given, and what
-the progenitor is given to read: under /var/log/cladenc/trials the trials of the progenitor
-on the non-holdout tasks, under /var/log/cladenc/line the
+the progenitor is given to read: under /var/log/cladenc/trials the trials of
+the progenitor on the non-holdout tasks, under /var/log/cladenc/line the
 harnesses the progenitor descends from, and under /var/log/cladenc/children
-the children the progenitor procreated before the progenitor's child of the
+the children the progenitor made before the progenitor's child of the
 experiment.
 What the primogenitor leaves in /var/opt/cladenc/work is the singleton control
 group harness.
-Where the primogenitor leaves /var/opt/cladenc/work as it was, no singleton
-control group harness is created, and the creation is recorded as unchanged.
+Where the primogenitor leaves the second clone as it was, no singleton control
+group harness is created, and the diversification is recorded as unchanged.
 .PP
 The singleton control group harness is built and benchmarked in full, as the
 progenitor's child is, and it takes no other part in the directed evolution:
-it is never chosen to procreate, it is counted in no clade, it is not named
-the best harness, and the container it is created in does not count toward
-\fB\-\-max\-procreations\fP.
-It is nobody's child, so no harness that procreates is given anything of it.
-Where the primogenitor procreates, no experiment is conducted: the
+it is never chosen to be cloned, it is counted in no clade, it is not named
+the best harness, and the diversification it is created in does not count
+toward \fB\-\-max\-diversifications\fP.
+It is nobody's child, so no harness that diversifies a clone is given anything
+of it.
+Where the progenitor is the primogenitor, no experiment is conducted: the
 progenitor's child and the singleton control group harness would be created in
 the same way.
 .PP
@@ -502,8 +516,8 @@ harnesses in the outputs directory, created or not.
 baselines in the outputs directory keeps, in a directory named after the
 singleton control group harness, the standard output and standard error of the
 primogenitor, the id of the progenitor in the file named progenitor, the id of
-the progenitor's child in the file named child, and how the creation ended in
-the file named outcome.
+the progenitor's child in the file named child, and how the diversification
+ended in the file named outcome.
 .SH BUILDS
 Where \fB\-\-harness\-build\-command\fP is given, a harness is built before it
 is run for the first time, in a container of the same image, as
@@ -520,10 +534,10 @@ of the harness and is what CLADENC_HARNESS names.
 A build calls no model, and is given none of the three variables of the model.
 What the build makes stays there, and is part of every copy made of the
 harness.
-The primogenitor is built before any procreation or trial, within the time
-limit of one procreation.
-A child is built as the last step of its procreation, within what is left of
-the time limit of that procreation.
+The primogenitor is built before any diversification or trial, within the
+time limit of one diversification.
+A child is built as the last step of its diversification, within what is left
+of the time limit of that diversification.
 .PP
 builds in the outputs directory keeps the standard output and standard error
 of every build, in a directory named after the harness.
@@ -542,8 +556,8 @@ a child is recorded as build_failed, and is not created; for the primogenitor
 the directed evolution stops, and \fBcladenc resume\fP builds it again
 .TP 18n
 \fBthe time limit\fP
-the container is removed, and the procreation of a child is recorded as timed
-out; for the primogenitor the directed evolution stops
+the container is removed, and for a child the diversification is recorded as
+timed out; for the primogenitor the directed evolution stops
 .PP
 A build that leaves anything but regular files, directories and symbolic links
 has failed.
@@ -634,12 +648,12 @@ The draw is made once for a directed evolution and written in its journal, and
 Every harness is benchmarked on the holdout tasks as on the non-holdout tasks,
 selection tasks and corroboration tasks alike, and nothing a harness is given
 in a trial says which of the sets its task is in.
-A harness that procreates is given its trials on the non-holdout tasks, and
-nothing of the holdout tasks: no task specification, no work, no result, and
-no count of them.
+A harness that diversifies a clone is given the trials of the progenitor on
+the non-holdout tasks, and nothing of the holdout tasks: no task
+specification, no work, no result, and no count of them.
 .PP
 Artificial selection goes by the selection tasks and by no others.
-cladenc chooses which harness procreates by the selection tasks that the
+cladenc chooses which harness is cloned by the selection tasks that the
 harness and its descendants completed and did not complete, and it names as
 the best harness the created harness, benchmarked in full, that completed the
 most selection tasks: of several that completed as many, the one created
@@ -648,7 +662,7 @@ The non-holdout tasks are what a harness reads to find what to change, and a
 harness that completes more of those alone is not chosen for it.
 .PP
 cladenc counts for every harness the corroboration tasks it completed, and
-chooses nothing by them: not the harness that procreates, and never the best
+chooses nothing by them: not the harness that is cloned, and never the best
 harness.
 A set of tasks gives a fair count only while nothing is chosen by it.
 .PP
@@ -681,24 +695,26 @@ How many more selection tasks the best of many harnesses that are all alike
 completes is measured by a directed evolution in which every harness works as
 the primogenitor does: one carried out with the values of the directed
 evolution it is set beside, and with a run command that, where the harness is
-started for a procreation, calls no model and adds one line to a file that no
-harness reads, as
+started for a diversification, calls no model and adds one line to a file that
+no harness reads, as
 .PP
 .RS 4
 .EX
 \-\-harness\-run\-command \(aqif [ \-d /var/log/cladenc/trials ]
-    then echo >> procreated; else <COMMAND>; fi\(aq
+    then echo >> diversified; else <COMMAND>; fi\(aq
 .EE
 .RE
 .PP
-where <COMMAND> is the run command of the other, and procreated is a name that
-no file of the primogenitor has.
-/var/log/cladenc/trials is there for a procreation and not for a trial,
-so every procreation calls no model, and creates a child that is the source
-code of its progenitor with one line more in the file named procreated.
-The line is added because a procreation that changes nothing creates no child.
+where <COMMAND> is the run command of the other, and diversified is a name
+that no file of the primogenitor has.
+/var/log/cladenc/trials is there for a diversification and not for a trial,
+so every diversification calls no model, and creates a child that is the
+source code of its progenitor with one line more in the file named
+diversified.
+The line is added because a diversification that changes nothing creates no
+child.
 Such a directed evolution holds as many children as
-\fB\-\-max\-procreations\fP gives, each of them benchmarked in full.
+\fB\-\-max\-diversifications\fP gives, each of them benchmarked in full.
 In \fBcladenc report\fP of it, how far apart the counts of the harnesses lie
 is what luck does to the count of one harness, and how many more selection
 tasks the best harness completed than the primogenitor is what luck and the
@@ -730,9 +746,9 @@ cladenc copies in and out
 .PP
 First the source code of the harness is copied into that container, at
 /var/opt/cladenc/harness, and the harness is started there, as it is for a
-procreation, in the working directory of the environment and as its user: the
-user and the working directory its Dockerfile names, and root and / where it
-names none.
+diversification, in the working directory of the environment and as its user:
+the user and the working directory its Dockerfile names, and root and / where
+it names none.
 CLADENC_INSTRUCTION holds the task specification.
 The harness is given nothing else of the task, so it can neither read nor
 change the verifier.
@@ -1220,8 +1236,8 @@ check, in stdout and stderr, where the task gives one
 .PP
 holdout in the outputs directory keeps the trials on the holdout tasks,
 selection tasks and corroboration tasks together, in the same way, apart from
-the others, so that the directory a harness that procreates is given holds
-none of them.
+the others, so that the directory a harness that diversifies a clone is given
+holds none of them.
 .SH SEE ALSO
 \fBcladenc\fP(1),
 \fBcladenc\-report\fP(1),

@@ -162,7 +162,7 @@ fn carried_out_with(
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: max_retries,
         max_task_health_check_retries: 0,
     };

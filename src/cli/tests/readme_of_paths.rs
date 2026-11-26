@@ -22,10 +22,10 @@ fn the_readme_says_where_the_source_code_of_the_harness_of_a_trial_is() {
 }
 
 #[test]
-fn the_readme_says_where_the_source_code_and_the_copy_are_in_the_container_of_a_procreation() {
+fn the_readme_says_where_the_source_code_and_the_copy_are_in_the_container_of_a_diversification() {
     assert!(readme().contains(
-        "In the container of a procreation, the source code of the harness that procreates is \
-         at `/var/opt/cladenc/harness`, and the copy that the harness changes is at \
+        "In the container of a diversification, the source code of the progenitor is at \
+         `/var/opt/cladenc/harness`, and the clone that the progenitor diversifies is at \
          `/var/opt/cladenc/work`, the working directory."
     ));
 }

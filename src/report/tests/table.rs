@@ -20,9 +20,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 37.5,
@@ -51,10 +51,10 @@ fn table_with(seconds: &[Seconds], build: impl FnOnce(&mut Genealogy)) -> String
     Report::of(&settings(), &genealogy, seconds, Some(0)).table()
 }
 
-fn took(trials: f64, procreation: Option<f64>) -> Seconds {
+fn took(trials: f64, diversification: Option<f64>) -> Seconds {
     Seconds {
         trials,
-        procreation,
+        diversification,
     }
 }
 
@@ -64,29 +64,29 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
         trialled(genealogy, "benchmark/t1", TrialResult::Completed);
         trialled(genealogy, "benchmark/t4", TrialResult::Completed);
         trialled(genealogy, "benchmark/t5", TrialResult::NotCompleted);
-        genealogy.start_procreation(0).unwrap();
+        genealogy.start_diversification(0).unwrap();
     });
     assert_eq!(
         table,
         "model a-model at http://models.example/v1\n\
-         started 1 of 800 procreations, best harness 0\n\
+         started 1 of 800 diversifications, best harness 0\n\
          completed by at least one harness: selection tasks 1 of 3, corroboration tasks 1 of 1, non-holdout tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  procreation seconds\n\
+         id  progenitor  experiment  state          selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  diversification seconds\n\
          0   -           -           created        1                    0                        1                        0                            0                      1                          1                0                    1.000        4.5            -\n\
          1   0           -           being created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n"
     );
 }
 
 #[test]
-fn a_harness_whose_procreation_left_the_progenitor_s_copy_unchanged_is_shown_as_unchanged() {
+fn a_harness_whose_diversification_left_the_progenitor_s_clone_unchanged_is_shown_as_unchanged() {
     let table = table(|genealogy| {
-        let child = genealogy.start_procreation(0).unwrap();
+        let child = genealogy.start_diversification(0).unwrap();
         genealogy
-            .end_procreation(child, CreationOutcome::Unchanged)
+            .end_diversification(child, CreationOutcome::Unchanged)
             .unwrap();
     });
     assert!(
@@ -101,21 +101,21 @@ fn a_harness_whose_procreation_left_the_progenitor_s_copy_unchanged_is_shown_as_
 fn a_failed_harness_is_shown_as_failed() {
     let seconds = [took(0.0, None), took(0.0, Some(30.26))];
     let table = table_with(&seconds, |genealogy| {
-        let child = genealogy.start_procreation(0).unwrap();
+        let child = genealogy.start_diversification(0).unwrap();
         genealogy
-            .end_procreation(child, CreationOutcome::Failed)
+            .end_diversification(child, CreationOutcome::Failed)
             .unwrap();
     });
     assert_eq!(
         table,
         "model a-model at http://models.example/v1\n\
-         started 1 of 800 procreations, best harness 0\n\
+         started 1 of 800 diversifications, best harness 0\n\
          completed by at least one harness: selection tasks 0 of 3, corroboration tasks 0 of 1, non-holdout tasks 0 of 1\n\
          on the corroboration tasks: the best harness is the primogenitor, so there are no two harnesses to compare\n\
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  procreation seconds\n\
+         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade score  trial seconds  diversification seconds\n\
          0   -           -           created  0                    0                        0                        0                            0                      0                          0                0                    -            0.0            -\n\
          1   0           -           failed   0                    0                        0                        0                            0                      0                          0                0                    -            0.0            30.3\n"
     );
@@ -132,15 +132,15 @@ fn a_rate_is_printed_to_three_decimal_places() {
 }
 
 #[test]
-fn the_most_procreations_being_1_is_not_shown_as_several() {
+fn the_most_diversifications_being_1_is_not_shown_as_several() {
     let settings = Settings {
-        max_procreations: 1,
+        max_diversifications: 1,
         ..settings()
     };
     let table = Report::of(&settings, &Genealogy::new(), &[], Some(0)).table();
     assert_eq!(
         table.lines().nth(1),
-        Some("started 0 of 1 procreation, best harness 0")
+        Some("started 0 of 1 diversification, best harness 0")
     );
 }
 
@@ -150,10 +150,10 @@ fn the_table_has_no_column_of_lower_bounds() {
 }
 
 #[test]
-fn the_seconds_of_a_procreation_are_printed_to_one_decimal_place() {
+fn the_seconds_of_a_diversification_are_printed_to_one_decimal_place() {
     let seconds = [took(0.0, None), took(0.0, Some(30.26))];
     let table = table_with(&seconds, |genealogy| {
-        genealogy.start_procreation(0).unwrap();
+        genealogy.start_diversification(0).unwrap();
     });
     assert!(table.lines().nth(9).unwrap().ends_with("  30.3"));
 }

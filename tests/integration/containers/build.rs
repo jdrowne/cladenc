@@ -8,7 +8,7 @@ use cladenc::outputs_directory::OutputsDirectory;
 use nix::unistd::Uid;
 use tempfile::TempDir;
 
-const CHANGE_THE_COPY: &str = "touch changed";
+const CHANGE_THE_CLONE: &str = "touch changed";
 
 const MODEL: Model<'static> = Model {
     name: test_inputs::MODEL,
@@ -16,7 +16,7 @@ const MODEL: Model<'static> = Model {
     key: None,
 };
 
-type Procreated = (
+type Diversified = (
     TempDir,
     OutputsDirectory,
     Result<containers::Creation, ContainerError>,
@@ -34,19 +34,19 @@ fn made() -> (TempDir, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) -> Procreated {
+fn diversified_within(run_command: &str, build_command: &str, time_limit: u64) -> Diversified {
     let (directory, outputs_directory) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
         run_command,
         build_command: Some(build_command),
         model: MODEL,
-        procreation_timeout: time_limit,
+        diversification_timeout: time_limit,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
     let stop = AtomicBool::new(false);
-    let result = containers::run_procreation(
+    let result = containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -59,29 +59,31 @@ fn procreated_within(run_command: &str, build_command: &str, time_limit: u64) ->
     (directory, outputs_directory, result)
 }
 
-fn procreated(run_command: &str, build_command: &str) -> Procreated {
-    procreated_within(run_command, build_command, 30)
+fn diversified(run_command: &str, build_command: &str) -> Diversified {
+    diversified_within(run_command, build_command, 30)
 }
 
-fn stopped_while_its_child_is_built() -> Procreated {
+fn stopped_while_its_child_is_built() -> Diversified {
     let (directory, outputs_directory) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: CHANGE_THE_COPY,
+        run_command: CHANGE_THE_CLONE,
         build_command: Some("hostname > id; sleep 300"),
         model: MODEL,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let id_file = outputs_directory.running_procreation(1).join("child/id");
+    let id_file = outputs_directory
+        .running_diversification(1)
+        .join("child/id");
     let stop = AtomicBool::new(false);
     let result = thread::scope(|scope| {
         scope.spawn(|| {
             test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
-        containers::run_procreation(
+        containers::run_diversification(
             Host {
                 docker: &Program,
                 outputs_directory: &outputs_directory,
@@ -99,17 +101,17 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
     let (_directory, outputs_directory) = made();
     let launch = Launch {
         image: test_inputs::IMAGE,
-        run_command: CHANGE_THE_COPY,
+        run_command: CHANGE_THE_CLONE,
         build_command: Some(build_command),
         model: Model {
             key: Some(test_inputs::MODEL_KEY),
             ..MODEL
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let _ = containers::run_procreation(
+    let _ = containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -123,7 +125,7 @@ fn left_by_a_build_of_a_directed_evolution_with_a_key(build_command: &str, file:
 }
 
 fn left_in_the_child(build_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated(CHANGE_THE_COPY, build_command);
+    let (_directory, outputs_directory, _result) = diversified(CHANGE_THE_CLONE, build_command);
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
@@ -177,7 +179,7 @@ fn a_build_is_told_nothing_of_the_model() {
 #[test]
 fn the_build_of_a_child_works_on_what_its_progenitor_left() {
     let (_directory, outputs_directory, _result) =
-        procreated("echo changed > source", "cp source product");
+        diversified("echo changed > source", "cp source product");
     assert_eq!(
         fs::read_to_string(outputs_directory.harness(1).join("product")).unwrap(),
         "changed\n"
@@ -195,16 +197,18 @@ fn the_build_of_a_child_runs_as_the_user_cladenc_runs_as() {
 #[test]
 fn the_time_limit_removes_the_container_of_a_build() {
     let (_directory, outputs_directory, _result) =
-        procreated_within(CHANGE_THE_COPY, "hostname > id; sleep 300", 8);
+        diversified_within(CHANGE_THE_CLONE, "hostname > id; sleep 300", 8);
     assert!(test_inputs::container_is_gone(
         &outputs_directory.harness(1).join("id")
     ));
 }
 
 #[test]
-fn a_procreation_stopped_while_its_child_is_built_leaves_no_container_behind() {
+fn a_diversification_stopped_while_its_child_is_built_leaves_no_container_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_child_is_built();
     assert!(test_inputs::container_is_gone(
-        &outputs_directory.running_procreation(1).join("child/id")
+        &outputs_directory
+            .running_diversification(1)
+            .join("child/id")
     ));
 }

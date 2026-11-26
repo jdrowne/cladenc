@@ -6,12 +6,12 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
     ("--benchmark", "/benchmark"),
-    ("--procreation-docker-image", "image"),
+    ("--diversification-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
-    ("--max-procreations", "800"),
+    ("--max-diversifications", "800"),
     ("--max-concurrent-containers", "8"),
-    ("--procreation-timeout", "3600"),
+    ("--diversification-timeout", "3600"),
     ("--max-verifier-health-check-retries", "3"),
     ("--max-task-health-check-retries", "2"),
     ("--selection-tasks-percentage", "45"),
@@ -75,10 +75,10 @@ fn a_genealogy_growth_which_is_no_flag_of_start_is_refused_as_an_argument_not_ex
 }
 
 #[test]
-fn initial_procreations_which_are_no_flag_of_start_are_refused_as_an_argument_not_expected() {
+fn initial_diversifications_which_are_no_flag_of_start_are_refused_as_an_argument_not_expected() {
     assert!(
-        said_with(&["--initial-procreations=5"])
-            .starts_with("error: unexpected argument '--initial-procreations' found\n")
+        said_with(&["--initial-diversifications=5"])
+            .starts_with("error: unexpected argument '--initial-diversifications' found\n")
     );
 }
 
@@ -113,8 +113,8 @@ fn a_confidence_which_is_no_flag_of_start_is_refused_as_an_argument_that_is_not_
 }
 
 #[test]
-fn a_command_line_without_the_most_procreations_is_refused_for_the_flag_it_lacks() {
-    assert!(said_without("--max-procreations").contains("  --max-procreations <COUNT>\n"));
+fn a_command_line_without_the_most_diversifications_is_refused_for_the_flag_it_lacks() {
+    assert!(said_without("--max-diversifications").contains("  --max-diversifications <COUNT>\n"));
 }
 
 #[test]
@@ -134,10 +134,10 @@ fn a_command_line_without_the_corroboration_tasks_percentage_is_refused_for_the_
 }
 
 #[test]
-fn the_most_procreations_being_0_is_refused_for_the_value() {
+fn the_most_diversifications_being_0_is_refused_for_the_value() {
     assert!(
-        said_given("--max-procreations", "0")
-            .starts_with("error: invalid value '0' for '--max-procreations <COUNT>': ")
+        said_given("--max-diversifications", "0")
+            .starts_with("error: invalid value '0' for '--max-diversifications <COUNT>': ")
     );
 }
 
@@ -165,12 +165,12 @@ fn a_corroboration_tasks_percentage_of_100_is_refused_for_the_value() {
 fn an_image_and_a_dockerfile_together_are_refused_by_the_flags_of_both() {
     assert!(
         said_with(&[
-            "--procreation-dockerfile=/images/Dockerfile",
-            "--procreation-docker-image-build-timeout=60"
+            "--diversification-dockerfile=/images/Dockerfile",
+            "--diversification-docker-image-build-timeout=60"
         ])
         .starts_with(
-            "error: the argument '--procreation-docker-image <IMAGE>' cannot be used with:\n  \
-             --procreation-dockerfile <FILE>\n"
+            "error: the argument '--diversification-docker-image <IMAGE>' cannot be used with:\n  \
+             --diversification-dockerfile <FILE>\n"
         )
     );
 }

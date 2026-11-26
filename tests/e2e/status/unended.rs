@@ -33,6 +33,6 @@ fn status_names_the_harness_that_is_ahead_so_far() {
     let (directory, _run) = &*STOPPED;
     assert_eq!(
         lines_of(directory.path())[2],
-        "started 0 of 1 procreation, harness ahead so far 0"
+        "started 0 of 1 diversification, harness ahead so far 0"
     );
 }

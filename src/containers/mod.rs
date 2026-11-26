@@ -39,9 +39,10 @@ pub use program::{Ending, Limits, Program};
 use program::{FOREVER, seconds_since};
 use verifier::Verifying;
 
-pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds a \
-    copy of your own source code. Improve that source code, so that the harness it makes completes \
-    more coding tasks than you do. /var/log/cladenc/trials holds the trials you are shown: one \
+pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds \
+    your clone, which is a copy of your own source code. Improve that source code, so that the \
+    harness it makes completes more coding tasks than you do. /var/log/cladenc/trials holds the \
+    trials you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named specification says what you were asked to do, the file named result reads \
     completed, not_completed or timed_out, the file named ending reads ended, or stopped where \
@@ -65,7 +66,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     /var/log/cladenc/line holds one directory for each harness you descend from, named by its id, \
     and /var/log/cladenc/children one for each harness you made before, created or not. In the \
     directory of such a harness, the directory named harness holds its source code, the directory \
-    named trials holds its trials, laid out as yours are, the directory named procreation \
+    named trials holds its trials, laid out as yours are, the directory named diversification \
     holds what the harness that made it printed, in the files named stdout and stderr, with the id \
     of that harness in the file named progenitor and one word in the file named outcome, created, \
     unchanged, failed, build_failed or timed_out, and the directory named build holds what its \
@@ -75,7 +76,7 @@ pub const INSTRUCTION: &str = "You are an agentic coding harness. The current di
     in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
     one. Taking out what does not help is an improvement as well. Change files in the current \
     directory only: what it holds when you end becomes a new harness, which is benchmarked in its \
-    turn. It may then be asked, as you are now, to improve a copy of its own source code, so a \
+    turn. It may then be asked, as you are now, to improve a clone of its own, so a \
     change that makes it better at that counts as well. Where you leave the current directory as \
     it was, no new harness is made: a change that you only print in your answer changes no file. \
     The new harness is judged by tasks that you are not shown.";
@@ -93,7 +94,7 @@ pub struct Launch<'a> {
     pub run_command: &'a str,
     pub build_command: Option<&'a str>,
     pub model: Model<'a>,
-    pub procreation_timeout: u64,
+    pub diversification_timeout: u64,
     pub max_verifier_health_check_retries: u64,
     pub max_task_health_check_retries: u64,
 }
@@ -204,7 +205,7 @@ impl Display for ContainerError {
 
 impl Error for ContainerError {}
 
-pub fn run_procreation(
+pub fn run_diversification(
     host: Host<'_>,
     launch: &Launch<'_>,
     child: HarnessId,
@@ -213,16 +214,16 @@ pub fn run_procreation(
 ) -> Result<Creation, ContainerError> {
     let outputs_directory = host.outputs_directory;
     outputs_directory
-        .start_procreation(child, progenitor)
+        .start_diversification(child, progenitor)
         .map_err(ContainerError::Io)?;
-    let running = outputs_directory.running_procreation(child);
+    let running = outputs_directory.running_diversification(child);
     let source = running.join("progenitor");
     let made = running.join("child");
     let trials = outputs_directory.trials(progenitor);
     let shown = shown::to(outputs_directory, progenitor, None);
     let changing = Changing {
         harness: child,
-        copied_from: progenitor,
+        cloned_from: progenitor,
         running: &running,
         source: &source,
         made: &made,
@@ -231,7 +232,7 @@ pub fn run_procreation(
     };
     let creation = changing.run(host, launch, stop)?;
     outputs_directory
-        .end_procreation(child, progenitor, creation.outcome)
+        .end_diversification(child, progenitor, creation.outcome)
         .map(|()| creation)
         .map_err(ContainerError::Io)
 }
@@ -258,7 +259,7 @@ pub fn run_baseline(
     );
     let changing = Changing {
         harness,
-        copied_from: experiment.progenitor,
+        cloned_from: experiment.progenitor,
         running: &running,
         source: &source,
         made: &made,
@@ -274,7 +275,7 @@ pub fn run_baseline(
 
 struct Changing<'a> {
     harness: HarnessId,
-    copied_from: HarnessId,
+    cloned_from: HarnessId,
     running: &'a Path,
     source: &'a Path,
     made: &'a Path,
@@ -313,7 +314,7 @@ impl Changing<'_> {
             read_only: true,
         }))
         .collect();
-        let limits = Limits::starting_now(launch.procreation_timeout, stop);
+        let limits = Limits::starting_now(launch.diversification_timeout, stop);
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
             ("CLADENC_INSTRUCTION", INSTRUCTION),
@@ -349,10 +350,10 @@ impl Changing<'_> {
         limits: Limits<'_>,
     ) -> Result<CreationOutcome, ContainerError> {
         let files = host.outputs_directory.files();
-        let copied = host.outputs_directory.harness(self.copied_from);
+        let cloned = host.outputs_directory.harness(self.cloned_from);
         if !holds_only_harness_files(files, self.made).unwrap_or(false) {
             Ok(CreationOutcome::Failed)
-        } else if same_tree(files, self.made, &copied).unwrap_or(false) {
+        } else if same_tree(files, self.made, &cloned).unwrap_or(false) {
             Ok(CreationOutcome::Unchanged)
         } else {
             build::build_child(host, launch, self.harness, self.made, limits)

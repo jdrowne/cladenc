@@ -10,7 +10,7 @@ fn tasks() -> Vec<String> {
 
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations: 4,
+        max_diversifications: 4,
         tasks: tasks(),
         seed,
     }
@@ -18,9 +18,9 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
 
 fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     for harness in [0, 1] {
         genealogy.start_trial(harness, "task-0").unwrap();
@@ -38,9 +38,9 @@ fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
 fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     for progenitor in [0, 0] {
-        let child = genealogy.start_procreation(progenitor).unwrap();
+        let child = genealogy.start_diversification(progenitor).unwrap();
         genealogy
-            .end_procreation(child, CreationOutcome::Created)
+            .end_diversification(child, CreationOutcome::Created)
             .unwrap();
     }
     for harness in [0, 1, 2] {
@@ -53,9 +53,9 @@ fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
             .end_trial(harness, "task-1", TrialResult::NotCompleted)
             .unwrap();
     }
-    let child = genealogy.start_procreation(1).unwrap();
+    let child = genealogy.start_diversification(1).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Failed)
+        .end_diversification(child, CreationOutcome::Failed)
         .unwrap();
     genealogy
 }
@@ -121,7 +121,7 @@ fn action_k_draws_from_stream_k_of_the_seeded_generator_for_each_harness_in_asce
         .collect();
     let expected: Vec<Option<Action>> = (0..20)
         .map(|action| {
-            Some(Action::Procreation {
+            Some(Action::Diversification {
                 progenitor: progenitor_drawn(7, action),
             })
         })
@@ -130,14 +130,14 @@ fn action_k_draws_from_stream_k_of_the_seeded_generator_for_each_harness_in_asce
 }
 
 #[test]
-fn the_draws_are_sharpened_by_the_most_procreations_over_those_not_yet_started() {
+fn the_draws_are_sharpened_by_the_most_diversifications_over_those_not_yet_started() {
     let genealogy = with_two_harnesses_benchmarked_in_full();
     let drawn: Vec<Option<Action>> = (0..20)
         .map(|seed| artificial_selection(seed).next_action(&genealogy, 5))
         .collect();
     let expected: Vec<Option<Action>> = (0..20)
         .map(|seed| {
-            Some(Action::Procreation {
+            Some(Action::Diversification {
                 progenitor: progenitor_drawn(seed, 5),
             })
         })
@@ -153,7 +153,7 @@ fn a_harness_that_waits_takes_no_draw() {
         .collect();
     let expected: Vec<Option<Action>> = (0..20)
         .map(|action| {
-            Some(Action::Procreation {
+            Some(Action::Diversification {
                 progenitor: progenitor_drawn_with_the_second_harness_waiting(7, action),
             })
         })

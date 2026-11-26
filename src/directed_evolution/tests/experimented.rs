@@ -9,12 +9,12 @@ use crate::journal::{Record, Settings, Started};
 
 const A_BASELINE: [&str; 2] = ["run a harness", "baseline-3"];
 const THE_BASELINE: &str = "the creation of harness 3, the singleton control group harness, by \
-                            the primogenitor from the source code of harness 1";
+                            the primogenitor from a second clone of harness 1";
 
 fn twice_over_three_tasks(directory: &Memory, settings: &mut Settings) {
     let benchmark = test_inputs::benchmark_in(directory, directory.path(), &["t1", "t2", "t3"]);
     settings.benchmarks = vec![Benchmark::read(directory, &benchmark).unwrap()];
-    settings.max_procreations = 2;
+    settings.max_diversifications = 2;
     settings.selection_tasks_percentage = 33.5;
     settings.holdout_tasks = vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()];
     settings.corroboration_tasks_percentage = 33.5;
@@ -45,7 +45,7 @@ fn changing_nothing() -> Evolved {
     given::started(Double::default(), twice_over_three_tasks)
 }
 
-fn leaving_the_copy_of_the_baseline_as_it_was() -> Evolved {
+fn leaving_the_clone_of_the_baseline_as_it_was() -> Evolved {
     let docker = Double::default().changing_when(|asked| !asked.kept.ends_with("baseline-3"));
     given::started(docker, twice_over_three_tasks)
 }
@@ -58,18 +58,19 @@ fn kept_of_the_baseline(evolved: &Evolved, file: &str) -> String {
 }
 
 #[test]
-fn a_baseline_is_established_at_the_procreation_of_a_harness_other_than_the_primogenitor_alone() {
+fn a_baseline_is_established_at_the_diversification_of_a_harness_other_than_the_primogenitor_alone()
+{
     assert_eq!(
         experimented().starts(),
         [
             "trial of 0",
             "trial of 0",
             "trial of 0",
-            "procreation of 1 by 0",
+            "diversification of 1 by 0",
             "trial of 1",
             "trial of 1",
             "trial of 1",
-            "procreation of 2 by 1",
+            "diversification of 2 by 1",
             "baseline of 3 for 2 from 1",
             "trial of 2",
             "trial of 2",
@@ -106,11 +107,12 @@ fn a_directed_evolution_says_how_a_baseline_ended_and_where_its_harness_is_kept(
 }
 
 #[test]
-fn a_directed_evolution_numbers_a_procreation_by_the_procreations_started_before_it() {
+fn a_directed_evolution_numbers_a_diversification_by_the_diversifications_started_before_it() {
     let lines = experimented().lines();
     assert!(
         lines.contains(
-            &"cladenc: started the procreation of harness 2 by harness 1, procreation 2 of 2"
+            &"cladenc: started the diversification of harness 2 by harness 1, diversification 2 of \
+              2"
                 .to_owned()
         )
     );
@@ -166,35 +168,35 @@ fn a_resumed_directed_evolution_counts_the_singleton_control_group_harness_among
         resumed.lines()[0],
         format!(
             "cladenc: continuing the directed evolution in {}, which has started 2 of 2 \
-             procreations and holds 4 harnesses",
+             diversifications and holds 4 harnesses",
             resumed.outputs().display()
         )
     );
 }
 
 #[test]
-fn a_child_that_would_be_the_progenitor_s_copy_as_it_was_trials_no_task() {
+fn a_child_that_would_be_the_progenitor_s_clone_as_it_was_trials_no_task() {
     assert_eq!(
         changing_nothing().starts(),
         [
             "trial of 0",
             "trial of 0",
             "trial of 0",
-            "procreation of 1 by 0",
-            "procreation of 2 by 0",
+            "diversification of 1 by 0",
+            "diversification of 2 by 0",
         ]
     );
 }
 
 #[test]
-fn a_procreation_that_left_the_progenitor_s_copy_as_it_was_is_journaled_as_unchanged() {
+fn a_diversification_that_left_the_progenitor_s_clone_as_it_was_is_journaled_as_unchanged() {
     let unchanged = changing_nothing()
         .records()
         .into_iter()
         .filter(|record| {
             matches!(
                 record,
-                Record::ProcreationFinished {
+                Record::DiversificationFinished {
                     outcome: CreationOutcome::Unchanged,
                     ..
                 }
@@ -205,35 +207,36 @@ fn a_procreation_that_left_the_progenitor_s_copy_as_it_was_is_journaled_as_uncha
 }
 
 #[test]
-fn a_directed_evolution_says_that_a_procreation_left_the_copy_unchanged_and_created_no_harness() {
+fn a_directed_evolution_says_that_a_diversification_left_the_clone_unchanged_and_created_no_harness()
+ {
     let evolved = changing_nothing();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: the procreation of harness 1 by harness 0 left the copy of the source code of \
-         harness 0 unchanged, and created no harness: what the harness printed is kept in {}",
-        evolved.outputs().join("procreations/1").display()
+        "cladenc: the diversification of harness 1 by harness 0 left the clone of harness 0 \
+         unchanged, and created no harness: what the harness printed is kept in {}",
+        evolved.outputs().join("diversifications/1").display()
     )));
 }
 
 #[test]
-fn what_a_procreation_that_changed_nothing_left_is_kept_among_the_harnesses() {
+fn what_a_diversification_that_changed_nothing_left_is_kept_among_the_harnesses() {
     let evolved = changing_nothing();
     let kept = evolved.outputs().join("harnesses/1/harness.sh");
     assert!(evolved.files().is_file(kept));
 }
 
 #[test]
-fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_trials_no_task() {
+fn a_singleton_control_group_harness_that_would_be_the_clone_as_it_was_trials_no_task() {
     assert_eq!(
-        leaving_the_copy_of_the_baseline_as_it_was().starts(),
+        leaving_the_clone_of_the_baseline_as_it_was().starts(),
         [
             "trial of 0",
             "trial of 0",
             "trial of 0",
-            "procreation of 1 by 0",
+            "diversification of 1 by 0",
             "trial of 1",
             "trial of 1",
             "trial of 1",
-            "procreation of 2 by 1",
+            "diversification of 2 by 1",
             "baseline of 3 for 2 from 1",
             "trial of 2",
             "trial of 2",
@@ -243,10 +246,10 @@ fn a_singleton_control_group_harness_that_would_be_the_copy_as_it_was_trials_no_
 }
 
 #[test]
-fn a_directed_evolution_says_that_a_baseline_left_the_copy_unchanged_and_created_no_harness() {
-    let evolved = leaving_the_copy_of_the_baseline_as_it_was();
+fn a_directed_evolution_says_that_a_baseline_left_the_clone_unchanged_and_created_no_harness() {
+    let evolved = leaving_the_clone_of_the_baseline_as_it_was();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: {THE_BASELINE} left the copy of the source code of harness 1 unchanged, and \
+        "cladenc: {THE_BASELINE} left the clone of harness 1 unchanged, and \
          created no harness: what the primogenitor printed is kept in {}",
         evolved.outputs().join("baselines/3").display()
     )));

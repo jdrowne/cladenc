@@ -9,7 +9,7 @@ use crate::genealogy::{Experiment, Genealogy, HarnessId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Started {
-    Procreation {
+    Diversification {
         child: HarnessId,
         progenitor: HarnessId,
     },
@@ -27,9 +27,9 @@ pub enum Started {
 impl Display for Started {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Procreation { child, progenitor } => write!(
+            Self::Diversification { child, progenitor } => write!(
                 formatter,
-                "the procreation of harness {child} by harness {progenitor}"
+                "the diversification of harness {child} by harness {progenitor}"
             ),
             Self::Baseline {
                 harness,
@@ -38,7 +38,7 @@ impl Display for Started {
             } => write!(
                 formatter,
                 "the creation of harness {harness}, the singleton control group harness, by the \
-                 primogenitor from the source code of harness {progenitor}"
+                 primogenitor from a second clone of harness {progenitor}"
             ),
             Self::Trial { harness, task } => {
                 write!(formatter, "the trial of harness {harness} on task {task}")
@@ -56,7 +56,7 @@ enum First {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct Seconds {
     pub(crate) trials: f64,
-    pub(crate) procreation: Option<f64>,
+    pub(crate) diversification: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -118,27 +118,27 @@ impl State {
         match record {
             Record::Run { .. } => return Err(JournalError::RunRecordRepeated { line }),
             Record::PrimogenitorBuilt => self.genealogy.build_primogenitor().map_err(refused)?,
-            Record::ProcreationStarted { child, progenitor } => {
+            Record::DiversificationStarted { child, progenitor } => {
                 if child != self.genealogy.harness_count() {
                     return Err(JournalError::WrongChild { line, child });
                 }
                 self.genealogy
-                    .start_procreation(progenitor)
+                    .start_diversification(progenitor)
                     .map_err(refused)?;
                 self.seconds.push(Seconds::default());
-                self.start(Started::Procreation { child, progenitor });
+                self.start(Started::Diversification { child, progenitor });
             }
-            Record::ProcreationFinished {
+            Record::DiversificationFinished {
                 child,
                 outcome,
                 seconds,
             } => {
                 self.genealogy
-                    .end_procreation(child, outcome)
+                    .end_diversification(child, outcome)
                     .map_err(refused)?;
-                self.seconds[child as usize].procreation = Some(seconds);
+                self.seconds[child as usize].diversification = Some(seconds);
                 self.unfinished
-                    .retain(|action| !matches!(action, Started::Procreation { child: running, .. } if *running == child));
+                    .retain(|action| !matches!(action, Started::Diversification { child: running, .. } if *running == child));
             }
             Record::BaselineStarted {
                 harness,

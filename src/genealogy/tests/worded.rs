@@ -10,7 +10,7 @@ fn worded(error: impl Error) -> String {
 fn a_progenitor_that_is_not_created_is_worded() {
     assert_eq!(
         worded(GenealogyError::ProgenitorNotCreated { progenitor: 3 }),
-        "harness 3 cannot procreate because it is not a created harness"
+        "harness 3 cannot be cloned because it is not a created harness"
     );
 }
 
@@ -37,7 +37,7 @@ fn an_experiment_that_does_not_await_its_baseline_is_worded() {
             child: 3,
             progenitor: 1
         }),
-        "no experiment at the procreation of harness 3 by harness 1 is waiting for its baseline"
+        "no experiment at the diversification of harness 3 by harness 1 is waiting for its baseline"
     );
 }
 

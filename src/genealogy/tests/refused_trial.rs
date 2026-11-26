@@ -2,14 +2,14 @@ use crate::genealogy::{CreationOutcome, Genealogy, GenealogyError, TrialResult};
 
 fn with_a_child_being_created() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     genealogy
 }
 
 fn with_a_failed_child() -> Genealogy {
     let mut genealogy = with_a_child_being_created();
     genealogy
-        .end_procreation(1, CreationOutcome::Failed)
+        .end_diversification(1, CreationOutcome::Failed)
         .unwrap();
     genealogy
 }
@@ -17,7 +17,7 @@ fn with_a_failed_child() -> Genealogy {
 fn with_an_unchanged_child() -> Genealogy {
     let mut genealogy = with_a_child_being_created();
     genealogy
-        .end_procreation(1, CreationOutcome::Unchanged)
+        .end_diversification(1, CreationOutcome::Unchanged)
         .unwrap();
     genealogy
 }

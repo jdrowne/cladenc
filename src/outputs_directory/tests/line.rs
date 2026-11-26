@@ -16,34 +16,34 @@ fn made() -> (Memory, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn procreated(
+fn diversified(
     outputs_directory: &OutputsDirectory,
     child: u64,
     progenitor: u64,
     outcome: CreationOutcome,
 ) {
     outputs_directory
-        .start_procreation(child, progenitor)
+        .start_diversification(child, progenitor)
         .unwrap();
     outputs_directory
-        .end_procreation(child, progenitor, outcome)
+        .end_diversification(child, progenitor, outcome)
         .unwrap();
 }
 
 fn family() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
-    procreated(&outputs_directory, 2, 1, CreationOutcome::Created);
-    procreated(&outputs_directory, 3, 0, CreationOutcome::Failed);
-    procreated(&outputs_directory, 4, 2, CreationOutcome::Created);
-    outputs_directory.start_procreation(5, 1).unwrap();
+    diversified(&outputs_directory, 1, 0, CreationOutcome::Created);
+    diversified(&outputs_directory, 2, 1, CreationOutcome::Created);
+    diversified(&outputs_directory, 3, 0, CreationOutcome::Failed);
+    diversified(&outputs_directory, 4, 2, CreationOutcome::Created);
+    outputs_directory.start_diversification(5, 1).unwrap();
     (directory, outputs_directory)
 }
 
 fn with_eleven_children_of_the_primogenitor() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     for child in 1..=11 {
-        procreated(&outputs_directory, child, 0, CreationOutcome::Created);
+        diversified(&outputs_directory, child, 0, CreationOutcome::Created);
     }
     (directory, outputs_directory)
 }
@@ -51,7 +51,10 @@ fn with_eleven_children_of_the_primogenitor() -> (Memory, OutputsDirectory) {
 fn with_two_records_that_name_each_other() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = family();
     directory
-        .write(outputs_directory.procreation(1).join("progenitor"), "2\n")
+        .write(
+            outputs_directory.diversification(1).join("progenitor"),
+            "2\n",
+        )
         .unwrap();
     (directory, outputs_directory)
 }
@@ -75,7 +78,7 @@ fn the_progenitor_of_a_child_that_was_not_created_is_the_harness_that_made_it() 
 }
 
 #[test]
-fn a_child_whose_procreation_has_not_ended_has_no_progenitor_on_record() {
+fn a_child_whose_diversification_has_not_ended_has_no_progenitor_on_record() {
     let (_directory, outputs_directory) = family();
     assert_eq!(outputs_directory.progenitor_of(5), None);
 }
@@ -85,7 +88,7 @@ fn a_record_that_does_not_hold_an_id_names_no_progenitor() {
     let (directory, outputs_directory) = family();
     directory
         .write(
-            outputs_directory.procreation(1).join("progenitor"),
+            outputs_directory.diversification(1).join("progenitor"),
             "none\n",
         )
         .unwrap();
@@ -123,7 +126,7 @@ fn the_children_of_a_harness_are_those_it_made_whether_they_were_created_or_not(
 }
 
 #[test]
-fn a_child_whose_procreation_has_not_ended_is_not_among_the_children_of_its_progenitor() {
+fn a_child_whose_diversification_has_not_ended_is_not_among_the_children_of_its_progenitor() {
     let (_directory, outputs_directory) = family();
     assert_eq!(outputs_directory.children_of(1), [2]);
 }
@@ -144,10 +147,10 @@ fn the_children_of_a_harness_are_in_the_order_of_their_ids_and_not_of_their_name
 }
 
 #[test]
-fn what_is_kept_beside_the_procreations_under_a_name_that_is_no_id_is_no_child() {
+fn what_is_kept_beside_the_diversifications_under_a_name_that_is_no_id_is_no_child() {
     let (directory, outputs_directory) = family();
     directory
-        .create_dir(outputs_directory.path().join("procreations/notes"))
+        .create_dir(outputs_directory.path().join("diversifications/notes"))
         .unwrap();
     assert_eq!(outputs_directory.children_of(0), [1, 3]);
 }

@@ -17,26 +17,26 @@ fn made() -> (Memory, OutputsDirectory) {
     (directory, outputs_directory)
 }
 
-fn procreate(
+fn diversify(
     outputs_directory: &OutputsDirectory,
     child: HarnessId,
     progenitor: HarnessId,
     outcome: CreationOutcome,
 ) {
     outputs_directory
-        .start_procreation(child, progenitor)
+        .start_diversification(child, progenitor)
         .unwrap();
     outputs_directory
-        .end_procreation(child, progenitor, outcome)
+        .end_diversification(child, progenitor, outcome)
         .unwrap();
 }
 
 fn with_three_generations() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    procreate(&outputs_directory, 1, 0, CreationOutcome::Created);
-    procreate(&outputs_directory, 2, 1, CreationOutcome::Created);
-    procreate(&outputs_directory, 3, 1, CreationOutcome::Failed);
-    procreate(&outputs_directory, 4, 1, CreationOutcome::Created);
+    diversify(&outputs_directory, 1, 0, CreationOutcome::Created);
+    diversify(&outputs_directory, 2, 1, CreationOutcome::Created);
+    diversify(&outputs_directory, 3, 1, CreationOutcome::Failed);
+    diversify(&outputs_directory, 4, 1, CreationOutcome::Created);
     outputs_directory.start_build(2).unwrap();
     (directory, outputs_directory)
 }
@@ -53,7 +53,7 @@ fn a_progenitor_is_shown_every_harness_it_descends_from_with_the_nearest_first()
         [
             "/var/log/cladenc/line/1/harness",
             "/var/log/cladenc/line/1/trials",
-            "/var/log/cladenc/line/1/procreation",
+            "/var/log/cladenc/line/1/diversification",
             "/var/log/cladenc/line/0/harness",
             "/var/log/cladenc/line/0/trials",
         ]
@@ -70,13 +70,13 @@ fn a_progenitor_is_shown_every_child_it_made_after_its_line_whether_created_or_n
             "/var/log/cladenc/line/0/trials",
             "/var/log/cladenc/children/2/harness",
             "/var/log/cladenc/children/2/trials",
-            "/var/log/cladenc/children/2/procreation",
+            "/var/log/cladenc/children/2/diversification",
             "/var/log/cladenc/children/2/build",
             "/var/log/cladenc/children/3/harness",
-            "/var/log/cladenc/children/3/procreation",
+            "/var/log/cladenc/children/3/diversification",
             "/var/log/cladenc/children/4/harness",
             "/var/log/cladenc/children/4/trials",
-            "/var/log/cladenc/children/4/procreation",
+            "/var/log/cladenc/children/4/diversification",
         ]
     );
 }
@@ -91,7 +91,7 @@ fn a_progenitor_shown_what_it_saw_before_a_child_is_shown_only_the_children_made
             "/var/log/cladenc/line/0/trials",
             "/var/log/cladenc/children/2/harness",
             "/var/log/cladenc/children/2/trials",
-            "/var/log/cladenc/children/2/procreation",
+            "/var/log/cladenc/children/2/diversification",
             "/var/log/cladenc/children/2/build",
         ]
     );
@@ -109,7 +109,7 @@ fn what_a_progenitor_is_shown_of_a_harness_is_what_the_outputs_directory_keeps_o
         [
             outputs_directory.harness(1),
             outputs_directory.trials(1),
-            outputs_directory.procreation(1),
+            outputs_directory.diversification(1),
         ]
     );
 }

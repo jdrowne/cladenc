@@ -574,10 +574,9 @@ fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_wa
 #[test]
 fn the_flag_of_the_image_says_which_containers_are_started_from_the_image() {
     assert!(readme().contains(
-        "| `--procreation-docker-image <IMAGE>` | Not Required | The Docker image every \
-         procreation, every build of a harness and every creation of a singleton control group \
-         harness is carried out in. No trial is carried out in it: a trial is carried out \
-         in the environment of its task,"
+        "| `--diversification-docker-image <IMAGE>` | Not Required | The Docker image every \
+         diversification and every build of a harness is carried out in. No trial is carried out \
+         in it: a trial is carried out in the environment of its task,"
     ));
 }
 
@@ -756,27 +755,27 @@ fn the_section_of_cladenc_resume_says_what_it_prints_of_a_directed_evolution_tha
 }
 
 #[test]
-fn the_steps_of_cladenc_start_say_that_a_procreation_that_changes_nothing_creates_no_child() {
+fn the_steps_of_cladenc_start_say_that_a_diversification_that_changes_nothing_creates_no_child() {
     assert!(what_is_said_of("start").contains(
-        "A procreation in which the harness leaves the copy of its own source code as it was \
-         creates no child, and is recorded as unchanged."
+        "A diversification in which the progenitor leaves its clone as it was creates no child, \
+         and is recorded as unchanged."
     ));
 }
 
 #[test]
 fn the_steps_of_cladenc_start_say_that_a_baseline_that_changes_nothing_creates_no_harness() {
     assert!(what_is_said_of("start").contains(
-        "Where the primogenitor leaves the second copy of the source code of the progenitor as \
-         it was, no singleton control group harness is created."
+        "Where the primogenitor leaves the second clone of the progenitor as it was, no singleton \
+         control group harness is created."
     ));
 }
 
 #[test]
-fn the_section_of_cladenc_report_says_what_it_prints_of_a_harness_whose_procreation_changed_nothing()
+fn the_section_of_cladenc_report_says_what_it_prints_of_a_harness_whose_diversification_changed_nothing()
  {
     assert!(what_is_said_of("report").contains(
-        "whether it was created, which reads `unchanged` where its procreation left the copy of \
-         the source code as it was"
+        "whether it was created, which reads `unchanged` where its diversification left the clone \
+         as it was"
     ));
 }
 
@@ -790,11 +789,12 @@ fn the_section_of_cladenc_report_says_what_it_prints_where_no_experiment_created
 }
 
 #[test]
-fn the_steps_of_cladenc_start_say_that_a_procreation_starts_once_every_harness_is_benchmarked() {
+fn the_steps_of_cladenc_start_say_that_a_diversification_starts_once_every_harness_is_benchmarked()
+{
     assert!(what_is_said_of("start").contains(
-        "It starts as many procreations as `--max-procreations` gives, each only once every \
-         harness created so far has been benchmarked in full, so that it chooses each harness \
-         that procreates with what every created harness completed in hand."
+        "It starts as many diversifications as `--max-diversifications` gives, each only once \
+         every harness created so far has been benchmarked in full, so that it chooses each \
+         harness that is cloned with what every created harness completed in hand."
     ));
 }
 

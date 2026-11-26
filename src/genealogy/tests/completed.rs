@@ -2,9 +2,9 @@ use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn with_a_child() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     genealogy
 }

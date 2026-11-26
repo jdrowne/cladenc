@@ -24,7 +24,7 @@ fn launch<'a>(image: &'a str, run_command: &'a str, build_command: Option<&'a st
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     }
@@ -44,24 +44,24 @@ fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
     }
 }
 
-fn procreated(
+fn diversified(
     outputs_directory: &OutputsDirectory,
     child: u64,
     progenitor: u64,
     outcome: CreationOutcome,
 ) {
     outputs_directory
-        .start_procreation(child, progenitor)
+        .start_diversification(child, progenitor)
         .unwrap();
     fs::write(
         outputs_directory
-            .running_procreation(child)
+            .running_diversification(child)
             .join("child/name"),
         format!("{child}\n"),
     )
     .unwrap();
     outputs_directory
-        .end_procreation(child, progenitor, outcome)
+        .end_diversification(child, progenitor, outcome)
         .unwrap();
 }
 
@@ -80,11 +80,11 @@ fn family() -> (TempDir, OutputsDirectory) {
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     trialled(&outputs_directory, 0);
-    procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
+    diversified(&outputs_directory, 1, 0, CreationOutcome::Created);
     trialled(&outputs_directory, 1);
-    procreated(&outputs_directory, 2, 1, CreationOutcome::Created);
-    procreated(&outputs_directory, 3, 1, CreationOutcome::Created);
-    procreated(&outputs_directory, 4, 1, CreationOutcome::Failed);
+    diversified(&outputs_directory, 2, 1, CreationOutcome::Created);
+    diversified(&outputs_directory, 3, 1, CreationOutcome::Created);
+    diversified(&outputs_directory, 4, 1, CreationOutcome::Failed);
     (directory, outputs_directory)
 }
 
@@ -127,12 +127,12 @@ fn the_source_code_that_runs_for_a_baseline_is_a_copy_of_that_of_the_primogenito
 }
 
 #[test]
-fn the_source_code_that_is_changed_for_a_baseline_is_a_copy_of_that_of_the_progenitor() {
+fn the_source_code_that_is_diversified_for_a_baseline_is_a_clone_of_the_progenitor() {
     assert_eq!(found("cat name"), "1\n");
 }
 
 #[test]
-fn the_working_directory_of_a_baseline_is_the_copy_that_is_changed() {
+fn the_working_directory_of_a_baseline_is_the_clone_that_is_diversified() {
     assert_eq!(found("pwd"), "/var/opt/cladenc/work\n");
 }
 
@@ -176,7 +176,7 @@ fn the_primogenitor_is_given_the_harnesses_the_progenitor_descends_from() {
 }
 
 #[test]
-fn the_primogenitor_is_given_the_children_the_progenitor_procreated_before_and_no_later_one() {
+fn the_primogenitor_is_given_the_children_the_progenitor_made_before_and_no_later_one() {
     assert_eq!(found("ls /var/log/cladenc/children"), "2\n");
 }
 

@@ -54,9 +54,9 @@ fn a_harness_given_every_task_of_the_list_has_none_left() {
 fn a_task_given_to_one_harness_is_not_given_to_another() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     genealogy.start_trial(0, "a").unwrap();
     assert_eq!(genealogy.harnesses()[1].tasks_not_given(&list), ["a", "b"]);
@@ -111,9 +111,9 @@ fn a_harness_has_not_trialled_every_task_while_a_trial_of_it_is_running() {
 fn a_task_another_harness_trialled_does_not_count_for_a_harness() {
     let list = tasks(&["a"]);
     let mut genealogy = Genealogy::new();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     trialled(&mut genealogy, "a", TrialResult::Completed);
     assert!(!genealogy.harnesses()[1].has_trialled_every(&list));

@@ -7,7 +7,7 @@ use crate::journal::{self, Journal, JournalError, Record, Seconds, Settings};
 use crate::report::leader::Leader;
 use crate::report::{self, Report};
 
-const CUT_SHORT: &str = "{\"record\":\"procreation_fin";
+const CUT_SHORT: &str = "{\"record\":\"diversification_fin";
 
 fn settings() -> Settings {
     Settings {
@@ -24,9 +24,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
@@ -65,7 +65,7 @@ fn outputs_directory(last_line: &str) -> Memory {
             result: TrialResult::NotCompleted,
             seconds: 2.0,
         },
-        Record::ProcreationStarted {
+        Record::DiversificationStarted {
             child: 1,
             progenitor: 0,
         },
@@ -101,11 +101,11 @@ fn of_the_records() -> Report {
     genealogy
         .end_trial(0, "benchmark/t2", TrialResult::NotCompleted)
         .unwrap();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     let seconds = [
         Seconds {
             trials: 3.5,
-            procreation: None,
+            diversification: None,
         },
         Seconds::default(),
     ];

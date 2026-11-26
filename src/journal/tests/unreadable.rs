@@ -53,12 +53,12 @@ fn the_end_of_a_trial_of_this_format_that_holds_no_seconds_is_not_a_record() {
 }
 
 #[test]
-fn the_end_of_a_procreation_of_this_format_that_holds_no_seconds_is_not_a_record() {
+fn the_end_of_a_diversification_of_this_format_that_holds_no_seconds_is_not_a_record() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
-            r#"{"record":"procreation_finished","child":1,"outcome":"created"}"#
+            r#"{"record":"diversification_started","child":1,"progenitor":0}"#,
+            r#"{"record":"diversification_finished","child":1,"outcome":"created"}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -67,7 +67,7 @@ fn the_end_of_a_procreation_of_this_format_that_holds_no_seconds_is_not_a_record
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":31,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":32,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -118,7 +118,7 @@ fn a_run_record_of_this_format_that_names_no_selection_tasks_percentage_is_not_a
 #[test]
 fn a_run_record_of_this_format_that_names_a_budget_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""max_procreations":800"#, r#""budget":800"#)]),
+        error_of(&[&RUN.replace(r#""max_diversifications":800"#, r#""budget":800"#)]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -132,11 +132,11 @@ fn a_run_record_of_this_format_that_names_the_progenitor_is_not_a_record() {
 }
 
 #[test]
-fn the_start_of_a_procreation_of_this_format_that_names_the_parent_is_not_a_record() {
+fn the_start_of_a_diversification_of_this_format_that_names_the_parent_is_not_a_record() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":1,"parent":0}"#
+            r#"{"record":"diversification_started","child":1,"parent":0}"#
         ]),
         JournalError::NotARecord { line: 2 }
     ));
@@ -151,9 +151,12 @@ fn a_record_of_this_format_named_progenitor_built_is_not_a_record() {
 }
 
 #[test]
-fn a_run_record_of_this_format_that_names_no_time_limit_of_a_procreation_is_not_a_record() {
+fn a_run_record_of_this_format_that_names_no_time_limit_of_a_diversification_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""procreation_timeout":"#, r#""procreation_time_limit":"#)]),
+        error_of(&[&RUN.replace(
+            r#""diversification_timeout":"#,
+            r#""diversification_time_limit":"#
+        )]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -184,6 +187,17 @@ fn a_record_of_this_format_named_attempt_started_is_not_a_record() {
         error_of(&[
             RUN,
             r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#
+        ]),
+        JournalError::NotARecord { line: 2 }
+    ));
+}
+
+#[test]
+fn a_record_of_this_format_named_procreation_started_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"procreation_started","child":1,"progenitor":0}"#
         ]),
         JournalError::NotARecord { line: 2 }
     ));
@@ -248,7 +262,7 @@ fn a_journal_with_a_record_of_an_unknown_name_cannot_be_read() {
 #[test]
 fn a_journal_with_a_record_that_lacks_a_key_cannot_be_read() {
     assert!(matches!(
-        error_of(&[RUN, r#"{"record":"procreation_started","child":1}"#]),
+        error_of(&[RUN, r#"{"record":"diversification_started","child":1}"#]),
         JournalError::NotARecord { line: 2 }
     ));
 }
@@ -258,8 +272,8 @@ fn a_journal_with_an_unknown_outcome_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
-            r#"{"record":"procreation_finished","child":1,"outcome":"lost","seconds":1.5}"#
+            r#"{"record":"diversification_started","child":1,"progenitor":0}"#,
+            r#"{"record":"diversification_finished","child":1,"outcome":"lost","seconds":1.5}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -306,11 +320,11 @@ fn a_journal_with_a_second_run_record_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_with_a_procreation_of_a_harness_that_was_not_created_cannot_be_read() {
+fn a_journal_with_a_diversification_of_a_harness_that_was_not_created_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":1,"progenitor":5}"#
+            r#"{"record":"diversification_started","child":1,"progenitor":5}"#
         ]),
         JournalError::Refused {
             line: 2,
@@ -320,11 +334,11 @@ fn a_journal_with_a_procreation_of_a_harness_that_was_not_created_cannot_be_read
 }
 
 #[test]
-fn a_journal_with_the_end_of_a_procreation_that_never_started_cannot_be_read() {
+fn a_journal_with_the_end_of_a_diversification_that_never_started_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":1.5}"#
+            r#"{"record":"diversification_finished","child":1,"outcome":"created","seconds":1.5}"#
         ]),
         JournalError::Refused {
             line: 2,
@@ -360,11 +374,11 @@ fn a_journal_that_builds_its_primogenitor_twice_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_that_starts_a_procreation_before_its_primogenitor_was_built_cannot_be_read() {
+fn a_journal_that_starts_a_diversification_before_its_primogenitor_was_built_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             &run_that_builds(),
-            r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+            r#"{"record":"diversification_started","child":1,"progenitor":0}"#
         ]),
         JournalError::Refused {
             line: 2,
@@ -417,11 +431,11 @@ fn a_journal_with_the_end_of_a_trial_that_never_started_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_whose_procreation_names_a_child_other_than_the_next_id_cannot_be_read() {
+fn a_journal_whose_diversification_names_a_child_other_than_the_next_id_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":7,"progenitor":0}"#
+            r#"{"record":"diversification_started","child":7,"progenitor":0}"#
         ]),
         JournalError::WrongChild { line: 2, child: 7 }
     ));
@@ -433,7 +447,7 @@ fn a_journal_with_a_record_after_the_end_of_its_directed_evolution_cannot_be_rea
         error_of(&[
             RUN,
             r#"{"record":"directed_evolution_finished","best_harness":0}"#,
-            r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+            r#"{"record":"diversification_started","child":1,"progenitor":0}"#
         ]),
         JournalError::AfterDirectedEvolutionFinished { line: 3 }
     ));
@@ -441,9 +455,9 @@ fn a_journal_with_a_record_after_the_end_of_its_directed_evolution_cannot_be_rea
 
 const A_CHILD_OF_A_CHILD: [&str; 5] = [
     RUN,
-    r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
-    r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":1.5}"#,
-    r#"{"record":"procreation_started","child":2,"progenitor":1}"#,
+    r#"{"record":"diversification_started","child":1,"progenitor":0}"#,
+    r#"{"record":"diversification_finished","child":1,"outcome":"created","seconds":1.5}"#,
+    r#"{"record":"diversification_started","child":2,"progenitor":1}"#,
     r#"{"record":"baseline_started","harness":3,"child":2,"progenitor":1}"#,
 ];
 
@@ -453,11 +467,11 @@ fn error_after_a_baseline_started(line: &str) -> JournalError {
 }
 
 #[test]
-fn a_journal_with_a_baseline_where_the_primogenitor_procreated_cannot_be_read() {
+fn a_journal_with_a_baseline_where_the_primogenitor_was_cloned_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"procreation_started","child":1,"progenitor":0}"#,
+            r#"{"record":"diversification_started","child":1,"progenitor":0}"#,
             r#"{"record":"baseline_started","harness":2,"child":1,"progenitor":0}"#
         ]),
         JournalError::Refused {
@@ -512,10 +526,10 @@ fn a_journal_with_the_end_of_a_baseline_that_never_started_cannot_be_read() {
 }
 
 #[test]
-fn a_journal_that_ends_a_baseline_as_though_it_were_a_procreation_cannot_be_read() {
+fn a_journal_that_ends_a_baseline_as_though_it_were_a_diversification_cannot_be_read() {
     assert!(matches!(
         error_after_a_baseline_started(
-            r#"{"record":"procreation_finished","child":3,"outcome":"created","seconds":1.5}"#
+            r#"{"record":"diversification_finished","child":3,"outcome":"created","seconds":1.5}"#
         ),
         JournalError::Refused {
             line: 6,

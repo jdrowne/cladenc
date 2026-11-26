@@ -23,7 +23,7 @@ fn launch(run_command: &str) -> Launch<'_> {
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     }
@@ -38,22 +38,24 @@ fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
     }
 }
 
-fn procreated(
+fn diversified(
     outputs_directory: &OutputsDirectory,
     child: u64,
     progenitor: u64,
     outcome: CreationOutcome,
 ) {
     outputs_directory
-        .start_procreation(child, progenitor)
+        .start_diversification(child, progenitor)
         .unwrap();
     fs::write(
-        outputs_directory.running_procreation(child).join("stdout"),
+        outputs_directory
+            .running_diversification(child)
+            .join("stdout"),
         format!("making {child}\n"),
     )
     .unwrap();
     outputs_directory
-        .end_procreation(child, progenitor, outcome)
+        .end_diversification(child, progenitor, outcome)
         .unwrap();
 }
 
@@ -72,19 +74,19 @@ fn family() -> (TempDir, OutputsDirectory) {
         .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
         .unwrap();
     trialled(&outputs_directory, 0);
-    procreated(&outputs_directory, 1, 0, CreationOutcome::Created);
+    diversified(&outputs_directory, 1, 0, CreationOutcome::Created);
     let build = outputs_directory.start_build(1).unwrap();
     fs::write(build.join("stdout"), "building\n").unwrap();
     trialled(&outputs_directory, 1);
-    procreated(&outputs_directory, 2, 0, CreationOutcome::Failed);
-    procreated(&outputs_directory, 3, 1, CreationOutcome::Created);
+    diversified(&outputs_directory, 2, 0, CreationOutcome::Failed);
+    diversified(&outputs_directory, 3, 1, CreationOutcome::Created);
     trialled(&outputs_directory, 3);
     (directory, outputs_directory)
 }
 
 fn made_by(progenitor: u64, run_command: &str) -> (TempDir, OutputsDirectory) {
     let (directory, outputs_directory) = family();
-    let _ = containers::run_procreation(
+    let _ = containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -135,7 +137,7 @@ fn a_progenitor_is_given_no_harness_that_is_neither_of_its_line_nor_its_child() 
 fn of_a_harness_that_was_made_and_built_a_progenitor_is_given_all_four_directories() {
     assert_eq!(
         found_by(3, "ls /var/log/cladenc/line/1"),
-        "build\nharness\nprocreation\ntrials\n"
+        "build\nharness\ndiversification\ntrials\n"
     );
 }
 
@@ -151,17 +153,17 @@ fn of_the_primogenitor_a_progenitor_is_given_its_source_code_and_its_trials_alon
 fn of_a_child_that_was_not_created_a_progenitor_is_given_no_trials() {
     assert_eq!(
         found_by(0, "ls /var/log/cladenc/children/2"),
-        "harness\nprocreation\n"
+        "harness\ndiversification\n"
     );
 }
 
 #[test]
-fn a_progenitor_reads_which_harness_made_a_child_and_how_the_procreation_ended() {
+fn a_progenitor_reads_which_harness_made_a_child_and_how_the_diversification_ended() {
     assert_eq!(
         found_by(
             0,
-            "cat /var/log/cladenc/children/2/procreation/progenitor \
-             /var/log/cladenc/children/2/procreation/outcome"
+            "cat /var/log/cladenc/children/2/diversification/progenitor \
+             /var/log/cladenc/children/2/diversification/outcome"
         ),
         "0\nfailed\n"
     );
@@ -170,7 +172,7 @@ fn a_progenitor_reads_which_harness_made_a_child_and_how_the_procreation_ended()
 #[test]
 fn a_progenitor_reads_what_the_harness_that_made_one_of_its_line_printed() {
     assert_eq!(
-        found_by(3, "cat /var/log/cladenc/line/1/procreation/stdout"),
+        found_by(3, "cat /var/log/cladenc/line/1/diversification/stdout"),
         "making 1\n"
     );
 }

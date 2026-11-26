@@ -25,19 +25,18 @@ fn what_could_not_be_carried_out_is_worded_with_the_system_s_reason() {
 fn a_container_that_docker_did_not_start_is_worded_with_the_file_that_holds_what_docker_said() {
     assert_eq!(
         worded(ContainerError::Docker(PathBuf::from(
-            "/outputs/running/procreation-1/stderr"
+            "/outputs/running/diversification-1/stderr"
         ))),
         "could not be carried out: Docker did not start its container, \
-         and /outputs/running/procreation-1/stderr holds what Docker said"
+         and /outputs/running/diversification-1/stderr holds what Docker said"
     );
 }
 
 #[test]
 fn the_instruction_says_where_the_source_code_to_improve_is() {
-    assert!(
-        containers::INSTRUCTION
-            .contains("The current directory holds a copy of your own source code")
-    );
+    assert!(containers::INSTRUCTION.contains(
+        "The current directory holds your clone, which is a copy of your own source code"
+    ));
 }
 
 #[test]
@@ -74,9 +73,9 @@ fn the_instruction_says_where_the_source_code_and_the_trials_of_such_a_harness_a
 }
 
 #[test]
-fn the_instruction_says_where_the_record_of_the_procreation_of_such_a_harness_is() {
+fn the_instruction_says_where_the_record_of_the_diversification_of_such_a_harness_is() {
     assert!(containers::INSTRUCTION.contains(
-        "the directory named procreation holds what the harness that made it printed, in the \
+        "the directory named diversification holds what the harness that made it printed, in the \
          files named stdout and stderr, with the id of that harness in the file named \
          progenitor and one word in the file named outcome, created, unchanged, failed, \
          build_failed or timed_out, "
@@ -131,10 +130,10 @@ fn the_instruction_says_that_taking_out_what_does_not_help_is_an_improvement() {
 }
 
 #[test]
-fn the_instruction_says_that_the_child_may_be_asked_to_improve_its_own_source_code_in_its_turn() {
+fn the_instruction_says_that_the_child_may_be_asked_to_improve_a_clone_of_its_own_in_its_turn() {
     assert!(containers::INSTRUCTION.contains(
         "becomes a new harness, which is benchmarked in its turn. It may then be asked, as you \
-         are now, to improve a copy of its own source code, so a change that makes it better \
+         are now, to improve a clone of its own, so a change that makes it better \
          at that counts as well. "
     ));
 }

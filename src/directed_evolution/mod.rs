@@ -228,8 +228,8 @@ pub fn resume(
                 .map_err(DirectedEvolutionError::Key)?;
             let continuing = Said::Continuing {
                 outputs_directory: path,
-                procreations: genealogy.procreations_started(),
-                max_procreations: settings.max_procreations,
+                diversifications: genealogy.diversifications_started(),
+                max_diversifications: settings.max_diversifications,
                 harnesses: genealogy.harness_count(),
             };
             say(writer, &continuing);

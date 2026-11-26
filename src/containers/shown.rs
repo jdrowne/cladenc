@@ -26,7 +26,10 @@ pub(super) fn to(
             [
                 (outputs_directory.harness(harness), "harness"),
                 (outputs_directory.trials(harness), "trials"),
-                (outputs_directory.procreation(harness), "procreation"),
+                (
+                    outputs_directory.diversification(harness),
+                    "diversification",
+                ),
                 (outputs_directory.build(harness), "build"),
             ]
             .map(|(kept, name)| (kept, format!("{relation}/{harness}/{name}")))

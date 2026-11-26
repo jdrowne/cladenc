@@ -24,7 +24,7 @@ type Trialled = (
     OutputsDirectory,
     Result<containers::Trialled, ContainerError>,
 );
-type Procreated = (
+type Diversified = (
     TempDir,
     OutputsDirectory,
     Result<containers::Creation, ContainerError>,
@@ -67,7 +67,7 @@ fn launch(run_command: &str) -> Launch<'_> {
         run_command,
         build_command: None,
         model: MODEL,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     }
@@ -159,12 +159,14 @@ fn stopped_while_its_verifier_runs() -> Trialled {
     (directory, outputs_directory, result)
 }
 
-fn procreation_stopped_while_running() -> Procreated {
+fn diversification_stopped_while_running() -> Diversified {
     let (directory, outputs_directory) = made();
     let launch = launch(SAY_THE_CONTAINER_AND_STAY);
-    let id_file = outputs_directory.running_procreation(1).join("child/id");
+    let id_file = outputs_directory
+        .running_diversification(1)
+        .join("child/id");
     let result = stopped_once_written(&id_file, |stop| {
-        containers::run_procreation(
+        containers::run_diversification(
             Host {
                 docker: &Program,
                 outputs_directory: &outputs_directory,
@@ -207,9 +209,11 @@ fn a_trial_stopped_while_its_verifier_runs_leaves_no_container_behind() {
 }
 
 #[test]
-fn a_procreation_whose_stop_flag_is_set_leaves_no_container_behind() {
-    let (_directory, outputs_directory, _result) = procreation_stopped_while_running();
+fn a_diversification_whose_stop_flag_is_set_leaves_no_container_behind() {
+    let (_directory, outputs_directory, _result) = diversification_stopped_while_running();
     assert!(test_inputs::container_is_gone(
-        &outputs_directory.running_procreation(1).join("child/id")
+        &outputs_directory
+            .running_diversification(1)
+            .join("child/id")
     ));
 }

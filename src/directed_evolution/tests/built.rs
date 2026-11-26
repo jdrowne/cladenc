@@ -99,9 +99,9 @@ fn the_primogenitor_of_a_directed_evolution_is_built_once() {
 }
 
 #[test]
-fn a_child_is_built_once_in_the_copy_that_its_progenitor_changed() {
+fn a_child_is_built_once_in_the_clone_that_its_progenitor_diversified() {
     let evolved = built_by(Double::default().changing());
-    assert_eq!(builds_of(&evolved, "running/procreation-1/child"), 1);
+    assert_eq!(builds_of(&evolved, "running/diversification-1/child"), 1);
 }
 
 #[test]
@@ -119,7 +119,9 @@ fn a_directed_evolution_that_builds_its_harnesses_finds_the_best_among_them() {
 fn a_child_that_does_not_build_is_journaled_as_one_whose_build_failed() {
     let journal = with_a_child_that_does_not_build().journal();
     assert!(
-        journal.contains(r#"{"record":"procreation_finished","child":1,"outcome":"build_failed","#)
+        journal.contains(
+            r#"{"record":"diversification_finished","child":1,"outcome":"build_failed","#
+        )
     );
 }
 
@@ -132,7 +134,7 @@ fn a_directed_evolution_goes_on_to_its_end_past_a_child_that_did_not_build() {
 fn a_child_that_did_not_build_is_said_with_where_what_its_build_printed_is_kept() {
     let evolved = with_a_child_that_does_not_build();
     assert!(evolved.said.contains(&format!(
-        "cladenc: the procreation of harness 1 by harness 0 made a harness that did not build: \
+        "cladenc: the diversification of harness 1 by harness 0 made a harness that did not build: \
          what its build printed is kept in {}\n",
         evolved.outputs().join("builds/1").display()
     )));

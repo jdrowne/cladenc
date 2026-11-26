@@ -165,14 +165,15 @@ fn the_containers_of_the_trials_are_started_from_the_images_built_from_the_envir
 }
 
 #[test]
-fn the_timer_of_a_procreation_is_given_the_run_command_and_five_seconds_more_than_its_time_limit() {
+fn the_timer_of_a_diversification_is_given_the_run_command_and_five_seconds_more_than_its_time_limit()
+ {
     let commands = evolved().commands();
-    let procreations: Vec<&String> = containers(&commands)
+    let diversifications: Vec<&String> = containers(&commands)
         .into_iter()
         .filter(|command| !command.contains(STAYS))
         .collect();
     assert!(each_holds(
-        &procreations,
+        &diversifications,
         &format!(" sh -c {TIMER} run a harness 35")
     ));
 }

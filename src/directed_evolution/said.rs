@@ -41,8 +41,8 @@ pub(super) enum Said<'a> {
     },
     Continuing {
         outputs_directory: &'a Path,
-        procreations: u64,
-        max_procreations: u64,
+        diversifications: u64,
+        max_diversifications: u64,
         harnesses: u64,
     },
     HadFinished {
@@ -58,10 +58,10 @@ pub(super) enum Said<'a> {
     Started {
         action: &'a Started,
         again: bool,
-        procreations: u64,
-        max_procreations: u64,
+        diversifications: u64,
+        max_diversifications: u64,
     },
-    Procreated {
+    Diversified {
         child: HarnessId,
         progenitor: HarnessId,
         outcome: CreationOutcome,
@@ -158,15 +158,15 @@ impl Display for Said<'_> {
             ),
             Self::Continuing {
                 outputs_directory,
-                procreations,
-                max_procreations,
+                diversifications,
+                max_diversifications,
                 harnesses,
             } => write!(
                 formatter,
-                "continuing the directed evolution in {}, which has started {procreations} of {} \
-                 and holds {}",
+                "continuing the directed evolution in {}, which has started {diversifications} of \
+                 {} and holds {}",
                 outputs_directory.display(),
-                counted(*max_procreations, "procreation", "procreations"),
+                counted(*max_diversifications, "diversification", "diversifications"),
                 counted(*harnesses, "harness", "harnesses")
             ),
             Self::HadFinished {
@@ -191,17 +191,17 @@ impl Display for Said<'_> {
             Self::Started {
                 action,
                 again,
-                procreations,
-                max_procreations,
+                diversifications,
+                max_diversifications,
             } => match (action, again) {
-                (Started::Procreation { .. }, false) => write!(
+                (Started::Diversification { .. }, false) => write!(
                     formatter,
-                    "started {action}, procreation {procreations} of {max_procreations}"
+                    "started {action}, diversification {diversifications} of {max_diversifications}"
                 ),
                 (_, false) => write!(formatter, "started {action}"),
                 (_, true) => write!(formatter, "started again {action}"),
             },
-            Self::Procreated {
+            Self::Diversified {
                 child,
                 progenitor,
                 outcome,
@@ -209,14 +209,14 @@ impl Display for Said<'_> {
             } => {
                 let kept = Kept {
                     harness: *child,
-                    copied_from: *progenitor,
+                    cloned_from: *progenitor,
                     printer: "the harness",
-                    printed: outputs_directory.procreation(*child),
+                    printed: outputs_directory.diversification(*child),
                     outputs_directory,
                 };
                 write!(
                     formatter,
-                    "the procreation of harness {child} by harness {progenitor} {}",
+                    "the diversification of harness {child} by harness {progenitor} {}",
                     kept.after(*outcome)
                 )
             }
@@ -233,7 +233,7 @@ impl Display for Said<'_> {
                 };
                 let kept = Kept {
                     harness: *harness,
-                    copied_from: experiment.progenitor,
+                    cloned_from: experiment.progenitor,
                     printer: "the primogenitor",
                     printed: outputs_directory.baseline(*harness),
                     outputs_directory,
@@ -432,7 +432,7 @@ impl Display for Retrying<'_> {
 
 struct Kept<'a> {
     harness: HarnessId,
-    copied_from: HarnessId,
+    cloned_from: HarnessId,
     printer: &'a str,
     printed: PathBuf,
     outputs_directory: &'a OutputsDirectory,
@@ -447,9 +447,9 @@ impl Kept<'_> {
             ),
             CreationOutcome::Unchanged => (
                 format!(
-                    "left the copy of the source code of harness {} unchanged, and created no \
-                     harness: what {} printed is kept in",
-                    self.copied_from, self.printer
+                    "left the clone of harness {} unchanged, and created no harness: what {} \
+                     printed is kept in",
+                    self.cloned_from, self.printer
                 ),
                 self.printed,
             ),

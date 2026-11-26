@@ -82,14 +82,14 @@ fn a_record_after_the_directed_evolution_finished_is_worded() {
 }
 
 #[test]
-fn a_procreation_is_named_by_its_progenitor_and_its_child() {
+fn a_diversification_is_named_by_its_progenitor_and_its_child() {
     assert_eq!(
-        Started::Procreation {
+        Started::Diversification {
             child: 3,
             progenitor: 0
         }
         .to_string(),
-        "the procreation of harness 3 by harness 0"
+        "the diversification of harness 3 by harness 0"
     );
 }
 
@@ -115,6 +115,6 @@ fn a_baseline_is_named_by_its_harness_and_the_progenitor_whose_source_code_is_ch
         }
         .to_string(),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1"
+         from a second clone of harness 1"
     );
 }

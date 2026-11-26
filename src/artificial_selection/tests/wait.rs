@@ -13,15 +13,15 @@ fn tasks() -> Vec<String> {
 
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations: 1000,
+        max_diversifications: 1000,
         tasks: tasks(),
         seed,
     }
 }
 
 fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationOutcome) {
-    let child = genealogy.start_procreation(progenitor).unwrap();
-    genealogy.end_procreation(child, outcome).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
+    genealogy.end_diversification(child, outcome).unwrap();
 }
 
 fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
@@ -41,9 +41,9 @@ fn two_harnesses_benchmarked_in_full() -> Genealogy {
     genealogy
 }
 
-fn after(procreations: &[(HarnessId, CreationOutcome)]) -> Genealogy {
+fn after(diversifications: &[(HarnessId, CreationOutcome)]) -> Genealogy {
     let mut genealogy = two_harnesses_benchmarked_in_full();
-    for (progenitor, outcome) in procreations {
+    for (progenitor, outcome) in diversifications {
         child_of(&mut genealogy, *progenitor, *outcome);
     }
     genealogy
@@ -53,7 +53,7 @@ fn progenitors(genealogy: &Genealogy) -> Vec<HarnessId> {
     let chosen: BTreeSet<HarnessId> = (0..200)
         .filter_map(
             |seed| match artificial_selection(seed).next_action(genealogy, 0) {
-                Some(Action::Procreation { progenitor }) => Some(progenitor),
+                Some(Action::Diversification { progenitor }) => Some(progenitor),
                 Some(Action::Trial { .. }) | None => None,
             },
         )
@@ -65,11 +65,11 @@ fn is_left_out(genealogy: &Genealogy) -> bool {
     Waits::of(genealogy).has_one_for(&genealogy.harnesses()[1])
 }
 
-fn procreations_of_a_harness_that_never_creates_a_child() -> Vec<u64> {
+fn diversifications_of_a_harness_that_never_creates_a_child() -> Vec<u64> {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, CREATED);
     let mut numbers = Vec::new();
-    while genealogy.procreations_started() < 100 {
+    while genealogy.diversifications_started() < 100 {
         let number = genealogy.harness_count();
         if Waits::of(&genealogy).has_one_for(&genealogy.harnesses()[1]) {
             child_of(&mut genealogy, 0, CREATED);
@@ -87,12 +87,12 @@ fn a_harness_that_made_no_child_yet_can_be_the_progenitor() {
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_failed() {
+fn a_harness_is_left_out_of_the_diversification_after_one_of_its_own_that_failed() {
     assert_eq!(progenitors(&after(&[(1, FAILED)])), [0]);
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_whose_child_did_not_build() {
+fn a_harness_is_left_out_of_the_diversification_after_one_of_its_own_whose_child_did_not_build() {
     assert_eq!(
         progenitors(&after(&[(1, CreationOutcome::BuildFailed)])),
         [0]
@@ -100,23 +100,26 @@ fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_whose_child_did
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_ran_past_its_time_limit() {
+fn a_harness_is_left_out_of_the_diversification_after_one_of_its_own_that_ran_past_its_time_limit()
+{
     assert_eq!(progenitors(&after(&[(1, CreationOutcome::TimedOut)])), [0]);
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_procreation_after_one_of_its_own_that_left_its_copy_unchanged() {
+fn a_harness_is_left_out_of_the_diversification_after_one_of_its_own_that_left_its_clone_unchanged()
+{
     assert_eq!(progenitors(&after(&[(1, CreationOutcome::Unchanged)])), [0]);
 }
 
 #[test]
-fn a_harness_can_be_the_progenitor_again_one_procreation_after_its_first_that_created_no_child() {
+fn a_harness_can_be_the_progenitor_again_one_diversification_after_its_first_that_created_no_child()
+{
     assert!(!is_left_out(&after(&[(1, FAILED), (0, CREATED)])));
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_first_procreation_after_its_second_in_a_row_that_created_no_child()
-{
+fn a_harness_is_left_out_of_the_first_diversification_after_its_second_in_a_row_that_created_no_child()
+ {
     assert!(is_left_out(&after(&[
         (1, FAILED),
         (0, CREATED),
@@ -125,8 +128,8 @@ fn a_harness_is_left_out_of_the_first_procreation_after_its_second_in_a_row_that
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_second_procreation_after_its_second_in_a_row_that_created_no_child()
-{
+fn a_harness_is_left_out_of_the_second_diversification_after_its_second_in_a_row_that_created_no_child()
+ {
     assert!(is_left_out(&after(&[
         (1, FAILED),
         (0, CREATED),
@@ -136,7 +139,7 @@ fn a_harness_is_left_out_of_the_second_procreation_after_its_second_in_a_row_tha
 }
 
 #[test]
-fn a_harness_can_be_the_progenitor_again_two_procreations_after_its_second_in_a_row_that_created_no_child()
+fn a_harness_can_be_the_progenitor_again_two_diversifications_after_its_second_in_a_row_that_created_no_child()
  {
     assert!(!is_left_out(&after(&[
         (1, FAILED),
@@ -148,8 +151,8 @@ fn a_harness_can_be_the_progenitor_again_two_procreations_after_its_second_in_a_
 }
 
 #[test]
-fn a_harness_is_left_out_of_the_fourth_procreation_after_its_third_in_a_row_that_created_no_child()
-{
+fn a_harness_is_left_out_of_the_fourth_diversification_after_its_third_in_a_row_that_created_no_child()
+ {
     assert!(is_left_out(&after(&[
         (1, FAILED),
         (0, CREATED),
@@ -164,7 +167,7 @@ fn a_harness_is_left_out_of_the_fourth_procreation_after_its_third_in_a_row_that
 }
 
 #[test]
-fn a_harness_can_be_the_progenitor_again_four_procreations_after_its_third_in_a_row_that_created_no_child()
+fn a_harness_can_be_the_progenitor_again_four_diversifications_after_its_third_in_a_row_that_created_no_child()
  {
     assert!(!is_left_out(&after(&[
         (1, FAILED),
@@ -181,7 +184,7 @@ fn a_harness_can_be_the_progenitor_again_four_procreations_after_its_third_in_a_
 }
 
 #[test]
-fn a_procreation_that_created_a_child_ends_the_wait_of_its_progenitor() {
+fn a_diversification_that_created_a_child_ends_the_wait_of_its_progenitor() {
     assert!(!is_left_out(&after(&[
         (1, FAILED),
         (1, FAILED),
@@ -190,7 +193,8 @@ fn a_procreation_that_created_a_child_ends_the_wait_of_its_progenitor() {
 }
 
 #[test]
-fn a_procreation_that_creates_no_child_after_one_that_created_a_child_is_counted_as_the_first() {
+fn a_diversification_that_creates_no_child_after_one_that_created_a_child_is_counted_as_the_first()
+{
     assert!(!is_left_out(&after(&[
         (1, FAILED),
         (1, FAILED),
@@ -201,16 +205,16 @@ fn a_procreation_that_creates_no_child_after_one_that_created_a_child_is_counted
 }
 
 #[test]
-fn a_procreation_that_is_still_running_does_not_lengthen_the_wait_of_its_progenitor() {
+fn a_diversification_that_is_still_running_does_not_lengthen_the_wait_of_its_progenitor() {
     let mut genealogy = after(&[(1, FAILED), (0, CREATED)]);
-    genealogy.start_procreation(1).unwrap();
+    genealogy.start_diversification(1).unwrap();
     assert!(!is_left_out(&genealogy));
 }
 
 #[test]
-fn a_procreation_that_is_still_running_does_not_end_the_wait_of_its_progenitor() {
+fn a_diversification_that_is_still_running_does_not_end_the_wait_of_its_progenitor() {
     let mut genealogy = after(&[(1, FAILED)]);
-    genealogy.start_procreation(1).unwrap();
+    genealogy.start_diversification(1).unwrap();
     child_of(&mut genealogy, 1, FAILED);
     child_of(&mut genealogy, 0, CREATED);
     assert!(is_left_out(&genealogy));
@@ -224,10 +228,10 @@ fn a_harness_that_waits_can_be_the_progenitor_again_once_its_wait_is_over_and_no
 }
 
 #[test]
-fn a_harness_that_never_creates_a_child_and_procreates_whenever_it_does_not_wait_takes_7_of_100_procreations()
+fn a_harness_that_never_creates_a_child_and_is_cloned_whenever_it_does_not_wait_takes_7_of_100_diversifications()
  {
     assert_eq!(
-        procreations_of_a_harness_that_never_creates_a_child(),
+        diversifications_of_a_harness_that_never_creates_a_child(),
         [2, 4, 7, 12, 21, 38, 71]
     );
 }

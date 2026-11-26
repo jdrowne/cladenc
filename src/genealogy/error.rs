@@ -40,7 +40,7 @@ impl Display for GenealogyError {
             }
             Self::ProgenitorNotCreated { progenitor } => write!(
                 formatter,
-                "harness {progenitor} cannot procreate because it is not a created harness"
+                "harness {progenitor} cannot be cloned because it is not a created harness"
             ),
             Self::ChildNotBeingCreated { child } => {
                 write!(
@@ -50,8 +50,8 @@ impl Display for GenealogyError {
             }
             Self::ExperimentNotAwaitingBaseline { child, progenitor } => write!(
                 formatter,
-                "no experiment at the procreation of harness {child} by harness {progenitor} is \
-                 waiting for its baseline"
+                "no experiment at the diversification of harness {child} by harness {progenitor} \
+                 is waiting for its baseline"
             ),
             Self::SingletonControlGroupHarnessNotBeingCreated { harness } => write!(
                 formatter,

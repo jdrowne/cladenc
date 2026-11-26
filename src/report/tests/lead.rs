@@ -26,9 +26,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 17.0,
@@ -58,9 +58,9 @@ fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
 
 fn evolved(primogenitor: &[&str], child: &[&str]) -> Genealogy {
     let mut genealogy = settings().genealogy();
-    let made = genealogy.start_procreation(0).unwrap();
+    let made = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(made, CreationOutcome::Created)
+        .end_diversification(made, CreationOutcome::Created)
         .unwrap();
     benchmarked(&mut genealogy, 0, primogenitor);
     benchmarked(&mut genealogy, made, child);
@@ -173,9 +173,9 @@ fn where_the_primogenitor_is_alone_the_report_holds_no_lead() {
 fn the_lead_is_that_of_the_best_harness_and_not_of_a_harness_that_completed_more_corroboration_tasks()
  {
     let mut genealogy = evolved(&[], &[SELECTION]);
-    let another = genealogy.start_procreation(0).unwrap();
+    let another = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(another, CreationOutcome::Created)
+        .end_diversification(another, CreationOutcome::Created)
         .unwrap();
     benchmarked(
         &mut genealogy,

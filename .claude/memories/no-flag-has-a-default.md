@@ -14,7 +14,7 @@ metadata:
 
 The seed of the random draws is not a flag. `cladenc` draws it.
 
-**Why:** `cladenc` assumes no value and does nothing that was not spelled out. Having to choose every value of a directed evolution, the most procreations and the numbers the artificial selection works from among them, is no problem, not even a small one of convenience. The seed is drawn: no value of it is better than another, and a directed evolution cannot be repeated, so a person has no reason to choose one.
+**Why:** `cladenc` assumes no value and does nothing that was not spelled out. Having to choose every value of a directed evolution, the most diversifications and the numbers the artificial selection works from among them, is no problem, not even a small one of convenience. The seed is drawn: no value of it is better than another, and a directed evolution cannot be repeated, so a person has no reason to choose one.
 
 **How to apply:** Do not propose a default for a flag, in an issue, in a decision put to the user or in a design, and do not file the number of required flags as a problem. A new flag that takes a value is required. Do not propose a flag for the seed. The inputs of [[cladenc-takes-a-primogenitor-and-a-model]] are what a person brings to a directed evolution, not a count of flags, so a long command line does not go against that design.
 

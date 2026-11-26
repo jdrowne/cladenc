@@ -140,14 +140,14 @@ fn the_manual_of_start_says_what_the_environment_of_every_task_has_to_hold() {
 fn the_manual_of_start_says_in_which_image_the_harness_of_a_trial_is_started() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "A harness is started in a container, of the image of the directed evolution for a \
-         procreation and of the environment of its task for a trial, as"
+         diversification and of the environment of its task for a trial, as"
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_as_which_user_the_command_of_a_harness_runs() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "In a procreation the command runs as the user cladenc runs as, and in a trial as the \
+        "In a diversification the command runs as the user cladenc runs as, and in a trial as the \
          user of the environment of the task, or as the user that the task.toml of the task names."
     ));
 }
@@ -155,7 +155,7 @@ fn the_manual_of_start_says_as_which_user_the_command_of_a_harness_runs() {
 #[test]
 fn the_manual_of_start_says_what_the_image_of_the_directed_evolution_is_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every procreation, and every build of a harness, is carried out in a container of one \
+        "Every diversification, and every build of a harness, is carried out in a container of one \
          image, the image of the directed evolution."
     ));
 }
@@ -173,7 +173,7 @@ fn the_manual_of_start_names_what_a_harness_is_told() {
     let help = manual_on_one_line("cladenc-start");
     let told = [
         "/var/opt/cladenc/harness holds the source code of the harness",
-        "/var/opt/cladenc/work in a procreation, the directory the harness",
+        "/var/opt/cladenc/work in a diversification, the clone that the harness",
         "CLADENC_HARNESS /var/opt/cladenc/harness",
         "CLADENC_INSTRUCTION",
     ];
@@ -236,7 +236,7 @@ fn the_manual_of_start_says_what_docker_is_given_to_build_an_image_from() {
 #[test]
 fn the_manual_of_start_says_how_long_the_timeout_of_the_build_of_the_image_waits() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "<SECONDS> the value of --procreation-docker-image-build-timeout, and five seconds more"
+        "<SECONDS> the value of --diversification-docker-image-build-timeout, and five seconds more"
     ));
 }
 
@@ -275,7 +275,7 @@ fn the_manual_of_start_says_that_the_name_of_an_image_says_which_registry_it_is_
 #[test]
 fn the_manual_of_start_says_how_an_image_is_brought_to_the_machine() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The image that --procreation-docker-image names has to be on the machine before the \
+        "The image that --diversification-docker-image names has to be on the machine before the \
          directed evolution: fetched there with docker pull, carried there as a file with docker \
          save and docker load, or built there."
     ));
@@ -309,7 +309,8 @@ fn the_manual_of_start_says_that_docker_fetches_a_base_image_the_machine_does_no
 #[test]
 fn the_manual_of_start_says_that_resume_builds_no_image() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "cladenc resume carries out its procreations and builds in it, and does not build it again."
+        "cladenc resume carries out its diversifications and builds in it, and does not build it \
+         again."
     ));
 }
 
@@ -317,10 +318,10 @@ fn the_manual_of_start_says_that_resume_builds_no_image() {
 fn the_manual_of_start_says_what_each_way_a_harness_ends_means() {
     let help = manual_on_one_line("cladenc-start");
     let endings = [
-        "exit status 0 the procreation created a harness, or is recorded as unchanged where the \
-         harness changed nothing",
+        "exit status 0 the diversification created a harness, or is recorded as unchanged where \
+         the harness changed nothing",
         "exit status 125 Docker did not start the container: the directed evolution stops",
-        "any other status the procreation failed",
+        "any other status the diversification failed",
         "the time limit the container is removed",
     ];
     assert!(endings.iter().all(|ending| help.contains(ending)));
@@ -355,10 +356,10 @@ fn the_manual_of_start_names_no_budget() {
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_copy_that_a_procreation_improves_is() {
+fn the_manual_of_start_says_where_the_copy_that_a_diversification_improves_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "/var/opt/cladenc/work holds a second copy of its source code, and the instruction asks \
-         the harness to improve that copy: what the harness leaves there is its child."
+        "/var/opt/cladenc/work holds its clone, and the instruction asks the progenitor to improve \
+         the clone: what the progenitor leaves there is its child."
     ));
 }
 
@@ -385,17 +386,16 @@ fn the_manual_of_start_names_no_directory_at_the_top_of_the_filesystem_of_a_cont
 #[test]
 fn the_manual_of_start_says_which_containers_are_started_from_the_image() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The creation of a singleton control group harness is carried out in a container of that \
-         image as well, and no trial is: a trial is carried out in the environment of its \
-         task."
+        "The diversification of an experiment is carried out in a container of that image as well, \
+         and no trial is: a trial is carried out in the environment of its task."
     ));
 }
 
 #[test]
 fn the_manual_of_start_names_the_flags_of_the_image_by_what_the_image_is_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The image of the directed evolution is the image that --procreation-docker-image names, \
-         or the image that cladenc builds when the directed evolution is started, from the \
-         Dockerfile that --procreation-dockerfile names, as"
+        "The image of the directed evolution is the image that --diversification-docker-image \
+         names, or the image that cladenc builds when the directed evolution is started, from the \
+         Dockerfile that --diversification-dockerfile names, as"
     ));
 }

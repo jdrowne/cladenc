@@ -8,7 +8,7 @@ use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::journal::Started;
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
-const PROCREATION: [&str; 2] = ["run", "run a harness"];
+const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
 const FIRST_TRIAL_STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#;
 
 fn refused() -> Evolved {
@@ -105,12 +105,12 @@ fn a_directed_evolution_that_is_asked_to_stop_says_so_last_with_the_containers_r
 }
 
 #[test]
-fn a_procreation_whose_container_docker_does_not_start_is_told_when_it_happens() {
-    let docker = Double::default().answering(&PROCREATION, &[Answer::Exited(125)]);
+fn a_diversification_whose_container_docker_does_not_start_is_told_when_it_happens() {
+    let docker = Double::default().answering(&DIVERSIFICATION, &[Answer::Exited(125)]);
     let said = given::started(docker, given::unchanged).said;
     assert!(said.contains(
-        "cladenc: the procreation of harness 1 by harness 0 could not be carried out: Docker did \
-         not start its container"
+        "cladenc: the diversification of harness 1 by harness 0 could not be carried out: Docker \
+         did not start its container"
     ));
 }
 

@@ -10,38 +10,38 @@ use wait::Waits;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum Action {
-    Procreation { progenitor: HarnessId },
+    Diversification { progenitor: HarnessId },
     Trial { harness: HarnessId, task: String },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ArtificialSelection {
-    pub(crate) max_procreations: u64,
+    pub(crate) max_diversifications: u64,
     pub(crate) tasks: Vec<String>,
     pub(crate) seed: u64,
 }
 
-fn focus(max_procreations: u64, started: u64) -> f64 {
-    max_procreations as f64 / (max_procreations as f64 - started as f64)
+fn focus(max_diversifications: u64, started: u64) -> f64 {
+    max_diversifications as f64 / (max_diversifications as f64 - started as f64)
 }
 
 impl ArtificialSelection {
     pub(crate) fn next_action(&self, genealogy: &Genealogy, action: u64) -> Option<Action> {
         self.progenitor(genealogy, action)
-            .map(|progenitor| Action::Procreation { progenitor })
+            .map(|progenitor| Action::Diversification { progenitor })
             .or_else(|| self.trial(genealogy))
     }
 
     fn progenitor(&self, genealogy: &Genealogy, action: u64) -> Option<HarnessId> {
-        let procreations = genealogy.procreations_started();
-        if procreations >= self.max_procreations || !self.no_other_work_is_left(genealogy) {
+        let diversifications = genealogy.diversifications_started();
+        if diversifications >= self.max_diversifications || !self.no_other_work_is_left(genealogy) {
             return None;
         }
         let mut generator = ChaCha8Rng::seed_from_u64(self.seed);
         generator.set_stream(action);
         largest_draw(
             &mut generator,
-            focus(self.max_procreations, procreations),
+            focus(self.max_diversifications, diversifications),
             harnesses_to_choose_among(genealogy).into_iter(),
         )
         .map(Harness::id)

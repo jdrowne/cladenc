@@ -1,6 +1,6 @@
 .TH CLADENC 1 "" cladenc "cladenc"
 .SH NAME
-cladenc \- carries out a directed evolution of an agentic coding harness, in which harnesses procreate, each changing a copy of its own source code, and are benchmarked
+cladenc \- carries out a directed evolution of an agentic coding harness, in which harnesses are cloned, each diversifying its clone, and are benchmarked
 .SH SYNOPSIS
 .nf
 \fBcladenc\fP [\fB\-\-help\fP] [\fB\-\-version\fP]
@@ -12,13 +12,17 @@ cladenc \- carries out a directed evolution of an agentic coding harness, in whi
 .SH DESCRIPTION
 \fBcladenc\fP works by directed evolution.
 A directed evolution starts from one harness, the primogenitor.
-Harnesses procreate, each making a changed copy of its own source code, and
-are benchmarked on every task of the benchmarks a person brings.
-A part of the tasks of each benchmark is held out: no harness that procreates
-reads about them.
+A new harness is made in two steps.
+In a cloning, \fBcladenc\fP copies the source code of a harness, the
+progenitor, and the copy is the progenitor's clone.
+In a diversification, the progenitor changes its clone, and the clone that it
+changed is its child.
+Every harness is benchmarked on every task of the benchmarks a person brings.
+A part of the tasks of each benchmark is held out: no harness that diversifies a
+clone reads about them.
 The holdout tasks are divided in two, the selection tasks and the
 corroboration tasks.
-Artificial selection chooses which harness procreates, and at the end names
+Artificial selection chooses which harness is cloned, and at the end names
 the best harness, both by the selection tasks alone.
 Every harness is scored on the corroboration tasks and nothing is chosen by
 them, so they say how far the best harness is ahead of the primogenitor on

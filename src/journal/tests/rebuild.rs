@@ -20,9 +20,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 8,
-        procreation_timeout: 3600,
+        diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
@@ -57,12 +57,12 @@ fn a_trial_on_each_task() -> [Record; 6] {
     ]
 }
 
-fn procreation_started(child: u64, progenitor: u64) -> Record {
-    Record::ProcreationStarted { child, progenitor }
+fn diversification_started(child: u64, progenitor: u64) -> Record {
+    Record::DiversificationStarted { child, progenitor }
 }
 
-fn procreation_finished(child: u64, outcome: CreationOutcome) -> Record {
-    Record::ProcreationFinished {
+fn diversification_finished(child: u64, outcome: CreationOutcome) -> Record {
+    Record::DiversificationFinished {
         child,
         outcome,
         seconds: 30.25,
@@ -130,11 +130,11 @@ fn rebuilt_with_a_last_line_of(records: &[Record], last_line: &str) -> State {
 
 fn four_actions_of_which_two_finished() -> [Record; 6] {
     [
-        procreation_started(1, 0),
+        diversification_started(1, 0),
         trial_started(0, "t1"),
-        procreation_started(2, 0),
+        diversification_started(2, 0),
         trial_started(0, "t2"),
-        procreation_finished(1, CreationOutcome::Created),
+        diversification_finished(1, CreationOutcome::Created),
         trial_finished(0, "t1", TrialResult::Completed),
     ]
 }
@@ -177,29 +177,29 @@ fn the_build_of_the_primogenitor_is_not_counted_as_an_action() {
 #[test]
 fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(1, CreationOutcome::Created)
+        .end_diversification(1, CreationOutcome::Created)
         .unwrap();
     genealogy.start_trial(1, "t2").unwrap();
     genealogy
         .end_trial(1, "t2", TrialResult::Completed)
         .unwrap();
-    genealogy.start_procreation(1).unwrap();
+    genealogy.start_diversification(1).unwrap();
     genealogy.start_trial(0, "t1").unwrap();
     genealogy.end_trial(0, "t1", TrialResult::TimedOut).unwrap();
     genealogy
-        .end_procreation(2, CreationOutcome::Failed)
+        .end_diversification(2, CreationOutcome::Failed)
         .unwrap();
     let state = rebuilt(&[
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Created),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Created),
         trial_started(1, "t2"),
         trial_finished(1, "t2", TrialResult::Completed),
-        procreation_started(2, 1),
+        diversification_started(2, 1),
         trial_started(0, "t1"),
         trial_finished(0, "t1", TrialResult::TimedOut),
-        procreation_finished(2, CreationOutcome::Failed),
+        diversification_finished(2, CreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
 }
@@ -260,27 +260,27 @@ fn rebuilding_adds_up_the_seconds_of_the_trials_of_each_harness() {
 }
 
 #[test]
-fn rebuilding_gives_a_child_the_seconds_of_the_procreation_that_made_it() {
+fn rebuilding_gives_a_child_the_seconds_of_the_diversification_that_made_it() {
     let state = rebuilt(&[
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Created),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Created),
     ]);
-    assert_eq!(state.seconds[1].procreation, Some(30.25));
+    assert_eq!(state.seconds[1].diversification, Some(30.25));
 }
 
 #[test]
-fn rebuilding_gives_a_child_whose_procreation_has_not_ended_no_seconds_of_it() {
-    let state = rebuilt(&[procreation_started(1, 0)]);
+fn rebuilding_gives_a_child_whose_diversification_has_not_ended_no_seconds_of_it() {
+    let state = rebuilt(&[diversification_started(1, 0)]);
     assert_eq!(state.seconds[1], Seconds::default());
 }
 
 #[test]
-fn rebuilding_gives_the_seconds_of_a_procreation_to_the_child_and_not_to_its_progenitor() {
+fn rebuilding_gives_the_seconds_of_a_diversification_to_the_child_and_not_to_its_progenitor() {
     let state = rebuilt(&[
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Failed),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Failed),
     ]);
-    assert_eq!(state.seconds[0].procreation, None);
+    assert_eq!(state.seconds[0].diversification, None);
 }
 
 #[test]
@@ -288,7 +288,7 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
     assert_eq!(
         rebuilt(&four_actions_of_which_two_finished()).unfinished,
         [
-            Started::Procreation {
+            Started::Diversification {
                 child: 2,
                 progenitor: 0
             },
@@ -303,8 +303,8 @@ fn the_actions_that_did_not_finish_come_back_in_the_order_they_started() {
 #[test]
 fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
     let state = rebuilt(&[
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Created),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Created),
         trial_started(1, "t1"),
         trial_finished(1, "t1", TrialResult::NotCompleted),
     ]);
@@ -327,8 +327,8 @@ fn the_first_action_of_a_journal_that_holds_no_action_takes_number_0() {
 #[test]
 fn a_journal_that_holds_the_end_of_its_directed_evolution_names_the_best_harness() {
     let state = rebuilt(&[
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Created),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Created),
         Record::DirectedEvolutionFinished { best_harness: 1 },
     ]);
     assert_eq!(state.best_harness, Some(1));
@@ -336,16 +336,16 @@ fn a_journal_that_holds_the_end_of_its_directed_evolution_names_the_best_harness
 
 #[test]
 fn a_journal_that_does_not_hold_the_end_of_its_directed_evolution_names_no_best_harness() {
-    assert_eq!(rebuilt(&[procreation_started(1, 0)]).best_harness, None);
+    assert_eq!(rebuilt(&[diversification_started(1, 0)]).best_harness, None);
 }
 
 #[test]
 fn a_cut_short_last_line_is_ignored_when_the_journal_is_read() {
     let state = rebuilt_with_a_last_line_of(
-        &[procreation_started(1, 0)],
-        "{\"record\":\"procreation_finished\",\"chi",
+        &[diversification_started(1, 0)],
+        "{\"record\":\"diversification_finished\",\"chi",
     );
-    assert_eq!(state, rebuilt(&[procreation_started(1, 0)]));
+    assert_eq!(state, rebuilt(&[diversification_started(1, 0)]));
 }
 
 #[test]
@@ -366,10 +366,10 @@ fn reading_a_journal_takes_no_lock() {
 
 fn an_experiment_whose_baseline_started() -> Vec<Record> {
     vec![
-        procreation_started(1, 0),
-        procreation_finished(1, CreationOutcome::Created),
-        procreation_started(2, 1),
-        procreation_finished(2, CreationOutcome::Created),
+        diversification_started(1, 0),
+        diversification_finished(1, CreationOutcome::Created),
+        diversification_started(2, 1),
+        diversification_finished(2, CreationOutcome::Created),
         Record::BaselineStarted {
             harness: 3,
             child: 2,
@@ -424,9 +424,9 @@ fn a_trial_of_a_singleton_control_group_harness_takes_no_number_of_an_action() {
 }
 
 #[test]
-fn rebuilding_gives_a_singleton_control_group_harness_no_seconds_of_a_procreation() {
+fn rebuilding_gives_a_singleton_control_group_harness_no_seconds_of_a_diversification() {
     let state = rebuilt(&an_experiment_whose_baseline_ended_and_then(&[]));
-    assert_eq!(state.seconds[3].procreation, None);
+    assert_eq!(state.seconds[3].diversification, None);
 }
 
 #[test]

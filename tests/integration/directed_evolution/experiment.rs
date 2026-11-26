@@ -9,7 +9,7 @@ use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
-const A_PROGENITOR_THAT_PROCREATES_BETTER_THAN_THE_PRIMOGENITOR: &str = r#"if [ -d /var/log/cladenc/trials ]
+const A_PROGENITOR_THAT_DIVERSIFIES_BETTER_THAN_THE_PRIMOGENITOR: &str = r#"if [ -d /var/log/cladenc/trials ]
 then
   [ -e "$CLADENC_HARNESS/improved" ] && echo t3 >> solved
   echo improved >> improved
@@ -35,10 +35,10 @@ fn settings(directory: &Path) -> Settings {
         dockerfile: None,
         docker_build_timeout: None,
         harness_build_command: None,
-        harness_run_command: A_PROGENITOR_THAT_PROCREATES_BETTER_THAN_THE_PRIMOGENITOR.to_owned(),
-        max_procreations: 2,
+        harness_run_command: A_PROGENITOR_THAT_DIVERSIFIES_BETTER_THAN_THE_PRIMOGENITOR.to_owned(),
+        max_diversifications: 2,
         max_concurrent_containers: 1,
-        procreation_timeout: 120,
+        diversification_timeout: 120,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 33.5,

@@ -26,9 +26,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 8,
-        procreation_timeout: 3600,
+        diversification_timeout: 3600,
         max_verifier_health_check_retries: 3,
         max_task_health_check_retries: 2,
         selection_tasks_percentage: 25.0,
@@ -82,8 +82,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_31() {
-    assert_eq!(journal::FORMAT, 31);
+fn the_format_of_the_journal_is_32() {
+    assert_eq!(journal::FORMAT, 32);
 }
 
 #[test]
@@ -91,7 +91,7 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":31,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":32,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
@@ -99,9 +99,9 @@ fn the_run_record_is_written_key_for_key() {
             r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2","t3"]}],"#,
             r#""selection_tasks_percentage":25.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
             r#""corroboration_tasks_percentage":25.0,"#,
-            r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#,
+            r#""corroboration_tasks":["benchmark/t3"],"max_diversifications":800,"#,
             r#""max_concurrent_containers":8,"#,
-            r#""procreation_timeout":3600,"max_verifier_health_check_retries":3,"#,
+            r#""diversification_timeout":3600,"max_verifier_health_check_retries":3,"#,
             r#""max_task_health_check_retries":2,"seed":7}"#
         )
     );
@@ -110,7 +110,7 @@ fn the_run_record_is_written_key_for_key() {
 #[test]
 fn the_run_record_holds_the_limit_of_concurrent_containers_between_two_other_settings() {
     assert!(run(settings()).line().unwrap().contains(
-        r#""max_procreations":800,"max_concurrent_containers":8,"procreation_timeout":3600,"#
+        r#""max_diversifications":800,"max_concurrent_containers":8,"diversification_timeout":3600,"#
     ));
 }
 
@@ -127,7 +127,7 @@ fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_b
 fn the_run_record_holds_the_corroboration_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
         r#""corroboration_tasks_percentage":25.0,"#,
-        r#""corroboration_tasks":["benchmark/t3"],"max_procreations":800,"#
+        r#""corroboration_tasks":["benchmark/t3"],"max_diversifications":800,"#
     )));
 }
 
@@ -214,12 +214,12 @@ fn the_run_record_holds_no_confidence() {
 }
 
 #[test]
-fn the_run_record_holds_no_initial_procreations() {
+fn the_run_record_holds_no_initial_diversifications() {
     assert!(
         !run(settings())
             .line()
             .unwrap()
-            .contains("initial_procreations")
+            .contains("initial_diversifications")
     );
 }
 
@@ -335,7 +335,7 @@ fn the_settings_give_how_a_harness_is_built_and_run() {
                 url: "http://models.example/v1",
                 key: None,
             },
-            procreation_timeout: 3600,
+            diversification_timeout: 3600,
             max_verifier_health_check_retries: 3,
             max_task_health_check_retries: 2,
         }
@@ -343,12 +343,12 @@ fn the_settings_give_how_a_harness_is_built_and_run() {
 }
 
 #[test]
-fn the_settings_give_how_long_a_procreation_may_take() {
+fn the_settings_give_how_long_a_diversification_may_take() {
     let settings = Settings {
-        procreation_timeout: 1800,
+        diversification_timeout: 1800,
         ..settings()
     };
-    assert_eq!(settings.launch(None).procreation_timeout, 1800);
+    assert_eq!(settings.launch(None).diversification_timeout, 1800);
 }
 
 #[test]
@@ -483,7 +483,7 @@ fn the_settings_give_the_artificial_selection_made_from_them() {
     assert_eq!(
         settings().artificial_selection(),
         ArtificialSelection {
-            max_procreations: 800,
+            max_diversifications: 800,
             tasks: vec![
                 "benchmark/t1".to_owned(),
                 "benchmark/t2".to_owned(),

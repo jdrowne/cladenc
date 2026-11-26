@@ -32,9 +32,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 2,
+        max_diversifications: 2,
         max_concurrent_containers: 8,
-        procreation_timeout: 3600,
+        diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
@@ -114,7 +114,7 @@ fn end_of(action: Started) -> Told {
         seconds: 2.5,
     };
     Told::Ended(match action {
-        Started::Procreation { child, progenitor } => Ended::Procreated {
+        Started::Diversification { child, progenitor } => Ended::Diversified {
             child,
             progenitor,
             creation,
@@ -167,11 +167,11 @@ fn left_trialling<'a>(progress: Progress<'a>, tasks: &[&str]) -> Progress<'a> {
 
 fn awaiting_a_baseline(progress: Progress<'_>, unfinished: Vec<Started>) -> Progress<'_> {
     let mut genealogy = settings().genealogy();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    genealogy.start_procreation(child).unwrap();
+    genealogy.start_diversification(child).unwrap();
     progress.resumed(genealogy, unfinished, 2)
 }
 
@@ -187,9 +187,9 @@ fn benchmarked_in_full(genealogy: &mut Genealogy, harness: u64) {
 fn two_harnesses_benchmarked_in_full() -> Genealogy {
     let mut genealogy = settings().genealogy();
     benchmarked_in_full(&mut genealogy, 0);
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     benchmarked_in_full(&mut genealogy, child);
     genealogy
@@ -200,14 +200,14 @@ fn progenitor_chosen(seed: u64) -> Option<u64> {
         .artificial_selection()
         .next_action(&two_harnesses_benchmarked_in_full(), 5);
     match chosen {
-        Some(Action::Procreation { progenitor }) => Some(progenitor),
+        Some(Action::Diversification { progenitor }) => Some(progenitor),
         _ => None,
     }
 }
 
 fn progenitor_taken(taken: Option<(Started, bool)>) -> Option<u64> {
     match taken {
-        Some((Started::Procreation { progenitor, .. }, false)) => Some(progenitor),
+        Some((Started::Diversification { progenitor, .. }, false)) => Some(progenitor),
         _ => None,
     }
 }
@@ -256,7 +256,7 @@ fn taking_an_action_says_nothing() {
 }
 
 #[test]
-fn once_the_primogenitor_is_benchmarked_in_full_its_procreation_is_taken() {
+fn once_the_primogenitor_is_benchmarked_in_full_its_diversification_is_taken() {
     let taken = returned(&settings(), |mut progress| {
         carry_out(&mut progress, 2);
         progress.take()
@@ -264,7 +264,7 @@ fn once_the_primogenitor_is_benchmarked_in_full_its_procreation_is_taken() {
     assert_eq!(
         taken,
         Some((
-            Started::Procreation {
+            Started::Diversification {
                 child: 1,
                 progenitor: 0
             },
@@ -274,14 +274,14 @@ fn once_the_primogenitor_is_benchmarked_in_full_its_procreation_is_taken() {
 }
 
 #[test]
-fn a_procreation_that_is_taken_is_journaled_as_started() {
+fn a_diversification_that_is_taken_is_journaled_as_started() {
     let journaled = journaled(&settings(), |mut progress| {
         carry_out(&mut progress, 2);
         progress.take()
     });
     assert_eq!(
         journaled.last(),
-        Some(&Record::ProcreationStarted {
+        Some(&Record::DiversificationStarted {
             child: 1,
             progenitor: 0
         })
@@ -308,12 +308,13 @@ fn a_child_that_was_created_is_given_its_first_task_next() {
 }
 
 #[test]
-fn no_action_is_taken_once_the_most_procreations_are_started_and_every_harness_is_benchmarked() {
-    let only_one_procreation = Settings {
-        max_procreations: 1,
+fn no_action_is_taken_once_the_most_diversifications_are_started_and_every_harness_is_benchmarked()
+{
+    let only_one_diversification = Settings {
+        max_diversifications: 1,
         ..settings()
     };
-    let taken = returned(&only_one_procreation, |mut progress| {
+    let taken = returned(&only_one_diversification, |mut progress| {
         carry_out(&mut progress, 5);
         progress.take()
     });
@@ -321,7 +322,7 @@ fn no_action_is_taken_once_the_most_procreations_are_started_and_every_harness_i
 }
 
 #[test]
-fn a_progenitor_is_chosen_with_the_count_of_the_actions_started_before_its_procreation() {
+fn a_progenitor_is_chosen_with_the_count_of_the_actions_started_before_its_diversification() {
     let taken: Vec<Option<u64>> = (0..32)
         .map(|seed| {
             returned(&seeded(seed), |mut progress| {
@@ -419,14 +420,14 @@ fn a_baseline_that_is_taken_is_journaled_as_started() {
 
 #[test]
 fn an_unfinished_action_is_taken_before_the_baseline_that_an_experiment_waits_for() {
-    let procreation = Started::Procreation {
+    let diversification = Started::Diversification {
         child: 2,
         progenitor: 1,
     };
     let taken = returned(&settings(), |progress| {
-        awaiting_a_baseline(progress, vec![procreation.clone()]).take()
+        awaiting_a_baseline(progress, vec![diversification.clone()]).take()
     });
-    assert_eq!(taken, Some((procreation, true)));
+    assert_eq!(taken, Some((diversification, true)));
 }
 
 #[test]
@@ -481,14 +482,17 @@ fn a_trial_set_running_is_said_to_have_started() {
 }
 
 #[test]
-fn a_procreation_set_running_is_said_with_its_number_and_the_most_procreations() {
+fn a_diversification_set_running_is_said_with_its_number_and_the_most_diversifications() {
     let said = said(&settings(), |mut progress| {
         carry_out(&mut progress, 2);
         start(&mut progress)
     });
     assert_eq!(
         said.last().map(String::as_str),
-        Some("cladenc: started the procreation of harness 1 by harness 0, procreation 1 of 2")
+        Some(
+            "cladenc: started the diversification of harness 1 by harness 0, diversification 1 of \
+              2"
+        )
     );
 }
 
@@ -501,7 +505,7 @@ fn a_baseline_set_running_is_said_to_have_started() {
         said,
         [
             "cladenc: started the creation of harness 3, the singleton control group harness, by \
-             the primogenitor from the source code of harness 1"
+             the primogenitor from a second clone of harness 1"
         ]
     );
 }

@@ -9,7 +9,7 @@ use crate::journal::{self, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 
 const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
-const A_PROCREATION: [&str; 2] = ["run a harness", "procreation-1"];
+const A_DIVERSIFICATION: [&str; 2] = ["run a harness", "diversification-1"];
 const NOT_STARTED: Answer = Answer::Exited(125);
 const TASK: &str = "benchmark/t2";
 
@@ -19,7 +19,7 @@ fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
 
 fn twice(directory: &Memory, settings: &mut Settings) {
     with_a_selection_task(directory, settings);
-    settings.max_procreations = 2;
+    settings.max_diversifications = 2;
 }
 
 fn working() -> Double {
@@ -66,9 +66,9 @@ fn resumed_with_something_left_by_a_trial() -> Evolved {
     })
 }
 
-fn resumed_with_something_left_by_a_procreation() -> Evolved {
-    resumed_with_something_left(&A_PROCREATION, |outputs_directory| {
-        outputs_directory.running_procreation(1).join("child")
+fn resumed_with_something_left_by_a_diversification() -> Evolved {
+    resumed_with_something_left(&A_DIVERSIFICATION, |outputs_directory| {
+        outputs_directory.running_diversification(1).join("child")
     })
 }
 
@@ -96,11 +96,12 @@ fn a_directed_evolution_a_trial_stopped_continues_to_the_journal_an_unbroken_one
 }
 
 #[test]
-fn a_container_that_ends_with_status_125_at_a_procreation_stops_the_directed_evolution_naming_it() {
+fn a_container_that_ends_with_status_125_at_a_diversification_stops_the_directed_evolution_naming_it()
+ {
     assert!(matches!(
-        stopped_at(&A_PROCREATION).result,
+        stopped_at(&A_DIVERSIFICATION).result,
         Err(DirectedEvolutionError::Action {
-            action: Started::Procreation {
+            action: Started::Diversification {
                 child: 1,
                 progenitor: 0
             },
@@ -110,9 +111,10 @@ fn a_container_that_ends_with_status_125_at_a_procreation_stops_the_directed_evo
 }
 
 #[test]
-fn a_directed_evolution_a_procreation_stopped_continues_to_the_journal_an_unbroken_one_writes() {
+fn a_directed_evolution_a_diversification_stopped_continues_to_the_journal_an_unbroken_one_writes()
+{
     assert_eq!(
-        journal_of(&resumed_after_a_stop_at(&A_PROCREATION)),
+        journal_of(&resumed_after_a_stop_at(&A_DIVERSIFICATION)),
         journal_of(&unbroken())
     );
 }
@@ -202,7 +204,7 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
 
 #[test]
 fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given_in() {
-    let stopped = stopped_at(&A_PROCREATION);
+    let stopped = stopped_at(&A_DIVERSIFICATION);
     stopped
         .files()
         .remove_dir_all(stopped.files().path().join("benchmark"))
@@ -225,15 +227,15 @@ fn a_trial_that_is_started_again_ends_with_its_result_in_place() {
 }
 
 #[test]
-fn what_a_procreation_left_where_it_was_running_is_gone_before_it_is_started_again() {
-    let resumed = resumed_with_something_left_by_a_procreation();
+fn what_a_diversification_left_where_it_was_running_is_gone_before_it_is_started_again() {
+    let resumed = resumed_with_something_left_by_a_diversification();
     let child = resumed.outputs_directory().harness(1);
     assert!(!resumed.files().exists(child.join("leftover")));
 }
 
 #[test]
-fn a_procreation_that_is_started_again_ends_with_its_child_in_place() {
-    let resumed = resumed_with_something_left_by_a_procreation();
+fn a_diversification_that_is_started_again_ends_with_its_child_in_place() {
+    let resumed = resumed_with_something_left_by_a_diversification();
     let child = resumed.outputs_directory().harness(1);
     assert!(resumed.files().is_file(child.join("changed")));
 }

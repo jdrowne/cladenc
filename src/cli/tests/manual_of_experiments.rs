@@ -1,39 +1,38 @@
 use test_inputs::manual_on_one_line;
 
 #[test]
-fn the_manual_of_start_says_what_experiment_cladenc_conducts_and_at_which_procreations() {
+fn the_manual_of_start_says_what_experiment_cladenc_conducts_and_at_which_diversifications() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "At each procreation of a harness other than the primogenitor, cladenc conducts an \
-         experiment to test whether a progenitor is better at procreating better harnesses than \
-         the primogenitor."
+        "Where the progenitor is not the primogenitor, cladenc conducts an experiment to test \
+         whether a progenitor is better at diversifying clones into better harnesses than the \
+         primogenitor."
     ));
 }
 
 #[test]
 fn the_manual_of_start_says_how_cladenc_establishes_the_baseline_of_an_experiment() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "To conduct the experiment, cladenc establishes a baseline: it has the primogenitor create \
-         a harness from the same source code that the progenitor uses to procreate the \
-         progenitor's child."
+        "To conduct the experiment, cladenc establishes a baseline: it clones the progenitor a \
+         second time, and has the primogenitor diversify the second clone."
     ));
 }
 
 #[test]
 fn the_manual_of_start_names_the_singleton_control_group_harness() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The harness the primogenitor creates from the source code of the progenitor is the \
-         singleton control group harness."
+        "The harness the primogenitor creates by diversifying the second clone of the progenitor \
+         is the singleton control group harness."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_which_source_code_runs_and_which_is_changed_for_a_baseline() {
+fn the_manual_of_start_says_which_source_code_runs_and_which_is_diversified_for_a_baseline() {
     let help = manual_on_one_line("cladenc-start");
     let given = [
         "/var/opt/cladenc/harness holds a copy of the source code of the",
         "primogenitor, which is what runs",
-        "/var/opt/cladenc/work holds a second copy of the source code of the",
-        "progenitor, which is what is changed",
+        "/var/opt/cladenc/work holds the second clone of the progenitor, which",
+        "is what is diversified",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
 }
@@ -49,8 +48,8 @@ fn the_manual_of_start_says_that_the_primogenitor_is_given_what_the_progenitor_i
 #[test]
 fn the_manual_of_start_says_which_children_of_the_progenitor_the_primogenitor_is_given() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "under /var/log/cladenc/children the children the progenitor procreated before the \
-         progenitor's child of the experiment."
+        "under /var/log/cladenc/children the children the progenitor made before the progenitor's \
+         child of the experiment."
     ));
 }
 
@@ -65,16 +64,18 @@ fn the_manual_of_start_says_that_the_singleton_control_group_harness_is_benchmar
 #[test]
 fn the_manual_of_start_says_what_the_singleton_control_group_harness_takes_no_part_in() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "it is never chosen to procreate, it is counted in no clade, it is not named the best \
-         harness, and the container it is created in does not count toward --max-procreations."
+        "it is never chosen to be cloned, it is counted in no clade, it is not named the best \
+         harness, and the diversification it is created in does not count toward \
+         --max-diversifications."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_no_experiment_is_conducted_where_the_primogenitor_procreates() {
+fn the_manual_of_start_says_that_no_experiment_is_conducted_where_the_progenitor_is_the_primogenitor()
+ {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where the primogenitor procreates, no experiment is conducted: the progenitor's child and \
-         the singleton control group harness would be created in the same way."
+        "Where the progenitor is the primogenitor, no experiment is conducted: the progenitor's \
+         child and the singleton control group harness would be created in the same way."
     ));
 }
 
@@ -84,7 +85,7 @@ fn the_manual_of_start_says_what_the_outputs_directory_keeps_of_a_baseline() {
         "baselines in the outputs directory keeps, in a directory named after the singleton \
          control group harness, the standard output and standard error of the primogenitor, the id \
          of the progenitor in the file named progenitor, the id of the progenitor's child in the \
-         file named child, and how the creation ended in the file named outcome."
+         file named child, and how the diversification ended in the file named outcome."
     ));
 }
 
@@ -110,8 +111,8 @@ fn the_manual_of_report_says_how_the_harnesses_of_the_experiments_are_told_apart
 #[test]
 fn the_manual_of_start_says_that_a_baseline_that_changes_nothing_creates_no_harness() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Where the primogenitor leaves /var/opt/cladenc/work as it was, no singleton control group \
-         harness is created, and the creation is recorded as unchanged."
+        "Where the primogenitor leaves the second clone as it was, no singleton control group \
+         harness is created, and the diversification is recorded as unchanged."
     ));
 }
 

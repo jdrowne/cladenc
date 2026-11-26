@@ -16,7 +16,7 @@ pub(super) enum Told {
 }
 
 pub(super) enum Ended {
-    Procreated {
+    Diversified {
         child: HarnessId,
         progenitor: HarnessId,
         creation: Creation,
@@ -51,11 +51,17 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
     };
     let cleared = cleared.map_err(ContainerError::Io);
     let result = match action.clone() {
-        Started::Procreation { child, progenitor } => cleared
+        Started::Diversification { child, progenitor } => cleared
             .and_then(|()| {
-                containers::run_procreation(host, &shared.launch, child, progenitor, &shared.halt)
+                containers::run_diversification(
+                    host,
+                    &shared.launch,
+                    child,
+                    progenitor,
+                    &shared.halt,
+                )
             })
-            .map(|creation| Ended::Procreated {
+            .map(|creation| Ended::Diversified {
                 child,
                 progenitor,
                 creation,
@@ -114,7 +120,7 @@ pub(super) fn carry_out(shared: &Shared<'_>, action: Started, again: bool) -> En
 
 pub(super) fn discard(outputs_directory: &OutputsDirectory, action: &Started) -> io::Result<()> {
     match action {
-        Started::Procreation { child, .. } => outputs_directory.discard_procreation(*child),
+        Started::Diversification { child, .. } => outputs_directory.discard_diversification(*child),
         Started::Baseline { harness, .. } => outputs_directory.discard_baseline(*harness),
         Started::Trial { harness, task } => outputs_directory.discard_trial(*harness, task),
     }

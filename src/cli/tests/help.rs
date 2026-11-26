@@ -3,8 +3,8 @@ use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser};
 
 const WHAT_CLADENC_DOES: &str = "Carries out a directed evolution of an agentic coding harness, in \
-                                 which harnesses procreate, each changing a copy of its own \
-                                 source code, and are benchmarked";
+                                 which harnesses are cloned, each diversifying its clone, and \
+                                 are benchmarked";
 
 const COMMANDS: [&[&str]; 5] = [
     &["cladenc"],
@@ -118,8 +118,8 @@ fn the_help_of_start_says_that_the_limit_is_the_most_containers_running_at_once(
 fn the_help_of_start_names_the_two_flags_of_a_dockerfile() {
     let help = help_of("start");
     let flags = [
-        "--procreation-dockerfile <FILE>",
-        "--procreation-docker-image-build-timeout <SECONDS>",
+        "--diversification-dockerfile <FILE>",
+        "--diversification-docker-image-build-timeout <SECONDS>",
     ];
     assert!(flags.iter().all(|flag| help.contains(flag)));
 }
@@ -130,13 +130,13 @@ fn the_help_of_start_names_the_flag_that_builds_a_harness() {
 }
 
 #[test]
-fn the_help_of_start_names_the_flag_that_gives_the_most_procreations() {
-    assert!(help_of("start").contains("--max-procreations <COUNT>"));
+fn the_help_of_start_names_the_flag_that_gives_the_most_diversifications() {
+    assert!(help_of("start").contains("--max-diversifications <COUNT>"));
 }
 
 #[test]
-fn the_help_of_start_says_that_the_flag_gives_the_most_procreations_to_start() {
-    assert!(help_of("start").contains("The most procreations to start"));
+fn the_help_of_start_says_that_the_flag_gives_the_most_diversifications_to_start() {
+    assert!(help_of("start").contains("The most diversifications to start"));
 }
 
 #[test]

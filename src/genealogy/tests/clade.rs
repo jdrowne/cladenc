@@ -3,9 +3,9 @@ use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 fn family() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&["a".to_owned()]);
     for progenitor in [0, 1, 0] {
-        let child = genealogy.start_procreation(progenitor).unwrap();
+        let child = genealogy.start_diversification(progenitor).unwrap();
         genealogy
-            .end_procreation(child, CreationOutcome::Created)
+            .end_diversification(child, CreationOutcome::Created)
             .unwrap();
     }
     genealogy
@@ -108,42 +108,44 @@ fn a_trial_not_completed_stays_out_of_the_clade_not_completed_of_a_child() {
     assert_eq!(genealogy.harnesses()[2].clade_not_completed(), 0);
 }
 
-fn family_after_a_procreation_that_created_no_child(outcome: CreationOutcome) -> Genealogy {
+fn family_after_a_diversification_that_created_no_child(outcome: CreationOutcome) -> Genealogy {
     let mut genealogy = family_after(1, TrialResult::NotCompleted);
-    let child = genealogy.start_procreation(1).unwrap();
-    genealogy.end_procreation(child, outcome).unwrap();
+    let child = genealogy.start_diversification(1).unwrap();
+    genealogy.end_diversification(child, outcome).unwrap();
     genealogy
 }
 
 #[test]
-fn a_procreation_that_failed_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Failed);
+fn a_diversification_that_failed_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
+    let genealogy = family_after_a_diversification_that_created_no_child(CreationOutcome::Failed);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_adds_nothing_to_the_clade_not_completed_of_its_progenitor()
+fn a_diversification_whose_child_did_not_build_adds_nothing_to_the_clade_not_completed_of_its_progenitor()
  {
-    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::BuildFailed);
+    let genealogy =
+        family_after_a_diversification_that_created_no_child(CreationOutcome::BuildFailed);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
-fn a_procreation_that_timed_out_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::TimedOut);
+fn a_diversification_that_timed_out_adds_nothing_to_the_clade_not_completed_of_its_progenitor() {
+    let genealogy = family_after_a_diversification_that_created_no_child(CreationOutcome::TimedOut);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
-fn a_procreation_that_left_the_progenitor_s_copy_unchanged_adds_nothing_to_the_clade_of_its_progenitor()
+fn a_diversification_that_left_the_progenitor_s_clone_unchanged_adds_nothing_to_the_clade_of_its_progenitor()
  {
-    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Unchanged);
+    let genealogy =
+        family_after_a_diversification_that_created_no_child(CreationOutcome::Unchanged);
     assert_eq!(genealogy.harnesses()[1].clade_not_completed(), 1);
 }
 
 #[test]
-fn a_procreation_that_failed_adds_nothing_to_the_clade_not_completed_of_the_primogenitor() {
-    let genealogy = family_after_a_procreation_that_created_no_child(CreationOutcome::Failed);
+fn a_diversification_that_failed_adds_nothing_to_the_clade_not_completed_of_the_primogenitor() {
+    let genealogy = family_after_a_diversification_that_created_no_child(CreationOutcome::Failed);
     assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);
 }
 

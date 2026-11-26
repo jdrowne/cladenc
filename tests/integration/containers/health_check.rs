@@ -68,7 +68,7 @@ fn trialled(task_toml: &str, run_command: &str) -> Trialled {
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };

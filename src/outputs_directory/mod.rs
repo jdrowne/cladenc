@@ -53,7 +53,7 @@ impl OutputsDirectory {
         files
             .make_directory(path)
             .and_then(|()| files.make_directory(&path.join("harnesses")))
-            .and_then(|()| files.make_directory(&path.join("procreations")))
+            .and_then(|()| files.make_directory(&path.join("diversifications")))
             .and_then(|()| files.make_directory(&path.join("baselines")))
             .and_then(|()| files.make_directory(&path.join("trials")))
             .and_then(|()| files.make_directory(&path.join("holdout")))
@@ -127,8 +127,8 @@ impl OutputsDirectory {
         self.path.join("harnesses").join(id.to_string())
     }
 
-    pub fn procreation(&self, child: HarnessId) -> PathBuf {
-        self.path.join("procreations").join(child.to_string())
+    pub fn diversification(&self, child: HarnessId) -> PathBuf {
+        self.path.join("diversifications").join(child.to_string())
     }
 
     pub(crate) fn baseline(&self, harness: HarnessId) -> PathBuf {
@@ -155,10 +155,10 @@ impl OutputsDirectory {
         self.path.join("builds").join(harness.to_string())
     }
 
-    pub fn running_procreation(&self, child: HarnessId) -> PathBuf {
+    pub fn running_diversification(&self, child: HarnessId) -> PathBuf {
         self.path
             .join("running")
-            .join(format!("procreation-{child}"))
+            .join(format!("diversification-{child}"))
     }
 
     pub(crate) fn running_baseline(&self, harness: HarnessId) -> PathBuf {
@@ -173,8 +173,8 @@ impl OutputsDirectory {
             .join(format!("trial-{harness}-{}", task.replace('/', "+")))
     }
 
-    pub fn start_procreation(&self, child: HarnessId, progenitor: HarnessId) -> io::Result<()> {
-        let running = self.running_procreation(child);
+    pub fn start_diversification(&self, child: HarnessId, progenitor: HarnessId) -> io::Result<()> {
+        let running = self.running_diversification(child);
         let harness = self.harness(progenitor);
         let files = self.files();
         files
@@ -183,18 +183,18 @@ impl OutputsDirectory {
             .and_then(|()| copy_tree(files, &harness, &running.join("child")))
     }
 
-    pub fn end_procreation(
+    pub fn end_diversification(
         &self,
         child: HarnessId,
         progenitor: HarnessId,
         outcome: CreationOutcome,
     ) -> io::Result<()> {
-        let running = self.running_procreation(child);
+        let running = self.running_diversification(child);
         self.keep_made(&running.join("child"), child, outcome)
             .and_then(|()| self.files.remove_tree(&running.join("progenitor")))
             .and_then(|()| self.note(&running.join("progenitor"), &format!("{progenitor}\n")))
             .and_then(|()| self.note(&running.join("outcome"), word_of(outcome)))
-            .and_then(|()| self.files.rename(&running, &self.procreation(child)))
+            .and_then(|()| self.files.rename(&running, &self.diversification(child)))
     }
 
     pub(crate) fn start_baseline(
@@ -259,7 +259,7 @@ impl OutputsDirectory {
 
     fn progenitor_of(&self, harness: HarnessId) -> Option<HarnessId> {
         self.files
-            .read_text(&self.procreation(harness).join("progenitor"))
+            .read_text(&self.diversification(harness).join("progenitor"))
             .ok()
             .and_then(|id| id.trim().parse().ok())
     }
@@ -275,7 +275,7 @@ impl OutputsDirectory {
     pub(crate) fn children_of(&self, progenitor: HarnessId) -> Vec<HarnessId> {
         let mut children: Vec<HarnessId> = self
             .files
-            .list(&self.path.join("procreations"))
+            .list(&self.path.join("diversifications"))
             .unwrap_or_default()
             .iter()
             .filter_map(|made| made.to_string_lossy().parse().ok())
@@ -323,11 +323,11 @@ impl OutputsDirectory {
             .and_then(|()| self.files.rename(&running, &self.trial(harness, task)))
     }
 
-    pub(crate) fn discard_procreation(&self, child: HarnessId) -> io::Result<()> {
+    pub(crate) fn discard_diversification(&self, child: HarnessId) -> io::Result<()> {
         [
-            self.running_procreation(child),
+            self.running_diversification(child),
             self.harness(child),
-            self.procreation(child),
+            self.diversification(child),
             self.trials(child),
             self.build(child),
         ]

@@ -14,7 +14,7 @@ fn started() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.start_procreation(1, 0).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
     (directory, outputs_directory)
 }
 
@@ -23,12 +23,14 @@ fn ended(outcome: CreationOutcome) -> (Memory, OutputsDirectory) {
     directory
         .write(
             outputs_directory
-                .running_procreation(1)
+                .running_diversification(1)
                 .join("child/new.txt"),
             "new",
         )
         .unwrap();
-    outputs_directory.end_procreation(1, 0, outcome).unwrap();
+    outputs_directory
+        .end_diversification(1, 0, outcome)
+        .unwrap();
     (directory, outputs_directory)
 }
 
@@ -43,7 +45,7 @@ fn names_in(files: &Memory, path: PathBuf) -> Vec<String> {
 fn recorded(outcome: CreationOutcome, file: &str) -> String {
     let (directory, outputs_directory) = ended(outcome);
     directory
-        .read_to_string(outputs_directory.procreation(1).join(file))
+        .read_to_string(outputs_directory.diversification(1).join(file))
         .unwrap()
 }
 
@@ -54,50 +56,52 @@ fn harness_script(directory: &Memory, harness: PathBuf) -> String {
 }
 
 #[test]
-fn a_started_procreation_holds_a_copy_of_its_progenitor_to_run() {
+fn a_started_diversification_holds_a_copy_of_its_progenitor_to_run() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         harness_script(
             &directory,
-            outputs_directory.running_procreation(1).join("progenitor")
+            outputs_directory
+                .running_diversification(1)
+                .join("progenitor")
         ),
         harness_script(&directory, outputs_directory.harness(0))
     );
 }
 
 #[test]
-fn a_started_procreation_holds_a_copy_of_its_progenitor_to_modify() {
+fn a_started_diversification_holds_a_clone_of_its_progenitor_to_diversify() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         harness_script(
             &directory,
-            outputs_directory.running_procreation(1).join("child")
+            outputs_directory.running_diversification(1).join("child")
         ),
         harness_script(&directory, outputs_directory.harness(0))
     );
 }
 
 #[test]
-fn a_started_procreation_holds_its_two_copies_and_nothing_else() {
+fn a_started_diversification_holds_its_copy_its_clone_and_nothing_else() {
     let (directory, outputs_directory) = started();
     assert_eq!(
-        entries(&directory, outputs_directory.running_procreation(1)),
+        entries(&directory, outputs_directory.running_diversification(1)),
         2
     );
 }
 
 #[test]
-fn a_procreation_cannot_be_started_twice() {
+fn a_diversification_cannot_be_started_twice() {
     let (_directory, outputs_directory) = started();
-    let refused = outputs_directory.start_procreation(1, 0).unwrap_err();
+    let refused = outputs_directory.start_diversification(1, 0).unwrap_err();
     assert_eq!(refused.kind(), ErrorKind::AlreadyExists);
 }
 
 #[test]
-fn writing_into_the_progenitor_of_a_started_procreation_leaves_the_harness_unchanged() {
+fn writing_into_the_progenitor_of_a_started_diversification_leaves_the_harness_unchanged() {
     let (directory, outputs_directory) = started();
     let copy = outputs_directory
-        .running_procreation(1)
+        .running_diversification(1)
         .join("progenitor/harness.sh");
     directory.write(copy, "changed").unwrap();
     assert_eq!(
@@ -107,10 +111,10 @@ fn writing_into_the_progenitor_of_a_started_procreation_leaves_the_harness_uncha
 }
 
 #[test]
-fn writing_into_the_child_of_a_started_procreation_leaves_the_harness_unchanged() {
+fn writing_into_the_child_of_a_started_diversification_leaves_the_harness_unchanged() {
     let (directory, outputs_directory) = started();
     let copy = outputs_directory
-        .running_procreation(1)
+        .running_diversification(1)
         .join("child/harness.sh");
     directory.write(copy, "changed").unwrap();
     assert_eq!(
@@ -120,7 +124,7 @@ fn writing_into_the_child_of_a_started_procreation_leaves_the_harness_unchanged(
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_the_files_of_the_child_as_its_harness() {
+fn a_diversification_that_created_its_child_leaves_the_files_of_the_child_as_its_harness() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
     assert_eq!(
         directory
@@ -131,37 +135,38 @@ fn a_procreation_that_created_its_child_leaves_the_files_of_the_child_as_its_har
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_an_empty_directory_for_its_trials() {
+fn a_diversification_that_created_its_child_leaves_an_empty_directory_for_its_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
     assert_eq!(entries(&directory, outputs_directory.trials(1)), 0);
 }
 
 #[test]
-fn a_procreation_that_created_its_child_keeps_its_record_and_neither_copy_in_its_directory() {
+fn a_diversification_that_created_its_child_keeps_its_record_and_neither_the_copy_nor_the_clone_in_its_directory()
+ {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
     assert_eq!(
-        names_in(&directory, outputs_directory.procreation(1)),
+        names_in(&directory, outputs_directory.diversification(1)),
         ["outcome", "progenitor"]
     );
 }
 
 #[test]
-fn a_procreation_that_ended_records_the_id_of_the_progenitor_on_a_line() {
+fn a_diversification_that_ended_records_the_id_of_the_progenitor_on_a_line() {
     assert_eq!(recorded(CreationOutcome::Created, "progenitor"), "0\n");
 }
 
 #[test]
-fn a_procreation_that_created_its_child_records_the_word_created() {
+fn a_diversification_that_created_its_child_records_the_word_created() {
     assert_eq!(recorded(CreationOutcome::Created, "outcome"), "created\n");
 }
 
 #[test]
-fn a_procreation_that_failed_records_the_word_failed() {
+fn a_diversification_that_failed_records_the_word_failed() {
     assert_eq!(recorded(CreationOutcome::Failed, "outcome"), "failed\n");
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_records_the_word_build_failed() {
+fn a_diversification_whose_child_did_not_build_records_the_word_build_failed() {
     assert_eq!(
         recorded(CreationOutcome::BuildFailed, "outcome"),
         "build_failed\n"
@@ -169,7 +174,7 @@ fn a_procreation_whose_child_did_not_build_records_the_word_build_failed() {
 }
 
 #[test]
-fn a_procreation_that_timed_out_records_the_word_timed_out() {
+fn a_diversification_that_timed_out_records_the_word_timed_out() {
     assert_eq!(
         recorded(CreationOutcome::TimedOut, "outcome"),
         "timed_out\n"
@@ -177,13 +182,13 @@ fn a_procreation_that_timed_out_records_the_word_timed_out() {
 }
 
 #[test]
-fn a_procreation_that_created_its_child_leaves_nothing_running() {
+fn a_diversification_that_created_its_child_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(CreationOutcome::Created);
-    assert!(!directory.exists(outputs_directory.running_procreation(1)));
+    assert!(!directory.exists(outputs_directory.running_diversification(1)));
 }
 
 #[test]
-fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses() {
+fn a_diversification_that_failed_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert_eq!(
         directory
@@ -194,22 +199,23 @@ fn a_procreation_that_failed_keeps_the_files_of_the_child_beside_the_harnesses()
 }
 
 #[test]
-fn a_procreation_that_failed_leaves_no_directory_for_the_trials_of_its_child() {
+fn a_diversification_that_failed_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
-fn a_procreation_that_failed_keeps_its_record_and_neither_copy_in_its_directory() {
+fn a_diversification_that_failed_keeps_its_record_and_neither_the_copy_nor_the_clone_in_its_directory()
+ {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
     assert_eq!(
-        names_in(&directory, outputs_directory.procreation(1)),
+        names_in(&directory, outputs_directory.diversification(1)),
         ["outcome", "progenitor"]
     );
 }
 
 #[test]
-fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesses() {
+fn a_diversification_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
     assert_eq!(
         directory
@@ -220,31 +226,31 @@ fn a_procreation_that_timed_out_keeps_the_files_of_the_child_beside_the_harnesse
 }
 
 #[test]
-fn a_procreation_that_timed_out_leaves_no_directory_for_the_trials_of_its_child() {
+fn a_diversification_that_timed_out_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::TimedOut);
     assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_keeps_the_files_of_the_child_beside_the_harnesses() {
+fn a_diversification_whose_child_did_not_build_keeps_the_files_of_the_child_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
     assert!(directory.is_file(outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
-fn a_procreation_whose_child_did_not_build_leaves_no_directory_for_its_trials() {
+fn a_diversification_whose_child_did_not_build_leaves_no_directory_for_its_trials() {
     let (directory, outputs_directory) = ended(CreationOutcome::BuildFailed);
     assert!(!directory.exists(outputs_directory.trials(1)));
 }
 
 #[test]
-fn a_procreation_that_failed_leaves_nothing_running() {
+fn a_diversification_that_failed_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(CreationOutcome::Failed);
-    assert!(!directory.exists(outputs_directory.running_procreation(1)));
+    assert!(!directory.exists(outputs_directory.running_diversification(1)));
 }
 
 #[test]
-fn a_procreation_recorded_as_unchanged_records_the_word_unchanged() {
+fn a_diversification_recorded_as_unchanged_records_the_word_unchanged() {
     assert_eq!(
         recorded(CreationOutcome::Unchanged, "outcome"),
         "unchanged\n"
@@ -252,13 +258,13 @@ fn a_procreation_recorded_as_unchanged_records_the_word_unchanged() {
 }
 
 #[test]
-fn a_procreation_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_harnesses() {
+fn a_diversification_recorded_as_unchanged_keeps_what_its_harness_left_beside_the_harnesses() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
     assert!(directory.is_file(outputs_directory.harness(1).join("harness.sh")));
 }
 
 #[test]
-fn a_procreation_recorded_as_unchanged_leaves_no_directory_for_the_trials_of_its_child() {
+fn a_diversification_recorded_as_unchanged_leaves_no_directory_for_the_trials_of_its_child() {
     let (directory, outputs_directory) = ended(CreationOutcome::Unchanged);
     assert!(!directory.exists(outputs_directory.trials(1)));
 }

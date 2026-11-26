@@ -1,6 +1,6 @@
 ---
 name: a-flag-name-says-what-it-holds
-description: "A flag's name says what kind of thing the value is and what it is for, such as --procreation-docker-image, never a bare word like image"
+description: "A flag's name says what kind of thing the value is and what it is for, such as --diversification-docker-image, never a bare word like image"
 metadata:
   node_type: memory
   type: feedback
@@ -10,7 +10,7 @@ metadata:
 
 # A flag's name says what it holds
 
-A flag's name says what kind of thing its value is, and what `cladenc` uses it for. The kind is said in full: `docker-image`, not `image`. The use comes first: `--procreation-docker-image`, `--procreation-dockerfile`, `--procreation-docker-image-build-timeout`.
+A flag's name says what kind of thing its value is, and what `cladenc` uses it for. The kind is said in full: `docker-image`, not `image`. The use comes first: `--diversification-docker-image`, `--diversification-dockerfile`, `--diversification-docker-image-build-timeout`.
 
 **Why:** A short word such as `image` does not tell a person what the flag takes. Once `cladenc` uses more than one Docker image, a bare `--docker-image` does not say which one.
 

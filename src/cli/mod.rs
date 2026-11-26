@@ -23,7 +23,7 @@ const HAS_ENDED: &str =
     name = "cladenc",
     version,
     about = "Carries out a directed evolution of an agentic coding harness, in which harnesses \
-             procreate, each changing a copy of its own source code, and are benchmarked",
+             are cloned, each diversifying its clone, and are benchmarked",
     after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc",
     disable_help_subcommand = true
 )]
@@ -58,7 +58,7 @@ pub enum Command {
 }
 
 #[derive(Clone, Debug, Args)]
-#[command(group(ArgGroup::new("image").required(true).args(["procreation_docker_image", "procreation_dockerfile"])))]
+#[command(group(ArgGroup::new("image").required(true).args(["diversification_docker_image", "diversification_dockerfile"])))]
 pub struct StartOptions {
     #[arg(
         long,
@@ -76,6 +76,38 @@ pub struct StartOptions {
                 and below 100"
     )]
     corroboration_tasks_percentage: f64,
+    #[arg(
+        long,
+        value_name = "IMAGE",
+        value_parser = NonEmptyStringValueParser::new(),
+        help = "The Docker image every diversification and every build of a harness is carried \
+                out in, where --diversification-dockerfile is not given"
+    )]
+    diversification_docker_image: Option<String>,
+    #[arg(
+        long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        requires = "diversification_dockerfile",
+        conflicts_with = "diversification_docker_image",
+        help = "The time limit of the build of the image, given with --diversification-dockerfile"
+    )]
+    diversification_docker_image_build_timeout: Option<u64>,
+    #[arg(
+        long,
+        value_name = "FILE",
+        requires = "diversification_docker_image_build_timeout",
+        help = "The Dockerfile cladenc builds the image of every diversification and every build \
+                of a harness from, in place of --diversification-docker-image"
+    )]
+    diversification_dockerfile: Option<PathBuf>,
+    #[arg(
+        long,
+        value_name = "SECONDS",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "The time limit of one diversification"
+    )]
+    diversification_timeout: u64,
     #[arg(
         long,
         value_name = "COMMAND",
@@ -101,9 +133,9 @@ pub struct StartOptions {
         long,
         value_name = "COUNT",
         value_parser = clap::value_parser!(u64).range(1..),
-        help = "The most procreations to start"
+        help = "The most diversifications to start"
     )]
-    max_procreations: u64,
+    max_diversifications: u64,
     #[arg(
         long,
         value_name = "COUNT",
@@ -150,38 +182,6 @@ pub struct StartOptions {
         help = "The directory of source code copied to make the primogenitor"
     )]
     primogenitor: PathBuf,
-    #[arg(
-        long,
-        value_name = "IMAGE",
-        value_parser = NonEmptyStringValueParser::new(),
-        help = "The Docker image every procreation and every build of a harness is carried out \
-                in, where --procreation-dockerfile is not given"
-    )]
-    procreation_docker_image: Option<String>,
-    #[arg(
-        long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        requires = "procreation_dockerfile",
-        conflicts_with = "procreation_docker_image",
-        help = "The time limit of the build of the image, given with --procreation-dockerfile"
-    )]
-    procreation_docker_image_build_timeout: Option<u64>,
-    #[arg(
-        long,
-        value_name = "FILE",
-        requires = "procreation_docker_image_build_timeout",
-        help = "The Dockerfile cladenc builds the image of every procreation and every build of a \
-                harness from, in place of --procreation-docker-image"
-    )]
-    procreation_dockerfile: Option<PathBuf>,
-    #[arg(
-        long,
-        value_name = "SECONDS",
-        value_parser = clap::value_parser!(u64).range(1..),
-        help = "The time limit of one procreation"
-    )]
-    procreation_timeout: u64,
     #[arg(
         long,
         value_name = "NUMBER",

@@ -22,7 +22,7 @@ const MODEL: Model<'static> = Model {
     key: None,
 };
 
-type Procreated = (
+type Diversified = (
     TempDir,
     OutputsDirectory,
     Result<containers::Creation, ContainerError>,
@@ -51,11 +51,11 @@ fn started_from(
         run_command,
         build_command: None,
         model: MODEL,
-        procreation_timeout: time_limit,
+        diversification_timeout: time_limit,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    containers::run_procreation(
+    containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory,
@@ -67,7 +67,7 @@ fn started_from(
     )
 }
 
-fn procreated_within(run_command: &str, time_limit: u64) -> Procreated {
+fn diversified_within(run_command: &str, time_limit: u64) -> Diversified {
     let (directory, outputs_directory) = made_at("outputs");
     let result = started_from(
         test_inputs::IMAGE,
@@ -78,35 +78,35 @@ fn procreated_within(run_command: &str, time_limit: u64) -> Procreated {
     (directory, outputs_directory, result)
 }
 
-fn procreated(run_command: &str) -> Procreated {
-    procreated_within(run_command, 30)
+fn diversified(run_command: &str) -> Diversified {
+    diversified_within(run_command, 30)
 }
 
-static NOT_STARTED_BY_DOCKER: LazyLock<Procreated> = LazyLock::new(|| {
+static NOT_STARTED_BY_DOCKER: LazyLock<Diversified> = LazyLock::new(|| {
     let (directory, outputs_directory) = made_at("outputs");
     let result = started_from("Not An Image", "exit 0", &outputs_directory, 30);
     (directory, outputs_directory, result)
 });
 
-static IN_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Procreated> = LazyLock::new(|| {
+static IN_AN_IMAGE_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Diversified> = LazyLock::new(|| {
     let (directory, outputs_directory) = made_at("outputs");
     let result = started_from(NOT_ON_THE_MACHINE, "exit 0", &outputs_directory, 30);
     (directory, outputs_directory, result)
 });
 
-fn what_docker_said_of(procreated: &Procreated) -> String {
-    let (_directory, outputs_directory, _result) = procreated;
-    fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap()
+fn what_docker_said_of(diversified: &Diversified) -> String {
+    let (_directory, outputs_directory, _result) = diversified;
+    fs::read_to_string(outputs_directory.running_diversification(1).join("stderr")).unwrap()
 }
 
 fn left_in_the_child(run_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated(run_command);
+    let (_directory, outputs_directory, _result) = diversified(run_command);
     fs::read_to_string(outputs_directory.harness(1).join(file)).unwrap()
 }
 
-fn kept_of_the_procreation(run_command: &str, file: &str) -> String {
-    let (_directory, outputs_directory, _result) = procreated(run_command);
-    fs::read_to_string(outputs_directory.procreation(1).join(file)).unwrap()
+fn kept_of_the_diversification(run_command: &str, file: &str) -> String {
+    let (_directory, outputs_directory, _result) = diversified(run_command);
+    fs::read_to_string(outputs_directory.diversification(1).join(file)).unwrap()
 }
 
 fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
@@ -119,11 +119,11 @@ fn left_by_a_harness_given_a_key(run_command: &str, file: &str) -> String {
             key: Some(test_inputs::MODEL_KEY),
             ..MODEL
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };
-    let _ = containers::run_procreation(
+    let _ = containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,
@@ -146,7 +146,7 @@ fn heard_from_a_harness_that_says(said: &str) -> String {
             .and_then(|(mut harness, _)| harness.read_to_string(&mut heard));
         heard
     });
-    let _ = procreated(&format!(
+    let _ = diversified(&format!(
         "bash -c 'echo {said} > /dev/tcp/host.docker.internal/{port}'"
     ));
     drop(TcpStream::connect(("127.0.0.1", port)));
@@ -154,12 +154,12 @@ fn heard_from_a_harness_that_says(said: &str) -> String {
 }
 
 fn outcome_of(run_command: &str) -> CreationOutcome {
-    let (_directory, _outputs_directory, result) = procreated(run_command);
+    let (_directory, _outputs_directory, result) = diversified(run_command);
     result.unwrap().outcome
 }
 
 #[test]
-fn the_working_directory_of_a_harness_is_the_copy_that_becomes_its_child() {
+fn the_working_directory_of_a_harness_is_the_clone_that_becomes_its_child() {
     assert_eq!(
         left_in_the_child("pwd > where", "where"),
         "/var/opt/cladenc/work\n"
@@ -238,12 +238,12 @@ fn a_harness_can_read_the_ended_trials_of_its_progenitor_and_none_still_running(
 #[test]
 fn a_harness_cannot_write_into_the_trials_of_its_progenitor() {
     let (_directory, outputs_directory, _result) =
-        procreated("touch /var/log/cladenc/trials/written");
+        diversified("touch /var/log/cladenc/trials/written");
     assert!(!outputs_directory.trials(0).join("written").exists());
 }
 
 #[test]
-fn the_container_of_a_procreation_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
+fn the_container_of_a_diversification_holds_nothing_under_var_lib_that_is_named_after_cladenc() {
     assert_eq!(
         left_in_the_child(
             "ls -d /var/lib/cladenc > held 2> /dev/null; echo looked >> held",
@@ -275,18 +275,21 @@ fn the_standard_input_of_a_harness_is_empty() {
 }
 
 #[test]
-fn the_standard_output_of_a_harness_is_kept_with_its_procreation() {
-    assert_eq!(kept_of_the_procreation("echo out", "stdout"), "out\n");
+fn the_standard_output_of_a_harness_is_kept_with_its_diversification() {
+    assert_eq!(kept_of_the_diversification("echo out", "stdout"), "out\n");
 }
 
 #[test]
-fn the_standard_error_of_a_harness_is_kept_with_its_procreation() {
-    assert_eq!(kept_of_the_procreation("echo err >&2", "stderr"), "err\n");
+fn the_standard_error_of_a_harness_is_kept_with_its_diversification() {
+    assert_eq!(
+        kept_of_the_diversification("echo err >&2", "stderr"),
+        "err\n"
+    );
 }
 
 #[test]
-fn a_harness_that_changes_its_copy_and_exits_with_0_creates_its_child() {
-    let (_directory, _outputs_directory, result) = procreated("touch changed");
+fn a_harness_that_changes_its_clone_and_exits_with_0_creates_its_child() {
+    let (_directory, _outputs_directory, result) = diversified("touch changed");
     assert!(matches!(
         result,
         Ok(containers::Creation {
@@ -298,7 +301,11 @@ fn a_harness_that_changes_its_copy_and_exits_with_0_creates_its_child() {
 
 #[test]
 fn the_time_limit_removes_the_container_of_a_harness() {
-    let (_directory, outputs_directory, _result) = procreated_within("hostname > id; sleep 300", 5);
+    let (_directory, outputs_directory, _result) = diversified_within(
+        "hostname > id; sleep \
+                                                                       300",
+        5,
+    );
     assert!(test_inputs::container_is_gone(
         &outputs_directory.harness(1).join("id")
     ));
@@ -313,7 +320,8 @@ fn a_container_that_docker_does_not_start_is_an_error() {
 #[test]
 fn what_docker_said_is_kept_under_running() {
     let (_directory, outputs_directory, _result) = &*NOT_STARTED_BY_DOCKER;
-    let said = fs::read_to_string(outputs_directory.running_procreation(1).join("stderr")).unwrap();
+    let said =
+        fs::read_to_string(outputs_directory.running_diversification(1).join("stderr")).unwrap();
     assert!(said.contains("invalid reference format"));
 }
 
@@ -344,6 +352,6 @@ fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_moun
 }
 
 #[test]
-fn a_harness_that_exits_with_0_and_leaves_its_copy_as_it_was_creates_no_child() {
+fn a_harness_that_exits_with_0_and_leaves_its_clone_as_it_was_creates_no_child() {
     assert_eq!(outcome_of("exit 0"), CreationOutcome::Unchanged);
 }

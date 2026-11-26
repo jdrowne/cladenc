@@ -13,8 +13,8 @@ fn outputs_directory() -> OutputsDirectory {
     OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
 }
 
-fn procreation() -> Started {
-    Started::Procreation {
+fn diversification() -> Started {
+    Started::Diversification {
         child: 3,
         progenitor: 1,
     }
@@ -39,8 +39,8 @@ fn started(action: &Started, again: bool) -> String {
     Said::Started {
         action,
         again,
-        procreations: 2,
-        max_procreations: 800,
+        diversifications: 2,
+        max_diversifications: 800,
     }
     .to_string()
 }
@@ -58,8 +58,8 @@ fn established(outcome: CreationOutcome) -> String {
     .to_string()
 }
 
-fn procreated(outcome: CreationOutcome) -> String {
-    Said::Procreated {
+fn diversified(outcome: CreationOutcome) -> String {
+    Said::Diversified {
         child: 3,
         progenitor: 1,
         outcome,
@@ -100,12 +100,12 @@ fn copying(tasks: u64) -> String {
     .to_string()
 }
 
-fn continuing(procreations: u64, max_procreations: u64) -> String {
+fn continuing(diversifications: u64, max_diversifications: u64) -> String {
     Said::Continuing {
         outputs_directory: Path::new("/outputs"),
-        procreations,
-        max_procreations,
-        harnesses: procreations + 1,
+        diversifications,
+        max_diversifications,
+        harnesses: diversifications + 1,
     }
     .to_string()
 }
@@ -227,8 +227,8 @@ fn one_container_is_not_said_to_be_several() {
 fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
     assert_eq!(
         continuing(5, 800),
-        "continuing the directed evolution in /outputs, which has started 5 of 800 procreations \
-         and holds 6 harnesses"
+        "continuing the directed evolution in /outputs, which has started 5 of 800 \
+         diversifications and holds 6 harnesses"
     );
 }
 
@@ -236,17 +236,17 @@ fn a_directed_evolution_that_is_continued_is_said_with_how_far_it_had_got() {
 fn one_harness_is_not_said_to_be_several() {
     assert_eq!(
         continuing(0, 800),
-        "continuing the directed evolution in /outputs, which has started 0 of 800 procreations \
-         and holds 1 harness"
+        "continuing the directed evolution in /outputs, which has started 0 of 800 \
+         diversifications and holds 1 harness"
     );
 }
 
 #[test]
-fn one_procreation_is_not_said_to_be_several() {
+fn one_diversification_is_not_said_to_be_several() {
     assert_eq!(
         continuing(1, 1),
-        "continuing the directed evolution in /outputs, which has started 1 of 1 procreation and \
-         holds 2 harnesses"
+        "continuing the directed evolution in /outputs, which has started 1 of 1 diversification \
+         and holds 2 harnesses"
     );
 }
 
@@ -458,16 +458,16 @@ fn a_build_of_the_primogenitor_that_failed_is_said_with_where_what_it_printed_is
 }
 
 #[test]
-fn a_procreation_is_said_to_have_started_with_its_number_and_the_most_there_may_be() {
+fn a_diversification_is_said_to_have_started_with_its_number_and_the_most_there_may_be() {
     assert_eq!(
-        started(&procreation(), false),
-        "started the procreation of harness 3 by harness 1, procreation 2 of 800"
+        started(&diversification(), false),
+        "started the diversification of harness 3 by harness 1, diversification 2 of 800"
     );
 }
 
 #[test]
-fn the_number_of_a_procreation_is_how_many_were_started_and_not_the_id_of_its_child() {
-    assert!(started(&procreation(), false).ends_with(", procreation 2 of 800"));
+fn the_number_of_a_diversification_is_how_many_were_started_and_not_the_id_of_its_child() {
+    assert!(started(&diversification(), false).ends_with(", diversification 2 of 800"));
 }
 
 #[test]
@@ -475,7 +475,7 @@ fn a_baseline_is_said_to_have_started_with_no_number() {
     assert_eq!(
         started(&baseline(), false),
         "started the creation of harness 4, the singleton control group harness, by the \
-         primogenitor from the source code of harness 1"
+         primogenitor from a second clone of harness 1"
     );
 }
 
@@ -484,7 +484,7 @@ fn a_baseline_that_is_established_again_is_said_to_have_started_again() {
     assert_eq!(
         started(&baseline(), true),
         "started again the creation of harness 4, the singleton control group harness, by the \
-         primogenitor from the source code of harness 1"
+         primogenitor from a second clone of harness 1"
     );
 }
 
@@ -493,7 +493,7 @@ fn a_baseline_that_created_its_harness_is_said_with_where_the_harness_is_kept() 
     assert_eq!(
         established(CreationOutcome::Created),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1 created harness 4, kept in /outputs/harnesses/4"
+         from a second clone of harness 1 created harness 4, kept in /outputs/harnesses/4"
     );
 }
 
@@ -502,7 +502,7 @@ fn a_baseline_that_failed_is_said_with_where_what_the_primogenitor_printed_is_ke
     assert_eq!(
         established(CreationOutcome::Failed),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1 failed: what the primogenitor printed is kept in \
+         from a second clone of harness 1 failed: what the primogenitor printed is kept in \
          /outputs/baselines/4"
     );
 }
@@ -512,7 +512,7 @@ fn a_singleton_control_group_harness_that_did_not_build_is_said_with_where_its_b
     assert_eq!(
         established(CreationOutcome::BuildFailed),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1 made a harness that did not build: what its build \
+         from a second clone of harness 1 made a harness that did not build: what its build \
          printed is kept in /outputs/builds/4"
     );
 }
@@ -522,7 +522,7 @@ fn a_baseline_that_timed_out_is_said_to_have_run_past_its_time_limit() {
     assert_eq!(
         established(CreationOutcome::TimedOut),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1 ran past its time limit: what the primogenitor \
+         from a second clone of harness 1 ran past its time limit: what the primogenitor \
          printed is kept in /outputs/baselines/4"
     );
 }
@@ -533,17 +533,17 @@ fn a_baseline_that_left_the_source_code_of_the_progenitor_unchanged_is_said_to_h
     assert_eq!(
         established(CreationOutcome::Unchanged),
         "the creation of harness 4, the singleton control group harness, by the primogenitor \
-         from the source code of harness 1 left the copy of the source code of harness 1 \
+         from a second clone of harness 1 left the clone of harness 1 \
          unchanged, and created no harness: what the primogenitor printed is kept in \
          /outputs/baselines/4"
     );
 }
 
 #[test]
-fn a_procreation_that_is_run_again_is_said_to_have_started_again_with_no_number() {
+fn a_diversification_that_is_run_again_is_said_to_have_started_again_with_no_number() {
     assert_eq!(
-        started(&procreation(), true),
-        "started again the procreation of harness 3 by harness 1"
+        started(&diversification(), true),
+        "started again the diversification of harness 3 by harness 1"
     );
 }
 
@@ -564,47 +564,49 @@ fn a_trial_that_is_run_again_is_said_to_have_started_again_with_no_number() {
 }
 
 #[test]
-fn a_procreation_that_created_its_child_is_said_with_where_the_child_is_kept() {
+fn a_diversification_that_created_its_child_is_said_with_where_the_child_is_kept() {
     assert_eq!(
-        procreated(CreationOutcome::Created),
-        "the procreation of harness 3 by harness 1 created harness 3, kept in /outputs/harnesses/3"
+        diversified(CreationOutcome::Created),
+        "the diversification of harness 3 by harness 1 created harness 3, kept in \
+         /outputs/harnesses/3"
     );
 }
 
 #[test]
-fn a_procreation_that_failed_is_said_with_where_what_the_harness_printed_is_kept() {
+fn a_diversification_that_failed_is_said_with_where_what_the_harness_printed_is_kept() {
     assert_eq!(
-        procreated(CreationOutcome::Failed),
-        "the procreation of harness 3 by harness 1 failed: what the harness printed is kept in \
-         /outputs/procreations/3"
+        diversified(CreationOutcome::Failed),
+        "the diversification of harness 3 by harness 1 failed: what the harness printed is kept in \
+         /outputs/diversifications/3"
     );
 }
 
 #[test]
-fn a_procreation_that_left_the_progenitor_s_copy_unchanged_is_said_to_have_created_no_harness() {
+fn a_diversification_that_left_the_progenitor_s_clone_unchanged_is_said_to_have_created_no_harness()
+{
     assert_eq!(
-        procreated(CreationOutcome::Unchanged),
-        "the procreation of harness 3 by harness 1 left the copy of the source code of harness 1 \
+        diversified(CreationOutcome::Unchanged),
+        "the diversification of harness 3 by harness 1 left the clone of harness 1 \
          unchanged, and created no harness: what the harness printed is kept in \
-         /outputs/procreations/3"
+         /outputs/diversifications/3"
     );
 }
 
 #[test]
 fn a_child_that_did_not_build_is_said_with_where_what_its_build_printed_is_kept() {
     assert_eq!(
-        procreated(CreationOutcome::BuildFailed),
-        "the procreation of harness 3 by harness 1 made a harness that did not build: what its \
+        diversified(CreationOutcome::BuildFailed),
+        "the diversification of harness 3 by harness 1 made a harness that did not build: what its \
          build printed is kept in /outputs/builds/3"
     );
 }
 
 #[test]
-fn a_procreation_that_timed_out_is_said_to_have_run_past_its_time_limit() {
+fn a_diversification_that_timed_out_is_said_to_have_run_past_its_time_limit() {
     assert_eq!(
-        procreated(CreationOutcome::TimedOut),
-        "the procreation of harness 3 by harness 1 ran past its time limit: what the harness \
-         printed is kept in /outputs/procreations/3"
+        diversified(CreationOutcome::TimedOut),
+        "the diversification of harness 3 by harness 1 ran past its time limit: what the harness \
+         printed is kept in /outputs/diversifications/3"
     );
 }
 

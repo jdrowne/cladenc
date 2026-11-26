@@ -7,7 +7,7 @@ fn tasks() -> Vec<String> {
 
 fn artificial_selection(seed: u64) -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations: 1000,
+        max_diversifications: 1000,
         tasks: tasks(),
         seed,
     }
@@ -31,9 +31,9 @@ fn two_children_selected_by_the_first_five_tasks(first: &[usize], second: &[usiz
         .corroborating_with(&tasks()[10..]);
     benchmarked(&mut genealogy, 0, &[]);
     for completed in [first, second] {
-        let child = genealogy.start_procreation(0).unwrap();
+        let child = genealogy.start_diversification(0).unwrap();
         genealogy
-            .end_procreation(child, CreationOutcome::Created)
+            .end_diversification(child, CreationOutcome::Created)
             .unwrap();
         benchmarked(&mut genealogy, child, completed);
     }
@@ -48,7 +48,7 @@ fn times_progenitor(genealogy: &Genealogy, progenitor: HarnessId) -> usize {
     (0..200)
         .filter(|seed| {
             artificial_selection(*seed).next_action(genealogy, 0)
-                == Some(Action::Procreation { progenitor })
+                == Some(Action::Diversification { progenitor })
         })
         .count()
 }

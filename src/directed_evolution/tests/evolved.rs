@@ -12,8 +12,8 @@ const IMAGES_REMOVED: &str = "docker image rm --force \
                               cladenc-environments-0123456789abcdef:1";
 
 const SHOWN_THE_PRIMOGENITOR: &str = "/trials/0:/var/log/cladenc/trials:ro";
-const EXPERIMENT: &str = "the singleton control group harness, by the primogenitor from the \
-                          source code of harness 1";
+const EXPERIMENT: &str = "the singleton control group harness, by the primogenitor from a \
+                          second clone of harness 1";
 
 fn evolved() -> Evolved {
     given::started(Double::default(), given::unchanged)
@@ -23,20 +23,20 @@ fn changing() -> Evolved {
     given::started(Double::default().changing(), given::unchanged)
 }
 
-fn with_three_procreations(_: &Memory, settings: &mut Settings) {
-    settings.max_procreations = 3;
+fn with_three_diversifications(_: &Memory, settings: &mut Settings) {
+    settings.max_diversifications = 3;
 }
 
 fn experimented() -> Evolved {
-    let procreated = AtomicBool::new(false);
+    let diversified = AtomicBool::new(false);
     let docker = Double::default().changing_when(move |asked| {
         let by_the_primogenitor = asked
             .arguments
             .iter()
             .any(|argument| argument.ends_with(SHOWN_THE_PRIMOGENITOR));
-        !(by_the_primogenitor && procreated.swap(true, Ordering::SeqCst))
+        !(by_the_primogenitor && diversified.swap(true, Ordering::SeqCst))
     });
-    given::started(docker, with_three_procreations)
+    given::started(docker, with_three_diversifications)
 }
 
 fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
@@ -68,16 +68,19 @@ fn the_primogenitor_trials_each_task_in_a_container_of_its_own() {
 }
 
 #[test]
-fn a_procreation_starts_once_the_primogenitor_trialled_every_task() {
+fn a_diversification_starts_once_the_primogenitor_trialled_every_task() {
     let said = evolved().said;
-    assert!(said.contains("started the procreation of harness 1 by harness 0, procreation 1 of 1"));
+    assert!(said.contains(
+        "started the diversification of harness 1 by harness 0, diversification \
+                           1 of 1"
+    ));
 }
 
 #[test]
-fn a_progenitor_that_leaves_its_copy_unchanged_creates_no_harness() {
+fn a_progenitor_that_leaves_its_clone_unchanged_creates_no_harness() {
     let said = evolved().said;
     assert!(said.contains(
-        "the procreation of harness 1 by harness 0 left the copy of the source code of harness 0 \
+        "the diversification of harness 1 by harness 0 left the clone of harness 0 \
          unchanged, and created no harness"
     ));
 }
@@ -89,9 +92,12 @@ fn the_images_of_the_environments_are_removed_once_the_directed_evolution_ends()
 }
 
 #[test]
-fn a_copy_that_its_progenitor_changes_becomes_a_harness() {
+fn a_clone_that_its_progenitor_diversifies_becomes_a_harness() {
     let said = changing().said;
-    assert!(said.contains("the procreation of harness 1 by harness 0 created harness 1, kept in"));
+    assert!(said.contains(
+        "the diversification of harness 1 by harness 0 created harness 1, kept \
+                           in"
+    ));
 }
 
 #[test]
@@ -106,7 +112,7 @@ fn a_directed_evolution_ends_with_the_count_of_its_harnesses() {
 }
 
 #[test]
-fn an_experiment_starts_when_a_harness_other_than_the_primogenitor_procreates() {
+fn an_experiment_starts_when_a_harness_other_than_the_primogenitor_is_cloned() {
     assert!(experimented().said.contains(EXPERIMENT));
 }
 

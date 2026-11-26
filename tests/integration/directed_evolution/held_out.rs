@@ -33,9 +33,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: run_command.to_owned(),
-        max_procreations: 1,
+        max_diversifications: 1,
         max_concurrent_containers: 1,
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 20.0,
@@ -59,7 +59,7 @@ fn evolved() -> TempDir {
 static GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN: LazyLock<[String; 2]> = LazyLock::new(|| {
     let directory = test_inputs::temporary_directory();
     let mut settings = settings(directory.path(), KEEP_WHAT_IS_GIVEN_TO_READ);
-    settings.max_procreations = 2;
+    settings.max_diversifications = 2;
     let outputs_directory = directory.path().join("outputs");
     let stop = AtomicBool::new(false);
     crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink()).unwrap();
@@ -84,12 +84,12 @@ fn a_progenitor_finds_its_trials_on_the_tasks_that_are_not_held_out_and_no_other
 }
 
 #[test]
-fn the_primogenitor_that_procreates_for_the_first_time_is_given_its_trials_and_nothing_else() {
+fn the_primogenitor_that_is_cloned_for_the_first_time_is_given_its_trials_and_nothing_else() {
     assert_eq!(GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[0], "trials\n");
 }
 
 #[test]
-fn the_harness_that_procreates_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
+fn the_harness_that_is_cloned_next_is_given_the_child_it_made_or_the_line_it_descends_from() {
     assert!(
         ["children\ntrials\n", "line\ntrials\n"]
             .contains(&GIVEN_TO_THE_MAKERS_OF_TWO_CHILDREN[1].as_str())

@@ -29,9 +29,9 @@ fn settings(directory: &Path, key_file: &Path) -> Settings {
         harness_run_command: "[ -e end-with-125 ] && exit 125; printf %s \"$CLADENC_MODEL_KEY\" > \
                               key-given"
             .to_owned(),
-        max_procreations: 1,
+        max_diversifications: 1,
         max_concurrent_containers: 1,
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,

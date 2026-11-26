@@ -24,9 +24,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 800,
+        max_diversifications: 800,
         max_concurrent_containers: 1,
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.5,
@@ -52,9 +52,9 @@ fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
 
 fn with_a_child_ahead() -> Genealogy {
     let mut genealogy = settings().genealogy();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     benchmarked(&mut genealogy, 0, &[]);
     benchmarked(&mut genealogy, child, &EVERY_HOLDOUT_TASK);
@@ -105,7 +105,7 @@ fn the_model_follows_the_line_that_says_that_the_directed_evolution_has_not_ende
 fn the_table_of_a_directed_evolution_that_has_not_ended_names_the_harness_that_is_ahead_so_far() {
     assert_eq!(
         line_of(&so_far(&with_a_child_ahead()), 2),
-        "started 1 of 800 procreations, harness ahead so far 1"
+        "started 1 of 800 diversifications, harness ahead so far 1"
     );
 }
 
@@ -113,7 +113,7 @@ fn the_table_of_a_directed_evolution_that_has_not_ended_names_the_harness_that_i
 fn the_table_of_a_directed_evolution_that_has_ended_names_the_best_harness() {
     assert_eq!(
         line_of(&ended(&with_a_child_ahead()), 1),
-        "started 1 of 800 procreations, best harness 1"
+        "started 1 of 800 diversifications, best harness 1"
     );
 }
 
@@ -171,14 +171,14 @@ fn the_object_of_a_directed_evolution_that_has_ended_says_so_first() {
 #[test]
 fn the_object_names_the_harness_that_is_ahead_so_far_where_a_report_names_the_best_harness() {
     assert!(so_far(&with_a_child_ahead()).json().contains(
-        r#""max_procreations":800,"harness_ahead_so_far":1,"selection_tasks_completed_by_any":1,"#
+        r#""max_diversifications":800,"harness_ahead_so_far":1,"selection_tasks_completed_by_any":1,"#
     ));
 }
 
 #[test]
 fn the_object_of_a_directed_evolution_that_has_ended_names_the_best_harness() {
     assert!(ended(&with_a_child_ahead()).json().contains(
-        r#""max_procreations":800,"best_harness":1,"selection_tasks_completed_by_any":1,"#
+        r#""max_diversifications":800,"best_harness":1,"selection_tasks_completed_by_any":1,"#
     ));
 }
 

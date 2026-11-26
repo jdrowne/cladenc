@@ -28,7 +28,7 @@ fn launch(run_command: &str) -> Launch<'_> {
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 30,
+        diversification_timeout: 30,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     }
@@ -97,7 +97,7 @@ fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
             .end_trial(0, task, TrialResult::NotCompleted)
             .unwrap();
     }
-    let _ = containers::run_procreation(
+    let _ = containers::run_diversification(
         Host {
             docker: &Program,
             outputs_directory: &outputs_directory,

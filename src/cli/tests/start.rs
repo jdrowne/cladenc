@@ -43,9 +43,9 @@ fn with_a_missing_file_of_the_key(directory: &Memory, options: &mut StartOptions
 }
 
 fn with_a_missing_dockerfile(directory: &Memory, options: &mut StartOptions) {
-    options.procreation_docker_image = None;
-    options.procreation_dockerfile = Some(directory.path().join("missing"));
-    options.procreation_docker_image_build_timeout = Some(600);
+    options.diversification_docker_image = None;
+    options.diversification_dockerfile = Some(directory.path().join("missing"));
+    options.diversification_docker_image_build_timeout = Some(600);
 }
 
 fn with_a_percentage_that_leaves_no_selection_task(_: &Memory, options: &mut StartOptions) {
@@ -128,7 +128,7 @@ fn a_dockerfile_that_does_not_exist_gives_exit_status_2() {
 fn a_dockerfile_that_does_not_exist_is_refused_for_what_the_flag_takes() {
     assert_eq!(
         ran(with_a_missing_dockerfile).errors,
-        "cladenc: --procreation-dockerfile takes an existing file\n"
+        "cladenc: --diversification-dockerfile takes an existing file\n"
     );
 }
 

@@ -3,11 +3,11 @@ use std::path::Path;
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Journal, JournalError, Record};
 
-const FIRST: &str = r#"{"record":"procreation_started","child":1,"progenitor":0}"#;
-const SECOND: &str = r#"{"record":"procreation_started","child":2,"progenitor":0}"#;
+const FIRST: &str = r#"{"record":"diversification_started","child":1,"progenitor":0}"#;
+const SECOND: &str = r#"{"record":"diversification_started","child":2,"progenitor":0}"#;
 
 fn started(child: u64) -> Record {
-    Record::ProcreationStarted {
+    Record::DiversificationStarted {
         child,
         progenitor: 0,
     }
@@ -87,7 +87,7 @@ fn two_records_appended_to_one_journal_are_kept_in_their_order() {
 
 #[test]
 fn a_cut_short_last_line_is_gone_after_the_next_record_is_appended() {
-    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"procreation_fin"));
+    let cut_short = holding(&format!("{FIRST}\n{{\"record\":\"diversification_fin"));
     assert_eq!(
         after_appending(&cut_short, &started(2)),
         format!("{FIRST}\n{SECOND}\n")

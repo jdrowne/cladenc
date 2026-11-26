@@ -38,9 +38,9 @@ fn settings() -> Settings {
         docker_build_timeout: None,
         harness_build_command: None,
         harness_run_command: "run a harness".to_owned(),
-        max_procreations: 2,
+        max_diversifications: 2,
         max_concurrent_containers: 8,
-        procreation_timeout: 3600,
+        diversification_timeout: 3600,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
@@ -118,8 +118,8 @@ fn trial(harness: u64, task: &str) -> Started {
     }
 }
 
-fn first_procreation() -> Started {
-    Started::Procreation {
+fn first_diversification() -> Started {
+    Started::Diversification {
         child: 1,
         progenitor: 0,
     }
@@ -147,7 +147,7 @@ fn end_of(action: Started, well: bool) -> Told {
         TrialResult::NotCompleted
     };
     Told::Ended(match action {
-        Started::Procreation { child, progenitor } => Ended::Procreated {
+        Started::Diversification { child, progenitor } => Ended::Diversified {
             child,
             progenitor,
             creation,
@@ -229,11 +229,11 @@ fn fail_both_trials(progress: &mut Progress<'_>) {
 
 fn awaiting_a_baseline(progress: Progress<'_>) -> Progress<'_> {
     let mut genealogy = settings().genealogy();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    genealogy.start_procreation(child).unwrap();
+    genealogy.start_diversification(child).unwrap();
     progress.resumed(genealogy, Vec::new(), 2)
 }
 
@@ -316,13 +316,13 @@ fn a_trial_that_ended_is_one_container_fewer_running() {
 }
 
 #[test]
-fn a_procreation_that_ended_is_journaled_with_its_outcome_and_how_long_it_took() {
+fn a_diversification_that_ended_is_journaled_with_its_outcome_and_how_long_it_took() {
     let journaled = journaled(&settings(), |mut progress| {
         carry_out(&mut progress, 3, &[]);
     });
     assert_eq!(
         journaled.last(),
-        Some(&Record::ProcreationFinished {
+        Some(&Record::DiversificationFinished {
             child: 1,
             outcome: CreationOutcome::Created,
             seconds: 2.5
@@ -331,13 +331,13 @@ fn a_procreation_that_ended_is_journaled_with_its_outcome_and_how_long_it_took()
 }
 
 #[test]
-fn a_procreation_that_failed_is_journaled_as_failed() {
+fn a_diversification_that_failed_is_journaled_as_failed() {
     let journaled = journaled(&settings(), |mut progress| {
-        carry_out(&mut progress, 3, &[first_procreation()]);
+        carry_out(&mut progress, 3, &[first_diversification()]);
     });
     assert_eq!(
         journaled.last(),
-        Some(&Record::ProcreationFinished {
+        Some(&Record::DiversificationFinished {
             child: 1,
             outcome: CreationOutcome::Failed,
             seconds: 2.5
@@ -346,29 +346,29 @@ fn a_procreation_that_failed_is_journaled_as_failed() {
 }
 
 #[test]
-fn a_procreation_that_created_a_harness_is_said_with_where_the_harness_is_kept() {
+fn a_diversification_that_created_a_harness_is_said_with_where_the_harness_is_kept() {
     let said = said(&settings(), |mut progress| {
         carry_out(&mut progress, 3, &[]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: the procreation of harness 1 by harness 0 created harness 1, kept in \
+            "cladenc: the diversification of harness 1 by harness 0 created harness 1, kept in \
              /outputs/harnesses/1"
         )
     );
 }
 
 #[test]
-fn a_procreation_that_failed_is_said_with_where_what_the_harness_printed_is_kept() {
+fn a_diversification_that_failed_is_said_with_where_what_the_harness_printed_is_kept() {
     let said = said(&settings(), |mut progress| {
-        carry_out(&mut progress, 3, &[first_procreation()]);
+        carry_out(&mut progress, 3, &[first_diversification()]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: the procreation of harness 1 by harness 0 failed: what the harness \
-             printed is kept in /outputs/procreations/1"
+            "cladenc: the diversification of harness 1 by harness 0 failed: what the harness \
+             printed is kept in /outputs/diversifications/1"
         )
     );
 }
@@ -383,15 +383,15 @@ fn a_child_that_was_created_is_given_its_first_task() {
 }
 
 #[test]
-fn a_progenitor_whose_procreation_failed_procreates_again() {
+fn a_progenitor_whose_diversification_failed_is_cloned_again() {
     let taken = returned(&settings(), |mut progress| {
-        carry_out(&mut progress, 3, &[first_procreation()]);
+        carry_out(&mut progress, 3, &[first_diversification()]);
         progress.take()
     });
     assert_eq!(
         taken,
         Some((
-            Started::Procreation {
+            Started::Diversification {
                 child: 2,
                 progenitor: 0
             },
@@ -424,7 +424,7 @@ fn a_baseline_that_created_the_singleton_control_group_harness_is_said_with_wher
         said.last().map(String::as_str),
         Some(
             "cladenc: the creation of harness 3, the singleton control group harness, by the \
-             primogenitor from the source code of harness 1 created harness 3, kept in \
+             primogenitor from a second clone of harness 1 created harness 3, kept in \
              /outputs/harnesses/3"
         )
     );
@@ -525,7 +525,11 @@ fn an_action_that_failed_halts_the_directed_evolution() {
 #[test]
 fn a_directed_evolution_whose_actions_end_without_failing_is_not_halted() {
     let halted = returned(&settings(), |mut progress| {
-        carry_out(&mut progress, 3, &[trial(0, FIRST), first_procreation()]);
+        carry_out(
+            &mut progress,
+            3,
+            &[trial(0, FIRST), first_diversification()],
+        );
         progress.halted(&AtomicBool::new(false))
     });
     assert!(!halted);

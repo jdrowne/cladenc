@@ -19,17 +19,17 @@ fn with_a_child_of_the_primogenitor() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.start_procreation(1, 0).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
     directory
         .write(
             outputs_directory
-                .running_procreation(1)
+                .running_diversification(1)
                 .join("child/harness.sh"),
             "#!/bin/sh\necho child\n",
         )
         .unwrap();
     outputs_directory
-        .end_procreation(1, 0, CreationOutcome::Created)
+        .end_diversification(1, 0, CreationOutcome::Created)
         .unwrap();
     (directory, outputs_directory)
 }
@@ -105,7 +105,7 @@ fn a_started_baseline_holds_a_copy_of_the_primogenitor_to_run() {
 }
 
 #[test]
-fn a_started_baseline_holds_a_copy_of_the_progenitor_to_change() {
+fn a_started_baseline_holds_a_clone_of_the_progenitor_to_diversify() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         harness_script(
@@ -119,7 +119,7 @@ fn a_started_baseline_holds_a_copy_of_the_progenitor_to_change() {
 }
 
 #[test]
-fn a_started_baseline_holds_its_two_copies_and_nothing_else() {
+fn a_started_baseline_holds_its_copy_its_clone_and_nothing_else() {
     let (directory, outputs_directory) = started();
     assert_eq!(
         entries(&directory, outputs_directory.running_baseline(3)),

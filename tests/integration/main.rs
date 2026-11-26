@@ -10,6 +10,7 @@ mod containers {
     mod collect;
     mod configuration;
     mod detached;
+    mod diversification;
     mod environment;
     mod harbor;
     mod health_check;
@@ -20,7 +21,6 @@ mod containers {
     mod lineage;
     mod primogenitor;
     mod printed;
-    mod procreation;
     mod ran;
     mod retried;
     mod trial;

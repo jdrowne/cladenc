@@ -19,21 +19,21 @@ fn made() -> (Memory, OutputsDirectory) {
 }
 
 #[test]
-fn what_a_procreation_left_is_discarded_before_it_is_carried_out_again() {
+fn what_a_diversification_left_is_discarded_before_it_is_carried_out_again() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
+    outputs_directory.start_diversification(1, 0).unwrap();
     outputs_directory
-        .end_procreation(1, 0, CreationOutcome::Created)
+        .end_diversification(1, 0, CreationOutcome::Created)
         .unwrap();
-    let procreation = Started::Procreation {
+    let diversification = Started::Diversification {
         child: 1,
         progenitor: 0,
     };
-    action::discard(&outputs_directory, &procreation).unwrap();
+    action::discard(&outputs_directory, &diversification).unwrap();
     assert_eq!(
         [
             directory.exists(outputs_directory.harness(1)),
-            directory.exists(outputs_directory.procreation(1)),
+            directory.exists(outputs_directory.diversification(1)),
             directory.exists(outputs_directory.trials(1)),
         ],
         [false, false, false]
@@ -68,17 +68,17 @@ fn what_a_trial_left_is_discarded_before_it_is_carried_out_again() {
 }
 
 #[test]
-fn the_harness_that_procreated_is_kept_when_what_its_procreation_left_is_discarded() {
+fn the_harness_that_was_cloned_is_kept_when_what_its_diversification_left_is_discarded() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_procreation(1, 0).unwrap();
-    let procreation = Started::Procreation {
+    outputs_directory.start_diversification(1, 0).unwrap();
+    let diversification = Started::Diversification {
         child: 1,
         progenitor: 0,
     };
-    action::discard(&outputs_directory, &procreation).unwrap();
+    action::discard(&outputs_directory, &diversification).unwrap();
     assert_eq!(
         [
-            directory.exists(outputs_directory.running_procreation(1)),
+            directory.exists(outputs_directory.running_diversification(1)),
             directory.exists(outputs_directory.harness(0)),
         ],
         [false, true]

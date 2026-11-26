@@ -8,9 +8,9 @@ const EXPERIMENT: Experiment = Experiment {
 };
 
 fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId) -> HarnessId {
-    let child = genealogy.start_procreation(progenitor).unwrap();
+    let child = genealogy.start_diversification(progenitor).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     child
 }
@@ -47,14 +47,14 @@ fn no_experiment_awaits_its_baseline_in_a_new_genealogy() {
 }
 
 #[test]
-fn no_experiment_awaits_its_baseline_where_the_primogenitor_procreates() {
+fn no_experiment_awaits_its_baseline_where_the_primogenitor_is_cloned() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     assert_eq!(genealogy.experiment_awaiting_its_baseline(), None);
 }
 
 #[test]
-fn an_experiment_awaits_its_baseline_where_a_harness_other_than_the_primogenitor_procreates() {
+fn an_experiment_awaits_its_baseline_where_a_harness_other_than_the_primogenitor_is_cloned() {
     assert_eq!(
         with_a_child_of_a_child().experiment_awaiting_its_baseline(),
         Some(EXPERIMENT)
@@ -125,9 +125,9 @@ fn a_baseline_that_left_the_source_code_of_the_progenitor_unchanged_leaves_an_un
 }
 
 #[test]
-fn a_baseline_is_refused_where_the_primogenitor_procreated() {
+fn a_baseline_is_refused_where_the_primogenitor_was_cloned() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     assert_eq!(
         genealogy.start_baseline(Experiment {
             child: 1,
@@ -152,7 +152,7 @@ fn a_second_baseline_of_one_experiment_is_refused() {
 }
 
 #[test]
-fn a_baseline_that_names_another_progenitor_than_the_one_that_procreated_is_refused() {
+fn a_baseline_that_names_another_progenitor_than_the_one_that_was_cloned_is_refused() {
     assert_eq!(
         with_a_child_of_a_child().start_baseline(Experiment {
             child: 2,
@@ -168,7 +168,7 @@ fn a_baseline_that_names_another_progenitor_than_the_one_that_procreated_is_refu
 #[test]
 fn the_end_of_a_baseline_is_refused_for_a_child_that_is_being_created() {
     let mut genealogy = Genealogy::new();
-    genealogy.start_procreation(0).unwrap();
+    genealogy.start_diversification(0).unwrap();
     assert_eq!(
         genealogy.end_baseline(1, CreationOutcome::Created),
         Err(GenealogyError::SingletonControlGroupHarnessNotBeingCreated { harness: 1 })
@@ -184,16 +184,16 @@ fn the_end_of_a_baseline_is_refused_once_the_baseline_has_ended() {
 }
 
 #[test]
-fn the_end_of_a_procreation_is_refused_for_a_singleton_control_group_harness() {
+fn the_end_of_a_diversification_is_refused_for_a_singleton_control_group_harness() {
     assert_eq!(
-        with_a_baseline_started().end_procreation(3, CreationOutcome::Created),
+        with_a_baseline_started().end_diversification(3, CreationOutcome::Created),
         Err(GenealogyError::ChildNotBeingCreated { child: 3 })
     );
 }
 
 #[test]
-fn a_baseline_is_not_counted_as_a_procreation() {
-    assert_eq!(with_a_baseline_started().procreations_started(), 2);
+fn a_baseline_is_not_counted_as_a_diversification() {
+    assert_eq!(with_a_baseline_started().diversifications_started(), 2);
 }
 
 #[test]
@@ -202,8 +202,8 @@ fn harness_count_counts_the_singleton_control_group_harness() {
 }
 
 #[test]
-fn a_child_procreated_after_a_baseline_takes_the_id_after_the_singleton_control_group_harness() {
-    assert_eq!(with_a_baseline_started().start_procreation(0), Ok(4));
+fn a_child_made_after_a_baseline_takes_the_id_after_the_singleton_control_group_harness() {
+    assert_eq!(with_a_baseline_started().start_diversification(0), Ok(4));
 }
 
 #[test]
@@ -243,7 +243,7 @@ fn a_trial_of_the_singleton_control_group_harness_is_no_action_that_is_counted_a
 }
 
 #[test]
-fn the_actions_started_count_each_procreation_and_each_trial_of_a_harness_that_is_not_one() {
+fn the_actions_started_count_each_diversification_and_each_trial_of_a_harness_that_is_not_one() {
     let mut genealogy =
         after_a_trial_of_the_singleton_control_group_harness(TrialResult::Completed);
     genealogy.start_trial(0, "a").unwrap();

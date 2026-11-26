@@ -54,10 +54,10 @@ fn a_new_outputs_directory_holds_an_empty_directory_for_the_trials_of_harness_0(
 }
 
 #[test]
-fn a_new_outputs_directory_holds_no_procreation() {
+fn a_new_outputs_directory_holds_no_diversification() {
     let (directory, outputs_directory) = made();
     assert_eq!(
-        entries(&directory, outputs_directory.join("procreations")),
+        entries(&directory, outputs_directory.join("diversifications")),
         0
     );
 }

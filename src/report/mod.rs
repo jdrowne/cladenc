@@ -35,7 +35,7 @@ const HEADER: [&str; COLUMNS] = [
     "clade not completed",
     "clade score",
     "trial seconds",
-    "procreation seconds",
+    "diversification seconds",
 ];
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -43,8 +43,8 @@ pub struct Report {
     ended: bool,
     model: String,
     model_url: String,
-    procreations_started: u64,
-    max_procreations: u64,
+    diversifications_started: u64,
+    max_diversifications: u64,
     #[serde(flatten)]
     leader: Leader,
     pub selection_tasks_completed_by_any: u64,
@@ -74,7 +74,7 @@ struct HarnessReport {
     clade_not_completed: u64,
     clade_score: Option<f64>,
     trial_seconds: f64,
-    procreation_seconds: Option<f64>,
+    diversification_seconds: Option<f64>,
 }
 
 pub fn read(files: &dyn FileSystem, outputs_directory: &Path) -> Result<Report, JournalError> {
@@ -128,8 +128,8 @@ impl Report {
             ended: best_harness.is_some(),
             model: settings.model.clone(),
             model_url: settings.model_url.clone(),
-            procreations_started: genealogy.procreations_started(),
-            max_procreations: settings.max_procreations,
+            diversifications_started: genealogy.diversifications_started(),
+            max_diversifications: settings.max_diversifications,
             leader,
             selection_tasks_completed_by_any,
             selection_tasks,
@@ -173,10 +173,10 @@ impl Report {
                 format!("{}\n", line.trim_end())
             })
             .collect();
-        let procreations = if self.max_procreations == 1 {
-            "procreation"
+        let diversifications = if self.max_diversifications == 1 {
+            "diversification"
         } else {
-            "procreations"
+            "diversifications"
         };
         let opening = if self.ended { "" } else { NOT_ENDED };
         let lead = self.corroboration_lead.as_ref().map_or_else(
@@ -190,13 +190,13 @@ impl Report {
             |lead| lead.line(self.leader),
         );
         format!(
-            "{opening}model {} at {}\nstarted {} of {} {procreations}, {}\ncompleted by at least \
-             one harness: selection tasks {} of {}, corroboration tasks {} of {}, non-holdout \
-             tasks {} of {}\n{lead}\n{}\n\n{lines}",
+            "{opening}model {} at {}\nstarted {} of {} {diversifications}, {}\ncompleted by at \
+             least one harness: selection tasks {} of {}, corroboration tasks {} of {}, \
+             non-holdout tasks {} of {}\n{lead}\n{}\n\n{lines}",
             self.model,
             self.model_url,
-            self.procreations_started,
-            self.max_procreations,
+            self.diversifications_started,
+            self.max_diversifications,
             self.leader,
             self.selection_tasks_completed_by_any,
             self.selection_tasks,
@@ -226,7 +226,7 @@ impl HarnessReport {
             clade_not_completed: harness.clade_not_completed(),
             clade_score: harness.clade_score(),
             trial_seconds: (seconds.trials * 1000.0).round() / 1000.0,
-            procreation_seconds: seconds.procreation,
+            diversification_seconds: seconds.diversification,
         }
     }
 
@@ -256,7 +256,7 @@ impl HarnessReport {
             shown(self.clade_score.map(|rate| format!("{rate:.3}"))),
             format!("{:.1}", self.trial_seconds),
             shown(
-                self.procreation_seconds
+                self.diversification_seconds
                     .map(|seconds| format!("{seconds:.1}")),
             ),
         ]

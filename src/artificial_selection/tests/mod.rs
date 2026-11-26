@@ -1,11 +1,11 @@
 mod best;
+mod diversification;
 mod due;
 mod every_harness_waits;
 mod experiment;
 mod focus;
 mod holdout;
 mod no_action;
-mod procreation;
 mod repeatable;
 mod to_the_end;
 mod trial;

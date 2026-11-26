@@ -7,7 +7,7 @@ fn tasks() -> Vec<String> {
 
 fn artificial_selection() -> ArtificialSelection {
     ArtificialSelection {
-        max_procreations: 3,
+        max_diversifications: 3,
         tasks: tasks(),
         seed: 3,
     }
@@ -19,9 +19,9 @@ fn actions_to_the_end(outcome: CreationOutcome, result: TrialResult) -> Vec<Acti
     let mut actions = Vec::new();
     while let Some(action) = artificial_selection.next_action(&genealogy, actions.len() as u64) {
         match &action {
-            Action::Procreation { progenitor } => {
-                let child = genealogy.start_procreation(*progenitor).unwrap();
-                genealogy.end_procreation(child, outcome).unwrap();
+            Action::Diversification { progenitor } => {
+                let child = genealogy.start_diversification(*progenitor).unwrap();
+                genealogy.end_diversification(child, outcome).unwrap();
             }
             Action::Trial { harness, task } => {
                 genealogy.start_trial(*harness, task).unwrap();
@@ -33,10 +33,10 @@ fn actions_to_the_end(outcome: CreationOutcome, result: TrialResult) -> Vec<Acti
     actions
 }
 
-fn procreations(actions: &[Action]) -> usize {
+fn diversifications(actions: &[Action]) -> usize {
     actions
         .iter()
-        .filter(|action| matches!(action, Action::Procreation { .. }))
+        .filter(|action| matches!(action, Action::Diversification { .. }))
         .count()
 }
 
@@ -45,7 +45,7 @@ fn trials(actions: &[Action]) -> Vec<(HarnessId, String)> {
         .iter()
         .filter_map(|action| match action {
             Action::Trial { harness, task } => Some((*harness, task.clone())),
-            Action::Procreation { .. } => None,
+            Action::Diversification { .. } => None,
         })
         .collect();
     trials.sort();
@@ -64,21 +64,21 @@ fn shape(actions: &[Action]) -> Vec<String> {
         .iter()
         .map(|action| match action {
             Action::Trial { harness, .. } => format!("trial of {harness}"),
-            Action::Procreation { .. } => "procreation".to_owned(),
+            Action::Diversification { .. } => "diversification".to_owned(),
         })
         .collect()
 }
 
 #[test]
-fn exactly_as_many_procreations_start_as_the_most_there_may_be() {
+fn exactly_as_many_diversifications_start_as_the_most_there_may_be() {
     let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Completed);
-    assert_eq!(procreations(&actions), 3);
+    assert_eq!(diversifications(&actions), 3);
 }
 
 #[test]
-fn a_procreation_that_fails_is_one_of_the_most_there_may_be() {
+fn a_diversification_that_fails_is_one_of_the_most_there_may_be() {
     let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Completed);
-    assert_eq!(procreations(&actions), 3);
+    assert_eq!(diversifications(&actions), 3);
 }
 
 #[test]
@@ -100,20 +100,20 @@ fn a_harness_that_was_not_created_trials_nothing() {
 }
 
 #[test]
-fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
+fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
     let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Completed);
     assert_eq!(
         shape(&actions),
         [
             "trial of 0",
             "trial of 0",
-            "procreation",
+            "diversification",
             "trial of 1",
             "trial of 1",
-            "procreation",
+            "diversification",
             "trial of 2",
             "trial of 2",
-            "procreation",
+            "diversification",
             "trial of 3",
             "trial of 3",
         ]
@@ -121,16 +121,16 @@ fn each_child_is_benchmarked_in_full_before_the_next_procreation_starts() {
 }
 
 #[test]
-fn every_procreation_still_starts_when_each_one_fails() {
+fn every_diversification_still_starts_when_each_one_fails() {
     let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Completed);
     assert_eq!(
         shape(&actions),
         [
             "trial of 0",
             "trial of 0",
-            "procreation",
-            "procreation",
-            "procreation",
+            "diversification",
+            "diversification",
+            "diversification",
         ]
     );
 }

@@ -244,17 +244,17 @@ fn a_directed_evolution_a_trial_stopped_names_the_harness_and_the_task() {
 }
 
 #[test]
-fn a_directed_evolution_a_procreation_stopped_names_the_progenitor_and_the_child() {
+fn a_directed_evolution_a_diversification_stopped_names_the_progenitor_and_the_child() {
     assert_eq!(
         worded(DirectedEvolutionError::Action {
-            action: Started::Procreation {
+            action: Started::Diversification {
                 child: 3,
                 progenitor: 0
             },
             error: ContainerError::Signal(9)
         }),
         "the directed evolution stopped before its end: \
-         the procreation of harness 3 by harness 0 was ended by signal 9"
+         the diversification of harness 3 by harness 0 was ended by signal 9"
     );
 }
 
@@ -270,7 +270,7 @@ fn a_directed_evolution_a_baseline_stopped_names_the_singleton_control_group_har
             error: ContainerError::Exit(2)
         }),
         "the directed evolution stopped before its end: the creation of harness 4, the \
-         singleton control group harness, by the primogenitor from the source code of harness 1 \
+         singleton control group harness, by the primogenitor from a second clone of harness 1 \
          exited with status 2"
     );
 }

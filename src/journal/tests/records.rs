@@ -9,8 +9,8 @@ fn read_back(record: &Record) -> Record {
     serde_json::from_str(&line(record)).unwrap()
 }
 
-fn procreation_finished(outcome: CreationOutcome) -> Record {
-    Record::ProcreationFinished {
+fn diversification_finished(outcome: CreationOutcome) -> Record {
+    Record::DiversificationFinished {
         child: 1,
         outcome,
         seconds: 12.5,
@@ -27,59 +27,61 @@ fn trial_finished(result: TrialResult) -> Record {
 }
 
 #[test]
-fn the_start_of_a_procreation_is_written_with_its_child_and_progenitor() {
+fn the_start_of_a_diversification_is_written_with_its_child_and_progenitor() {
     assert_eq!(
-        line(&Record::ProcreationStarted {
+        line(&Record::DiversificationStarted {
             child: 1,
             progenitor: 0
         }),
-        r#"{"record":"procreation_started","child":1,"progenitor":0}"#
+        r#"{"record":"diversification_started","child":1,"progenitor":0}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_that_created_its_child_is_written_as_created() {
+fn the_end_of_a_diversification_that_created_its_child_is_written_as_created() {
     assert_eq!(
-        line(&procreation_finished(CreationOutcome::Created)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"created","seconds":12.5}"#
+        line(&diversification_finished(CreationOutcome::Created)),
+        r#"{"record":"diversification_finished","child":1,"outcome":"created","seconds":12.5}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_that_failed_is_written_as_failed() {
+fn the_end_of_a_diversification_that_failed_is_written_as_failed() {
     assert_eq!(
-        line(&procreation_finished(CreationOutcome::Failed)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"failed","seconds":12.5}"#
+        line(&diversification_finished(CreationOutcome::Failed)),
+        r#"{"record":"diversification_finished","child":1,"outcome":"failed","seconds":12.5}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_that_timed_out_is_written_as_timed_out() {
+fn the_end_of_a_diversification_that_timed_out_is_written_as_timed_out() {
     assert_eq!(
-        line(&procreation_finished(CreationOutcome::TimedOut)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"timed_out","seconds":12.5}"#
+        line(&diversification_finished(CreationOutcome::TimedOut)),
+        r#"{"record":"diversification_finished","child":1,"outcome":"timed_out","seconds":12.5}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_whose_child_did_not_build_is_written_as_build_failed() {
+fn the_end_of_a_diversification_whose_child_did_not_build_is_written_as_build_failed() {
     assert_eq!(
-        line(&procreation_finished(CreationOutcome::BuildFailed)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"build_failed","seconds":12.5}"#
+        line(&diversification_finished(CreationOutcome::BuildFailed)),
+        r#"{"record":"diversification_finished","child":1,"outcome":"build_failed","seconds":12.5}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_that_left_the_progenitor_s_copy_unchanged_is_written_as_unchanged() {
+fn the_end_of_a_diversification_that_left_the_progenitor_s_clone_unchanged_is_written_as_unchanged()
+{
     assert_eq!(
-        line(&procreation_finished(CreationOutcome::Unchanged)),
-        r#"{"record":"procreation_finished","child":1,"outcome":"unchanged","seconds":12.5}"#
+        line(&diversification_finished(CreationOutcome::Unchanged)),
+        r#"{"record":"diversification_finished","child":1,"outcome":"unchanged","seconds":12.5}"#
     );
 }
 
 #[test]
-fn the_end_of_a_procreation_that_left_the_progenitor_s_copy_unchanged_survives_being_read_back() {
-    let record = procreation_finished(CreationOutcome::Unchanged);
+fn the_end_of_a_diversification_that_left_the_progenitor_s_clone_unchanged_survives_being_read_back()
+ {
+    let record = diversification_finished(CreationOutcome::Unchanged);
     assert_eq!(read_back(&record), record);
 }
 
@@ -143,8 +145,8 @@ fn the_end_of_a_directed_evolution_is_written_with_its_best_harness() {
 }
 
 #[test]
-fn the_start_of_a_procreation_survives_being_written_and_read_back() {
-    let record = Record::ProcreationStarted {
+fn the_start_of_a_diversification_survives_being_written_and_read_back() {
+    let record = Record::DiversificationStarted {
         child: 1,
         progenitor: 0,
     };
@@ -152,8 +154,8 @@ fn the_start_of_a_procreation_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_a_procreation_survives_being_written_and_read_back() {
-    let record = procreation_finished(CreationOutcome::TimedOut);
+fn the_end_of_a_diversification_survives_being_written_and_read_back() {
+    let record = diversification_finished(CreationOutcome::TimedOut);
     assert_eq!(read_back(&record), record);
 }
 

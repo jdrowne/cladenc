@@ -28,9 +28,9 @@ pub struct Settings {
     pub holdout_tasks: Vec<String>,
     pub corroboration_tasks_percentage: f64,
     pub corroboration_tasks: Vec<String>,
-    pub max_procreations: u64,
+    pub max_diversifications: u64,
     pub max_concurrent_containers: u64,
-    pub procreation_timeout: u64,
+    pub diversification_timeout: u64,
     pub max_verifier_health_check_retries: u64,
     pub max_task_health_check_retries: u64,
     pub seed: u64,
@@ -58,7 +58,7 @@ impl Settings {
             run_command: &self.harness_run_command,
             build_command: self.harness_build_command.as_deref(),
             model: self.model(key),
-            procreation_timeout: self.procreation_timeout,
+            diversification_timeout: self.diversification_timeout,
             max_verifier_health_check_retries: self.max_verifier_health_check_retries,
             max_task_health_check_retries: self.max_task_health_check_retries,
         }
@@ -122,7 +122,7 @@ impl Settings {
 
     pub(crate) fn artificial_selection(&self) -> ArtificialSelection {
         ArtificialSelection {
-            max_procreations: self.max_procreations,
+            max_diversifications: self.max_diversifications,
             tasks: self.tasks(),
             seed: self.seed,
         }
@@ -138,11 +138,11 @@ pub(crate) enum Record {
         settings: Box<Settings>,
     },
     PrimogenitorBuilt,
-    ProcreationStarted {
+    DiversificationStarted {
         child: HarnessId,
         progenitor: HarnessId,
     },
-    ProcreationFinished {
+    DiversificationFinished {
         child: HarnessId,
         outcome: CreationOutcome,
         seconds: f64,

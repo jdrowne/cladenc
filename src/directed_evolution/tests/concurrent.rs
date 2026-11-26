@@ -8,9 +8,9 @@ fn three_at_once(directory: &Memory, settings: &mut Settings) {
     settings.max_concurrent_containers = 3;
 }
 
-fn three_at_once_with_two_procreations(directory: &Memory, settings: &mut Settings) {
+fn three_at_once_with_two_diversifications(directory: &Memory, settings: &mut Settings) {
     three_at_once(directory, settings);
-    settings.max_procreations = 2;
+    settings.max_diversifications = 2;
 }
 
 fn two_at_once(directory: &Memory, settings: &mut Settings) {
@@ -27,13 +27,13 @@ fn most_running_at_once(records: &[Record]) -> usize {
     let mut most = 0;
     for record in records {
         match record {
-            Record::ProcreationStarted { .. }
+            Record::DiversificationStarted { .. }
             | Record::BaselineStarted { .. }
             | Record::TrialStarted { .. } => {
                 running += 1;
                 most = most.max(running);
             }
-            Record::ProcreationFinished { .. }
+            Record::DiversificationFinished { .. }
             | Record::BaselineFinished { .. }
             | Record::TrialFinished { .. } => running -= 1,
             Record::Run { .. }
@@ -44,17 +44,17 @@ fn most_running_at_once(records: &[Record]) -> usize {
     most
 }
 
-fn most_running_as_a_procreation_starts(records: &[Record]) -> Option<usize> {
+fn most_running_as_a_diversification_starts(records: &[Record]) -> Option<usize> {
     let mut running = 0_usize;
     let mut most = None;
     for record in records {
         match record {
-            Record::ProcreationStarted { .. } => {
+            Record::DiversificationStarted { .. } => {
                 most = most.max(Some(running));
                 running += 1;
             }
             Record::BaselineStarted { .. } | Record::TrialStarted { .. } => running += 1,
-            Record::ProcreationFinished { .. }
+            Record::DiversificationFinished { .. }
             | Record::BaselineFinished { .. }
             | Record::TrialFinished { .. } => running -= 1,
             Record::Run { .. }
@@ -74,7 +74,7 @@ fn fewest_tasks_a_progenitor_had_trialled(records: &[Record]) -> Option<usize> {
         .iter()
         .enumerate()
         .filter_map(|(place, record)| match record {
-            Record::ProcreationStarted { progenitor, .. } => {
+            Record::DiversificationStarted { progenitor, .. } => {
                 Some(count(&records[..place], |earlier| {
                     matches!(
                         earlier,
@@ -105,25 +105,25 @@ fn with_a_limit_of_three_the_journal_still_holds_one_trial_of_every_task_by_each
 }
 
 #[test]
-fn with_a_limit_of_three_every_procreation_still_starts() {
-    let records = records(three_at_once_with_two_procreations);
+fn with_a_limit_of_three_every_diversification_still_starts() {
+    let records = records(three_at_once_with_two_diversifications);
     assert_eq!(
         count(&records, |record| matches!(
             record,
-            Record::ProcreationStarted { .. }
+            Record::DiversificationStarted { .. }
         )),
         2
     );
 }
 
 #[test]
-fn with_a_limit_of_three_a_procreation_starts_only_when_nothing_else_runs() {
-    let records = records(three_at_once_with_two_procreations);
-    assert_eq!(most_running_as_a_procreation_starts(&records), Some(0));
+fn with_a_limit_of_three_a_diversification_starts_only_when_nothing_else_runs() {
+    let records = records(three_at_once_with_two_diversifications);
+    assert_eq!(most_running_as_a_diversification_starts(&records), Some(0));
 }
 
 #[test]
-fn with_a_limit_of_two_no_procreation_starts_before_its_progenitor_is_benchmarked_in_full() {
+fn with_a_limit_of_two_no_diversification_starts_before_its_progenitor_is_benchmarked_in_full() {
     assert_eq!(
         fewest_tasks_a_progenitor_had_trialled(&records(two_at_once)),
         Some(5)

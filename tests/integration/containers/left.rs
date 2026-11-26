@@ -94,7 +94,7 @@ fn the_container_of_a_trial_is_listed_under_the_label_of_its_directed_evolution(
             url: test_inputs::MODEL_URL,
             key: None,
         },
-        procreation_timeout: 60,
+        diversification_timeout: 60,
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
     };

@@ -12,9 +12,9 @@ fn told_of_its_tasks() -> Genealogy {
 
 fn with_a_child() -> Genealogy {
     let mut genealogy = told_of_its_tasks();
-    let child = genealogy.start_procreation(0).unwrap();
+    let child = genealogy.start_diversification(0).unwrap();
     genealogy
-        .end_procreation(child, CreationOutcome::Created)
+        .end_diversification(child, CreationOutcome::Created)
         .unwrap();
     genealogy
 }

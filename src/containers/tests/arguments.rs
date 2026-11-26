@@ -29,7 +29,7 @@ fn of_the_harness() -> Mount<'static> {
 
 fn of_the_child() -> Mount<'static> {
     Mount {
-        from: Path::new("/outputs/running/procreation-4/child"),
+        from: Path::new("/outputs/running/diversification-4/child"),
         to: "/var/opt/cladenc/child",
         read_only: false,
     }
@@ -90,7 +90,7 @@ fn a_container_is_given_each_of_its_mounts_as_a_volume_after_everything_else() {
             "--volume",
             "/outputs/harnesses/3:/opt/cladenc/harness:ro",
             "--volume",
-            "/outputs/running/procreation-4/child:/var/opt/cladenc/child",
+            "/outputs/running/diversification-4/child:/var/opt/cladenc/child",
         ]
     );
 }
@@ -107,7 +107,7 @@ fn a_mount_that_is_only_read_is_written_as_its_two_paths_and_ro() {
 fn a_mount_that_can_be_written_to_is_written_as_its_two_paths_alone() {
     assert_eq!(
         of_the_child().written(),
-        "/outputs/running/procreation-4/child:/var/opt/cladenc/child"
+        "/outputs/running/diversification-4/child:/var/opt/cladenc/child"
     );
 }
 
