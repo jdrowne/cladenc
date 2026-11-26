@@ -100,9 +100,11 @@ fn the_source_code_of_the_harness_is_put_in_the_sandbox_and_owned_by_who_runs_it
     assert_eq!(
         tried.commands()[2..5],
         [
-            format!("docker exec --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harness"),
+            format!(
+                "docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harness"
+            ),
             "docker cp OUTPUTS/harnesses/0/. NAME:/var/opt/cladenc/harness".to_owned(),
-            "docker exec --user 0 NAME chown -R 0 /var/opt/cladenc/harness".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R 0 /var/opt/cladenc/harness".to_owned(),
         ]
     );
 }
@@ -113,7 +115,7 @@ fn the_harness_is_given_a_place_for_its_artifacts_before_it_runs() {
     assert_eq!(
         tried.commands()[5],
         format!(
-            "docker exec --user 0 NAME sh -c {LOGS_LINKED} && {ARTIFACTS_MADE} sh /logs \
+            "docker exec --workdir / --user 0 NAME sh -c {LOGS_LINKED} && {ARTIFACTS_MADE} sh /logs \
              /var/log/cladenc/harbor /logs/artifacts 0"
         )
     );
@@ -164,13 +166,16 @@ fn the_tests_of_the_task_are_put_in_the_sandbox_only_once_the_harness_has_ended(
     assert_eq!(
         tried.commands()[10..14],
         [
-            format!("docker exec --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"),
+            format!(
+                "docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"
+            ),
             "docker cp OUTPUTS/benchmarks/benchmark/t1/tests/. \
              NAME:/var/opt/cladenc/harbor/tests"
                 .to_owned(),
-            "docker exec --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests"
+                .to_owned(),
             format!(
-                "docker exec --user 0 NAME sh -c {TESTS_LINKED} sh /tests \
+                "docker exec --workdir / --user 0 NAME sh -c {TESTS_LINKED} sh /tests \
                  /var/opt/cladenc/harbor/tests"
             ),
         ]
@@ -184,7 +189,7 @@ fn the_verifier_runs_on_an_emptied_place_for_its_logs_which_are_then_copied_out(
         tried.commands()[14..17],
         [
             format!(
-                "docker exec --user 0 NAME sh -c {LOGS_LINKED} && {VERIFIER_EMPTIED} sh /logs \
+                "docker exec --workdir / --user 0 NAME sh -c {LOGS_LINKED} && {VERIFIER_EMPTIED} sh /logs \
                  /var/log/cladenc/harbor /logs/verifier 0"
             ),
             format!(
@@ -332,7 +337,7 @@ fn everything_in_the_sandbox_is_ended_once_the_harness_ran_past_its_time_limit()
     let tried = trialled_by(Double::default().answering(&HARNESS, &[Answer::TimedOut]));
     assert_eq!(
         tried.commands()[8],
-        "docker exec --user 0 NAME sh -c kill -9 -1"
+        "docker exec --workdir / --user 0 NAME sh -c kill -9 -1"
     );
 }
 
@@ -391,7 +396,7 @@ fn the_source_code_of_the_harness_is_owned_by_the_user_the_task_names_for_the_ha
     let tried = trialled_with(Double::default(), configuration);
     assert_eq!(
         tried.commands()[4],
-        "docker exec --user 0 NAME chown -R agent /var/opt/cladenc/harness"
+        "docker exec --workdir / --user 0 NAME chown -R agent /var/opt/cladenc/harness"
     );
 }
 

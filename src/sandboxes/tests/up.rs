@@ -372,9 +372,9 @@ fn a_directory_is_put_in_a_sandbox_emptied_first_and_then_given_to_its_owner() {
     assert_eq!(
         docker.commands(&outputs_directory)[2..],
         [
-            format!("docker exec --user 0 NAME sh -c {EMPTIED} sh /to"),
+            format!("docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /to"),
             "docker cp /from/. NAME:/to".to_owned(),
-            "docker exec --user 0 NAME chown -R owner /to".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R owner /to".to_owned(),
         ]
     );
 }
@@ -388,9 +388,9 @@ fn a_file_is_put_in_a_sandbox_where_room_is_made_for_it_and_then_given_to_its_ow
     assert_eq!(
         docker.commands(&outputs_directory)[2..],
         [
-            r#"docker exec --user 0 NAME sh -c rm -rf "$1" && mkdir -p "${1%/*}/" sh /to/file"#,
+            r#"docker exec --workdir / --user 0 NAME sh -c rm -rf "$1" && mkdir -p "${1%/*}/" sh /to/file"#,
             "docker cp /from/file NAME:/to/file",
-            "docker exec --user 0 NAME chown -R owner /to/file",
+            "docker exec --workdir / --user 0 NAME chown -R owner /to/file",
         ]
     );
 }
@@ -422,7 +422,7 @@ fn a_script_is_run_in_a_sandbox_as_root_with_its_arguments() {
     up.run_as_root("mkdir \"$1\"", &["/made"]).unwrap();
     assert_eq!(
         docker.commands(&outputs_directory)[2],
-        "docker exec --user 0 NAME sh -c mkdir \"$1\" sh /made"
+        "docker exec --workdir / --user 0 NAME sh -c mkdir \"$1\" sh /made"
     );
 }
 
@@ -444,7 +444,7 @@ fn every_program_of_a_sandbox_is_ended_as_root_with_the_signal_that_cannot_be_ca
     up.end_everything();
     assert_eq!(
         docker.commands(&outputs_directory)[2],
-        "docker exec --user 0 NAME sh -c kill -9 -1"
+        "docker exec --workdir / --user 0 NAME sh -c kill -9 -1"
     );
 }
 

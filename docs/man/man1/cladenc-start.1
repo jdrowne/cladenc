@@ -1254,6 +1254,15 @@ What a verifier that ran past its time limit left in /logs/verifier is copied
 out in the same way, and where that copy fails, no result is recorded for the
 trial either.
 .PP
+A harness that removed its working directory left no work to keep.
+Docker starts no command in a directory that is gone, so the verifier of the
+task, where it runs in the sandbox of the harness, is not started: it left no
+verdict, the trial is inconclusive, and its cause is recorded as no_verdict.
+What Docker said of the verifier is kept with the trial as what the verifier
+printed.
+What cladenc itself runs in a sandbox as root, it runs from /, so that it does
+not depend on the working directory.
+.PP
 At the end of a trial, \fBcladenc start\fP says on standard error whether the
 trial passed, failed or was inconclusive, and of an inconclusive trial whether
 the verifier left no verdict that can be read or ran past its time limit.

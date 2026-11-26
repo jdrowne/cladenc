@@ -316,10 +316,8 @@ impl<'a> Up<'a> {
     }
 
     fn unless_absent(&self, absent: &str, path: &str, error: io::Error) -> io::Result<()> {
-        let mut docker = Command::new("docker");
-        docker
-            .args(["exec", "--workdir", TOP, "--user", ROOT, &self.name])
-            .args(["sh", "-c", absent, "sh", path]);
+        let mut docker = self.as_root();
+        docker.args(["sh", "-c", absent, "sh", path]);
         let said = self.docker.print(docker);
         if said.is_ok_and(|printed| printed.trim() == NONE) {
             Ok(())
@@ -342,7 +340,7 @@ impl<'a> Up<'a> {
 
     fn as_root(&self) -> Command {
         let mut docker = Command::new("docker");
-        docker.args(["exec", "--user", ROOT, &self.name]);
+        docker.args(["exec", "--workdir", TOP, "--user", ROOT, &self.name]);
         docker
     }
 }

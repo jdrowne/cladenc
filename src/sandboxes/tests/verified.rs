@@ -109,7 +109,9 @@ fn the_logs_that_harbor_names_are_linked_in_the_verifier_sandbox() {
     let tried = verified_apart(Double::default());
     assert_eq!(
         tried.commands()[13],
-        format!("docker exec --user 0 NAME sh -c {LOGS_LINKED} sh /logs /var/log/cladenc/harbor")
+        format!(
+            "docker exec --workdir / --user 0 NAME sh -c {LOGS_LINKED} sh /logs /var/log/cladenc/harbor"
+        )
     );
 }
 
@@ -120,7 +122,7 @@ fn a_verifier_that_its_image_holds_is_given_no_tests_and_runs_in_its_own_sandbox
         tried.commands()[14..],
         [
             format!(
-                "docker exec --user 0 NAME sh -c {LOGS_LINKED} && {VERIFIER_EMPTIED} sh /logs \
+                "docker exec --workdir / --user 0 NAME sh -c {LOGS_LINKED} && {VERIFIER_EMPTIED} sh /logs \
                  /var/log/cladenc/harbor /logs/verifier 0"
             ),
             format!(
@@ -139,13 +141,16 @@ fn a_verifier_that_its_image_does_not_hold_is_given_the_tests_of_the_task() {
     assert_eq!(
         tried.commands()[14..18],
         [
-            format!("docker exec --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"),
+            format!(
+                "docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"
+            ),
             "docker cp OUTPUTS/benchmarks/benchmark/t1/tests/. \
              NAME:/var/opt/cladenc/harbor/tests"
                 .to_owned(),
-            "docker exec --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests"
+                .to_owned(),
             format!(
-                "docker exec --user 0 NAME sh -c {TESTS_LINKED} sh /tests \
+                "docker exec --workdir / --user 0 NAME sh -c {TESTS_LINKED} sh /tests \
                  /var/opt/cladenc/harbor/tests"
             ),
         ]
@@ -200,9 +205,9 @@ fn a_directory_the_harness_left_as_artifacts_is_given_to_the_verifier_at_the_sam
     assert_eq!(
         tried.commands()[14..17],
         [
-            format!("docker exec --user 0 NAME sh -c {EMPTIED} sh /logs/artifacts"),
+            format!("docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /logs/artifacts"),
             format!("docker cp {GIVEN}/. NAME:/logs/artifacts"),
-            "docker exec --user 0 NAME chown -R 0 /logs/artifacts".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R 0 /logs/artifacts".to_owned(),
         ]
     );
 }
@@ -213,9 +218,9 @@ fn a_file_the_harness_left_as_artifacts_is_given_to_the_verifier_at_the_same_pat
     assert_eq!(
         tried.commands()[14..17],
         [
-            format!("docker exec --user 0 NAME sh -c {ROOM_MADE} sh /logs/artifacts"),
+            format!("docker exec --workdir / --user 0 NAME sh -c {ROOM_MADE} sh /logs/artifacts"),
             format!("docker cp {GIVEN} NAME:/logs/artifacts"),
-            "docker exec --user 0 NAME chown -R 0 /logs/artifacts".to_owned(),
+            "docker exec --workdir / --user 0 NAME chown -R 0 /logs/artifacts".to_owned(),
         ]
     );
 }
@@ -246,7 +251,7 @@ fn what_is_given_to_the_verifier_is_owned_by_the_user_the_task_names_for_the_ver
     let tried = verified_with(leaving_a_directory(), configuration);
     assert_eq!(
         tried.commands()[16],
-        "docker exec --user 0 NAME chown -R judge /logs/artifacts"
+        "docker exec --workdir / --user 0 NAME chown -R judge /logs/artifacts"
     );
 }
 

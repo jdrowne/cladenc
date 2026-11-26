@@ -34,6 +34,8 @@ const PUT_LOGS_VERIFIER_WHERE_DOCKER_COPIES_NOTHING_FROM: &str =
     "rm -rf /logs/verifier && ln -s /proc/1 /logs/verifier";
 const PUT_THE_WORKING_DIRECTORY_WHERE_DOCKER_COPIES_NOTHING_FROM: &str =
     "cd / && rm -rf /app && ln -s /proc/1 /app";
+const REMOVE_THE_WORKING_DIRECTORY: &str = "cd / && rm -rf /app";
+const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES: &str =
     "mkdir left && echo done > left/work.txt && mkfifo left/pipe && ln left/pipe left/twin";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
@@ -309,6 +311,9 @@ static VERIFIER_LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<Trialled> = LazyL
     )
 });
 
+static WORKING_DIRECTORY_REMOVED: LazyLock<Trialled> =
+    LazyLock::new(|| trialled(REMOVE_THE_WORKING_DIRECTORY, COMPLETE));
+
 static IN_AN_ENVIRONMENT_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Trialled> =
     LazyLock::new(|| in_the_environment(Environment::Named(NOT_ON_THE_MACHINE), FINISH, FINISHED));
 
@@ -569,6 +574,41 @@ fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_sandbox_is_given_no_r
             ..
         })
     ));
+}
+
+#[test]
+fn a_trial_whose_harness_removed_its_working_directory_is_given_a_result() {
+    assert!(WORKING_DIRECTORY_REMOVED.result.is_ok());
+}
+
+#[test]
+fn the_verifier_of_a_harness_that_removed_its_working_directory_is_not_started() {
+    assert!(with_its_result(
+        &WORKING_DIRECTORY_REMOVED,
+        TrialResult::Inconclusive(Cause::NoVerdict)
+    ));
+}
+
+#[test]
+fn what_docker_said_of_a_verifier_it_did_not_start_is_kept_as_what_the_verifier_printed() {
+    let verifier = WORKING_DIRECTORY_REMOVED
+        .outputs_directory
+        .trial(0, TASK)
+        .join("verifier");
+    let printed: String = ["stdout", "stderr"]
+        .iter()
+        .filter_map(|file| fs::read_to_string(verifier.join(file)).ok())
+        .collect();
+    assert!(!printed.trim().is_empty());
+}
+
+#[test]
+fn no_work_is_kept_of_a_harness_that_removed_its_working_directory() {
+    let work = WORKING_DIRECTORY_REMOVED
+        .outputs_directory
+        .trial(0, TASK)
+        .join("work");
+    assert!(fs::symlink_metadata(work).is_err());
 }
 
 #[test]

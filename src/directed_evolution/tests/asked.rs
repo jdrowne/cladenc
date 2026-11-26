@@ -15,7 +15,7 @@ const OBEYED: &str = "[agent]\nuser = 1000\ntimeout_sec = 30\n\n[verifier]\nuser
                       \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET:-a-made-up-token}\"\n";
 const SANDBOX: &str = "docker run ";
 const COMMAND: &str = "docker exec ";
-const AS_ROOT: &str = "docker exec --user 0 ";
+const AS_ROOT: &str = "docker exec --workdir / --user 0 ";
 const STAYS: &str = " --detach ";
 const HARNESS: &str = " run a harness ";
 const VERIFIER: &str = " /tests/test.sh ";

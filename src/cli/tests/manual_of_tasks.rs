@@ -271,6 +271,25 @@ fn the_manual_of_start_says_that_a_verifier_that_removed_logs_verifier_left_no_v
 }
 
 #[test]
+fn the_manual_of_start_says_what_a_trial_whose_harness_removed_its_working_directory_ends_as() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A harness that removed its working directory left no work to keep. Docker starts no \
+         command in a directory that is gone, so the verifier of the task, where it runs in the \
+         sandbox of the harness, is not started: it left no verdict, the trial is inconclusive, \
+         and its cause is recorded as no_verdict. What Docker said of the verifier is kept with \
+         the trial as what the verifier printed."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_where_cladenc_runs_what_it_runs_as_root_in_a_sandbox() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "What cladenc itself runs in a sandbox as root, it runs from /, so that it does not \
+         depend on the working directory."
+    ));
+}
+
+#[test]
 fn the_manual_of_start_says_that_start_says_which_result_a_trial_had() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "At the end of a trial, cladenc start says on standard error whether the trial passed, \

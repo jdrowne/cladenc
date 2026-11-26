@@ -237,6 +237,15 @@ fn the_readme_says_that_a_verifier_that_removed_logs_verifier_left_no_verdict() 
 }
 
 #[test]
+fn the_readme_says_what_a_trial_whose_harness_removed_its_working_directory_ends_as() {
+    assert!(readme().contains(
+        "A harness that removed its working directory left no work to keep, and Docker starts no \
+         verifier in a directory that is gone: the verifier left no verdict, so the trial is \
+         inconclusive, and its cause is recorded as `no_verdict`."
+    ));
+}
+
+#[test]
 fn the_readme_says_which_three_counts_the_report_gives_of_each_set_of_tasks() {
     assert!(readme().contains(
         "how many of its trials on the selection tasks passed, how many failed and how many \
