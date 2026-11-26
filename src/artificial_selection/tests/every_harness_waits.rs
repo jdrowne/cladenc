@@ -27,7 +27,7 @@ fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
         genealogy.start_trial(harness, &task).unwrap();
         genealogy
-            .end_trial(harness, &task, TrialResult::NotCompleted)
+            .end_trial(harness, &task, TrialResult::Fail)
             .unwrap();
     }
 }

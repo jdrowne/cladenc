@@ -25,11 +25,11 @@ fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
     for harness in [0, 1] {
         genealogy.start_trial(harness, "task-0").unwrap();
         genealogy
-            .end_trial(harness, "task-0", TrialResult::Completed)
+            .end_trial(harness, "task-0", TrialResult::Pass)
             .unwrap();
         genealogy.start_trial(harness, "task-1").unwrap();
         genealogy
-            .end_trial(harness, "task-1", TrialResult::NotCompleted)
+            .end_trial(harness, "task-1", TrialResult::Fail)
             .unwrap();
     }
     genealogy
@@ -46,11 +46,11 @@ fn with_the_second_of_three_harnesses_waiting() -> Genealogy {
     for harness in [0, 1, 2] {
         genealogy.start_trial(harness, "task-0").unwrap();
         genealogy
-            .end_trial(harness, "task-0", TrialResult::Completed)
+            .end_trial(harness, "task-0", TrialResult::Pass)
             .unwrap();
         genealogy.start_trial(harness, "task-1").unwrap();
         genealogy
-            .end_trial(harness, "task-1", TrialResult::NotCompleted)
+            .end_trial(harness, "task-1", TrialResult::Fail)
             .unwrap();
     }
     let child = genealogy.start_diversification(1).unwrap();

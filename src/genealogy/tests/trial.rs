@@ -1,4 +1,4 @@
-use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 
 fn selecting_by_both_tasks() -> Genealogy {
     Genealogy::new().selecting_by(&["a".to_owned(), "b".to_owned()])
@@ -20,7 +20,7 @@ fn started_counts_a_trial_that_has_not_ended() {
 
 #[test]
 fn started_keeps_counting_a_trial_that_has_ended() {
-    assert_eq!(trialled(TrialResult::Completed).started(), 1);
+    assert_eq!(trialled(TrialResult::Pass).started(), 1);
 }
 
 #[test]
@@ -37,95 +37,95 @@ fn started_counts_the_trials_of_every_harness() {
 }
 
 #[test]
-fn a_harness_whose_trial_has_not_ended_counts_as_neither_completed_nor_not_completed() {
+fn a_harness_whose_trial_has_not_ended_counts_as_neither_passed_nor_failed() {
     let mut genealogy = Genealogy::new();
     genealogy.start_trial(0, "a").unwrap();
     let primogenitor = &genealogy.harnesses()[0];
     assert_eq!(
         (
-            primogenitor.selection_completed(),
-            primogenitor.selection_not_completed()
+            primogenitor.selection_passed(),
+            primogenitor.selection_failed()
         ),
         (0, 0)
     );
 }
 
 #[test]
-fn a_completed_trial_adds_one_to_the_completed_of_its_harness() {
-    let genealogy = trialled(TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].selection_completed(), 1);
+fn a_trial_that_passed_adds_one_to_the_passed_of_its_harness() {
+    let genealogy = trialled(TrialResult::Pass);
+    assert_eq!(genealogy.harnesses()[0].selection_passed(), 1);
 }
 
 #[test]
-fn a_completed_trial_adds_nothing_to_the_not_completed_of_its_harness() {
-    let genealogy = trialled(TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 0);
+fn a_trial_that_passed_adds_nothing_to_the_failed_of_its_harness() {
+    let genealogy = trialled(TrialResult::Pass);
+    assert_eq!(genealogy.harnesses()[0].selection_failed(), 0);
 }
 
 #[test]
-fn a_trial_not_completed_adds_one_to_the_not_completed_of_its_harness() {
-    let genealogy = trialled(TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 1);
+fn a_failed_trial_adds_one_to_the_failed_of_its_harness() {
+    let genealogy = trialled(TrialResult::Fail);
+    assert_eq!(genealogy.harnesses()[0].selection_failed(), 1);
 }
 
 #[test]
-fn a_trial_not_completed_adds_nothing_to_the_completed_of_its_harness() {
-    let genealogy = trialled(TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[0].selection_completed(), 0);
+fn a_failed_trial_adds_nothing_to_the_passed_of_its_harness() {
+    let genealogy = trialled(TrialResult::Fail);
+    assert_eq!(genealogy.harnesses()[0].selection_passed(), 0);
 }
 
 #[test]
-fn a_result_of_no_verdict_adds_one_to_the_no_verdict_of_its_harness() {
-    let genealogy = trialled(TrialResult::NoVerdict);
-    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 1);
+fn a_trial_whose_verifier_left_no_verdict_adds_one_to_the_inconclusive_of_its_harness() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::NoVerdict));
+    assert_eq!(genealogy.harnesses()[0].selection_inconclusive(), 1);
 }
 
 #[test]
-fn a_result_of_no_verdict_adds_nothing_to_the_not_completed() {
-    let genealogy = trialled(TrialResult::NoVerdict);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 0);
+fn a_trial_whose_verifier_left_no_verdict_adds_nothing_to_the_failed() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::NoVerdict));
+    assert_eq!(genealogy.harnesses()[0].selection_failed(), 0);
 }
 
 #[test]
-fn a_result_of_no_verdict_adds_nothing_to_the_completed() {
-    let genealogy = trialled(TrialResult::NoVerdict);
-    assert_eq!(genealogy.harnesses()[0].selection_completed(), 0);
+fn a_trial_whose_verifier_left_no_verdict_adds_nothing_to_the_passed() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::NoVerdict));
+    assert_eq!(genealogy.harnesses()[0].selection_passed(), 0);
 }
 
 #[test]
-fn a_result_of_timed_out_adds_one_to_the_no_verdict_of_its_harness() {
-    let genealogy = trialled(TrialResult::TimedOut);
-    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 1);
+fn a_trial_whose_verifier_timed_out_adds_one_to_the_inconclusive_of_its_harness() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::TimedOut));
+    assert_eq!(genealogy.harnesses()[0].selection_inconclusive(), 1);
 }
 
 #[test]
-fn a_result_of_timed_out_adds_nothing_to_the_not_completed() {
-    let genealogy = trialled(TrialResult::TimedOut);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 0);
+fn a_trial_whose_verifier_timed_out_adds_nothing_to_the_failed() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::TimedOut));
+    assert_eq!(genealogy.harnesses()[0].selection_failed(), 0);
 }
 
 #[test]
-fn a_result_of_timed_out_adds_nothing_to_the_completed() {
-    let genealogy = trialled(TrialResult::TimedOut);
-    assert_eq!(genealogy.harnesses()[0].selection_completed(), 0);
+fn a_trial_whose_verifier_timed_out_adds_nothing_to_the_passed() {
+    let genealogy = trialled(TrialResult::Inconclusive(Cause::TimedOut));
+    assert_eq!(genealogy.harnesses()[0].selection_passed(), 0);
 }
 
 #[test]
-fn a_completed_trial_adds_nothing_to_the_no_verdict_of_its_harness() {
-    let genealogy = trialled(TrialResult::Completed);
-    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 0);
+fn a_trial_that_passed_adds_nothing_to_the_inconclusive_of_its_harness() {
+    let genealogy = trialled(TrialResult::Pass);
+    assert_eq!(genealogy.harnesses()[0].selection_inconclusive(), 0);
 }
 
 #[test]
-fn a_trial_not_completed_adds_nothing_to_the_no_verdict_of_its_harness() {
-    let genealogy = trialled(TrialResult::NotCompleted);
-    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 0);
+fn a_failed_trial_adds_nothing_to_the_inconclusive_of_its_harness() {
+    let genealogy = trialled(TrialResult::Fail);
+    assert_eq!(genealogy.harnesses()[0].selection_inconclusive(), 0);
 }
 
 #[test]
 fn the_results_of_a_harness_add_up_over_its_tasks() {
-    let mut genealogy = trialled(TrialResult::Completed);
+    let mut genealogy = trialled(TrialResult::Pass);
     genealogy.start_trial(0, "b").unwrap();
-    genealogy.end_trial(0, "b", TrialResult::Completed).unwrap();
-    assert_eq!(genealogy.harnesses()[0].selection_completed(), 2);
+    genealogy.end_trial(0, "b", TrialResult::Pass).unwrap();
+    assert_eq!(genealogy.harnesses()[0].selection_passed(), 2);
 }

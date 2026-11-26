@@ -9,7 +9,7 @@ impl ArtificialSelection {
             .filter(|harness| !harness.is_a_singleton_control_group_harness())
             .filter(|harness| harness.has_trialled_every(&self.tasks))
             .rev()
-            .max_by_key(|harness| harness.selection_completed())
+            .max_by_key(|harness| harness.selection_passed())
             .map_or(0, Harness::id)
     }
 }

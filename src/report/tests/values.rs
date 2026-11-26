@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{CreationOutcome, Genealogy, HarnessState, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, HarnessState, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 use crate::report::leader::Leader;
@@ -46,35 +46,35 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     genealogy
         .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::NotCompleted);
-    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::Completed);
-    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::Completed);
-    trialled(
-        &mut genealogy,
-        child,
-        "benchmark/t1",
-        TrialResult::Completed,
-    );
-    trialled(
-        &mut genealogy,
-        child,
-        "benchmark/t2",
-        TrialResult::NotCompleted,
-    );
-    trialled(
-        &mut genealogy,
-        child,
-        "benchmark/t3",
-        TrialResult::NotCompleted,
-    );
+    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::Fail);
+    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::Pass);
+    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::Pass);
+    trialled(&mut genealogy, child, "benchmark/t1", TrialResult::Pass);
+    trialled(&mut genealogy, child, "benchmark/t2", TrialResult::Fail);
+    trialled(&mut genealogy, child, "benchmark/t3", TrialResult::Fail);
     genealogy
 }
 
-fn a_primogenitor_whose_trials_have_no_verdict() -> Genealogy {
+fn a_primogenitor_whose_trials_are_inconclusive() -> Genealogy {
     let mut genealogy = settings().genealogy();
-    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::NoVerdict);
-    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::TimedOut);
-    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::NoVerdict);
+    trialled(
+        &mut genealogy,
+        0,
+        "benchmark/t1",
+        TrialResult::Inconclusive(Cause::NoVerdict),
+    );
+    trialled(
+        &mut genealogy,
+        0,
+        "benchmark/t2",
+        TrialResult::Inconclusive(Cause::TimedOut),
+    );
+    trialled(
+        &mut genealogy,
+        0,
+        "benchmark/t3",
+        TrialResult::Inconclusive(Cause::NoVerdict),
+    );
     genealogy
 }
 
@@ -123,8 +123,8 @@ fn the_clade_counts_of_a_harness_count_its_descendants() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].clade_completed,
-            report.harnesses[0].clade_not_completed
+            report.harnesses[0].clade_passed,
+            report.harnesses[0].clade_failed
         ),
         (1, 1)
     );
@@ -135,8 +135,8 @@ fn the_selection_counts_of_a_harness_are_those_of_its_own_trials_on_the_selectio
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].selection_completed,
-            report.harnesses[0].selection_not_completed
+            report.harnesses[0].selection_passed,
+            report.harnesses[0].selection_failed
         ),
         (0, 1)
     );
@@ -147,8 +147,8 @@ fn the_corroboration_counts_of_a_harness_are_those_of_its_own_trials_on_the_corr
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].corroboration_completed,
-            report.harnesses[0].corroboration_not_completed
+            report.harnesses[0].corroboration_passed,
+            report.harnesses[0].corroboration_failed
         ),
         (1, 0)
     );
@@ -159,8 +159,8 @@ fn the_corroboration_counts_of_a_child_are_its_own_and_not_those_of_its_progenit
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[1].corroboration_completed,
-            report.harnesses[1].corroboration_not_completed
+            report.harnesses[1].corroboration_passed,
+            report.harnesses[1].corroboration_failed
         ),
         (0, 1)
     );
@@ -171,8 +171,8 @@ fn the_non_holdout_counts_of_a_harness_are_those_of_its_own_trials_on_the_non_ho
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[0].non_holdout_completed,
-            report.harnesses[0].non_holdout_not_completed
+            report.harnesses[0].non_holdout_passed,
+            report.harnesses[0].non_holdout_failed
         ),
         (1, 0)
     );
@@ -183,50 +183,50 @@ fn the_clade_counts_of_a_harness_leave_out_the_tasks_that_are_not_held_out() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(
         (
-            report.harnesses[1].clade_completed,
-            report.harnesses[1].clade_not_completed
+            report.harnesses[1].clade_passed,
+            report.harnesses[1].clade_failed
         ),
         (1, 0)
     );
 }
 
 #[test]
-fn the_no_verdict_counts_of_a_harness_are_those_of_its_own_trials_on_each_set_of_tasks() {
-    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+fn the_inconclusive_counts_of_a_harness_are_those_of_its_own_trials_on_each_set_of_tasks() {
+    let report = report(&a_primogenitor_whose_trials_are_inconclusive());
     assert_eq!(
         (
-            report.harnesses[0].selection_no_verdict,
-            report.harnesses[0].corroboration_no_verdict,
-            report.harnesses[0].non_holdout_no_verdict
+            report.harnesses[0].selection_inconclusive,
+            report.harnesses[0].corroboration_inconclusive,
+            report.harnesses[0].non_holdout_inconclusive
         ),
         (1, 1, 1)
     );
 }
 
 #[test]
-fn a_trial_with_no_verdict_is_reported_as_neither_completed_nor_not_completed() {
-    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+fn an_inconclusive_trial_is_reported_as_neither_passed_nor_failed() {
+    let report = report(&a_primogenitor_whose_trials_are_inconclusive());
     assert_eq!(
         (
-            report.harnesses[0].selection_completed,
-            report.harnesses[0].selection_not_completed,
-            report.harnesses[0].corroboration_not_completed,
-            report.harnesses[0].non_holdout_not_completed,
-            report.harnesses[0].clade_not_completed
+            report.harnesses[0].selection_passed,
+            report.harnesses[0].selection_failed,
+            report.harnesses[0].corroboration_failed,
+            report.harnesses[0].non_holdout_failed,
+            report.harnesses[0].clade_failed
         ),
         (0, 0, 0, 0, 0)
     );
 }
 
 #[test]
-fn the_clade_no_verdict_of_a_harness_counts_its_trials_on_the_selection_tasks() {
-    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
-    assert_eq!(report.harnesses[0].clade_no_verdict, 1);
+fn the_clade_inconclusive_of_a_harness_counts_its_trials_on_the_selection_tasks() {
+    let report = report(&a_primogenitor_whose_trials_are_inconclusive());
+    assert_eq!(report.harnesses[0].clade_inconclusive, 1);
 }
 
 #[test]
-fn a_clade_whose_finished_trials_have_no_verdict_has_a_clade_completion_rate_of_zero() {
-    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+fn a_clade_whose_finished_trials_are_inconclusive_has_a_clade_completion_rate_of_zero() {
+    let report = report(&a_primogenitor_whose_trials_are_inconclusive());
     assert_eq!(report.harnesses[0].clade_completion_rate, Some(0.0));
 }
 
@@ -448,11 +448,6 @@ fn a_task_that_two_harnesses_completed_is_counted_once() {
     genealogy
         .end_diversification(another, CreationOutcome::Created)
         .unwrap();
-    trialled(
-        &mut genealogy,
-        another,
-        "benchmark/t1",
-        TrialResult::Completed,
-    );
+    trialled(&mut genealogy, another, "benchmark/t1", TrialResult::Pass);
     assert_eq!(report(&genealogy).selection_tasks_completed_by_any, 1);
 }

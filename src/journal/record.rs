@@ -164,6 +164,7 @@ pub(crate) enum Record {
     TrialFinished {
         harness: HarnessId,
         task: String,
+        #[serde(flatten)]
         result: TrialResult,
         seconds: f64,
     },

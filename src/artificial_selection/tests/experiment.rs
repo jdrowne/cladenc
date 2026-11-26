@@ -61,9 +61,9 @@ fn with_every_harness_benchmarked_in_full_and_the_singleton_control_group_harnes
 -> Genealogy {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
-        benchmark_in_full(&mut genealogy, harness, TrialResult::NotCompleted);
+        benchmark_in_full(&mut genealogy, harness, TrialResult::Fail);
     }
-    benchmark_in_full(&mut genealogy, 3, TrialResult::Completed);
+    benchmark_in_full(&mut genealogy, 3, TrialResult::Pass);
     genealogy
 }
 
@@ -89,7 +89,7 @@ fn with_a_harness_whose_last_two_diversifications_created_no_child() -> Genealog
 fn a_singleton_control_group_harness_with_a_task_left_is_given_it_as_a_child_is() {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
-        benchmark_in_full(&mut genealogy, harness, TrialResult::NotCompleted);
+        benchmark_in_full(&mut genealogy, harness, TrialResult::Fail);
     }
     assert_eq!(
         artificial_selection(2).next_action(&genealogy, 0),
@@ -105,9 +105,9 @@ fn a_singleton_control_group_harness_is_not_chosen_to_be_cloned_though_it_alone_
  {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
-        trial(&mut genealogy, harness, "task-0", TrialResult::NotCompleted);
+        trial(&mut genealogy, harness, "task-0", TrialResult::Fail);
     }
-    benchmark_in_full(&mut genealogy, 3, TrialResult::Completed);
+    benchmark_in_full(&mut genealogy, 3, TrialResult::Pass);
     assert_eq!(
         artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Trial {
@@ -127,8 +127,8 @@ fn a_singleton_control_group_harness_is_not_named_the_best_harness_though_it_com
 #[test]
 fn the_trials_of_a_singleton_control_group_harness_make_no_diversification_due() {
     let mut genealogy = after_an_experiment();
-    benchmark_in_full(&mut genealogy, 0, TrialResult::NotCompleted);
-    benchmark_in_full(&mut genealogy, 3, TrialResult::NotCompleted);
+    benchmark_in_full(&mut genealogy, 0, TrialResult::Fail);
+    benchmark_in_full(&mut genealogy, 3, TrialResult::Fail);
     assert_eq!(
         artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Trial {
@@ -142,9 +142,9 @@ fn the_trials_of_a_singleton_control_group_harness_make_no_diversification_due()
 fn a_singleton_control_group_harness_is_not_one_of_the_harnesses_a_diversification_waits_for() {
     let mut genealogy = after_an_experiment();
     for harness in [0, 1, 2] {
-        benchmark_in_full(&mut genealogy, harness, TrialResult::NotCompleted);
+        benchmark_in_full(&mut genealogy, harness, TrialResult::Fail);
     }
-    trial(&mut genealogy, 3, "task-0", TrialResult::NotCompleted);
+    trial(&mut genealogy, 3, "task-0", TrialResult::Fail);
     assert!(matches!(
         artificial_selection(1000).next_action(&genealogy, 0),
         Some(Action::Diversification { .. })
@@ -163,7 +163,7 @@ fn a_diversification_is_due_while_a_singleton_control_group_harness_is_still_bei
         })
         .unwrap();
     for harness in [0, 1, 2] {
-        benchmark_in_full(&mut genealogy, harness, TrialResult::NotCompleted);
+        benchmark_in_full(&mut genealogy, harness, TrialResult::Fail);
     }
     assert!(matches!(
         artificial_selection(1000).next_action(&genealogy, 0),

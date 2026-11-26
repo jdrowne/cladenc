@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, CollectCommand, TaskConfiguration};
-use crate::genealogy::TrialResult;
+use crate::genealogy::{Cause, TrialResult};
 use crate::model::Model;
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{
@@ -198,19 +198,22 @@ fn the_sandbox_of_a_trial_is_removed_once_its_verifier_has_run_and_nothing_more_
 #[test]
 fn a_trial_whose_verifier_writes_a_reward_of_one_completed_the_task() {
     let tried = trialled_by(Double::default().verifying(|_| true));
-    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
+    assert_eq!(result_of(&tried), Some(TrialResult::Pass));
 }
 
 #[test]
-fn a_trial_whose_verifier_writes_another_reward_did_not_complete_the_task() {
+fn a_trial_whose_verifier_writes_another_reward_failed() {
     let tried = trialled_by(Double::default().verifying(|_| false));
-    assert_eq!(result_of(&tried), Some(TrialResult::NotCompleted));
+    assert_eq!(result_of(&tried), Some(TrialResult::Fail));
 }
 
 #[test]
-fn a_trial_whose_verifier_writes_no_reward_has_a_result_of_no_verdict() {
+fn a_trial_whose_verifier_writes_no_reward_is_inconclusive_for_no_verdict() {
     let tried = trialled_by(Double::default());
-    assert_eq!(result_of(&tried), Some(TrialResult::NoVerdict));
+    assert_eq!(
+        result_of(&tried),
+        Some(TrialResult::Inconclusive(Cause::NoVerdict))
+    );
 }
 
 #[test]
@@ -218,10 +221,7 @@ fn the_reward_decides_whatever_status_the_verifier_exits_with() {
     let docker = Double::default()
         .verifying(|_| true)
         .answering(&VERIFIER, &[Answer::Exited(1)]);
-    assert_eq!(
-        result_of(&trialled_by(docker)),
-        Some(TrialResult::Completed)
-    );
+    assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -229,16 +229,16 @@ fn a_trial_whose_verifier_runs_past_its_time_limit_timed_out() {
     let docker = Double::default()
         .verifying(|_| true)
         .answering(&VERIFIER, &[Answer::TimedOut]);
-    assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::TimedOut));
+    assert_eq!(
+        result_of(&trialled_by(docker)),
+        Some(TrialResult::Inconclusive(Cause::TimedOut))
+    );
 }
 
 #[test]
 fn the_logs_of_the_verifier_are_copied_into_the_directory_of_the_running_trial() {
     let docker = Double::default().verifying(|trial| trial == "trial-0-benchmark+t1");
-    assert_eq!(
-        result_of(&trialled_by(docker)),
-        Some(TrialResult::Completed)
-    );
+    assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -246,10 +246,7 @@ fn a_trial_whose_harness_exits_with_a_status_other_than_zero_is_verified_all_the
     let docker = Double::default()
         .verifying(|_| true)
         .answering(&HARNESS, &[Answer::Exited(3)]);
-    assert_eq!(
-        result_of(&trialled_by(docker)),
-        Some(TrialResult::Completed)
-    );
+    assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -281,14 +278,14 @@ fn the_verifier_of_a_holdout_task_decides_the_result_of_its_trial() {
     );
     assert_eq!(
         trialled.ok().map(|trialled| trialled.result),
-        Some(TrialResult::Completed)
+        Some(TrialResult::Pass)
     );
 }
 
 #[test]
 fn the_result_of_a_trial_is_kept_with_it() {
     let tried = trialled_by(Double::default().verifying(|_| true));
-    assert_eq!(kept(&tried, "result").as_deref(), Some("completed\n"));
+    assert_eq!(kept(&tried, "result").as_deref(), Some("pass\n"));
 }
 
 #[test]
@@ -329,10 +326,7 @@ fn a_trial_whose_harness_was_stopped_is_verified_all_the_same() {
     let docker = Double::default()
         .verifying(|_| true)
         .answering(&HARNESS, &[Answer::TimedOut]);
-    assert_eq!(
-        result_of(&trialled_by(docker)),
-        Some(TrialResult::Completed)
-    );
+    assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -591,7 +585,7 @@ fn a_collect_command_that_exits_with_a_status_other_than_zero_does_not_end_the_t
         .verifying(|_| true)
         .answering(&COLLECT, &[Answer::Exited(3)]);
     let tried = trialled_with(docker, collecting(&[None]));
-    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
+    assert_eq!(result_of(&tried), Some(TrialResult::Pass));
 }
 
 #[test]

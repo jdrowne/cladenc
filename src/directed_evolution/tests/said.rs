@@ -4,7 +4,7 @@ use std::time::Duration;
 use crate::directed_evolution::Said;
 use crate::directed_evolution::said::{Environments, Retrying};
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{CreationOutcome, Experiment, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Experiment, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::{Checked, HarnessEnding, Retry, SandboxError};
@@ -169,31 +169,31 @@ fn one_selection_task_and_one_corroboration_task_are_not_said_as_several() {
 }
 
 #[test]
-fn a_harness_that_was_stopped_at_its_time_limit_and_completed_its_task_is_said_with_both() {
+fn a_trial_that_passed_after_its_harness_was_stopped_at_its_time_limit_is_said_with_both() {
     assert_eq!(
-        trialled_by_a_harness_that_ran_out_of_time(TrialResult::Completed),
-        "harness 3 completed task fix-the-parser, after it was stopped at its time limit: what \
-         the trial left is kept in /outputs/trials/3/fix-the-parser"
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::Pass),
+        "the trial of harness 3 on task fix-the-parser passed, after the harness was stopped at \
+         its time limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is_said_with_both() {
+fn a_trial_that_failed_after_its_harness_was_stopped_at_its_time_limit_is_said_with_both() {
     assert_eq!(
-        trialled_by_a_harness_that_ran_out_of_time(TrialResult::NotCompleted),
-        "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
-         limit, as the verifier wrote a verdict that is not 1: what the trial left is kept in \
-         /outputs/trials/3/fix-the-parser"
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::Fail),
+        "the trial of harness 3 on task fix-the-parser failed, after the harness was stopped at \
+         its time limit, as the verifier wrote a verdict that is not 1: what the trial left is \
+         kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_that_was_stopped_at_its_time_limit_and_was_given_no_verdict_is_said_with_both() {
+fn an_inconclusive_trial_whose_harness_was_stopped_at_its_time_limit_is_said_with_both() {
     assert_eq!(
-        trialled_by_a_harness_that_ran_out_of_time(TrialResult::NoVerdict),
-        "harness 3 was given no verdict on task fix-the-parser, after it was stopped at its \
-         time limit, as the verifier left none that can be read: what the trial left is kept \
-         in /outputs/trials/3/fix-the-parser"
+        trialled_by_a_harness_that_ran_out_of_time(TrialResult::Inconclusive(Cause::NoVerdict)),
+        "the trial of harness 3 on task fix-the-parser was inconclusive, after the harness was \
+         stopped at its time limit, as the verifier left no verdict that can be read: what the \
+         trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
@@ -203,14 +203,14 @@ fn a_trial_on_a_holdout_task_is_said_with_the_directory_under_holdout_that_keeps
         Said::Trialled {
             harness: 3,
             task: "parsing/fix-the-parser",
-            result: TrialResult::Completed,
+            result: TrialResult::Pass,
             ending: HarnessEnding::Ended,
             outputs_directory: &outputs_directory()
                 .holding_out(&["parsing/fix-the-parser".to_owned()]),
         }
         .to_string(),
-        "harness 3 completed task parsing/fix-the-parser: what the trial left is kept in \
-         /outputs/holdout/3/parsing/fix-the-parser"
+        "the trial of harness 3 on task parsing/fix-the-parser passed: what the trial left is \
+         kept in /outputs/holdout/3/parsing/fix-the-parser"
     );
 }
 
@@ -622,49 +622,50 @@ fn a_diversification_that_timed_out_is_said_to_have_run_past_its_time_limit() {
 }
 
 #[test]
-fn a_harness_that_completed_a_task_is_said_with_where_what_the_trial_left_is_kept() {
+fn a_trial_that_passed_is_said_with_where_what_the_trial_left_is_kept() {
     assert_eq!(
-        trialled(TrialResult::Completed),
-        "harness 3 completed task fix-the-parser: what the trial left is kept \
-         in /outputs/trials/3/fix-the-parser"
+        trialled(TrialResult::Pass),
+        "the trial of harness 3 on task fix-the-parser passed: what the trial left is kept in \
+         /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_verdict_was_not_1_is_said_not_to_have_completed_the_task_for_it() {
+fn a_trial_whose_verdict_was_not_1_is_said_to_have_failed_for_it() {
     assert_eq!(
-        trialled(TrialResult::NotCompleted),
-        "harness 3 did not complete task fix-the-parser, as the verifier wrote a verdict that \
-         is not 1: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+        trialled(TrialResult::Fail),
+        "the trial of harness 3 on task fix-the-parser failed, as the verifier wrote a verdict \
+         that is not 1: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_verifier_left_no_verdict_is_said_to_have_been_given_none() {
+fn a_trial_whose_verifier_left_no_verdict_is_said_to_be_inconclusive_for_it() {
     assert_eq!(
-        trialled(TrialResult::NoVerdict),
-        "harness 3 was given no verdict on task fix-the-parser, as the verifier left none that \
-         can be read: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+        trialled(TrialResult::Inconclusive(Cause::NoVerdict)),
+        "the trial of harness 3 on task fix-the-parser was inconclusive, as the verifier left \
+         no verdict that can be read: what the trial left is kept in \
+         /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_verifier_timed_out_is_said_to_have_been_given_no_verdict() {
+fn a_trial_whose_verifier_timed_out_is_said_to_be_inconclusive_for_it() {
     assert_eq!(
-        trialled(TrialResult::TimedOut),
-        "harness 3 was given no verdict on task fix-the-parser, as the verifier ran past its \
-         time limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+        trialled(TrialResult::Inconclusive(Cause::TimedOut)),
+        "the trial of harness 3 on task fix-the-parser was inconclusive, as the verifier ran \
+         past its time limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_verifier_left_no_verdict_is_not_said_to_have_not_completed_the_task() {
-    assert!(!trialled(TrialResult::NoVerdict).contains("did not complete"));
+fn a_trial_whose_verifier_left_no_verdict_is_not_said_to_have_failed() {
+    assert!(!trialled(TrialResult::Inconclusive(Cause::NoVerdict)).contains("failed"));
 }
 
 #[test]
-fn a_harness_whose_verifier_timed_out_is_not_said_to_have_not_completed_the_task() {
-    assert!(!trialled(TrialResult::TimedOut).contains("did not complete"));
+fn a_trial_whose_verifier_timed_out_is_not_said_to_have_failed() {
+    assert!(!trialled(TrialResult::Inconclusive(Cause::TimedOut)).contains("failed"));
 }
 
 #[test]

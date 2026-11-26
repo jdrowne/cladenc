@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{self, Journal, Record, Seconds, Settings, Started, State};
 
 fn settings() -> Settings {
@@ -49,11 +49,15 @@ fn dividing_its_tasks() -> Settings {
 fn a_trial_on_each_task() -> [Record; 6] {
     [
         trial_started(0, "benchmark/t1"),
-        trial_finished(0, "benchmark/t1", TrialResult::NotCompleted),
+        trial_finished(0, "benchmark/t1", TrialResult::Fail),
         trial_started(0, "benchmark/t2"),
-        trial_finished(0, "benchmark/t2", TrialResult::Completed),
+        trial_finished(0, "benchmark/t2", TrialResult::Pass),
         trial_started(0, "benchmark/t3"),
-        trial_finished(0, "benchmark/t3", TrialResult::TimedOut),
+        trial_finished(
+            0,
+            "benchmark/t3",
+            TrialResult::Inconclusive(Cause::TimedOut),
+        ),
     ]
 }
 
@@ -135,7 +139,7 @@ fn four_actions_of_which_two_finished() -> [Record; 6] {
         diversification_started(2, 0),
         trial_started(0, "t2"),
         diversification_finished(1, CreationOutcome::Created),
-        trial_finished(0, "t1", TrialResult::Completed),
+        trial_finished(0, "t1", TrialResult::Pass),
     ]
 }
 
@@ -182,12 +186,12 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
         .end_diversification(1, CreationOutcome::Created)
         .unwrap();
     genealogy.start_trial(1, "t2").unwrap();
-    genealogy
-        .end_trial(1, "t2", TrialResult::Completed)
-        .unwrap();
+    genealogy.end_trial(1, "t2", TrialResult::Pass).unwrap();
     genealogy.start_diversification(1).unwrap();
     genealogy.start_trial(0, "t1").unwrap();
-    genealogy.end_trial(0, "t1", TrialResult::TimedOut).unwrap();
+    genealogy
+        .end_trial(0, "t1", TrialResult::Inconclusive(Cause::TimedOut))
+        .unwrap();
     genealogy
         .end_diversification(2, CreationOutcome::Failed)
         .unwrap();
@@ -195,10 +199,10 @@ fn rebuilding_gives_the_genealogy_that_the_same_changes_give_directly() {
         diversification_started(1, 0),
         diversification_finished(1, CreationOutcome::Created),
         trial_started(1, "t2"),
-        trial_finished(1, "t2", TrialResult::Completed),
+        trial_finished(1, "t2", TrialResult::Pass),
         diversification_started(2, 1),
         trial_started(0, "t1"),
-        trial_finished(0, "t1", TrialResult::TimedOut),
+        trial_finished(0, "t1", TrialResult::Inconclusive(Cause::TimedOut)),
         diversification_finished(2, CreationOutcome::Failed),
     ]);
     assert_eq!(state.genealogy, genealogy);
@@ -210,8 +214,8 @@ fn rebuilding_counts_the_trials_on_the_selection_tasks_of_the_run_record_apart()
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
-            primogenitor.selection_completed(),
-            primogenitor.non_holdout_not_completed()
+            primogenitor.selection_passed(),
+            primogenitor.non_holdout_failed()
         ),
         (1, 1)
     );
@@ -223,9 +227,9 @@ fn rebuilding_counts_the_trials_on_the_corroboration_tasks_of_the_run_record_apa
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
         (
-            primogenitor.corroboration_completed(),
-            primogenitor.corroboration_not_completed(),
-            primogenitor.corroboration_no_verdict()
+            primogenitor.corroboration_passed(),
+            primogenitor.corroboration_failed(),
+            primogenitor.corroboration_inconclusive()
         ),
         (0, 0, 1)
     );
@@ -236,10 +240,7 @@ fn rebuilding_counts_no_trial_on_a_corroboration_task_in_a_clade() {
     let state = read(&journal_with(dividing_its_tasks(), &a_trial_on_each_task()));
     let primogenitor = &state.genealogy.harnesses()[0];
     assert_eq!(
-        (
-            primogenitor.clade_completed(),
-            primogenitor.clade_not_completed()
-        ),
+        (primogenitor.clade_passed(), primogenitor.clade_failed()),
         (1, 0)
     );
 }
@@ -253,9 +254,9 @@ fn a_journal_that_holds_no_action_gives_the_primogenitor_no_seconds_spent() {
 fn rebuilding_adds_up_the_seconds_of_the_trials_of_each_harness() {
     let state = rebuilt(&[
         trial_started(0, "t1"),
-        trial_finished(0, "t1", TrialResult::Completed),
+        trial_finished(0, "t1", TrialResult::Pass),
         trial_started(0, "t2"),
-        trial_finished(0, "t2", TrialResult::NotCompleted),
+        trial_finished(0, "t2", TrialResult::Fail),
     ]);
     assert_eq!(state.seconds[0].trials, 3.0);
 }
@@ -307,7 +308,7 @@ fn a_journal_whose_actions_all_finished_holds_no_unfinished_action() {
         diversification_started(1, 0),
         diversification_finished(1, CreationOutcome::Created),
         trial_started(1, "t1"),
-        trial_finished(1, "t1", TrialResult::NotCompleted),
+        trial_finished(1, "t1", TrialResult::Fail),
     ]);
     assert_eq!(state.unfinished, []);
 }
@@ -434,7 +435,7 @@ fn rebuilding_gives_a_singleton_control_group_harness_no_seconds_of_a_diversific
 fn rebuilding_gives_a_singleton_control_group_harness_the_seconds_of_its_trials() {
     let state = rebuilt(&an_experiment_whose_baseline_ended_and_then(&[
         trial_started(3, "benchmark/t1"),
-        trial_finished(3, "benchmark/t1", TrialResult::Completed),
+        trial_finished(3, "benchmark/t1", TrialResult::Pass),
     ]));
     assert_eq!(state.seconds[3].trials, 1.5);
 }

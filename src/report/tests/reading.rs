@@ -52,7 +52,7 @@ fn outputs_directory(last_line: &str) -> Memory {
         Record::TrialFinished {
             harness: 0,
             task: "benchmark/t1".to_owned(),
-            result: TrialResult::Completed,
+            result: TrialResult::Pass,
             seconds: 1.5,
         },
         Record::TrialStarted {
@@ -62,7 +62,7 @@ fn outputs_directory(last_line: &str) -> Memory {
         Record::TrialFinished {
             harness: 0,
             task: "benchmark/t2".to_owned(),
-            result: TrialResult::NotCompleted,
+            result: TrialResult::Fail,
             seconds: 2.0,
         },
         Record::DiversificationStarted {
@@ -95,11 +95,11 @@ fn of_the_records() -> Report {
     let mut genealogy = settings().genealogy();
     genealogy.start_trial(0, "benchmark/t1").unwrap();
     genealogy
-        .end_trial(0, "benchmark/t1", TrialResult::Completed)
+        .end_trial(0, "benchmark/t1", TrialResult::Pass)
         .unwrap();
     genealogy.start_trial(0, "benchmark/t2").unwrap();
     genealogy
-        .end_trial(0, "benchmark/t2", TrialResult::NotCompleted)
+        .end_trial(0, "benchmark/t2", TrialResult::Fail)
         .unwrap();
     genealogy.start_diversification(0).unwrap();
     let seconds = [
@@ -120,13 +120,13 @@ fn a_report_is_read_from_the_journal_of_an_outputs_directory() {
 #[test]
 fn a_report_read_from_a_journal_counts_the_selection_tasks_its_run_record_leaves() {
     let report = read(&outputs_directory("")).unwrap();
-    assert_eq!(report.harnesses[0].selection_completed, 1);
+    assert_eq!(report.harnesses[0].selection_passed, 1);
 }
 
 #[test]
 fn a_report_read_from_a_journal_counts_the_corroboration_tasks_its_run_record_names() {
     let report = read(&outputs_directory("")).unwrap();
-    assert_eq!(report.harnesses[0].corroboration_not_completed, 1);
+    assert_eq!(report.harnesses[0].corroboration_failed, 1);
 }
 
 #[test]

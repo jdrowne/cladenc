@@ -34,7 +34,7 @@ fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
     for task in ["benchmark/t1", "benchmark/t2"] {
         outputs_directory.start_trial(harness, task).unwrap();
         outputs_directory
-            .end_trial(harness, task, TrialResult::NotCompleted)
+            .end_trial(harness, task, TrialResult::Fail)
             .unwrap();
         fs::write(
             outputs_directory.trial(harness, task).join("stdout"),

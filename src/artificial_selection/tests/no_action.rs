@@ -17,9 +17,7 @@ fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     for task in tasks() {
         genealogy.start_trial(0, &task).unwrap();
-        genealogy
-            .end_trial(0, &task, TrialResult::Completed)
-            .unwrap();
+        genealogy.end_trial(0, &task, TrialResult::Pass).unwrap();
     }
     genealogy
 }

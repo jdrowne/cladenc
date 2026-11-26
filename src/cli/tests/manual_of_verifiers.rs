@@ -121,8 +121,7 @@ fn the_manual_of_start_says_that_a_verifier_waits_for_the_health_check_of_its_sa
 fn the_manual_of_start_says_that_a_verifier_that_never_ran_judged_nothing() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the health check of the verifier sandbox does not pass, no verifier has judged \
-         what the harness left, so cladenc does not record that the harness did not complete the \
-         task."
+         what the harness left, so cladenc does not record that the trial failed."
     ));
 }
 

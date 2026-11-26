@@ -271,11 +271,11 @@ fn a_directed_evolution_says_how_a_diversification_ended_and_where_its_child_is_
 }
 
 #[test]
-fn a_directed_evolution_says_whether_a_harness_completed_its_task_and_where_what_the_trial_left_is_kept()
- {
+fn a_directed_evolution_says_whether_a_trial_passed_and_where_what_the_trial_left_is_kept() {
     let evolved = said_over_one_task();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: harness 1 completed task benchmark/t1: what the trial left is kept in {}",
+        "cladenc: the trial of harness 1 on task benchmark/t1 passed: what the trial left is \
+         kept in {}",
         evolved.outputs().join("holdout/1/benchmark/t1").display()
     )));
 }

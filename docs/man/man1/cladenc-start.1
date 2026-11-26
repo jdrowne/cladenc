@@ -666,7 +666,7 @@ work, no result, and no count of them.
 Artificial selection goes by the selection tasks and by no others.
 cladenc chooses which harness is cloned by the finished trials of the harness
 and its descendants on the selection tasks, and by how many of those trials
-were completed, and it names as
+passed, and it names as
 the best harness the created harness, benchmarked in full, that completed the
 most selection tasks: of several that completed as many, the one created
 first.
@@ -844,7 +844,7 @@ task gives none, is not counted, and the command is then run again after
 start_interval_sec, or 5 seconds where the task gives none.
 .PP
 Where the health check of a task does not pass, the harness was never started,
-so cladenc does not record that the harness did not complete the task.
+so cladenc does not record that the trial failed.
 It removes the sandbox, waits, brings up a new sandbox of the task and
 runs the health check there again, as many times as
 \fB\-\-max\-task\-health\-check\-retries\fP gives.
@@ -967,8 +967,8 @@ what exclude left out.
 A directory takes the place of what the image holds at that path.
 .PP
 Where the health check of the verifier sandbox does not pass, no verifier
-has judged what the harness left, so cladenc does not record that the harness
-did not complete the task.
+has judged what the harness left, so cladenc does not record that the trial
+failed.
 It removes the sandbox, waits, brings up a new verifier sandbox and
 runs the health check there again, as many times as
 \fB\-\-max\-verifier\-health\-check\-retries\fP gives.
@@ -1149,16 +1149,16 @@ in place of reward.txt where both are there.
 /tests and /logs/verifier are the paths of Harbor's task layout, which a
 verifier expects.
 .PP
-How a trial ends decides its result:
+How a trial ends decides its result, which is pass, fail or inconclusive:
 .TP 7n
 \fBa verdict of 1, or 1 for every label of reward.json\fP
-the harness completed the task
+the result is pass: the harness completed the task
 .TP 7n
 \fBany other verdict, or a reward.json in which a verdict is not 1\fP
-the harness did not complete the task, which is recorded as not_completed
+the result is fail: the harness did not complete the task
 .TP 7n
 \fBno verdict, or a file that cannot be read as one\fP
-the trial has no verdict, which is recorded as no_verdict
+the result is inconclusive, and its cause is recorded as no_verdict
 .TP 7n
 \fBa health check of the task, or of the verifier sandbox, that passes in none of its tries\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
@@ -1169,40 +1169,39 @@ Docker did not start the sandbox: the directed evolution stops, and
 \fBcladenc resume\fP carries out the trial again
 .TP 7n
 \fBthe time limit of the verifier\fP
-the sandbox is removed, and the trial has no verdict, which is recorded as
-timed_out
+the sandbox is removed, the result is inconclusive, and its cause is recorded
+as timed_out
 .PP
 The exit status of the verifier decides nothing more.
 .PP
-A trial so has one of three outcomes: the harness completed the task, the
-harness did not complete the task, or the trial has no verdict.
-A harness is said not to have completed a task only where the verifier judged
-what the harness left and wrote a verdict that is not 1.
-Where a trial has no verdict, nothing judged what the harness left, and
+A trial so has one of three results: pass, fail or inconclusive.
+A trial fails only where the verifier judged what the harness left and wrote a
+verdict that is not 1.
+Where a trial is inconclusive, nothing judged what the harness left, and
 whether the harness completed the task is not known.
 .PP
 A file cannot be read as a verdict where reward.txt holds anything but one
 number, where reward.json holds anything but an object of one labelled number
 or more, and where either is not a regular file.
-Where a trial is recorded as no_verdict, the verifier ran to its end and wrote
-no verdict that can be read: the verifier may have broken by itself, or what
-the harness left may have broken it, and cladenc has no way to tell which.
+Where the cause of an inconclusive trial is no_verdict, the verifier ran to its
+end and wrote no verdict that can be read: the verifier may have broken by
+itself, or what the harness left may have broken it, and cladenc has no way to
+tell which.
 What the verifier printed and left is kept with the trial.
 .PP
-At the end of a trial, \fBcladenc start\fP says on standard error which of
-the three outcomes it had, and of a trial with no verdict whether the verifier
-left none that can be read or ran past its time limit.
-\fBcladenc report\fP and \fBcladenc status\fP count the trials with no
-verdict, those recorded as no_verdict and as timed_out together, apart from
-the tasks a harness completed and from those it did not complete.
-A trial with no verdict is a finished trial all the same: a completion rate is
-the part of the finished trials in which the task was completed, and
-artificial selection goes by the finished trials of a clade and by how many of
-them were completed, so a harness gains nothing by leaving what breaks a
-verifier.
+At the end of a trial, \fBcladenc start\fP says on standard error whether the
+trial passed, failed or was inconclusive, and of an inconclusive trial whether
+the verifier left no verdict that can be read or ran past its time limit.
+\fBcladenc report\fP and \fBcladenc status\fP count the trials that passed,
+those that failed and those that were inconclusive apart, each in a column of
+its own.
+An inconclusive trial is a finished trial all the same: a completion rate is
+the part of the finished trials that passed, and artificial selection goes by
+the finished trials of a clade and by how many of them passed, so a harness
+gains nothing by leaving what breaks a verifier.
 .SH CAVEATS
-A task that is recorded as completed means that the harness did the work only
-as far as three things hold, and cladenc sees to none of them.
+A trial that is recorded as pass means that the harness did the work only as
+far as three things hold, and cladenc sees to none of them.
 .PP
 A harness reaches the network.
 Every sandbox is started on the usual network of Docker, and reaches the
@@ -1236,7 +1235,12 @@ held out, in a directory named after the harness, in it one named after the
 benchmark, and in that one named after the task, which holds
 .TP 18n
 \fBresult\fP
-one word: completed, not_completed, no_verdict or timed_out
+one word: pass, fail or inconclusive
+.TP 18n
+\fBcause\fP
+one word, there only where the result is inconclusive: no_verdict where the
+verifier left no verdict that can be read, or timed_out where it ran past its
+time limit
 .TP 18n
 \fBending\fP
 one word: ended, or stopped where the harness ran past its time limit

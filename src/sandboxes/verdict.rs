@@ -3,7 +3,7 @@ use std::path::Path;
 use serde_json::{Map, Value};
 
 use crate::file_system::{FileSystem, Kind};
-use crate::genealogy::TrialResult;
+use crate::genealogy::{Cause, TrialResult};
 
 const VERDICTS: &str = "reward.json";
 const VERDICT: &str = "reward.txt";
@@ -16,9 +16,9 @@ pub(super) fn result(files: &dyn FileSystem, verifier: &Path) -> TrialResult {
         read(files, &verifier.join(VERDICT)).and_then(|text| single(&text))
     };
     match verdicts {
-        None => TrialResult::NoVerdict,
-        Some(verdicts) if verdicts.iter().all(|verdict| *verdict == 1.0) => TrialResult::Completed,
-        Some(_) => TrialResult::NotCompleted,
+        None => TrialResult::Inconclusive(Cause::NoVerdict),
+        Some(verdicts) if verdicts.iter().all(|verdict| *verdict == 1.0) => TrialResult::Pass,
+        Some(_) => TrialResult::Fail,
     }
 }
 

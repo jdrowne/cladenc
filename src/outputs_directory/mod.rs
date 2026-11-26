@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::benchmark::{Benchmark, INSTRUCTION};
 use crate::file_system::FileSystem;
-use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Experiment, HarnessId, TrialResult};
 
 use copy::copy_tree;
 pub(crate) use copy::{holds_only_harness_files, make_removable, same_tree};
@@ -314,13 +314,14 @@ impl OutputsDirectory {
 
     pub fn end_trial(&self, harness: HarnessId, task: &str, result: TrialResult) -> io::Result<()> {
         let running = self.running_trial(harness, task);
-        let word = match result {
-            TrialResult::Completed => "completed\n",
-            TrialResult::NotCompleted => "not_completed\n",
-            TrialResult::NoVerdict => "no_verdict\n",
-            TrialResult::TimedOut => "timed_out\n",
+        let (word, cause) = match result {
+            TrialResult::Pass => ("pass\n", None),
+            TrialResult::Fail => ("fail\n", None),
+            TrialResult::Inconclusive(Cause::NoVerdict) => ("inconclusive\n", Some("no_verdict\n")),
+            TrialResult::Inconclusive(Cause::TimedOut) => ("inconclusive\n", Some("timed_out\n")),
         };
         self.note(&running.join("result"), word)
+            .and_then(|()| cause.map_or(Ok(()), |cause| self.note(&running.join("cause"), cause)))
             .and_then(|()| self.files.rename(&running, &self.trial(harness, task)))
     }
 

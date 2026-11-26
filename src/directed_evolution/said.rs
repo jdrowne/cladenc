@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::{Checked, HarnessEnding, Retry, SandboxError};
@@ -250,12 +250,12 @@ impl Display for Said<'_> {
                 let (how, why) = how_and_why(*result);
                 let stopped = match ending {
                     HarnessEnding::Ended => "",
-                    HarnessEnding::Stopped => ", after it was stopped at its time limit",
+                    HarnessEnding::Stopped => ", after the harness was stopped at its time limit",
                 };
                 write!(
                     formatter,
-                    "harness {harness} {how} task {task}{stopped}{why}: what the trial left is \
-                     kept in {}",
+                    "the trial of harness {harness} on task {task} {how}{stopped}{why}: what the \
+                     trial left is kept in {}",
                     outputs_directory.trial(*harness, task).display()
                 )
             }
@@ -472,17 +472,14 @@ pub(super) fn say(writer: &mut dyn Write, said: &Said<'_>) {
 
 fn how_and_why(result: TrialResult) -> (&'static str, &'static str) {
     match result {
-        TrialResult::Completed => ("completed", ""),
-        TrialResult::NotCompleted => (
-            "did not complete",
-            ", as the verifier wrote a verdict that is not 1",
+        TrialResult::Pass => ("passed", ""),
+        TrialResult::Fail => ("failed", ", as the verifier wrote a verdict that is not 1"),
+        TrialResult::Inconclusive(Cause::NoVerdict) => (
+            "was inconclusive",
+            ", as the verifier left no verdict that can be read",
         ),
-        TrialResult::NoVerdict => (
-            "was given no verdict on",
-            ", as the verifier left none that can be read",
-        ),
-        TrialResult::TimedOut => (
-            "was given no verdict on",
+        TrialResult::Inconclusive(Cause::TimedOut) => (
+            "was inconclusive",
             ", as the verifier ran past its time limit",
         ),
     }

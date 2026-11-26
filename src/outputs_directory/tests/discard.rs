@@ -35,7 +35,7 @@ fn with_a_trial_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
     outputs_directory.start_trial(0, "benchmark/t1").unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::Completed)
+        .end_trial(0, "benchmark/t1", TrialResult::Pass)
         .unwrap();
     outputs_directory.discard_trial(0, "benchmark/t1").unwrap();
     (directory, outputs_directory)

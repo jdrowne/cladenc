@@ -132,7 +132,7 @@ fn end_of(action: Started) -> Told {
             harness,
             task,
             trialled: Trialled {
-                result: TrialResult::Completed,
+                result: TrialResult::Pass,
                 seconds: 1.5,
                 ending: HarnessEnding::Ended,
             },
@@ -179,7 +179,7 @@ fn benchmarked_in_full(genealogy: &mut Genealogy, harness: u64) {
     for task in [FIRST, SECOND] {
         genealogy.start_trial(harness, task).unwrap();
         genealogy
-            .end_trial(harness, task, TrialResult::Completed)
+            .end_trial(harness, task, TrialResult::Pass)
             .unwrap();
     }
 }

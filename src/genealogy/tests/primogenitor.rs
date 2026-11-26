@@ -30,17 +30,17 @@ fn a_new_genealogy_has_started_no_trial() {
 
 #[test]
 fn the_primogenitor_starts_with_nothing_completed() {
-    assert_eq!(Genealogy::new().harnesses()[0].selection_completed(), 0);
+    assert_eq!(Genealogy::new().harnesses()[0].selection_passed(), 0);
 }
 
 #[test]
-fn the_primogenitor_starts_with_nothing_not_completed() {
-    assert_eq!(Genealogy::new().harnesses()[0].selection_not_completed(), 0);
+fn the_primogenitor_starts_with_no_failed_trial() {
+    assert_eq!(Genealogy::new().harnesses()[0].selection_failed(), 0);
 }
 
 #[test]
-fn the_primogenitor_starts_with_no_trial_that_has_no_verdict() {
-    assert_eq!(Genealogy::new().harnesses()[0].selection_no_verdict(), 0);
+fn the_primogenitor_starts_with_no_inconclusive_trial() {
+    assert_eq!(Genealogy::new().harnesses()[0].selection_inconclusive(), 0);
 }
 
 #[test]

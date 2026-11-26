@@ -34,7 +34,7 @@ fn trialled(tasks: &[&str]) -> (Memory, OutputsDirectory) {
     for task in tasks {
         outputs_directory.start_trial(0, task).unwrap();
         outputs_directory
-            .end_trial(0, task, TrialResult::Completed)
+            .end_trial(0, task, TrialResult::Pass)
             .unwrap();
     }
     (directory, outputs_directory)
@@ -134,7 +134,7 @@ fn a_trial_on_a_holdout_task_that_ended_is_kept_under_holdout_with_its_result() 
                     .join("holdout/0/benchmark/t2/result")
             )
             .unwrap(),
-        "completed\n"
+        "pass\n"
     );
 }
 

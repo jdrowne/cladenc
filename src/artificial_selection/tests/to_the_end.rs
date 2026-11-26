@@ -71,37 +71,37 @@ fn shape(actions: &[Action]) -> Vec<String> {
 
 #[test]
 fn exactly_as_many_diversifications_start_as_the_most_there_may_be() {
-    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Pass);
     assert_eq!(diversifications(&actions), 3);
 }
 
 #[test]
 fn a_diversification_that_fails_is_one_of_the_most_there_may_be() {
-    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Pass);
     assert_eq!(diversifications(&actions), 3);
 }
 
 #[test]
 fn at_the_end_every_created_harness_has_trialled_every_task_exactly_once() {
-    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Pass);
     assert_eq!(trials(&actions), every_task_for_each_of(&[0, 1, 2, 3]));
 }
 
 #[test]
 fn a_harness_that_completes_none_of_its_tasks_still_trials_every_task() {
-    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::NotCompleted);
+    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Fail);
     assert_eq!(trials(&actions), every_task_for_each_of(&[0, 1, 2, 3]));
 }
 
 #[test]
 fn a_harness_that_was_not_created_trials_nothing() {
-    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Pass);
     assert_eq!(trials(&actions), every_task_for_each_of(&[0]));
 }
 
 #[test]
 fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
-    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Pass);
     assert_eq!(
         shape(&actions),
         [
@@ -122,7 +122,7 @@ fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
 
 #[test]
 fn every_diversification_still_starts_when_each_one_fails() {
-    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Completed);
+    let actions = actions_to_the_end(CreationOutcome::Failed, TrialResult::Pass);
     assert_eq!(
         shape(&actions),
         [

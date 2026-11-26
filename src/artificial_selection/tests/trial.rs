@@ -29,7 +29,7 @@ fn trialled(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result:
 
 fn with_two_children() -> Genealogy {
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, 0, 5, TrialResult::NotCompleted);
+    trialled(&mut genealogy, 0, 5, TrialResult::Fail);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     genealogy
@@ -71,7 +71,7 @@ fn a_trial_is_the_next_action_when_no_diversification_is_due() {
 #[test]
 fn a_diversification_is_not_a_trial() {
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, 0, 2, TrialResult::Completed);
+    trialled(&mut genealogy, 0, 2, TrialResult::Pass);
     assert_eq!(trialling(&genealogy, 0, 2), None);
 }
 
@@ -83,15 +83,15 @@ fn a_trial_takes_the_place_of_a_diversification_that_no_harness_is_benchmarked_i
 #[test]
 fn the_harness_with_the_lowest_id_that_has_a_task_not_yet_given_trials_next() {
     let mut genealogy = with_two_children();
-    trialled(&mut genealogy, 1, 2, TrialResult::Completed);
+    trialled(&mut genealogy, 1, 2, TrialResult::Pass);
     assert_eq!(trialling(&genealogy, 0, 5), Some(1));
 }
 
 #[test]
 fn a_harness_with_better_results_does_not_trial_ahead_of_one_with_a_lower_id() {
     let mut genealogy = with_two_children();
-    trialled(&mut genealogy, 1, 2, TrialResult::NotCompleted);
-    trialled(&mut genealogy, 2, 4, TrialResult::Completed);
+    trialled(&mut genealogy, 1, 2, TrialResult::Fail);
+    trialled(&mut genealogy, 2, 4, TrialResult::Pass);
     assert_eq!(times_trialling(&genealogy, 1, 5), 200);
 }
 
@@ -99,7 +99,7 @@ fn a_harness_with_better_results_does_not_trial_ahead_of_one_with_a_lower_id() {
 fn a_harness_with_no_task_left_never_trials_a_task() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    trialled(&mut genealogy, 0, 2, TrialResult::Completed);
+    trialled(&mut genealogy, 0, 2, TrialResult::Pass);
     assert_eq!(times_trialling(&genealogy, 1, 2), 200);
 }
 
@@ -107,7 +107,7 @@ fn a_harness_with_no_task_left_never_trials_a_task() {
 fn a_harness_that_is_being_created_never_trials_a_task() {
     let mut genealogy = Genealogy::new();
     genealogy.start_diversification(0).unwrap();
-    trialled(&mut genealogy, 0, 2, TrialResult::NotCompleted);
+    trialled(&mut genealogy, 0, 2, TrialResult::Fail);
     assert_eq!(times_trialling(&genealogy, 0, 20), 200);
 }
 
@@ -115,7 +115,7 @@ fn a_harness_that_is_being_created_never_trials_a_task() {
 fn a_failed_harness_never_trials_a_task() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, CreationOutcome::Failed);
-    trialled(&mut genealogy, 0, 2, TrialResult::NotCompleted);
+    trialled(&mut genealogy, 0, 2, TrialResult::Fail);
     assert_eq!(times_trialling(&genealogy, 0, 20), 200);
 }
 
@@ -123,7 +123,7 @@ fn a_failed_harness_never_trials_a_task() {
 fn the_first_task_not_yet_given_is_the_one_trialled_whatever_the_seed() {
     let mut genealogy = Genealogy::new();
     child_of(&mut genealogy, 0, CreationOutcome::Failed);
-    trialled(&mut genealogy, 0, 2, TrialResult::Completed);
+    trialled(&mut genealogy, 0, 2, TrialResult::Pass);
     assert_eq!(
         tasks_trialled(&genealogy, 5),
         BTreeSet::from(["task-2".to_owned()])
@@ -159,7 +159,7 @@ fn a_task_whose_trial_is_running_is_not_given_again() {
 #[test]
 fn the_action_number_does_not_change_which_trial_is_next() {
     let mut genealogy = with_two_children();
-    trialled(&mut genealogy, 1, 2, TrialResult::Completed);
+    trialled(&mut genealogy, 1, 2, TrialResult::Pass);
     let first = artificial_selection(7, 5).next_action(&genealogy, 0);
     assert!(
         (1..50).all(|action| artificial_selection(7, 5).next_action(&genealogy, action) == first)

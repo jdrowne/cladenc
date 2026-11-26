@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::TrialResult;
+use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use cladenc::sandboxes::{self, Host, Launch, Program, SandboxError};
@@ -472,8 +472,8 @@ fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_rem
 }
 
 #[test]
-fn a_verdict_of_1_on_what_the_harness_left_gives_completed() {
-    assert!(with_its_result(&LOOKED_AT.trialled, TrialResult::Completed));
+fn a_verdict_of_1_on_what_the_harness_left_gives_a_pass() {
+    assert!(with_its_result(&LOOKED_AT.trialled, TrialResult::Pass));
 }
 
 #[test]
@@ -499,7 +499,7 @@ fn a_verdict_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
             "mkdir -p /logs/verifier && echo 1 > /logs/verifier/reward.txt",
             "true"
         ),
-        TrialResult::NoVerdict
+        TrialResult::Inconclusive(Cause::NoVerdict)
     ));
 }
 
@@ -529,7 +529,7 @@ fn the_verifier_runs_as_the_user_the_harness_ran_as() {
 fn the_verifier_of_an_environment_with_a_user_can_write_its_verdict() {
     assert!(with_its_result(
         &AS_A_USER_AND_LOOKED_AT.trialled,
-        TrialResult::Completed
+        TrialResult::Pass
     ));
 }
 
@@ -582,7 +582,7 @@ fn the_verifier_finds_what_the_harness_left_outside_the_working_directory() {
             "echo done > /tmp/left",
             "grep -q done /tmp/left && echo 1 > /logs/verifier/reward.txt"
         ),
-        TrialResult::Completed
+        TrialResult::Pass
     ));
 }
 
@@ -590,7 +590,7 @@ fn the_verifier_finds_what_the_harness_left_outside_the_working_directory() {
 fn the_verifier_finds_a_process_that_the_harness_left_running() {
     assert!(with_its_result(
         &trialled(LEAVE_A_PROCESS_RUNNING, THE_PROCESS_STILL_RUNS),
-        TrialResult::Completed
+        TrialResult::Pass
     ));
 }
 
@@ -635,7 +635,7 @@ fn what_docker_said_of_a_trial_whose_environment_is_not_on_the_machine_is_kept()
 fn what_a_harness_that_ran_past_its_time_limit_left_is_still_judged() {
     assert!(with_its_result(
         &within(2, FINISH_AND_STAY, FINISHED),
-        TrialResult::Completed
+        TrialResult::Pass
     ));
 }
 
@@ -647,7 +647,7 @@ fn what_a_harness_that_ran_past_its_time_limit_left_running_is_ended_before_the_
             LEAVE_A_PROCESS_RUNNING_AND_STAY,
             THE_PROCESS_NO_LONGER_RUNS
         ),
-        TrialResult::Completed
+        TrialResult::Pass
     ));
 }
 

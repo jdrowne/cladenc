@@ -1,4 +1,4 @@
-use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 
 fn tasks(ids: &[&str]) -> Vec<String> {
     ids.iter().map(|id| (*id).to_owned()).collect()
@@ -26,7 +26,7 @@ fn the_tasks_not_given_leave_out_a_task_whose_trial_has_ended() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
     genealogy.start_trial(0, "a").unwrap();
-    genealogy.end_trial(0, "a", TrialResult::Completed).unwrap();
+    genealogy.end_trial(0, "a", TrialResult::Pass).unwrap();
     assert_eq!(genealogy.harnesses()[0].tasks_not_given(&list), ["b"]);
 }
 
@@ -71,8 +71,8 @@ fn trialled(genealogy: &mut Genealogy, task: &str, result: TrialResult) {
 fn a_harness_with_a_finished_trial_on_each_task_of_the_list_has_trialled_every_task() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, "a", TrialResult::Completed);
-    trialled(&mut genealogy, "b", TrialResult::NotCompleted);
+    trialled(&mut genealogy, "a", TrialResult::Pass);
+    trialled(&mut genealogy, "b", TrialResult::Fail);
     assert!(genealogy.harnesses()[0].has_trialled_every(&list));
 }
 
@@ -80,7 +80,11 @@ fn a_harness_with_a_finished_trial_on_each_task_of_the_list_has_trialled_every_t
 fn a_harness_whose_trial_ran_past_its_time_limit_has_trialled_that_task() {
     let list = tasks(&["a"]);
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, "a", TrialResult::TimedOut);
+    trialled(
+        &mut genealogy,
+        "a",
+        TrialResult::Inconclusive(Cause::TimedOut),
+    );
     assert!(genealogy.harnesses()[0].has_trialled_every(&list));
 }
 
@@ -94,7 +98,7 @@ fn a_harness_given_no_task_has_not_trialled_every_task() {
 fn a_harness_not_given_one_task_of_the_list_has_not_trialled_every_task() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, "a", TrialResult::Completed);
+    trialled(&mut genealogy, "a", TrialResult::Pass);
     assert!(!genealogy.harnesses()[0].has_trialled_every(&list));
 }
 
@@ -102,7 +106,7 @@ fn a_harness_not_given_one_task_of_the_list_has_not_trialled_every_task() {
 fn a_harness_has_not_trialled_every_task_while_a_trial_of_it_is_running() {
     let list = tasks(&["a", "b"]);
     let mut genealogy = Genealogy::new();
-    trialled(&mut genealogy, "a", TrialResult::Completed);
+    trialled(&mut genealogy, "a", TrialResult::Pass);
     genealogy.start_trial(0, "b").unwrap();
     assert!(!genealogy.harnesses()[0].has_trialled_every(&list));
 }
@@ -115,6 +119,6 @@ fn a_task_another_harness_trialled_does_not_count_for_a_harness() {
     genealogy
         .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    trialled(&mut genealogy, "a", TrialResult::Completed);
+    trialled(&mut genealogy, "a", TrialResult::Pass);
     assert!(!genealogy.harnesses()[1].has_trialled_every(&list));
 }

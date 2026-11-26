@@ -97,8 +97,8 @@ fn largest_draw<'a>(
     let mut largest: Option<(&Harness, f64)> = None;
     for harness in candidates {
         let draw = Beta::new(
-            focus * (1 + harness.clade_completed()) as f64,
-            focus * (1 + harness.clade_finished_without_completion()) as f64,
+            focus * (1 + harness.clade_passed()) as f64,
+            focus * (1 + harness.clade_failed_or_inconclusive()) as f64,
         )
         .expect("both parameters of the Beta distribution are at least 1")
         .sample(generator);

@@ -16,20 +16,21 @@ many diversifications were started, the best harness, how many of the
 selection tasks, of the corroboration tasks and of the non-holdout tasks at
 least one harness completed, and for each harness its progenitor, whether it
 was created, which reads unchanged where its diversification left the clone
-as it was, how many of the selection tasks it completed, how many it did not
-complete and how many of its trials on them have no verdict, the same three
-counts of the corroboration tasks and of the non-holdout tasks, the three
-counts of the selection tasks for its clade, which is the harness and all
-its descendants together, the clade completion rate, which is the part of the
-finished trials of the clade on the selection tasks in which the task was
-completed, and how many seconds the harness ran in all its trials together and
-how many its progenitor ran in the diversification that made it.
+as it was, how many of its trials on the selection tasks passed, how many
+failed and how many were inconclusive, the same three counts of the
+corroboration tasks and of the non-holdout tasks, the three counts of the
+selection tasks for its clade, which is the harness and all its descendants
+together, the clade completion rate, which is the part of the finished trials
+of the clade on the selection tasks that passed, and how many seconds the
+harness ran in all its trials together and how many its progenitor ran in the
+diversification that made it.
 .PP
-A trial has no verdict where its verifier left none that can be read or ran
-past its time limit: the harness is counted neither as having completed the
-task nor as not having completed it.
-Such a trial on a selection task is one of the finished trials of the clade
-completion rate all the same.
+A trial passes where its verifier wrote a verdict of 1, and fails where its
+verifier wrote a verdict that is not 1.
+A trial is inconclusive where its verifier left no verdict that can be read or
+ran past its time limit: it is counted neither as passed nor as failed.
+An inconclusive trial on a selection task is one of the finished trials of the
+clade completion rate all the same.
 .PP
 Nothing is chosen by the corroboration tasks, so the counts of the
 corroboration tasks are where a person reads how far the best harness is ahead

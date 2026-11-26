@@ -94,7 +94,7 @@ fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
     for task in [SHOWN, HELD_OUT] {
         outputs_directory.start_trial(0, task).unwrap();
         outputs_directory
-            .end_trial(0, task, TrialResult::NotCompleted)
+            .end_trial(0, task, TrialResult::Fail)
             .unwrap();
     }
     let _ = sandboxes::run_diversification(

@@ -41,9 +41,9 @@ fn settings() -> Settings {
 fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
-            TrialResult::Completed
+            TrialResult::Pass
         } else {
-            TrialResult::NotCompleted
+            TrialResult::Fail
         };
         genealogy.start_trial(harness, &task).unwrap();
         genealogy.end_trial(harness, &task, result).unwrap();

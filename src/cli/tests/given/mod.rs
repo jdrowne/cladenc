@@ -61,7 +61,7 @@ pub(super) fn of_format_33(outputs_directory: Memory) -> Memory {
     let older = outputs_directory
         .read_to_string(&journal)
         .unwrap()
-        .replace(r#""format":34"#, r#""format":33"#);
+        .replace(r#""format":35"#, r#""format":33"#);
     outputs_directory.write(journal, older).unwrap();
     outputs_directory
 }

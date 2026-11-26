@@ -1,4 +1,4 @@
-use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn with_a_child() -> Genealogy {
     let mut genealogy = Genealogy::new();
@@ -23,27 +23,27 @@ fn in_a_new_genealogy_no_harness_has_completed_a_task() {
 
 #[test]
 fn a_task_the_primogenitor_completed_is_completed_by_one_harness_at_least() {
-    assert!(after(0, TrialResult::Completed).completed_by_any("a"));
+    assert!(after(0, TrialResult::Pass).completed_by_any("a"));
 }
 
 #[test]
 fn a_task_a_child_completed_is_completed_by_one_harness_at_least() {
-    assert!(after(1, TrialResult::Completed).completed_by_any("a"));
+    assert!(after(1, TrialResult::Pass).completed_by_any("a"));
 }
 
 #[test]
-fn a_task_that_was_trialled_and_not_completed_is_completed_by_no_harness() {
-    assert!(!after(0, TrialResult::NotCompleted).completed_by_any("a"));
+fn a_task_whose_trial_failed_is_completed_by_no_harness() {
+    assert!(!after(0, TrialResult::Fail).completed_by_any("a"));
 }
 
 #[test]
-fn a_task_whose_verifier_left_no_verdict_is_completed_by_no_harness() {
-    assert!(!after(0, TrialResult::NoVerdict).completed_by_any("a"));
+fn a_task_whose_trial_is_inconclusive_is_completed_by_no_harness() {
+    assert!(!after(0, TrialResult::Inconclusive(Cause::NoVerdict)).completed_by_any("a"));
 }
 
 #[test]
 fn a_task_whose_trial_ran_past_its_time_limit_is_completed_by_no_harness() {
-    assert!(!after(0, TrialResult::TimedOut).completed_by_any("a"));
+    assert!(!after(0, TrialResult::Inconclusive(Cause::TimedOut)).completed_by_any("a"));
 }
 
 #[test]
@@ -55,15 +55,15 @@ fn a_task_whose_trial_has_not_ended_is_completed_by_no_harness() {
 
 #[test]
 fn a_task_no_harness_trialled_is_completed_by_no_harness() {
-    assert!(!after(0, TrialResult::Completed).completed_by_any("b"));
+    assert!(!after(0, TrialResult::Pass).completed_by_any("b"));
 }
 
 #[test]
 fn the_harness_that_completed_a_task_has_completed_it() {
-    assert!(after(1, TrialResult::Completed).harnesses()[1].has_completed("a"));
+    assert!(after(1, TrialResult::Pass).harnesses()[1].has_completed("a"));
 }
 
 #[test]
 fn a_harness_has_not_completed_a_task_that_another_harness_completed() {
-    assert!(!after(1, TrialResult::Completed).harnesses()[0].has_completed("a"));
+    assert!(!after(1, TrialResult::Pass).harnesses()[0].has_completed("a"));
 }

@@ -12,7 +12,7 @@ pub use record::Settings;
 pub use state::Started;
 pub(crate) use state::{Seconds, State, read};
 
-pub(crate) const FORMAT: u32 = 34;
+pub(crate) const FORMAT: u32 = 35;
 
 #[derive(Debug)]
 pub(crate) struct Journal {

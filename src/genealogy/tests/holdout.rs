@@ -1,4 +1,4 @@
-use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 const SELECTION: &str = "selection";
 const CORROBORATION: &str = "corroboration";
@@ -29,28 +29,28 @@ fn after(harness: HarnessId, task: &str, result: TrialResult) -> Genealogy {
 fn counts_of_the_child(genealogy: &Genealogy) -> [u64; 9] {
     let child = &genealogy.harnesses()[1];
     [
-        child.selection_completed(),
-        child.selection_not_completed(),
-        child.selection_no_verdict(),
-        child.corroboration_completed(),
-        child.corroboration_not_completed(),
-        child.corroboration_no_verdict(),
-        child.non_holdout_completed(),
-        child.non_holdout_not_completed(),
-        child.non_holdout_no_verdict(),
+        child.selection_passed(),
+        child.selection_failed(),
+        child.selection_inconclusive(),
+        child.corroboration_passed(),
+        child.corroboration_failed(),
+        child.corroboration_inconclusive(),
+        child.non_holdout_passed(),
+        child.non_holdout_failed(),
+        child.non_holdout_inconclusive(),
     ]
 }
 
-fn clade_completed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
-    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_completed())
+fn clade_passed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
+    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_passed())
 }
 
-fn clade_not_completed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
-    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_not_completed())
+fn clade_failed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
+    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_failed())
 }
 
-fn clade_no_verdict_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
-    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_no_verdict())
+fn clade_inconclusive_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
+    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_inconclusive())
 }
 
 #[test]
@@ -91,182 +91,222 @@ fn a_new_harness_has_no_count_of_any_task() {
 }
 
 #[test]
-fn a_completed_trial_on_a_selection_task_adds_one_to_the_selection_completed_alone() {
+fn a_trial_that_passed_on_a_selection_task_adds_one_to_the_selection_passed_alone() {
     assert_eq!(
-        counts_of_the_child(&after(1, SELECTION, TrialResult::Completed)),
+        counts_of_the_child(&after(1, SELECTION, TrialResult::Pass)),
         [1, 0, 0, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_selection_task_adds_one_to_the_selection_not_completed_alone() {
+fn a_failed_trial_at_a_selection_task_adds_one_to_the_selection_failed_alone() {
     assert_eq!(
-        counts_of_the_child(&after(1, SELECTION, TrialResult::NotCompleted)),
+        counts_of_the_child(&after(1, SELECTION, TrialResult::Fail)),
         [0, 1, 0, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_selection_task_adds_one_to_the_selection_no_verdict_alone() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_selection_task_adds_one_to_the_selection_inconclusive_alone()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, SELECTION, TrialResult::NoVerdict)),
+        counts_of_the_child(&after(
+            1,
+            SELECTION,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [0, 0, 1, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_selection_task_adds_one_to_the_selection_no_verdict_alone() {
+fn a_trial_whose_verifier_timed_out_at_a_selection_task_adds_one_to_the_selection_inconclusive_alone()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, SELECTION, TrialResult::TimedOut)),
+        counts_of_the_child(&after(
+            1,
+            SELECTION,
+            TrialResult::Inconclusive(Cause::TimedOut)
+        )),
         [0, 0, 1, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_completed_trial_on_a_corroboration_task_adds_one_to_the_corroboration_completed_alone() {
+fn a_trial_that_passed_on_a_corroboration_task_adds_one_to_the_corroboration_passed_alone() {
     assert_eq!(
-        counts_of_the_child(&after(1, CORROBORATION, TrialResult::Completed)),
+        counts_of_the_child(&after(1, CORROBORATION, TrialResult::Pass)),
         [0, 0, 0, 1, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_corroboration_task_adds_one_to_the_corroboration_not_completed() {
+fn a_failed_trial_at_a_corroboration_task_adds_one_to_the_corroboration_failed() {
     assert_eq!(
-        counts_of_the_child(&after(1, CORROBORATION, TrialResult::NotCompleted)),
+        counts_of_the_child(&after(1, CORROBORATION, TrialResult::Fail)),
         [0, 0, 0, 0, 1, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_corroboration_task_adds_one_to_the_corroboration_no_verdict() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_corroboration_task_adds_one_to_the_corroboration_inconclusive()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, CORROBORATION, TrialResult::NoVerdict)),
+        counts_of_the_child(&after(
+            1,
+            CORROBORATION,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [0, 0, 0, 0, 0, 1, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_corroboration_task_adds_one_to_the_corroboration_no_verdict() {
+fn a_trial_whose_verifier_timed_out_at_a_corroboration_task_adds_one_to_the_corroboration_inconclusive()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, CORROBORATION, TrialResult::TimedOut)),
+        counts_of_the_child(&after(
+            1,
+            CORROBORATION,
+            TrialResult::Inconclusive(Cause::TimedOut)
+        )),
         [0, 0, 0, 0, 0, 1, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_completed_trial_on_a_task_not_held_out_adds_one_to_the_non_holdout_completed_alone() {
+fn a_trial_that_passed_on_a_task_not_held_out_adds_one_to_the_non_holdout_passed_alone() {
     assert_eq!(
-        counts_of_the_child(&after(1, SHOWN, TrialResult::Completed)),
+        counts_of_the_child(&after(1, SHOWN, TrialResult::Pass)),
         [0, 0, 0, 0, 0, 0, 1, 0, 0]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_task_not_held_out_adds_one_to_the_non_holdout_not_completed() {
+fn a_failed_trial_at_a_task_not_held_out_adds_one_to_the_non_holdout_failed() {
     assert_eq!(
-        counts_of_the_child(&after(1, SHOWN, TrialResult::NotCompleted)),
+        counts_of_the_child(&after(1, SHOWN, TrialResult::Fail)),
         [0, 0, 0, 0, 0, 0, 0, 1, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_task_not_held_out_adds_one_to_the_non_holdout_no_verdict() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_task_not_held_out_adds_one_to_the_non_holdout_inconclusive()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, SHOWN, TrialResult::NoVerdict)),
+        counts_of_the_child(&after(
+            1,
+            SHOWN,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [0, 0, 0, 0, 0, 0, 0, 0, 1]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_task_not_held_out_adds_one_to_the_non_holdout_no_verdict() {
+fn a_trial_whose_verifier_timed_out_at_a_task_not_held_out_adds_one_to_the_non_holdout_inconclusive()
+ {
     assert_eq!(
-        counts_of_the_child(&after(1, SHOWN, TrialResult::TimedOut)),
+        counts_of_the_child(&after(1, SHOWN, TrialResult::Inconclusive(Cause::TimedOut))),
         [0, 0, 0, 0, 0, 0, 0, 0, 1]
     );
 }
 
 #[test]
-fn a_completed_trial_on_a_selection_task_reaches_the_clade_completed_of_its_line() {
+fn a_trial_that_passed_on_a_selection_task_reaches_the_clade_passed_of_its_line() {
     assert_eq!(
-        clade_completed_of_the_line(&after(1, SELECTION, TrialResult::Completed)),
+        clade_passed_of_the_line(&after(1, SELECTION, TrialResult::Pass)),
         [1, 1]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_selection_task_reaches_the_clade_not_completed_of_its_line() {
+fn a_failed_trial_at_a_selection_task_reaches_the_clade_failed_of_its_line() {
     assert_eq!(
-        clade_not_completed_of_the_line(&after(1, SELECTION, TrialResult::NotCompleted)),
+        clade_failed_of_the_line(&after(1, SELECTION, TrialResult::Fail)),
         [1, 1]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_selection_task_reaches_the_clade_no_verdict_of_its_line() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_selection_task_reaches_the_clade_inconclusive_of_its_line()
+ {
     assert_eq!(
-        clade_no_verdict_of_the_line(&after(1, SELECTION, TrialResult::NoVerdict)),
+        clade_inconclusive_of_the_line(&after(
+            1,
+            SELECTION,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [1, 1]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_corroboration_task_reaches_no_clade_no_verdict() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_corroboration_task_reaches_no_clade_inconclusive() {
     assert_eq!(
-        clade_no_verdict_of_the_line(&after(1, CORROBORATION, TrialResult::NoVerdict)),
+        clade_inconclusive_of_the_line(&after(
+            1,
+            CORROBORATION,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [0, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_task_that_is_not_held_out_reaches_no_clade_no_verdict() {
+fn a_trial_whose_verifier_left_no_verdict_at_a_task_that_is_not_held_out_reaches_no_clade_inconclusive()
+ {
     assert_eq!(
-        clade_no_verdict_of_the_line(&after(1, SHOWN, TrialResult::NoVerdict)),
+        clade_inconclusive_of_the_line(&after(
+            1,
+            SHOWN,
+            TrialResult::Inconclusive(Cause::NoVerdict)
+        )),
         [0, 0]
     );
 }
 
 #[test]
-fn a_completed_trial_on_a_corroboration_task_reaches_no_clade_completed() {
+fn a_trial_that_passed_on_a_corroboration_task_reaches_no_clade_passed() {
     assert_eq!(
-        clade_completed_of_the_line(&after(1, CORROBORATION, TrialResult::Completed)),
+        clade_passed_of_the_line(&after(1, CORROBORATION, TrialResult::Pass)),
         [0, 0]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_corroboration_task_reaches_no_clade_not_completed() {
+fn a_failed_trial_at_a_corroboration_task_reaches_no_clade_failed() {
     assert_eq!(
-        clade_not_completed_of_the_line(&after(1, CORROBORATION, TrialResult::NotCompleted)),
+        clade_failed_of_the_line(&after(1, CORROBORATION, TrialResult::Fail)),
         [0, 0]
     );
 }
 
 #[test]
 fn a_clade_that_finished_only_corroboration_tasks_has_no_clade_completion_rate() {
-    let genealogy = after(1, CORROBORATION, TrialResult::Completed);
+    let genealogy = after(1, CORROBORATION, TrialResult::Pass);
     assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
 #[test]
-fn a_completed_trial_on_a_task_that_is_not_held_out_reaches_no_clade_completed() {
+fn a_trial_that_passed_on_a_task_that_is_not_held_out_reaches_no_clade_passed() {
     assert_eq!(
-        clade_completed_of_the_line(&after(1, SHOWN, TrialResult::Completed)),
+        clade_passed_of_the_line(&after(1, SHOWN, TrialResult::Pass)),
         [0, 0]
     );
 }
 
 #[test]
-fn a_trial_not_completed_at_a_task_that_is_not_held_out_reaches_no_clade_not_completed() {
+fn a_failed_trial_at_a_task_that_is_not_held_out_reaches_no_clade_failed() {
     assert_eq!(
-        clade_not_completed_of_the_line(&after(1, SHOWN, TrialResult::NotCompleted)),
+        clade_failed_of_the_line(&after(1, SHOWN, TrialResult::Fail)),
         [0, 0]
     );
 }
 
 #[test]
 fn a_clade_that_finished_only_tasks_that_are_not_held_out_has_no_clade_completion_rate() {
-    let genealogy = after(1, SHOWN, TrialResult::Completed);
+    let genealogy = after(1, SHOWN, TrialResult::Pass);
     assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), None);
 }
 
@@ -275,23 +315,23 @@ fn a_genealogy_told_of_no_task_counts_every_task_as_one_that_is_not_held_out() {
     let mut genealogy = Genealogy::new();
     genealogy.start_trial(0, SELECTION).unwrap();
     genealogy
-        .end_trial(0, SELECTION, TrialResult::Completed)
+        .end_trial(0, SELECTION, TrialResult::Pass)
         .unwrap();
-    assert_eq!(genealogy.harnesses()[0].non_holdout_completed(), 1);
+    assert_eq!(genealogy.harnesses()[0].non_holdout_passed(), 1);
 }
 
 #[test]
 fn a_trial_on_a_selection_task_is_started_and_counted_as_any_trial_is() {
-    assert_eq!(after(1, SELECTION, TrialResult::Completed).started(), 1);
+    assert_eq!(after(1, SELECTION, TrialResult::Pass).started(), 1);
 }
 
 #[test]
 fn a_trial_on_a_corroboration_task_is_started_and_counted_as_any_trial_is() {
-    assert_eq!(after(1, CORROBORATION, TrialResult::Completed).started(), 1);
+    assert_eq!(after(1, CORROBORATION, TrialResult::Pass).started(), 1);
 }
 
 #[test]
 fn a_harness_has_completed_a_corroboration_task_it_completed() {
-    let genealogy = after(1, CORROBORATION, TrialResult::Completed);
+    let genealogy = after(1, CORROBORATION, TrialResult::Pass);
     assert!(genealogy.completed_by_any(CORROBORATION));
 }

@@ -11,7 +11,7 @@ use super::{
     verdict,
 };
 use crate::benchmark::TESTS;
-use crate::genealogy::TrialResult;
+use crate::genealogy::{Cause, TrialResult};
 
 const VERIFIER: Shell<'static> = Shell {
     command: harbor::VERIFIER,
@@ -100,7 +100,7 @@ impl<'a> Verifying<'a> {
             .map(|ending| {
                 up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
                 match ending {
-                    Ending::TimedOut => TrialResult::TimedOut,
+                    Ending::TimedOut => TrialResult::Inconclusive(Cause::TimedOut),
                     Ending::Exited(_) => verdict::result(up.files(), &logs),
                 }
             })

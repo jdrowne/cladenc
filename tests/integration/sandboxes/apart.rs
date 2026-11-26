@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
 use cladenc::file_system::Disk;
-use cladenc::genealogy::TrialResult;
+use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
 use cladenc::sandboxes::{
@@ -419,7 +419,7 @@ fn a_path_the_task_lists_is_at_the_same_path_in_the_verifier_sandbox() {
 fn a_harness_completes_a_task_whose_verifier_runs_separately_by_what_was_kept() {
     assert_eq!(
         result_of(&VERIFIED_SEPARATELY_ON_ITS_REPORT.trialled),
-        Some(TrialResult::Completed)
+        Some(TrialResult::Pass)
     );
 }
 
@@ -427,7 +427,7 @@ fn a_harness_completes_a_task_whose_verifier_runs_separately_by_what_was_kept() 
 fn a_harness_does_not_complete_a_task_by_work_that_its_separate_verifier_is_not_given() {
     assert_eq!(
         result_of(&VERIFIED_SEPARATELY.trialled),
-        Some(TrialResult::NoVerdict)
+        Some(TrialResult::Inconclusive(Cause::NoVerdict))
     );
 }
 
@@ -476,7 +476,7 @@ fn a_verifier_is_run_where_a_path_the_task_lists_was_not_in_the_sandbox_of_the_h
         WRITE_A_REPORT,
         COMPLETE,
     );
-    assert_eq!(result_of(&trialled), Some(TrialResult::Completed));
+    assert_eq!(result_of(&trialled), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -695,7 +695,7 @@ fn a_verifier_whose_health_check_passes_is_run() {
         WRITE_A_REPORT,
         COMPLETE,
     );
-    assert_eq!(result_of(&trialled), Some(TrialResult::Completed));
+    assert_eq!(result_of(&trialled), Some(TrialResult::Pass));
 }
 
 #[test]

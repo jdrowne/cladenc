@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -38,9 +38,9 @@ fn settings() -> Settings {
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     let mut genealogy = settings().genealogy();
     for (task, result) in [
-        ("benchmark/t1", TrialResult::Completed),
-        ("benchmark/t2", TrialResult::NotCompleted),
-        ("benchmark/t3", TrialResult::Completed),
+        ("benchmark/t1", TrialResult::Pass),
+        ("benchmark/t2", TrialResult::Fail),
+        ("benchmark/t3", TrialResult::Pass),
     ] {
         genealogy.start_trial(0, task).unwrap();
         genealogy.end_trial(0, task, result).unwrap();
@@ -65,21 +65,21 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":null},"#,
             r#""harnesses":["#,
             r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
-            r#""selection_completed":1,"selection_not_completed":0,"selection_no_verdict":0,"#,
-            r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
-            r#""corroboration_no_verdict":0,"#,
-            r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
-            r#""non_holdout_no_verdict":0,"#,
-            r#""clade_completed":1,"clade_not_completed":0,"clade_no_verdict":0,"#,
+            r#""selection_passed":1,"selection_failed":0,"selection_inconclusive":0,"#,
+            r#""corroboration_passed":1,"corroboration_failed":0,"#,
+            r#""corroboration_inconclusive":0,"#,
+            r#""non_holdout_passed":0,"non_holdout_failed":1,"#,
+            r#""non_holdout_inconclusive":0,"#,
+            r#""clade_passed":1,"clade_failed":0,"clade_inconclusive":0,"#,
             r#""clade_completion_rate":1.0,"#,
             r#""trial_seconds":4.5,"diversification_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"experiment":null,"state":"being_created","#,
-            r#""selection_completed":0,"selection_not_completed":0,"selection_no_verdict":0,"#,
-            r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
-            r#""corroboration_no_verdict":0,"#,
-            r#""non_holdout_completed":0,"non_holdout_not_completed":0,"#,
-            r#""non_holdout_no_verdict":0,"#,
-            r#""clade_completed":0,"clade_not_completed":0,"clade_no_verdict":0,"#,
+            r#""selection_passed":0,"selection_failed":0,"selection_inconclusive":0,"#,
+            r#""corroboration_passed":0,"corroboration_failed":0,"#,
+            r#""corroboration_inconclusive":0,"#,
+            r#""non_holdout_passed":0,"non_holdout_failed":0,"#,
+            r#""non_holdout_inconclusive":0,"#,
+            r#""clade_passed":0,"clade_failed":0,"clade_inconclusive":0,"#,
             r#""clade_completion_rate":null,"#,
             r#""trial_seconds":0.0,"diversification_seconds":null}]}"#
         )
@@ -87,18 +87,20 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
 }
 
 #[test]
-fn a_trial_with_no_verdict_is_written_under_a_name_of_its_own() {
+fn an_inconclusive_trial_is_written_under_a_name_of_its_own() {
     let mut genealogy = settings().genealogy();
     genealogy.start_trial(0, "benchmark/t1").unwrap();
     genealogy
-        .end_trial(0, "benchmark/t1", TrialResult::NoVerdict)
+        .end_trial(
+            0,
+            "benchmark/t1",
+            TrialResult::Inconclusive(Cause::NoVerdict),
+        )
         .unwrap();
     assert!(
         Report::of(&settings(), &genealogy, &[], Some(0))
             .json()
-            .contains(
-                r#""selection_completed":0,"selection_not_completed":0,"selection_no_verdict":1,"#
-            )
+            .contains(r#""selection_passed":0,"selection_failed":0,"selection_inconclusive":1,"#)
     );
 }
 

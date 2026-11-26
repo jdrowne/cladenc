@@ -23,10 +23,16 @@ pub enum CreationOutcome {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "result", content = "cause", rename_all = "snake_case")]
 pub enum TrialResult {
-    Completed,
-    NotCompleted,
+    Pass,
+    Fail,
+    Inconclusive(Cause),
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Cause {
     NoVerdict,
     TimedOut,
 }

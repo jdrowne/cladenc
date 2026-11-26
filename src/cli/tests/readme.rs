@@ -658,7 +658,7 @@ fn the_steps_of_cladenc_start_say_when_the_health_check_of_a_task_is_run() {
 fn the_steps_of_cladenc_start_say_that_a_health_check_that_does_not_pass_is_tried_again() {
     assert!(what_is_said_of("start").contains(
         "Where the health check does not pass, the harness was never started, so `cladenc` does \
-         not record that the harness did not complete the task: it removes the sandbox, \
+         not record that the trial failed: it removes the sandbox, \
          waits, brings up a new sandbox of the task and runs the health check there again, as \
          many times as `--max-task-health-check-retries` gives."
     ));
@@ -870,6 +870,6 @@ fn the_readme_names_no_score_and_says_of_no_harness_that_it_is_scored() {
 fn the_section_of_cladenc_report_says_what_the_clade_completion_rate_is() {
     assert!(what_is_said_of("report").contains(
         "the clade completion rate, which is the part of the finished trials of the clade on the \
-         selection tasks in which the task was completed,"
+         selection tasks that passed,"
     ));
 }

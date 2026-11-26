@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::benchmark::Benchmark;
 use crate::file_system::tests::double::Memory;
-use crate::genealogy::TrialResult;
+use crate::genealogy::{Cause, TrialResult};
 use crate::outputs_directory::OutputsDirectory;
 
 fn made() -> (Memory, OutputsDirectory) {
@@ -40,6 +40,13 @@ fn result_written(result: TrialResult) -> String {
     directory
         .read_to_string(outputs_directory.trial(0, "benchmark/t1").join("result"))
         .unwrap()
+}
+
+fn cause_written(result: TrialResult) -> Option<String> {
+    let (directory, outputs_directory) = ended(result);
+    directory
+        .read_to_string(outputs_directory.trial(0, "benchmark/t1").join("cause"))
+        .ok()
 }
 
 fn held_while_running(file: &str) -> String {
@@ -129,28 +136,60 @@ fn a_trial_on_a_task_the_outputs_directory_does_not_hold_cannot_be_started() {
 }
 
 #[test]
-fn a_completed_trial_leaves_the_word_completed_as_its_result() {
-    assert_eq!(result_written(TrialResult::Completed), "completed\n");
+fn a_trial_that_passed_leaves_the_word_pass_as_its_result() {
+    assert_eq!(result_written(TrialResult::Pass), "pass\n");
 }
 
 #[test]
-fn a_trial_not_completed_leaves_the_word_not_completed_as_its_result() {
-    assert_eq!(result_written(TrialResult::NotCompleted), "not_completed\n");
+fn a_trial_that_failed_leaves_the_word_fail_as_its_result() {
+    assert_eq!(result_written(TrialResult::Fail), "fail\n");
 }
 
 #[test]
-fn a_trial_whose_verifier_left_no_verdict_leaves_the_word_no_verdict_as_its_result() {
-    assert_eq!(result_written(TrialResult::NoVerdict), "no_verdict\n");
+fn a_trial_whose_verifier_left_no_verdict_leaves_the_word_inconclusive_as_its_result() {
+    assert_eq!(
+        result_written(TrialResult::Inconclusive(Cause::NoVerdict)),
+        "inconclusive\n"
+    );
 }
 
 #[test]
-fn a_harness_whose_trial_timed_out_leaves_the_word_timed_out_as_its_result() {
-    assert_eq!(result_written(TrialResult::TimedOut), "timed_out\n");
+fn a_trial_whose_verifier_timed_out_leaves_the_word_inconclusive_as_its_result() {
+    assert_eq!(
+        result_written(TrialResult::Inconclusive(Cause::TimedOut)),
+        "inconclusive\n"
+    );
+}
+
+#[test]
+fn a_trial_whose_verifier_left_no_verdict_leaves_the_word_no_verdict_as_its_cause() {
+    assert_eq!(
+        cause_written(TrialResult::Inconclusive(Cause::NoVerdict)).as_deref(),
+        Some("no_verdict\n")
+    );
+}
+
+#[test]
+fn a_trial_whose_verifier_timed_out_leaves_the_word_timed_out_as_its_cause() {
+    assert_eq!(
+        cause_written(TrialResult::Inconclusive(Cause::TimedOut)).as_deref(),
+        Some("timed_out\n")
+    );
+}
+
+#[test]
+fn a_trial_that_passed_leaves_no_cause() {
+    assert_eq!(cause_written(TrialResult::Pass), None);
+}
+
+#[test]
+fn a_trial_that_failed_leaves_no_cause() {
+    assert_eq!(cause_written(TrialResult::Fail), None);
 }
 
 #[test]
 fn an_ended_trial_keeps_no_copy_of_its_harness() {
-    let (directory, outputs_directory) = ended(TrialResult::Completed);
+    let (directory, outputs_directory) = ended(TrialResult::Pass);
     assert!(!directory.exists(outputs_directory.trial(0, "benchmark/t1").join("harness")));
 }
 
@@ -163,7 +202,7 @@ fn an_ended_trial_keeps_what_was_left_in_the_directory_of_the_running_trial() {
         .write(running.join("work/left"), "done\n")
         .unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::Completed)
+        .end_trial(0, "benchmark/t1", TrialResult::Pass)
         .unwrap();
     assert_eq!(
         directory
@@ -175,7 +214,7 @@ fn an_ended_trial_keeps_what_was_left_in_the_directory_of_the_running_trial() {
 
 #[test]
 fn an_ended_trial_keeps_the_instruction_of_its_task() {
-    let (directory, outputs_directory) = ended(TrialResult::Completed);
+    let (directory, outputs_directory) = ended(TrialResult::Pass);
     assert!(
         directory.is_file(
             outputs_directory
@@ -187,7 +226,7 @@ fn an_ended_trial_keeps_the_instruction_of_its_task() {
 
 #[test]
 fn an_ended_trial_leaves_nothing_running() {
-    let (directory, outputs_directory) = ended(TrialResult::Completed);
+    let (directory, outputs_directory) = ended(TrialResult::Pass);
     assert!(!directory.exists(outputs_directory.running_trial(0, "benchmark/t1")));
 }
 
@@ -226,7 +265,7 @@ fn a_trial_that_ends_after_another_on_a_task_of_the_same_benchmark_is_kept_besid
     for task in ["benchmark/t1", "benchmark/t2"] {
         outputs_directory.start_trial(0, task).unwrap();
         outputs_directory
-            .end_trial(0, task, TrialResult::Completed)
+            .end_trial(0, task, TrialResult::Pass)
             .unwrap();
     }
     assert_eq!(

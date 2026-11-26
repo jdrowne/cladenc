@@ -46,9 +46,11 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     trials you are shown: one \
     directory for each benchmark, and in it one directory for each task. In the directory of a \
     task, the file named instruction says what you were asked to do, the file named result reads \
-    completed, not_completed where the verifier of the task wrote a verdict that is not 1, \
-    no_verdict where it left no verdict that can be read, or timed_out where it ran past its \
-    time limit, the file named ending reads ended, or stopped where \
+    pass, fail where the verifier of the task wrote a verdict that is not 1, or inconclusive \
+    where it gave no verdict, the file named cause, which is there only where the result is \
+    inconclusive, reads no_verdict where the verifier left no verdict that can be read, or \
+    timed_out where it ran past its time limit, the file named ending reads ended, or stopped \
+    where \
     you ran past the time limit of the task and were stopped, the directory named work holds what \
     you left in the \
     working directory of the task, the file named changes lists every path you added, changed or \
@@ -65,7 +67,7 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     ran the tests of the task, which you are not shown, on what you left, or, where the task has \
     its verifier run in a sandbox of its own, on nothing but what the directory named artifacts \
     holds, and wrote its verdict in logs/verifier/reward.txt, or one verdict for each label \
-    in logs/verifier/reward.json: the task was completed where every verdict is 1. \
+    in logs/verifier/reward.json: the result is pass where every verdict is 1. \
     /var/log/cladenc/line holds one directory for each harness you descend from, named by its id, \
     and /var/log/cladenc/children one for each harness you made before, created or not. In the \
     directory of such a harness, the directory named harness holds its source code, the directory \

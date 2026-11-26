@@ -16,22 +16,22 @@ pub(crate) enum HarnessState {
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct Counts {
-    completed: u64,
-    not_completed: u64,
-    no_verdict: u64,
+    passed: u64,
+    failed: u64,
+    inconclusive: u64,
 }
 
 impl Counts {
     fn count(&mut self, result: TrialResult) {
         match result {
-            TrialResult::Completed => self.completed += 1,
-            TrialResult::NotCompleted => self.not_completed += 1,
-            TrialResult::NoVerdict | TrialResult::TimedOut => self.no_verdict += 1,
+            TrialResult::Pass => self.passed += 1,
+            TrialResult::Fail => self.failed += 1,
+            TrialResult::Inconclusive(_) => self.inconclusive += 1,
         }
     }
 
     fn finished(self) -> u64 {
-        self.completed + self.not_completed + self.no_verdict
+        self.passed + self.failed + self.inconclusive
     }
 }
 
@@ -94,61 +94,61 @@ impl Harness {
         self.state
     }
 
-    pub(crate) fn selection_completed(&self) -> u64 {
-        self.selection.completed
+    pub(crate) fn selection_passed(&self) -> u64 {
+        self.selection.passed
     }
 
-    pub(crate) fn selection_not_completed(&self) -> u64 {
-        self.selection.not_completed
+    pub(crate) fn selection_failed(&self) -> u64 {
+        self.selection.failed
     }
 
-    pub(crate) fn selection_no_verdict(&self) -> u64 {
-        self.selection.no_verdict
+    pub(crate) fn selection_inconclusive(&self) -> u64 {
+        self.selection.inconclusive
     }
 
-    pub(crate) fn corroboration_completed(&self) -> u64 {
-        self.corroboration.completed
+    pub(crate) fn corroboration_passed(&self) -> u64 {
+        self.corroboration.passed
     }
 
-    pub(crate) fn corroboration_not_completed(&self) -> u64 {
-        self.corroboration.not_completed
+    pub(crate) fn corroboration_failed(&self) -> u64 {
+        self.corroboration.failed
     }
 
-    pub(crate) fn corroboration_no_verdict(&self) -> u64 {
-        self.corroboration.no_verdict
+    pub(crate) fn corroboration_inconclusive(&self) -> u64 {
+        self.corroboration.inconclusive
     }
 
-    pub(crate) fn non_holdout_completed(&self) -> u64 {
-        self.non_holdout.completed
+    pub(crate) fn non_holdout_passed(&self) -> u64 {
+        self.non_holdout.passed
     }
 
-    pub(crate) fn non_holdout_not_completed(&self) -> u64 {
-        self.non_holdout.not_completed
+    pub(crate) fn non_holdout_failed(&self) -> u64 {
+        self.non_holdout.failed
     }
 
-    pub(crate) fn non_holdout_no_verdict(&self) -> u64 {
-        self.non_holdout.no_verdict
+    pub(crate) fn non_holdout_inconclusive(&self) -> u64 {
+        self.non_holdout.inconclusive
     }
 
-    pub(crate) fn clade_completed(&self) -> u64 {
-        self.clade.completed
+    pub(crate) fn clade_passed(&self) -> u64 {
+        self.clade.passed
     }
 
-    pub(crate) fn clade_not_completed(&self) -> u64 {
-        self.clade.not_completed
+    pub(crate) fn clade_failed(&self) -> u64 {
+        self.clade.failed
     }
 
-    pub(crate) fn clade_no_verdict(&self) -> u64 {
-        self.clade.no_verdict
+    pub(crate) fn clade_inconclusive(&self) -> u64 {
+        self.clade.inconclusive
     }
 
-    pub(crate) fn clade_finished_without_completion(&self) -> u64 {
-        self.clade.not_completed + self.clade.no_verdict
+    pub(crate) fn clade_failed_or_inconclusive(&self) -> u64 {
+        self.clade.failed + self.clade.inconclusive
     }
 
     pub(crate) fn clade_completion_rate(&self) -> Option<f64> {
         let finished = self.clade.finished();
-        (finished > 0).then(|| self.clade.completed as f64 / finished as f64)
+        (finished > 0).then(|| self.clade.passed as f64 / finished as f64)
     }
 
     pub(crate) fn tasks_not_given<'a>(&self, tasks: &'a [String]) -> Vec<&'a str> {
@@ -182,7 +182,7 @@ impl Harness {
     pub(super) fn finish(&mut self, task: &str, result: TrialResult, set: TaskSet) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            if result == TrialResult::Completed {
+            if result == TrialResult::Pass {
                 self.completed.insert(task.to_owned());
             }
             let counts = match set {

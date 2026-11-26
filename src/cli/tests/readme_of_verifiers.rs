@@ -125,7 +125,7 @@ fn the_readme_says_that_a_verifier_waits_for_the_health_check_of_its_sandbox() {
 fn the_readme_says_that_the_health_check_of_a_verifier_is_tried_again_in_a_new_sandbox() {
     assert!(readme().contains(
         "Where it does not pass, no verifier has judged what the harness left, so `cladenc` \
-         does not record that the harness did not complete the task: it removes the \
+         does not record that the trial failed: it removes the \
          sandbox, waits, brings up a new verifier sandbox and runs the health check \
          there again, as many times as `--max-verifier-health-check-retries` gives."
     ));
@@ -152,29 +152,42 @@ fn the_readme_says_that_a_verifier_that_never_ran_stops_the_directed_evolution()
 }
 
 #[test]
-fn the_readme_says_that_a_verdict_that_is_not_1_is_a_task_not_completed() {
+fn the_readme_names_the_three_results_of_a_trial() {
+    assert!(readme().contains("The result of a trial is `pass`, `fail` or `inconclusive`."));
+}
+
+#[test]
+fn the_readme_says_that_a_trial_passes_where_every_verdict_is_1() {
+    assert!(
+        readme()
+            .contains("The trial passes where every verdict is 1: the harness completed the task.")
+    );
+}
+
+#[test]
+fn the_readme_says_that_a_trial_fails_where_a_verdict_is_not_1() {
     assert!(readme().contains(
-        "Where the verifier writes a verdict that is not 1, the harness did not complete the \
-         task, which is recorded as `not_completed`."
+        "Where the verifier writes a verdict that is not 1, the trial fails: the harness did \
+         not complete the task."
     ));
 }
 
 #[test]
-fn the_readme_says_that_a_trial_whose_verifier_gave_no_verdict_is_neither() {
+fn the_readme_says_that_a_trial_whose_verifier_gave_no_verdict_is_inconclusive() {
     assert!(readme().contains(
         "Where the verifier ends and leaves no verdict, or a file that cannot be read as one, \
-         or where it runs past its time limit, the trial has no verdict: nothing judged what \
-         the harness left, so the harness is said neither to have completed the task nor not \
-         to have completed it."
+         or where it runs past its time limit, the trial is inconclusive: nothing judged what \
+         the harness left, so whether the harness completed the task is not known."
     ));
 }
 
 #[test]
-fn the_readme_says_how_a_trial_with_no_verdict_is_recorded_and_said() {
+fn the_readme_says_how_the_cause_of_an_inconclusive_trial_is_recorded_and_what_is_said() {
     assert!(readme().contains(
-        "A trial with no verdict is recorded as `no_verdict` where the verifier ended and as \
-         `timed_out` where the verifier ran past its time limit, and `cladenc` says which of \
-         the three outcomes a trial had on standard error at its end."
+        "The cause of an inconclusive trial is recorded as `no_verdict` where the verifier \
+         ended and as `timed_out` where the verifier ran past its time limit, and `cladenc` \
+         says on standard error, at the end of a trial, whether the trial passed, failed or was \
+         inconclusive."
     ));
 }
 
@@ -187,29 +200,29 @@ fn the_readme_says_that_nothing_tells_what_broke_a_verifier() {
 }
 
 #[test]
-fn the_readme_says_that_the_trials_with_no_verdict_are_counted_apart() {
+fn the_readme_says_that_the_three_results_are_counted_apart() {
     assert!(readme().contains(
-        "`cladenc report` and `cladenc status` count the trials with no verdict apart from the \
-         tasks a harness completed and from those it did not complete."
+        "`cladenc report` and `cladenc status` count the trials that passed, those that failed \
+         and those that were inconclusive apart."
     ));
 }
 
 #[test]
-fn the_readme_says_that_a_trial_with_no_verdict_is_a_finished_trial() {
+fn the_readme_says_that_an_inconclusive_trial_is_a_finished_trial() {
     assert!(readme().contains(
-        "A trial with no verdict is a finished trial all the same: a completion rate is the \
-         part of the finished trials in which the task was completed, and artificial selection \
-         goes by the finished trials of a clade and by how many of them were completed, so a \
-         harness gains nothing by leaving what breaks a verifier."
+        "An inconclusive trial is a finished trial all the same: a completion rate is the part \
+         of the finished trials that passed, and artificial selection goes by the finished \
+         trials of a clade and by how many of them passed, so a harness gains nothing by \
+         leaving what breaks a verifier."
     ));
 }
 
 #[test]
 fn the_readme_says_which_three_counts_the_report_gives_of_each_set_of_tasks() {
     assert!(readme().contains(
-        "how many of the selection tasks it completed, how many it did not complete and how \
-         many of its trials on them have no verdict, the same three counts of the corroboration \
-         tasks and of the non-holdout tasks, the three counts of the selection tasks for its \
-         clade, which is the harness and all its descendants together,"
+        "how many of its trials on the selection tasks passed, how many failed and how many \
+         were inconclusive, the same three counts of the corroboration tasks and of the \
+         non-holdout tasks, the three counts of the selection tasks for its clade, which is the \
+         harness and all its descendants together,"
     ));
 }

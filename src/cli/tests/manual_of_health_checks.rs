@@ -63,7 +63,7 @@ fn the_manual_of_start_says_that_a_failure_in_the_start_period_is_not_counted() 
 fn the_manual_of_start_says_that_a_harness_that_was_never_started_is_given_no_result() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Where the health check of a task does not pass, the harness was never started, so cladenc \
-         does not record that the harness did not complete the task."
+         does not record that the trial failed."
     ));
 }
 

@@ -30,7 +30,7 @@ fn with_a_trial_running() -> Genealogy {
 
 fn with_a_trial_ended() -> Genealogy {
     let mut genealogy = with_a_trial_running();
-    genealogy.end_trial(0, "a", TrialResult::Completed).unwrap();
+    genealogy.end_trial(0, "a", TrialResult::Pass).unwrap();
     genealogy
 }
 
@@ -134,7 +134,7 @@ fn a_refused_second_trial_on_an_ended_task_changes_nothing() {
 #[test]
 fn the_end_of_a_trial_of_a_harness_that_is_not_in_the_genealogy_is_refused() {
     assert_eq!(
-        Genealogy::new().end_trial(7, "a", TrialResult::Completed),
+        Genealogy::new().end_trial(7, "a", TrialResult::Pass),
         Err(not_running(7, "a"))
     );
 }
@@ -142,14 +142,14 @@ fn the_end_of_a_trial_of_a_harness_that_is_not_in_the_genealogy_is_refused() {
 #[test]
 fn a_refused_end_of_a_trial_of_a_missing_harness_changes_nothing() {
     let mut genealogy = Genealogy::new();
-    let _ = genealogy.end_trial(7, "a", TrialResult::Completed);
+    let _ = genealogy.end_trial(7, "a", TrialResult::Pass);
     assert_eq!(genealogy, Genealogy::new());
 }
 
 #[test]
 fn the_end_of_a_trial_on_a_task_never_given_is_refused() {
     assert_eq!(
-        with_a_trial_running().end_trial(0, "b", TrialResult::Completed),
+        with_a_trial_running().end_trial(0, "b", TrialResult::Pass),
         Err(not_running(0, "b"))
     );
 }
@@ -157,14 +157,14 @@ fn the_end_of_a_trial_on_a_task_never_given_is_refused() {
 #[test]
 fn a_refused_end_of_a_trial_on_a_task_never_given_changes_nothing() {
     let mut genealogy = with_a_trial_running();
-    let _ = genealogy.end_trial(0, "b", TrialResult::Completed);
+    let _ = genealogy.end_trial(0, "b", TrialResult::Pass);
     assert_eq!(genealogy, with_a_trial_running());
 }
 
 #[test]
 fn a_second_end_of_a_trial_is_refused() {
     assert_eq!(
-        with_a_trial_ended().end_trial(0, "a", TrialResult::NotCompleted),
+        with_a_trial_ended().end_trial(0, "a", TrialResult::Fail),
         Err(not_running(0, "a"))
     );
 }
@@ -172,6 +172,6 @@ fn a_second_end_of_a_trial_is_refused() {
 #[test]
 fn a_refused_second_end_of_a_trial_changes_nothing() {
     let mut genealogy = with_a_trial_ended();
-    let _ = genealogy.end_trial(0, "a", TrialResult::NotCompleted);
+    let _ = genealogy.end_trial(0, "a", TrialResult::Fail);
     assert_eq!(genealogy, with_a_trial_ended());
 }

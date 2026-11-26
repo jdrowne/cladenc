@@ -67,8 +67,8 @@ fn the_trials_of_each_harness_at_the_non_holdout_tasks_are_kept_under_trials() {
 fn what_is_said_of_a_trial_on_a_holdout_task_names_where_the_trial_is_kept() {
     let evolved = evolved();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: harness 0 was given no verdict on task benchmark/t2, as the verifier left \
-         none that can be read: what the trial left is kept in {}",
+        "cladenc: the trial of harness 0 on task benchmark/t2 was inconclusive, as the \
+         verifier left no verdict that can be read: what the trial left is kept in {}",
         evolved.outputs().join("holdout/0/benchmark/t2").display()
     )));
 }

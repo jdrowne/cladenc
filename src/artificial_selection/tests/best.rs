@@ -22,9 +22,9 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
 fn trial(genealogy: &mut Genealogy, harness: HarnessId, count: usize, completed: usize) {
     for (number, task) in tasks().iter().take(count).enumerate() {
         let result = if number < completed {
-            TrialResult::Completed
+            TrialResult::Pass
         } else {
-            TrialResult::NotCompleted
+            TrialResult::Fail
         };
         genealogy.start_trial(harness, task).unwrap();
         genealogy.end_trial(harness, task, result).unwrap();

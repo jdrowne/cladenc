@@ -1,4 +1,4 @@
-use crate::genealogy::{CreationOutcome, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, TrialResult};
 use crate::journal::Record;
 
 fn line(record: &Record) -> String {
@@ -113,34 +113,34 @@ fn the_start_of_a_trial_is_written_with_its_harness_and_task() {
 }
 
 #[test]
-fn the_end_of_a_trial_is_written_with_a_result_of_completed() {
+fn the_end_of_a_trial_that_passed_is_written_with_a_result_of_pass() {
     assert_eq!(
-        line(&trial_finished(TrialResult::Completed)),
-        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"completed","seconds":3.25}"#
+        line(&trial_finished(TrialResult::Pass)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"pass","seconds":3.25}"#
     );
 }
 
 #[test]
-fn the_end_of_a_trial_is_written_with_a_result_of_not_completed() {
+fn the_end_of_a_trial_that_failed_is_written_with_a_result_of_fail() {
     assert_eq!(
-        line(&trial_finished(TrialResult::NotCompleted)),
-        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"not_completed","seconds":3.25}"#
+        line(&trial_finished(TrialResult::Fail)),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"fail","seconds":3.25}"#
     );
 }
 
 #[test]
-fn the_end_of_a_trial_is_written_with_a_result_of_no_verdict() {
+fn the_end_of_a_trial_whose_verifier_left_no_verdict_is_written_as_inconclusive_with_its_cause() {
     assert_eq!(
-        line(&trial_finished(TrialResult::NoVerdict)),
-        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"no_verdict","seconds":3.25}"#
+        line(&trial_finished(TrialResult::Inconclusive(Cause::NoVerdict))),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"inconclusive","cause":"no_verdict","seconds":3.25}"#
     );
 }
 
 #[test]
-fn the_end_of_a_trial_is_written_with_a_result_of_timed_out() {
+fn the_end_of_a_trial_whose_verifier_timed_out_is_written_as_inconclusive_with_its_cause() {
     assert_eq!(
-        line(&trial_finished(TrialResult::TimedOut)),
-        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"timed_out","seconds":3.25}"#
+        line(&trial_finished(TrialResult::Inconclusive(Cause::TimedOut))),
+        r#"{"record":"trial_finished","harness":1,"task":"t2","result":"inconclusive","cause":"timed_out","seconds":3.25}"#
     );
 }
 
@@ -177,14 +177,26 @@ fn the_start_of_a_trial_survives_being_written_and_read_back() {
 }
 
 #[test]
-fn the_end_of_a_trial_survives_being_written_and_read_back() {
-    let record = trial_finished(TrialResult::TimedOut);
+fn the_end_of_a_trial_that_passed_survives_being_written_and_read_back() {
+    let record = trial_finished(TrialResult::Pass);
+    assert_eq!(read_back(&record), record);
+}
+
+#[test]
+fn the_end_of_a_trial_that_failed_survives_being_written_and_read_back() {
+    let record = trial_finished(TrialResult::Fail);
+    assert_eq!(read_back(&record), record);
+}
+
+#[test]
+fn the_end_of_a_trial_whose_verifier_timed_out_survives_being_written_and_read_back() {
+    let record = trial_finished(TrialResult::Inconclusive(Cause::TimedOut));
     assert_eq!(read_back(&record), record);
 }
 
 #[test]
 fn the_end_of_a_trial_whose_verifier_left_no_verdict_survives_being_written_and_read_back() {
-    let record = trial_finished(TrialResult::NoVerdict);
+    let record = trial_finished(TrialResult::Inconclusive(Cause::NoVerdict));
     assert_eq!(read_back(&record), record);
 }
 

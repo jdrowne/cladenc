@@ -112,7 +112,7 @@ fn a_trial_goes_on_where_a_path_the_task_names_cannot_be_copied_out() {
     let tried = trialled(docker, naming(&[NEVER_MADE], &[]));
     assert_eq!(
         tried.result.ok().map(|trialled| trialled.result),
-        Some(TrialResult::Completed)
+        Some(TrialResult::Pass)
     );
 }
 

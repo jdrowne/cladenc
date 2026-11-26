@@ -16,9 +16,9 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
 fn benchmarked(genealogy: &mut Genealogy, harness: HarnessId, completed: &[usize]) {
     for (number, task) in tasks().iter().enumerate() {
         let result = if completed.contains(&number) {
-            TrialResult::Completed
+            TrialResult::Pass
         } else {
-            TrialResult::NotCompleted
+            TrialResult::Fail
         };
         genealogy.start_trial(harness, task).unwrap();
         genealogy.end_trial(harness, task, result).unwrap();

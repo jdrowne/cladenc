@@ -142,9 +142,9 @@ fn end_of(action: Started, well: bool) -> Told {
         seconds: 2.5,
     };
     let result = if well {
-        TrialResult::Completed
+        TrialResult::Pass
     } else {
-        TrialResult::NotCompleted
+        TrialResult::Fail
     };
     Told::Ended(match action {
         Started::Diversification { child, progenitor } => Ended::Diversified {
@@ -252,14 +252,14 @@ fn a_trial_that_ended_is_journaled_with_its_result_and_how_long_it_took() {
         Some(&Record::TrialFinished {
             harness: 0,
             task: FIRST.to_owned(),
-            result: TrialResult::Completed,
+            result: TrialResult::Pass,
             seconds: 1.5
         })
     );
 }
 
 #[test]
-fn a_trial_that_did_not_complete_its_task_is_journaled_as_such() {
+fn a_trial_that_failed_is_journaled_as_such() {
     let journaled = journaled(&settings(), |mut progress| {
         carry_out(&mut progress, 1, &[trial(0, FIRST)]);
     });
@@ -268,36 +268,36 @@ fn a_trial_that_did_not_complete_its_task_is_journaled_as_such() {
         Some(&Record::TrialFinished {
             harness: 0,
             task: FIRST.to_owned(),
-            result: TrialResult::NotCompleted,
+            result: TrialResult::Fail,
             seconds: 1.5
         })
     );
 }
 
 #[test]
-fn a_trial_that_completed_its_task_is_said_with_where_what_it_left_is_kept() {
+fn a_trial_that_passed_is_said_with_where_what_it_left_is_kept() {
     let said = said(&settings(), |mut progress| {
         carry_out(&mut progress, 1, &[]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: harness 0 completed task benchmark/t1: what the trial left is kept in \
-             /outputs/trials/0/benchmark/t1"
+            "cladenc: the trial of harness 0 on task benchmark/t1 passed: what the trial left \
+             is kept in /outputs/trials/0/benchmark/t1"
         )
     );
 }
 
 #[test]
-fn a_trial_that_did_not_complete_its_task_is_said_not_to_have_completed_it() {
+fn a_trial_that_failed_is_said_to_have_failed() {
     let said = said(&settings(), |mut progress| {
         carry_out(&mut progress, 1, &[trial(0, FIRST)]);
     });
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: harness 0 did not complete task benchmark/t1, as the verifier wrote a \
-             verdict that is not 1: what the trial left is kept in \
+            "cladenc: the trial of harness 0 on task benchmark/t1 failed, as the verifier \
+             wrote a verdict that is not 1: what the trial left is kept in \
              /outputs/trials/0/benchmark/t1"
         )
     );

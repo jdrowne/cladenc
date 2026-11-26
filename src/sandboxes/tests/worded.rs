@@ -158,9 +158,11 @@ fn the_diversification_prompt_does_not_say_that_every_task_the_harness_had_a_tri
 fn the_diversification_prompt_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
     assert!(sandboxes::DIVERSIFICATION_PROMPT.contains(
         "the file named instruction says what you were asked to do, the file named result \
-         reads completed, not_completed where the verifier of the task wrote a verdict that is \
-         not 1, no_verdict where it left no verdict that can be read, or timed_out where it ran \
-         past its time limit, the file named ending reads ended, or \
+         reads pass, fail where the verifier of the task wrote a verdict that is not 1, or \
+         inconclusive where it gave no verdict, the file named cause, which is there only where \
+         the result is inconclusive, reads no_verdict where the verifier left no verdict that \
+         can be read, or timed_out where it ran past its time limit, the file named ending \
+         reads ended, or \
          stopped where you ran past the time limit of the task and were stopped, the directory \
          named work holds what you left in the working directory of the task, the file named \
          changes lists every path you added, changed or removed in the sandbox of the task, \
@@ -216,7 +218,7 @@ fn the_diversification_prompt_says_how_the_verifier_judged_the_trial() {
          are not shown, on what you left, or, where the task has its verifier run in a sandbox \
          of its own, on nothing but what the directory named artifacts holds, and wrote its \
          verdict in logs/verifier/reward.txt, or one verdict for each label in \
-         logs/verifier/reward.json: the task was completed where every verdict is 1. "
+         logs/verifier/reward.json: the result is pass where every verdict is 1. "
     ));
 }
 

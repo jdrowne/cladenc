@@ -220,7 +220,7 @@ fn a_harness_can_read_the_ended_trials_of_its_progenitor_and_none_still_running(
         .unwrap();
     outputs_directory.start_trial(0, "benchmark/t1").unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::NotCompleted)
+        .end_trial(0, "benchmark/t1", TrialResult::Fail)
         .unwrap();
     outputs_directory.start_trial(0, "benchmark/t2").unwrap();
     let _ = started_from(

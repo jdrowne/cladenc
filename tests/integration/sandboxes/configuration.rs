@@ -258,7 +258,7 @@ fn a_verifier_that_runs_as_another_user_than_the_harness_can_write_its_verdict()
     assert!(matches!(
         WITH_A_USER_FOR_THE_VERIFIER.trialled.result,
         Ok(sandboxes::Trialled {
-            result: TrialResult::Completed,
+            result: TrialResult::Pass,
             ..
         })
     ));

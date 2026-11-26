@@ -100,9 +100,9 @@ fn a_harness_that_was_never_started_is_said_with_the_tries_and_where_the_health_
 }
 
 #[test]
-fn a_trial_whose_harness_was_never_started_is_not_said_to_have_been_given_no_verdict() {
+fn a_trial_whose_harness_was_never_started_is_not_said_to_be_inconclusive() {
     let said = never_ready().said;
-    assert!(!said.contains("no verdict on task benchmark/t1"));
+    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
 }
 
 #[test]
@@ -158,9 +158,9 @@ fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_che
 }
 
 #[test]
-fn a_trial_whose_verifier_was_never_run_is_not_said_to_have_been_given_no_verdict() {
+fn a_trial_whose_verifier_was_never_run_is_not_said_to_be_inconclusive() {
     let said = with_a_verifier_that_is_never_ready().said;
-    assert!(!said.contains("no verdict on task benchmark/t1"));
+    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
 }
 
 #[test]

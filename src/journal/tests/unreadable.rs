@@ -46,7 +46,7 @@ fn the_end_of_a_trial_of_this_format_that_holds_no_seconds_is_not_a_record() {
         error_of(&[
             RUN,
             r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#,
-            r#"{"record":"trial_finished","harness":0,"task":"benchmark/t1","result":"completed"}"#
+            r#"{"record":"trial_finished","harness":0,"task":"benchmark/t1","result":"pass"}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -67,7 +67,7 @@ fn the_end_of_a_diversification_of_this_format_that_holds_no_seconds_is_not_a_re
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":34,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":35,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -209,7 +209,7 @@ fn the_end_of_a_trial_of_this_format_that_names_a_score_is_not_a_record() {
         error_of(&[
             RUN,
             r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
-            r#"{"record":"trial_finished","harness":0,"task":"t1","score":"completed","seconds":1.5}"#
+            r#"{"record":"trial_finished","harness":0,"task":"t1","score":"pass","seconds":1.5}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -222,6 +222,42 @@ fn the_end_of_a_trial_of_this_format_whose_result_is_success_is_not_a_record() {
             RUN,
             r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
             r#"{"record":"trial_finished","harness":0,"task":"t1","result":"success","seconds":1.5}"#
+        ]),
+        JournalError::NotARecord { line: 3 }
+    ));
+}
+
+#[test]
+fn the_end_of_a_trial_of_this_format_whose_result_is_completed_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
+            r#"{"record":"trial_finished","harness":0,"task":"t1","result":"completed","seconds":1.5}"#
+        ]),
+        JournalError::NotARecord { line: 3 }
+    ));
+}
+
+#[test]
+fn the_end_of_an_inconclusive_trial_that_names_no_cause_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
+            r#"{"record":"trial_finished","harness":0,"task":"t1","result":"inconclusive","seconds":1.5}"#
+        ]),
+        JournalError::NotARecord { line: 3 }
+    ));
+}
+
+#[test]
+fn the_end_of_an_inconclusive_trial_whose_cause_is_unknown_is_not_a_record() {
+    assert!(matches!(
+        error_of(&[
+            RUN,
+            r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
+            r#"{"record":"trial_finished","harness":0,"task":"t1","result":"inconclusive","cause":"lost","seconds":1.5}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -297,7 +333,7 @@ fn a_journal_that_calls_the_result_of_a_trial_an_outcome_cannot_be_read() {
         error_of(&[
             RUN,
             r#"{"record":"trial_started","harness":0,"task":"t1"}"#,
-            r#"{"record":"trial_finished","harness":0,"task":"t1","outcome":"completed","seconds":1.5}"#
+            r#"{"record":"trial_finished","harness":0,"task":"t1","outcome":"pass","seconds":1.5}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -421,7 +457,7 @@ fn a_journal_with_the_end_of_a_trial_that_never_started_cannot_be_read() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"trial_finished","harness":0,"task":"t1","result":"completed","seconds":1.5}"#
+            r#"{"record":"trial_finished","harness":0,"task":"t1","result":"pass","seconds":1.5}"#
         ]),
         JournalError::Refused {
             line: 2,

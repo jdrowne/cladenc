@@ -1,5 +1,5 @@
 use crate::artificial_selection::{Action, ArtificialSelection};
-use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, HarnessId, TrialResult};
 
 fn tasks() -> Vec<String> {
     (0..20).map(|number| format!("task-{number}")).collect()
@@ -27,19 +27,19 @@ fn trial(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result: Tr
 
 fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    trial(&mut genealogy, 0, 20, TrialResult::NotCompleted);
+    trial(&mut genealogy, 0, 20, TrialResult::Fail);
     genealogy
 }
 
 fn with_a_child_that_trialled(count: usize) -> Genealogy {
     let mut genealogy = with_the_primogenitor_benchmarked_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    trial(&mut genealogy, 1, count, TrialResult::Completed);
+    trial(&mut genealogy, 1, count, TrialResult::Pass);
     genealogy
 }
 
 fn benchmark(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
-    benchmark_ending(genealogy, harness, completed, TrialResult::NotCompleted);
+    benchmark_ending(genealogy, harness, completed, TrialResult::Fail);
 }
 
 fn benchmark_ending(
@@ -50,7 +50,7 @@ fn benchmark_ending(
 ) {
     for (number, task) in tasks().iter().enumerate() {
         let result = if number < completed {
-            TrialResult::Completed
+            TrialResult::Pass
         } else {
             otherwise
         };
@@ -170,7 +170,7 @@ fn a_failed_harness_is_never_the_progenitor() {
 #[test]
 fn a_diversification_is_the_next_action_once_no_task_is_left_to_give() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    trial(&mut genealogy, 0, 20, TrialResult::Completed);
+    trial(&mut genealogy, 0, 20, TrialResult::Pass);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Diversification { progenitor: 0 })
@@ -188,7 +188,12 @@ fn a_harness_that_completed_no_task_can_be_the_progenitor() {
 #[test]
 fn a_harness_whose_trials_ran_past_their_time_limit_can_be_the_progenitor() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    trial(&mut genealogy, 0, 20, TrialResult::TimedOut);
+    trial(
+        &mut genealogy,
+        0,
+        20,
+        TrialResult::Inconclusive(Cause::TimedOut),
+    );
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Diversification { progenitor: 0 })
@@ -196,33 +201,33 @@ fn a_harness_whose_trials_ran_past_their_time_limit_can_be_the_progenitor() {
 }
 
 #[test]
-fn a_trial_with_no_verdict_weighs_on_which_harness_is_cloned_as_one_not_completed_does() {
+fn an_inconclusive_trial_weighs_on_which_harness_is_cloned_as_one_that_failed_does() {
     assert_eq!(
-        progenitors_where_every_other_trial_ends_with(TrialResult::NoVerdict),
-        progenitors_where_every_other_trial_ends_with(TrialResult::NotCompleted)
+        progenitors_where_every_other_trial_ends_with(TrialResult::Inconclusive(Cause::NoVerdict)),
+        progenitors_where_every_other_trial_ends_with(TrialResult::Fail)
     );
 }
 
 #[test]
-fn a_trial_whose_verifier_timed_out_weighs_on_which_harness_is_cloned_as_one_not_completed_does() {
+fn a_trial_whose_verifier_timed_out_weighs_on_which_harness_is_cloned_as_one_that_failed_does() {
     assert_eq!(
-        progenitors_where_every_other_trial_ends_with(TrialResult::TimedOut),
-        progenitors_where_every_other_trial_ends_with(TrialResult::NotCompleted)
+        progenitors_where_every_other_trial_ends_with(TrialResult::Inconclusive(Cause::TimedOut)),
+        progenitors_where_every_other_trial_ends_with(TrialResult::Fail)
     );
 }
 
 #[test]
-fn a_trial_with_no_verdict_weighs_on_which_harness_is_cloned() {
+fn an_inconclusive_trial_weighs_on_which_harness_is_cloned() {
     assert_ne!(
-        progenitors_where_every_other_trial_ends_with(TrialResult::NoVerdict),
-        progenitors_where_every_other_trial_ends_with(TrialResult::Completed)
+        progenitors_where_every_other_trial_ends_with(TrialResult::Inconclusive(Cause::NoVerdict)),
+        progenitors_where_every_other_trial_ends_with(TrialResult::Pass)
     );
 }
 
 #[test]
 fn a_trial_takes_the_place_of_a_diversification_no_harness_has_trialled_enough_for() {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    trial(&mut genealogy, 0, 19, TrialResult::Completed);
+    trial(&mut genealogy, 0, 19, TrialResult::Pass);
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Trial {

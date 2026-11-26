@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::benchmark::Benchmark;
-use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
+use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
 
@@ -61,9 +61,9 @@ fn took(trials: f64, diversification: Option<f64>) -> Seconds {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table_with(&[took(4.5, None)], |genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Completed);
-        trialled(genealogy, "benchmark/t4", TrialResult::Completed);
-        trialled(genealogy, "benchmark/t5", TrialResult::NotCompleted);
+        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
+        trialled(genealogy, "benchmark/t4", TrialResult::Pass);
+        trialled(genealogy, "benchmark/t5", TrialResult::Fail);
         genealogy.start_diversification(0).unwrap();
     });
     assert_eq!(
@@ -75,9 +75,9 @@ fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_e
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state          selection completed  selection not completed  selection no verdict  corroboration completed  corroboration not completed  corroboration no verdict  non-holdout completed  non-holdout not completed  non-holdout no verdict  clade completed  clade not completed  clade no verdict  clade completion rate  trial seconds  diversification seconds\n\
-         0   -           -           created        1                    0                        0                     1                        0                            0                         0                      1                          0                       1                0                    0                 1.000                  4.5            -\n\
-         1   0           -           being created  0                    0                        0                     0                        0                            0                         0                      0                          0                       0                0                    0                 -                      0.0            -\n"
+         id  progenitor  experiment  state          selection passed  selection failed  selection inconclusive  corroboration passed  corroboration failed  corroboration inconclusive  non-holdout passed  non-holdout failed  non-holdout inconclusive  clade passed  clade failed  clade inconclusive  clade completion rate  trial seconds  diversification seconds\n\
+         0   -           -           created        1                 0                 0                       1                     0                     0                           0                   1                   0                         1             0             0                   1.000                  4.5            -\n\
+         1   0           -           being created  0                 0                 0                       0                     0                     0                           0                   0                   0                         0             0             0                   -                      0.0            -\n"
     );
 }
 
@@ -115,18 +115,18 @@ fn a_failed_harness_is_shown_as_failed() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  selection no verdict  corroboration completed  corroboration not completed  corroboration no verdict  non-holdout completed  non-holdout not completed  non-holdout no verdict  clade completed  clade not completed  clade no verdict  clade completion rate  trial seconds  diversification seconds\n\
-         0   -           -           created  0                    0                        0                     0                        0                            0                         0                      0                          0                       0                0                    0                 -                      0.0            -\n\
-         1   0           -           failed   0                    0                        0                     0                        0                            0                         0                      0                          0                       0                0                    0                 -                      0.0            30.3\n"
+         id  progenitor  experiment  state    selection passed  selection failed  selection inconclusive  corroboration passed  corroboration failed  corroboration inconclusive  non-holdout passed  non-holdout failed  non-holdout inconclusive  clade passed  clade failed  clade inconclusive  clade completion rate  trial seconds  diversification seconds\n\
+         0   -           -           created  0                 0                 0                       0                     0                     0                           0                   0                   0                         0             0             0                   -                      0.0            -\n\
+         1   0           -           failed   0                 0                 0                       0                     0                     0                           0                   0                   0                         0             0             0                   -                      0.0            30.3\n"
     );
 }
 
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Completed);
-        trialled(genealogy, "benchmark/t2", TrialResult::NotCompleted);
-        trialled(genealogy, "benchmark/t3", TrialResult::NotCompleted);
+        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
+        trialled(genealogy, "benchmark/t2", TrialResult::Fail);
+        trialled(genealogy, "benchmark/t3", TrialResult::Fail);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.333  "));
 }
@@ -195,8 +195,8 @@ fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_t
 #[test]
 fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_completion_rate() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::NotCompleted);
-        trialled(genealogy, "benchmark/t4", TrialResult::Completed);
+        trialled(genealogy, "benchmark/t1", TrialResult::Fail);
+        trialled(genealogy, "benchmark/t4", TrialResult::Pass);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.000  "));
 }
@@ -204,27 +204,35 @@ fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_completion
 #[test]
 fn the_header_names_the_columns_of_the_selection_tasks_ahead_of_those_of_the_corroboration_tasks() {
     assert!(table(|_| {}).lines().nth(7).unwrap().contains(
-        "  selection completed  selection not completed  selection no verdict  corroboration \
-         completed  corroboration not completed  corroboration no verdict  non-holdout \
-         completed  non-holdout not completed  non-holdout no verdict  "
+        "  selection passed  selection failed  selection inconclusive  corroboration passed  \
+         corroboration failed  corroboration inconclusive  non-holdout passed  non-holdout \
+         failed  non-holdout inconclusive  "
     ));
 }
 
 #[test]
-fn a_trial_with_no_verdict_is_shown_in_a_column_of_its_own_and_not_as_not_completed() {
+fn an_inconclusive_trial_is_shown_in_a_column_of_its_own_and_not_as_failed() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::NoVerdict);
+        trialled(
+            genealogy,
+            "benchmark/t1",
+            TrialResult::Inconclusive(Cause::NoVerdict),
+        );
     });
     assert!(table.lines().nth(8).unwrap().starts_with(
-        "0   -           -           created  0                    0                        1  "
+        "0   -           -           created  0                 0                 1  "
     ));
 }
 
 #[test]
-fn a_trial_with_no_verdict_is_one_of_the_finished_trials_of_the_rate_that_is_printed() {
+fn an_inconclusive_trial_is_one_of_the_finished_trials_of_the_rate_that_is_printed() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Completed);
-        trialled(genealogy, "benchmark/t2", TrialResult::NoVerdict);
+        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
+        trialled(
+            genealogy,
+            "benchmark/t2",
+            TrialResult::Inconclusive(Cause::NoVerdict),
+        );
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.500  "));
 }
@@ -241,7 +249,11 @@ fn the_table_names_no_score() {
 
 #[test]
 fn the_header_names_the_completion_rate_of_the_clade_after_its_three_counts() {
-    assert!(table(|_| {}).lines().nth(7).unwrap().contains(
-        "  clade completed  clade not completed  clade no verdict  clade completion rate  "
-    ));
+    assert!(
+        table(|_| {})
+            .lines()
+            .nth(7)
+            .unwrap()
+            .contains("  clade passed  clade failed  clade inconclusive  clade completion rate  ")
+    );
 }

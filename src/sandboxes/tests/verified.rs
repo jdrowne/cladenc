@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
-use crate::genealogy::TrialResult;
+use crate::genealogy::{Cause, TrialResult};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{
     self, EMPTIED, HEALTH_CHECK, LAUNCH, LOGS_LINKED, TASK, TESTS_LINKED, TIMER, Tried,
@@ -164,7 +164,7 @@ fn a_verifier_that_its_image_does_not_hold_is_given_the_tests_of_the_task() {
 #[test]
 fn a_verifier_in_a_sandbox_of_its_own_decides_the_result_of_the_trial() {
     let tried = verified_apart(Double::default().verifying(|_| true));
-    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
+    assert_eq!(result_of(&tried), Some(TrialResult::Pass));
 }
 
 #[test]
@@ -172,7 +172,7 @@ fn a_verifier_in_a_sandbox_of_its_own_that_runs_past_its_time_limit_timed_out() 
     let docker = Double::default().answering(&VERIFIER, &[Answer::TimedOut]);
     assert_eq!(
         result_of(&verified_apart(docker)),
-        Some(TrialResult::TimedOut)
+        Some(TrialResult::Inconclusive(Cause::TimedOut))
     );
 }
 
@@ -409,7 +409,7 @@ fn a_verifier_whose_health_check_passes_once_it_is_brought_up_again_is_run() {
         .answering(&CHECK, &[Answer::Exited(1), Answer::Exited(0)]);
     let environment = apart(true, with_a_checked_verifier());
     let tried = given::trialled(docker, &RETRIED, &environment);
-    assert_eq!(result_of(&tried), Some(TrialResult::Completed));
+    assert_eq!(result_of(&tried), Some(TrialResult::Pass));
 }
 
 #[test]
