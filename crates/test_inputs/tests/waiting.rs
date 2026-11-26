@@ -2,7 +2,9 @@ use std::fs::{self, File};
 use std::path::Path;
 use std::process::{Child, Command};
 
-use test_inputs::{line_is_written, temporary_directory, wait_for_a_line, within_ten_seconds};
+use test_inputs::{
+    line_is_written, temporary_directory, wait_for_a_line, within_ten_seconds, within_two_minutes,
+};
 
 const WRITES_A_LINE_AND_STAYS: &str = "echo an-id > id; exec sleep 300";
 const WRITES_A_LINE_AND_ENDS: &str = "echo an-id > id";
@@ -57,6 +59,20 @@ fn what_holds_is_not_looked_at_again() {
         looks >= 3
     });
     assert_eq!(looks, 3);
+}
+
+#[test]
+fn what_holds_at_the_first_look_holds_within_two_minutes() {
+    assert!(within_two_minutes(|| true));
+}
+
+#[test]
+fn what_holds_only_after_ten_seconds_holds_within_two_minutes() {
+    let mut looks = 0;
+    assert!(within_two_minutes(|| {
+        looks += 1;
+        looks == 1_100
+    }));
 }
 
 #[test]

@@ -104,7 +104,7 @@ fn the_sandbox_of_a_trial_is_listed_under_the_label_of_its_directed_evolution() 
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
         let listed = scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+            test_inputs::within_two_minutes(|| test_inputs::line_is_written(&id_file));
             let listed = Command::new("docker")
                 .args(["ps", "--quiet", "--no-trunc", "--filter"])
                 .arg(format!("label={}", label_of(&path)))

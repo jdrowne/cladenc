@@ -310,6 +310,10 @@ pub fn within_ten_seconds(holds: impl FnMut() -> bool) -> bool {
     within(TEN_SECONDS, holds)
 }
 
+pub fn within_two_minutes(holds: impl FnMut() -> bool) -> bool {
+    within(TWO_MINUTES, holds)
+}
+
 fn within(looks: u32, mut holds: impl FnMut() -> bool) -> bool {
     (0..looks).any(|_| {
         thread::sleep(LOOK);

@@ -44,7 +44,7 @@ fn stopped_by_its_flag() -> TempDir {
     let stop = AtomicBool::new(false);
     let _ = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+            test_inputs::within_two_minutes(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
         crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink())

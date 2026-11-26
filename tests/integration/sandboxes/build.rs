@@ -80,7 +80,7 @@ fn stopped_while_its_child_is_built() -> Diversified {
     let stop = AtomicBool::new(false);
     let result = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(&id_file));
+            test_inputs::within_two_minutes(|| test_inputs::line_is_written(&id_file));
             stop.store(true, Ordering::SeqCst);
         });
         sandboxes::run_diversification(

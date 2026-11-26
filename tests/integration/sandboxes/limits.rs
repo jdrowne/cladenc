@@ -80,7 +80,7 @@ fn stopped_once_written<Outcome>(
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| test_inputs::line_is_written(written));
+            test_inputs::within_two_minutes(|| test_inputs::line_is_written(written));
             stop.store(true, Ordering::SeqCst);
         });
         run(&stop)

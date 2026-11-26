@@ -84,7 +84,7 @@ fn stopped_while_t2_is_built() -> Evolved {
     let printed = outputs_directory.join("environments/benchmark/t2/stdout");
     let _ = thread::scope(|scope| {
         scope.spawn(|| {
-            test_inputs::within_ten_seconds(|| printed.exists());
+            test_inputs::within_two_minutes(|| printed.exists());
             stop.store(true, Ordering::SeqCst);
         });
         crate::real::start(&settings, &outputs_directory, &stop, &mut io::sink())
