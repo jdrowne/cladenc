@@ -478,11 +478,11 @@ fn how_and_why(result: TrialResult) -> (&'static str, &'static str) {
             ", as the verifier wrote a verdict that is not 1",
         ),
         TrialResult::NoVerdict => (
-            "did not complete",
-            ", as the verifier left no verdict that can be read",
+            "was given no verdict on",
+            ", as the verifier left none that can be read",
         ),
         TrialResult::TimedOut => (
-            "did not complete",
+            "was given no verdict on",
             ", as the verifier ran past its time limit",
         ),
     }

@@ -67,9 +67,27 @@ fn a_trial_not_completed_reaches_the_clade_not_completed_of_the_primogenitor() {
 }
 
 #[test]
-fn a_result_of_no_verdict_reaches_the_clade_not_completed_of_the_primogenitor() {
+fn a_result_of_no_verdict_reaches_the_clade_no_verdict_of_its_own_harness() {
     let genealogy = family_after(2, TrialResult::NoVerdict);
-    assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);
+    assert_eq!(genealogy.harnesses()[2].clade_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_no_verdict_reaches_the_clade_no_verdict_of_its_progenitor() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[1].clade_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_no_verdict_reaches_the_clade_no_verdict_of_the_primogenitor() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].clade_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_no_verdict_adds_nothing_to_the_clade_not_completed() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 0);
 }
 
 #[test]
@@ -79,9 +97,39 @@ fn a_result_of_no_verdict_adds_nothing_to_the_clade_completed() {
 }
 
 #[test]
-fn a_result_of_timed_out_reaches_the_clade_not_completed_of_the_primogenitor() {
+fn a_result_of_timed_out_reaches_the_clade_no_verdict_of_the_primogenitor() {
     let genealogy = family_after(2, TrialResult::TimedOut);
-    assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 1);
+    assert_eq!(genealogy.harnesses()[0].clade_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_timed_out_adds_nothing_to_the_clade_not_completed() {
+    let genealogy = family_after(2, TrialResult::TimedOut);
+    assert_eq!(genealogy.harnesses()[0].clade_not_completed(), 0);
+}
+
+#[test]
+fn a_completed_trial_adds_nothing_to_the_clade_no_verdict() {
+    let genealogy = family_after(2, TrialResult::Completed);
+    assert_eq!(genealogy.harnesses()[0].clade_no_verdict(), 0);
+}
+
+#[test]
+fn a_trial_not_completed_adds_nothing_to_the_clade_no_verdict() {
+    let genealogy = family_after(2, TrialResult::NotCompleted);
+    assert_eq!(genealogy.harnesses()[0].clade_no_verdict(), 0);
+}
+
+#[test]
+fn a_result_of_no_verdict_stays_out_of_the_clade_no_verdict_of_a_sibling_of_its_progenitor() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[3].clade_no_verdict(), 0);
+}
+
+#[test]
+fn a_result_of_no_verdict_stays_out_of_the_clade_no_verdict_of_a_child() {
+    let genealogy = family_after(1, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[2].clade_no_verdict(), 0);
 }
 
 #[test]
@@ -174,6 +222,12 @@ fn the_clade_not_completed_are_summed_over_the_clade() {
 }
 
 #[test]
+fn the_clade_no_verdict_are_summed_over_the_clade() {
+    let genealogy = family_with_every_harness_finishing(TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[1].clade_no_verdict(), 2);
+}
+
+#[test]
 fn the_clade_of_the_primogenitor_is_the_whole_genealogy() {
     let genealogy = family_with_every_harness_finishing(TrialResult::Completed);
     assert_eq!(genealogy.harnesses()[0].clade_completed(), 4);
@@ -187,6 +241,31 @@ fn the_clade_completion_rate_is_the_share_completed() {
     finish(&mut genealogy, 2, TrialResult::Completed);
     finish(&mut genealogy, 3, TrialResult::NotCompleted);
     assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), Some(0.75));
+}
+
+#[test]
+fn a_trial_with_no_verdict_is_one_of_the_finished_trials_the_clade_completion_rate_is_over() {
+    let mut genealogy = family();
+    finish(&mut genealogy, 0, TrialResult::Completed);
+    finish(&mut genealogy, 1, TrialResult::Completed);
+    finish(&mut genealogy, 2, TrialResult::Completed);
+    finish(&mut genealogy, 3, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), Some(0.75));
+}
+
+#[test]
+fn a_trial_whose_verifier_timed_out_is_one_of_the_finished_trials_the_clade_completion_rate_is_over()
+ {
+    let mut genealogy = family();
+    finish(&mut genealogy, 0, TrialResult::Completed);
+    finish(&mut genealogy, 1, TrialResult::TimedOut);
+    assert_eq!(genealogy.harnesses()[0].clade_completion_rate(), Some(0.5));
+}
+
+#[test]
+fn the_clade_completion_rate_of_a_clade_whose_only_trial_has_no_verdict_is_zero() {
+    let genealogy = family_after(2, TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[1].clade_completion_rate(), Some(0.0));
 }
 
 #[test]

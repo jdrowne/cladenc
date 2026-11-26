@@ -191,8 +191,8 @@ fn a_harness_that_was_stopped_at_its_time_limit_and_did_not_complete_its_task_is
 fn a_harness_that_was_stopped_at_its_time_limit_and_was_given_no_verdict_is_said_with_both() {
     assert_eq!(
         trialled_by_a_harness_that_ran_out_of_time(TrialResult::NoVerdict),
-        "harness 3 did not complete task fix-the-parser, after it was stopped at its time \
-         limit, as the verifier left no verdict that can be read: what the trial left is kept \
+        "harness 3 was given no verdict on task fix-the-parser, after it was stopped at its \
+         time limit, as the verifier left none that can be read: what the trial left is kept \
          in /outputs/trials/3/fix-the-parser"
     );
 }
@@ -640,21 +640,31 @@ fn a_harness_whose_verdict_was_not_1_is_said_not_to_have_completed_the_task_for_
 }
 
 #[test]
-fn a_harness_whose_verifier_left_no_verdict_is_said_not_to_have_completed_the_task_for_it() {
+fn a_harness_whose_verifier_left_no_verdict_is_said_to_have_been_given_none() {
     assert_eq!(
         trialled(TrialResult::NoVerdict),
-        "harness 3 did not complete task fix-the-parser, as the verifier left no verdict that \
+        "harness 3 was given no verdict on task fix-the-parser, as the verifier left none that \
          can be read: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
 }
 
 #[test]
-fn a_harness_whose_verifier_timed_out_is_said_not_to_have_completed_the_task_for_it() {
+fn a_harness_whose_verifier_timed_out_is_said_to_have_been_given_no_verdict() {
     assert_eq!(
         trialled(TrialResult::TimedOut),
-        "harness 3 did not complete task fix-the-parser, as the verifier ran past its time \
-         limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
+        "harness 3 was given no verdict on task fix-the-parser, as the verifier ran past its \
+         time limit: what the trial left is kept in /outputs/trials/3/fix-the-parser"
     );
+}
+
+#[test]
+fn a_harness_whose_verifier_left_no_verdict_is_not_said_to_have_not_completed_the_task() {
+    assert!(!trialled(TrialResult::NoVerdict).contains("did not complete"));
+}
+
+#[test]
+fn a_harness_whose_verifier_timed_out_is_not_said_to_have_not_completed_the_task() {
+    assert!(!trialled(TrialResult::TimedOut).contains("did not complete"));
 }
 
 #[test]

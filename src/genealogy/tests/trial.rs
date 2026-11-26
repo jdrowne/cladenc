@@ -75,9 +75,15 @@ fn a_trial_not_completed_adds_nothing_to_the_completed_of_its_harness() {
 }
 
 #[test]
-fn a_result_of_no_verdict_counts_as_not_completed() {
+fn a_result_of_no_verdict_adds_one_to_the_no_verdict_of_its_harness() {
     let genealogy = trialled(TrialResult::NoVerdict);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 1);
+    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_no_verdict_adds_nothing_to_the_not_completed() {
+    let genealogy = trialled(TrialResult::NoVerdict);
+    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 0);
 }
 
 #[test]
@@ -87,15 +93,33 @@ fn a_result_of_no_verdict_adds_nothing_to_the_completed() {
 }
 
 #[test]
-fn a_result_of_timed_out_counts_as_not_completed() {
+fn a_result_of_timed_out_adds_one_to_the_no_verdict_of_its_harness() {
     let genealogy = trialled(TrialResult::TimedOut);
-    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 1);
+    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 1);
+}
+
+#[test]
+fn a_result_of_timed_out_adds_nothing_to_the_not_completed() {
+    let genealogy = trialled(TrialResult::TimedOut);
+    assert_eq!(genealogy.harnesses()[0].selection_not_completed(), 0);
 }
 
 #[test]
 fn a_result_of_timed_out_adds_nothing_to_the_completed() {
     let genealogy = trialled(TrialResult::TimedOut);
     assert_eq!(genealogy.harnesses()[0].selection_completed(), 0);
+}
+
+#[test]
+fn a_completed_trial_adds_nothing_to_the_no_verdict_of_its_harness() {
+    let genealogy = trialled(TrialResult::Completed);
+    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 0);
+}
+
+#[test]
+fn a_trial_not_completed_adds_nothing_to_the_no_verdict_of_its_harness() {
+    let genealogy = trialled(TrialResult::NotCompleted);
+    assert_eq!(genealogy.harnesses()[0].selection_no_verdict(), 0);
 }
 
 #[test]

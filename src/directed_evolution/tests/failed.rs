@@ -119,8 +119,9 @@ fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stop
     let docker = Double::default().answering(&HARNESS, &[Answer::TimedOut]);
     let said = given::started(docker, given::unchanged).said;
     assert!(said.contains(
-        "cladenc: harness 0 did not complete task benchmark/t1, after it was stopped at its time \
-         limit, as the verifier left no verdict that can be read: what the trial left is kept in "
+        "cladenc: harness 0 was given no verdict on task benchmark/t1, after it was stopped at \
+         its time limit, as the verifier left none that can be read: what the trial left is \
+         kept in "
     ));
 }
 

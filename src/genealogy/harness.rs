@@ -14,6 +14,27 @@ pub(crate) enum HarnessState {
     Failed,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct Counts {
+    completed: u64,
+    not_completed: u64,
+    no_verdict: u64,
+}
+
+impl Counts {
+    fn count(&mut self, result: TrialResult) {
+        match result {
+            TrialResult::Completed => self.completed += 1,
+            TrialResult::NotCompleted => self.not_completed += 1,
+            TrialResult::NoVerdict | TrialResult::TimedOut => self.no_verdict += 1,
+        }
+    }
+
+    fn finished(self) -> u64 {
+        self.completed + self.not_completed + self.no_verdict
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Harness {
     id: HarnessId,
@@ -23,14 +44,10 @@ pub(crate) struct Harness {
     given: BTreeSet<String>,
     running: BTreeSet<String>,
     completed: BTreeSet<String>,
-    selection_completed: u64,
-    selection_not_completed: u64,
-    corroboration_completed: u64,
-    corroboration_not_completed: u64,
-    non_holdout_completed: u64,
-    non_holdout_not_completed: u64,
-    clade_completed: u64,
-    clade_not_completed: u64,
+    selection: Counts,
+    corroboration: Counts,
+    non_holdout: Counts,
+    clade: Counts,
 }
 
 impl Harness {
@@ -43,14 +60,10 @@ impl Harness {
             given: BTreeSet::new(),
             running: BTreeSet::new(),
             completed: BTreeSet::new(),
-            selection_completed: 0,
-            selection_not_completed: 0,
-            corroboration_completed: 0,
-            corroboration_not_completed: 0,
-            non_holdout_completed: 0,
-            non_holdout_not_completed: 0,
-            clade_completed: 0,
-            clade_not_completed: 0,
+            selection: Counts::default(),
+            corroboration: Counts::default(),
+            non_holdout: Counts::default(),
+            clade: Counts::default(),
         }
     }
 
@@ -82,40 +95,60 @@ impl Harness {
     }
 
     pub(crate) fn selection_completed(&self) -> u64 {
-        self.selection_completed
+        self.selection.completed
     }
 
     pub(crate) fn selection_not_completed(&self) -> u64 {
-        self.selection_not_completed
+        self.selection.not_completed
+    }
+
+    pub(crate) fn selection_no_verdict(&self) -> u64 {
+        self.selection.no_verdict
     }
 
     pub(crate) fn corroboration_completed(&self) -> u64 {
-        self.corroboration_completed
+        self.corroboration.completed
     }
 
     pub(crate) fn corroboration_not_completed(&self) -> u64 {
-        self.corroboration_not_completed
+        self.corroboration.not_completed
+    }
+
+    pub(crate) fn corroboration_no_verdict(&self) -> u64 {
+        self.corroboration.no_verdict
     }
 
     pub(crate) fn non_holdout_completed(&self) -> u64 {
-        self.non_holdout_completed
+        self.non_holdout.completed
     }
 
     pub(crate) fn non_holdout_not_completed(&self) -> u64 {
-        self.non_holdout_not_completed
+        self.non_holdout.not_completed
+    }
+
+    pub(crate) fn non_holdout_no_verdict(&self) -> u64 {
+        self.non_holdout.no_verdict
     }
 
     pub(crate) fn clade_completed(&self) -> u64 {
-        self.clade_completed
+        self.clade.completed
     }
 
     pub(crate) fn clade_not_completed(&self) -> u64 {
-        self.clade_not_completed
+        self.clade.not_completed
+    }
+
+    pub(crate) fn clade_no_verdict(&self) -> u64 {
+        self.clade.no_verdict
+    }
+
+    pub(crate) fn clade_finished_without_completion(&self) -> u64 {
+        self.clade.not_completed + self.clade.no_verdict
     }
 
     pub(crate) fn clade_completion_rate(&self) -> Option<f64> {
-        let finished = self.clade_completed + self.clade_not_completed;
-        (finished > 0).then(|| self.clade_completed as f64 / finished as f64)
+        let finished = self.clade.finished();
+        (finished > 0).then(|| self.clade.completed as f64 / finished as f64)
     }
 
     pub(crate) fn tasks_not_given<'a>(&self, tasks: &'a [String]) -> Vec<&'a str> {
@@ -149,29 +182,20 @@ impl Harness {
     pub(super) fn finish(&mut self, task: &str, result: TrialResult, set: TaskSet) -> bool {
         let was_running = self.running.remove(task);
         if was_running {
-            let completed = result == TrialResult::Completed;
-            if completed {
+            if result == TrialResult::Completed {
                 self.completed.insert(task.to_owned());
             }
-            let count = match (set, completed) {
-                (TaskSet::Selection, true) => &mut self.selection_completed,
-                (TaskSet::Selection, false) => &mut self.selection_not_completed,
-                (TaskSet::Corroboration, true) => &mut self.corroboration_completed,
-                (TaskSet::Corroboration, false) => &mut self.corroboration_not_completed,
-                (TaskSet::NonHoldout, true) => &mut self.non_holdout_completed,
-                (TaskSet::NonHoldout, false) => &mut self.non_holdout_not_completed,
+            let counts = match set {
+                TaskSet::Selection => &mut self.selection,
+                TaskSet::Corroboration => &mut self.corroboration,
+                TaskSet::NonHoldout => &mut self.non_holdout,
             };
-            *count += 1;
+            counts.count(result);
         }
         was_running
     }
 
     pub(super) fn count_in_clade(&mut self, result: TrialResult) {
-        match result {
-            TrialResult::Completed => self.clade_completed += 1,
-            TrialResult::NotCompleted | TrialResult::NoVerdict | TrialResult::TimedOut => {
-                self.clade_not_completed += 1;
-            }
-        }
+        self.clade.count(result);
     }
 }

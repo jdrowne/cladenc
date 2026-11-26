@@ -224,9 +224,10 @@ fn rebuilding_counts_the_trials_on_the_corroboration_tasks_of_the_run_record_apa
     assert_eq!(
         (
             primogenitor.corroboration_completed(),
-            primogenitor.corroboration_not_completed()
+            primogenitor.corroboration_not_completed(),
+            primogenitor.corroboration_no_verdict()
         ),
-        (0, 1)
+        (0, 0, 1)
     );
 }
 

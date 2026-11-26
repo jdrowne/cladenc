@@ -100,9 +100,9 @@ fn a_harness_that_was_never_started_is_said_with_the_tries_and_where_the_health_
 }
 
 #[test]
-fn a_trial_whose_harness_was_never_started_is_not_said_to_be_one_it_did_not_complete() {
+fn a_trial_whose_harness_was_never_started_is_not_said_to_have_been_given_no_verdict() {
     let said = never_ready().said;
-    assert!(!said.contains("did not complete task benchmark/t1"));
+    assert!(!said.contains("no verdict on task benchmark/t1"));
 }
 
 #[test]
@@ -158,9 +158,9 @@ fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_che
 }
 
 #[test]
-fn a_trial_whose_verifier_was_never_run_is_not_said_to_be_one_the_harness_did_not_complete() {
+fn a_trial_whose_verifier_was_never_run_is_not_said_to_have_been_given_no_verdict() {
     let said = with_a_verifier_that_is_never_ready().said;
-    assert!(!said.contains("did not complete task benchmark/t1"));
+    assert!(!said.contains("no verdict on task benchmark/t1"));
 }
 
 #[test]

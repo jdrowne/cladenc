@@ -49,9 +49,9 @@ fn report_prints_the_table() {
          experiments: conducted 0, the progenitor's child created in 0, the singleton control group harness created in 0, both created in 0\n\
          on the corroboration tasks of the experiments: no experiment created both the progenitor's child and the singleton control group harness, so there are no two harnesses to compare\n\
          \n\
-         id  progenitor  experiment  state    selection completed  selection not completed  corroboration completed  corroboration not completed  non-holdout completed  non-holdout not completed  clade completed  clade not completed  clade completion rate\n\
-         0   -           -           created  0                    1                        0                        1                            0                      1                          1                1                    0.500\n\
-         1   0           -           created  1                    0                        1                        0                            1                      0                          1                0                    1.000\n"
+         id  progenitor  experiment  state    selection completed  selection not completed  selection no verdict  corroboration completed  corroboration not completed  corroboration no verdict  non-holdout completed  non-holdout not completed  non-holdout no verdict  clade completed  clade not completed  clade no verdict  clade completion rate\n\
+         0   -           -           created  0                    1                        0                     0                        1                            0                         0                      1                          0                       1                1                    0                 0.500\n\
+         1   0           -           created  1                    0                        0                     1                        0                            0                         1                      0                          0                       1                0                    0                 1.000\n"
     );
 }
 

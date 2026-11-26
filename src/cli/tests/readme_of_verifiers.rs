@@ -152,22 +152,64 @@ fn the_readme_says_that_a_verifier_that_never_ran_stops_the_directed_evolution()
 }
 
 #[test]
-fn the_readme_says_that_a_verdict_that_is_not_1_and_no_verdict_are_told_apart() {
+fn the_readme_says_that_a_verdict_that_is_not_1_is_a_task_not_completed() {
     assert!(readme().contains(
         "Where the verifier writes a verdict that is not 1, the harness did not complete the \
-         task. Where the verifier ends and leaves no verdict, or a file that cannot be read as \
-         one, the harness did not complete the task either, and `cladenc` tells the two apart: \
-         it says which of the two it was on standard error at the end of the trial, and records \
-         the first as `not_completed` and the second as `no_verdict`."
+         task, which is recorded as `not_completed`."
     ));
 }
 
 #[test]
-fn the_readme_says_that_a_task_whose_verifier_left_no_verdict_counts_as_not_completed() {
+fn the_readme_says_that_a_trial_whose_verifier_gave_no_verdict_is_neither() {
+    assert!(readme().contains(
+        "Where the verifier ends and leaves no verdict, or a file that cannot be read as one, \
+         or where it runs past its time limit, the trial has no verdict: nothing judged what \
+         the harness left, so the harness is said neither to have completed the task nor not \
+         to have completed it."
+    ));
+}
+
+#[test]
+fn the_readme_says_how_a_trial_with_no_verdict_is_recorded_and_said() {
+    assert!(readme().contains(
+        "A trial with no verdict is recorded as `no_verdict` where the verifier ended and as \
+         `timed_out` where the verifier ran past its time limit, and `cladenc` says which of \
+         the three outcomes a trial had on standard error at its end."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_nothing_tells_what_broke_a_verifier() {
     assert!(readme().contains(
         "The verifier may have broken by itself, or what the harness left may have broken it, \
-         and `cladenc` has no way to tell which, so a task whose verifier left no verdict \
-         counts among the tasks the harness did not complete, in artificial selection and in \
-         what `cladenc report` and `cladenc status` print."
+         and `cladenc` has no way to tell which."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_the_trials_with_no_verdict_are_counted_apart() {
+    assert!(readme().contains(
+        "`cladenc report` and `cladenc status` count the trials with no verdict apart from the \
+         tasks a harness completed and from those it did not complete."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_a_trial_with_no_verdict_is_a_finished_trial() {
+    assert!(readme().contains(
+        "A trial with no verdict is a finished trial all the same: a completion rate is the \
+         part of the finished trials in which the task was completed, and artificial selection \
+         goes by the finished trials of a clade and by how many of them were completed, so a \
+         harness gains nothing by leaving what breaks a verifier."
+    ));
+}
+
+#[test]
+fn the_readme_says_which_three_counts_the_report_gives_of_each_set_of_tasks() {
+    assert!(readme().contains(
+        "how many of the selection tasks it completed, how many it did not complete and how \
+         many of its trials on them have no verdict, the same three counts of the corroboration \
+         tasks and of the non-holdout tasks, the three counts of the selection tasks for its \
+         clade, which is the harness and all its descendants together,"
     ));
 }

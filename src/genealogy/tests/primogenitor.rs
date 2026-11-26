@@ -39,6 +39,11 @@ fn the_primogenitor_starts_with_nothing_not_completed() {
 }
 
 #[test]
+fn the_primogenitor_starts_with_no_trial_that_has_no_verdict() {
+    assert_eq!(Genealogy::new().harnesses()[0].selection_no_verdict(), 0);
+}
+
+#[test]
 fn the_default_genealogy_is_a_new_genealogy() {
     assert_eq!(Genealogy::default(), Genealogy::new());
 }

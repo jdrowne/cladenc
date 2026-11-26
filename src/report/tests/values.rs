@@ -70,6 +70,14 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     genealogy
 }
 
+fn a_primogenitor_whose_trials_have_no_verdict() -> Genealogy {
+    let mut genealogy = settings().genealogy();
+    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::NoVerdict);
+    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::TimedOut);
+    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::NoVerdict);
+    genealogy
+}
+
 fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
     let mut genealogy = Genealogy::new();
     let failed = genealogy.start_diversification(0).unwrap();
@@ -180,6 +188,46 @@ fn the_clade_counts_of_a_harness_leave_out_the_tasks_that_are_not_held_out() {
         ),
         (1, 0)
     );
+}
+
+#[test]
+fn the_no_verdict_counts_of_a_harness_are_those_of_its_own_trials_on_each_set_of_tasks() {
+    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+    assert_eq!(
+        (
+            report.harnesses[0].selection_no_verdict,
+            report.harnesses[0].corroboration_no_verdict,
+            report.harnesses[0].non_holdout_no_verdict
+        ),
+        (1, 1, 1)
+    );
+}
+
+#[test]
+fn a_trial_with_no_verdict_is_reported_as_neither_completed_nor_not_completed() {
+    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+    assert_eq!(
+        (
+            report.harnesses[0].selection_completed,
+            report.harnesses[0].selection_not_completed,
+            report.harnesses[0].corroboration_not_completed,
+            report.harnesses[0].non_holdout_not_completed,
+            report.harnesses[0].clade_not_completed
+        ),
+        (0, 0, 0, 0, 0)
+    );
+}
+
+#[test]
+fn the_clade_no_verdict_of_a_harness_counts_its_trials_on_the_selection_tasks() {
+    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+    assert_eq!(report.harnesses[0].clade_no_verdict, 1);
+}
+
+#[test]
+fn a_clade_whose_finished_trials_have_no_verdict_has_a_clade_completion_rate_of_zero() {
+    let report = report(&a_primogenitor_whose_trials_have_no_verdict());
+    assert_eq!(report.harnesses[0].clade_completion_rate, Some(0.0));
 }
 
 #[test]

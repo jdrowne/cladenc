@@ -26,15 +26,18 @@ fn after(harness: HarnessId, task: &str, result: TrialResult) -> Genealogy {
     genealogy
 }
 
-fn counts_of_the_child(genealogy: &Genealogy) -> [u64; 6] {
+fn counts_of_the_child(genealogy: &Genealogy) -> [u64; 9] {
     let child = &genealogy.harnesses()[1];
     [
         child.selection_completed(),
         child.selection_not_completed(),
+        child.selection_no_verdict(),
         child.corroboration_completed(),
         child.corroboration_not_completed(),
+        child.corroboration_no_verdict(),
         child.non_holdout_completed(),
         child.non_holdout_not_completed(),
+        child.non_holdout_no_verdict(),
     ]
 }
 
@@ -44,6 +47,10 @@ fn clade_completed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
 
 fn clade_not_completed_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
     [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_not_completed())
+}
+
+fn clade_no_verdict_of_the_line(genealogy: &Genealogy) -> [u64; 2] {
+    [0, 1].map(|harness: usize| genealogy.harnesses()[harness].clade_no_verdict())
 }
 
 #[test]
@@ -77,14 +84,17 @@ fn a_genealogy_that_corroborates_with_a_task_is_not_one_that_selects_by_the_task
 
 #[test]
 fn a_new_harness_has_no_count_of_any_task() {
-    assert_eq!(counts_of_the_child(&with_a_child()), [0, 0, 0, 0, 0, 0]);
+    assert_eq!(
+        counts_of_the_child(&with_a_child()),
+        [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
 }
 
 #[test]
 fn a_completed_trial_on_a_selection_task_adds_one_to_the_selection_completed_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SELECTION, TrialResult::Completed)),
-        [1, 0, 0, 0, 0, 0]
+        [1, 0, 0, 0, 0, 0, 0, 0, 0]
     );
 }
 
@@ -92,23 +102,23 @@ fn a_completed_trial_on_a_selection_task_adds_one_to_the_selection_completed_alo
 fn a_trial_not_completed_at_a_selection_task_adds_one_to_the_selection_not_completed_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SELECTION, TrialResult::NotCompleted)),
-        [0, 1, 0, 0, 0, 0]
+        [0, 1, 0, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_selection_task_counts_as_selection_not_completed() {
+fn a_result_of_no_verdict_at_a_selection_task_adds_one_to_the_selection_no_verdict_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SELECTION, TrialResult::NoVerdict)),
-        [0, 1, 0, 0, 0, 0]
+        [0, 0, 1, 0, 0, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_selection_task_counts_as_selection_not_completed() {
+fn a_result_of_timed_out_at_a_selection_task_adds_one_to_the_selection_no_verdict_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SELECTION, TrialResult::TimedOut)),
-        [0, 1, 0, 0, 0, 0]
+        [0, 0, 1, 0, 0, 0, 0, 0, 0]
     );
 }
 
@@ -116,7 +126,7 @@ fn a_result_of_timed_out_at_a_selection_task_counts_as_selection_not_completed()
 fn a_completed_trial_on_a_corroboration_task_adds_one_to_the_corroboration_completed_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, CORROBORATION, TrialResult::Completed)),
-        [0, 0, 1, 0, 0, 0]
+        [0, 0, 0, 1, 0, 0, 0, 0, 0]
     );
 }
 
@@ -124,23 +134,23 @@ fn a_completed_trial_on_a_corroboration_task_adds_one_to_the_corroboration_compl
 fn a_trial_not_completed_at_a_corroboration_task_adds_one_to_the_corroboration_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, CORROBORATION, TrialResult::NotCompleted)),
-        [0, 0, 0, 1, 0, 0]
+        [0, 0, 0, 0, 1, 0, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_corroboration_task_counts_as_corroboration_not_completed() {
+fn a_result_of_no_verdict_at_a_corroboration_task_adds_one_to_the_corroboration_no_verdict() {
     assert_eq!(
         counts_of_the_child(&after(1, CORROBORATION, TrialResult::NoVerdict)),
-        [0, 0, 0, 1, 0, 0]
+        [0, 0, 0, 0, 0, 1, 0, 0, 0]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_corroboration_task_counts_as_corroboration_not_completed() {
+fn a_result_of_timed_out_at_a_corroboration_task_adds_one_to_the_corroboration_no_verdict() {
     assert_eq!(
         counts_of_the_child(&after(1, CORROBORATION, TrialResult::TimedOut)),
-        [0, 0, 0, 1, 0, 0]
+        [0, 0, 0, 0, 0, 1, 0, 0, 0]
     );
 }
 
@@ -148,7 +158,7 @@ fn a_result_of_timed_out_at_a_corroboration_task_counts_as_corroboration_not_com
 fn a_completed_trial_on_a_task_not_held_out_adds_one_to_the_non_holdout_completed_alone() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, TrialResult::Completed)),
-        [0, 0, 0, 0, 1, 0]
+        [0, 0, 0, 0, 0, 0, 1, 0, 0]
     );
 }
 
@@ -156,23 +166,23 @@ fn a_completed_trial_on_a_task_not_held_out_adds_one_to_the_non_holdout_complete
 fn a_trial_not_completed_at_a_task_not_held_out_adds_one_to_the_non_holdout_not_completed() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, TrialResult::NotCompleted)),
-        [0, 0, 0, 0, 0, 1]
+        [0, 0, 0, 0, 0, 0, 0, 1, 0]
     );
 }
 
 #[test]
-fn a_result_of_no_verdict_at_a_task_not_held_out_counts_as_non_holdout_not_completed() {
+fn a_result_of_no_verdict_at_a_task_not_held_out_adds_one_to_the_non_holdout_no_verdict() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, TrialResult::NoVerdict)),
-        [0, 0, 0, 0, 0, 1]
+        [0, 0, 0, 0, 0, 0, 0, 0, 1]
     );
 }
 
 #[test]
-fn a_result_of_timed_out_at_a_task_not_held_out_counts_as_non_holdout_not_completed() {
+fn a_result_of_timed_out_at_a_task_not_held_out_adds_one_to_the_non_holdout_no_verdict() {
     assert_eq!(
         counts_of_the_child(&after(1, SHOWN, TrialResult::TimedOut)),
-        [0, 0, 0, 0, 0, 1]
+        [0, 0, 0, 0, 0, 0, 0, 0, 1]
     );
 }
 
@@ -189,6 +199,30 @@ fn a_trial_not_completed_at_a_selection_task_reaches_the_clade_not_completed_of_
     assert_eq!(
         clade_not_completed_of_the_line(&after(1, SELECTION, TrialResult::NotCompleted)),
         [1, 1]
+    );
+}
+
+#[test]
+fn a_result_of_no_verdict_at_a_selection_task_reaches_the_clade_no_verdict_of_its_line() {
+    assert_eq!(
+        clade_no_verdict_of_the_line(&after(1, SELECTION, TrialResult::NoVerdict)),
+        [1, 1]
+    );
+}
+
+#[test]
+fn a_result_of_no_verdict_at_a_corroboration_task_reaches_no_clade_no_verdict() {
+    assert_eq!(
+        clade_no_verdict_of_the_line(&after(1, CORROBORATION, TrialResult::NoVerdict)),
+        [0, 0]
+    );
+}
+
+#[test]
+fn a_result_of_no_verdict_at_a_task_that_is_not_held_out_reaches_no_clade_no_verdict() {
+    assert_eq!(
+        clade_no_verdict_of_the_line(&after(1, SHOWN, TrialResult::NoVerdict)),
+        [0, 0]
     );
 }
 

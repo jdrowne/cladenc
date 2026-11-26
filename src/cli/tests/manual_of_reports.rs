@@ -108,3 +108,23 @@ fn the_manual_of_report_says_what_the_clade_completion_rate_is() {
          selection tasks in which the task was completed,"
     ));
 }
+
+#[test]
+fn the_manual_of_report_says_which_three_counts_it_gives_of_each_set_of_tasks() {
+    assert!(manual_on_one_line("cladenc-report").contains(
+        "how many of the selection tasks it completed, how many it did not complete and how \
+         many of its trials on them have no verdict, the same three counts of the corroboration \
+         tasks and of the non-holdout tasks, the three counts of the selection tasks for its \
+         clade, which is the harness and all its descendants together,"
+    ));
+}
+
+#[test]
+fn the_manual_of_report_says_what_a_trial_with_no_verdict_is() {
+    assert!(manual_on_one_line("cladenc-report").contains(
+        "A trial has no verdict where its verifier left none that can be read or ran past its \
+         time limit: the harness is counted neither as having completed the task nor as not \
+         having completed it. Such a trial on a selection task is one of the finished trials \
+         of the clade completion rate all the same."
+    ));
+}

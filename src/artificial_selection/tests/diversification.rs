@@ -39,15 +39,36 @@ fn with_a_child_that_trialled(count: usize) -> Genealogy {
 }
 
 fn benchmark(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
+    benchmark_ending(genealogy, harness, completed, TrialResult::NotCompleted);
+}
+
+fn benchmark_ending(
+    genealogy: &mut Genealogy,
+    harness: HarnessId,
+    completed: usize,
+    otherwise: TrialResult,
+) {
     for (number, task) in tasks().iter().enumerate() {
         let result = if number < completed {
             TrialResult::Completed
         } else {
-            TrialResult::NotCompleted
+            otherwise
         };
         genealogy.start_trial(harness, task).unwrap();
         genealogy.end_trial(harness, task, result).unwrap();
     }
+}
+
+fn progenitors_where_every_other_trial_ends_with(otherwise: TrialResult) -> Vec<Option<Action>> {
+    let mut genealogy = Genealogy::new().selecting_by(&tasks());
+    benchmark_ending(&mut genealogy, 0, 0, otherwise);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
+    child_of(&mut genealogy, 0, CreationOutcome::Created);
+    benchmark_ending(&mut genealogy, 1, 10, otherwise);
+    benchmark_ending(&mut genealogy, 2, 12, otherwise);
+    (0..200)
+        .map(|seed| artificial_selection(seed).next_action(&genealogy, 0))
+        .collect()
 }
 
 fn two_lines() -> Genealogy {
@@ -171,6 +192,30 @@ fn a_harness_whose_trials_ran_past_their_time_limit_can_be_the_progenitor() {
     assert_eq!(
         artificial_selection(0).next_action(&genealogy, 0),
         Some(Action::Diversification { progenitor: 0 })
+    );
+}
+
+#[test]
+fn a_trial_with_no_verdict_weighs_on_which_harness_is_cloned_as_one_not_completed_does() {
+    assert_eq!(
+        progenitors_where_every_other_trial_ends_with(TrialResult::NoVerdict),
+        progenitors_where_every_other_trial_ends_with(TrialResult::NotCompleted)
+    );
+}
+
+#[test]
+fn a_trial_whose_verifier_timed_out_weighs_on_which_harness_is_cloned_as_one_not_completed_does() {
+    assert_eq!(
+        progenitors_where_every_other_trial_ends_with(TrialResult::TimedOut),
+        progenitors_where_every_other_trial_ends_with(TrialResult::NotCompleted)
+    );
+}
+
+#[test]
+fn a_trial_with_no_verdict_weighs_on_which_harness_is_cloned() {
+    assert_ne!(
+        progenitors_where_every_other_trial_ends_with(TrialResult::NoVerdict),
+        progenitors_where_every_other_trial_ends_with(TrialResult::Completed)
     );
 }
 

@@ -65,18 +65,40 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
             r#""only_singleton_control_group_harness_completed":0,"likelihood_by_luck":null},"#,
             r#""harnesses":["#,
             r#"{"id":0,"progenitor":null,"experiment":null,"state":"created","#,
-            r#""selection_completed":1,"selection_not_completed":0,"#,
+            r#""selection_completed":1,"selection_not_completed":0,"selection_no_verdict":0,"#,
             r#""corroboration_completed":1,"corroboration_not_completed":0,"#,
+            r#""corroboration_no_verdict":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":1,"#,
-            r#""clade_completed":1,"clade_not_completed":0,"clade_completion_rate":1.0,"#,
+            r#""non_holdout_no_verdict":0,"#,
+            r#""clade_completed":1,"clade_not_completed":0,"clade_no_verdict":0,"#,
+            r#""clade_completion_rate":1.0,"#,
             r#""trial_seconds":4.5,"diversification_seconds":null},"#,
             r#"{"id":1,"progenitor":0,"experiment":null,"state":"being_created","#,
-            r#""selection_completed":0,"selection_not_completed":0,"#,
+            r#""selection_completed":0,"selection_not_completed":0,"selection_no_verdict":0,"#,
             r#""corroboration_completed":0,"corroboration_not_completed":0,"#,
+            r#""corroboration_no_verdict":0,"#,
             r#""non_holdout_completed":0,"non_holdout_not_completed":0,"#,
-            r#""clade_completed":0,"clade_not_completed":0,"clade_completion_rate":null,"#,
+            r#""non_holdout_no_verdict":0,"#,
+            r#""clade_completed":0,"clade_not_completed":0,"clade_no_verdict":0,"#,
+            r#""clade_completion_rate":null,"#,
             r#""trial_seconds":0.0,"diversification_seconds":null}]}"#
         )
+    );
+}
+
+#[test]
+fn a_trial_with_no_verdict_is_written_under_a_name_of_its_own() {
+    let mut genealogy = settings().genealogy();
+    genealogy.start_trial(0, "benchmark/t1").unwrap();
+    genealogy
+        .end_trial(0, "benchmark/t1", TrialResult::NoVerdict)
+        .unwrap();
+    assert!(
+        Report::of(&settings(), &genealogy, &[], Some(0))
+            .json()
+            .contains(
+                r#""selection_completed":0,"selection_not_completed":0,"selection_no_verdict":1,"#
+            )
     );
 }
 
