@@ -1,6 +1,6 @@
 ---
 name: a-failed-run-is-fixed-before-other-work
-description: "When a run that the session's own push started is found to have failed, the fix is the next commit the session pushes, ahead of any other work not yet pushed"
+description: "When a run that the session's own push started is found to have failed, the fix goes in the next push the session makes, with whatever else is finished, and no new work begins before that push"
 metadata:
   node_type: memory
   type: feedback
@@ -10,8 +10,8 @@ metadata:
 
 # A failed run is fixed before other work
 
-When a run that the session's own push started is found to have failed, the fix goes in the next commit the session pushes, and no new work is begun until that commit is pushed.
+When a run that the session's own push started is found to have failed, the fix goes in the next push the session makes, and no new work is begun until that push is made.
 
-**Why:** A change is unverified until every job that checks it has passed, and a failure left standing hides how each later change fares. The fix may share its commit with other finished changes, so long as the push is that one commit, per [[one-commit-per-push]]. Every run is waited for, per [[the-work-waits-for-ci]], so a failure comes to light before any new work is begun.
+**Why:** A change is unverified until every job that checks it has passed, and a failure left standing hides how each later change fares. The fix may share its push, and its commit, with other finished changes, per [[commits-in-a-push-are-the-sessions-choice]]. Every run is waited for, per [[the-work-waits-for-ci]], so a failure comes to light before any new work is begun.
 
-**How to apply:** When a watch kept per [[every-run-is-watched]] ends on a failed run, read `gh run view <id> --log-failed`, and fix the failure whether the push caused it or inherited it from an earlier commit. Anything finished in the working tree, a change the user asked for among it, goes in the same commit as the fix. A commit that holds only the fix, or the fix and changes the user asked for, closes no issue, per [[a-commit-closes-at-least-one-issue]], and writes `Refs #N` for each issue the failed commit closed. The issues the failed commit closed were closed on push, whatever the run said; they stay closed while the fix goes in, and are reopened by hand with `gh issue reopen <number>` only if the commit is taken back instead.
+**How to apply:** When a watch kept per [[every-run-is-watched]] ends on a failed run, read `gh run view <id> --log-failed`, and fix the failure whether the push caused it or inherited it from an earlier one. The run checked the push at its head, so the fault can be in any commit of the push: the log names the check that failed, and the summary page of the run lists the commits to look in. Anything finished, a change the user asked for among it, goes in the same push as the fix, in the commit of the fix or in one of its own. A push that holds only the fix, or the fix and changes the user asked for, closes no issue, per [[a-push-closes-at-least-one-issue]], and the commit that holds the fix writes `Refs #N` for each issue the failed push closed. The issues the failed push closed were closed on push, whatever the run said; they stay closed while the fix goes in, and are reopened by hand with `gh issue reopen <number>` only if the commit that closed them is taken back instead.

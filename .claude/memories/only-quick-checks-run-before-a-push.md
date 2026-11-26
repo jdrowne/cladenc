@@ -23,7 +23,7 @@ Which of the eleven run depends on the files the commit changes:
 
 The rows add up: a commit that changes a Rust file and a Markdown file runs the checks of the first three rows. Every command below runs from the top directory of the repository, each between parentheses so that one that fails does not stop the next.
 
-Three checks run before every push, whatever the commit changes:
+Three checks run before every push, whatever its commits change:
 
 - `assert-no-comments`: no file holds a comment or a doc comment.
 - `assert-no-inline-directives`: no Rust, Markdown, TOML or YAML file holds an attribute or an inline directive that silences a tool.
@@ -138,16 +138,16 @@ It is the script of the two jobs, given both workflows and the directory of the 
 
 Everything else the workflows check is left to CI: whether the code compiles, every test of every tier, `cargo clippy`, the two coverage measures, and the `.deb` and its install on Debian.
 
-**Why:** Compiling the code and running the tests are the heavy part of the checks, and CI does both on every push anyway. The eleven checks that run locally compile nothing and run no test, and together they take under two seconds. A commit that fails one of them in CI costs a failed run on `main`, a second commit and a second wait for CI, per [[a-failed-run-is-fixed-before-other-work]]. The three `assert-*` tools of every push each read files of more than one kind, and the workflow `release` does not run for every commit: a commit of Markdown files alone starts no run of it, so a finding in such a commit would fail the run of a later push that has nothing to do with it.
+**Why:** Compiling the code and running the tests are the heavy part of the checks, and CI does both on every push anyway. The eleven checks that run locally compile nothing and run no test, and together they take under two seconds. A push that fails one of them in CI costs a failed run on `main`, a second push and a second wait for CI, per [[a-failed-run-is-fixed-before-other-work]]. The three `assert-*` tools of every push each read files of more than one kind, and the workflow `release` does not run for every push: a push of Markdown files alone starts no run of it, so a finding in such a push would fail the run of a later push that has nothing to do with it.
 
 **How to apply:**
 
 - No `cargo test` is run locally: not one test, not one file, not a tier, with Docker or without it.
 - No `cargo check`, `cargo build` or `cargo clippy` is run to check a change before its push: each of the three compiles the code.
-- A commit that does not compile is found by the run of its push, in which every job that compiles fails. The fix is the next commit, per [[a-failed-run-is-fixed-before-other-work]].
+- A commit that does not compile is found by the run of its push, in which every job that compiles fails. The fix goes in the next push, per [[a-failed-run-is-fixed-before-other-work]].
 - A test is written before its code, per [[tests-are-written-before-code]], and CI compiles and runs it for the first time, in the run of the push that brings it with its code.
 - `cargo` is reached per [[cargo-is-not-on-the-shell-path]].
-- The order is `cargo fmt --all`, then `git add` of the files of the commit, then the other checks, all before `git commit`. Most of the checks read only the files git tracks, so a new file is checked only once it is staged.
+- The order is `cargo fmt --all`, then `git add` of the files of the commit, then the other checks, all before `git commit`. A push of several commits has each of its commits checked this way before it is made, per [[commits-in-a-push-are-the-sessions-choice]]. Most of the checks read only the files git tracks, so a new file is checked only once it is staged.
 - A check that passes prints nothing. Each line a check prints names a file and what is wrong in it, and that file is fixed before the push. A warning of `yamllint` fails its check as an error does. A file that `cargo fmt --all` cannot read as Rust is fixed before the push too. Nothing else holds a push back, per [[push-to-main]].
 - A commit of `README.md` alone runs the three checks of every push and `markdownlint`, and nothing else. A commit of a memory is the same, since a memory is a Markdown file.
 - The workflow is the list: where a command here and its job disagree, the workflow is right, and the command here is corrected. A commit that changes the job of one of the eleven checks changes the command of the check here as well.

@@ -28,7 +28,7 @@ That code is written to pass the checks from the start was a session's wording i
 
 **How to apply:**
 
-- Push once the change is complete as far as reading it shows and the checks of [[only-quick-checks-run-before-a-push]] pass. The run says what is wrong, and what it finds is fixed in the next commit, per [[a-failed-run-is-fixed-before-other-work]].
+- Push once the change is complete as far as reading it shows and the checks of [[only-quick-checks-run-before-a-push]] pass. The run says what is wrong, and what it finds is fixed in the next push, per [[a-failed-run-is-fixed-before-other-work]].
 - Do not trace by hand what a compiler or a test would say in order to be spared a run.
 - Time and the count of runs are never given as a reason: not for a test left out, not for a narrower fix, not for doing other than a rule such as [[the-work-waits-for-ci]] says.
 - What the checks are is read in `.github/workflows/release.yml` and `etc/clippy/clippy.toml`, not in a memory, per [[what-the-repository-says-is-read-there]].

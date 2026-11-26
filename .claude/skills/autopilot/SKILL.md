@@ -9,7 +9,7 @@ The autopilot is a set of scheduled reminders. Together they keep the session so
 
 The session works on one issue or several at a time: the first listed issue that no open issue blocks, and any other listed issues it chooses to add, per `.claude/memories/several-issues-can-be-worked-on-together.md`.
 
-Starting the autopilot is the user's request to commit and push what it solves: each commit goes to `main` without a further go-ahead, per `.claude/memories/push-to-main.md`, and each closes at least one issue, per `.claude/memories/a-commit-closes-at-least-one-issue.md`. Each push is one commit, which may hold several things at once, per `.claude/memories/one-commit-per-push.md`.
+Starting the autopilot is the user's request to commit and push what it solves: its work goes to `main` without a further go-ahead, per `.claude/memories/push-to-main.md`. A push carries one commit or several and goes when the session chooses, per `.claude/memories/commits-in-a-push-are-the-sessions-choice.md`, and each push closes at least one issue, per `.claude/memories/a-push-closes-at-least-one-issue.md`.
 
 Every part of the work, reading, searching and filing as well as code, is done in the session itself: no Agent or Workflow call takes any part of it, per `.claude/memories/working-without-subagents.md`.
 
@@ -93,13 +93,13 @@ Each file is under `.claude/memories/`.
 | The goal is a `cladenc` that is right, and CI is a tool that says whether it is: a first push that passes, few runs and little time are not goals. | `ci-says-whether-the-code-is-right.md` |
 | No test runs locally and no change is compiled locally to check it: before a push, the eleven checks of the workflows that compile nothing run locally: `assert-no-comments`, `assert-no-inline-directives` and `assert-no-linter-config-files` before every push; `cargo fmt --all`, `assert-no-empty-test-files`, `assert-no-oversized-functions`, `assert-no-oversized-source-files`, `assert-one-assert-per-test` and `assert-one-directory-per-module` for a commit that changes a Rust file; `markdownlint` for a commit that changes a Markdown file; `yamllint` for a commit that changes a workflow or an action. Whether the code compiles, every test, `clippy`, coverage and the package are left to CI. | `only-quick-checks-run-before-a-push.md` |
 | A command that can take more than about a minute runs in the background. | `long-running-commands-in-the-background.md` |
-| A commit closes at least one issue, with a `Closes #N` line for each. | `a-commit-closes-at-least-one-issue.md` |
-| A push carries exactly one commit, which may hold several things at once. | `one-commit-per-push.md` |
+| A push closes at least one issue, with a `Closes #N` line for each in the commit that finishes it. | `a-push-closes-at-least-one-issue.md` |
+| A push carries one commit or several and goes when the session chooses. | `commits-in-a-push-are-the-sessions-choice.md` |
 | After a push, nothing else is done until every run it started has ended, except what the user instructs. | `the-work-waits-for-ci.md` |
 | Every run a push starts is watched to its end in the background. | `every-run-is-watched.md` |
-| A run found to have failed is fixed in the next commit pushed, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
-| After a push, the issues its commit closes are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
-| When a run that passed shows that an issue its commit closed is not solved, the issue is reopened with a comment that says why, and its body is left as it is. | `a-passed-run-can-show-a-closed-issue-unsolved.md` |
+| A run found to have failed is fixed in the next push, before new work begins. | `a-failed-run-is-fixed-before-other-work.md` |
+| After a push, the issues its commits close are checked to be closed. | `a-push-can-leave-its-issues-open.md` |
+| When a run that passed shows that an issue its push closed is not solved, the issue is reopened with a comment that says why, and its body is left as it is. | `a-passed-run-can-show-a-closed-issue-unsolved.md` |
 | The task list holds what is left to do, and is brought up to date as the work goes. | `the-task-list-holds-what-is-left-to-do.md` |
 
 ## Start

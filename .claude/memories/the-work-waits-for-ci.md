@@ -16,8 +16,8 @@ While a workflow run that a push of the session's started is queued or in progre
 
 **How to apply:**
 
-- The push itself finishes first: list the runs it started, start a watch on each, and read back the issues its commit closes, per [[a-push-can-leave-its-issues-open]]. Then end the turn.
+- The push itself finishes first: list the runs it started, start a watch on each, and read back the issues its commits close, per [[a-push-can-leave-its-issues-open]]. Then end the turn.
 - The autopilot has a reminder of its own for this rule, exception included, per "Reminders" in `.claude/skills/autopilot/SKILL.md`. Another reminder that fires during the wait, to take work or to go on autonomously, does not override it. End the turn again.
 - Once every run of the push has ended: if all passed, the next work begins. If one failed, its fix comes first.
 - A session that starts or resumes while a run of an earlier push is queued or in progress waits for that run too.
-- What the user instructs during the wait is the one exception, done in full at once, per [[what-the-user-instructs-is-done]]: a question is answered with whatever reading it takes, and a change is made, committed and pushed without waiting for the runs, per [[push-to-main]] and [[one-commit-per-push]]. The runs its push starts are watched like any other, and the wait goes on until every run of both pushes has ended.
+- What the user instructs during the wait is the one exception, done in full at once, per [[what-the-user-instructs-is-done]]: a question is answered with whatever reading it takes, and a change is made, committed and pushed without waiting for the runs, per [[push-to-main]] and [[commits-in-a-push-are-the-sessions-choice]]. The runs its push starts are watched like any other, and the wait goes on until every run of both pushes has ended.
