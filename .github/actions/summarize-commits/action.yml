@@ -1,0 +1,30 @@
+---
+description: >-
+  List every commit of the push that started the run, on the summary page of
+  the run and in the log of the job: the hash of each commit, linked to the
+  commit, its author and its title. The page of a run names only the last
+  commit of its push.
+name: summarize-commits
+runs:
+  steps:
+    - name: List the commits of the push
+      run: |
+        jq --raw-output '
+          def cell:
+            gsub("[\r\n]+"; " ") | gsub("&"; "&amp;") | gsub("<"; "&lt;")
+            | gsub("\\|"; "&#124;");
+          "## Commits of the push",
+          "",
+          if (.commits | length) == 0 then
+            "The push brought no commit."
+          else
+            "| Commit | Author | Title |",
+            "| --- | --- | --- |",
+            (.commits[]
+              | "| [`\(.id[:7])`](\(.url))"
+                + " | \(.author.name | cell)"
+                + " | \(.message | split("\n")[0] | cell) |")
+          end
+        ' "$GITHUB_EVENT_PATH" | tee -a "$GITHUB_STEP_SUMMARY"
+      shell: bash
+  using: composite

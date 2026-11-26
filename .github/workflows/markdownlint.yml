@@ -24,6 +24,17 @@ jobs:
         run: npm install --global --prefer-offline markdownlint-cli
       - name: markdownlint
         run: markdownlint --dot --disable MD013 -- '**/*.md'
+  summarize-commits:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the action
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions/summarize-commits
+      - name: summarize-commits
+        uses: ./.github/actions/summarize-commits
   yamllint:
     runs-on: ubuntu-latest
     steps:
@@ -59,4 +70,5 @@ on:
       - main
     paths:
       - "**.md"
+      - ".github/actions/summarize-commits/**"
       - ".github/workflows/markdownlint.yml"

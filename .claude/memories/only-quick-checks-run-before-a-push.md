@@ -1,11 +1,11 @@
 ---
 name: only-quick-checks-run-before-a-push
-description: "No test runs locally and no change is compiled locally to check it: CI compiles the code and runs the unit, integration and end-to-end tests; the eleven checks of the workflows that compile nothing run locally before a push: assert-no-comments, assert-no-inline-directives and assert-no-linter-config-files before every push; cargo fmt --all, assert-no-empty-test-files, assert-no-oversized-functions, assert-no-oversized-source-files, assert-one-assert-per-test and assert-one-directory-per-module for a commit that changes a Rust file; markdownlint for a commit that changes a Markdown file; yamllint for a commit that changes a workflow; whether the code compiles, the tests, clippy, coverage and the package are left to CI"
+description: "No test runs locally and no change is compiled locally to check it: CI compiles the code and runs the unit, integration and end-to-end tests; the eleven checks of the workflows that compile nothing run locally before a push: assert-no-comments, assert-no-inline-directives and assert-no-linter-config-files before every push; cargo fmt --all, assert-no-empty-test-files, assert-no-oversized-functions, assert-no-oversized-source-files, assert-one-assert-per-test and assert-one-directory-per-module for a commit that changes a Rust file; markdownlint for a commit that changes a Markdown file; yamllint for a commit that changes a workflow or an action; whether the code compiles, the tests, clippy, coverage and the package are left to CI"
 metadata:
   node_type: memory
   type: feedback
   originSessionId: c0ccaee5-b418-4970-9ebc-74bd1acf04de
-  modified: 2026-11-24T12:00:00.000Z
+  modified: 2026-11-26T16:00:00.000Z
 ---
 
 # Only quick checks run before a push
@@ -19,7 +19,7 @@ Which of the eleven run depends on the files the commit changes:
 | anything | `assert-no-comments`, `assert-no-inline-directives`, `assert-no-linter-config-files` |
 | a Rust file | `cargo fmt --all`, `assert-no-empty-test-files`, `assert-no-oversized-functions`, `assert-no-oversized-source-files`, `assert-one-assert-per-test`, `assert-one-directory-per-module` |
 | a Markdown file | `markdownlint` |
-| a workflow | `yamllint` |
+| a workflow or an action | `yamllint` |
 
 The rows add up: a commit that changes a Rust file and a Markdown file runs the checks of the first three rows. Every command below runs from the top directory of the repository, each between parentheses so that one that fails does not stop the next.
 
@@ -117,11 +117,11 @@ It is a tool that is installed locally, called with the flags its job gives it, 
 )
 ```
 
-One check runs for a commit that changes a workflow:
+One check runs for a commit that changes a workflow or an action:
 
-- `yamllint`: each of the two workflows keeps the rules of the job `yamllint` that reads it. `.github/workflows/markdownlint.yml` has a job of that name too, with the same rules, for its own file.
+- `yamllint`: each of the two workflows keeps the rules of the job `yamllint` that reads it, and so does each action under `.github/actions/`, which the job of `.github/workflows/release.yml` reads as well. `.github/workflows/markdownlint.yml` has a job of that name too, with the same rules, for its own file.
 
-It is the script of the two jobs, given both workflows at once, and `yamllint` is installed locally as well:
+It is the script of the two jobs, given both workflows and the directory of the actions at once, and `yamllint` is installed locally as well:
 
 ```bash
 (
@@ -131,7 +131,8 @@ It is the script of the two jobs, given both workflows at once, and `yamllint` i
   RULES="$EMPTY_LINES, $KEY_ORDERING, $TRUTHY"
   yamllint --strict --format github \
     --config-data "{extends: default, rules: {$RULES}}" \
-    .github/workflows/release.yml .github/workflows/markdownlint.yml
+    .github/workflows/release.yml .github/workflows/markdownlint.yml \
+    .github/actions
 )
 ```
 

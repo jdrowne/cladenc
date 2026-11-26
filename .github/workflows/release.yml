@@ -924,6 +924,7 @@ jobs:
       - integration-test-debug
       - package
       - rustfmt
+      - summarize-commits
       - test-package
       - unit-test-debug
       - yamllint
@@ -967,6 +968,17 @@ jobs:
         run: cargo fmt --all --check
       - name: rustfmt, on every Rust file, built or not
         run: rustfmt --check --edition 2024 $(git ls-files '*.rs')
+  summarize-commits:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the action
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions/summarize-commits
+      - name: summarize-commits
+        uses: ./.github/actions/summarize-commits
   test-package:
     needs:
       - cache-images
@@ -1092,13 +1104,14 @@ jobs:
           RULES="$EMPTY_LINES, $KEY_ORDERING, $TRUTHY"
           yamllint --strict --format github \
             --config-data "{extends: default, rules: {$RULES}}" \
-            .github/workflows/release.yml
+            .github/workflows/release.yml .github/actions
 name: release
 on:
   push:
     branches:
       - main
     paths:
+      - ".github/actions/summarize-commits/**"
       - ".github/workflows/release.yml"
       - "Cargo.lock"
       - "Cargo.toml"
