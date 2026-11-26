@@ -37,11 +37,7 @@ fn leaving(docker: Double, at: &'static str, files: &'static [&'static str]) -> 
             .arguments
             .iter()
             .any(|argument| argument.ends_with(&from));
-        let to = asked
-            .arguments
-            .last()
-            .map(PathBuf::from)
-            .unwrap_or_default();
+        let to = asked.kept.join("left");
         if asked_for {
             directory.create_dir_all(&to).unwrap();
             for file in files {
@@ -94,14 +90,9 @@ fn the_published_place_that_a_task_names_is_kept_at_the_destination_the_task_giv
         }],
         ..TaskConfiguration::default()
     };
-    let commands = trialled(Double::default(), configuration).commands();
-    assert!(
-        commands.contains(
-            &"docker cp --follow-link NAME:/logs/artifacts \
-          OUTPUTS/running/trial-0-benchmark+t1/artifacts/published"
-                .to_owned()
-        )
-    );
+    let docker = leaving(Double::default(), PUBLISHED, &["a.txt"]);
+    let tried = trialled(docker, configuration);
+    assert_eq!(kept_of(&tried, "published"), ["a.txt"]);
 }
 
 #[test]

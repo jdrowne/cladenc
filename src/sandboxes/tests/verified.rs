@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
@@ -51,24 +50,18 @@ fn result_of(tried: &Tried) -> Option<TrialResult> {
 
 fn leaving_a_directory() -> Double {
     Double::default().doing(&COPIED, |directory, asked| {
-        let left = asked
-            .arguments
-            .last()
-            .map(PathBuf::from)
-            .unwrap_or_default();
-        directory.create_dir(&left).unwrap();
+        let left = asked.kept.join("artifacts");
+        directory.create_dir_all(&left).unwrap();
         directory.write(left.join("made.txt"), "made\n").unwrap();
     })
 }
 
 fn leaving_a_file() -> Double {
     Double::default().doing(&COPIED, |directory, asked| {
-        let left = asked
-            .arguments
-            .last()
-            .map(PathBuf::from)
-            .unwrap_or_default();
-        directory.write(left, "made\n").unwrap();
+        directory.create_dir_all(&asked.kept).unwrap();
+        directory
+            .write(asked.kept.join("artifacts"), "made\n")
+            .unwrap();
     })
 }
 
@@ -133,9 +126,7 @@ fn a_verifier_that_its_image_holds_is_given_no_tests_and_runs_in_its_own_sandbox
             format!(
                 "docker exec --env-file /dev/stdin --user 0 NAME sh -c {TIMER} /tests/test.sh 605"
             ),
-            "docker cp NAME:/logs/verifier/. \
-             OUTPUTS/running/trial-0-benchmark+t1/verifier/logs/verifier"
-                .to_owned(),
+            "docker cp NAME:/logs/verifier/. -".to_owned(),
             REMOVED.to_owned(),
         ]
     );

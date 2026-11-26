@@ -145,8 +145,16 @@ fn what_the_harness_left_in_the_published_place_for_artifacts_is_copied_out() {
     let tried = trialled_by(Double::default());
     assert_eq!(
         tried.commands()[9],
-        "docker cp --follow-link NAME:/logs/artifacts \
-         OUTPUTS/running/trial-0-benchmark+t1/artifacts/logs/artifacts"
+        "docker cp --follow-link NAME:/logs/artifacts -"
+    );
+}
+
+#[test]
+fn what_the_harness_left_at_a_path_is_unpacked_beside_the_artifacts_of_the_trial() {
+    let tried = trialled_by(Double::default());
+    assert_eq!(
+        tried.docker.asked()[9].kept,
+        tried.running().join("taken-out-of-the-sandbox")
     );
 }
 
@@ -182,10 +190,17 @@ fn the_verifier_runs_on_an_emptied_place_for_its_logs_which_are_then_copied_out(
             format!(
                 "docker exec --env-file /dev/stdin --user 0 NAME sh -c {TIMER} /tests/test.sh 605"
             ),
-            "docker cp NAME:/logs/verifier/. \
-             OUTPUTS/running/trial-0-benchmark+t1/verifier/logs/verifier"
-                .to_owned(),
+            "docker cp NAME:/logs/verifier/. -".to_owned(),
         ]
+    );
+}
+
+#[test]
+fn the_logs_of_the_verifier_are_unpacked_in_the_logs_kept_with_the_trial() {
+    let tried = trialled_by(Double::default());
+    assert_eq!(
+        tried.docker.asked()[16].kept,
+        tried.running().join("verifier/logs/verifier")
     );
 }
 
@@ -415,10 +430,14 @@ fn the_verifier_runs_as_the_user_of_the_image_where_the_task_names_none() {
 fn what_the_harness_left_in_the_working_directory_of_the_image_is_copied_out() {
     let docker = Double::default().answering(&["inspect"], &[Answer::Printed("\n/app\n")]);
     let tried = trialled_by(docker);
-    assert_eq!(
-        tried.commands()[9],
-        "docker cp NAME:/app/. OUTPUTS/running/trial-0-benchmark+t1/work"
-    );
+    assert_eq!(tried.commands()[9], "docker cp NAME:/app/. -");
+}
+
+#[test]
+fn what_the_harness_left_in_its_working_directory_is_unpacked_in_the_work_of_the_trial() {
+    let docker = Double::default().answering(&["inspect"], &[Answer::Printed("\n/app\n")]);
+    let tried = trialled_by(docker);
+    assert_eq!(tried.docker.asked()[9].kept, tried.running().join("work"));
 }
 
 #[test]
@@ -617,10 +636,8 @@ fn a_path_the_task_names_to_be_kept_is_copied_out_before_the_published_place_for
     assert_eq!(
         tried.commands()[9..11],
         [
-            "docker cp --follow-link NAME:/app/out \
-             OUTPUTS/running/trial-0-benchmark+t1/artifacts/out",
-            "docker cp --follow-link NAME:/logs/artifacts \
-             OUTPUTS/running/trial-0-benchmark+t1/artifacts/logs/artifacts",
+            "docker cp --follow-link NAME:/app/out -",
+            "docker cp --follow-link NAME:/logs/artifacts -",
         ]
     );
 }

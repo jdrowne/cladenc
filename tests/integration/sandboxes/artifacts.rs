@@ -168,6 +168,36 @@ fn a_path_the_task_lists_is_kept_at_the_destination_the_task_gives() {
 }
 
 #[test]
+fn a_directory_the_task_lists_that_no_one_can_write_in_is_kept_with_all_it_holds() {
+    let trialled = trialled(
+        "artifacts = [\"/app/out\"]\n",
+        "mkdir -p out/locked && echo a > out/locked/a.txt && chmod 500 out/locked out",
+    );
+    assert_eq!(
+        artifacts_of(&trialled),
+        ["app", "app/out", "app/out/locked", "app/out/locked/a.txt"]
+    );
+}
+
+#[test]
+fn a_directory_in_logs_artifacts_that_no_one_can_write_in_is_kept_with_all_it_holds() {
+    let trialled = trialled(
+        "schema_version = \"1.4\"\n",
+        "mkdir /logs/artifacts/locked && echo a > /logs/artifacts/locked/a.txt && chmod 500 \
+         /logs/artifacts/locked",
+    );
+    assert_eq!(
+        artifacts_of(&trialled),
+        [
+            "logs",
+            "logs/artifacts",
+            "logs/artifacts/locked",
+            "logs/artifacts/locked/a.txt"
+        ]
+    );
+}
+
+#[test]
 fn a_directory_no_one_can_read_is_left_out_where_a_pattern_matches_it() {
     let trialled = trialled(
         "[[artifacts]]\nsource = \"/app/out\"\ndestination = \"out\"\nexclude = [\"cache\"]\n",

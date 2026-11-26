@@ -91,3 +91,30 @@ fn the_manual_of_start_says_where_what_was_left_at_the_paths_under_artifacts_is_
          lists any, and in /logs/artifacts"
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_how_cladenc_copies_out_of_a_sandbox() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "What cladenc copies out of a sandbox, it has Docker print as an archive and unpacks \
+         itself: what the working directory of the harness holds, and what /logs/verifier holds, \
+         as docker cp <SANDBOX>:<DIR>/. - and a path that is kept as ARTIFACTS says, as docker cp \
+         --follow-link <SANDBOX>:<PATH> - where <SANDBOX> is the name that cladenc gave the \
+         sandbox."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_directory_that_cannot_be_written_in_is_copied_out_whole() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A directory that cannot be written in is copied out with all it holds, and the copy is \
+         a directory that its owner can write in."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_which_files_are_not_copied_out_of_a_sandbox() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A file that is not a regular file, a directory or a symbolic link, such as a named pipe \
+         or a device, is not copied out, and neither is another name of such a file."
+    ));
+}

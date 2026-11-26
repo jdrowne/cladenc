@@ -1,8 +1,11 @@
 use std::fs;
 use std::io;
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+use std::process::Command;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
+use std::thread;
 use std::time::Duration;
 
 use cladenc::benchmark::{Benchmark, TaskConfiguration};
@@ -26,10 +29,13 @@ const LEAVE_A_PROCESS_RUNNING_AND_STAY: &str =
 const THE_PROCESS_NO_LONGER_RUNS: &str = "before=$(wc -l < beats); sleep 3; \
     [ \"$(wc -l < beats)\" -eq \"$before\" ] && echo 1 > /logs/verifier/reward.txt";
 const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: &str =
-    "mkdir -p locked/inner && touch locked/inner/file && chmod 500 locked/inner locked";
+    "mkdir -p locked/inner && echo kept > locked/inner/file && chmod 500 locked/inner locked";
 const REMOVE_LOGS_VERIFIER: &str = "rm -rf /logs/verifier";
-const LEAVE_WHAT_CANNOT_BE_COPIED_OUT: &str = "cd /logs/verifier && mkdir locked && \
-    touch locked/file && chmod 500 locked && echo 1 > reward.txt";
+const LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN_BESIDE_A_VERDICT: &str = "cd /logs/verifier && mkdir \
+    locked && echo noted > locked/file && chmod 500 locked && echo 1 > reward.txt";
+const SAY_THE_SANDBOX_AND_STAY: &str = "hostname; sleep 300";
+const LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES: &str =
+    "mkdir left && echo done > left/work.txt && mkfifo left/pipe && ln left/pipe left/twin";
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const LOOK_FOR_THE_TESTS: &str = "ls -d /tests /var/opt/cladenc/harbor/tests \
     /var/log/cladenc/trials 2> /dev/null";
@@ -65,6 +71,7 @@ struct Trial<'a> {
     key: Option<&'a str>,
     harness_time_limit: Option<u64>,
     unreadable_in_the_harness: bool,
+    sandbox_removed_under_the_verifier: bool,
 }
 
 impl Default for Trial<'_> {
@@ -76,8 +83,15 @@ impl Default for Trial<'_> {
             key: None,
             harness_time_limit: Some(30),
             unreadable_in_the_harness: false,
+            sandbox_removed_under_the_verifier: false,
         }
     }
+}
+
+struct LeftLocked {
+    trialled: Trialled,
+    kept: Option<String>,
+    removed: io::Result<()>,
 }
 
 fn built(outputs_directory: &OutputsDirectory) -> Image {
@@ -156,20 +170,28 @@ fn trialled_as(trial: &Trial<'_>) -> Trialled {
         },
         verifier: None,
     };
-    let result = sandboxes::run_trial(
-        Host {
-            docker: &Program,
-            outputs_directory: &outputs_directory,
-        },
-        &launch,
-        sandboxes::Trial {
-            harness: 0,
-            task: TASK,
-            environment: &environment,
-        },
-        &stop,
-        &|_| (),
-    );
+    let said = outputs_directory
+        .running_trial(0, TASK)
+        .join("verifier/stdout");
+    let result = thread::scope(|scope| {
+        if trial.sandbox_removed_under_the_verifier {
+            scope.spawn(|| remove_the_sandbox_that_says_its_name_in(&said));
+        }
+        sandboxes::run_trial(
+            Host {
+                docker: &Program,
+                outputs_directory: &outputs_directory,
+            },
+            &launch,
+            sandboxes::Trial {
+                harness: 0,
+                task: TASK,
+                environment: &environment,
+            },
+            &stop,
+            &|_| (),
+        )
+    });
     Trialled {
         _directory: directory,
         _built: built,
@@ -177,6 +199,16 @@ fn trialled_as(trial: &Trial<'_>) -> Trialled {
         outputs_directory,
         result,
     }
+}
+
+fn remove_the_sandbox_that_says_its_name_in(said: &Path) {
+    let name = (0..12)
+        .filter(|_| test_inputs::within_ten_seconds(|| test_inputs::line_is_written(said)))
+        .find_map(|_| fs::read_to_string(said).ok())
+        .unwrap_or_default();
+    let _ = Command::new("docker")
+        .args(["rm", "--force", name.trim()])
+        .output();
 }
 
 fn trialled(run_command: &str, verifier: &str) -> Trialled {
@@ -278,12 +310,24 @@ static AT_THE_TOP: LazyLock<Asked> = LazyLock::new(|| {
     )
 });
 
-static LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<(Trialled, io::Result<()>)> =
-    LazyLock::new(|| {
-        let trialled = trialled(LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN, FINISHED);
-        let removed = fs::remove_dir_all(trialled.outputs_directory.path());
-        (trialled, removed)
-    });
+static LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<LeftLocked> = LazyLock::new(|| {
+    let trialled = trialled(LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN, FINISHED);
+    let work = trialled.outputs_directory.trial(0, TASK).join("work");
+    let kept = fs::read_to_string(work.join("locked/inner/file")).ok();
+    let removed = fs::remove_dir_all(trialled.outputs_directory.path());
+    LeftLocked {
+        trialled,
+        kept,
+        removed,
+    }
+});
+
+static VERIFIER_LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN: LazyLock<Trialled> = LazyLock::new(|| {
+    trialled(
+        FINISH,
+        LEAVE_A_DIRECTORY_NO_ONE_CAN_WRITE_IN_BESIDE_A_VERDICT,
+    )
+});
 
 static IN_AN_ENVIRONMENT_THAT_IS_NOT_ON_THE_MACHINE: LazyLock<Trialled> =
     LazyLock::new(|| in_the_environment(Environment::Named(NOT_ON_THE_MACHINE), FINISH, FINISHED));
@@ -466,12 +510,34 @@ fn a_harness_that_changes_the_files_of_the_environment_leaves_the_task_unchanged
 
 #[test]
 fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_trial_end() {
-    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.0.result.is_ok());
+    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.trialled.result.is_ok());
+}
+
+#[test]
+fn a_directory_the_harness_left_that_no_one_can_write_in_is_kept_with_all_it_holds() {
+    assert_eq!(
+        LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.kept.as_deref(),
+        Some("kept\n")
+    );
+}
+
+#[test]
+fn a_named_pipe_the_harness_left_under_two_names_is_not_kept_with_what_is_beside_it() {
+    let trialled = trialled(LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES, FINISHED);
+    let left = trialled.outputs_directory.trial(0, TASK).join("work/left");
+    let mut kept: Vec<String> = fs::read_dir(left)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    kept.sort();
+    assert_eq!(kept, ["work.txt"]);
 }
 
 #[test]
 fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_removed() {
-    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.1.is_ok());
+    assert!(LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN.removed.is_ok());
 }
 
 #[test]
@@ -516,10 +582,34 @@ fn a_verifier_that_removed_logs_verifier_left_no_verdict() {
 
 #[test]
 fn a_trial_whose_verifier_logs_cannot_be_copied_out_of_its_sandbox_is_given_no_result() {
+    let trialled = trialled_as(&Trial {
+        verifier: SAY_THE_SANDBOX_AND_STAY,
+        sandbox_removed_under_the_verifier: true,
+        ..Trial::default()
+    });
     assert!(matches!(
-        trialled(FINISH, LEAVE_WHAT_CANNOT_BE_COPIED_OUT).result,
+        trialled.result,
         Err(SandboxError::NotCopiedOut(_))
     ));
+}
+
+#[test]
+fn a_verdict_the_verifier_left_beside_a_directory_no_one_can_write_in_is_read() {
+    assert!(with_its_result(
+        &VERIFIER_LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN,
+        TrialResult::Pass
+    ));
+}
+
+#[test]
+fn a_directory_the_verifier_left_that_no_one_can_write_in_is_kept_with_all_it_holds() {
+    assert_eq!(
+        kept(
+            &VERIFIER_LEFT_A_DIRECTORY_NO_ONE_CAN_WRITE_IN,
+            "verifier/logs/verifier/locked/file"
+        ),
+        "noted\n"
+    );
 }
 
 #[test]

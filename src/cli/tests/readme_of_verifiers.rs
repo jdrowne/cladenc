@@ -223,8 +223,8 @@ fn the_readme_says_what_cladenc_does_where_the_copy_of_logs_verifier_fails() {
         "Once the verifier has ended, `cladenc` copies `/logs/verifier` out of the sandbox and \
          reads the verdict in the copy. Where the copy fails, the verdict is not known, so no \
          result is recorded for the trial: the directed evolution stops with exit status 1, \
-         `cladenc` names the harness and the task and says what Docker said of the copy, and \
-         `cladenc resume` carries out the trial again."
+         `cladenc` names the harness and the task and says why the copy failed, and `cladenc \
+         resume` carries out the trial again."
     ));
 }
 

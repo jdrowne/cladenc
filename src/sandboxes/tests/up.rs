@@ -13,6 +13,9 @@ use crate::sandboxes::tests::given::{self, EMPTIED, TIMER};
 const RUNNING: &str = "/running";
 const REMOVED: &str = "docker rm --force NAME";
 const REFUSED: Answer = Answer::Refused("docker is not there");
+const COPIED_OUT: [&str; 2] = ["cp", "--follow-link"];
+const THROUGH: &str = "/directory/taken";
+const KEPT: &str = "/directory/kept";
 
 const PLAIN: Bringing<'static> = Bringing {
     image: test_inputs::IMAGE,
@@ -69,6 +72,32 @@ fn ran(up: &Up<'_>) -> Result<Ending, SandboxError> {
 
 fn last_asked_of(docker: &Double, outputs_directory: &OutputsDirectory) -> Option<String> {
     docker.commands(outputs_directory).pop()
+}
+
+fn leaving_a_directory(docker: Double) -> Double {
+    docker.doing(&COPIED_OUT, |directory, asked| {
+        directory.create_dir_all(asked.kept.join("out")).unwrap();
+        directory.write(asked.kept.join("out/a.txt"), "").unwrap();
+        directory.set_mode(asked.kept.join("out"), 0o500).unwrap();
+    })
+}
+
+fn leaving_a_file(docker: Double) -> Double {
+    docker.doing(&COPIED_OUT, |directory, asked| {
+        directory.create_dir_all(&asked.kept).unwrap();
+        directory
+            .write(asked.kept.join("report.txt"), "found\n")
+            .unwrap();
+    })
+}
+
+fn kept_of_what_is_at_a_path(leaving: impl FnOnce(Double) -> Double) -> Memory {
+    let directory = Memory::default();
+    let docker = leaving(Double::default().on(&directory));
+    let outputs_directory = OutputsDirectory::at(directory.shared(), Path::new("/outputs"));
+    let up = brought_up(&docker, &outputs_directory);
+    up.copy_what_is_at("/app/out", Path::new(THROUGH), Path::new(KEPT));
+    directory
 }
 
 #[test]
@@ -211,8 +240,17 @@ fn the_work_of_a_sandbox_is_copied_out_of_the_working_directory_its_image_sets()
     up.keep_work(Path::new("/running/work"));
     assert_eq!(
         docker.commands(&outputs_directory)[2],
-        "docker cp NAME:/app/. /running/work"
+        "docker cp NAME:/app/. -"
     );
+}
+
+#[test]
+fn the_work_of_a_sandbox_is_unpacked_where_it_is_kept() {
+    let docker = Double::default().answering(&["inspect"], &[Answer::Printed("harness\n/app\n")]);
+    let outputs_directory = outputs();
+    let up = brought_up(&docker, &outputs_directory);
+    up.keep_work(Path::new("/running/work"));
+    assert_eq!(docker.asked()[2].kept, Path::new("/running/work"));
 }
 
 #[test]
@@ -392,25 +430,95 @@ fn a_sandbox_whose_changes_docker_does_not_print_is_taken_to_have_none() {
 }
 
 #[test]
-fn what_a_directory_of_a_sandbox_holds_is_copied_out_of_it() {
+fn docker_is_asked_to_print_an_archive_of_what_a_directory_of_a_sandbox_holds() {
     let (docker, outputs_directory) = (Double::default(), outputs());
     let up = brought_up(&docker, &outputs_directory);
     up.copy_out_of("/logs/verifier", Path::new("/running/verifier"));
     assert_eq!(
         docker.commands(&outputs_directory)[2],
-        "docker cp NAME:/logs/verifier/. /running/verifier"
+        "docker cp NAME:/logs/verifier/. -"
     );
 }
 
 #[test]
-fn what_is_at_a_path_of_a_sandbox_is_copied_out_with_a_link_followed() {
+fn what_a_directory_of_a_sandbox_holds_is_unpacked_where_it_is_kept() {
     let (docker, outputs_directory) = (Double::default(), outputs());
     let up = brought_up(&docker, &outputs_directory);
-    up.copy_what_is_at("/logs/artifacts", Path::new("/running/artifacts"));
+    up.copy_out_of("/logs/verifier", Path::new("/running/verifier"));
+    assert_eq!(docker.asked()[2].kept, Path::new("/running/verifier"));
+}
+
+#[test]
+fn docker_is_asked_to_print_an_archive_of_what_is_at_a_path_of_a_sandbox_with_a_link_followed() {
+    let (docker, outputs_directory) = (Double::default(), outputs());
+    let up = brought_up(&docker, &outputs_directory);
+    up.copy_what_is_at(
+        "/logs/artifacts",
+        Path::new("/running/taken"),
+        Path::new("/running/artifacts"),
+    );
     assert_eq!(
         docker.commands(&outputs_directory)[2],
-        "docker cp --follow-link NAME:/logs/artifacts /running/artifacts"
+        "docker cp --follow-link NAME:/logs/artifacts -"
     );
+}
+
+#[test]
+fn what_is_at_a_path_of_a_sandbox_is_unpacked_apart_from_where_it_is_kept() {
+    let (docker, outputs_directory) = (Double::default(), outputs());
+    let up = brought_up(&docker, &outputs_directory);
+    up.copy_what_is_at(
+        "/logs/artifacts",
+        Path::new("/running/taken"),
+        Path::new("/running/artifacts"),
+    );
+    assert_eq!(docker.asked()[2].kept, Path::new("/running/taken"));
+}
+
+#[test]
+fn a_directory_at_a_path_of_a_sandbox_is_kept_under_the_name_it_is_given() {
+    let directory = kept_of_what_is_at_a_path(leaving_a_directory);
+    assert_eq!(directory.names_in(KEPT), ["a.txt"]);
+}
+
+#[test]
+fn a_file_at_a_path_of_a_sandbox_is_kept_under_the_name_it_is_given() {
+    let directory = kept_of_what_is_at_a_path(leaving_a_file);
+    assert_eq!(
+        directory.read_to_string(KEPT).ok().as_deref(),
+        Some("found\n")
+    );
+}
+
+#[test]
+fn a_directory_copied_out_of_a_sandbox_that_cannot_be_written_in_is_kept_as_one_that_can() {
+    let directory = kept_of_what_is_at_a_path(leaving_a_directory);
+    assert_eq!(directory.mode(KEPT) & 0o700, 0o700);
+}
+
+#[test]
+fn the_place_where_a_path_of_a_sandbox_was_unpacked_is_removed() {
+    let directory = kept_of_what_is_at_a_path(leaving_a_directory);
+    assert!(!directory.exists(THROUGH));
+}
+
+#[test]
+fn what_was_left_where_a_path_of_a_sandbox_is_unpacked_is_not_kept_in_its_place() {
+    let directory = kept_of_what_is_at_a_path(|docker| {
+        leaving_a_directory(docker).doing(&["inspect"], |directory, _| {
+            directory.create_dir_all(THROUGH).unwrap();
+            directory
+                .write(Path::new(THROUGH).join("earlier"), "")
+                .unwrap();
+        })
+    });
+    assert!(directory.is_dir(KEPT));
+}
+
+#[test]
+fn a_path_that_docker_does_not_copy_out_of_a_sandbox_keeps_nothing() {
+    let directory = kept_of_what_is_at_a_path(|docker| docker.answering(&COPIED_OUT, &[REFUSED]));
+    assert!(!directory.exists(KEPT));
 }
 
 #[test]

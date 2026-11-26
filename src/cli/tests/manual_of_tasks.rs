@@ -246,7 +246,8 @@ fn the_manual_of_start_says_what_cladenc_does_where_the_copy_of_logs_verifier_fa
          the verdict in the copy. Where the copy fails, the verdict is not known, so cladenc does \
          not record that the verifier left no verdict: the directed evolution stops with exit \
          status 1, and no result is recorded for the trial. cladenc then names the harness and \
-         the task, and says what Docker said of the copy."
+         the task, and says why the copy failed: what Docker said of it, or what kept cladenc \
+         from unpacking what Docker printed."
     ));
 }
 

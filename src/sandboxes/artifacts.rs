@@ -8,6 +8,7 @@ use crate::file_system::{FileSystem, Found, Kind};
 
 const KEPT: &str = ".";
 const GIVEN: &str = "given-to-the-verifier";
+const TAKEN: &str = "taken-out-of-the-sandbox";
 const READ_WRITTEN_AND_RUN: u32 = 0o777;
 
 enum Token {
@@ -61,7 +62,7 @@ fn keep_one(up: &Up<'_>, artifact: &Artifact, kept: &Path) -> PathBuf {
     let _ = place
         .parent()
         .map(|above| up.files().make_directories(above));
-    up.copy_what_is_at(&artifact.source, &place);
+    up.copy_what_is_at(&artifact.source, &kept.with_file_name(TAKEN), &place);
     leave_out(up.files(), &place, &artifact.exclude);
     place
 }

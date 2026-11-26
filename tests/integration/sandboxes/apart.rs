@@ -458,6 +458,16 @@ fn a_directory_that_was_kept_takes_the_place_of_what_the_image_holds_at_its_path
 }
 
 #[test]
+fn a_directory_no_one_can_write_in_is_given_to_the_verifier_with_all_it_holds() {
+    let trialled = trialled(
+        &separate_and(OUT),
+        "mkdir -p out/locked && echo found > out/locked/report.txt && chmod 500 out/locked out",
+        "grep -q found /app/out/locked/report.txt && echo 1 > /logs/verifier/reward.txt",
+    );
+    assert_eq!(result_of(&trialled), Some(TrialResult::Pass));
+}
+
+#[test]
 fn what_the_patterns_of_the_task_left_out_is_not_given_to_the_verifier() {
     assert_eq!(
         printed_by_the_verifier(

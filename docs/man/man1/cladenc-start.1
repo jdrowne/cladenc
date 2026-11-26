@@ -797,6 +797,31 @@ A verifier calls no model, and is given none of the three variables of the
 model.
 The sandbox is removed once the trial has ended.
 .PP
+What cladenc copies out of a sandbox, it has Docker print as an archive and
+unpacks itself: what the working directory of the harness holds, and what
+/logs/verifier holds, as
+.PP
+.RS 4
+.EX
+docker cp <SANDBOX>:<DIR>/. \-
+.EE
+.RE
+.PP
+and a path that is kept as ARTIFACTS says, as
+.PP
+.RS 4
+.EX
+docker cp \-\-follow\-link <SANDBOX>:<PATH> \-
+.EE
+.RE
+.PP
+where <SANDBOX> is the name that cladenc gave the sandbox.
+A directory that cannot be written in is copied out with all it holds, and the
+copy is a directory that its owner can write in.
+A file that is not a regular file, a directory or a symbolic link, such as a
+named pipe or a device, is not copied out, and neither is another name of such
+a file.
+.PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
 cladenc makes no directory there, as the Filesystem Hierarchy Standard asks of
@@ -1198,8 +1223,9 @@ and reads the verdict in the copy.
 Where the copy fails, the verdict is not known, so cladenc does not record
 that the verifier left no verdict: the directed evolution stops with exit
 status 1, and no result is recorded for the trial.
-cladenc then names the harness and the task, and says what Docker said of the
-copy.
+cladenc then names the harness and the task, and says why the copy failed:
+what Docker said of it, or what kept cladenc from unpacking what Docker
+printed.
 Where the verifier removed /logs/verifier, or put something that is not a
 directory in its place, there is nothing to copy: the verifier left no verdict,
 and the cause of the inconclusive trial is recorded as no_verdict.

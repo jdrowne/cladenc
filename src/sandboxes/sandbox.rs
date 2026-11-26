@@ -27,6 +27,7 @@ const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
 const END_EVERYTHING: &str = "kill -9 -1";
 const COPYING: Duration = Duration::from_secs(600);
 const FOLLOW_LINK: &str = "--follow-link";
+const ARCHIVE: &str = "-";
 const NO_DIRECTORY: &str = r#"[ -d "$1" ] || echo none"#;
 const NONE: &str = "none";
 
@@ -286,15 +287,23 @@ impl<'a> Up<'a> {
     }
 
     pub(super) fn copy_out_of(&self, from: &str, to: &Path) {
-        let _ = self.copy(&[], &format!("{from}/."), to);
+        let _ = self.unpack(&[], &format!("{from}/."), to);
     }
 
-    pub(super) fn copy_what_is_at(&self, from: &str, to: &Path) {
-        let _ = self.copy(&[FOLLOW_LINK], from, to);
+    pub(super) fn copy_what_is_at(&self, from: &str, through: &Path, to: &Path) {
+        let _ = self.files.remove_tree(through);
+        let _ = self.unpack(&[FOLLOW_LINK], from, through);
+        let _ = self
+            .files
+            .list(through)
+            .ok()
+            .and_then(|names| names.into_iter().next())
+            .map(|name| self.files.rename(&through.join(name), to));
+        let _ = self.files.remove_tree(through);
     }
 
     pub(super) fn take_out_of(&self, from: &str, to: &Path) -> io::Result<()> {
-        self.copy(&[], &format!("{from}/."), to).or_else(|error| {
+        self.unpack(&[], &format!("{from}/."), to).or_else(|error| {
             if self.holds_no_directory_at(from) {
                 Ok(())
             } else {
@@ -311,16 +320,16 @@ impl<'a> Up<'a> {
             .is_ok_and(|printed| printed.trim() == NONE)
     }
 
-    fn copy(&self, flags: &[&str], from: &str, to: &Path) -> io::Result<()> {
+    fn unpack(&self, flags: &[&str], from: &str, into: &Path) -> io::Result<()> {
         let mut docker = Command::new("docker");
         docker
             .arg("cp")
             .args(flags)
             .arg(format!("{}:{from}", self.name))
-            .arg(to);
-        let copied = self.docker.print(docker).map(drop);
-        make_removable(self.files, to);
-        copied
+            .arg(ARCHIVE);
+        let unpacked = self.docker.unpack(docker, into);
+        make_removable(self.files, into);
+        unpacked
     }
 
     fn as_root(&self) -> Command {

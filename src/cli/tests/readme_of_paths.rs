@@ -83,3 +83,13 @@ fn the_readme_says_where_the_package_installs_the_manual_pages_and_how_man_shows
          `man cladenc-start` shows it where `/opt/cladenc/bin` is on `PATH`."
     ));
 }
+
+#[test]
+fn the_readme_says_how_cladenc_copies_out_of_a_sandbox_and_what_it_keeps() {
+    assert!(readme().contains(
+        "Whatever `cladenc` copies out of a sandbox, it has Docker print as an archive and \
+         unpacks itself: a directory that cannot be written in is kept with all it holds, and a \
+         file that is not a regular file, a directory or a symbolic link, such as a named pipe, \
+         is not kept."
+    ));
+}

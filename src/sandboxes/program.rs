@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
@@ -11,6 +11,7 @@ use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
 
 use super::SandboxError;
+use super::archive;
 use super::docker::Docker;
 
 pub(super) const LOOK: Duration = Duration::from_millis(20);
@@ -131,6 +132,36 @@ impl Docker for Program {
                 String::from_utf8_lossy(&output.stderr).trim().to_owned(),
             ))
         }
+    }
+
+    fn unpack(&self, mut command: Command, into: &Path) -> io::Result<()> {
+        let mut program = command
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+        let said = program.stderr.take().map(|mut said| {
+            thread::spawn(move || {
+                let mut text = Vec::new();
+                let _ = said.read_to_end(&mut text);
+                String::from_utf8_lossy(&text).trim().to_owned()
+            })
+        });
+        let unpacked = program.stdout.take().map_or(Ok(()), |mut printed| {
+            let unpacked = archive::unpack(&mut printed, into);
+            let _ = io::copy(&mut printed, &mut io::sink());
+            unpacked
+        });
+        let said = said.and_then(|said| said.join().ok()).unwrap_or_default();
+        program.wait().and_then(|status| {
+            if status.success() {
+                unpacked
+            } else if said.is_empty() {
+                Err(io::Error::other(status.to_string()))
+            } else {
+                Err(io::Error::other(said))
+            }
+        })
     }
 }
 

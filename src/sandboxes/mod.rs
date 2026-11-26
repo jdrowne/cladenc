@@ -1,3 +1,4 @@
+mod archive;
 mod artifacts;
 mod build;
 mod collect;

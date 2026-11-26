@@ -162,10 +162,9 @@ impl Double {
                 .arguments
                 .iter()
                 .any(|argument| argument.ends_with(VERIFIER));
-            let to = asked.arguments.last().map(PathBuf::from);
-            if let Some(to) = to.filter(|_| from_the_verifier) {
-                let reward = reward(completes(&trial_of(&to)));
-                files.write(to.join("reward.txt"), reward).unwrap();
+            if from_the_verifier {
+                let reward = reward(completes(&trial_of(&asked.kept)));
+                files.write(asked.kept.join("reward.txt"), reward).unwrap();
             }
         })
     }
@@ -236,12 +235,20 @@ impl Docker for Double {
     }
 
     fn print(&self, command: Command) -> io::Result<String> {
-        match self.answer(&command, "", Path::new("")) {
-            None => Ok(String::new()),
-            Some(Answer::Printed(text)) => Ok(text.to_owned()),
-            Some(Answer::Refused(reason)) => Err(io::Error::other(reason)),
-            Some(_) => Err(io::Error::other("the command did not succeed")),
-        }
+        printed(self.answer(&command, "", Path::new("")))
+    }
+
+    fn unpack(&self, command: Command, into: &Path) -> io::Result<()> {
+        printed(self.answer(&command, "", into)).map(drop)
+    }
+}
+
+fn printed(answer: Option<Answer>) -> io::Result<String> {
+    match answer {
+        None => Ok(String::new()),
+        Some(Answer::Printed(text)) => Ok(text.to_owned()),
+        Some(Answer::Refused(reason)) => Err(io::Error::other(reason)),
+        Some(_) => Err(io::Error::other("the command did not succeed")),
     }
 }
 

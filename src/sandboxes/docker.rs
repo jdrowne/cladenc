@@ -20,6 +20,8 @@ pub trait Docker: Sync {
     fn detach(&self, command: Command, input: &str, said: &Path) -> Result<Ending, SandboxError>;
 
     fn print(&self, command: Command) -> io::Result<String>;
+
+    fn unpack(&self, command: Command, into: &Path) -> io::Result<()>;
 }
 
 #[derive(Clone, Copy)]
