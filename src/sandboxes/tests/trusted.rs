@@ -1,4 +1,7 @@
+use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
+
+use nix::errno::Errno;
 
 use crate::file_system::tests::double::Memory;
 use crate::sandboxes::artifacts;
@@ -16,7 +19,7 @@ fn copied(make: impl FnOnce(&Memory, &Path)) -> Copied {
     let kept = directory.path().join("kept");
     make(&directory, &kept);
     let copy = directory.path().join("copy");
-    let kind = artifacts::trusted(&directory, &kept, &copy);
+    let kind = artifacts::trusted(&directory, &kept, &copy).unwrap();
     Copied {
         directory,
         copy,
@@ -33,6 +36,25 @@ fn a_directory(make: impl FnOnce(&Memory, &Path)) -> Copied {
             .unwrap();
         make(directory, kept);
     })
+}
+
+fn not_copied(make: impl FnOnce(&Memory, &Path, &Path)) -> io::Error {
+    let directory = Memory::default();
+    let kept = directory.path().join("kept");
+    let copy = directory.path().join("copy");
+    make(&directory, &kept, &copy);
+    artifacts::trusted(&directory, &kept, &copy).unwrap_err()
+}
+
+fn a_directory_with_a_file_no_one_may_read(directory: &Memory, kept: &Path, _: &Path) {
+    directory.create_dir_all(kept.join("inner")).unwrap();
+    directory.write(kept.join("report.txt"), "found\n").unwrap();
+    directory
+        .write(kept.join("inner/notes.txt"), "noted\n")
+        .unwrap();
+    directory
+        .set_mode(kept.join("inner/notes.txt"), 0o000)
+        .unwrap();
 }
 
 fn a_file_with_the_bits(mode: u32) -> Copied {
@@ -207,7 +229,7 @@ fn a_socket_inside_a_directory_is_left_out() {
     directory.create_dir(&kept).unwrap();
     directory.socket(kept.join("socket")).unwrap();
     let copy = directory.path().join("copy");
-    artifacts::trusted(&directory, &kept, &copy);
+    artifacts::trusted(&directory, &kept, &copy).unwrap();
     assert_eq!(directory.names_in(&copy).len(), 0);
 }
 
@@ -225,7 +247,62 @@ fn a_path_that_was_kept_as_a_socket_gives_nothing_to_hand_over() {
     let kept = directory.path().join("kept");
     directory.socket(&kept).unwrap();
     assert_eq!(
-        artifacts::trusted(&directory, &kept, &directory.path().join("copy")),
+        artifacts::trusted(&directory, &kept, &directory.path().join("copy")).unwrap(),
         None
     );
+}
+
+#[test]
+fn a_file_that_cannot_be_read_is_not_left_out_of_the_copy_as_though_it_were_not_kept() {
+    let error = not_copied(|directory, kept, _| {
+        directory.write(kept, "found\n").unwrap();
+        directory.set_mode(kept, 0o000).unwrap();
+    });
+    assert_eq!(error.kind(), ErrorKind::PermissionDenied);
+}
+
+#[test]
+fn a_file_inside_a_directory_that_cannot_be_read_fails_the_copy_of_the_directory() {
+    assert_eq!(
+        not_copied(a_directory_with_a_file_no_one_may_read).kind(),
+        ErrorKind::PermissionDenied
+    );
+}
+
+#[test]
+fn a_copy_that_failed_names_the_file_that_was_not_copied_and_says_why() {
+    assert_eq!(
+        not_copied(a_directory_with_a_file_no_one_may_read).to_string(),
+        format!(
+            "/directory/kept/inner/notes.txt: {}",
+            io::Error::from(Errno::EACCES)
+        )
+    );
+}
+
+#[test]
+fn a_directory_that_cannot_be_made_for_the_copy_fails_the_copy() {
+    let error = not_copied(|directory, kept, copy| {
+        directory.create_dir(kept).unwrap();
+        directory.write(copy, "there before\n").unwrap();
+    });
+    assert_eq!(error.kind(), ErrorKind::AlreadyExists);
+}
+
+#[test]
+fn a_directory_that_cannot_be_made_for_the_copy_is_named() {
+    let error = not_copied(|directory, kept, copy| {
+        directory.create_dir(kept).unwrap();
+        directory.write(copy, "there before\n").unwrap();
+    });
+    assert!(error.to_string().starts_with("/directory/kept: "));
+}
+
+#[test]
+fn a_kept_path_that_cannot_be_looked_at_fails_the_copy() {
+    let directory = Memory::default();
+    directory.write(directory.path().join("file"), "").unwrap();
+    let kept = directory.path().join("file/kept");
+    let copied = artifacts::trusted(&directory, &kept, &directory.path().join("copy"));
+    assert_eq!(copied.unwrap_err().kind(), ErrorKind::NotADirectory);
 }

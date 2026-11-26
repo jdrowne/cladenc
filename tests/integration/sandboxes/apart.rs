@@ -27,6 +27,8 @@ const WRITE_A_REPORT: &str = "echo found > report.txt";
 const CHANGE_THE_WORK_AND_WRITE_A_REPORT: &str = "echo done > work.txt; echo found > report.txt";
 const COMPLETE: &str = "echo 1 > /logs/verifier/reward.txt";
 const PUT_OUT_WHERE_DOCKER_COPIES_NOTHING_FROM: &str = "ln -s /proc/1 out";
+const LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT: &str =
+    "mkdir out && echo found > out/report.txt && chmod 000 out/report.txt";
 const HOLDS_ITS_TESTS: &str = "COPY . /tests/\n";
 const NEVER_READY: &str = "[verifier.environment.healthcheck]\ncommand = \"echo not ready; exit \
                            1\"\ninterval_sec = 0\nretries = 1\n";
@@ -490,6 +492,35 @@ fn a_trial_is_given_no_result_where_a_path_its_verifier_would_be_given_cannot_be
     assert!(matches!(
         trialled.result,
         Err(SandboxError::NotCopiedOut { left: Copied::Artifact(path), .. }) if path == "/app/out"
+    ));
+}
+
+#[test]
+fn a_trial_is_given_no_result_where_a_kept_path_cannot_be_copied_in_full_for_its_verifier() {
+    let trialled = trialled(
+        &separate_and(OUT),
+        LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT,
+        COMPLETE,
+    );
+    assert!(matches!(
+        trialled.result,
+        Err(SandboxError::NotGivenToVerifier { left, .. }) if left == "/app/out"
+    ));
+}
+
+#[test]
+fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_copied() {
+    let trialled = trialled(
+        &separate_and(OUT),
+        LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT,
+        COMPLETE,
+    );
+    assert!(matches!(
+        trialled.result,
+        Err(SandboxError::NotGivenToVerifier { error, .. })
+            if error.to_string().ends_with(
+                "/artifacts/app/out/report.txt: Permission denied (os error 13)"
+            )
     ));
 }
 

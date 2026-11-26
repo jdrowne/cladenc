@@ -13,6 +13,7 @@ const DIRECTORY_MODE: u32 = 0o755;
 const FILE_MODE: u32 = 0o644;
 const LINK_MODE: u32 = 0o777;
 const PERMISSION_BITS: u32 = 0o7777;
+const READ_BY_ITS_OWNER: u32 = 0o400;
 
 #[derive(Clone, Debug)]
 pub(super) enum Node {
@@ -130,6 +131,7 @@ impl Tree {
 
     pub(super) fn read(&self, file: &Path) -> io::Result<Vec<u8>> {
         match self.node(file, true)?.1 {
+            Node::File { mode, .. } if mode & READ_BY_ITS_OWNER == 0 => Err(Errno::EACCES.into()),
             Node::File { contents, .. } => Ok(contents.clone()),
             Node::Directory { .. } => Err(Errno::EISDIR.into()),
             Node::Link { .. } | Node::Other => Err(Errno::EINVAL.into()),
@@ -206,10 +208,11 @@ impl Tree {
     }
 
     pub(super) fn copy(&mut self, from: &Path, to: &Path) -> io::Result<()> {
-        let (mode, contents) = match self.node(from, true)?.1 {
-            Node::File { mode, contents } => (*mode, contents.clone()),
+        let mode = match self.node(from, true)?.1 {
+            Node::File { mode, .. } => *mode,
             _ => return Err(Errno::EINVAL.into()),
         };
+        let contents = self.read(from)?;
         self.write(to, &contents)
             .and_then(|()| self.set_mode(to, mode))
     }

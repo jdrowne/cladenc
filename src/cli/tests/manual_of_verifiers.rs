@@ -193,6 +193,26 @@ fn the_manual_of_start_says_that_what_is_copied_to_a_verifier_is_not_trusted() {
 }
 
 #[test]
+fn the_manual_of_start_says_that_a_kept_path_is_copied_to_a_verifier_in_full_or_not_at_all() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Apart from what is left out so, a path that was kept is copied in full or not at all. \
+         cladenc first makes a copy of the path in the outputs directory, without what is left \
+         out, and then copies that into the verifier sandbox."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_a_kept_path_that_cannot_be_copied_for_a_verifier_gives() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Where a file or a directory cannot be copied, as where the outputs directory has no \
+         room left, no verifier is run, no result is recorded for the trial, and the directed \
+         evolution stops with exit status 1. cladenc then names the harness, the task and the \
+         path, and says which file or directory was not copied and why. cladenc resume carries \
+         out the trial again."
+    ));
+}
+
+#[test]
 fn the_manual_of_start_says_how_the_verifier_is_run_in_a_sandbox_of_its_own() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Then the tests directory is copied in where the image holds no verifier, /logs/verifier \

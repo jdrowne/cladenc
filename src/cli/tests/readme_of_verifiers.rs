@@ -88,6 +88,18 @@ fn the_readme_says_that_what_is_copied_to_a_verifier_is_not_trusted() {
 }
 
 #[test]
+fn the_readme_says_that_a_kept_path_is_copied_to_a_verifier_in_full_or_not_at_all() {
+    assert!(readme().contains(
+        "Apart from what is left out so, a path that was kept is copied in full or not at all: \
+         where a file or a directory of it cannot be copied, as where the outputs directory has \
+         no room left, no verifier is run and no result is recorded for the trial, the directed \
+         evolution stops with exit status 1, `cladenc` names the harness, the task and the path, \
+         says which file or directory was not copied and why, and `cladenc resume` carries out \
+         the trial again."
+    ));
+}
+
+#[test]
 fn the_flag_of_the_most_retries_says_what_is_retried_and_that_0_is_taken() {
     assert!(readme().contains(
         "| `--max-verifier-health-check-retries <COUNT>` | Required | The most times a \

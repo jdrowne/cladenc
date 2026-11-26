@@ -1032,6 +1032,17 @@ A file that is not a regular file, a directory or a symbolic link is left out,
 and so is a symbolic link that points outside the path it was kept with.
 What is copied in belongs to the user the verifier runs as.
 .PP
+Apart from what is left out so, a path that was kept is copied in full or not
+at all.
+cladenc first makes a copy of the path in the outputs directory, without what
+is left out, and then copies that into the verifier sandbox.
+Where a file or a directory cannot be copied, as where the outputs directory
+has no room left, no verifier is run, no result is recorded for the trial, and
+the directed evolution stops with exit status 1.
+cladenc then names the harness, the task and the path, and says which file or
+directory was not copied and why.
+\fBcladenc resume\fP carries out the trial again.
+.PP
 Then the tests directory is copied in where the image holds no verifier,
 /logs/verifier is emptied, and the verifier is run as said above, in the working
 directory and as the user of its own sandbox, unless the task.toml names a

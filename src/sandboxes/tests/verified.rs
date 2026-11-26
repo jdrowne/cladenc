@@ -56,6 +56,15 @@ fn leaving_a_directory() -> Double {
     })
 }
 
+fn leaving_a_file_no_one_may_read() -> Double {
+    Double::default().doing(&COPIED, |directory, asked| {
+        let left = asked.kept.join("artifacts");
+        directory.create_dir_all(&left).unwrap();
+        directory.write(left.join("made.txt"), "made\n").unwrap();
+        directory.set_mode(left.join("made.txt"), 0o000).unwrap();
+    })
+}
+
 fn leaving_a_file() -> Double {
     Double::default().doing(&COPIED, |directory, asked| {
         directory.create_dir_all(&asked.kept).unwrap();
@@ -437,6 +446,54 @@ fn no_verifier_sandbox_is_brought_up_where_what_it_would_be_given_was_not_copied
             .count(),
         1
     );
+}
+
+#[test]
+fn a_trial_whose_verifier_would_be_given_part_of_a_kept_path_is_given_no_result() {
+    assert!(matches!(
+        verified_apart(leaving_a_file_no_one_may_read()).result,
+        Err(SandboxError::NotGivenToVerifier { left, .. }) if left == "/logs/artifacts"
+    ));
+}
+
+#[test]
+fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_copied() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let kept = tried.running().join("artifacts/logs/artifacts/made.txt");
+    assert!(matches!(
+        &tried.result,
+        Err(SandboxError::NotGivenToVerifier { error, .. })
+            if error.to_string().starts_with(&format!("{}: ", kept.display()))
+    ));
+}
+
+#[test]
+fn no_part_of_a_kept_path_that_was_not_copied_in_full_is_put_in_the_verifier_sandbox() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.starts_with(&format!("docker cp {GIVEN}")))
+    );
+}
+
+#[test]
+fn no_verifier_is_run_on_part_of_a_kept_path() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains("/tests/test.sh"))
+    );
+}
+
+#[test]
+fn a_copy_for_the_verifier_that_was_not_made_in_full_is_not_left_behind() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let given = tried.running().join("given-to-the-verifier");
+    assert!(!tried.directory.exists(given));
 }
 
 #[test]

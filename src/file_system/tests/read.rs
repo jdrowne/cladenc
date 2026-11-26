@@ -173,3 +173,16 @@ fn what_is_not_there_has_no_target() {
         ErrorKind::NotFound
     );
 }
+
+#[test]
+fn a_file_its_owner_may_not_read_cannot_be_read() {
+    let directory = Memory::default();
+    let files = directory.shared();
+    let file = directory.path().join("file");
+    files.write(&file, b"written\n").unwrap();
+    files.set_mode(&file, 0o000).unwrap();
+    assert_eq!(
+        files.read(&file).unwrap_err().kind(),
+        ErrorKind::PermissionDenied
+    );
+}

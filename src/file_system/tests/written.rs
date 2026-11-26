@@ -243,3 +243,17 @@ fn the_permission_bits_are_set_on_what_a_symbolic_link_leads_to() {
     files.set_mode(&link, 0o600).unwrap();
     assert_eq!(files.found(&file).unwrap().mode, 0o600);
 }
+
+#[test]
+fn a_file_its_owner_may_not_read_cannot_be_copied() {
+    let directory = Memory::default();
+    let files = directory.shared();
+    let from = directory.path().join("from");
+    let to = directory.path().join("to");
+    files.write(&from, b"written\n").unwrap();
+    files.set_mode(&from, 0o000).unwrap();
+    assert_eq!(
+        files.copy(&from, &to).unwrap_err().kind(),
+        ErrorKind::PermissionDenied
+    );
+}

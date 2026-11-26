@@ -1,3 +1,4 @@
+use std::io::{self, ErrorKind};
 use std::iter;
 use std::path::{Component, Path, PathBuf};
 
@@ -101,7 +102,13 @@ pub(super) fn give(
     let published = Artifact::published(artifacts);
     let gave = artifacts.iter().chain(&published).try_for_each(|artifact| {
         remove(files, &given);
-        match trusted(files, &place_of(artifact, kept), &given) {
+        let copied = trusted(files, &place_of(artifact, kept), &given).map_err(|error| {
+            SandboxError::NotGivenToVerifier {
+                left: artifact.source.clone(),
+                error,
+            }
+        })?;
+        match copied {
             Some(true) => up.put(&given, &artifact.path(), owner),
             Some(false) => up.put_file(&given, &artifact.path(), owner),
             None => Ok(()),
@@ -117,36 +124,58 @@ pub(super) fn remove(files: &dyn FileSystem, given: &Path) {
         .or_else(|_| files.remove_tree(given));
 }
 
-pub(super) fn trusted(files: &dyn FileSystem, from: &Path, to: &Path) -> Option<bool> {
-    let found = files.found(from).ok()?;
-    matches!(found.kind, Kind::Directory | Kind::File).then(|| {
-        copy_trusted(files, from, found, to, 0);
-        found.kind == Kind::Directory
+pub(super) fn trusted(files: &dyn FileSystem, from: &Path, to: &Path) -> io::Result<Option<bool>> {
+    match files.found(from) {
+        Ok(found) if matches!(found.kind, Kind::Directory | Kind::File) => {
+            copy_trusted(files, from, found, to, 0).map(|()| Some(found.kind == Kind::Directory))
+        }
+        Ok(_) => Ok(None),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(naming(from)(error)),
+    }
+}
+
+fn copy_trusted(
+    files: &dyn FileSystem,
+    from: &Path,
+    found: Found,
+    to: &Path,
+    depth: usize,
+) -> io::Result<()> {
+    let copied = match found.kind {
+        Kind::Directory => files.make_directory(to).and_then(|()| files.list(from)),
+        Kind::File => {
+            let mode = found.mode & READ_WRITTEN_AND_RUN;
+            files
+                .copy(from, to)
+                .and_then(|()| files.set_mode(to, mode))
+                .map(|()| Vec::new())
+        }
+        Kind::SymbolicLink => files
+            .target(from)
+            .and_then(|target| {
+                if stays_inside(&target, depth) {
+                    files.link(&target, to)
+                } else {
+                    Ok(())
+                }
+            })
+            .map(|()| Vec::new()),
+        Kind::Other => Ok(Vec::new()),
+    };
+    copied.map_err(naming(from)).and_then(|names| {
+        names.into_iter().try_for_each(|name| {
+            let (from, to) = (from.join(&name), to.join(&name));
+            files
+                .found(&from)
+                .map_err(naming(&from))
+                .and_then(|found| copy_trusted(files, &from, found, &to, depth + 1))
+        })
     })
 }
 
-fn copy_trusted(files: &dyn FileSystem, from: &Path, found: Found, to: &Path, depth: usize) {
-    if found.kind == Kind::Directory {
-        let _ = files.make_directory(to);
-        let entries = files
-            .list(from)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|name| (from.join(&name), to.join(&name)))
-            .filter_map(|(from, to)| files.found(&from).ok().map(|found| (from, found, to)));
-        for (from, found, to) in entries {
-            copy_trusted(files, &from, found, &to, depth + 1);
-        }
-    } else if found.kind == Kind::File {
-        let mode = found.mode & READ_WRITTEN_AND_RUN;
-        let _ = files.copy(from, to).and_then(|()| files.set_mode(to, mode));
-    } else if let Some(target) = files
-        .target(from)
-        .ok()
-        .filter(|target| stays_inside(target, depth))
-    {
-        let _ = files.link(&target, to);
-    }
+fn naming(path: &Path) -> impl Fn(io::Error) -> io::Error {
+    move |error| io::Error::new(error.kind(), format!("{}: {error}", path.display()))
 }
 
 fn stays_inside(target: &Path, depth: usize) -> bool {

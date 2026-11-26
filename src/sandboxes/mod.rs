@@ -170,6 +170,7 @@ pub enum SandboxError {
     TaskHealthCheck { tries: u64, kept: PathBuf },
     VerifierHealthCheck { tries: u64, kept: PathBuf },
     NotCopiedOut { left: Copied, error: io::Error },
+    NotGivenToVerifier { left: String, error: io::Error },
 }
 
 #[derive(Debug)]
@@ -232,6 +233,11 @@ impl Display for SandboxError {
                 formatter,
                 "was not given a result: what {left} could not be copied out of its sandbox: \
                  {error}"
+            ),
+            Self::NotGivenToVerifier { left, error } => write!(
+                formatter,
+                "was not given a result: what the harness left at {left} could not be copied in \
+                 full for its verifier sandbox: {error}"
             ),
         }
     }

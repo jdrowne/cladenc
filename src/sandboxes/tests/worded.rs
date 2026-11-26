@@ -296,6 +296,23 @@ fn a_path_that_was_not_copied_out_is_worded_with_the_path_and_the_reason() {
 }
 
 #[test]
+fn a_path_that_was_not_copied_for_the_verifier_is_worded_with_the_path_and_the_reason() {
+    assert_eq!(
+        worded(SandboxError::NotGivenToVerifier {
+            left: "/app/out".to_owned(),
+            error: io::Error::other(
+                "/outputs/running/trial-3-parsing+t1/artifacts/app/out/report.txt: no space \
+                 left on device"
+            ),
+        }),
+        "was not given a result: what the harness left at /app/out could not be copied in full \
+         for its verifier sandbox: \
+         /outputs/running/trial-3-parsing+t1/artifacts/app/out/report.txt: no space left on \
+         device"
+    );
+}
+
+#[test]
 fn one_try_of_the_health_check_of_a_verifier_is_not_worded_as_several() {
     assert!(
         worded(SandboxError::VerifierHealthCheck {
