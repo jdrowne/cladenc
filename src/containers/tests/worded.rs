@@ -33,31 +33,32 @@ fn a_container_that_docker_did_not_start_is_worded_with_the_file_that_holds_what
 }
 
 #[test]
-fn the_instruction_says_where_the_source_code_to_improve_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_the_source_code_to_improve_is() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "The current directory holds your clone, which is a copy of your own source code"
     ));
 }
 
 #[test]
-fn the_instruction_says_where_the_trials_are() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_the_trials_are() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "than you do. /var/log/cladenc/trials holds the trials you are shown: one directory \
          for each benchmark, and in it one directory for each task. In the directory of a task, "
     ));
 }
 
 #[test]
-fn the_instruction_says_that_the_child_is_judged_by_tasks_the_progenitor_is_not_shown() {
+fn the_diversification_prompt_says_that_the_child_is_judged_by_tasks_the_progenitor_is_not_shown() {
     assert!(
-        containers::INSTRUCTION
+        containers::DIVERSIFICATION_PROMPT
             .ends_with(" The new harness is judged by tasks that you are not shown.")
     );
 }
 
 #[test]
-fn the_instruction_says_where_the_line_of_the_harness_and_the_children_it_made_before_are() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_the_line_of_the_harness_and_the_children_it_made_before_are()
+ {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " /var/log/cladenc/line holds one directory for each harness you descend from, named by \
          its id, and /var/log/cladenc/children one for each harness you made before, created or \
          not. "
@@ -65,16 +66,16 @@ fn the_instruction_says_where_the_line_of_the_harness_and_the_children_it_made_b
 }
 
 #[test]
-fn the_instruction_says_where_the_source_code_and_the_trials_of_such_a_harness_are() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_the_source_code_and_the_trials_of_such_a_harness_are() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " In the directory of such a harness, the directory named harness holds its source \
          code, the directory named trials holds its trials, laid out as yours are, "
     ));
 }
 
 #[test]
-fn the_instruction_says_where_the_record_of_the_diversification_of_such_a_harness_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_the_record_of_the_diversification_of_such_a_harness_is() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "the directory named diversification holds what the harness that made it printed, in the \
          files named stdout and stderr, with the id of that harness in the file named \
          progenitor and one word in the file named outcome, created, unchanged, failed, \
@@ -83,55 +84,57 @@ fn the_instruction_says_where_the_record_of_the_diversification_of_such_a_harnes
 }
 
 #[test]
-fn the_instruction_says_where_what_the_build_of_such_a_harness_printed_is() {
+fn the_diversification_prompt_says_where_what_the_build_of_such_a_harness_printed_is() {
     assert!(
-        containers::INSTRUCTION
+        containers::DIVERSIFICATION_PROMPT
             .contains("and the directory named build holds what its build printed. ")
     );
 }
 
 #[test]
-fn the_instruction_says_that_a_directory_that_would_hold_nothing_is_not_there() {
+fn the_diversification_prompt_says_that_a_directory_that_would_hold_nothing_is_not_there() {
     assert!(
-        containers::INSTRUCTION.contains(" A directory that would hold nothing is not there. ")
+        containers::DIVERSIFICATION_PROMPT
+            .contains(" A directory that would hold nothing is not there. ")
     );
 }
 
 #[test]
-fn the_instruction_says_what_the_line_and_the_children_are_to_be_read_for() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_what_the_line_and_the_children_are_to_be_read_for() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " Use all of them to find what to improve, and to see what was changed before and what \
          came of it. "
     ));
 }
 
 #[test]
-fn the_instruction_asks_for_a_change_that_answers_several_trials_and_not_one() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_asks_for_a_change_that_answers_several_trials_and_not_one() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " Make a change to how the harness works on any task: one that answers something you \
          saw in several of your trials, not in one. "
     ));
 }
 
 #[test]
-fn the_instruction_asks_for_source_code_that_names_no_task_and_holds_no_answer() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_asks_for_source_code_that_names_no_task_and_holds_no_answer() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " Leave nothing in the source code that names a task, a file of a task or the answer \
          to one. "
     ));
 }
 
 #[test]
-fn the_instruction_says_that_taking_out_what_does_not_help_is_an_improvement() {
+fn the_diversification_prompt_says_that_taking_out_what_does_not_help_is_an_improvement() {
     assert!(
-        containers::INSTRUCTION
+        containers::DIVERSIFICATION_PROMPT
             .contains(" Taking out what does not help is an improvement as well. ")
     );
 }
 
 #[test]
-fn the_instruction_says_that_the_child_may_be_asked_to_improve_a_clone_of_its_own_in_its_turn() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_that_the_child_may_be_asked_to_improve_a_clone_of_its_own_in_its_turn()
+ {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "becomes a new harness, which is benchmarked in its turn. It may then be asked, as you \
          are now, to improve a clone of its own, so a change that makes it better \
          at that counts as well. "
@@ -139,21 +142,21 @@ fn the_instruction_says_that_the_child_may_be_asked_to_improve_a_clone_of_its_ow
 }
 
 #[test]
-fn the_instruction_says_that_a_current_directory_left_as_it_was_makes_no_new_harness() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_that_a_current_directory_left_as_it_was_makes_no_new_harness() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " counts as well. Where you leave the current directory as it was, no new harness is \
          made: a change that you only print in your answer changes no file. The new harness "
     ));
 }
 
 #[test]
-fn the_instruction_does_not_say_that_every_task_the_harness_had_a_trial_on_is_there() {
-    assert!(!containers::INSTRUCTION.contains("each task you have had a trial on"));
+fn the_diversification_prompt_does_not_say_that_every_task_the_harness_had_a_trial_on_is_there() {
+    assert!(!containers::DIVERSIFICATION_PROMPT.contains("each task you have had a trial on"));
 }
 
 #[test]
-fn the_instruction_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "the file named specification says what you were asked to do, the file named result \
          reads completed, not_completed or timed_out, the file named ending reads ended, or \
          stopped where you ran past the time limit of the task and were stopped, the directory \
@@ -164,13 +167,14 @@ fn the_instruction_says_what_each_trial_keeps_of_the_task_and_of_the_harness() {
 }
 
 #[test]
-fn the_instruction_names_no_trial_whose_harness_was_never_started() {
-    assert!(!containers::INSTRUCTION.contains("not_started"));
+fn the_diversification_prompt_names_no_trial_whose_harness_was_never_started() {
+    assert!(!containers::DIVERSIFICATION_PROMPT.contains("not_started"));
 }
 
 #[test]
-fn the_instruction_says_where_what_was_left_at_the_paths_the_task_lists_under_artifacts_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_what_was_left_at_the_paths_the_task_lists_under_artifacts_is()
+ {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "one to a line after A, C or D, the directory named artifacts holds what you left at \
          the paths that the task names to be kept, where it names any, and what you left in \
          /logs/artifacts, in logs/artifacts, "
@@ -178,8 +182,8 @@ fn the_instruction_says_where_what_was_left_at_the_paths_the_task_lists_under_ar
 }
 
 #[test]
-fn the_instruction_says_where_what_the_commands_of_the_task_printed_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_what_the_commands_of_the_task_printed_is() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " the directory named collection-hooks holds what the commands that the task runs before \
          those paths are kept printed, one directory for each, where it runs any, the files \
          named stdout and stderr hold what you printed, "
@@ -187,8 +191,8 @@ fn the_instruction_says_where_what_the_commands_of_the_task_printed_is() {
 }
 
 #[test]
-fn the_instruction_says_where_what_the_verifier_printed_and_left_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_what_the_verifier_printed_and_left_is() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         "the files named stdout and stderr hold what you printed, the directory named verifier \
          holds what the verifier of the task printed, in the files named stdout and stderr, and \
          the files it left in logs/verifier, "
@@ -196,16 +200,16 @@ fn the_instruction_says_where_what_the_verifier_printed_and_left_is() {
 }
 
 #[test]
-fn the_instruction_says_where_what_the_health_check_printed_is() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_where_what_the_health_check_printed_is() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         ", and the directory named health-check holds what the health check of the environment \
          of the task printed the last time it ran, in the files named stdout and stderr. Once "
     ));
 }
 
 #[test]
-fn the_instruction_says_how_the_verifier_judged_the_trial() {
-    assert!(containers::INSTRUCTION.contains(
+fn the_diversification_prompt_says_how_the_verifier_judged_the_trial() {
+    assert!(containers::DIVERSIFICATION_PROMPT.contains(
         " Once you had ended or were stopped, the verifier ran the tests of the task, which you \
          are not shown, on what you left, or, where the task has its verifier run in a container \
          of its own, on nothing but what the directory named artifacts holds, and wrote its \

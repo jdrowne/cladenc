@@ -78,16 +78,43 @@ fn the_manual_of_start_says_what_the_outputs_directory_keeps_of_a_diversificatio
 }
 
 #[test]
-fn the_manual_of_start_says_what_kind_of_change_the_instruction_asks_for() {
+fn the_manual_of_start_says_what_the_diversification_prompt_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The instruction asks the progenitor for a change to how its child works on any task: one \
-         that answers something it saw in several of its trials, not in one, and that leaves in \
-         the source code nothing that names a task, a file of a task or the answer to one."
+        "The diversification prompt is a text that cladenc holds itself, the same in every \
+         diversification: it says what the harness is asked to do, and what the harness is given \
+         to read."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_instruction_counts_taking_out_as_an_improvement() {
+fn the_manual_of_start_tells_the_diversification_prompt_from_the_text_of_a_task() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "No benchmark brings the diversification prompt: the text that a task brings is the task \
+         specification of the task, which a harness is given in a trial."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_what_holds_the_diversification_prompt_in_a_diversification() {
+    assert!(
+        manual_on_one_line("cladenc-start").contains(
+            "In a diversification, CLADENC_INSTRUCTION holds the diversification prompt."
+        )
+    );
+}
+
+#[test]
+fn the_manual_of_start_says_what_kind_of_change_the_diversification_prompt_asks_for() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "The diversification prompt asks the progenitor for a change to how its child works on \
+         any task: one that answers something it saw in several of its trials, not in one, and \
+         that leaves in the source code nothing that names a task, a file of a task or the answer \
+         to one."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_the_diversification_prompt_counts_taking_out_as_an_improvement() {
     assert!(
         manual_on_one_line("cladenc-start")
             .contains("It says that taking out what does not help is an improvement as well,")
@@ -95,7 +122,7 @@ fn the_manual_of_start_says_that_the_instruction_counts_taking_out_as_an_improve
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_instruction_tells_of_the_child_diversifying_a_clone_in_its_turn()
+fn the_manual_of_start_says_that_the_diversification_prompt_tells_of_the_child_diversifying_a_clone()
  {
     assert!(manual_on_one_line("cladenc-start").contains(
         "that the child may be asked in its turn to improve a clone of its own, so that making the \
@@ -104,7 +131,7 @@ fn the_manual_of_start_says_that_the_instruction_tells_of_the_child_diversifying
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_instruction_tells_how_the_child_is_judged() {
+fn the_manual_of_start_says_that_the_diversification_prompt_tells_how_the_child_is_judged() {
     assert!(
         manual_on_one_line("cladenc-start")
             .contains("and that the child is judged by tasks the progenitor is not shown.")
@@ -112,10 +139,11 @@ fn the_manual_of_start_says_that_the_instruction_tells_how_the_child_is_judged()
 }
 
 #[test]
-fn the_manual_of_start_says_that_an_instruction_is_a_request_cladenc_does_not_enforce() {
+fn the_manual_of_start_says_that_the_diversification_prompt_is_a_request_cladenc_does_not_enforce()
+{
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("An instruction is a request: cladenc enforces none of it.")
+            .contains("The diversification prompt is a request: cladenc enforces none of it.")
     );
 }
 

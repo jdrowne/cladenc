@@ -150,10 +150,10 @@ fn what_the_primogenitor_leaves_is_kept_as_the_singleton_control_group_harness()
 }
 
 #[test]
-fn the_primogenitor_is_given_the_instruction_the_progenitor_is_given() {
+fn the_primogenitor_is_given_the_diversification_prompt_the_progenitor_is_given() {
     assert_eq!(
         left("printf %s \"$CLADENC_INSTRUCTION\" > given", "given"),
-        containers::INSTRUCTION
+        containers::DIVERSIFICATION_PROMPT
     );
 }
 

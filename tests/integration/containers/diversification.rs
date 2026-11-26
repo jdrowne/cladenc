@@ -183,10 +183,10 @@ fn the_source_code_a_harness_is_told_of_is_that_of_its_progenitor() {
 }
 
 #[test]
-fn a_harness_is_given_the_instruction_to_improve_its_source_code() {
+fn a_harness_is_given_the_diversification_prompt_in_a_diversification() {
     assert_eq!(
         left_in_the_child("printf %s \"$CLADENC_INSTRUCTION\" > given", "given"),
-        containers::INSTRUCTION
+        containers::DIVERSIFICATION_PROMPT
     );
 }
 

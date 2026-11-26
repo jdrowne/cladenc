@@ -7,7 +7,7 @@ use nix::unistd::{Gid, Uid};
 
 use crate::containers::tests::double::{Answer, Double};
 use crate::containers::tests::given::{self, LAUNCH, TIMER};
-use crate::containers::{self, ContainerError, Creation, INSTRUCTION, Launch};
+use crate::containers::{self, ContainerError, Creation, DIVERSIFICATION_PROMPT, Launch};
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
@@ -149,7 +149,7 @@ fn a_progenitor_is_told_where_its_source_code_is_what_to_do_and_which_model_to_c
         diversified.docker.asked()[0].variables,
         [
             ("CLADENC_HARNESS", "/var/opt/cladenc/harness"),
-            ("CLADENC_INSTRUCTION", INSTRUCTION),
+            ("CLADENC_INSTRUCTION", DIVERSIFICATION_PROMPT),
             ("CLADENC_MODEL", test_inputs::MODEL),
             ("CLADENC_MODEL_URL", test_inputs::MODEL_URL),
         ]

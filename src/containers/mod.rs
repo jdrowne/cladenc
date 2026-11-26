@@ -39,7 +39,8 @@ pub use program::{Ending, Limits, Program};
 use program::{FOREVER, seconds_since};
 use verifier::Verifying;
 
-pub const INSTRUCTION: &str = "You are an agentic coding harness. The current directory holds \
+pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The current \
+    directory holds \
     your clone, which is a copy of your own source code. Improve that source code, so that the \
     harness it makes completes more coding tasks than you do. /var/log/cladenc/trials holds the \
     trials you are shown: one \
@@ -317,7 +318,7 @@ impl Changing<'_> {
         let limits = Limits::starting_now(launch.diversification_timeout, stop);
         let environment: Vec<(&str, &str)> = [
             ("CLADENC_HARNESS", HARNESS),
-            ("CLADENC_INSTRUCTION", INSTRUCTION),
+            ("CLADENC_INSTRUCTION", DIVERSIFICATION_PROMPT),
         ]
         .into_iter()
         .chain(launch.model.environment())

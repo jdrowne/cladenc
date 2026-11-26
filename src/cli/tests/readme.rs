@@ -799,6 +799,31 @@ fn the_steps_of_cladenc_start_say_that_a_diversification_starts_once_every_harne
 }
 
 #[test]
+fn the_steps_of_cladenc_start_say_what_the_diversification_prompt_is() {
+    assert!(what_is_said_of("start").contains(
+        "In the diversification, the progenitor is given the diversification prompt: a text that \
+         `cladenc` holds itself, the same in every diversification, which asks a harness to \
+         improve the clone in its working directory and says what the harness is given to read."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_tell_the_diversification_prompt_from_the_text_of_a_task() {
+    assert!(what_is_said_of("start").contains(
+        "No benchmark brings the diversification prompt: the text that a task brings is the task \
+         specification of the task, which a harness is given in a trial."
+    ));
+}
+
+#[test]
+fn the_steps_of_cladenc_start_say_that_the_primogenitor_is_given_the_diversification_prompt() {
+    assert!(what_is_said_of("start").contains(
+        "The primogenitor is given the diversification prompt that the progenitor is given. What \
+         is there to read is what the progenitor is given in its diversification:"
+    ));
+}
+
+#[test]
 fn the_readme_names_no_growth() {
     assert!(!readme().contains("growth"));
 }

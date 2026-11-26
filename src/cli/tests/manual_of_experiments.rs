@@ -40,8 +40,8 @@ fn the_manual_of_start_says_which_source_code_runs_and_which_is_diversified_for_
 #[test]
 fn the_manual_of_start_says_that_the_primogenitor_is_given_what_the_progenitor_is_given() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The primogenitor is given the instruction the progenitor is given, and what the \
-         progenitor is given to read:"
+        "The primogenitor is given the diversification prompt that the progenitor is given, and \
+         what the progenitor is given to read:"
     ));
 }
 

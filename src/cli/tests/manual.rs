@@ -181,6 +181,14 @@ fn the_manual_of_start_names_what_a_harness_is_told() {
 }
 
 #[test]
+fn the_manual_of_start_says_which_text_a_harness_is_given_in_which_container() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "CLADENC_INSTRUCTION what the harness is asked to do: in a diversification the \
+         diversification prompt, and in a trial the task specification of its task CLADENC_MODEL"
+    ));
+}
+
+#[test]
 fn the_manual_of_start_names_the_variables_a_harness_is_told_the_model_in() {
     let help = manual_on_one_line("cladenc-start");
     let told = [
@@ -358,8 +366,8 @@ fn the_manual_of_start_names_no_budget() {
 #[test]
 fn the_manual_of_start_says_where_the_copy_that_a_diversification_improves_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "/var/opt/cladenc/work holds its clone, and the instruction asks the progenitor to improve \
-         the clone: what the progenitor leaves there is its child."
+        "/var/opt/cladenc/work holds its clone, and the diversification prompt asks the \
+         progenitor to improve the clone: what the progenitor leaves there is its child."
     ));
 }
 

@@ -305,7 +305,8 @@ directory
 /var/opt/cladenc/harness
 .TP 21n
 \fBCLADENC_INSTRUCTION\fP
-what the harness is asked to do
+what the harness is asked to do: in a diversification the diversification
+prompt, and in a trial the task specification of its task
 .TP 21n
 \fBCLADENC_MODEL\fP
 the name of the model, the value of \fB\-\-model\fP
@@ -346,8 +347,14 @@ In the cloning, cladenc copies the source code of a harness, the progenitor,
 as it is kept under harnesses in the outputs directory: the copy is the
 progenitor's clone.
 In the diversification, the progenitor is started in a container, where
-/var/opt/cladenc/work holds its clone, and the instruction asks the progenitor
-to improve the clone: what the progenitor leaves there is its child.
+/var/opt/cladenc/work holds its clone, and the diversification prompt asks the
+progenitor to improve the clone: what the progenitor leaves there is its child.
+The diversification prompt is a text that cladenc holds itself, the same in
+every diversification: it says what the harness is asked to do, and what the
+harness is given to read.
+No benchmark brings the diversification prompt: the text that a task brings is
+the task specification of the task, which a harness is given in a trial.
+In a diversification, CLADENC_INSTRUCTION holds the diversification prompt.
 /var/log/cladenc/trials holds the finished trials of the progenitor on the
 non-holdout tasks, to read: one directory for each benchmark, and in it one
 for each task, holding what the trial on that task kept.
@@ -391,15 +398,15 @@ diversification, a harness that was not created has no trials, and a harness
 that was not built has no build.
 Nothing of a holdout task is in any of them.
 .PP
-The instruction asks the progenitor for a change to how its child works on any
-task: one that answers something it saw in several of its trials, not in one,
-and that leaves in the source code nothing that names a task, a file of a task
-or the answer to one.
+The diversification prompt asks the progenitor for a change to how its child
+works on any task: one that answers something it saw in several of its trials,
+not in one, and that leaves in the source code nothing that names a task, a
+file of a task or the answer to one.
 It says that taking out what does not help is an improvement as well, that the
 child may be asked in its turn to improve a clone of its own, so that making
 the child better at that counts, and that the child is judged by tasks the
 progenitor is not shown.
-An instruction is a request: cladenc enforces none of it.
+The diversification prompt is a request: cladenc enforces none of it.
 .PP
 A harness is cloned only once it has been benchmarked in full, on every task
 of every benchmark of the directed evolution, so that it finds every
@@ -489,12 +496,12 @@ holds a copy of the source code of the primogenitor, which is what runs
 \fB/var/opt/cladenc/work\fP
 holds the second clone of the progenitor, which is what is diversified
 .PP
-The primogenitor is given the instruction the progenitor is given, and what
-the progenitor is given to read: under /var/log/cladenc/trials the trials of
-the progenitor on the non-holdout tasks, under /var/log/cladenc/line the
-harnesses the progenitor descends from, and under /var/log/cladenc/children
-the children the progenitor made before the progenitor's child of the
-experiment.
+The primogenitor is given the diversification prompt that the progenitor is
+given, and what the progenitor is given to read: under /var/log/cladenc/trials
+the trials of the progenitor on the non-holdout tasks, under
+/var/log/cladenc/line the harnesses the progenitor descends from, and under
+/var/log/cladenc/children the children the progenitor made before the
+progenitor's child of the experiment.
 What the primogenitor leaves in /var/opt/cladenc/work is the singleton control
 group harness.
 Where the primogenitor leaves the second clone as it was, no singleton control

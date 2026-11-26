@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: cbdff9f0-8a8b-4526-8929-b4403e305f2d
-  modified: 2026-11-26T02:34:55.333Z
+  modified: 2026-11-26T03:33:27.653Z
 ---
 
 # More tasks completed is not shown to be an improvement
@@ -17,7 +17,7 @@ That a harness of a directed evolution completes more tasks than its progenitor 
 **How to apply:**
 
 - Say that a child completes more tasks, or completes more of the tasks its progenitor read about. Say improved, better or self-improvement only for what is shown on tasks that no progenitor of the line read about, and write the rest as what is meant or expected.
-- Do not put into the README, the help or an issue, as a fact, that `cladenc` leads to recursive self-improvement or that its harnesses improve themselves. That `cladenc` is there for that, and that a progenitor is asked to improve the progenitor's clone, can be said: each is a purpose or an instruction.
+- Do not put into the README, the help or an issue, as a fact, that `cladenc` leads to recursive self-improvement or that its harnesses improve themselves. That `cladenc` is there for that, and that a progenitor is asked to improve the progenitor's clone, can be said: each is a purpose or a request.
 - Issue 62 holds the analysis. The tasks that no progenitor reads about are the holdout tasks, per [[the-words-about-benchmarks]]. `cladenc` draws them at random out of each benchmark a person brings, and a person brings no benchmark of them.
 - A person has to be able to tell whether the lead of the best harness is luck, as the scientific method asks, though luck in the choosing does not stop a directed evolution. So a part of the holdout tasks is kept from artificial selection and only scored, per [[the-words-about-benchmarks]]. `cladenc` never chooses the best harness by that part.
 - When the user states a doubt about what `cladenc` achieves, weigh it on its merits and say plainly where it holds, before defending what an issue says.
