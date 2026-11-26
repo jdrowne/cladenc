@@ -79,6 +79,10 @@ pub(crate) fn kept_verifier_logs() -> String {
     kept_of_the_running_trial("verifier/logs/verifier")
 }
 
+pub(super) fn kept_published() -> String {
+    kept_of_the_running_trial("artifacts/logs/artifacts")
+}
+
 pub(super) fn kept_work() -> String {
     kept_of_the_running_trial("work")
 }

@@ -13,7 +13,7 @@ use super::program::{Ending, FOREVER, LEEWAY, Limits};
 use super::{Copied, Environment, SandboxError};
 use crate::benchmark::{HealthCheck, TaskConfiguration};
 use crate::file_system::FileSystem;
-use crate::outputs_directory::{OutputsDirectory, make_removable};
+use crate::outputs_directory::{OutputsDirectory, make_usable};
 
 const NOT_STARTED: i32 = 125;
 const MACHINE: &str = "host.docker.internal:host-gateway";
@@ -332,7 +332,7 @@ impl<'a> Up<'a> {
             .arg(format!("{}:{from}", self.name))
             .arg(ARCHIVE);
         let unpacked = self.docker.unpack(docker, into);
-        make_removable(self.files, into);
+        make_usable(self.files, into);
         unpacked
     }
 

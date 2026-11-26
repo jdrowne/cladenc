@@ -25,7 +25,7 @@ use crate::benchmark::TaskConfiguration;
 use crate::file_system::FileSystem;
 use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::model::Model;
-use crate::outputs_directory::{holds_only_harness_files, same_tree};
+use crate::outputs_directory::{holds_only_harness_files, make_usable, same_tree};
 
 pub use build::build_primogenitor;
 pub use docker::{Docker, Host, Outside};
@@ -387,6 +387,7 @@ impl Changing<'_> {
         let started = Instant::now();
         let ending = sandbox.run(&shell, self.running, limits)?;
         let seconds = seconds_since(started);
+        make_usable(host.outputs_directory.files(), self.made);
         let outcome = match ending {
             Ending::Exited(0) => self.made_of_what_was_left(host, launch, limits)?,
             Ending::Exited(_) => CreationOutcome::Failed,

@@ -11,7 +11,7 @@ use crate::file_system::FileSystem;
 use crate::genealogy::{Cause, CreationOutcome, Experiment, HarnessId, TrialResult};
 
 use copy::copy_tree;
-pub(crate) use copy::{holds_only_harness_files, make_removable, same_tree};
+pub(crate) use copy::{holds_only_harness_files, make_usable, same_tree};
 
 #[derive(Clone, Debug)]
 pub struct OutputsDirectory {

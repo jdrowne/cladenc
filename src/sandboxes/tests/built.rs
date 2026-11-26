@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use nix::unistd::{Gid, Uid};
@@ -83,6 +84,22 @@ fn what_the_build_of_the_primogenitor_prints_is_kept_with_its_builds() {
 #[test]
 fn a_build_that_exits_with_zero_and_leaves_only_harness_files_has_built_the_primogenitor() {
     assert!(built_by(Double::default()).result.is_ok());
+}
+
+#[test]
+fn a_build_that_leaves_a_directory_no_one_may_list_has_built_the_primogenitor() {
+    let docker = Double::default().doing(&["run"], |files, asked| {
+        let source = asked
+            .arguments
+            .iter()
+            .find_map(|argument| argument.strip_suffix(HARNESS));
+        if let Some(source) = source {
+            let locked = Path::new(source).join("locked");
+            files.create_dir_all(&locked).unwrap();
+            files.set_mode(&locked, 0o000).unwrap();
+        }
+    });
+    assert!(built_by(docker).result.is_ok());
 }
 
 #[test]

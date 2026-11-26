@@ -9,5 +9,5 @@ mod environment;
 mod holdout;
 mod image;
 mod line;
-mod removable;
 mod trial;
+mod usable;

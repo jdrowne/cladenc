@@ -207,3 +207,12 @@ fn the_manual_of_start_lists_a_file_that_cannot_be_written_among_what_gives_no_r
          trial again"
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_what_a_file_no_one_may_read_is_copied_out_as() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "A directory that cannot be written in is copied out with all it holds, and the copy is \
+         a directory that its owner can write in. A file that no one may read is copied out as \
+         a file that its owner can read."
+    ));
+}

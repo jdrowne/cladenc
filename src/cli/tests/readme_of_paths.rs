@@ -88,9 +88,9 @@ fn the_readme_says_where_the_package_installs_the_manual_pages_and_how_man_shows
 fn the_readme_says_how_cladenc_copies_out_of_a_sandbox_and_what_it_keeps() {
     assert!(readme().contains(
         "Whatever `cladenc` copies out of a sandbox, it has Docker print as an archive and \
-         unpacks itself: a directory that cannot be written in is kept with all it holds, and a \
-         file that is not a regular file, a directory or a symbolic link, such as a named pipe, \
-         is not kept."
+         unpacks itself: a directory that cannot be written in is kept with all it holds, a file \
+         that no one may read is kept as a file that its owner can read, and a file that is not \
+         a regular file, a directory or a symbolic link, such as a named pipe, is not kept."
     ));
 }
 
@@ -124,5 +124,15 @@ fn the_readme_says_what_cladenc_does_where_it_cannot_write_what_it_records_of_a_
          trial is not kept without it: no result is recorded for the trial either, the directed \
          evolution stops with exit status 1, `cladenc` names the file that was not written and \
          says why, and `cladenc resume` carries out the trial again."
+    ));
+}
+
+#[test]
+fn the_readme_says_that_the_permission_bits_a_harness_leaves_keep_no_child_from_being_made() {
+    assert!(readme().contains(
+        "Once the progenitor has ended, and again once a build has ended, `cladenc` makes every \
+         directory of the source code one that its owner can list, write in and enter, and \
+         every file one that its owner can read, so that the permission bits a harness or a \
+         build leaves keep no child from being made or benchmarked."
     ));
 }

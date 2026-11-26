@@ -355,3 +355,19 @@ fn an_outputs_directory_whose_path_holds_a_comma_a_quote_and_a_space_can_be_moun
 fn a_harness_that_exits_with_0_and_leaves_its_clone_as_it_was_creates_no_child() {
     assert_eq!(outcome_of("exit 0"), CreationOutcome::Unchanged);
 }
+
+#[test]
+fn a_harness_that_leaves_a_file_no_one_may_read_in_its_clone_creates_a_child_that_holds_it() {
+    assert_eq!(
+        left_in_the_child("echo kept > secret && chmod 000 secret", "secret"),
+        "kept\n"
+    );
+}
+
+#[test]
+fn a_harness_that_leaves_a_directory_no_one_may_list_in_its_clone_creates_its_child() {
+    assert_eq!(
+        outcome_of("mkdir locked && touch locked/file && chmod 000 locked"),
+        CreationOutcome::Created
+    );
+}

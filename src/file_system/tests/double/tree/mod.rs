@@ -125,8 +125,11 @@ impl Tree {
     }
 
     pub(super) fn list(&self, directory: &Path) -> io::Result<Vec<OsString>> {
-        let (at, _) = self.node(directory, true)?;
-        self.entered(&at).map(|()| self.names(&at))
+        let (at, node) = self.node(directory, true)?;
+        match node {
+            Node::Directory { mode } if mode & READ_BY_ITS_OWNER == 0 => Err(Errno::EACCES.into()),
+            _ => self.entered(&at).map(|()| self.names(&at)),
+        }
     }
 
     pub(super) fn read(&self, file: &Path) -> io::Result<Vec<u8>> {

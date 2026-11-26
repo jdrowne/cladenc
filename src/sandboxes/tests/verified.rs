@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Duration;
 
 use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
@@ -62,6 +63,13 @@ fn leaving_a_file_no_one_may_read() -> Double {
         directory.create_dir_all(&left).unwrap();
         directory.write(left.join("made.txt"), "made\n").unwrap();
         directory.set_mode(left.join("made.txt"), 0o000).unwrap();
+    })
+}
+
+fn with_a_kept_file_that_can_no_longer_be_read() -> Double {
+    let made = Path::new(&given::kept_published()).join("made.txt");
+    leaving_a_directory().doing(&["exec", LOGS_LINKED], move |directory, _| {
+        let _ = directory.set_mode(&made, 0o000);
     })
 }
 
@@ -451,14 +459,33 @@ fn no_verifier_sandbox_is_brought_up_where_what_it_would_be_given_was_not_copied
 #[test]
 fn a_trial_whose_verifier_would_be_given_part_of_a_kept_path_is_given_no_result() {
     assert!(matches!(
-        verified_apart(leaving_a_file_no_one_may_read()).result,
+        verified_apart(with_a_kept_file_that_can_no_longer_be_read()).result,
         Err(SandboxError::NotGivenToVerifier { left, .. }) if left == "/logs/artifacts"
     ));
 }
 
 #[test]
-fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_copied() {
+fn a_file_no_one_may_read_at_a_kept_path_is_given_to_the_verifier() {
     let tried = verified_apart(leaving_a_file_no_one_may_read());
+    assert!(
+        tried
+            .commands()
+            .iter()
+            .any(|command| *command == format!("docker cp {GIVEN}/. NAME:/logs/artifacts"))
+    );
+}
+
+#[test]
+fn a_file_no_one_may_read_at_a_kept_path_is_kept_as_a_file_its_owner_can_read() {
+    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let trial = tried.outputs_directory.trial(0, TASK);
+    let kept = trial.join("artifacts/logs/artifacts/made.txt");
+    assert_eq!(tried.directory.mode(kept) & 0o777, 0o400);
+}
+
+#[test]
+fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_copied() {
+    let tried = verified_apart(with_a_kept_file_that_can_no_longer_be_read());
     let kept = tried.running().join("artifacts/logs/artifacts/made.txt");
     assert!(matches!(
         &tried.result,
@@ -469,7 +496,7 @@ fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_co
 
 #[test]
 fn no_part_of_a_kept_path_that_was_not_copied_in_full_is_put_in_the_verifier_sandbox() {
-    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let tried = verified_apart(with_a_kept_file_that_can_no_longer_be_read());
     assert!(
         !tried
             .commands()
@@ -480,7 +507,7 @@ fn no_part_of_a_kept_path_that_was_not_copied_in_full_is_put_in_the_verifier_san
 
 #[test]
 fn no_verifier_is_run_on_part_of_a_kept_path() {
-    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let tried = verified_apart(with_a_kept_file_that_can_no_longer_be_read());
     assert!(
         !tried
             .commands()
@@ -491,7 +518,7 @@ fn no_verifier_is_run_on_part_of_a_kept_path() {
 
 #[test]
 fn a_copy_for_the_verifier_that_was_not_made_in_full_is_not_left_behind() {
-    let tried = verified_apart(leaving_a_file_no_one_may_read());
+    let tried = verified_apart(with_a_kept_file_that_can_no_longer_be_read());
     let given = tried.running().join("given-to-the-verifier");
     assert!(!tried.directory.exists(given));
 }

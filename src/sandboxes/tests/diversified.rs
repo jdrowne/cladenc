@@ -104,6 +104,29 @@ fn removing_what_the_progenitor_added() -> Double {
         })
 }
 
+fn leaving_in_its_clone(left: impl Fn(&Memory, &Path) + Send + Sync + 'static) -> Double {
+    Double::default().doing(&DIVERSIFICATION, move |files, asked| {
+        let work = asked
+            .arguments
+            .iter()
+            .find_map(|argument| argument.strip_suffix(WORK));
+        if let Some(work) = work {
+            left(files, Path::new(work));
+        }
+    })
+}
+
+fn a_file_no_one_may_read(files: &Memory, source: &Path) {
+    files.write(source.join("secret"), "kept\n").unwrap();
+    files.set_mode(source.join("secret"), 0o000).unwrap();
+}
+
+fn a_directory_no_one_may_list(files: &Memory, source: &Path) {
+    files.create_dir_all(source.join("locked")).unwrap();
+    files.write(source.join("locked/file"), "kept\n").unwrap();
+    files.set_mode(source.join("locked"), 0o000).unwrap();
+}
+
 fn control_made_by(docker: Double) -> Diversified {
     let (directory, outputs_directory) = given::made();
     let docker = docker.on(&directory);
@@ -267,6 +290,48 @@ fn the_sandbox_of_a_progenitor_that_runs_past_the_time_limit_is_removed() {
     assert_eq!(
         diversified_by(docker, &LAUNCH).commands().pop().as_deref(),
         Some("docker rm --force NAME")
+    );
+}
+
+#[test]
+fn a_progenitor_that_leaves_a_file_no_one_may_read_in_its_clone_creates_its_child() {
+    let docker = leaving_in_its_clone(a_file_no_one_may_read);
+    assert_eq!(
+        diversified_by(docker, &LAUNCH).outcome(),
+        Some(CreationOutcome::Created)
+    );
+}
+
+#[test]
+fn a_file_no_one_may_read_in_a_clone_is_a_file_its_owner_can_read_in_the_child() {
+    let diversified = diversified_by(leaving_in_its_clone(a_file_no_one_may_read), &LAUNCH);
+    let secret = diversified.outputs_directory.harness(1).join("secret");
+    assert_eq!(diversified.directory.mode(secret) & 0o777, 0o400);
+}
+
+#[test]
+fn a_progenitor_that_leaves_a_directory_no_one_may_list_in_its_clone_creates_its_child() {
+    let docker = leaving_in_its_clone(a_directory_no_one_may_list);
+    assert_eq!(
+        diversified_by(docker, &LAUNCH).outcome(),
+        Some(CreationOutcome::Created)
+    );
+}
+
+#[test]
+fn a_child_whose_build_leaves_a_directory_no_one_may_list_is_created() {
+    let docker = Double::default().changing().doing(&BUILD, |files, asked| {
+        let source = asked
+            .arguments
+            .iter()
+            .find_map(|argument| argument.strip_suffix(HARNESS));
+        if let Some(source) = source {
+            a_directory_no_one_may_list(files, Path::new(source));
+        }
+    });
+    assert_eq!(
+        diversified_by(docker, &BUILT).outcome(),
+        Some(CreationOutcome::Created)
     );
 }
 

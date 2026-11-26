@@ -5,6 +5,9 @@ use std::path::Path;
 
 use crate::file_system::{FileSystem, Kind};
 
+const READ_WRITTEN_AND_ENTERED_BY_ITS_OWNER: u32 = 0o700;
+const READ_BY_ITS_OWNER: u32 = 0o400;
+
 pub(super) fn copy_tree(files: &dyn FileSystem, from: &Path, to: &Path) -> io::Result<()> {
     let kind = files.found(from)?.kind;
     if kind == Kind::Directory {
@@ -33,14 +36,18 @@ pub(super) fn copy_tree(files: &dyn FileSystem, from: &Path, to: &Path) -> io::R
     }
 }
 
-pub(crate) fn make_removable(files: &dyn FileSystem, tree: &Path) {
-    if let Ok(found) = files.found(tree)
-        && found.kind == Kind::Directory
-    {
-        let _ = files.set_mode(tree, found.mode | 0o700);
-        for name in files.list(tree).unwrap_or_default() {
-            make_removable(files, &tree.join(name));
+pub(crate) fn make_usable(files: &dyn FileSystem, tree: &Path) {
+    match files.found(tree) {
+        Ok(found) if found.kind == Kind::Directory => {
+            let _ = files.set_mode(tree, found.mode | READ_WRITTEN_AND_ENTERED_BY_ITS_OWNER);
+            for name in files.list(tree).unwrap_or_default() {
+                make_usable(files, &tree.join(name));
+            }
         }
+        Ok(found) if found.kind == Kind::File && found.mode & READ_BY_ITS_OWNER == 0 => {
+            let _ = files.set_mode(tree, found.mode | READ_BY_ITS_OWNER);
+        }
+        _ => {}
     }
 }
 

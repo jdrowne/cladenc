@@ -450,3 +450,13 @@ fn the_manual_of_report_says_why_the_likelihood_is_shown_for_the_best_harness_al
          show a low likelihood by luck."
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_that_the_permission_bits_a_harness_leaves_keep_no_child_out() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Once the progenitor has ended, and again once a build has ended, cladenc makes every \
+         directory of the source code one that its owner can list, write in and enter, and \
+         every file one that its owner can read. So the permission bits that a harness or a \
+         build leaves keep no child from being made or benchmarked."
+    ));
+}

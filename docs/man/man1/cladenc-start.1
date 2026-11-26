@@ -476,6 +476,12 @@ the same way twice, so what the child completed would differ from what its
 progenitor completed by luck alone.
 It is not built and not benchmarked, and it is never chosen to be cloned.
 .PP
+Once the progenitor has ended, and again once a build has ended, cladenc makes
+every directory of the source code one that its owner can list, write in and
+enter, and every file one that its owner can read.
+So the permission bits that a harness or a build leaves keep no child from
+being made or benchmarked.
+.PP
 A child that holds anything but regular files, directories and symbolic links
 is a failed diversification.
 The source code of every child is kept under harnesses in the outputs
@@ -818,6 +824,7 @@ docker cp \-\-follow\-link <SANDBOX>:<PATH> \-
 where <SANDBOX> is the name that cladenc gave the sandbox.
 A directory that cannot be written in is copied out with all it holds, and the
 copy is a directory that its owner can write in.
+A file that no one may read is copied out as a file that its owner can read.
 A file that is not a regular file, a directory or a symbolic link, such as a
 named pipe or a device, is not copied out, and neither is another name of such
 a file.

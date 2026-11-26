@@ -186,3 +186,15 @@ fn a_file_its_owner_may_not_read_cannot_be_read() {
         ErrorKind::PermissionDenied
     );
 }
+
+#[test]
+fn a_directory_its_owner_may_not_read_cannot_be_listed() {
+    let directory = Memory::default();
+    let files = directory.shared();
+    let made = directory.path().join("made");
+    files.make_directory(&made).unwrap();
+    files.set_mode(&made, 0o000).unwrap();
+    let listed = files.list(&made);
+    files.set_mode(&made, 0o700).unwrap();
+    assert_eq!(listed.unwrap_err().kind(), ErrorKind::PermissionDenied);
+}

@@ -496,32 +496,13 @@ fn a_trial_is_given_no_result_where_a_path_its_verifier_would_be_given_cannot_be
 }
 
 #[test]
-fn a_trial_is_given_no_result_where_a_kept_path_cannot_be_copied_in_full_for_its_verifier() {
+fn a_file_no_one_may_read_at_a_kept_path_is_given_to_the_verifier() {
     let trialled = trialled(
         &separate_and(OUT),
         LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT,
-        COMPLETE,
+        "grep -q found /app/out/report.txt && echo 1 > /logs/verifier/reward.txt",
     );
-    assert!(matches!(
-        trialled.result,
-        Err(SandboxError::NotGivenToVerifier { left, .. }) if left == "/app/out"
-    ));
-}
-
-#[test]
-fn a_kept_path_that_was_not_copied_in_full_is_told_with_the_file_that_was_not_copied() {
-    let trialled = trialled(
-        &separate_and(OUT),
-        LEAVE_A_FILE_NO_ONE_MAY_READ_IN_OUT,
-        COMPLETE,
-    );
-    assert!(matches!(
-        trialled.result,
-        Err(SandboxError::NotGivenToVerifier { error, .. })
-            if error.to_string().ends_with(
-                "/artifacts/app/out/report.txt: Permission denied (os error 13)"
-            )
-    ));
+    assert_eq!(result_of(&trialled), Some(TrialResult::Pass));
 }
 
 #[test]

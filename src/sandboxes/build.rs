@@ -6,7 +6,7 @@ use super::program::{Ending, Limits};
 use super::sandbox::{Mount, Sandbox, Shell};
 use super::{HARNESS, Launch, SandboxError};
 use crate::genealogy::{CreationOutcome, HarnessId};
-use crate::outputs_directory::holds_only_harness_files;
+use crate::outputs_directory::{holds_only_harness_files, make_usable};
 
 struct Build<'a> {
     image: &'a str,
@@ -86,6 +86,8 @@ impl Build<'_> {
             command: self.command,
             environment: &[("CLADENC_HARNESS", HARNESS)],
         };
-        sandbox.run(&shell, &kept, limits)
+        sandbox
+            .run(&shell, &kept, limits)
+            .inspect(|_| make_usable(host.outputs_directory.files(), self.source))
     }
 }
