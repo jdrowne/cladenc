@@ -7,9 +7,9 @@ mod health_check;
 mod image;
 mod left;
 mod program;
-mod reward;
 mod sandbox;
 mod shown;
+mod verdict;
 mod verifier;
 
 use std::collections::BTreeSet;
@@ -62,8 +62,8 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     it ran, in the files named stdout and stderr. Once you had ended or were stopped, the verifier \
     ran the tests of the task, which you are not shown, on what you left, or, where the task has \
     its verifier run in a sandbox of its own, on nothing but what the directory named artifacts \
-    holds, and wrote its score in logs/verifier/reward.txt, or one score for each label in \
-    logs/verifier/reward.json: the task was completed where every score is 1. \
+    holds, and wrote its verdict in logs/verifier/reward.txt, or one verdict for each label \
+    in logs/verifier/reward.json: the task was completed where every verdict is 1. \
     /var/log/cladenc/line holds one directory for each harness you descend from, named by its id, \
     and /var/log/cladenc/children one for each harness you made before, created or not. In the \
     directory of such a harness, the directory named harness holds its source code, the directory \

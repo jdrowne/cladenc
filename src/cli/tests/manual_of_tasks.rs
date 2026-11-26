@@ -59,7 +59,7 @@ fn the_manual_of_start_names_what_a_verifier_is_given() {
         "/tests a symbolic link to /var/opt/cladenc/harbor/tests, which",
         "holds a copy of the tests directory of the task, and",
         "nothing that the harness left there",
-        "/logs/verifier an empty directory, for the score of the verifier",
+        "/logs/verifier an empty directory, for the verdict of the verifier",
     ];
     assert!(given.iter().all(|line| help.contains(line)));
 }
@@ -126,9 +126,9 @@ fn the_manual_of_start_says_that_what_was_left_at_tests_is_removed_before_the_li
 }
 
 #[test]
-fn the_manual_of_start_says_where_the_verifier_writes_its_score() {
+fn the_manual_of_start_says_where_the_verifier_writes_its_verdict() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The verifier writes its score in /logs/verifier/reward.txt, a single number, or in \
+        "The verifier writes its verdict in /logs/verifier/reward.txt, a single number, or in \
          /logs/verifier/reward.json, an object of labelled numbers, which is read in place of \
          reward.txt where both are there."
     ));
@@ -159,9 +159,9 @@ fn the_manual_of_start_says_that_how_a_trial_ends_decides_the_result() {
 fn the_manual_of_start_says_what_each_way_a_trial_ends_gives() {
     let help = manual_on_one_line("cladenc-start");
     let endings = [
-        "a score of 1, or 1 for every label of reward.json the harness completed the task",
-        "any other score, a file that cannot be read, or no score the harness did not complete the \
-         task",
+        "a verdict of 1, or 1 for every label of reward.json the harness completed the task",
+        "any other verdict, a file that cannot be read, or no verdict the harness did not \
+         complete the task",
         "exit status 125 of either step or of the health check Docker did not start the sandbox: \
          the directed evolution stops",
         "a health check of the task, or of the verifier sandbox, that passes in none of its \
@@ -475,7 +475,7 @@ fn the_manual_of_start_says_which_harness_can_pass_a_verifier_that_trusts_nothin
         "The tests directory of the task is never given to a harness: a verifier that keeps what \
          it relies on there, and takes nothing from the working directory on trust, can be passed \
          that way only by a harness that left a process running to change the copy of that \
-         directory, or the score, once they are made."
+         directory, or the verdict, once they are made."
     ));
 }
 

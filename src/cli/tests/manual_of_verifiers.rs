@@ -238,7 +238,7 @@ fn the_manual_of_start_names_the_verifier_environment_among_what_cladenc_obeys()
 #[test]
 fn the_manual_of_start_says_where_the_health_check_of_a_verifier_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "left in /logs/verifier, its score among them; where the verifier ran in a sandbox of \
+        "left in /logs/verifier, its verdict among them; where the verifier ran in a sandbox of \
          its own with a health check, what the last run of that printed, in health-check"
     ));
 }

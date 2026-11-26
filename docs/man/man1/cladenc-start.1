@@ -787,7 +787,7 @@ a symbolic link to /var/opt/cladenc/harbor/tests, which holds a copy of the
 tests directory of the task, and nothing that the harness left there
 .TP 16n
 \fB/logs/verifier\fP
-an empty directory, for the score of the verifier
+an empty directory, for the verdict of the verifier
 .PP
 The verifier finds the sandbox as the harness left it: the files the harness
 left outside /tests and /logs/verifier, and the processes it left running, are
@@ -1142,18 +1142,18 @@ the verifier sandbox, as an entry under artifacts whose path names no
 file or directory, where the verifier runs separately.
 The refusal names the task and what it asks for.
 .SH RESULTS
-The verifier writes its score in /logs/verifier/reward.txt, a single number, or
-in /logs/verifier/reward.json, an object of labelled numbers, which is read in
-place of reward.txt where both are there.
+The verifier writes its verdict in /logs/verifier/reward.txt, a single number,
+or in /logs/verifier/reward.json, an object of labelled numbers, which is read
+in place of reward.txt where both are there.
 /tests and /logs/verifier are the paths of Harbor's task layout, which a
 verifier expects.
 .PP
 How a trial ends decides its result:
 .TP 7n
-\fBa score of 1, or 1 for every label of reward.json\fP
+\fBa verdict of 1, or 1 for every label of reward.json\fP
 the harness completed the task
 .TP 7n
-\fBany other score, a file that cannot be read, or no score\fP
+\fBany other verdict, a file that cannot be read, or no verdict\fP
 the harness did not complete the task
 .TP 7n
 \fBa health check of the task, or of the verifier sandbox, that passes in none of its tries\fP
@@ -1192,7 +1192,7 @@ harness that changed those tests, on a holdout task as on any other.
 The tests directory of the task is never given to a harness: a verifier that
 keeps what it relies on there, and takes nothing from the working directory on
 trust, can be passed that way only by a harness that left a process running to
-change the copy of that directory, or the score, once they are made.
+change the copy of that directory, or the verdict, once they are made.
 .PP
 The model may know the task.
 A task taken from a public source may have been among what the model was
@@ -1237,8 +1237,8 @@ the standard error of the harness
 .TP 18n
 \fBverifier\fP
 the standard output and the standard error of the verifier, in stdout and
-stderr, and in logs/verifier what the verifier left in /logs/verifier, its score
-among them; where the verifier ran in a sandbox of its own with a health
+stderr, and in logs/verifier what the verifier left in /logs/verifier, its
+verdict among them; where the verifier ran in a sandbox of its own with a health
 check, what the last run of that printed, in health\-check
 .TP 18n
 \fBhealth\-check\fP

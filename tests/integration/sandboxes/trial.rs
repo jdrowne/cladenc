@@ -472,7 +472,7 @@ fn a_directory_the_harness_left_that_no_one_can_write_in_lets_the_outputs_be_rem
 }
 
 #[test]
-fn a_verifier_that_scores_1_on_what_the_harness_left_gives_completed() {
+fn a_verdict_of_1_on_what_the_harness_left_gives_completed() {
     assert!(with_its_result(&LOOKED_AT.trialled, TrialResult::Completed));
 }
 
@@ -493,7 +493,7 @@ fn the_verifier_finds_logs_verifier_empty() {
 }
 
 #[test]
-fn a_score_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
+fn a_verdict_the_harness_left_in_logs_verifier_is_not_found_by_the_verifier() {
     assert!(with_its_result(
         &trialled(
             "mkdir -p /logs/verifier && echo 1 > /logs/verifier/reward.txt",
@@ -526,7 +526,7 @@ fn the_verifier_runs_as_the_user_the_harness_ran_as() {
 }
 
 #[test]
-fn the_verifier_of_an_environment_with_a_user_can_score() {
+fn the_verifier_of_an_environment_with_a_user_can_write_its_verdict() {
     assert!(with_its_result(
         &AS_A_USER_AND_LOOKED_AT.trialled,
         TrialResult::Completed

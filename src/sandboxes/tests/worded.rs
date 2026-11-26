@@ -213,8 +213,8 @@ fn the_diversification_prompt_says_how_the_verifier_judged_the_trial() {
         " Once you had ended or were stopped, the verifier ran the tests of the task, which you \
          are not shown, on what you left, or, where the task has its verifier run in a sandbox \
          of its own, on nothing but what the directory named artifacts holds, and wrote its \
-         score in logs/verifier/reward.txt, or one score for each label in \
-         logs/verifier/reward.json: the task was completed where every score is 1. "
+         verdict in logs/verifier/reward.txt, or one verdict for each label in \
+         logs/verifier/reward.json: the task was completed where every verdict is 1. "
     ));
 }
 

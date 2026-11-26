@@ -293,7 +293,7 @@ fn nothing_is_made_under_var_log_where_the_environment_of_the_task_holds_logs() 
 }
 
 #[test]
-fn the_verifier_scores_in_the_logs_that_the_environment_of_the_task_holds() {
+fn the_verifier_writes_its_verdict_in_the_logs_that_the_environment_of_the_task_holds() {
     assert_eq!(
         result_of(&HOLDING_LOGS_AND_LOOKED_AT.trialled),
         Some(TrialResult::Completed)

@@ -254,7 +254,7 @@ fn the_tests_of_the_task_belong_to_the_user_the_task_names_for_the_verifier() {
 }
 
 #[test]
-fn a_verifier_that_runs_as_another_user_than_the_harness_can_score() {
+fn a_verifier_that_runs_as_another_user_than_the_harness_can_write_its_verdict() {
     assert!(matches!(
         WITH_A_USER_FOR_THE_VERIFIER.trialled.result,
         Ok(sandboxes::Trialled {

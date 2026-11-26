@@ -8,7 +8,7 @@ use super::program::{Ending, Limits};
 use super::sandbox::{Bringing, Run, Shell, Up};
 use super::{
     ARTIFACTS, Checked, HEALTH_CHECK, Retry, SandboxError, Trial, VerifierImage, artifacts, harbor,
-    reward,
+    verdict,
 };
 use crate::benchmark::TESTS;
 use crate::genealogy::TrialResult;
@@ -101,7 +101,7 @@ impl<'a> Verifying<'a> {
                 up.copy_out_of(harbor::VERIFIER_LOGS, &logs);
                 match ending {
                     Ending::TimedOut => TrialResult::TimedOut,
-                    Ending::Exited(_) if reward::completed(up.files(), &logs) => {
+                    Ending::Exited(_) if verdict::completed(up.files(), &logs) => {
                         TrialResult::Completed
                     }
                     Ending::Exited(_) => TrialResult::NotCompleted,
