@@ -1,13 +1,13 @@
 use std::io;
 use std::path::PathBuf;
 
-use crate::benchmark::ConfigurationError;
 use crate::cli;
+use crate::dataset::ConfigurationError;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::journal::{JournalError, Started};
 use crate::sandboxes::SandboxError;
 
-const TASK: &str = "benchmark/t2";
+const TASK: &str = "dataset/t2";
 const IMAGE: &str = "parser:3";
 
 fn no_such_image() -> io::Error {
@@ -36,7 +36,7 @@ fn a_directed_evolution_one_of_whose_actions_fails_ends_with_status_one() {
     let error = DirectedEvolutionError::Action {
         action: Started::Trial {
             harness: 3,
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
         },
         error: SandboxError::TimeLimit,
     };

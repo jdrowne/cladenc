@@ -14,11 +14,11 @@ pub(super) enum Said<'a> {
         primogenitor: &'a Path,
     },
     CopyingTasks {
-        benchmark: &'a Path,
+        dataset: &'a Path,
         tasks: u64,
     },
     HoldingOut {
-        benchmark: &'a Path,
+        dataset: &'a Path,
         selection: u64,
         corroboration: u64,
         tasks: u64,
@@ -109,23 +109,23 @@ impl Display for Said<'_> {
                 outputs_directory.display(),
                 primogenitor.display()
             ),
-            Self::CopyingTasks { benchmark, tasks } => write!(
+            Self::CopyingTasks { dataset, tasks } => write!(
                 formatter,
-                "copying the {} of the benchmark {} into the outputs directory",
+                "copying the {} of the dataset {} into the outputs directory",
                 counted(*tasks, "task", "tasks"),
-                benchmark.display()
+                dataset.display()
             ),
             Self::HoldingOut {
-                benchmark,
+                dataset,
                 selection,
                 corroboration,
                 tasks,
             } => write!(
                 formatter,
-                "holding out {} of the {} of the benchmark {} from every progenitor: {} and {}",
+                "holding out {} of the {} of the dataset {} from every progenitor: {} and {}",
                 selection + corroboration,
                 counted(*tasks, "task", "tasks"),
-                benchmark.display(),
+                dataset.display(),
                 counted(*selection, "selection task", "selection tasks"),
                 counted(*corroboration, "corroboration task", "corroboration tasks")
             ),

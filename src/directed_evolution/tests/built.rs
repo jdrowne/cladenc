@@ -7,7 +7,7 @@ use crate::sandboxes::tests::double::{Answer, Double};
 
 const BUILD: [&str; 2] = ["run", "make"];
 const BUILD_OF_THE_CHILD: [&str; 2] = ["make", "builds/1"];
-const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t1"];
+const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-dataset+t1"];
 const BUILT: &str = r#"{"record":"primogenitor_built"}"#;
 
 fn with_a_build_command(_: &Memory, settings: &mut Settings) {
@@ -60,7 +60,7 @@ fn a_directed_evolution_that_is_stopped_while_the_primogenitor_is_built_was_aske
 
 fn with_a_selection_task(directory: &Memory, settings: &mut Settings) {
     with_a_build_command(directory, settings);
-    settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t1".to_owned()];
 }
 
 fn with_a_child_that_does_not_build() -> Evolved {

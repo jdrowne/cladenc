@@ -23,7 +23,7 @@ const HAS_ENDED: &str =
     name = "cladenc",
     version,
     about = "Carries out a directed evolution of an agentic coding harness, in which harnesses \
-             are cloned, each diversifying its clone, and are benchmarked",
+             are cloned, each diversifying its clone, and are evaluated",
     after_help = "The manual page says the rest: man -M /opt/cladenc/share/man cladenc",
     disable_help_subcommand = true
 )]
@@ -62,20 +62,20 @@ pub enum Command {
 pub struct StartOptions {
     #[arg(
         long,
-        value_name = "DIR",
-        required = true,
-        help = "The directory of a benchmark, which holds a directory for each task, given once \
-                for each benchmark"
-    )]
-    benchmark: Vec<PathBuf>,
-    #[arg(
-        long,
         value_name = "NUMBER",
         value_parser = checks::percentage,
-        help = "The percentage of each benchmark's tasks that are corroboration tasks, above 0 \
+        help = "The percentage of each dataset's tasks that are corroboration tasks, above 0 \
                 and below 100"
     )]
     corroboration_tasks_percentage: f64,
+    #[arg(
+        long,
+        value_name = "DIR",
+        required = true,
+        help = "The directory of a dataset, which holds a directory for each task, given once \
+                for each dataset"
+    )]
+    dataset: Vec<PathBuf>,
     #[arg(
         long,
         value_name = "IMAGE",
@@ -186,7 +186,7 @@ pub struct StartOptions {
         long,
         value_name = "NUMBER",
         value_parser = checks::percentage,
-        help = "The percentage of each benchmark's tasks that are selection tasks, above 0 and \
+        help = "The percentage of each dataset's tasks that are selection tasks, above 0 and \
                 below 100"
     )]
     selection_tasks_percentage: f64,

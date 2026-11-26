@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::holdout::{self, Percentages};
 use rand::SeedableRng;
 use rand::seq::index;
@@ -12,19 +12,19 @@ const PERCENTAGES: Percentages = Percentages {
     corroboration: 20.0,
 };
 
-fn benchmark(name: &str, tasks: usize) -> Benchmark {
-    Benchmark {
+fn dataset(name: &str, tasks: usize) -> Dataset {
+    Dataset {
         directory: PathBuf::from("/abs").join(name),
         tasks: (1..=tasks).map(|task| format!("t{task:02}")).collect(),
     }
 }
 
-fn benchmarks() -> [Benchmark; 2] {
-    [benchmark("bugs", 10), benchmark("features", 4)]
+fn datasets() -> [Dataset; 2] {
+    [dataset("bugs", 10), dataset("features", 4)]
 }
 
 fn drawn(seed: u64) -> Vec<String> {
-    holdout::draw(&benchmarks(), PERCENTAGES, seed)
+    holdout::draw(&datasets(), PERCENTAGES, seed)
         .unwrap()
         .holdout_tasks
 }
@@ -37,14 +37,14 @@ fn drawn_of(name: &str, seed: u64) -> Vec<String> {
 }
 
 fn every_task() -> BTreeSet<String> {
-    benchmarks()
+    datasets()
         .iter()
-        .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
+        .flat_map(|dataset| dataset.tasks.iter().map(|id| dataset.task(id)))
         .collect()
 }
 
 #[test]
-fn the_holdout_tasks_of_each_benchmark_are_as_many_as_its_selection_and_corroboration_tasks() {
+fn the_holdout_tasks_of_each_dataset_are_as_many_as_its_selection_and_corroboration_tasks() {
     assert_eq!(
         (drawn_of("bugs/", 7).len(), drawn_of("features/", 7).len()),
         (5, 2)
@@ -52,7 +52,7 @@ fn the_holdout_tasks_of_each_benchmark_are_as_many_as_its_selection_and_corrobor
 }
 
 #[test]
-fn a_holdout_task_is_a_task_of_a_benchmark_named_by_its_benchmark_and_its_id() {
+fn a_holdout_task_is_a_task_of_a_dataset_named_by_its_dataset_and_its_id() {
     assert!(drawn(7).iter().all(|task| every_task().contains(task)));
 }
 
@@ -62,7 +62,7 @@ fn no_task_is_drawn_twice() {
 }
 
 #[test]
-fn the_holdout_tasks_are_in_the_order_of_the_benchmarks_and_of_their_tasks() {
+fn the_holdout_tasks_are_in_the_order_of_the_datasets_and_of_their_tasks() {
     let mut in_order = drawn(7);
     in_order.sort();
     assert_eq!(drawn(7), in_order);
@@ -102,10 +102,10 @@ fn the_tasks_are_drawn_from_the_last_stream_of_the_seeded_generator() {
 }
 
 #[test]
-fn a_benchmark_of_three_tasks_can_have_two_holdout_tasks() {
+fn a_dataset_of_three_tasks_can_have_two_holdout_tasks() {
     assert_eq!(
         holdout::draw(
-            &[benchmark("bugs", 3)],
+            &[dataset("bugs", 3)],
             Percentages {
                 selection: 30.0,
                 corroboration: 30.0

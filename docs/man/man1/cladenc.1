@@ -1,6 +1,6 @@
 .TH CLADENC 1 "" cladenc "cladenc"
 .SH NAME
-cladenc \- carries out a directed evolution of an agentic coding harness, in which harnesses are cloned, each diversifying its clone, and are benchmarked
+cladenc \- carries out a directed evolution of an agentic coding harness, in which harnesses are cloned, each diversifying its clone, and are evaluated
 .SH SYNOPSIS
 .nf
 \fBcladenc\fP [\fB\-\-help\fP] [\fB\-\-version\fP]
@@ -17,8 +17,9 @@ In a cloning, \fBcladenc\fP copies the source code of a harness, the
 progenitor, and the copy is the progenitor's clone.
 In a diversification, the progenitor changes its clone, and the clone that it
 changed is its child.
-Every harness is benchmarked on every task of the benchmarks a person brings.
-A part of the tasks of each benchmark is held out: no harness that diversifies a
+Every harness is evaluated on every task of the datasets a person brings.
+Dataset is Harbor's word for a collection of tasks.
+A part of the tasks of each dataset is held out: no harness that diversifies a
 clone reads about them.
 The holdout tasks are divided in two, the selection tasks and the
 corroboration tasks.

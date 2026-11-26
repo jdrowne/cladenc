@@ -193,34 +193,34 @@ pub fn primogenitor_in(files: &dyn Files, directory: &Path) -> PathBuf {
     primogenitor
 }
 
-pub fn benchmark(directory: &Path, tasks: &[&str]) -> PathBuf {
-    benchmark_in(&Disk, directory, tasks)
+pub fn dataset(directory: &Path, tasks: &[&str]) -> PathBuf {
+    dataset_in(&Disk, directory, tasks)
 }
 
-pub fn benchmark_in(files: &dyn Files, directory: &Path, tasks: &[&str]) -> PathBuf {
-    benchmark_named_in(files, directory, "benchmark", tasks)
+pub fn dataset_in(files: &dyn Files, directory: &Path, tasks: &[&str]) -> PathBuf {
+    dataset_named_in(files, directory, "dataset", tasks)
 }
 
-pub fn benchmark_named_in(
+pub fn dataset_named_in(
     files: &dyn Files,
     directory: &Path,
     name: &str,
     tasks: &[&str],
 ) -> PathBuf {
-    let benchmark = directory.join(name);
-    files.make_directories(&benchmark);
+    let dataset = directory.join(name);
+    files.make_directories(&dataset);
     for id in tasks {
-        task_in(files, &benchmark, id);
+        task_in(files, &dataset, id);
     }
-    benchmark
+    dataset
 }
 
-pub fn task(benchmark: &Path, id: &str) -> PathBuf {
-    task_in(&Disk, benchmark, id)
+pub fn task(dataset: &Path, id: &str) -> PathBuf {
+    task_in(&Disk, dataset, id)
 }
 
-pub fn task_in(files: &dyn Files, benchmark: &Path, id: &str) -> PathBuf {
-    let task = benchmark.join(id);
+pub fn task_in(files: &dyn Files, dataset: &Path, id: &str) -> PathBuf {
+    let task = dataset.join(id);
     let verifier = task.join("tests/test.sh");
     files.make_directories(&task.join("tests"));
     files.make_directories(&task.join("environment/workspace"));
@@ -359,7 +359,7 @@ pub fn sandbox_is_running(id_file: &Path) -> bool {
 
 pub fn end_with_125_on(directory: &Path, task: &str) {
     let marker = directory
-        .join("benchmark")
+        .join("dataset")
         .join(task)
         .join("environment/workspace/end-with-125");
     fs::write(marker, "").expect("the marker can be written");
@@ -367,7 +367,7 @@ pub fn end_with_125_on(directory: &Path, task: &str) {
 
 pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
     let marker = outputs_directory
-        .join("benchmarks/benchmark")
+        .join("datasets/dataset")
         .join(task)
         .join("environment/workspace/end-with-125");
     fs::remove_file(marker).expect("the marker can be removed");
@@ -375,7 +375,7 @@ pub fn end_with_125_on_no_more(outputs_directory: &Path, task: &str) {
 
 pub fn kept_verifier(outputs_directory: &Path, task: &str, command: &str) {
     let verifier = outputs_directory
-        .join("benchmarks/benchmark")
+        .join("datasets/dataset")
         .join(task)
         .join("tests/test.sh");
     fs::write(verifier, format!("#!/bin/sh\n{command}\n")).expect("the verifier can be written");

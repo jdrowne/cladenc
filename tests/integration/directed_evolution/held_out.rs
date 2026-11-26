@@ -4,13 +4,13 @@ use std::path::Path;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
 
 const KEEP_THE_TASKS_FOUND: &str = "if [ -d /var/log/cladenc/trials ]; then ls \
-                                    /var/log/cladenc/trials/benchmark > tasks-found; fi";
+                                    /var/log/cladenc/trials/dataset > tasks-found; fi";
 
 const KEEP_WHAT_IS_GIVEN_TO_READ: &str = "if [ -d /var/log/cladenc/trials ]; then ls \
                                           /var/log/cladenc > given; fi";
@@ -21,10 +21,10 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(
+        datasets: vec![
+            Dataset::read(
                 &Disk,
-                &test_inputs::benchmark(directory, &["t1", "t2", "t3", "t4", "t5"]),
+                &test_inputs::dataset(directory, &["t1", "t2", "t3", "t4", "t5"]),
             )
             .unwrap(),
         ],
@@ -39,9 +39,9 @@ fn settings(directory: &Path, run_command: &str) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 20.0,
-        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t4".to_owned()],
+        holdout_tasks: vec!["dataset/t2".to_owned(), "dataset/t4".to_owned()],
         corroboration_tasks_percentage: 20.0,
-        corroboration_tasks: vec!["benchmark/t4".to_owned()],
+        corroboration_tasks: vec!["dataset/t4".to_owned()],
         environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::directed_evolution::{self, DirectedEvolutionError, Found};
 use crate::file_system::tests::double::Memory;
 use crate::journal::{self, Record, Settings};
@@ -95,10 +95,10 @@ pub(super) fn settings(directory: &Memory) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(
+        datasets: vec![
+            Dataset::read(
                 directory,
-                &test_inputs::benchmark_in(directory, directory.path(), &["t1", "t2"]),
+                &test_inputs::dataset_in(directory, directory.path(), &["t1", "t2"]),
             )
             .unwrap(),
         ],
@@ -125,7 +125,7 @@ pub(super) fn configured(directory: &Memory, task: &str, configuration: &str) {
     let written = format!("schema_version = \"1.4\"\n{configuration}");
     let file = directory
         .path()
-        .join("benchmark")
+        .join("dataset")
         .join(task)
         .join("task.toml");
     directory.write(file, written).unwrap();
@@ -134,13 +134,13 @@ pub(super) fn configured(directory: &Memory, task: &str, configuration: &str) {
 pub(super) fn unchanged(_: &Memory, _: &mut Settings) {}
 
 pub(super) fn over_one_task(_: &Memory, settings: &mut Settings) {
-    settings.benchmarks[0].tasks = vec!["t1".to_owned()];
+    settings.datasets[0].tasks = vec!["t1".to_owned()];
 }
 
 pub(super) fn over_five_tasks(directory: &Memory, settings: &mut Settings) {
     let tasks = ["t1", "t2", "t3", "t4", "t5"];
-    let benchmark = test_inputs::benchmark_in(directory, directory.path(), &tasks);
-    settings.benchmarks = vec![Benchmark::read(directory, &benchmark).unwrap()];
+    let dataset = test_inputs::dataset_in(directory, directory.path(), &tasks);
+    settings.datasets = vec![Dataset::read(directory, &dataset).unwrap()];
 }
 
 pub(super) fn started(docker: Double, change: impl FnOnce(&Memory, &mut Settings)) -> Evolved {

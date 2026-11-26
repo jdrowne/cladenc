@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::{Benchmark, TaskConfiguration};
+use cladenc::dataset::{Dataset, TaskConfiguration};
 use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -10,7 +10,7 @@ use cladenc::sandboxes::{self, Environment, Host, Launch, Program};
 use tempfile::TempDir;
 use test_inputs::Image;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 const REPORT: &str = "artifacts = [\"/app/report.txt\"]\n";
 const WRITE_A_REPORT: &str = "echo found > report.txt";
 const WRITE_A_DIRECTORY: &str = "mkdir -p out/logs out/cache/inner && echo a > out/a.txt && echo \
@@ -53,10 +53,10 @@ fn trialled(task_toml: &str, run_command: &str) -> Trialled {
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    fs::write(benchmark.join("t1/task.toml"), task_toml).unwrap();
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
+    fs::write(dataset.join("t1/task.toml"), task_toml).unwrap();
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     test_inputs::kept_verifier(&path, "t1", COMPLETE);
     let (environment, built) = environment_of(&outputs_directory);

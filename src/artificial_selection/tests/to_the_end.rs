@@ -100,7 +100,7 @@ fn a_harness_that_was_not_created_trials_nothing() {
 }
 
 #[test]
-fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
+fn each_child_is_evaluated_in_full_before_the_next_diversification_starts() {
     let actions = actions_to_the_end(CreationOutcome::Created, TrialResult::Pass);
     assert_eq!(
         shape(&actions),

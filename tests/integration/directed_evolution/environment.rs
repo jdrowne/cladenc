@@ -6,7 +6,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
@@ -22,12 +22,8 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(
-                &Disk,
-                &test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
-            )
-            .unwrap(),
+        datasets: vec![
+            Dataset::read(&Disk, &test_inputs::dataset(directory, &["t1", "t2", "t3"])).unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -40,7 +36,7 @@ fn settings(directory: &Path) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 17.0,
-        holdout_tasks: vec!["benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t3".to_owned()],
         corroboration_tasks_percentage: 17.0,
         corroboration_tasks: Vec::new(),
         environment_image_repository: test_inputs::environment_image_repository(),
@@ -52,7 +48,7 @@ fn evolved_with_t2_built_from(steps: &str) -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     fs::write(
-        directory.path().join("benchmark/t2/environment/Dockerfile"),
+        directory.path().join("dataset/t2/environment/Dockerfile"),
         format!("FROM {}\n{steps}", test_inputs::IMAGE),
     )
     .unwrap();
@@ -75,13 +71,13 @@ fn stopped_while_t2_is_built() -> Evolved {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     fs::write(
-        directory.path().join("benchmark/t2/environment/Dockerfile"),
+        directory.path().join("dataset/t2/environment/Dockerfile"),
         format!("FROM {}\nRUN sleep 300\n", test_inputs::IMAGE),
     )
     .unwrap();
     let stop = AtomicBool::new(false);
     let outputs_directory = directory.path().join("outputs");
-    let printed = outputs_directory.join("environments/benchmark/t2/stdout");
+    let printed = outputs_directory.join("environments/dataset/t2/stdout");
     let _ = thread::scope(|scope| {
         scope.spawn(|| {
             test_inputs::within_two_minutes(|| printed.exists());
@@ -153,7 +149,7 @@ fn what_docker_printed_for_an_environment_that_was_not_built_says_which_step_fai
     let kept = NOT_BUILT
         .directory
         .path()
-        .join("outputs/environments/benchmark/t2");
+        .join("outputs/environments/dataset/t2");
     let printed = ["stdout", "stderr"]
         .map(|file| fs::read_to_string(kept.join(file)).unwrap())
         .concat();

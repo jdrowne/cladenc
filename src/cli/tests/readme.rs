@@ -456,7 +456,7 @@ fn the_steps_of_cladenc_start_end_with_what_it_prints() {
 #[test]
 fn the_steps_of_cladenc_start_build_the_environment_of_every_task_before_any_sandbox() {
     assert!(what_is_said_of("start").contains(
-        "\n4. It builds the environment of every task of every benchmark, before it brings up any \
+        "\n4. It builds the environment of every task of every dataset, before it brings up any \
          sandbox: "
     ));
 }
@@ -562,7 +562,7 @@ fn the_section_of_cladenc_start_says_that_a_trial_is_given_no_more_than_its_task
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
+fn the_flag_of_the_dataset_says_what_a_task_may_ask_for_that_cladenc_has_no_way_to_give() {
     assert!(readme().contains(
         "as is one that asks for what `cladenc` has no way to give: several steps, a GPU or a \
          TPU, Windows, MCP servers, a skills directory, a path or a command of a container \
@@ -600,7 +600,7 @@ fn the_section_of_cladenc_start_says_that_the_environments_it_built_are_removed_
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
+fn the_flag_of_the_dataset_says_that_a_task_holds_a_task_toml() {
     assert!(readme().contains(
         "The directory of a task holds its instruction in a file named \
          `instruction.md`, [Harbor's task \
@@ -611,7 +611,7 @@ fn the_flag_of_the_benchmark_says_that_a_task_holds_a_task_toml() {
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
+fn the_flag_of_the_dataset_says_what_of_a_task_toml_cladenc_obeys() {
     assert!(readme().contains(
         "`cladenc` obeys what the `task.toml` says of the environment of the task: its image, \
          its working directory, its users, its variables and its health check."
@@ -619,7 +619,7 @@ fn the_flag_of_the_benchmark_says_what_of_a_task_toml_cladenc_obeys() {
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_the_paths_a_task_lists_under_artifacts_are_kept() {
+fn the_flag_of_the_dataset_says_that_the_paths_a_task_lists_under_artifacts_are_kept() {
     assert!(readme().contains(
         "its variables and its health check. It keeps with each trial the paths that the \
          `task.toml` lists under `artifacts`."
@@ -704,7 +704,7 @@ fn the_flag_of_the_most_retries_of_a_task_says_all_that_a_retry_is() {
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_a_task_without_a_valid_task_toml_is_refused() {
+fn the_flag_of_the_dataset_says_that_a_task_without_a_valid_task_toml_is_refused() {
     assert!(readme().contains(
         "A task that holds no `task.toml` is refused, and so is one whose `task.toml` is not \
          valid as Harbor's task configuration: `cladenc` checks every setting that Harbor's \
@@ -789,11 +789,10 @@ fn the_section_of_cladenc_report_says_what_it_prints_where_no_experiment_created
 }
 
 #[test]
-fn the_steps_of_cladenc_start_say_that_a_diversification_starts_once_every_harness_is_benchmarked()
-{
+fn the_steps_of_cladenc_start_say_that_a_diversification_starts_once_every_harness_is_evaluated() {
     assert!(what_is_said_of("start").contains(
         "It starts as many diversifications as `--max-diversifications` gives, each only once \
-         every harness created so far has been benchmarked in full, so that it chooses each \
+         every harness created so far has been evaluated in full, so that it chooses each \
          harness that is cloned with what every created harness completed in hand."
     ));
 }
@@ -810,7 +809,7 @@ fn the_steps_of_cladenc_start_say_what_the_diversification_prompt_is() {
 #[test]
 fn the_steps_of_cladenc_start_tell_the_diversification_prompt_from_the_text_of_a_task() {
     assert!(what_is_said_of("start").contains(
-        "No benchmark brings the diversification prompt: the text that a task brings is the \
+        "No dataset brings the diversification prompt: the text that a task brings is the \
          instruction of the task, which a harness is given in a trial."
     ));
 }
@@ -872,4 +871,19 @@ fn the_section_of_cladenc_report_says_what_the_clade_completion_rate_is() {
         "the clade completion rate, which is the part of the finished trials of the clade on the \
          selection tasks that passed,"
     ));
+}
+
+#[test]
+fn the_readme_does_not_say_benchmark() {
+    assert!(!readme().to_lowercase().contains("benchmark"));
+}
+
+#[test]
+fn the_first_paragraph_says_that_dataset_is_harbor_s_word_for_a_collection_of_tasks() {
+    assert!(readme().split("\n\n").nth(1).is_some_and(|first| {
+        first.contains(
+            "Every harness is evaluated on every task of the datasets a person brings. Dataset \
+             is Harbor's word for a collection of tasks.",
+        )
+    }));
 }

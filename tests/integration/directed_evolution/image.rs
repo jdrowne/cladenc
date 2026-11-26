@@ -5,7 +5,7 @@ use std::process::Command;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
@@ -26,9 +26,7 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
-        ],
+        datasets: vec![Dataset::read(&Disk, &test_inputs::dataset(directory, &["t1"])).unwrap()],
         docker_image: image.name.clone(),
         dockerfile: Some(test_inputs::dockerfile(directory, steps)),
         docker_build_timeout: Some(60),
@@ -40,7 +38,7 @@ fn settings(directory: &Path, image: &Image, steps: &str) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
-        holdout_tasks: vec!["benchmark/t1".to_owned()],
+        holdout_tasks: vec!["dataset/t1".to_owned()],
         corroboration_tasks_percentage: 25.0,
         corroboration_tasks: Vec::new(),
         environment_image_repository: test_inputs::environment_image_repository(),

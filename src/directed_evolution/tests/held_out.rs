@@ -3,12 +3,12 @@ use crate::file_system::tests::double::Memory;
 use crate::journal::{Record, Settings};
 use crate::sandboxes::tests::double::{Answer, Double};
 
-const A_TRIAL_ON_A_HOLDOUT_TASK: [&str; 2] = ["run a harness", "trial-0-benchmark+t4"];
+const A_TRIAL_ON_A_HOLDOUT_TASK: [&str; 2] = ["run a harness", "trial-0-dataset+t4"];
 
 fn holding_out(directory: &Memory, settings: &mut Settings) {
     given::over_five_tasks(directory, settings);
-    settings.holdout_tasks = vec!["benchmark/t2".to_owned(), "benchmark/t4".to_owned()];
-    settings.corroboration_tasks = vec!["benchmark/t4".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t2".to_owned(), "dataset/t4".to_owned()];
+    settings.corroboration_tasks = vec!["dataset/t4".to_owned()];
 }
 
 fn evolved() -> Evolved {
@@ -25,15 +25,15 @@ fn stopped_at_a_holdout_task_and_resumed() -> Evolved {
 
 fn tasks_kept_under(evolved: &Evolved, kept: &str) -> [Vec<String>; 2] {
     ["0", "1"].map(|harness| {
-        let benchmark = evolved.outputs().join(kept).join(harness).join("benchmark");
-        evolved.files().names_in(benchmark)
+        let dataset = evolved.outputs().join(kept).join(harness).join("dataset");
+        evolved.files().names_in(dataset)
     })
 }
 
 fn best_harness_where_the_child_completes(task: &'static str) -> Option<u64> {
     let docker = Double::default()
         .changing()
-        .verifying(move |trial| trial == format!("trial-1-benchmark+{task}"));
+        .verifying(move |trial| trial == format!("trial-1-dataset+{task}"));
     given::started(docker, holding_out).best_harness()
 }
 
@@ -67,9 +67,9 @@ fn the_trials_of_each_harness_at_the_non_holdout_tasks_are_kept_under_trials() {
 fn what_is_said_of_a_trial_on_a_holdout_task_names_where_the_trial_is_kept() {
     let evolved = evolved();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: the trial of harness 0 on task benchmark/t2 was inconclusive, as the \
+        "cladenc: the trial of harness 0 on task dataset/t2 was inconclusive, as the \
          verifier left no verdict that can be read: what the trial left is kept in {}",
-        evolved.outputs().join("holdout/0/benchmark/t2").display()
+        evolved.outputs().join("holdout/0/dataset/t2").display()
     )));
 }
 

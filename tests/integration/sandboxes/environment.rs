@@ -4,14 +4,14 @@ use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::outputs_directory::OutputsDirectory;
 use cladenc::sandboxes::{self, Host, Program, SandboxError};
 use tempfile::TempDir;
 use test_inputs::Image;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 
 const MADE: &str = "RUN echo by the environment > /made-here\n";
 const HELD: &str = "COPY notes.txt /tests/notes.txt\n";
@@ -26,15 +26,14 @@ struct Built {
 fn made() -> (TempDir, OutputsDirectory) {
     let directory = test_inputs::temporary_directory();
     let primogenitor = test_inputs::primogenitor(directory.path());
-    let benchmark =
-        Benchmark::read(&Disk, &test_inputs::benchmark(directory.path(), &["t1"])).unwrap();
+    let dataset = Dataset::read(&Disk, &test_inputs::dataset(directory.path(), &["t1"])).unwrap();
     let outputs_directory = OutputsDirectory::create(
         crate::real::disk(),
         &directory.path().join("outputs"),
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.copy_benchmark(&benchmark).unwrap();
+    outputs_directory.copy_dataset(&dataset).unwrap();
     (directory, outputs_directory)
 }
 
@@ -121,10 +120,7 @@ fn the_environment_is_built_with_the_environment_directory_of_the_task_as_its_bu
 #[test]
 fn the_image_of_an_environment_is_labelled_with_its_task() {
     let built = &*BUILT;
-    assert_eq!(
-        label_of(&built.image.name, "cladenc.task"),
-        "benchmark/t1\n"
-    );
+    assert_eq!(label_of(&built.image.name, "cladenc.task"), "dataset/t1\n");
 }
 
 #[test]
@@ -225,10 +221,7 @@ fn what_docker_printed_while_it_built_a_verifier_environment_is_kept_in_verifier
 #[test]
 fn the_image_of_a_verifier_environment_is_labelled_with_its_task() {
     let built = &*VERIFIER_BUILT;
-    assert_eq!(
-        label_of(&built.image.name, "cladenc.task"),
-        "benchmark/t1\n"
-    );
+    assert_eq!(label_of(&built.image.name, "cladenc.task"), "dataset/t1\n");
 }
 
 #[test]

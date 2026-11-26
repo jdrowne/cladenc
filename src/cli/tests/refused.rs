@@ -5,7 +5,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--benchmark", "/benchmark"),
+    ("--dataset", "/dataset"),
     ("--diversification-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
@@ -87,6 +87,14 @@ fn the_limit_of_concurrent_sandboxes_under_a_name_it_does_not_have_is_refused_fo
     assert!(
         said_with(&["--max-concurrent-containers=8"])
             .starts_with("error: unexpected argument '--max-concurrent-containers' found\n")
+    );
+}
+
+#[test]
+fn the_dataset_under_the_name_benchmark_is_refused_for_the_name() {
+    assert!(
+        said_with(&["--benchmark=/dataset"])
+            .starts_with("error: unexpected argument '--benchmark' found\n")
     );
 }
 

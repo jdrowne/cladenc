@@ -30,22 +30,22 @@ const COMPOSE_FILES: [&str; 4] = [
 ];
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Benchmark {
+pub struct Dataset {
     pub directory: PathBuf,
     pub tasks: Vec<String>,
 }
 
-impl Benchmark {
-    pub fn read(files: &dyn FileSystem, directory: &Path) -> Result<Self, BenchmarkError> {
-        let benchmark = Self {
+impl Dataset {
+    pub fn read(files: &dyn FileSystem, directory: &Path) -> Result<Self, DatasetError> {
+        let dataset = Self {
             directory: directory.to_owned(),
             tasks: tasks(files, directory)?,
         };
-        if is_name(&benchmark.name()) {
-            Ok(benchmark)
+        if is_name(&dataset.name()) {
+            Ok(dataset)
         } else {
-            Err(BenchmarkError::NotNamed {
-                directory: benchmark.name(),
+            Err(DatasetError::NotNamed {
+                directory: dataset.name(),
             })
         }
     }
@@ -59,32 +59,32 @@ impl Benchmark {
     }
 }
 
-pub(crate) fn told_apart(benchmarks: &[Benchmark]) -> Result<(), BenchmarkError> {
-    benchmarks
+pub(crate) fn told_apart(datasets: &[Dataset]) -> Result<(), DatasetError> {
+    datasets
         .iter()
         .enumerate()
-        .try_for_each(|(place, benchmark)| {
-            benchmarks[..place]
+        .try_for_each(|(place, dataset)| {
+            datasets[..place]
                 .iter()
-                .find(|earlier| earlier.name() == benchmark.name())
-                .map_or(Ok(()), |earlier| Err(not_told_apart(earlier, benchmark)))
+                .find(|earlier| earlier.name() == dataset.name())
+                .map_or(Ok(()), |earlier| Err(not_told_apart(earlier, dataset)))
         })
 }
 
-fn not_told_apart(earlier: &Benchmark, benchmark: &Benchmark) -> BenchmarkError {
-    if earlier.directory == benchmark.directory {
-        BenchmarkError::GivenTwice {
-            directory: benchmark.directory.clone(),
+fn not_told_apart(earlier: &Dataset, dataset: &Dataset) -> DatasetError {
+    if earlier.directory == dataset.directory {
+        DatasetError::GivenTwice {
+            directory: dataset.directory.clone(),
         }
     } else {
-        BenchmarkError::SameName {
-            name: benchmark.name(),
+        DatasetError::SameName {
+            name: dataset.name(),
         }
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum BenchmarkError {
+pub enum DatasetError {
     NotADirectory,
     OneTask,
     NoTask,
@@ -127,7 +127,7 @@ pub enum BenchmarkError {
     },
 }
 
-impl Display for BenchmarkError {
+impl Display for DatasetError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::NotADirectory => write!(
@@ -136,7 +136,7 @@ impl Display for BenchmarkError {
             ),
             Self::OneTask => write!(
                 formatter,
-                "what was given is the directory of one task, and a benchmark is the directory \
+                "what was given is the directory of one task, and a dataset is the directory \
                  that holds the tasks"
             ),
             Self::NoTask => write!(
@@ -145,18 +145,18 @@ impl Display for BenchmarkError {
             ),
             Self::NotNamed { directory } => write!(
                 formatter,
-                "its directory is named `{directory}`, and the name of a benchmark is made of \
+                "its directory is named `{directory}`, and the name of a dataset is made of \
                  letters, digits, dots, underscores and hyphens alone"
             ),
             Self::GivenTwice { directory } => write!(
                 formatter,
-                "the benchmark {} is given twice",
+                "the dataset {} is given twice",
                 directory.display()
             ),
             Self::SameName { name } => write!(
                 formatter,
-                "two of the benchmarks given are in directories named `{name}`, and a task is \
-                 known by the name of its benchmark and its id together"
+                "two of the datasets given are in directories named `{name}`, and a task is \
+                 known by the name of its dataset and its id together"
             ),
             Self::NotAnId { directory } => write!(
                 formatter,
@@ -206,22 +206,22 @@ impl Display for BenchmarkError {
     }
 }
 
-impl Error for BenchmarkError {}
+impl Error for DatasetError {}
 
-fn tasks(files: &dyn FileSystem, benchmark: &Path) -> Result<Vec<String>, BenchmarkError> {
+fn tasks(files: &dyn FileSystem, dataset: &Path) -> Result<Vec<String>, DatasetError> {
     let mut directories: Vec<PathBuf> = files
-        .list(benchmark)
-        .map_err(|_| BenchmarkError::NotADirectory)?
+        .list(dataset)
+        .map_err(|_| DatasetError::NotADirectory)?
         .iter()
-        .map(|name| benchmark.join(name))
+        .map(|name| dataset.join(name))
         .filter(|entry| leads_to_a_directory(files, entry))
         .collect();
     directories.sort();
-    if is_instruction(files, &benchmark.join(INSTRUCTION)) && is_verifier(files, benchmark) {
-        return Err(BenchmarkError::OneTask);
+    if is_instruction(files, &dataset.join(INSTRUCTION)) && is_verifier(files, dataset) {
+        return Err(DatasetError::OneTask);
     }
     if directories.is_empty() {
-        return Err(BenchmarkError::NoTask);
+        return Err(DatasetError::NoTask);
     }
     directories
         .iter()
@@ -242,39 +242,39 @@ fn name_of(directory: &Path) -> String {
         .unwrap_or_default()
 }
 
-fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, BenchmarkError> {
+fn task(files: &dyn FileSystem, directory: &Path) -> Result<String, DatasetError> {
     let task = name_of(directory);
     if !is_name(&task) {
-        return Err(BenchmarkError::NotAnId { directory: task });
+        return Err(DatasetError::NotAnId { directory: task });
     }
     if !is_instruction(files, &directory.join(INSTRUCTION)) {
-        return Err(BenchmarkError::NoInstruction { task });
+        return Err(DatasetError::NoInstruction { task });
     }
     let configuration = TaskConfiguration::read(files, directory);
     let in_an_image = configuration
         .as_ref()
         .is_ok_and(|configuration| verifier_is_in_an_image(files, configuration, directory));
     if !in_an_image && !is_verifier(files, directory) {
-        return Err(BenchmarkError::NoVerifier { task });
+        return Err(DatasetError::NoVerifier { task });
     }
     let configuration = match configuration {
         Ok(configuration) => configuration,
-        Err(ConfigurationError::Missing) => return Err(BenchmarkError::NoConfiguration { task }),
-        Err(error) => return Err(BenchmarkError::Configuration { task, error }),
+        Err(ConfigurationError::Missing) => return Err(DatasetError::NoConfiguration { task }),
+        Err(error) => return Err(DatasetError::Configuration { task, error }),
     };
     if configuration.docker_image.is_none() && !is_environment(files, directory) {
-        return Err(BenchmarkError::NoEnvironment { task });
+        return Err(DatasetError::NoEnvironment { task });
     }
     if holds_compose_file(files, &directory.join(ENVIRONMENT)) {
-        return Err(BenchmarkError::ManyContainers { task });
+        return Err(DatasetError::ManyContainers { task });
     }
     if configuration.verifier_environment.is_some()
         && holds_compose_file(files, &directory.join(TESTS))
     {
-        return Err(BenchmarkError::ManyVerifierContainers { task });
+        return Err(DatasetError::ManyVerifierContainers { task });
     }
     if !can_be_copied(files, directory) {
-        return Err(BenchmarkError::OtherFiles { task });
+        return Err(DatasetError::OtherFiles { task });
     }
     Ok(task)
 }

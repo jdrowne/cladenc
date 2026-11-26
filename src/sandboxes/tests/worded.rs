@@ -40,10 +40,19 @@ fn the_diversification_prompt_says_where_the_source_code_to_improve_is() {
 }
 
 #[test]
+fn the_diversification_prompt_does_not_say_benchmark() {
+    assert!(
+        !sandboxes::DIVERSIFICATION_PROMPT
+            .to_lowercase()
+            .contains("benchmark")
+    );
+}
+
+#[test]
 fn the_diversification_prompt_says_where_the_trials_are() {
     assert!(sandboxes::DIVERSIFICATION_PROMPT.contains(
         "than you do. /var/log/cladenc/trials holds the trials you are shown: one directory \
-         for each benchmark, and in it one directory for each task. In the directory of a task, "
+         for each dataset, and in it one directory for each task. In the directory of a task, "
     ));
 }
 
@@ -135,7 +144,7 @@ fn the_diversification_prompt_says_that_taking_out_what_does_not_help_is_an_impr
 fn the_diversification_prompt_says_that_the_child_may_be_asked_to_improve_a_clone_of_its_own_in_its_turn()
  {
     assert!(sandboxes::DIVERSIFICATION_PROMPT.contains(
-        "becomes a new harness, which is benchmarked in its turn. It may then be asked, as you \
+        "becomes a new harness, which is evaluated in its turn. It may then be asked, as you \
          are now, to improve a clone of its own, so a change that makes it better \
          at that counts as well. "
     ));

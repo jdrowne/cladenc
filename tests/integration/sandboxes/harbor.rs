@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use cladenc::benchmark::{Benchmark, TaskConfiguration};
+use cladenc::dataset::{Dataset, TaskConfiguration};
 use cladenc::file_system::Disk;
 use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
@@ -12,7 +12,7 @@ use cladenc::sandboxes::{self, Host, Launch, Program, SandboxError};
 use tempfile::TempDir;
 use test_inputs::Image;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 const FINISH: &str = "echo done > work.txt";
 const FINISHED: &str = "grep -q done work.txt && echo 1 > /logs/verifier/reward.txt";
 const AS_ROOT: &str = "WORKDIR /app\nCOPY workspace .\n";
@@ -45,9 +45,9 @@ fn trialled_in(steps: &str, run_command: &str, verifier: &str) -> Trialled {
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     test_inputs::kept_verifier(&path, "t1", verifier);
     fs::write(

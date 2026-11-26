@@ -1,5 +1,5 @@
-use crate::benchmark::configuration::{self, ConfigurationError};
-use crate::benchmark::{self, BenchmarkError, TaskConfiguration};
+use crate::dataset::configuration::{self, ConfigurationError};
+use crate::dataset::{self, DatasetError, TaskConfiguration};
 use crate::file_system::tests::double::Memory;
 
 const NAMED: &str = "[task]\nname = \"a-team/fix-the-parser\"\n";
@@ -482,16 +482,16 @@ fn a_verifier_given_an_environment_and_no_environment_mode_is_valid() {
 #[test]
 fn a_task_whose_task_toml_is_not_valid_in_what_cladenc_does_not_obey_is_refused_with_its_id() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
         .write(
-            benchmark.join("t2/task.toml"),
+            dataset.join("t2/task.toml"),
             "[agent]\nnetwork_mode = \"private\"\n",
         )
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::Configuration {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::Configuration {
             task: "t2".to_owned(),
             error: ConfigurationError::NotValid {
                 line: 2,

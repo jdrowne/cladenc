@@ -338,10 +338,18 @@ fn the_manual_of_start_names_what_the_outputs_directory_keeps_of_a_trial() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_benchmark_holds_a_directory_for_each_task() {
+fn the_manual_of_start_says_that_dataset_is_harbor_s_word_for_a_collection_of_tasks() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "DATASETS Dataset is Harbor's word for a collection of tasks. A dataset is a directory \
+         that holds one directory for each task."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_says_that_a_dataset_holds_a_directory_for_each_task() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("A benchmark is a directory that holds one directory for each task.")
+            .contains("A dataset is a directory that holds one directory for each task.")
     );
 }
 
@@ -389,8 +397,8 @@ fn the_manual_of_start_says_that_a_task_whose_environment_holds_a_compose_file_i
 #[test]
 fn the_manual_of_start_says_that_the_tasks_are_copied_into_the_outputs_directory() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The tasks are copied into benchmarks in the outputs directory when a directed evolution \
-         is started, each into a directory named after its benchmark"
+        "The tasks are copied into datasets in the outputs directory when a directed evolution \
+         is started, each into a directory named after its dataset"
     ));
 }
 
@@ -403,9 +411,9 @@ fn the_manual_of_start_says_that_the_id_of_a_task_is_the_name_of_its_directory()
 }
 
 #[test]
-fn the_manual_of_start_says_what_a_directed_evolution_given_several_benchmarks_looks_for() {
+fn the_manual_of_start_says_what_a_directed_evolution_given_several_datasets_looks_for() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A directed evolution that is given several has each harness benchmarked on all of them, \
+        "A directed evolution that is given several has each harness evaluated on all of them, \
          and looks for the one harness that completes the most of their selection tasks."
     ));
 }
@@ -413,7 +421,7 @@ fn the_manual_of_start_says_what_a_directed_evolution_given_several_benchmarks_l
 #[test]
 fn the_manual_of_start_says_that_every_selection_task_counts_the_same() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every selection task counts the same, so a benchmark with more of them weighs more."
+        "Every selection task counts the same, so a dataset with more of them weighs more."
     ));
 }
 
@@ -436,7 +444,7 @@ fn the_manual_of_start_says_by_which_tasks_the_harness_that_is_cloned_is_chosen(
 #[test]
 fn the_manual_of_start_says_which_harness_is_named_the_best() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "it names as the best harness the created harness, benchmarked in full, that completed the \
+        "it names as the best harness the created harness, evaluated in full, that completed the \
          most selection tasks: of several that completed as many, the one created first."
     ));
 }
@@ -452,23 +460,23 @@ fn the_manual_of_start_says_what_the_non_holdout_tasks_are_for() {
 #[test]
 fn the_manual_of_start_says_how_a_task_of_a_directed_evolution_is_known() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "a task of a directed evolution is known by the two together, as <BENCHMARK>/<TASK> so two \
-         benchmarks may each hold a task of the same id."
+        "a task of a directed evolution is known by the two together, as <DATASET>/<TASK> so two \
+         datasets may each hold a task of the same id."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_two_benchmarks_of_the_same_name_are_refused() {
+fn the_manual_of_start_says_that_two_datasets_of_the_same_name_are_refused() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("Two benchmarks whose directories have the same name are refused.")
+            .contains("Two datasets whose directories have the same name are refused.")
     );
 }
 
 #[test]
 fn the_manual_of_start_says_what_the_selection_tasks_percentage_gives() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "--selection-tasks-percentage gives the part of the tasks of each benchmark that are \
+        "--selection-tasks-percentage gives the part of the tasks of each dataset that are \
          selection tasks, as so many in a hundred: a number above 0 and below 100, such as 45 or \
          12.5."
     ));
@@ -483,18 +491,18 @@ fn the_manual_of_start_says_what_the_holdout_tasks_are() {
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_holdout_tasks_are_drawn_out_of_each_benchmark_by_itself() {
+fn the_manual_of_start_says_that_the_holdout_tasks_are_drawn_out_of_each_dataset_by_itself() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "cladenc draws the selection tasks and the corroboration tasks at random when a directed \
-         evolution is started, out of each benchmark by itself:"
+         evolution is started, out of each dataset by itself:"
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_how_many_tasks_of_a_benchmark_are_held_out() {
+fn the_manual_of_start_says_how_many_tasks_of_a_dataset_are_held_out() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "the number of its tasks times the percentage, divided by 100 and rounded to the nearest \
-         whole number, a half rounded up. At 45 and 15, a benchmark of 500 tasks has 225 selection \
+         whole number, a half rounded up. At 45 and 15, a dataset of 500 tasks has 225 selection \
          tasks, 75 corroboration tasks and 200 non-holdout tasks."
     ));
 }
@@ -502,7 +510,7 @@ fn the_manual_of_start_says_how_many_tasks_of_a_benchmark_are_held_out() {
 #[test]
 fn the_manual_of_start_says_which_selection_tasks_percentage_is_refused() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A --selection-tasks-percentage that leaves a benchmark no selection task is refused,"
+        "A --selection-tasks-percentage that leaves a dataset no selection task is refused,"
     ));
 }
 
@@ -515,9 +523,9 @@ fn the_manual_of_start_says_that_the_holdout_tasks_are_drawn_once_and_kept_in_th
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_harness_is_benchmarked_on_the_holdout_tasks_too() {
+fn the_manual_of_start_says_that_a_harness_is_evaluated_on_the_holdout_tasks_too() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every harness is benchmarked on the holdout tasks as on the non-holdout tasks, selection \
+        "Every harness is evaluated on the holdout tasks as on the non-holdout tasks, selection \
          tasks and corroboration tasks alike, and nothing a harness is given in a trial says \
          which of the sets its task is in."
     ));
@@ -551,7 +559,7 @@ fn the_manual_of_start_says_where_the_trials_on_the_holdout_tasks_are_kept() {
 #[test]
 fn the_manual_of_start_says_where_the_directory_of_a_trial_is() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "in a directory named after the harness, in it one named after the benchmark, and in that \
+        "in a directory named after the harness, in it one named after the dataset, and in that \
          one named after the task, which holds"
     ));
 }
@@ -653,7 +661,7 @@ fn the_manual_of_start_says_what_the_non_holdout_tasks_are() {
 #[test]
 fn the_manual_of_start_says_which_corroboration_tasks_percentage_is_refused() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "and so is a --corroboration-tasks-percentage that leaves a benchmark no corroboration task"
+        "and so is a --corroboration-tasks-percentage that leaves a dataset no corroboration task"
     ));
 }
 
@@ -661,14 +669,14 @@ fn the_manual_of_start_says_which_corroboration_tasks_percentage_is_refused() {
 fn the_manual_of_start_says_which_two_percentages_together_are_refused() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("and so are two values that together leave a benchmark no non-holdout task.")
+            .contains("and so are two values that together leave a dataset no non-holdout task.")
     );
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_benchmark_of_fewer_than_three_tasks_is_refused() {
+fn the_manual_of_start_says_that_a_dataset_of_fewer_than_three_tasks_is_refused() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "So a benchmark holds three tasks at the least, and a benchmark of fewer is refused."
+        "So a dataset holds three tasks at the least, and a dataset of fewer is refused."
     ));
 }
 

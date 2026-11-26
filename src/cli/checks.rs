@@ -2,14 +2,14 @@ use std::fmt::{self, Display, Formatter};
 use std::path::{self, Path, PathBuf};
 
 use super::StartOptions;
-use crate::benchmark::{self, Benchmark, BenchmarkError};
+use crate::dataset::{self, Dataset, DatasetError};
 use crate::file_system::{FileSystem, Kind};
 use crate::holdout::{self, Drawn, HoldoutError, Percentages};
 use crate::journal::Settings;
 use crate::model;
 use crate::outputs_directory::holds_only_harness_files;
 
-const BENCHMARK: &[&str] = &["--benchmark"];
+const DATASET: &[&str] = &["--dataset"];
 const SELECTION: &[&str] = &["--selection-tasks-percentage"];
 const CORROBORATION: &[&str] = &["--corroboration-tasks-percentage"];
 const SELECTION_AND_CORROBORATION: &[&str] = &[
@@ -46,10 +46,10 @@ impl Display for Refused {
 
 impl StartOptions {
     pub(super) fn settings(&self, files: &dyn FileSystem) -> Result<Settings, Refused> {
-        let benchmarks = benchmarks(files, &self.benchmark)?;
+        let datasets = datasets(files, &self.dataset)?;
         let seed = rand::random();
         let drawn = drawn(
-            &benchmarks,
+            &datasets,
             Percentages {
                 selection: self.selection_tasks_percentage,
                 corroboration: self.corroboration_tasks_percentage,
@@ -78,7 +78,7 @@ impl StartOptions {
             environment_image_repository: environment_image_repository(),
             harness_build_command: self.harness_build_command.clone(),
             harness_run_command: self.harness_run_command.clone(),
-            benchmarks,
+            datasets,
             selection_tasks_percentage: self.selection_tasks_percentage,
             holdout_tasks: drawn.holdout_tasks,
             corroboration_tasks_percentage: self.corroboration_tasks_percentage,
@@ -101,8 +101,8 @@ pub(super) fn percentage(given: &str) -> Result<f64, String> {
         .ok_or_else(|| "a number above 0 and below 100 is expected".to_owned())
 }
 
-fn drawn(benchmarks: &[Benchmark], percentages: Percentages, seed: u64) -> Result<Drawn, Refused> {
-    holdout::draw(benchmarks, percentages, seed).map_err(|error| {
+fn drawn(datasets: &[Dataset], percentages: Percentages, seed: u64) -> Result<Drawn, Refused> {
+    holdout::draw(datasets, percentages, seed).map_err(|error| {
         let (flags, accepted) = refused_for(&error);
         Refused {
             flags,
@@ -115,22 +115,22 @@ fn drawn(benchmarks: &[Benchmark], percentages: Percentages, seed: u64) -> Resul
 fn refused_for(error: &HoldoutError) -> (&'static [&'static str], &'static str) {
     match error {
         HoldoutError::TooFewTasks { .. } => (
-            BENCHMARK,
-            "the directory of a benchmark of three tasks at the least",
+            DATASET,
+            "the directory of a dataset of three tasks at the least",
         ),
         HoldoutError::NoSelectionTask { .. } => (
             SELECTION,
-            "a number above 0 and below 100 that makes at least one task of every benchmark a \
+            "a number above 0 and below 100 that makes at least one task of every dataset a \
              selection task",
         ),
         HoldoutError::NoCorroborationTask { .. } => (
             CORROBORATION,
-            "a number above 0 and below 100 that makes at least one task of every benchmark a \
+            "a number above 0 and below 100 that makes at least one task of every dataset a \
              corroboration task",
         ),
         HoldoutError::NoNonHoldoutTask { .. } => (
             SELECTION_AND_CORROBORATION,
-            "numbers that together leave at least one task of every benchmark a non-holdout task",
+            "numbers that together leave at least one task of every dataset a non-holdout task",
         ),
     }
 }
@@ -187,31 +187,31 @@ fn dockerfile(files: &dyn FileSystem, given: &Path) -> Result<PathBuf, Refused> 
         })
 }
 
-fn benchmarks(files: &dyn FileSystem, given: &[PathBuf]) -> Result<Vec<Benchmark>, Refused> {
-    let mut benchmarks = given
+fn datasets(files: &dyn FileSystem, given: &[PathBuf]) -> Result<Vec<Dataset>, Refused> {
+    let mut datasets = given
         .iter()
-        .map(|given| benchmark(files, given))
-        .collect::<Result<Vec<Benchmark>, Refused>>()?;
-    benchmarks.sort_by_key(Benchmark::name);
-    benchmark::told_apart(&benchmarks)
-        .map(|()| benchmarks)
-        .map_err(|error| refused_benchmark(error.to_string()))
+        .map(|given| dataset(files, given))
+        .collect::<Result<Vec<Dataset>, Refused>>()?;
+    datasets.sort_by_key(Dataset::name);
+    dataset::told_apart(&datasets)
+        .map(|()| datasets)
+        .map_err(|error| refused_dataset(error.to_string()))
 }
 
-fn benchmark(files: &dyn FileSystem, given: &Path) -> Result<Benchmark, Refused> {
+fn dataset(files: &dyn FileSystem, given: &Path) -> Result<Dataset, Refused> {
     files
         .resolved(given)
         .ok()
         .filter(|directory| directory.to_str().is_some())
-        .ok_or(BenchmarkError::NotADirectory)
-        .and_then(|directory| Benchmark::read(files, &directory))
-        .map_err(|error| refused_benchmark(format!("{}: {error}", given.display())))
+        .ok_or(DatasetError::NotADirectory)
+        .and_then(|directory| Dataset::read(files, &directory))
+        .map_err(|error| refused_dataset(format!("{}: {error}", given.display())))
 }
 
-fn refused_benchmark(reason: String) -> Refused {
+fn refused_dataset(reason: String) -> Refused {
     Refused {
-        flags: BENCHMARK,
-        accepted: "the directory of a benchmark, in which every directory is a task that holds \
+        flags: DATASET,
+        accepted: "the directory of a dataset, in which every directory is a task that holds \
                    a file of text named instruction.md, a file named task.toml that is valid as \
                    the task configuration of Harbor, a directory named tests with an executable \
                    file named test.sh in it, or a verifier in an image of its own, and a directory \

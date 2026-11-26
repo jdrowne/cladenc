@@ -25,7 +25,7 @@ fn outputs_directory_is_left_by(change: impl FnOnce(&Memory, &mut StartOptions))
 
 fn with_a_task_that_lacks_its_verifier(directory: &Memory, options: &mut StartOptions) {
     directory
-        .remove_dir_all(options.benchmark[0].join("t1/tests"))
+        .remove_dir_all(options.dataset[0].join("t1/tests"))
         .unwrap();
 }
 
@@ -34,8 +34,8 @@ fn with_percentages_that_together_hold_out_every_task(_: &Memory, options: &mut 
     options.corroboration_tasks_percentage = 25.0;
 }
 
-fn with_a_missing_benchmark(directory: &Memory, options: &mut StartOptions) {
-    options.benchmark = vec![directory.path().join("missing")];
+fn with_a_missing_dataset(directory: &Memory, options: &mut StartOptions) {
+    options.dataset = vec![directory.path().join("missing")];
 }
 
 fn with_a_missing_file_of_the_key(directory: &Memory, options: &mut StartOptions) {
@@ -80,22 +80,22 @@ fn a_directed_evolution_that_finishes_exits_with_zero() {
 
 #[test]
 fn a_refused_value_gives_exit_status_2() {
-    assert_eq!(ran(with_a_missing_benchmark).status, 2);
+    assert_eq!(ran(with_a_missing_dataset).status, 2);
 }
 
 #[test]
 fn a_refused_value_is_reported_on_standard_error() {
     assert!(
-        ran(with_a_missing_benchmark)
+        ran(with_a_missing_dataset)
             .errors
-            .starts_with("cladenc: --benchmark takes ")
+            .starts_with("cladenc: --dataset takes ")
     );
 }
 
 #[test]
-fn a_refused_benchmark_is_reported_with_what_is_wrong_with_it() {
+fn a_refused_dataset_is_reported_with_what_is_wrong_with_it() {
     assert!(
-        ran(with_a_missing_benchmark)
+        ran(with_a_missing_dataset)
             .errors
             .ends_with(": what was given is not a directory that can be read\n")
     );
@@ -103,7 +103,7 @@ fn a_refused_benchmark_is_reported_with_what_is_wrong_with_it() {
 
 #[test]
 fn a_refused_value_prints_nothing_on_standard_output() {
-    assert_eq!(ran(with_a_missing_benchmark).output, "");
+    assert_eq!(ran(with_a_missing_dataset).output, "");
 }
 
 #[test]
@@ -183,7 +183,7 @@ fn an_outputs_directory_with_no_path_gives_exit_status_2() {
 }
 
 #[test]
-fn a_percentage_that_leaves_a_benchmark_no_selection_task_gives_exit_status_2() {
+fn a_percentage_that_leaves_a_dataset_no_selection_task_gives_exit_status_2() {
     assert_eq!(
         ran(with_a_percentage_that_leaves_no_selection_task).status,
         2
@@ -191,12 +191,12 @@ fn a_percentage_that_leaves_a_benchmark_no_selection_task_gives_exit_status_2() 
 }
 
 #[test]
-fn a_percentage_that_leaves_a_benchmark_no_selection_task_is_refused_with_the_benchmark() {
+fn a_percentage_that_leaves_a_dataset_no_selection_task_is_refused_with_the_dataset() {
     assert!(
         ran(with_a_percentage_that_leaves_no_selection_task)
             .errors
             .ends_with(
-                ": the benchmark `benchmark` holds 3 tasks, and none of them would be a selection \
+                ": the dataset `dataset` holds 3 tasks, and none of them would be a selection \
                  task\n"
             )
     );
@@ -212,7 +212,7 @@ fn a_percentage_that_leaves_no_selection_task_is_refused_before_the_outputs_dire
 }
 
 #[test]
-fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_gives_exit_status_2() {
+fn a_percentage_that_leaves_a_dataset_no_corroboration_task_gives_exit_status_2() {
     assert_eq!(
         ran(with_a_percentage_that_leaves_no_corroboration_task).status,
         2
@@ -220,12 +220,12 @@ fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_gives_exit_status_
 }
 
 #[test]
-fn a_percentage_that_leaves_a_benchmark_no_corroboration_task_is_refused_with_the_benchmark() {
+fn a_percentage_that_leaves_a_dataset_no_corroboration_task_is_refused_with_the_dataset() {
     assert!(
         ran(with_a_percentage_that_leaves_no_corroboration_task)
             .errors
             .ends_with(
-                ": the benchmark `benchmark` holds 3 tasks, and none of them would be a \
+                ": the dataset `dataset` holds 3 tasks, and none of them would be a \
                  corroboration task\n"
             )
     );
@@ -242,7 +242,7 @@ fn a_percentage_that_leaves_no_corroboration_task_is_refused_before_the_outputs_
 }
 
 #[test]
-fn a_benchmark_that_is_refused_leaves_no_outputs_directory() {
+fn a_dataset_that_is_refused_leaves_no_outputs_directory() {
     assert!(!outputs_directory_is_left_by(
         with_a_task_that_lacks_its_verifier
     ));

@@ -5,7 +5,7 @@ use std::process::Command;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::directed_evolution::{DirectedEvolutionError, Found};
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
@@ -20,13 +20,13 @@ struct Evolved {
     found: Result<Found, DirectedEvolutionError>,
 }
 
-fn settings(directory: &Path, benchmark: &Path) -> Settings {
+fn settings(directory: &Path, dataset: &Path) -> Settings {
     Settings {
         primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&Disk, benchmark).unwrap()],
+        datasets: vec![Dataset::read(&Disk, dataset).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -38,7 +38,7 @@ fn settings(directory: &Path, benchmark: &Path) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 17.0,
-        holdout_tasks: vec!["benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t3".to_owned()],
         corroboration_tasks_percentage: 17.0,
         corroboration_tasks: Vec::new(),
         environment_image_repository: test_inputs::environment_image_repository(),
@@ -48,16 +48,16 @@ fn settings(directory: &Path, benchmark: &Path) -> Settings {
 
 fn evolved_with_t2(task_toml: &str, steps_of_its_tests: Option<&str>) -> Evolved {
     let directory = test_inputs::temporary_directory();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]);
-    fs::write(benchmark.join("t2/task.toml"), task_toml).unwrap();
+    let dataset = test_inputs::dataset(directory.path(), &["t1", "t2", "t3"]);
+    fs::write(dataset.join("t2/task.toml"), task_toml).unwrap();
     if let Some(steps) = steps_of_its_tests {
         fs::write(
-            benchmark.join("t2/tests/Dockerfile"),
+            dataset.join("t2/tests/Dockerfile"),
             format!("FROM {}\n{steps}", test_inputs::IMAGE),
         )
         .unwrap();
     }
-    let settings = settings(directory.path(), &benchmark);
+    let settings = settings(directory.path(), &dataset);
     let found = crate::real::start(
         &settings,
         &directory.path().join("outputs"),
@@ -120,7 +120,7 @@ fn a_verifier_whose_image_is_not_on_the_machine_stops_the_directed_evolution_nam
     assert!(matches!(
         with_a_verifier_in(NOT_ON_THE_MACHINE).found,
         Err(DirectedEvolutionError::VerifierNotOnTheMachine { task, image, .. })
-            if task == "benchmark/t2" && image == NOT_ON_THE_MACHINE
+            if task == "dataset/t2" && image == NOT_ON_THE_MACHINE
     ));
 }
 

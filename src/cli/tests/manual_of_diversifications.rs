@@ -9,9 +9,9 @@ fn run_command_the_manual_gives(command: &str) -> String {
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_diversification_finds_its_trials_by_benchmark() {
+fn the_manual_of_start_says_that_a_diversification_finds_its_trials_by_dataset() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "one directory for each benchmark, and in it one for each task, holding what the trial on \
+        "one directory for each dataset, and in it one for each task, holding what the trial on \
          that task kept."
     ));
 }
@@ -89,7 +89,7 @@ fn the_manual_of_start_says_what_the_diversification_prompt_is() {
 #[test]
 fn the_manual_of_start_tells_the_diversification_prompt_from_the_text_of_a_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "No benchmark brings the diversification prompt: the text that a task brings is the \
+        "No dataset brings the diversification prompt: the text that a task brings is the \
          instruction of the task, which a harness is given in a trial."
     ));
 }
@@ -148,27 +148,26 @@ fn the_manual_of_start_says_that_the_diversification_prompt_is_a_request_cladenc
 }
 
 #[test]
-fn the_manual_of_start_says_that_a_harness_is_cloned_only_once_benchmarked_in_full() {
+fn the_manual_of_start_says_that_a_harness_is_cloned_only_once_evaluated_in_full() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "A harness is cloned only once it has been benchmarked in full, on every task of every \
-         benchmark of the directed evolution, so that it finds every non-holdout task in \
+        "A harness is cloned only once it has been evaluated in full, on every task of every \
+         dataset of the directed evolution, so that it finds every non-holdout task in \
          /var/log/cladenc/trials."
     ));
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_primogenitor_is_benchmarked_before_the_first_diversification()
-{
+fn the_manual_of_start_says_that_the_primogenitor_is_evaluated_before_the_first_diversification() {
     assert!(
         manual_on_one_line("cladenc-start")
-            .contains("The primogenitor is benchmarked in full before the first diversification.")
+            .contains("The primogenitor is evaluated in full before the first diversification.")
     );
 }
 
 #[test]
-fn the_manual_of_start_says_that_every_harness_is_benchmarked_in_full() {
+fn the_manual_of_start_says_that_every_harness_is_evaluated_in_full() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "Every harness is benchmarked in full once it is created, whether it is cloned or not."
+        "Every harness is evaluated in full once it is created, whether it is cloned or not."
     ));
 }
 
@@ -192,7 +191,7 @@ fn the_manual_of_start_says_what_the_most_diversifications_counts() {
 fn the_manual_of_start_says_when_a_directed_evolution_ends() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "The directed evolution ends once that many have been started, each of them has ended, and \
-         every created harness has been benchmarked in full."
+         every created harness has been evaluated in full."
     ));
 }
 
@@ -200,7 +199,7 @@ fn the_manual_of_start_says_when_a_directed_evolution_ends() {
 fn the_manual_of_start_says_when_a_diversification_starts() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "A diversification starts only once no trial is left to start, no trial is running and no \
-         other diversification is under way: every harness created so far has been benchmarked in \
+         other diversification is under way: every harness created so far has been evaluated in \
          full, the child of the diversification before among them."
     ));
 }
@@ -237,7 +236,7 @@ fn the_manual_of_start_names_no_growth() {
 #[test]
 fn the_manual_of_start_says_that_the_best_of_harnesses_that_are_alike_is_ahead_by_luck() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The best harness is named among many, each benchmarked once, and a model does not answer \
+        "The best harness is named among many, each evaluated once, and a model does not answer \
          the same way twice. So the best of many harnesses that are all alike has still completed \
          more selection tasks than the primogenitor, by luck."
     ));
@@ -291,7 +290,7 @@ fn the_manual_of_start_says_why_that_run_command_adds_a_line() {
 fn the_manual_of_start_says_what_a_directed_evolution_of_harnesses_that_work_alike_holds() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Such a directed evolution holds as many children as --max-diversifications gives, each of \
-         them benchmarked in full."
+         them evaluated in full."
     ));
 }
 
@@ -351,11 +350,11 @@ fn the_manual_of_start_says_what_is_compared_to_find_a_diversification_unchanged
 }
 
 #[test]
-fn the_manual_of_start_says_why_an_unchanged_child_is_not_benchmarked() {
+fn the_manual_of_start_says_why_an_unchanged_child_is_not_evaluated() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "Such a child would be its progenitor over again, and a model does not answer the same way \
          twice, so what the child completed would differ from what its progenitor completed by \
-         luck alone. It is not built and not benchmarked, and it is never chosen to be cloned."
+         luck alone. It is not built and not evaluated, and it is never chosen to be cloned."
     ));
 }
 
@@ -457,6 +456,6 @@ fn the_manual_of_start_says_that_the_permission_bits_a_harness_leaves_keep_no_ch
         "Once the progenitor has ended, and again once a build has ended, cladenc makes every \
          directory of the source code one that its owner can list, write in and enter, and \
          every file one that its owner can read. So the permission bits that a harness or a \
-         build leaves keep no child from being made or benchmarked."
+         build leaves keep no child from being made or evaluated."
     ));
 }

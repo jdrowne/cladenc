@@ -5,7 +5,7 @@ use rand::SeedableRng;
 use rand::seq::index;
 use rand_chacha::ChaCha8Rng;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 
 const STREAM: u64 = u64::MAX;
 const CORROBORATION_STREAM: u64 = u64::MAX - 1;
@@ -31,33 +31,33 @@ pub(crate) struct Drawn {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum HoldoutError {
-    TooFewTasks { benchmark: String },
-    NoSelectionTask { benchmark: String, tasks: usize },
-    NoCorroborationTask { benchmark: String, tasks: usize },
-    NoNonHoldoutTask { benchmark: String, tasks: usize },
+    TooFewTasks { dataset: String },
+    NoSelectionTask { dataset: String, tasks: usize },
+    NoCorroborationTask { dataset: String, tasks: usize },
+    NoNonHoldoutTask { dataset: String, tasks: usize },
 }
 
 impl Display for HoldoutError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::TooFewTasks { benchmark } => write!(
+            Self::TooFewTasks { dataset } => write!(
                 formatter,
-                "the benchmark `{benchmark}` holds fewer than three tasks, which cannot be divided \
+                "the dataset `{dataset}` holds fewer than three tasks, which cannot be divided \
                  into a selection task, a corroboration task and a non-holdout task"
             ),
-            Self::NoSelectionTask { benchmark, tasks } => write!(
+            Self::NoSelectionTask { dataset, tasks } => write!(
                 formatter,
-                "the benchmark `{benchmark}` holds {tasks} tasks, and none of them would be a \
+                "the dataset `{dataset}` holds {tasks} tasks, and none of them would be a \
                  selection task"
             ),
-            Self::NoCorroborationTask { benchmark, tasks } => write!(
+            Self::NoCorroborationTask { dataset, tasks } => write!(
                 formatter,
-                "the benchmark `{benchmark}` holds {tasks} tasks, and none of them would be a \
+                "the dataset `{dataset}` holds {tasks} tasks, and none of them would be a \
                  corroboration task"
             ),
-            Self::NoNonHoldoutTask { benchmark, tasks } => write!(
+            Self::NoNonHoldoutTask { dataset, tasks } => write!(
                 formatter,
-                "the benchmark `{benchmark}` holds {tasks} tasks, and every one of them would be \
+                "the dataset `{dataset}` holds {tasks} tasks, and every one of them would be \
                  held out"
             ),
         }
@@ -76,28 +76,28 @@ fn count(tasks: usize, percentage: f64) -> usize {
 }
 
 fn counts(
-    benchmark: &Benchmark,
+    dataset: &Dataset,
     tasks: usize,
     percentages: Percentages,
 ) -> Result<Counts, HoldoutError> {
     let selection = count(tasks, percentages.selection);
     let corroboration = count(tasks, percentages.corroboration);
-    let name = benchmark.name();
+    let name = dataset.name();
     if tasks < 3 {
-        Err(HoldoutError::TooFewTasks { benchmark: name })
+        Err(HoldoutError::TooFewTasks { dataset: name })
     } else if selection == 0 {
         Err(HoldoutError::NoSelectionTask {
-            benchmark: name,
+            dataset: name,
             tasks,
         })
     } else if corroboration == 0 {
         Err(HoldoutError::NoCorroborationTask {
-            benchmark: name,
+            dataset: name,
             tasks,
         })
     } else if selection + corroboration >= tasks {
         Err(HoldoutError::NoNonHoldoutTask {
-            benchmark: name,
+            dataset: name,
             tasks,
         })
     } else {
@@ -109,16 +109,16 @@ fn counts(
 }
 
 pub(crate) fn draw(
-    benchmarks: &[Benchmark],
+    datasets: &[Dataset],
     percentages: Percentages,
     seed: u64,
 ) -> Result<Drawn, HoldoutError> {
     let mut holdout_generator = generator(seed, STREAM);
     let mut corroboration_generator = generator(seed, CORROBORATION_STREAM);
     let mut drawn = Drawn::default();
-    for benchmark in benchmarks {
-        let tasks = tasks_of(benchmark);
-        let counts = counts(benchmark, tasks.len(), percentages)?;
+    for dataset in datasets {
+        let tasks = tasks_of(dataset);
+        let counts = counts(dataset, tasks.len(), percentages)?;
         let held_out = sampled(
             &mut holdout_generator,
             &tasks,
@@ -140,12 +140,8 @@ fn generator(seed: u64, stream: u64) -> ChaCha8Rng {
     generator
 }
 
-fn tasks_of(benchmark: &Benchmark) -> Vec<String> {
-    benchmark
-        .tasks
-        .iter()
-        .map(|id| benchmark.task(id))
-        .collect()
+fn tasks_of(dataset: &Dataset) -> Vec<String> {
+    dataset.tasks.iter().map(|id| dataset.task(id)).collect()
 }
 
 fn sampled(generator: &mut ChaCha8Rng, tasks: &[String], amount: usize) -> Vec<String> {

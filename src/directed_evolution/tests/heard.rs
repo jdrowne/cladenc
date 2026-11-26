@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
 use crate::directed_evolution::{DirectedEvolutionError, Found};
@@ -14,14 +14,13 @@ use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::{Checked, Creation, HarnessEnding, Retry, SandboxError, Trialled};
 
-const FIRST: &str = "benchmark/t1";
-const SECOND: &str = "benchmark/t2";
-const STARTED_THE_FIRST_TRIAL: &str =
-    "cladenc: started the trial of harness 0 on task benchmark/t1";
+const FIRST: &str = "dataset/t1";
+const SECOND: &str = "dataset/t2";
+const STARTED_THE_FIRST_TRIAL: &str = "cladenc: started the trial of harness 0 on task dataset/t1";
 const THE_FIRST_TRIAL_FAILED: &str =
-    "cladenc: the trial of harness 0 on task benchmark/t1 exited with status 3";
+    "cladenc: the trial of harness 0 on task dataset/t1 exited with status 3";
 const ENDED_WITH_THE_FIRST_TRIAL: &str = "the directed evolution stopped before its end: the \
-     trial of harness 0 on task benchmark/t1 exited with status 3";
+     trial of harness 0 on task dataset/t1 exited with status 3";
 
 fn settings() -> Settings {
     Settings {
@@ -29,8 +28,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -282,8 +281,8 @@ fn a_trial_that_passed_is_said_with_where_what_it_left_is_kept() {
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: the trial of harness 0 on task benchmark/t1 passed: what the trial left \
-             is kept in /outputs/trials/0/benchmark/t1"
+            "cladenc: the trial of harness 0 on task dataset/t1 passed: what the trial left \
+             is kept in /outputs/trials/0/dataset/t1"
         )
     );
 }
@@ -296,9 +295,9 @@ fn a_trial_that_failed_is_said_to_have_failed() {
     assert_eq!(
         said.last().map(String::as_str),
         Some(
-            "cladenc: the trial of harness 0 on task benchmark/t1 failed, as the verifier \
+            "cladenc: the trial of harness 0 on task dataset/t1 failed, as the verifier \
              wrote a verdict that is not 1: what the trial left is kept in \
-             /outputs/trials/0/benchmark/t1"
+             /outputs/trials/0/dataset/t1"
         )
     );
 }
@@ -461,7 +460,7 @@ fn a_trial_that_is_tried_again_in_a_new_sandbox_is_said() {
     assert_eq!(
         said,
         [
-            "cladenc: the trial of harness 0 on task benchmark/t1 is not carried out yet: the \
+            "cladenc: the trial of harness 0 on task dataset/t1 is not carried out yet: the \
              health check of the task did not pass, and cladenc tries again in a new sandbox \
              after 1 second, retry 1 of 3"
         ]
@@ -576,7 +575,7 @@ fn an_action_that_failed_after_another_is_said_with_what_went_wrong() {
     });
     assert_eq!(
         said.last().map(String::as_str),
-        Some("cladenc: the trial of harness 0 on task benchmark/t2 ran past its time limit")
+        Some("cladenc: the trial of harness 0 on task dataset/t2 ran past its time limit")
     );
 }
 

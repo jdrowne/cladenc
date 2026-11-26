@@ -3,7 +3,7 @@ use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::path::PathBuf;
 
-use crate::benchmark::ConfigurationError;
+use crate::dataset::ConfigurationError;
 use crate::journal::{JournalError, Started};
 use crate::sandboxes::SandboxError;
 

@@ -1,4 +1,4 @@
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
@@ -12,20 +12,20 @@ const THE_BASELINE: &str = "the creation of harness 3, the singleton control gro
                             the primogenitor from a second clone of harness 1";
 
 fn twice_over_three_tasks(directory: &Memory, settings: &mut Settings) {
-    let benchmark = test_inputs::benchmark_in(directory, directory.path(), &["t1", "t2", "t3"]);
-    settings.benchmarks = vec![Benchmark::read(directory, &benchmark).unwrap()];
+    let dataset = test_inputs::dataset_in(directory, directory.path(), &["t1", "t2", "t3"]);
+    settings.datasets = vec![Dataset::read(directory, &dataset).unwrap()];
     settings.max_diversifications = 2;
     settings.selection_tasks_percentage = 33.5;
-    settings.holdout_tasks = vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t2".to_owned(), "dataset/t3".to_owned()];
     settings.corroboration_tasks_percentage = 33.5;
-    settings.corroboration_tasks = vec!["benchmark/t3".to_owned()];
+    settings.corroboration_tasks = vec!["dataset/t3".to_owned()];
     settings.seed = 1;
 }
 
 fn working() -> Double {
     Double::default()
         .changing()
-        .verifying(|trial| trial == "trial-2-benchmark+t3")
+        .verifying(|trial| trial == "trial-2-dataset+t3")
 }
 
 fn experimented() -> Evolved {

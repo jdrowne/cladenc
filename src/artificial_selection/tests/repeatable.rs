@@ -16,7 +16,7 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
     }
 }
 
-fn with_two_harnesses_benchmarked_in_full() -> Genealogy {
+fn with_two_harnesses_evaluated_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     let child = genealogy.start_diversification(0).unwrap();
     genealogy
@@ -92,7 +92,7 @@ fn progenitor_drawn_with_the_second_harness_waiting(seed: u64, action: u64) -> H
 
 #[test]
 fn the_same_seed_and_action_number_give_the_same_action() {
-    let genealogy = with_two_harnesses_benchmarked_in_full();
+    let genealogy = with_two_harnesses_evaluated_in_full();
     assert_eq!(
         artificial_selection(7).next_action(&genealogy, 3),
         artificial_selection(7).next_action(&genealogy, 3)
@@ -101,21 +101,21 @@ fn the_same_seed_and_action_number_give_the_same_action() {
 
 #[test]
 fn another_action_number_draws_from_another_stream() {
-    let genealogy = with_two_harnesses_benchmarked_in_full();
+    let genealogy = with_two_harnesses_evaluated_in_full();
     let first = artificial_selection(7).next_action(&genealogy, 0);
     assert!((1..50).any(|action| artificial_selection(7).next_action(&genealogy, action) != first));
 }
 
 #[test]
 fn another_seed_draws_other_numbers() {
-    let genealogy = with_two_harnesses_benchmarked_in_full();
+    let genealogy = with_two_harnesses_evaluated_in_full();
     let first = artificial_selection(0).next_action(&genealogy, 0);
     assert!((1..50).any(|seed| artificial_selection(seed).next_action(&genealogy, 0) != first));
 }
 
 #[test]
 fn action_k_draws_from_stream_k_of_the_seeded_generator_for_each_harness_in_ascending_id_order() {
-    let genealogy = with_two_harnesses_benchmarked_in_full();
+    let genealogy = with_two_harnesses_evaluated_in_full();
     let drawn: Vec<Option<Action>> = (0..20)
         .map(|action| artificial_selection(7).next_action(&genealogy, action))
         .collect();
@@ -131,7 +131,7 @@ fn action_k_draws_from_stream_k_of_the_seeded_generator_for_each_harness_in_asce
 
 #[test]
 fn the_draws_are_sharpened_by_the_most_diversifications_over_those_not_yet_started() {
-    let genealogy = with_two_harnesses_benchmarked_in_full();
+    let genealogy = with_two_harnesses_evaluated_in_full();
     let drawn: Vec<Option<Action>> = (0..20)
         .map(|seed| artificial_selection(seed).next_action(&genealogy, 5))
         .collect();

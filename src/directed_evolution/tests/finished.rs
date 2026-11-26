@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::directed_evolution::tests::given::{self, Evolved};
 use crate::file_system::tests::double::Memory;
@@ -18,7 +18,7 @@ fn solving() -> Double {
 
 fn over_one_holdout_task(directory: &Memory, settings: &mut Settings) {
     given::over_one_task(directory, settings);
-    settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t1".to_owned()];
 }
 
 fn with_three_diversifications(directory: &Memory, settings: &mut Settings) {
@@ -35,12 +35,12 @@ fn with_two_diversifications_over_one_task(directory: &Memory, settings: &mut Se
     settings.max_diversifications = 2;
 }
 
-fn over_two_benchmarks(directory: &Memory, settings: &mut Settings) {
+fn over_two_datasets(directory: &Memory, settings: &mut Settings) {
     let refactoring =
-        test_inputs::benchmark_named_in(directory, directory.path(), "refactoring", &["t1", "t2"]);
+        test_inputs::dataset_named_in(directory, directory.path(), "refactoring", &["t1", "t2"]);
     settings
-        .benchmarks
-        .push(Benchmark::read(directory, &refactoring).unwrap());
+        .datasets
+        .push(Dataset::read(directory, &refactoring).unwrap());
 }
 
 fn with_a_primogenitor_whose_path_cannot_be_written(directory: &Memory, settings: &mut Settings) {
@@ -113,11 +113,9 @@ fn the_first_record_of_a_directed_evolution_is_the_run_record_with_its_settings(
 }
 
 #[test]
-fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_outputs_directory() {
+fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_dataset_in_its_outputs_directory() {
     let evolved = given::started(Double::default(), given::over_one_task);
-    let instruction = evolved
-        .outputs()
-        .join("benchmarks/benchmark/t1/instruction.md");
+    let instruction = evolved.outputs().join("datasets/dataset/t1/instruction.md");
     assert_eq!(
         evolved.files().read_to_string(instruction).ok().as_deref(),
         Some("Finish the work of t1.\n")
@@ -125,14 +123,14 @@ fn a_directed_evolution_keeps_a_copy_of_the_tasks_of_its_benchmark_in_its_output
 }
 
 #[test]
-fn a_directed_evolution_copies_no_task_of_its_benchmark_that_is_not_one_of_its_own() {
+fn a_directed_evolution_copies_no_task_of_its_dataset_that_is_not_one_of_its_own() {
     let evolved = given::started(Double::default(), given::over_one_task);
-    let other = evolved.outputs().join("benchmarks/benchmark/t2");
+    let other = evolved.outputs().join("datasets/dataset/t2");
     assert!(!evolved.files().exists(other));
 }
 
 #[test]
-fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
+fn each_child_is_evaluated_in_full_before_the_next_diversification_starts() {
     let evolved = given::started(Double::default().changing(), with_two_diversifications);
     assert_eq!(
         kinds_of_starts(&evolved)[..8],
@@ -150,8 +148,8 @@ fn each_child_is_benchmarked_in_full_before_the_next_diversification_starts() {
 }
 
 #[test]
-fn given_two_benchmarks_the_primogenitor_is_cloned_once_benchmarked_on_both() {
-    let evolved = given::started(Double::default().changing(), over_two_benchmarks);
+fn given_two_datasets_the_primogenitor_is_cloned_once_evaluated_on_both() {
+    let evolved = given::started(Double::default().changing(), over_two_datasets);
     assert_eq!(
         evolved.starts()[..6],
         [
@@ -184,10 +182,10 @@ fn every_harness_that_is_created_trials_every_task_once_whatever_it_completes() 
     assert_eq!(
         trials_started(&evolved),
         [
-            (0, "benchmark/t1".to_owned()),
-            (0, "benchmark/t2".to_owned()),
-            (1, "benchmark/t1".to_owned()),
-            (1, "benchmark/t2".to_owned()),
+            (0, "dataset/t1".to_owned()),
+            (0, "dataset/t2".to_owned()),
+            (1, "dataset/t1".to_owned()),
+            (1, "dataset/t2".to_owned()),
         ]
     );
 }
@@ -221,13 +219,13 @@ fn a_directed_evolution_says_first_that_it_makes_its_outputs_directory_with_a_co
 }
 
 #[test]
-fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
+fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_dataset() {
     let evolved = said_over_one_task();
     assert_eq!(
         evolved.lines()[1],
         format!(
-            "cladenc: copying the 1 task of the benchmark {} into the outputs directory",
-            evolved.files().path().join("benchmark").display()
+            "cladenc: copying the 1 task of the dataset {} into the outputs directory",
+            evolved.files().path().join("dataset").display()
         )
     );
 }
@@ -236,7 +234,7 @@ fn a_directed_evolution_says_next_that_it_copies_the_tasks_of_its_benchmark() {
 fn a_directed_evolution_says_a_trial_it_starts_with_no_number() {
     assert_eq!(
         said_over_one_task().lines()[5],
-        "cladenc: started the trial of harness 0 on task benchmark/t1"
+        "cladenc: started the trial of harness 0 on task dataset/t1"
     );
 }
 
@@ -274,9 +272,9 @@ fn a_directed_evolution_says_how_a_diversification_ended_and_where_its_child_is_
 fn a_directed_evolution_says_whether_a_trial_passed_and_where_what_the_trial_left_is_kept() {
     let evolved = said_over_one_task();
     assert!(evolved.lines().contains(&format!(
-        "cladenc: the trial of harness 1 on task benchmark/t1 passed: what the trial left is \
+        "cladenc: the trial of harness 1 on task dataset/t1 passed: what the trial left is \
          kept in {}",
-        evolved.outputs().join("holdout/1/benchmark/t1").display()
+        evolved.outputs().join("holdout/1/dataset/t1").display()
     )));
 }
 

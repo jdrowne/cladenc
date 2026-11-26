@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
 use tempfile::TempDir;
@@ -14,9 +14,7 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(&Disk, &test_inputs::benchmark(directory, &["t1"])).unwrap(),
-        ],
+        datasets: vec![Dataset::read(&Disk, &test_inputs::dataset(directory, &["t1"])).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -40,7 +38,7 @@ fn stopped_by_its_flag() -> TempDir {
     let directory = test_inputs::temporary_directory();
     let settings = settings(directory.path());
     let outputs_directory = directory.path().join("outputs");
-    let id_file = outputs_directory.join("running/trial-0-benchmark+t1/stdout");
+    let id_file = outputs_directory.join("running/trial-0-dataset+t1/stdout");
     let stop = AtomicBool::new(false);
     let _ = thread::scope(|scope| {
         scope.spawn(|| {
@@ -58,6 +56,6 @@ fn a_directed_evolution_stopped_by_its_flag_leaves_no_sandbox_behind() {
     assert!(test_inputs::sandbox_is_gone(
         &directory
             .path()
-            .join("outputs/running/trial-0-benchmark+t1/stdout")
+            .join("outputs/running/trial-0-dataset+t1/stdout")
     ));
 }

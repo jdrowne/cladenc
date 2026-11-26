@@ -18,8 +18,8 @@ fn stopped() -> TempDir {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory.path(), &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", END_WITH_125_WHERE_MARKED.into()),
@@ -33,11 +33,7 @@ fn stopped() -> TempDir {
         ("--corroboration-tasks-percentage", "25".into()),
     ]
     .map(|(option, value)| format!("{option}={}", value.display()));
-    fs::write(
-        directory.path().join("benchmark/t2/task.toml"),
-        WITH_A_TOKEN,
-    )
-    .unwrap();
+    fs::write(directory.path().join("dataset/t2/task.toml"), WITH_A_TOKEN).unwrap();
     test_inputs::end_with_125_on(directory.path(), "t2");
     Command::new(env!("CARGO_BIN_EXE_cladenc"))
         .arg("start")
@@ -76,7 +72,7 @@ fn a_variable_of_a_task_that_is_no_longer_set_is_reported_last_with_the_task_and
         str::from_utf8(&RESUMED_WITH_THE_VARIABLE_NO_LONGER_SET.stderr)
             .unwrap()
             .ends_with(
-                "cladenc: task benchmark/t2 cannot be given a trial: its task.toml gives API_TOKEN \
+                "cladenc: task dataset/t2 cannot be given a trial: its task.toml gives API_TOKEN \
                  under environment.env the value of CLADENC_TEST_TOKEN, which is not set where \
                  cladenc runs\n"
             )
@@ -86,7 +82,7 @@ fn a_variable_of_a_task_that_is_no_longer_set_is_reported_last_with_the_task_and
 #[test]
 fn a_resumed_directed_evolution_gives_a_variable_the_value_it_has_when_it_is_resumed() {
     let (directory, _output) = resumed_with_the_variable_set_to("another-token");
-    let trial = test_inputs::kept_trial(&directory.path().join("outputs"), 0, "benchmark/t2");
+    let trial = test_inputs::kept_trial(&directory.path().join("outputs"), 0, "dataset/t2");
     assert_eq!(
         fs::read_to_string(trial.join("stdout")).unwrap(),
         "another-token\n"

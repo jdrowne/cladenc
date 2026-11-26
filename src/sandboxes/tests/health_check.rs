@@ -1,7 +1,7 @@
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use crate::benchmark::HealthCheck;
+use crate::dataset::HealthCheck;
 use crate::sandboxes::SandboxError;
 use crate::sandboxes::health_check;
 

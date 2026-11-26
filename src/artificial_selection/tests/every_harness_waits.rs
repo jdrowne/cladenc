@@ -23,7 +23,7 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
     genealogy.end_diversification(child, outcome).unwrap();
 }
 
-fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
+fn evaluate_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
         genealogy.start_trial(harness, &task).unwrap();
         genealogy
@@ -32,18 +32,18 @@ fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     }
 }
 
-fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
+fn with_the_primogenitor_evaluated_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    benchmark_in_full(&mut genealogy, 0);
+    evaluate_in_full(&mut genealogy, 0);
     genealogy
 }
 
-fn two_harnesses_benchmarked_in_full_after(
+fn two_harnesses_evaluated_in_full_after(
     diversifications: &[(HarnessId, CreationOutcome)],
 ) -> Genealogy {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CREATED);
-    benchmark_in_full(&mut genealogy, 1);
+    evaluate_in_full(&mut genealogy, 1);
     for (progenitor, outcome) in diversifications {
         child_of(&mut genealogy, *progenitor, *outcome);
     }
@@ -64,7 +64,7 @@ fn progenitors(genealogy: &Genealogy) -> Vec<HarnessId> {
 
 fn diversifications_of_the_primogenitor_alone_when_each_creates_no_child() -> u64 {
     let artificial_selection = artificial_selection(100, 0);
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     let mut action = 0;
     while let Some(Action::Diversification { progenitor }) =
         artificial_selection.next_action(&genealogy, action)
@@ -78,7 +78,7 @@ fn diversifications_of_the_primogenitor_alone_when_each_creates_no_child() -> u6
 #[test]
 fn when_every_harness_waits_and_no_other_work_is_left_the_one_whose_wait_ends_first_is_the_progenitor()
  {
-    let genealogy = two_harnesses_benchmarked_in_full_after(&[
+    let genealogy = two_harnesses_evaluated_in_full_after(&[
         (1, FAILED),
         (1, FAILED),
         (1, FAILED),
@@ -89,8 +89,7 @@ fn when_every_harness_waits_and_no_other_work_is_left_the_one_whose_wait_ends_fi
 
 #[test]
 fn when_the_waits_of_two_harnesses_end_at_the_same_diversification_either_can_be_the_progenitor() {
-    let genealogy =
-        two_harnesses_benchmarked_in_full_after(&[(1, FAILED), (1, FAILED), (0, FAILED)]);
+    let genealogy = two_harnesses_evaluated_in_full_after(&[(1, FAILED), (1, FAILED), (0, FAILED)]);
     assert_eq!(progenitors(&genealogy), [0, 1]);
 }
 
@@ -105,14 +104,14 @@ fn the_primogenitor_alone_is_the_progenitor_of_every_diversification_though_each
 
 #[test]
 fn a_child_whose_diversification_left_the_progenitor_s_clone_unchanged_is_no_work_left_to_do() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Unchanged);
     assert_eq!(progenitors(&genealogy), [0]);
 }
 
 #[test]
 fn a_harness_that_waits_stays_left_out_while_another_harness_has_a_task_not_yet_given() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CREATED);
     child_of(&mut genealogy, 0, FAILED);
     assert_eq!(
@@ -126,7 +125,7 @@ fn a_harness_that_waits_stays_left_out_while_another_harness_has_a_task_not_yet_
 
 #[test]
 fn a_harness_that_waits_stays_left_out_while_a_trial_of_another_harness_is_still_running() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CREATED);
     for task in tasks() {
         genealogy.start_trial(1, &task).unwrap();
@@ -140,7 +139,7 @@ fn a_harness_that_waits_stays_left_out_while_a_trial_of_another_harness_is_still
 
 #[test]
 fn a_harness_that_waits_stays_left_out_while_a_diversification_is_still_running() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     genealogy.start_diversification(0).unwrap();
     child_of(&mut genealogy, 0, FAILED);
     assert_eq!(

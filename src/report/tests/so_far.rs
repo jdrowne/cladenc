@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
 use crate::journal::Settings;
 use crate::report::Report;
 use crate::report::lead::OnlyLeaderCompleted;
 use serde_json::Value;
 
-const EVERY_HOLDOUT_TASK: [&str; 3] = ["benchmark/c1", "benchmark/c2", "benchmark/s1"];
+const EVERY_HOLDOUT_TASK: [&str; 3] = ["dataset/c1", "dataset/c2", "dataset/s1"];
 
 fn settings() -> Settings {
     Settings {
@@ -15,8 +15,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: ["c1", "c2", "o1", "s1"].map(str::to_owned).to_vec(),
         }],
         docker_image: "image".to_owned(),
@@ -32,13 +32,13 @@ fn settings() -> Settings {
         selection_tasks_percentage: 25.5,
         holdout_tasks: EVERY_HOLDOUT_TASK.map(str::to_owned).to_vec(),
         corroboration_tasks_percentage: 49.5,
-        corroboration_tasks: vec!["benchmark/c1".to_owned(), "benchmark/c2".to_owned()],
+        corroboration_tasks: vec!["dataset/c1".to_owned(), "dataset/c2".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }
 
-fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
+fn evaluated(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
             TrialResult::Pass
@@ -56,8 +56,8 @@ fn with_a_child_ahead() -> Genealogy {
     genealogy
         .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    benchmarked(&mut genealogy, 0, &[]);
-    benchmarked(&mut genealogy, child, &EVERY_HOLDOUT_TASK);
+    evaluated(&mut genealogy, 0, &[]);
+    evaluated(&mut genealogy, child, &EVERY_HOLDOUT_TASK);
     genealogy
 }
 

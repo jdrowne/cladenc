@@ -202,3 +202,21 @@ fn no_manual_page_names_a_score_or_says_of_a_harness_that_it_is_scored() {
         .collect();
     assert_eq!(pages, Vec::<String>::new());
 }
+
+#[test]
+fn no_manual_page_says_benchmark() {
+    let pages: Vec<String> = commands()
+        .iter()
+        .map(|(page, _)| page.clone())
+        .filter(|page| manual(page).to_lowercase().contains("benchmark"))
+        .collect();
+    assert_eq!(pages, Vec::<String>::new());
+}
+
+#[test]
+fn the_manual_page_of_cladenc_says_that_dataset_is_harbor_s_word_for_a_collection_of_tasks() {
+    assert!(manual_on_one_line("cladenc").contains(
+        "Every harness is evaluated on every task of the datasets a person brings. Dataset is \
+         Harbor's word for a collection of tasks."
+    ));
+}

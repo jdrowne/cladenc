@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{CreationOutcome, Genealogy, TrialResult};
 use crate::journal::Settings;
 use crate::report::Report;
 use crate::report::lead::{self, Lead, OnlyLeaderCompleted};
 use serde_json::Value;
 
-const SELECTION: &str = "benchmark/s1";
+const SELECTION: &str = "dataset/s1";
 
 fn settings() -> Settings {
     Settings {
@@ -15,8 +15,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: ["c1", "c2", "c3", "c4", "c5", "o1", "s1"]
                 .map(str::to_owned)
                 .to_vec(),
@@ -33,18 +33,18 @@ fn settings() -> Settings {
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 17.0,
         holdout_tasks: ["c1", "c2", "c3", "c4", "c5", "s1"]
-            .map(|id| format!("benchmark/{id}"))
+            .map(|id| format!("dataset/{id}"))
             .to_vec(),
         corroboration_tasks_percentage: 68.0,
         corroboration_tasks: ["c1", "c2", "c3", "c4", "c5"]
-            .map(|id| format!("benchmark/{id}"))
+            .map(|id| format!("dataset/{id}"))
             .to_vec(),
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }
 
-fn benchmarked(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
+fn evaluated(genealogy: &mut Genealogy, harness: u64, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
             TrialResult::Pass
@@ -62,8 +62,8 @@ fn evolved(primogenitor: &[&str], child: &[&str]) -> Genealogy {
     genealogy
         .end_diversification(made, CreationOutcome::Created)
         .unwrap();
-    benchmarked(&mut genealogy, 0, primogenitor);
-    benchmarked(&mut genealogy, made, child);
+    evaluated(&mut genealogy, 0, primogenitor);
+    evaluated(&mut genealogy, made, child);
     genealogy
 }
 
@@ -106,8 +106,8 @@ fn line_of(primogenitor: &[&str], child: &[&str]) -> String {
 fn the_corroboration_tasks_that_only_the_best_harness_completed_are_counted() {
     assert_eq!(
         counts_of(
-            &["benchmark/c1"],
-            &[SELECTION, "benchmark/c1", "benchmark/c2", "benchmark/c3"]
+            &["dataset/c1"],
+            &[SELECTION, "dataset/c1", "dataset/c2", "dataset/c3"]
         ),
         (only_the_best_harness_completed(2), 0)
     );
@@ -117,8 +117,8 @@ fn the_corroboration_tasks_that_only_the_best_harness_completed_are_counted() {
 fn the_corroboration_tasks_that_only_the_primogenitor_completed_are_counted() {
     assert_eq!(
         counts_of(
-            &["benchmark/c1", "benchmark/c4", "benchmark/c5"],
-            &[SELECTION, "benchmark/c1", "benchmark/c2"]
+            &["dataset/c1", "dataset/c4", "dataset/c5"],
+            &[SELECTION, "dataset/c1", "dataset/c2"]
         ),
         (only_the_best_harness_completed(1), 2)
     );
@@ -127,7 +127,7 @@ fn the_corroboration_tasks_that_only_the_primogenitor_completed_are_counted() {
 #[test]
 fn a_corroboration_task_that_both_harnesses_completed_is_left_out() {
     assert_eq!(
-        counts_of(&["benchmark/c1"], &[SELECTION, "benchmark/c1"]),
+        counts_of(&["dataset/c1"], &[SELECTION, "dataset/c1"]),
         (only_the_best_harness_completed(0), 0)
     );
 }
@@ -143,7 +143,7 @@ fn a_corroboration_task_that_neither_harness_completed_is_left_out() {
 #[test]
 fn a_task_that_is_not_held_out_is_no_part_of_the_lead() {
     assert_eq!(
-        counts_of(&[], &[SELECTION, "benchmark/o1"]),
+        counts_of(&[], &[SELECTION, "dataset/o1"]),
         (only_the_best_harness_completed(0), 0)
     );
 }
@@ -151,7 +151,7 @@ fn a_task_that_is_not_held_out_is_no_part_of_the_lead() {
 #[test]
 fn the_selection_task_that_made_the_harness_the_best_is_no_part_of_the_lead() {
     assert_eq!(
-        counts_of(&[], &[SELECTION, "benchmark/c1"]),
+        counts_of(&[], &[SELECTION, "dataset/c1"]),
         (only_the_best_harness_completed(1), 0)
     );
 }
@@ -159,7 +159,7 @@ fn the_selection_task_that_made_the_harness_the_best_is_no_part_of_the_lead() {
 #[test]
 fn where_the_best_harness_is_the_primogenitor_the_report_holds_no_lead() {
     assert_eq!(
-        report_of(&[SELECTION], &["benchmark/c1"]).corroboration_lead,
+        report_of(&[SELECTION], &["dataset/c1"]).corroboration_lead,
         None
     );
 }
@@ -177,10 +177,10 @@ fn the_lead_is_that_of_the_best_harness_and_not_of_a_harness_that_completed_more
     genealogy
         .end_diversification(another, CreationOutcome::Created)
         .unwrap();
-    benchmarked(
+    evaluated(
         &mut genealogy,
         another,
-        &["benchmark/c1", "benchmark/c2", "benchmark/c3"],
+        &["dataset/c1", "dataset/c2", "dataset/c3"],
     );
     let lead = ended(&genealogy).corroboration_lead.unwrap();
     assert_eq!(
@@ -196,10 +196,7 @@ fn where_no_corroboration_task_tells_the_two_harnesses_apart_the_likelihood_is_1
 
 #[test]
 fn the_likelihood_of_the_lead_of_the_report_is_that_of_its_two_counts() {
-    let lead = lead_of(
-        &["benchmark/c5"],
-        &[SELECTION, "benchmark/c1", "benchmark/c2"],
-    );
+    let lead = lead_of(&["dataset/c5"], &[SELECTION, "dataset/c1", "dataset/c2"]);
     assert_eq!(lead.likelihood_by_luck, lead::likelihood_by_luck(2, 1));
 }
 
@@ -246,7 +243,7 @@ fn the_likelihood_is_never_above_1() {
 #[test]
 fn the_line_above_the_table_gives_the_two_counts_and_the_likelihood_to_three_decimal_places() {
     assert_eq!(
-        line_of(&[], &[SELECTION, "benchmark/c1", "benchmark/c2"]),
+        line_of(&[], &[SELECTION, "dataset/c1", "dataset/c2"]),
         "on the corroboration tasks: only the best harness completed 2, only the primogenitor \
          completed 0, and luck alone gives a lead at least as large with likelihood 0.250"
     );
@@ -264,7 +261,7 @@ fn the_line_above_the_table_says_that_a_best_harness_that_is_the_primogenitor_is
 
 #[test]
 fn the_object_holds_the_tasks_that_only_the_best_harness_completed() {
-    let object = object_of(&[], &[SELECTION, "benchmark/c1", "benchmark/c2"]);
+    let object = object_of(&[], &[SELECTION, "dataset/c1", "dataset/c2"]);
     assert_eq!(
         object["corroboration_lead"]["only_best_harness_completed"].as_u64(),
         Some(2)
@@ -273,7 +270,7 @@ fn the_object_holds_the_tasks_that_only_the_best_harness_completed() {
 
 #[test]
 fn the_object_holds_the_tasks_that_only_the_primogenitor_completed() {
-    let object = object_of(&["benchmark/c3"], &[SELECTION]);
+    let object = object_of(&["dataset/c3"], &[SELECTION]);
     assert_eq!(
         object["corroboration_lead"]["only_primogenitor_completed"].as_u64(),
         Some(1)
@@ -282,10 +279,7 @@ fn the_object_holds_the_tasks_that_only_the_primogenitor_completed() {
 
 #[test]
 fn the_object_holds_the_likelihood_as_it_is_counted_and_not_to_three_decimal_places() {
-    let object = object_of(
-        &[],
-        &[SELECTION, "benchmark/c1", "benchmark/c2", "benchmark/c3"],
-    );
+    let object = object_of(&[], &[SELECTION, "dataset/c1", "dataset/c2", "dataset/c3"]);
     assert_eq!(
         object["corroboration_lead"]["likelihood_by_luck"].as_f64(),
         Some(lead::likelihood_by_luck(3, 0))

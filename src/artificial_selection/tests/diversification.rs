@@ -25,24 +25,24 @@ fn trial(genealogy: &mut Genealogy, harness: HarnessId, count: usize, result: Tr
     }
 }
 
-fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
+fn with_the_primogenitor_evaluated_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
     trial(&mut genealogy, 0, 20, TrialResult::Fail);
     genealogy
 }
 
 fn with_a_child_that_trialled(count: usize) -> Genealogy {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     trial(&mut genealogy, 1, count, TrialResult::Pass);
     genealogy
 }
 
-fn benchmark(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
-    benchmark_ending(genealogy, harness, completed, TrialResult::Fail);
+fn evaluate(genealogy: &mut Genealogy, harness: HarnessId, completed: usize) {
+    evaluate_ending(genealogy, harness, completed, TrialResult::Fail);
 }
 
-fn benchmark_ending(
+fn evaluate_ending(
     genealogy: &mut Genealogy,
     harness: HarnessId,
     completed: usize,
@@ -61,30 +61,30 @@ fn benchmark_ending(
 
 fn progenitors_where_every_other_trial_ends_with(otherwise: TrialResult) -> Vec<Option<Action>> {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    benchmark_ending(&mut genealogy, 0, 0, otherwise);
+    evaluate_ending(&mut genealogy, 0, 0, otherwise);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    benchmark_ending(&mut genealogy, 1, 10, otherwise);
-    benchmark_ending(&mut genealogy, 2, 12, otherwise);
+    evaluate_ending(&mut genealogy, 1, 10, otherwise);
+    evaluate_ending(&mut genealogy, 2, 12, otherwise);
     (0..200)
         .map(|seed| artificial_selection(seed).next_action(&genealogy, 0))
         .collect()
 }
 
 fn two_lines() -> Genealogy {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Created);
     child_of(&mut genealogy, 0, CreationOutcome::Created);
-    benchmark(&mut genealogy, 1, 10);
-    benchmark(&mut genealogy, 2, 12);
+    evaluate(&mut genealogy, 1, 10);
+    evaluate(&mut genealogy, 2, 12);
     child_of(&mut genealogy, 1, CreationOutcome::Created);
     child_of(&mut genealogy, 1, CreationOutcome::Created);
     child_of(&mut genealogy, 2, CreationOutcome::Created);
     child_of(&mut genealogy, 2, CreationOutcome::Created);
-    benchmark(&mut genealogy, 3, 12);
-    benchmark(&mut genealogy, 4, 12);
-    benchmark(&mut genealogy, 5, 0);
-    benchmark(&mut genealogy, 6, 0);
+    evaluate(&mut genealogy, 3, 12);
+    evaluate(&mut genealogy, 4, 12);
+    evaluate(&mut genealogy, 5, 0);
+    evaluate(&mut genealogy, 6, 0);
     genealogy
 }
 
@@ -155,14 +155,14 @@ fn a_child_can_be_the_progenitor_once_it_has_trialled_every_task() {
 
 #[test]
 fn no_diversification_starts_while_a_child_is_being_created() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     genealogy.start_diversification(0).unwrap();
     assert_eq!(times_a_diversification_is_next(&genealogy), 0);
 }
 
 #[test]
 fn a_failed_harness_is_never_the_progenitor() {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     child_of(&mut genealogy, 0, CreationOutcome::Failed);
     assert_eq!(times_progenitor(&genealogy, 0), 200);
 }
@@ -180,7 +180,7 @@ fn a_diversification_is_the_next_action_once_no_task_is_left_to_give() {
 #[test]
 fn a_harness_that_completed_no_task_can_be_the_progenitor() {
     assert_eq!(
-        artificial_selection(0).next_action(&with_the_primogenitor_benchmarked_in_full(), 0),
+        artificial_selection(0).next_action(&with_the_primogenitor_evaluated_in_full(), 0),
         Some(Action::Diversification { progenitor: 0 })
     );
 }

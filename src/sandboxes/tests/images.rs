@@ -147,8 +147,8 @@ fn the_environment_of_a_task_is_built_from_its_directory_and_labelled_with_the_t
     assert_eq!(
         built.commands(),
         [
-            "docker build --tag an-image:made --label cladenc.task=benchmark/t1 --label \
-             cladenc.directed-evolution=OUTPUTS OUTPUTS/benchmarks/benchmark/t1/environment"
+            "docker build --tag an-image:made --label cladenc.task=dataset/t1 --label \
+             cladenc.directed-evolution=OUTPUTS OUTPUTS/datasets/dataset/t1/environment"
         ]
     );
 }
@@ -200,8 +200,8 @@ fn a_verifier_environment_is_built_from_the_tests_of_its_task() {
     assert_eq!(
         built.commands(),
         [
-            "docker build --tag an-image:made --label cladenc.task=benchmark/t1 --label \
-             cladenc.directed-evolution=OUTPUTS OUTPUTS/benchmarks/benchmark/t1/tests"
+            "docker build --tag an-image:made --label cladenc.task=dataset/t1 --label \
+             cladenc.directed-evolution=OUTPUTS OUTPUTS/datasets/dataset/t1/tests"
         ]
     );
 }

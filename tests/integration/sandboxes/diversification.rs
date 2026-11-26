@@ -5,7 +5,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::genealogy::{CreationOutcome, TrialResult};
 use cladenc::model::Model;
@@ -214,24 +214,24 @@ fn a_harness_reaches_the_machine_cladenc_runs_on_as_host_docker_internal() {
 #[test]
 fn a_harness_can_read_the_ended_trials_of_its_progenitor_and_none_still_running() {
     let (directory, outputs_directory) = made_at("outputs");
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
-    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
+    outputs_directory.start_trial(0, "dataset/t1").unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::Fail)
+        .end_trial(0, "dataset/t1", TrialResult::Fail)
         .unwrap();
-    outputs_directory.start_trial(0, "benchmark/t2").unwrap();
+    outputs_directory.start_trial(0, "dataset/t2").unwrap();
     let _ = started_from(
         test_inputs::IMAGE,
-        "ls /var/log/cladenc/trials /var/log/cladenc/trials/benchmark > evidence",
+        "ls /var/log/cladenc/trials /var/log/cladenc/trials/dataset > evidence",
         &outputs_directory,
         30,
     );
     assert_eq!(
         fs::read_to_string(outputs_directory.harness(1).join("evidence")).unwrap(),
-        "/var/log/cladenc/trials:\nbenchmark\n\n/var/log/cladenc/trials/benchmark:\nt1\n"
+        "/var/log/cladenc/trials:\ndataset\n\n/var/log/cladenc/trials/dataset:\nt1\n"
     );
 }
 

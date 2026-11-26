@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
-use cladenc::benchmark::{Benchmark, TaskConfiguration};
+use cladenc::dataset::{Dataset, TaskConfiguration};
 use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -40,7 +40,7 @@ fn environment() -> Environment {
 fn trial(environment: &Environment) -> Trial<'_> {
     Trial {
         harness: 0,
-        task: "benchmark/t1",
+        task: "dataset/t1",
         environment,
     }
 }
@@ -54,9 +54,9 @@ fn made() -> (TempDir, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }
@@ -116,7 +116,7 @@ fn stopped_while_its_harness_runs() -> Trialled {
     let (directory, outputs_directory) = made();
     let launch = launch(SAY_THE_SANDBOX_OF_THE_TRIAL_AND_STAY);
     let id_file = outputs_directory
-        .running_trial(0, "benchmark/t1")
+        .running_trial(0, "dataset/t1")
         .join("stdout");
     let result = stopped_once_written(&id_file, |stop| {
         sandboxes::run_trial(
@@ -142,7 +142,7 @@ fn stopped_while_its_verifier_runs() -> Trialled {
     );
     let launch = launch("true");
     let id_file = outputs_directory
-        .running_trial(0, "benchmark/t1")
+        .running_trial(0, "dataset/t1")
         .join("verifier/stdout");
     let result = stopped_once_written(&id_file, |stop| {
         sandboxes::run_trial(
@@ -184,7 +184,7 @@ fn diversification_stopped_while_running() -> Diversified {
 fn the_time_limit_of_a_trial_leaves_no_sandbox_behind() {
     let (_directory, outputs_directory, _result) = timed_out();
     assert!(test_inputs::sandbox_is_gone(
-        &outputs_directory.trial(0, "benchmark/t1").join("stdout")
+        &outputs_directory.trial(0, "dataset/t1").join("stdout")
     ));
 }
 
@@ -193,7 +193,7 @@ fn a_trial_whose_stop_flag_is_set_leaves_no_sandbox_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_harness_runs();
     assert!(test_inputs::sandbox_is_gone(
         &outputs_directory
-            .running_trial(0, "benchmark/t1")
+            .running_trial(0, "dataset/t1")
             .join("stdout")
     ));
 }
@@ -203,7 +203,7 @@ fn a_trial_stopped_while_its_verifier_runs_leaves_no_sandbox_behind() {
     let (_directory, outputs_directory, _result) = stopped_while_its_verifier_runs();
     assert!(test_inputs::sandbox_is_gone(
         &outputs_directory
-            .running_trial(0, "benchmark/t1")
+            .running_trial(0, "dataset/t1")
             .join("verifier/stdout")
     ));
 }

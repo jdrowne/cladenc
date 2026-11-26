@@ -8,7 +8,7 @@ use super::SandboxError;
 use super::docker::{Docker, Host};
 use super::left;
 use super::program::{Ending, LEEWAY, Limits};
-use crate::benchmark::{ENVIRONMENT, TESTS};
+use crate::dataset::{ENVIRONMENT, TESTS};
 
 const MACHINE: &str = "{{.NCPU}} {{.MemTotal}}";
 const BYTES_IN_A_MEGABYTE: u64 = 1_048_576;

@@ -1,5 +1,5 @@
-mod benchmarks;
 mod checks;
+mod datasets;
 mod docker;
 mod given;
 mod help;

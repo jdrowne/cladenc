@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use crate::benchmark::TaskConfiguration;
+use crate::dataset::TaskConfiguration;
 use crate::file_system::FileSystem;
 use crate::genealogy::{CreationOutcome, Experiment, HarnessId, TrialResult};
 use crate::model::Model;
@@ -45,7 +45,7 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     your clone, which is a copy of your own source code. Improve that source code, so that the \
     harness it makes completes more coding tasks than you do. /var/log/cladenc/trials holds the \
     trials you are shown: one \
-    directory for each benchmark, and in it one directory for each task. In the directory of a \
+    directory for each dataset, and in it one directory for each task. In the directory of a \
     task, the file named instruction says what you were asked to do, the file named result reads \
     pass, fail where the verifier of the task wrote a verdict that is not 1, or inconclusive \
     where it gave no verdict, the file named cause, which is there only where the result is \
@@ -81,7 +81,7 @@ pub const DIVERSIFICATION_PROMPT: &str = "You are an agentic coding harness. The
     harness works on any task: one that answers something you saw in several of your trials, not \
     in one. Leave nothing in the source code that names a task, a file of a task or the answer to \
     one. Taking out what does not help is an improvement as well. Change files in the current \
-    directory only: what it holds when you end becomes a new harness, which is benchmarked in its \
+    directory only: what it holds when you end becomes a new harness, which is evaluated in its \
     turn. It may then be asked, as you are now, to improve a clone of its own, so a \
     change that makes it better at that counts as well. Where you leave the current directory as \
     it was, no new harness is made: a change that you only print in your answer changes no file. \

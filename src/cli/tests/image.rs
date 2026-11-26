@@ -8,7 +8,7 @@ const OPTIONS: [(&str, &str); 13] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--benchmark", "/benchmark"),
+    ("--dataset", "/dataset"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
     ("--max-diversifications", "800"),

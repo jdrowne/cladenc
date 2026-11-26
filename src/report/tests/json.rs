@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
@@ -11,8 +11,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -26,9 +26,9 @@ fn settings() -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
-        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t1".to_owned(), "dataset/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        corroboration_tasks: vec!["dataset/t3".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
@@ -38,9 +38,9 @@ fn settings() -> Settings {
 fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
     let mut genealogy = settings().genealogy();
     for (task, result) in [
-        ("benchmark/t1", TrialResult::Pass),
-        ("benchmark/t2", TrialResult::Fail),
-        ("benchmark/t3", TrialResult::Pass),
+        ("dataset/t1", TrialResult::Pass),
+        ("dataset/t2", TrialResult::Fail),
+        ("dataset/t3", TrialResult::Pass),
     ] {
         genealogy.start_trial(0, task).unwrap();
         genealogy.end_trial(0, task, result).unwrap();
@@ -89,13 +89,9 @@ fn the_object_holds_the_values_of_the_run_and_of_each_harness() {
 #[test]
 fn an_inconclusive_trial_is_written_under_a_name_of_its_own() {
     let mut genealogy = settings().genealogy();
-    genealogy.start_trial(0, "benchmark/t1").unwrap();
+    genealogy.start_trial(0, "dataset/t1").unwrap();
     genealogy
-        .end_trial(
-            0,
-            "benchmark/t1",
-            TrialResult::Inconclusive(Cause::NoVerdict),
-        )
+        .end_trial(0, "dataset/t1", TrialResult::Inconclusive(Cause::NoVerdict))
         .unwrap();
     assert!(
         Report::of(&settings(), &genealogy, &[], Some(0))

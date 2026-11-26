@@ -30,7 +30,7 @@ depends:
   - docker.io | docker-ce
 description: >-
   Carries out a directed evolution of an agentic coding harness, in which
-  harnesses are cloned, each diversifying its clone, and are benchmarked.
+  harnesses are cloned, each diversifying its clone, and are evaluated.
 homepage: https://github.com/jdrowne/cladenc
 license: All rights reserved
 maintainer: Jose Drowne

@@ -54,9 +54,9 @@ fn the_manual_of_start_says_which_children_of_the_progenitor_the_primogenitor_is
 }
 
 #[test]
-fn the_manual_of_start_says_that_the_singleton_control_group_harness_is_benchmarked_in_full() {
+fn the_manual_of_start_says_that_the_singleton_control_group_harness_is_evaluated_in_full() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "The singleton control group harness is built and benchmarked in full, as the progenitor's \
+        "The singleton control group harness is built and evaluated in full, as the progenitor's \
          child is, and it takes no other part in the directed evolution:"
     ));
 }

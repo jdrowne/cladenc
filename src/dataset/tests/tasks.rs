@@ -1,18 +1,16 @@
-use crate::benchmark::{
-    self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, INSTRUCTION, TESTS, VERIFIER,
-};
+use crate::dataset::{self, COMPOSE_FILES, DOCKERFILE, ENVIRONMENT, INSTRUCTION, TESTS, VERIFIER};
 use crate::file_system::tests::double::Memory;
 
 #[test]
-fn the_tasks_of_a_benchmark_are_the_names_of_its_directories_in_order() {
+fn the_tasks_of_a_dataset_are_the_names_of_its_directories_in_order() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(
+    let dataset = test_inputs::dataset_in(
         &directory,
         directory.path(),
         &["rename-a-module", "add-a-flag", "fix-the-parser"],
     );
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec![
             "add-a-flag".to_owned(),
             "fix-the-parser".to_owned(),
@@ -24,10 +22,10 @@ fn the_tasks_of_a_benchmark_are_the_names_of_its_directories_in_order() {
 #[test]
 fn a_task_is_named_by_letters_digits_dots_underscores_and_hyphens() {
     let directory = Memory::default();
-    let benchmark =
-        test_inputs::benchmark_in(&directory, directory.path(), &["Task-1.a_b", "...", "2"]);
+    let dataset =
+        test_inputs::dataset_in(&directory, directory.path(), &["Task-1.a_b", "...", "2"]);
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec![
             "...".to_owned(),
             "2".to_owned(),
@@ -37,14 +35,14 @@ fn a_task_is_named_by_letters_digits_dots_underscores_and_hyphens() {
 }
 
 #[test]
-fn a_file_in_a_benchmark_is_not_a_task() {
+fn a_file_in_a_dataset_is_not_a_task() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .write(benchmark.join("README.md"), "Two tasks.\n")
+        .write(dataset.join("README.md"), "Two tasks.\n")
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }
@@ -52,11 +50,11 @@ fn a_file_in_a_benchmark_is_not_a_task() {
 #[test]
 fn a_directory_given_through_a_symbolic_link_is_a_task() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1"]);
     let elsewhere = test_inputs::task_in(&directory, directory.path(), "kept-elsewhere");
-    directory.symlink(elsewhere, benchmark.join("t2")).unwrap();
+    directory.symlink(elsewhere, dataset.join("t2")).unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }
@@ -64,12 +62,12 @@ fn a_directory_given_through_a_symbolic_link_is_a_task() {
 #[test]
 fn a_task_may_hold_more_than_its_instruction_its_tests_and_its_environment() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .create_dir(benchmark.join("t1/hidden-tests"))
+        .create_dir(dataset.join("t1/hidden-tests"))
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }
@@ -77,12 +75,12 @@ fn a_task_may_hold_more_than_its_instruction_its_tests_and_its_environment() {
 #[test]
 fn a_task_that_holds_no_directory_named_workspace_is_a_task() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .remove_dir_all(benchmark.join("t2/environment/workspace"))
+        .remove_dir_all(dataset.join("t2/environment/workspace"))
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }

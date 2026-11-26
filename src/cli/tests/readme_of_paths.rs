@@ -133,6 +133,6 @@ fn the_readme_says_that_the_permission_bits_a_harness_leaves_keep_no_child_from_
         "Once the progenitor has ended, and again once a build has ended, `cladenc` makes every \
          directory of the source code one that its owner can list, write in and enter, and \
          every file one that its owner can read, so that the permission bits a harness or a \
-         build leaves keep no child from being made or benchmarked."
+         build leaves keep no child from being made or evaluated."
     ));
 }

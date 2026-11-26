@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::{Artifact, TaskConfiguration};
+use crate::dataset::{Artifact, TaskConfiguration};
 use crate::genealogy::TrialResult;
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{self, LAUNCH, TASK, Tried};

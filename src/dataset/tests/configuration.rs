@@ -1,8 +1,8 @@
 use std::env;
 use std::time::Duration;
 
-use crate::benchmark::configuration::{self, CONFIGURATION, ConfigurationError};
-use crate::benchmark::{self, BenchmarkError, TaskConfiguration};
+use crate::dataset::configuration::{self, CONFIGURATION, ConfigurationError};
+use crate::dataset::{self, DatasetError, TaskConfiguration};
 use crate::file_system::tests::double::Memory;
 
 fn task_that_says(written: &str) -> Memory {
@@ -45,13 +45,13 @@ fn not_valid(line: usize, reason: &str) -> Result<TaskConfiguration, Configurati
     })
 }
 
-fn refused_for_its_task_toml(written: &str) -> Result<Vec<String>, BenchmarkError> {
+fn refused_for_its_task_toml(written: &str) -> Result<Vec<String>, DatasetError> {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .write(benchmark.join("t2/task.toml"), written)
+        .write(dataset.join("t2/task.toml"), written)
         .unwrap();
-    benchmark::tasks(&directory, &benchmark)
+    dataset::tasks(&directory, &dataset)
 }
 
 #[test]
@@ -778,7 +778,7 @@ fn a_task_reads_the_variables_that_are_set_where_cladenc_runs() {
 fn a_task_whose_task_toml_cannot_be_obeyed_is_refused_with_its_id_and_why() {
     assert_eq!(
         refused_for_its_task_toml("[environment]\nworkdir = 3\n"),
-        Err(BenchmarkError::Configuration {
+        Err(DatasetError::Configuration {
             task: "t2".to_owned(),
             error: ConfigurationError::NotValid {
                 line: 2,
@@ -794,7 +794,7 @@ fn a_task_that_names_a_variable_that_is_not_set_where_cladenc_runs_is_refused() 
         refused_for_its_task_toml(
             "[verifier.env]\nKEY = \"${CLADENC_TEST_A_VARIABLE_THAT_IS_NEVER_SET}\"\n"
         ),
-        Err(BenchmarkError::Configuration {
+        Err(DatasetError::Configuration {
             task: "t2".to_owned(),
             error: ConfigurationError::NotSet {
                 table: "verifier",
@@ -808,13 +808,11 @@ fn a_task_that_names_a_variable_that_is_not_set_where_cladenc_runs_is_refused() 
 #[test]
 fn a_task_that_holds_no_task_toml_is_refused_with_its_id() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
-    directory
-        .remove_file(benchmark.join("t2/task.toml"))
-        .unwrap();
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
+    directory.remove_file(dataset.join("t2/task.toml")).unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoConfiguration {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::NoConfiguration {
             task: "t2".to_owned()
         })
     );
@@ -823,16 +821,14 @@ fn a_task_that_holds_no_task_toml_is_refused_with_its_id() {
 #[test]
 fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
+    directory.remove_file(dataset.join("t2/task.toml")).unwrap();
     directory
-        .remove_file(benchmark.join("t2/task.toml"))
-        .unwrap();
-    directory
-        .remove_dir_all(benchmark.join("t2/environment"))
+        .remove_dir_all(dataset.join("t2/environment"))
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoConfiguration {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::NoConfiguration {
             task: "t2".to_owned()
         })
     );
@@ -841,16 +837,12 @@ fn a_task_with_no_task_toml_and_no_environment_is_refused_for_its_task_toml() {
 #[test]
 fn a_task_with_no_verifier_and_no_task_toml_is_refused_for_its_verifier() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
-    directory
-        .remove_file(benchmark.join("t2/task.toml"))
-        .unwrap();
-    directory
-        .remove_dir_all(benchmark.join("t2/tests"))
-        .unwrap();
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
+    directory.remove_file(dataset.join("t2/task.toml")).unwrap();
+    directory.remove_dir_all(dataset.join("t2/tests")).unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoVerifier {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::NoVerifier {
             task: "t2".to_owned()
         })
     );
@@ -859,18 +851,18 @@ fn a_task_with_no_verifier_and_no_task_toml_is_refused_for_its_verifier() {
 #[test]
 fn a_task_whose_task_toml_names_an_image_needs_no_directory_named_environment() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .remove_dir_all(benchmark.join("t2/environment"))
+        .remove_dir_all(dataset.join("t2/environment"))
         .unwrap();
     directory
         .write(
-            benchmark.join("t2/task.toml"),
+            dataset.join("t2/task.toml"),
             "[environment]\ndocker_image = \"debian:stable-slim\"\n",
         )
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
+        dataset::tasks(&directory, &dataset),
         Ok(vec!["t1".to_owned(), "t2".to_owned()])
     );
 }
@@ -878,19 +870,19 @@ fn a_task_whose_task_toml_names_an_image_needs_no_directory_named_environment() 
 #[test]
 fn a_task_whose_task_toml_names_no_image_still_needs_a_dockerfile() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
-        .remove_dir_all(benchmark.join("t2/environment"))
+        .remove_dir_all(dataset.join("t2/environment"))
         .unwrap();
     directory
         .write(
-            benchmark.join("t2/task.toml"),
+            dataset.join("t2/task.toml"),
             "[environment]\nworkdir = \"/app\"\n",
         )
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoEnvironment {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::NoEnvironment {
             task: "t2".to_owned()
         })
     );
@@ -899,22 +891,22 @@ fn a_task_whose_task_toml_names_no_image_still_needs_a_dockerfile() {
 #[test]
 fn a_task_whose_task_toml_names_an_image_is_still_refused_for_a_compose_file() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     directory
         .write(
-            benchmark.join("t2/environment/compose.yaml"),
+            dataset.join("t2/environment/compose.yaml"),
             "services: {}\n",
         )
         .unwrap();
     directory
         .write(
-            benchmark.join("t2/task.toml"),
+            dataset.join("t2/task.toml"),
             "[environment]\ndocker_image = \"debian:stable-slim\"\n",
         )
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::ManyContainers {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::ManyContainers {
             task: "t2".to_owned()
         })
     );
@@ -923,16 +915,14 @@ fn a_task_whose_task_toml_names_an_image_is_still_refused_for_a_compose_file() {
 #[test]
 fn a_task_with_no_verifier_and_a_task_toml_that_cannot_be_obeyed_is_refused_for_its_verifier() {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
+    directory.remove_dir_all(dataset.join("t2/tests")).unwrap();
     directory
-        .remove_dir_all(benchmark.join("t2/tests"))
-        .unwrap();
-    directory
-        .write(benchmark.join("t2/task.toml"), "[environment\n")
+        .write(dataset.join("t2/task.toml"), "[environment\n")
         .unwrap();
     assert_eq!(
-        benchmark::tasks(&directory, &benchmark),
-        Err(BenchmarkError::NoVerifier {
+        dataset::tasks(&directory, &dataset),
+        Err(DatasetError::NoVerifier {
             task: "t2".to_owned()
         })
     );

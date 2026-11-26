@@ -1,6 +1,6 @@
 mod artificial_selection;
-pub mod benchmark;
 pub mod cli;
+pub mod dataset;
 pub mod directed_evolution;
 pub mod file_system;
 pub mod genealogy;

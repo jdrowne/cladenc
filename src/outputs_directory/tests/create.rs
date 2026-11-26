@@ -63,9 +63,9 @@ fn a_new_outputs_directory_holds_no_diversification() {
 }
 
 #[test]
-fn a_new_outputs_directory_holds_no_benchmark() {
+fn a_new_outputs_directory_holds_no_dataset() {
     let (directory, outputs_directory) = made();
-    assert_eq!(entries(&directory, outputs_directory.join("benchmarks")), 0);
+    assert_eq!(entries(&directory, outputs_directory.join("datasets")), 0);
 }
 
 #[test]

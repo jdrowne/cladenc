@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use crate::benchmark::{HealthCheck, TaskConfiguration};
+use crate::dataset::{HealthCheck, TaskConfiguration};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{self, HEALTH_CHECK, LAUNCH, TASK, TIMER, Tried};
 use crate::sandboxes::{Checked, Launch, Retry, SandboxError};

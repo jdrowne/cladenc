@@ -76,7 +76,7 @@ fn a_diversification_is_not_a_trial() {
 }
 
 #[test]
-fn a_trial_takes_the_place_of_a_diversification_that_no_harness_is_benchmarked_in_full_for() {
+fn a_trial_takes_the_place_of_a_diversification_that_no_harness_is_evaluated_in_full_for() {
     assert_eq!(trialling(&Genealogy::new(), 0, 20), Some(0));
 }
 
@@ -133,7 +133,7 @@ fn the_first_task_not_yet_given_is_the_one_trialled_whatever_the_seed() {
 #[test]
 fn the_tasks_are_given_in_the_order_they_are_listed_in() {
     let listed = ArtificialSelection {
-        tasks: vec!["refactoring/t2".to_owned(), "benchmark/t1".to_owned()],
+        tasks: vec!["refactoring/t2".to_owned(), "dataset/t1".to_owned()],
         ..artificial_selection(0, 0)
     };
     assert_eq!(

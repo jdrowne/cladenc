@@ -1,4 +1,4 @@
-use crate::benchmark::TaskConfiguration;
+use crate::dataset::TaskConfiguration;
 use crate::genealogy::{Cause, TrialResult};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{self, LAUNCH, TASK, Tried};

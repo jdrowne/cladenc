@@ -1,12 +1,12 @@
 use std::path::Path;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::TrialResult;
 use crate::outputs_directory::OutputsDirectory;
 
-const SHOWN: &str = "benchmark/t1";
-const HELD_OUT: &str = "benchmark/t2";
+const SHOWN: &str = "dataset/t1";
+const HELD_OUT: &str = "dataset/t2";
 
 fn holding_out_one_task(directory: &Memory, path: &Path) -> OutputsDirectory {
     OutputsDirectory::at(directory.shared(), path).holding_out(&[HELD_OUT.to_owned()])
@@ -22,9 +22,9 @@ fn made() -> (Memory, OutputsDirectory) {
     )
     .unwrap()
     .holding_out(&[HELD_OUT.to_owned()]);
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&directory, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&directory, &dataset).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }
@@ -54,7 +54,7 @@ fn names_in(files: &Memory, path: &Path) -> Vec<String> {
 fn the_trial_on_a_holdout_task_is_kept_under_holdout() {
     assert_eq!(
         holding_out_one_task(&Memory::default(), Path::new("/outputs")).trial(3, HELD_OUT),
-        Path::new("/outputs/holdout/3/benchmark/t2")
+        Path::new("/outputs/holdout/3/dataset/t2")
     );
 }
 
@@ -62,7 +62,7 @@ fn the_trial_on_a_holdout_task_is_kept_under_holdout() {
 fn the_trial_on_a_task_that_is_not_held_out_is_kept_under_trials() {
     assert_eq!(
         holding_out_one_task(&Memory::default(), Path::new("/outputs")).trial(3, SHOWN),
-        Path::new("/outputs/trials/3/benchmark/t1")
+        Path::new("/outputs/trials/3/dataset/t1")
     );
 }
 
@@ -70,7 +70,7 @@ fn the_trial_on_a_task_that_is_not_held_out_is_kept_under_trials() {
 fn an_outputs_directory_told_of_no_holdout_task_keeps_every_trial_under_trials() {
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs")).trial(3, HELD_OUT),
-        Path::new("/outputs/trials/3/benchmark/t2")
+        Path::new("/outputs/trials/3/dataset/t2")
     );
 }
 
@@ -128,11 +128,7 @@ fn a_trial_on_a_holdout_task_that_ended_is_kept_under_holdout_with_its_result() 
     let (directory, outputs_directory) = trialled(&[HELD_OUT]);
     assert_eq!(
         directory
-            .read_to_string(
-                outputs_directory
-                    .path()
-                    .join("holdout/0/benchmark/t2/result")
-            )
+            .read_to_string(outputs_directory.path().join("holdout/0/dataset/t2/result"))
             .unwrap(),
         "pass\n"
     );
@@ -151,16 +147,16 @@ fn a_trial_on_a_holdout_task_leaves_nothing_in_the_directory_a_progenitor_is_giv
 fn the_directory_a_progenitor_is_given_holds_the_tasks_that_are_not_held_out_and_no_other() {
     let (directory, outputs_directory) = trialled(&[SHOWN, HELD_OUT]);
     assert_eq!(
-        names_in(&directory, &outputs_directory.trials(0).join("benchmark")),
+        names_in(&directory, &outputs_directory.trials(0).join("dataset")),
         ["t1"]
     );
 }
 
 #[test]
-fn the_trials_on_the_holdout_tasks_are_kept_apart_by_benchmark_and_task() {
+fn the_trials_on_the_holdout_tasks_are_kept_apart_by_dataset_and_task() {
     let (directory, outputs_directory) = trialled(&[SHOWN, HELD_OUT]);
     assert_eq!(
-        names_in(&directory, &outputs_directory.holdout(0).join("benchmark")),
+        names_in(&directory, &outputs_directory.holdout(0).join("dataset")),
         ["t2"]
     );
 }
@@ -168,7 +164,7 @@ fn the_trials_on_the_holdout_tasks_are_kept_apart_by_benchmark_and_task() {
 #[test]
 fn discarding_a_trial_on_a_holdout_task_that_ended_leaves_no_directory_of_the_trial() {
     let (directory, outputs_directory) = with_the_trial_on_the_holdout_task_discarded();
-    assert!(!directory.exists(outputs_directory.path().join("holdout/0/benchmark/t2")));
+    assert!(!directory.exists(outputs_directory.path().join("holdout/0/dataset/t2")));
 }
 
 #[test]

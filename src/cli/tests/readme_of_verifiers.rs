@@ -3,7 +3,7 @@ fn readme() -> String {
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_a_verifier_may_run_in_a_sandbox_of_its_own() {
+fn the_flag_of_the_dataset_says_that_a_verifier_may_run_in_a_sandbox_of_its_own() {
     assert!(readme().contains(
         "Where the `task.toml` says that the verifier of the task runs separately, `cladenc` \
          runs the verifier in a sandbox of its own, and a task whose verifier is in the image \
@@ -12,7 +12,7 @@ fn the_flag_of_the_benchmark_says_that_a_verifier_may_run_in_a_sandbox_of_its_ow
 }
 
 #[test]
-fn the_flag_of_the_benchmark_says_that_a_compose_file_in_the_tests_of_such_a_task_is_refused() {
+fn the_flag_of_the_dataset_says_that_a_compose_file_in_the_tests_of_such_a_task_is_refused() {
     assert!(readme().contains(
         "So is a task whose verifier runs separately and whose `tests` directory holds a \
          Compose file."

@@ -7,8 +7,8 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
@@ -41,7 +41,7 @@ fn a_run_on_a_machine_where_docker_is_not_found_says_that_the_first_environment_
         .unwrap();
     assert_eq!(
         said_last(&ended),
-        "cladenc: the environment of task benchmark/t1 was not built: its build could not be \
+        "cladenc: the environment of task dataset/t1 was not built: its build could not be \
          carried out: No such file or directory (os error 2)"
     );
 }

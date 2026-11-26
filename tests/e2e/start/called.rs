@@ -15,8 +15,8 @@ fn start(directory: &Path) -> Command {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         (
@@ -53,7 +53,7 @@ fn kept_by_the_harness(directory: &TempDir, file: &str) -> String {
 }
 
 fn left_by_the_trial(directory: &TempDir, file: &str) -> String {
-    let kept = test_inputs::kept_trial(&directory.path().join("outputs"), 0, "benchmark/t1");
+    let kept = test_inputs::kept_trial(&directory.path().join("outputs"), 0, "dataset/t1");
     fs::read_to_string(kept.join("work").join(file)).unwrap()
 }
 

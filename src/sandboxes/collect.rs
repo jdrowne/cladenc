@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicBool;
 use super::program::Limits;
 use super::sandbox::{Run, Shell, Up};
 use super::{SandboxError, make_directory};
-use crate::benchmark::CollectCommand;
+use crate::dataset::CollectCommand;
 
 pub(super) fn run(
     up: &Up<'_>,

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{self, Journal, Record, Seconds, Settings, Started, State};
@@ -11,8 +11,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -36,28 +36,24 @@ fn settings() -> Settings {
 
 fn dividing_its_tasks() -> Settings {
     Settings {
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
-        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
-        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t2".to_owned(), "dataset/t3".to_owned()],
+        corroboration_tasks: vec!["dataset/t3".to_owned()],
         ..settings()
     }
 }
 
 fn a_trial_on_each_task() -> [Record; 6] {
     [
-        trial_started(0, "benchmark/t1"),
-        trial_finished(0, "benchmark/t1", TrialResult::Fail),
-        trial_started(0, "benchmark/t2"),
-        trial_finished(0, "benchmark/t2", TrialResult::Pass),
-        trial_started(0, "benchmark/t3"),
-        trial_finished(
-            0,
-            "benchmark/t3",
-            TrialResult::Inconclusive(Cause::TimedOut),
-        ),
+        trial_started(0, "dataset/t1"),
+        trial_finished(0, "dataset/t1", TrialResult::Fail),
+        trial_started(0, "dataset/t2"),
+        trial_finished(0, "dataset/t2", TrialResult::Pass),
+        trial_started(0, "dataset/t3"),
+        trial_finished(0, "dataset/t3", TrialResult::Inconclusive(Cause::TimedOut)),
     ]
 }
 
@@ -421,7 +417,7 @@ fn the_start_of_a_baseline_takes_no_number_of_an_action() {
 
 #[test]
 fn a_trial_of_a_singleton_control_group_harness_takes_no_number_of_an_action() {
-    let records = an_experiment_whose_baseline_ended_and_then(&[trial_started(3, "benchmark/t1")]);
+    let records = an_experiment_whose_baseline_ended_and_then(&[trial_started(3, "dataset/t1")]);
     assert_eq!(rebuilt(&records).next_action, 2);
 }
 
@@ -434,8 +430,8 @@ fn rebuilding_gives_a_singleton_control_group_harness_no_seconds_of_a_diversific
 #[test]
 fn rebuilding_gives_a_singleton_control_group_harness_the_seconds_of_its_trials() {
     let state = rebuilt(&an_experiment_whose_baseline_ended_and_then(&[
-        trial_started(3, "benchmark/t1"),
-        trial_finished(3, "benchmark/t1", TrialResult::Pass),
+        trial_started(3, "dataset/t1"),
+        trial_finished(3, "dataset/t1", TrialResult::Pass),
     ]));
     assert_eq!(state.seconds[3].trials, 1.5);
 }
@@ -443,7 +439,7 @@ fn rebuilding_gives_a_singleton_control_group_harness_the_seconds_of_its_trials(
 #[test]
 fn the_end_of_a_baseline_leaves_the_other_actions_that_did_not_finish() {
     let mut records = an_experiment_whose_baseline_started();
-    records.push(trial_started(2, "benchmark/t1"));
+    records.push(trial_started(2, "dataset/t1"));
     records.push(Record::BaselineFinished {
         harness: 3,
         outcome: CreationOutcome::Failed,
@@ -453,7 +449,7 @@ fn the_end_of_a_baseline_leaves_the_other_actions_that_did_not_finish() {
         rebuilt(&records).unfinished,
         [Started::Trial {
             harness: 2,
-            task: "benchmark/t1".to_owned()
+            task: "dataset/t1".to_owned()
         }]
     );
 }

@@ -68,7 +68,7 @@ fn the_manual_of_start_says_when_a_verifier_image_is_built_and_under_what_name()
 #[test]
 fn the_manual_of_start_says_where_what_docker_printed_for_a_verifier_image_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "environments/<BENCHMARK>/<TASK>/verifier in the outputs directory keeps what Docker \
+        "environments/<DATASET>/<TASK>/verifier in the outputs directory keeps what Docker \
          printed."
     ));
 }

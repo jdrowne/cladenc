@@ -1,7 +1,7 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::image;
@@ -9,15 +9,15 @@ use crate::sandboxes::program::Ending;
 use crate::sandboxes::tests::double::Double;
 use crate::sandboxes::{Host, SandboxError};
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 const NAME: &str = "cladenc-environments-0123456789abcdef:never-built";
 
 fn made() -> (Memory, OutputsDirectory) {
     let directory = Memory::default();
     let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
-    let benchmark = Benchmark::read(
+    let dataset = Dataset::read(
         &directory,
-        &test_inputs::benchmark_in(&directory, directory.path(), &["t1"]),
+        &test_inputs::dataset_in(&directory, directory.path(), &["t1"]),
     )
     .unwrap();
     let outputs_directory = OutputsDirectory::create(
@@ -26,7 +26,7 @@ fn made() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.copy_benchmark(&benchmark).unwrap();
+    outputs_directory.copy_dataset(&dataset).unwrap();
     (directory, outputs_directory)
 }
 

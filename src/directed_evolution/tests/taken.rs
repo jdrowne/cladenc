@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use crate::artificial_selection::Action;
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::directed_evolution::Said;
 use crate::directed_evolution::action::{Ended, Told};
 use crate::directed_evolution::progress::Progress;
@@ -14,8 +14,8 @@ use crate::journal::{self, Journal, Record, Settings, Started};
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::{Creation, HarnessEnding, Trialled};
 
-const FIRST: &str = "benchmark/t1";
-const SECOND: &str = "benchmark/t2";
+const FIRST: &str = "dataset/t1";
+const SECOND: &str = "dataset/t2";
 
 fn settings() -> Settings {
     Settings {
@@ -23,8 +23,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -175,7 +175,7 @@ fn awaiting_a_baseline(progress: Progress<'_>, unfinished: Vec<Started>) -> Prog
     progress.resumed(genealogy, unfinished, 2)
 }
 
-fn benchmarked_in_full(genealogy: &mut Genealogy, harness: u64) {
+fn evaluated_in_full(genealogy: &mut Genealogy, harness: u64) {
     for task in [FIRST, SECOND] {
         genealogy.start_trial(harness, task).unwrap();
         genealogy
@@ -184,21 +184,21 @@ fn benchmarked_in_full(genealogy: &mut Genealogy, harness: u64) {
     }
 }
 
-fn two_harnesses_benchmarked_in_full() -> Genealogy {
+fn two_harnesses_evaluated_in_full() -> Genealogy {
     let mut genealogy = settings().genealogy();
-    benchmarked_in_full(&mut genealogy, 0);
+    evaluated_in_full(&mut genealogy, 0);
     let child = genealogy.start_diversification(0).unwrap();
     genealogy
         .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    benchmarked_in_full(&mut genealogy, child);
+    evaluated_in_full(&mut genealogy, child);
     genealogy
 }
 
 fn progenitor_chosen(seed: u64) -> Option<u64> {
     let chosen = seeded(seed)
         .artificial_selection()
-        .next_action(&two_harnesses_benchmarked_in_full(), 5);
+        .next_action(&two_harnesses_evaluated_in_full(), 5);
     match chosen {
         Some(Action::Diversification { progenitor }) => Some(progenitor),
         _ => None,
@@ -256,7 +256,7 @@ fn taking_an_action_says_nothing() {
 }
 
 #[test]
-fn once_the_primogenitor_is_benchmarked_in_full_its_diversification_is_taken() {
+fn once_the_primogenitor_is_evaluated_in_full_its_diversification_is_taken() {
     let taken = returned(&settings(), |mut progress| {
         carry_out(&mut progress, 2);
         progress.take()
@@ -308,8 +308,7 @@ fn a_child_that_was_created_is_given_its_first_task_next() {
 }
 
 #[test]
-fn no_action_is_taken_once_the_most_diversifications_are_started_and_every_harness_is_benchmarked()
-{
+fn no_action_is_taken_once_the_most_diversifications_are_started_and_every_harness_is_evaluated() {
     let only_one_diversification = Settings {
         max_diversifications: 1,
         ..settings()
@@ -340,7 +339,7 @@ fn a_resumed_directed_evolution_chooses_the_progenitor_an_uninterrupted_one_choo
     let taken: Vec<Option<u64>> = (0..32)
         .map(|seed| {
             returned(&seeded(seed), |progress| {
-                let genealogy = two_harnesses_benchmarked_in_full();
+                let genealogy = two_harnesses_evaluated_in_full();
                 progenitor_taken(progress.resumed(genealogy, Vec::new(), 5).take())
             })
         })
@@ -477,7 +476,7 @@ fn an_action_set_running_is_to_be_carried_out() {
 fn a_trial_set_running_is_said_to_have_started() {
     assert_eq!(
         said(&settings(), |mut progress| start(&mut progress)),
-        ["cladenc: started the trial of harness 0 on task benchmark/t1"]
+        ["cladenc: started the trial of harness 0 on task dataset/t1"]
     );
 }
 
@@ -517,7 +516,7 @@ fn an_unfinished_action_set_running_is_said_to_have_started_again() {
     });
     assert_eq!(
         said,
-        ["cladenc: started again the trial of harness 0 on task benchmark/t1"]
+        ["cladenc: started again the trial of harness 0 on task dataset/t1"]
     );
 }
 

@@ -4,7 +4,7 @@ use crate::genealogy::CreationOutcome;
 use crate::journal::Started;
 use crate::outputs_directory::OutputsDirectory;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 
 fn made() -> (Memory, OutputsDirectory) {
     let directory = Memory::default();

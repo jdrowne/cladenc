@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::genealogy::{CreationOutcome, TrialResult};
 use cladenc::model::Model;
@@ -30,7 +30,7 @@ fn launch(run_command: &str) -> Launch<'_> {
 }
 
 fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
-    for task in ["benchmark/t1", "benchmark/t2"] {
+    for task in ["dataset/t1", "dataset/t2"] {
         outputs_directory.start_trial(harness, task).unwrap();
         outputs_directory
             .end_trial(harness, task, TrialResult::Fail)
@@ -68,10 +68,10 @@ fn family() -> (TempDir, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap()
-    .holding_out(&["benchmark/t2".to_owned()]);
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    .holding_out(&["dataset/t2".to_owned()]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     trialled(&outputs_directory, 0);
     diversified(&outputs_directory, 1, 0, CreationOutcome::Created);
@@ -196,7 +196,7 @@ fn a_progenitor_reads_the_source_code_of_a_harness_of_its_line() {
 #[test]
 fn a_progenitor_reads_the_trials_of_a_harness_of_its_line_at_the_tasks_that_are_not_held_out() {
     assert_eq!(
-        found_by(3, "ls /var/log/cladenc/line/1/trials/benchmark"),
+        found_by(3, "ls /var/log/cladenc/line/1/trials/dataset"),
         "t1\n"
     );
 }
@@ -204,7 +204,7 @@ fn a_progenitor_reads_the_trials_of_a_harness_of_its_line_at_the_tasks_that_are_
 #[test]
 fn a_progenitor_reads_the_trials_of_a_child_it_made_at_the_tasks_that_are_not_held_out() {
     assert_eq!(
-        found_by(0, "ls /var/log/cladenc/children/1/trials/benchmark"),
+        found_by(0, "ls /var/log/cladenc/children/1/trials/dataset"),
         "t1\n"
     );
 }

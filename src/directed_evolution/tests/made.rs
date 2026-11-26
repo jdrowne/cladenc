@@ -7,17 +7,17 @@ use crate::sandboxes::tests::double::{Answer, Double};
 
 const ENVIRONMENTS_BUILT: [&str; 2] = [
     "docker build --tag cladenc-environments-0123456789abcdef:0 --label \
-     cladenc.task=benchmark/t1 --label cladenc.directed-evolution=OUTPUTS \
-     OUTPUTS/benchmarks/benchmark/t1/environment",
+     cladenc.task=dataset/t1 --label cladenc.directed-evolution=OUTPUTS \
+     OUTPUTS/datasets/dataset/t1/environment",
     "docker build --tag cladenc-environments-0123456789abcdef:1 --label \
-     cladenc.task=benchmark/t2 --label cladenc.directed-evolution=OUTPUTS \
-     OUTPUTS/benchmarks/benchmark/t2/environment",
+     cladenc.task=dataset/t2 --label cladenc.directed-evolution=OUTPUTS \
+     OUTPUTS/datasets/dataset/t2/environment",
 ];
 
 const VERIFIER_BUILT: &str = "docker build --tag cladenc-environments-0123456789abcdef:0-verifier \
-                            --label cladenc.task=benchmark/t1 --label \
+                            --label cladenc.task=dataset/t1 --label \
                             cladenc.directed-evolution=OUTPUTS \
-                            OUTPUTS/benchmarks/benchmark/t1/tests";
+                            OUTPUTS/datasets/dataset/t1/tests";
 
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const MACHINE: Answer = Answer::Printed("8 16777216000\n");
@@ -41,7 +41,7 @@ fn with_a_dockerfile_of_the_verifier(directory: &Memory, _: &mut Settings) {
     given::configured(directory, "t1", SEPARATE);
     directory
         .write(
-            directory.path().join("benchmark/t1/tests/Dockerfile"),
+            directory.path().join("dataset/t1/tests/Dockerfile"),
             "FROM scratch\n",
         )
         .unwrap();
@@ -84,16 +84,14 @@ fn an_environment_whose_build_fails_ends_the_directed_evolution_with_the_cause()
         Err(DirectedEvolutionError::Environment {
             task,
             error: SandboxError::Exit(1),
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
 #[test]
 fn an_environment_whose_build_fails_is_told_with_the_cause() {
     let said = not_built().said;
-    assert!(
-        said.contains("the build of the environment of task benchmark/t1 exited with status 1")
-    );
+    assert!(said.contains("the build of the environment of task dataset/t1 exited with status 1"));
 }
 
 #[test]
@@ -116,7 +114,7 @@ fn a_task_whose_configuration_is_not_valid_ends_the_directed_evolution() {
     let evolved = given::started(Double::default(), of_t1("not a table"));
     assert!(matches!(
         evolved.result,
-        Err(DirectedEvolutionError::Configuration { task, .. }) if task == "benchmark/t1"
+        Err(DirectedEvolutionError::Configuration { task, .. }) if task == "dataset/t1"
     ));
 }
 
@@ -132,9 +130,7 @@ fn an_image_that_a_task_names_as_its_environment_is_looked_for_on_the_machine() 
 #[test]
 fn an_image_that_a_task_names_as_its_environment_is_told() {
     let said = given::started(Double::default(), of_t1(IMAGE_GIVEN)).said;
-    assert!(
-        said.contains("taking the image an-image:given as the environment of task benchmark/t1")
-    );
+    assert!(said.contains("taking the image an-image:given as the environment of task dataset/t1"));
 }
 
 #[test]
@@ -144,7 +140,7 @@ fn an_image_that_a_task_names_and_the_machine_lacks_ends_the_directed_evolution(
     assert!(matches!(
         evolved.result,
         Err(DirectedEvolutionError::NotOnTheMachine { task, image, .. })
-            if task == "benchmark/t1" && image == "an-image:given"
+            if task == "dataset/t1" && image == "an-image:given"
     ));
 }
 
@@ -211,7 +207,7 @@ fn a_machine_that_cannot_be_asked_what_it_has_ends_the_directed_evolution() {
 fn an_image_that_a_task_names_as_its_verifier_environment_is_told() {
     let said = given::started(Double::default(), of_t1(VERIFIER_GIVEN)).said;
     assert!(said.contains(
-        "taking the image a-verifier:given as the verifier environment of task benchmark/t1"
+        "taking the image a-verifier:given as the verifier environment of task dataset/t1"
     ));
 }
 
@@ -222,7 +218,7 @@ fn a_verifier_image_that_the_machine_lacks_ends_the_directed_evolution() {
     assert!(matches!(
         evolved.result,
         Err(DirectedEvolutionError::VerifierNotOnTheMachine { task, image, .. })
-            if task == "benchmark/t1" && image == "a-verifier:given"
+            if task == "dataset/t1" && image == "a-verifier:given"
     ));
 }
 
@@ -248,16 +244,18 @@ fn a_verifier_environment_whose_build_fails_ends_the_directed_evolution_with_the
         Err(DirectedEvolutionError::VerifierEnvironment {
             task,
             error: SandboxError::Exit(1),
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
 #[test]
 fn a_verifier_environment_whose_build_fails_is_told_with_the_cause() {
     let said = verifier_not_built().said;
-    assert!(said.contains(
-        "the build of the verifier environment of task benchmark/t1 exited with status 1"
-    ));
+    assert!(
+        said.contains(
+            "the build of the verifier environment of task dataset/t1 exited with status 1"
+        )
+    );
 }
 
 #[test]
@@ -309,9 +307,9 @@ fn the_environment_of_each_task_is_told_to_be_built_with_the_image_it_is_built_a
     assert_eq!(
         building,
         [
-            "cladenc: building the environment of task benchmark/t1 as the image \
+            "cladenc: building the environment of task dataset/t1 as the image \
              cladenc-environments-0123456789abcdef:0",
-            "cladenc: building the environment of task benchmark/t2 as the image \
+            "cladenc: building the environment of task dataset/t2 as the image \
              cladenc-environments-0123456789abcdef:1",
         ]
     );
@@ -321,7 +319,7 @@ fn the_environment_of_each_task_is_told_to_be_built_with_the_image_it_is_built_a
 fn the_environments_are_built_after_the_tasks_are_held_out_and_before_the_first_action() {
     let starts = [
         "cladenc: holding out ",
-        "cladenc: building the environment of task benchmark/t1 ",
+        "cladenc: building the environment of task dataset/t1 ",
         "cladenc: built the environments ",
         "cladenc: started the ",
     ];
@@ -365,7 +363,7 @@ fn an_environment_whose_build_runs_past_the_time_limit_of_its_task_ends_the_dire
         Err(DirectedEvolutionError::Environment {
             task,
             error: SandboxError::TimeLimit,
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
@@ -374,12 +372,9 @@ fn an_environment_whose_build_runs_past_its_time_limit_is_said_with_where_what_d
  {
     let evolved = built_for_too_long();
     assert!(evolved.said.contains(&format!(
-        "cladenc: the build of the environment of task benchmark/t1 ran past its time limit: \
+        "cladenc: the build of the environment of task dataset/t1 ran past its time limit: \
          what Docker printed is kept in {}\n",
-        evolved
-            .outputs()
-            .join("environments/benchmark/t1")
-            .display()
+        evolved.outputs().join("environments/dataset/t1").display()
     )));
 }
 
@@ -409,7 +404,7 @@ fn a_directed_evolution_that_runs_to_its_end_holds_a_journal() {
 fn a_verifier_environment_is_told_to_be_built_with_the_image_it_is_built_as() {
     let said = given::started(Double::default(), with_a_dockerfile_of_the_verifier).said;
     assert!(said.contains(
-        "cladenc: building the verifier environment of task benchmark/t1 as the image \
+        "cladenc: building the verifier environment of task dataset/t1 as the image \
          cladenc-environments-0123456789abcdef:0-verifier\n"
     ));
 }
@@ -418,9 +413,9 @@ fn a_verifier_environment_is_told_to_be_built_with_the_image_it_is_built_as() {
 fn a_verifier_environment_is_built_after_that_of_its_task_and_before_that_of_the_next() {
     let evolved = given::started(Double::default(), with_a_dockerfile_of_the_verifier);
     let starts = [
-        "cladenc: building the environment of task benchmark/t1 ",
-        "cladenc: building the verifier environment of task benchmark/t1 ",
-        "cladenc: building the environment of task benchmark/t2 ",
+        "cladenc: building the environment of task dataset/t1 ",
+        "cladenc: building the verifier environment of task dataset/t1 ",
+        "cladenc: building the environment of task dataset/t2 ",
     ];
     assert_eq!(places_of(&evolved, &starts), [Some(3), Some(4), Some(5)]);
 }

@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicBool;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, Experiment};
 use crate::model::Model;
@@ -25,9 +25,9 @@ const LAUNCH: Launch<'static> = Launch {
 fn made() -> (Memory, OutputsDirectory) {
     let directory = Memory::default();
     let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
-    let benchmark = Benchmark::read(
+    let dataset = Dataset::read(
         &directory,
-        &test_inputs::benchmark_in(&directory, directory.path(), &["t1"]),
+        &test_inputs::dataset_in(&directory, directory.path(), &["t1"]),
     )
     .unwrap();
     let outputs_directory = OutputsDirectory::create(
@@ -36,7 +36,7 @@ fn made() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.copy_benchmark(&benchmark).unwrap();
+    outputs_directory.copy_dataset(&dataset).unwrap();
     (directory, outputs_directory)
 }
 
@@ -95,7 +95,7 @@ fn a_trial_of_a_harness_that_is_not_there_is_an_error() {
         &LAUNCH,
         Trial {
             harness: 9,
-            task: "benchmark/t1",
+            task: "dataset/t1",
             environment: &environment,
         },
         &AtomicBool::new(false),

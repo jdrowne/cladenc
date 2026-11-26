@@ -3,7 +3,7 @@ use test_inputs::manual_on_one_line;
 #[test]
 fn the_manual_of_start_says_when_the_environment_of_every_task_is_built() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "cladenc builds the environment of every task of every benchmark when the directed \
+        "cladenc builds the environment of every task of every dataset when the directed \
          evolution is started, and again each time it is resumed, before it brings up any \
          sandbox, as"
     ));
@@ -36,7 +36,7 @@ fn the_manual_of_start_says_what_the_labels_of_an_environment_are() {
 fn the_manual_of_start_says_that_two_directed_evolutions_build_two_images_of_one_task() {
     assert!(manual_on_one_line("cladenc-start").contains(
         "It makes the environments of two directed evolutions two images, even where both are \
-         built from one task of one benchmark, so that removing those of one leaves those of the \
+         built from one task of one dataset, so that removing those of one leaves those of the \
          other on the machine."
     ));
 }
@@ -61,7 +61,7 @@ fn the_manual_of_start_says_that_an_environment_is_built_from_the_copy_of_its_ta
 #[test]
 fn the_manual_of_start_says_where_what_docker_printed_for_an_environment_is_kept() {
     assert!(manual_on_one_line("cladenc-start").contains(
-        "environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker printed."
+        "environments/<DATASET>/<TASK> in the outputs directory keeps what Docker printed."
     ));
 }
 
@@ -111,7 +111,7 @@ fn the_manual_of_resume_says_that_the_base_image_of_an_environment_has_to_be_on_
 fn the_manual_of_resume_says_that_an_environment_that_is_not_built_stops_with_exit_status_2() {
     assert!(manual_on_one_line("cladenc-resume").contains(
         "A task whose environment is not built stops cladenc resume with exit status 2, and \
-         environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker printed."
+         environments/<DATASET>/<TASK> in the outputs directory keeps what Docker printed."
     ));
 }
 

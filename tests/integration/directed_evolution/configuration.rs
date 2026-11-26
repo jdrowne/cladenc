@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::directed_evolution::{DirectedEvolutionError, Found};
 use cladenc::file_system::Disk;
 use cladenc::journal::Settings;
@@ -23,16 +23,16 @@ fn in_the_image(image: &str) -> String {
 }
 
 fn settings(directory: &Path, task_tomls: &[(&str, &str)]) -> Settings {
-    let benchmark = test_inputs::benchmark(directory, &["t1", "t2", "t3"]);
+    let dataset = test_inputs::dataset(directory, &["t1", "t2", "t3"]);
     for (task, task_toml) in task_tomls {
-        fs::write(benchmark.join(task).join("task.toml"), task_toml).unwrap();
+        fs::write(dataset.join(task).join("task.toml"), task_toml).unwrap();
     }
     Settings {
         primogenitor: test_inputs::primogenitor(directory),
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark::read(&Disk, &benchmark).unwrap()],
+        datasets: vec![Dataset::read(&Disk, &dataset).unwrap()],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
         docker_build_timeout: None,
@@ -44,7 +44,7 @@ fn settings(directory: &Path, task_tomls: &[(&str, &str)]) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 17.0,
-        holdout_tasks: vec!["benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t3".to_owned()],
         corroboration_tasks_percentage: 17.0,
         corroboration_tasks: Vec::new(),
         environment_image_repository: test_inputs::environment_image_repository(),
@@ -93,14 +93,14 @@ fn a_directed_evolution_in_which_every_task_names_an_image_runs_to_its_end() {
 #[test]
 fn a_trial_on_a_task_that_names_an_image_is_carried_out_in_a_sandbox_of_that_image() {
     let evolved = with_t2_in(test_inputs::IMAGE);
-    let trial = test_inputs::kept_trial(&outputs_of(&evolved), 0, "benchmark/t2");
+    let trial = test_inputs::kept_trial(&outputs_of(&evolved), 0, "dataset/t2");
     assert!(!trial.join("work").exists());
 }
 
 #[test]
 fn a_trial_on_a_task_is_given_the_variables_its_task_toml_names() {
     assert_eq!(
-        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "benchmark/t1"),
+        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "dataset/t1"),
         "strict\n"
     );
 }
@@ -108,7 +108,7 @@ fn a_trial_on_a_task_is_given_the_variables_its_task_toml_names() {
 #[test]
 fn a_trial_on_a_task_is_given_no_variable_that_another_task_names() {
     assert_eq!(
-        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "benchmark/t2"),
+        printed_in_the_trial_at(&WITH_A_MODE_FOR_T1, "dataset/t2"),
         "\n"
     );
 }
@@ -118,7 +118,7 @@ fn a_task_whose_image_is_not_on_the_machine_stops_the_directed_evolution_naming_
     assert!(matches!(
         with_t2_in(NOT_ON_THE_MACHINE).found,
         Err(DirectedEvolutionError::NotOnTheMachine { task, image, .. })
-            if task == "benchmark/t2" && image == NOT_ON_THE_MACHINE
+            if task == "dataset/t2" && image == NOT_ON_THE_MACHINE
     ));
 }
 
@@ -126,7 +126,7 @@ fn a_task_whose_image_is_not_on_the_machine_stops_the_directed_evolution_naming_
 fn a_task_that_asks_for_more_cpus_than_the_machine_has_stops_the_directed_evolution() {
     assert!(matches!(
         evolved(&[("t2", "[environment]\ncpus = 100000\n")]).found,
-        Err(DirectedEvolutionError::TooLarge { task, key: "cpus", .. }) if task == "benchmark/t2"
+        Err(DirectedEvolutionError::TooLarge { task, key: "cpus", .. }) if task == "dataset/t2"
     ));
 }
 
@@ -135,7 +135,7 @@ fn a_task_that_asks_for_more_memory_than_the_machine_has_stops_the_directed_evol
     assert!(matches!(
         evolved(&[("t2", "[environment]\nmemory_mb = 100000000\n")]).found,
         Err(DirectedEvolutionError::TooLarge { task, key: "memory_mb", .. })
-            if task == "benchmark/t2"
+            if task == "dataset/t2"
     ));
 }
 

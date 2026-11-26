@@ -8,13 +8,13 @@ use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::SandboxError;
 use crate::sandboxes::tests::double::{Answer, Double};
 
-const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-benchmark+t2"];
+const A_TRIAL: [&str; 2] = ["run a harness", "trial-0-dataset+t2"];
 const A_DIVERSIFICATION: [&str; 2] = ["run a harness", "diversification-1"];
 const NOT_STARTED: Answer = Answer::Exited(125);
-const TASK: &str = "benchmark/t2";
+const TASK: &str = "dataset/t2";
 
 fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
-    settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t1".to_owned()];
 }
 
 fn twice(directory: &Memory, settings: &mut Settings) {
@@ -158,7 +158,7 @@ fn a_resumed_directed_evolution_returns_the_directory_of_the_best_harness_in_its
 #[test]
 fn a_directed_evolution_that_an_action_stops_says_what_became_of_the_action() {
     assert!(stopped_at(&A_TRIAL).said.contains(
-        "cladenc: the trial of harness 0 on task benchmark/t2 could not be carried out: Docker \
+        "cladenc: the trial of harness 0 on task dataset/t2 could not be carried out: Docker \
          did not start its sandbox, and "
     ));
 }
@@ -203,11 +203,11 @@ fn a_journal_cut_before_the_finished_record_of_an_action_in_place_continues_to_t
 }
 
 #[test]
-fn a_directed_evolution_is_resumed_without_the_directory_its_benchmark_was_given_in() {
+fn a_directed_evolution_is_resumed_without_the_directory_its_dataset_was_given_in() {
     let stopped = stopped_at(&A_DIVERSIFICATION);
     stopped
         .files()
-        .remove_dir_all(stopped.files().path().join("benchmark"))
+        .remove_dir_all(stopped.files().path().join("dataset"))
         .unwrap();
     assert!(given::resumed(stopped, working()).result.is_ok());
 }

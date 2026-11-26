@@ -10,8 +10,8 @@ use crate::sandboxes::tests::given::kept_verifier_logs;
 
 const HARNESS: [&str; 2] = ["exec", "run a harness"];
 const DIVERSIFICATION: [&str; 2] = ["run", "run a harness"];
-const FIRST_TRIAL_STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#;
-const STARTED_AGAIN: &str = "cladenc: started again the trial of harness 0 on task benchmark/t1\n";
+const FIRST_TRIAL_STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"dataset/t1"}"#;
+const STARTED_AGAIN: &str = "cladenc: started again the trial of harness 0 on task dataset/t1\n";
 
 fn refused() -> Evolved {
     let refused = [Answer::Refused("docker is not there")];
@@ -44,7 +44,7 @@ fn a_trial_that_cannot_be_carried_out_ends_the_directed_evolution_with_its_cause
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
             error: SandboxError::Io(_),
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
@@ -52,7 +52,7 @@ fn a_trial_that_cannot_be_carried_out_ends_the_directed_evolution_with_its_cause
 fn a_trial_that_cannot_be_carried_out_is_told_with_its_cause() {
     let said = refused().said;
     assert!(said.contains(
-        "the trial of harness 0 on task benchmark/t1 could not be carried out: docker is not \
+        "the trial of harness 0 on task dataset/t1 could not be carried out: docker is not \
          there"
     ));
 }
@@ -130,7 +130,7 @@ fn a_harness_that_runs_past_the_time_limit_of_its_task_is_said_to_have_been_stop
     let docker = Double::default().answering(&HARNESS, &[Answer::TimedOut]);
     let said = given::started(docker, given::unchanged).said;
     assert!(said.contains(
-        "cladenc: the trial of harness 0 on task benchmark/t1 was inconclusive, after the \
+        "cladenc: the trial of harness 0 on task dataset/t1 was inconclusive, after the \
          harness was stopped at its time limit, as the verifier left no verdict that can be \
          read: what the trial left is kept in "
     ));
@@ -149,7 +149,7 @@ fn a_trial_whose_verifier_logs_were_not_copied_out_ends_the_directed_evolution_w
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
             error: SandboxError::NotCopiedOut { .. },
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
@@ -157,7 +157,7 @@ fn a_trial_whose_verifier_logs_were_not_copied_out_ends_the_directed_evolution_w
 fn a_trial_whose_verifier_logs_were_not_copied_out_is_told_with_what_docker_said() {
     let said = not_copied_out().said;
     assert!(said.contains(
-        "cladenc: the trial of harness 0 on task benchmark/t1 was not given a result: what its \
+        "cladenc: the trial of harness 0 on task dataset/t1 was not given a result: what its \
          verifier left in /logs/verifier could not be copied out of its sandbox: no space left on \
          device\n"
     ));
@@ -166,7 +166,7 @@ fn a_trial_whose_verifier_logs_were_not_copied_out_is_told_with_what_docker_said
 #[test]
 fn a_trial_whose_verifier_logs_were_not_copied_out_is_not_said_to_be_inconclusive() {
     let said = not_copied_out().said;
-    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
+    assert!(!said.contains("on task dataset/t1 was inconclusive"));
 }
 
 #[test]

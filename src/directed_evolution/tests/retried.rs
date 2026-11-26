@@ -23,7 +23,7 @@ fn brought_up_again() -> Evolved {
 fn a_task_that_is_brought_up_again_for_its_health_check_is_told() {
     let said = brought_up_again().said;
     assert!(said.contains(
-        "the trial of harness 0 on task benchmark/t1 is not carried out yet: the health check \
+        "the trial of harness 0 on task dataset/t1 is not carried out yet: the health check \
          of the task did not pass"
     ));
 }
@@ -50,9 +50,9 @@ fn a_directed_evolution_goes_on_once_the_health_check_of_a_task_passes() {
 
 const VERIFIER_CHECKED: &str = "[verifier.environment.healthcheck]\ncommand = \"test -e \
                               /verified\"\ninterval_sec = 0.0\nretries = 1\n";
-const STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#;
-const FINISHED: &str = r#"{"record":"trial_finished","harness":0,"task":"benchmark/t1""#;
-const STARTED_AGAIN: &str = "cladenc: started again the trial of harness 0 on task benchmark/t1\n";
+const STARTED: &str = r#"{"record":"trial_started","harness":0,"task":"dataset/t1"}"#;
+const FINISHED: &str = r#"{"record":"trial_finished","harness":0,"task":"dataset/t1""#;
+const STARTED_AGAIN: &str = "cladenc: started again the trial of harness 0 on task dataset/t1\n";
 
 fn with_a_health_check_of_the_verifier(directory: &Memory, settings: &mut Settings) {
     settings.max_verifier_health_check_retries = 1;
@@ -81,7 +81,7 @@ fn a_task_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_and_
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
             error: SandboxError::TaskHealthCheck { tries: 2, .. },
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
@@ -89,12 +89,12 @@ fn a_task_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_and_
 fn a_harness_that_was_never_started_is_said_with_the_tries_and_where_the_health_check_is_kept() {
     let evolved = never_ready();
     assert!(evolved.said.contains(&format!(
-        "cladenc: the trial of harness 0 on task benchmark/t1 was not carried out: the health \
+        "cladenc: the trial of harness 0 on task dataset/t1 was not carried out: the health \
          check of the task did not pass in 2 tries, so the harness was not started, and {} holds \
          what the health check printed the last time it ran\n",
         evolved
             .outputs()
-            .join("running/trial-0-benchmark+t1/health-check")
+            .join("running/trial-0-dataset+t1/health-check")
             .display()
     )));
 }
@@ -102,7 +102,7 @@ fn a_harness_that_was_never_started_is_said_with_the_tries_and_where_the_health_
 #[test]
 fn a_trial_whose_harness_was_never_started_is_not_said_to_be_inconclusive() {
     let said = never_ready().said;
-    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
+    assert!(!said.contains("on task dataset/t1 was inconclusive"));
 }
 
 #[test]
@@ -129,7 +129,7 @@ fn a_verifier_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_
         Err(DirectedEvolutionError::Action {
             action: Started::Trial { harness: 0, task },
             error: SandboxError::VerifierHealthCheck { tries: 2, .. },
-        }) if task == "benchmark/t1"
+        }) if task == "dataset/t1"
     ));
 }
 
@@ -137,7 +137,7 @@ fn a_verifier_that_is_never_ready_stops_the_directed_evolution_naming_the_trial_
 fn a_verifier_that_is_brought_up_again_for_its_health_check_is_told_with_the_number_of_the_retry() {
     let said = with_a_verifier_that_is_never_ready().said;
     assert!(said.contains(
-        "cladenc: the trial of harness 0 on task benchmark/t1 is not verified yet: the health \
+        "cladenc: the trial of harness 0 on task dataset/t1 is not verified yet: the health \
          check of its verifier sandbox did not pass, and cladenc tries again in a new \
          sandbox after 0 seconds, retry 1 of 1\n"
     ));
@@ -147,12 +147,12 @@ fn a_verifier_that_is_brought_up_again_for_its_health_check_is_told_with_the_num
 fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_check_is_kept() {
     let evolved = with_a_verifier_that_is_never_ready();
     assert!(evolved.said.contains(&format!(
-        "cladenc: the trial of harness 0 on task benchmark/t1 was not verified: the health \
+        "cladenc: the trial of harness 0 on task dataset/t1 was not verified: the health \
          check of its verifier sandbox did not pass in 2 tries, so the verifier was not \
          run, and {} holds what the health check printed the last time it ran\n",
         evolved
             .outputs()
-            .join("running/trial-0-benchmark+t1/verifier/health-check")
+            .join("running/trial-0-dataset+t1/verifier/health-check")
             .display()
     )));
 }
@@ -160,7 +160,7 @@ fn a_verifier_that_was_never_run_is_said_with_the_tries_and_where_its_health_che
 #[test]
 fn a_trial_whose_verifier_was_never_run_is_not_said_to_be_inconclusive() {
     let said = with_a_verifier_that_is_never_ready().said;
-    assert!(!said.contains("on task benchmark/t1 was inconclusive"));
+    assert!(!said.contains("on task dataset/t1 was inconclusive"));
 }
 
 #[test]
@@ -188,7 +188,7 @@ fn what_the_health_check_of_a_task_that_was_never_ready_printed_is_kept_where_cl
     let evolved = never_ready();
     let kept = evolved
         .outputs()
-        .join("running/trial-0-benchmark+t1/health-check");
+        .join("running/trial-0-dataset+t1/health-check");
     assert!(evolved.files().is_dir(kept));
 }
 
@@ -197,6 +197,6 @@ fn what_the_health_check_of_a_verifier_that_was_never_run_printed_is_kept_where_
     let evolved = with_a_verifier_that_is_never_ready();
     let kept = evolved
         .outputs()
-        .join("running/trial-0-benchmark+t1/verifier/health-check");
+        .join("running/trial-0-dataset+t1/verifier/health-check");
     assert!(evolved.files().is_dir(kept));
 }

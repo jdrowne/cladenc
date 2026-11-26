@@ -1,5 +1,5 @@
-use crate::benchmark::Artifact;
-use crate::benchmark::configuration::{self, ConfigurationError};
+use crate::dataset::Artifact;
+use crate::dataset::configuration::{self, ConfigurationError};
 use crate::file_system::tests::double::Memory;
 
 const A_DIRECTORY: &str = "[[artifacts]]\nsource = \"/app/out\"\n";

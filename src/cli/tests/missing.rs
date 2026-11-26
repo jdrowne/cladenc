@@ -6,7 +6,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--benchmark", "/benchmark"),
+    ("--dataset", "/dataset"),
     ("--diversification-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
@@ -65,9 +65,9 @@ fn leaving_out_the_address_of_the_model_is_an_error() {
 }
 
 #[test]
-fn leaving_out_the_benchmark_is_an_error() {
+fn leaving_out_the_dataset_is_an_error() {
     assert_eq!(
-        refusal_without("--benchmark"),
+        refusal_without("--dataset"),
         ErrorKind::MissingRequiredArgument
     );
 }

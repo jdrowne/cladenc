@@ -94,7 +94,7 @@ const IMAGE: &str = "cladenc-0123456789abcdef";
 
 fn copying(tasks: u64) -> String {
     Said::CopyingTasks {
-        benchmark: Path::new("/parsing"),
+        dataset: Path::new("/parsing"),
         tasks,
     }
     .to_string()
@@ -123,10 +123,10 @@ fn the_outputs_directory_is_said_to_be_made_with_a_copy_of_the_primogenitor() {
 }
 
 #[test]
-fn the_tasks_of_a_benchmark_are_said_to_be_copied_with_their_number() {
+fn the_tasks_of_a_dataset_are_said_to_be_copied_with_their_number() {
     assert_eq!(
         copying(3),
-        "copying the 3 tasks of the benchmark /parsing into the outputs directory"
+        "copying the 3 tasks of the dataset /parsing into the outputs directory"
     );
 }
 
@@ -134,21 +134,21 @@ fn the_tasks_of_a_benchmark_are_said_to_be_copied_with_their_number() {
 fn one_task_is_not_said_to_be_several() {
     assert_eq!(
         copying(1),
-        "copying the 1 task of the benchmark /parsing into the outputs directory"
+        "copying the 1 task of the dataset /parsing into the outputs directory"
     );
 }
 
 #[test]
-fn the_tasks_held_out_of_a_benchmark_are_said_with_how_many_of_its_tasks_they_are() {
+fn the_tasks_held_out_of_a_dataset_are_said_with_how_many_of_its_tasks_they_are() {
     assert_eq!(
         Said::HoldingOut {
-            benchmark: Path::new("/parsing"),
+            dataset: Path::new("/parsing"),
             selection: 6,
             corroboration: 2,
             tasks: 10,
         }
         .to_string(),
-        "holding out 8 of the 10 tasks of the benchmark /parsing from every progenitor: 6 \
+        "holding out 8 of the 10 tasks of the dataset /parsing from every progenitor: 6 \
          selection tasks and 2 corroboration tasks"
     );
 }
@@ -157,13 +157,13 @@ fn the_tasks_held_out_of_a_benchmark_are_said_with_how_many_of_its_tasks_they_ar
 fn one_selection_task_and_one_corroboration_task_are_not_said_as_several() {
     assert_eq!(
         Said::HoldingOut {
-            benchmark: Path::new("/parsing"),
+            dataset: Path::new("/parsing"),
             selection: 1,
             corroboration: 1,
             tasks: 3,
         }
         .to_string(),
-        "holding out 2 of the 3 tasks of the benchmark /parsing from every progenitor: 1 \
+        "holding out 2 of the 3 tasks of the dataset /parsing from every progenitor: 1 \
          selection task and 1 corroboration task"
     );
 }
@@ -314,11 +314,11 @@ fn an_image_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() 
 fn the_environment_of_a_task_is_said_to_be_being_built_with_the_image_it_is_built_as() {
     assert_eq!(
         Said::Environments(Environments::Building {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             image: "cladenc-environments-0123456789abcdef:0",
         })
         .to_string(),
-        "building the environment of task benchmark/t1 as the image \
+        "building the environment of task dataset/t1 as the image \
          cladenc-environments-0123456789abcdef:0"
     );
 }
@@ -382,12 +382,12 @@ fn the_one_environment_built_among_several_tasks_is_said_as_one() {
 fn an_image_that_a_task_names_is_said_to_be_taken_as_the_environment_of_the_task() {
     assert_eq!(
         Said::Environments(Environments::Taking {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             image: "registry.example/tasks/parser:3",
         })
         .to_string(),
         "taking the image registry.example/tasks/parser:3 as the environment of task \
-         benchmark/t1, as its task.toml says"
+         dataset/t1, as its task.toml says"
     );
 }
 
@@ -395,13 +395,13 @@ fn an_image_that_a_task_names_is_said_to_be_taken_as_the_environment_of_the_task
 fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::Environments(Environments::NotBuilt {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             error: &SandboxError::Exit(1),
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
-        "the build of the environment of task benchmark/t1 exited with status 1: what Docker \
-         printed is kept in /outputs/environments/benchmark/t1"
+        "the build of the environment of task dataset/t1 exited with status 1: what Docker \
+         printed is kept in /outputs/environments/dataset/t1"
     );
 }
 
@@ -409,11 +409,11 @@ fn an_environment_that_was_not_built_is_said_with_its_task_and_where_what_docker
 fn a_verifier_environment_is_said_to_be_being_built_with_the_image_it_is_built_as() {
     assert_eq!(
         Said::Environments(Environments::VerifierBuilding {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             image: "cladenc-environments-0123456789abcdef:0-verifier",
         })
         .to_string(),
-        "building the verifier environment of task benchmark/t1 as the image \
+        "building the verifier environment of task dataset/t1 as the image \
          cladenc-environments-0123456789abcdef:0-verifier"
     );
 }
@@ -422,12 +422,12 @@ fn a_verifier_environment_is_said_to_be_being_built_with_the_image_it_is_built_a
 fn an_image_that_a_task_names_for_its_verifier_is_said_to_be_taken_as_its_environment() {
     assert_eq!(
         Said::Environments(Environments::VerifierTaking {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             image: "registry.example/verifiers/parser:3",
         })
         .to_string(),
         "taking the image registry.example/verifiers/parser:3 as the verifier environment of \
-         task benchmark/t1, as its task.toml says"
+         task dataset/t1, as its task.toml says"
     );
 }
 
@@ -435,13 +435,13 @@ fn an_image_that_a_task_names_for_its_verifier_is_said_to_be_taken_as_its_enviro
 fn a_verifier_environment_that_was_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         Said::Environments(Environments::VerifierNotBuilt {
-            task: "benchmark/t1",
+            task: "dataset/t1",
             error: &SandboxError::Exit(1),
             outputs_directory: &outputs_directory(),
         })
         .to_string(),
-        "the build of the verifier environment of task benchmark/t1 exited with status 1: \
-         what Docker printed is kept in /outputs/environments/benchmark/t1/verifier"
+        "the build of the verifier environment of task dataset/t1 exited with status 1: \
+         what Docker printed is kept in /outputs/environments/dataset/t1/verifier"
     );
 }
 

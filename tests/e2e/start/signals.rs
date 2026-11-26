@@ -14,8 +14,8 @@ fn start(directory: &Path, run_command: &str) -> Vec<String> {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
@@ -42,7 +42,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
     fs::write(
         directory
             .path()
-            .join("benchmark/t1/environment/workspace/hold"),
+            .join("dataset/t1/environment/workspace/hold"),
         "",
     )
     .unwrap();
@@ -54,7 +54,7 @@ fn a_run_started_through_nohup_goes_on_to_its_end_after_a_hangup() {
         .spawn()
         .unwrap();
     let outputs = directory.path().join("outputs");
-    let id_file = outputs.join("running/trial-0-benchmark+t1/stdout");
+    let id_file = outputs.join("running/trial-0-dataset+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGHUP).unwrap();
     let id = fs::read_to_string(&id_file).unwrap();

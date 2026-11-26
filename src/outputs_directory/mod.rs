@@ -6,7 +6,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::benchmark::{Benchmark, INSTRUCTION};
+use crate::dataset::{Dataset, INSTRUCTION};
 use crate::file_system::FileSystem;
 use crate::genealogy::{Cause, CreationOutcome, Experiment, HarnessId, TrialResult};
 
@@ -58,7 +58,7 @@ impl OutputsDirectory {
             .and_then(|()| files.make_directory(&path.join("trials")))
             .and_then(|()| files.make_directory(&path.join("holdout")))
             .and_then(|()| files.make_directory(&path.join("running")))
-            .and_then(|()| files.make_directory(&path.join("benchmarks")))
+            .and_then(|()| files.make_directory(&path.join("datasets")))
             .and_then(|()| files.resolved(primogenitor))
             .and_then(|resolved| copy_tree(files, &resolved, &self.harness(0)))
             .and_then(|()| files.make_directory(&self.trials(0)))
@@ -72,20 +72,20 @@ impl OutputsDirectory {
         self.files.as_ref()
     }
 
-    pub fn copy_benchmark(&self, benchmark: &Benchmark) -> io::Result<()> {
+    pub fn copy_dataset(&self, dataset: &Dataset) -> io::Result<()> {
         let files = self.files();
-        let kept = self.path.join("benchmarks").join(benchmark.name());
+        let kept = self.path.join("datasets").join(dataset.name());
         files.make_directory(&kept).and_then(|()| {
-            benchmark.tasks.iter().try_for_each(|id| {
+            dataset.tasks.iter().try_for_each(|id| {
                 files
-                    .resolved(&benchmark.directory.join(id))
+                    .resolved(&dataset.directory.join(id))
                     .and_then(|resolved| copy_tree(files, &resolved, &kept.join(id)))
             })
         })
     }
 
     pub fn task(&self, task: &str) -> PathBuf {
-        self.path.join("benchmarks").join(task)
+        self.path.join("datasets").join(task)
     }
 
     pub fn image(&self) -> PathBuf {

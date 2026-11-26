@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{CreationOutcome, Experiment, Genealogy, HarnessId, TrialResult};
 use crate::journal::Settings;
 use crate::report::Report;
@@ -15,8 +15,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: ["c1", "c2", "c3", "o1", "s1"].map(str::to_owned).to_vec(),
         }],
         docker_image: "image".to_owned(),
@@ -31,18 +31,18 @@ fn settings() -> Settings {
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 20.0,
         holdout_tasks: ["c1", "c2", "c3", "s1"]
-            .map(|id| format!("benchmark/{id}"))
+            .map(|id| format!("dataset/{id}"))
             .to_vec(),
         corroboration_tasks_percentage: 60.0,
         corroboration_tasks: ["c1", "c2", "c3"]
-            .map(|id| format!("benchmark/{id}"))
+            .map(|id| format!("dataset/{id}"))
             .to_vec(),
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
 }
 
-fn benchmarked(genealogy: &mut Genealogy, harness: HarnessId, completed: &[&str]) {
+fn evaluated(genealogy: &mut Genealogy, harness: HarnessId, completed: &[&str]) {
     for task in settings().tasks() {
         let result = if completed.contains(&task.as_str()) {
             TrialResult::Pass
@@ -80,16 +80,16 @@ fn with_a_child_of_the_primogenitor() -> Genealogy {
 fn after_an_experiment(child: &[&str], singleton_control_group_harness: &[&str]) -> Genealogy {
     let mut genealogy = with_a_child_of_the_primogenitor();
     experiment_on(&mut genealogy, 1, (CREATED, CREATED));
-    benchmarked(&mut genealogy, 2, child);
-    benchmarked(&mut genealogy, 3, singleton_control_group_harness);
+    evaluated(&mut genealogy, 2, child);
+    evaluated(&mut genealogy, 3, singleton_control_group_harness);
     genealogy
 }
 
 fn after_two_experiments() -> Genealogy {
-    let mut genealogy = after_an_experiment(&["benchmark/c1", "benchmark/c2"], &["benchmark/c2"]);
+    let mut genealogy = after_an_experiment(&["dataset/c1", "dataset/c2"], &["dataset/c2"]);
     experiment_on(&mut genealogy, 2, (CREATED, CREATED));
-    benchmarked(&mut genealogy, 4, &["benchmark/c1"]);
-    benchmarked(&mut genealogy, 5, &["benchmark/c2"]);
+    evaluated(&mut genealogy, 4, &["dataset/c1"]);
+    evaluated(&mut genealogy, 5, &["dataset/c2"]);
     genealogy
 }
 
@@ -101,7 +101,7 @@ fn after_an_experiment_that_created(outcomes: (CreationOutcome, CreationOutcome)
         (singleton_control_group_harness, outcomes.1),
     ] {
         if outcome == CREATED {
-            benchmarked(&mut genealogy, harness, &["benchmark/c1"]);
+            evaluated(&mut genealogy, harness, &["dataset/c1"]);
         }
     }
     genealogy
@@ -157,8 +157,8 @@ fn the_corroboration_tasks_that_only_one_of_the_two_harnesses_of_an_experiment_c
  {
     assert_eq!(
         told_apart(&after_an_experiment(
-            &["benchmark/c1", "benchmark/c2"],
-            &["benchmark/c2", "benchmark/c3"]
+            &["dataset/c1", "dataset/c2"],
+            &["dataset/c2", "dataset/c3"]
         )),
         (1, 1)
     );
@@ -168,7 +168,7 @@ fn the_corroboration_tasks_that_only_one_of_the_two_harnesses_of_an_experiment_c
 fn a_task_that_is_no_corroboration_task_tells_the_two_harnesses_of_an_experiment_apart_by_nothing()
 {
     assert_eq!(
-        told_apart(&after_an_experiment(&["benchmark/s1", "benchmark/o1"], &[])),
+        told_apart(&after_an_experiment(&["dataset/s1", "dataset/o1"], &[])),
         (0, 0)
     );
 }
@@ -215,14 +215,14 @@ fn the_tasks_of_an_experiment_where_one_of_the_two_harnesses_was_not_created_are
 fn a_task_that_one_of_the_two_harnesses_has_not_trialled_yet_is_not_counted() {
     let mut genealogy = with_a_child_of_the_primogenitor();
     experiment_on(&mut genealogy, 1, (CREATED, CREATED));
-    benchmarked(&mut genealogy, 2, &["benchmark/c1"]);
+    evaluated(&mut genealogy, 2, &["dataset/c1"]);
     assert_eq!(told_apart(&genealogy), (0, 0));
 }
 
 #[test]
 fn the_likelihood_is_that_of_a_lead_of_the_progenitors_children_at_least_as_large_by_luck() {
     let report = report_of(&after_an_experiment(
-        &["benchmark/c1", "benchmark/c2", "benchmark/c3"],
+        &["dataset/c1", "dataset/c2", "dataset/c3"],
         &[],
     ));
     assert_eq!(report.experiments.likelihood_by_luck, Some(0.125));
@@ -256,7 +256,7 @@ fn a_baseline_is_not_reported_as_a_diversification_that_was_started() {
 
 #[test]
 fn a_task_that_only_a_singleton_control_group_harness_completed_is_completed_by_no_harness() {
-    let report = report_of(&after_an_experiment(&[], &["benchmark/s1"]));
+    let report = report_of(&after_an_experiment(&[], &["dataset/s1"]));
     assert_eq!(report.selection_tasks_completed_by_any, 0);
 }
 

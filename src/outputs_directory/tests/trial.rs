@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{Cause, TrialResult};
 use crate::outputs_directory::OutputsDirectory;
@@ -14,23 +14,23 @@ fn made() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&directory, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&directory, &dataset).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }
 
 fn started() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
+    outputs_directory.start_trial(0, "dataset/t1").unwrap();
     (directory, outputs_directory)
 }
 
 fn ended(result: TrialResult) -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = started();
     outputs_directory
-        .end_trial(0, "benchmark/t1", result)
+        .end_trial(0, "dataset/t1", result)
         .unwrap();
     (directory, outputs_directory)
 }
@@ -38,25 +38,21 @@ fn ended(result: TrialResult) -> (Memory, OutputsDirectory) {
 fn result_written(result: TrialResult) -> String {
     let (directory, outputs_directory) = ended(result);
     directory
-        .read_to_string(outputs_directory.trial(0, "benchmark/t1").join("result"))
+        .read_to_string(outputs_directory.trial(0, "dataset/t1").join("result"))
         .unwrap()
 }
 
 fn cause_written(result: TrialResult) -> Option<String> {
     let (directory, outputs_directory) = ended(result);
     directory
-        .read_to_string(outputs_directory.trial(0, "benchmark/t1").join("cause"))
+        .read_to_string(outputs_directory.trial(0, "dataset/t1").join("cause"))
         .ok()
 }
 
 fn held_while_running(file: &str) -> String {
     let (directory, outputs_directory) = started();
     directory
-        .read_to_string(
-            outputs_directory
-                .running_trial(0, "benchmark/t1")
-                .join(file),
-        )
+        .read_to_string(outputs_directory.running_trial(0, "dataset/t1").join(file))
         .unwrap()
 }
 
@@ -79,7 +75,7 @@ fn a_started_trial_holds_a_directory_for_the_verifier_with_nothing_in_it_but_its
         entries(
             &directory,
             outputs_directory
-                .running_trial(0, "benchmark/t1")
+                .running_trial(0, "dataset/t1")
                 .join("verifier")
         ),
         1
@@ -93,7 +89,7 @@ fn a_started_trial_holds_an_empty_directory_for_what_the_verifier_leaves_in_logs
         entries(
             &directory,
             outputs_directory
-                .running_trial(0, "benchmark/t1")
+                .running_trial(0, "dataset/t1")
                 .join("verifier/logs/verifier")
         ),
         0
@@ -103,15 +99,15 @@ fn a_started_trial_holds_an_empty_directory_for_what_the_verifier_leaves_in_logs
 #[test]
 fn a_started_trial_holds_nothing_but_the_instruction_and_a_directory_for_the_verifier() {
     let (directory, outputs_directory) = started();
-    let names = directory.names_in(outputs_directory.running_trial(0, "benchmark/t1"));
+    let names = directory.names_in(outputs_directory.running_trial(0, "dataset/t1"));
     assert_eq!(names, ["instruction", "verifier"]);
 }
 
 #[test]
-fn a_started_trial_has_an_empty_directory_for_its_benchmark_among_those_of_its_harness() {
+fn a_started_trial_has_an_empty_directory_for_its_dataset_among_those_of_its_harness() {
     let (directory, outputs_directory) = started();
     assert_eq!(
-        entries(&directory, outputs_directory.trials(0).join("benchmark")),
+        entries(&directory, outputs_directory.trials(0).join("dataset")),
         0
     );
 }
@@ -119,20 +115,20 @@ fn a_started_trial_has_an_empty_directory_for_its_benchmark_among_those_of_its_h
 #[test]
 fn a_trial_of_a_harness_the_outputs_directory_does_not_hold_cannot_be_started() {
     let (_directory, outputs_directory) = made();
-    assert!(outputs_directory.start_trial(7, "benchmark/t1").is_err());
+    assert!(outputs_directory.start_trial(7, "dataset/t1").is_err());
 }
 
 #[test]
 fn a_trial_of_a_harness_the_outputs_directory_does_not_hold_leaves_nothing_running() {
     let (directory, outputs_directory) = made();
-    let _ = outputs_directory.start_trial(7, "benchmark/t1");
-    assert!(!directory.exists(outputs_directory.running_trial(7, "benchmark/t1")));
+    let _ = outputs_directory.start_trial(7, "dataset/t1");
+    assert!(!directory.exists(outputs_directory.running_trial(7, "dataset/t1")));
 }
 
 #[test]
 fn a_trial_on_a_task_the_outputs_directory_does_not_hold_cannot_be_started() {
     let (_directory, outputs_directory) = made();
-    assert!(outputs_directory.start_trial(0, "benchmark/t9").is_err());
+    assert!(outputs_directory.start_trial(0, "dataset/t9").is_err());
 }
 
 #[test]
@@ -190,23 +186,23 @@ fn a_trial_that_failed_leaves_no_cause() {
 #[test]
 fn an_ended_trial_keeps_no_copy_of_its_harness() {
     let (directory, outputs_directory) = ended(TrialResult::Pass);
-    assert!(!directory.exists(outputs_directory.trial(0, "benchmark/t1").join("harness")));
+    assert!(!directory.exists(outputs_directory.trial(0, "dataset/t1").join("harness")));
 }
 
 #[test]
 fn an_ended_trial_keeps_what_was_left_in_the_directory_of_the_running_trial() {
     let (directory, outputs_directory) = started();
-    let running = outputs_directory.running_trial(0, "benchmark/t1");
+    let running = outputs_directory.running_trial(0, "dataset/t1");
     directory.create_dir(running.join("work")).unwrap();
     directory
         .write(running.join("work/left"), "done\n")
         .unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::Pass)
+        .end_trial(0, "dataset/t1", TrialResult::Pass)
         .unwrap();
     assert_eq!(
         directory
-            .read_to_string(outputs_directory.trial(0, "benchmark/t1").join("work/left"))
+            .read_to_string(outputs_directory.trial(0, "dataset/t1").join("work/left"))
             .unwrap(),
         "done\n"
     );
@@ -215,23 +211,17 @@ fn an_ended_trial_keeps_what_was_left_in_the_directory_of_the_running_trial() {
 #[test]
 fn an_ended_trial_keeps_the_instruction_of_its_task() {
     let (directory, outputs_directory) = ended(TrialResult::Pass);
-    assert!(
-        directory.is_file(
-            outputs_directory
-                .trial(0, "benchmark/t1")
-                .join("instruction")
-        )
-    );
+    assert!(directory.is_file(outputs_directory.trial(0, "dataset/t1").join("instruction")));
 }
 
 #[test]
 fn an_ended_trial_leaves_nothing_running() {
     let (directory, outputs_directory) = ended(TrialResult::Pass);
-    assert!(!directory.exists(outputs_directory.running_trial(0, "benchmark/t1")));
+    assert!(!directory.exists(outputs_directory.running_trial(0, "dataset/t1")));
 }
 
 #[test]
-fn the_directory_of_an_ended_trial_is_named_after_its_harness_its_benchmark_and_its_task() {
+fn the_directory_of_an_ended_trial_is_named_after_its_harness_its_dataset_and_its_task() {
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
             .trial(3, "parsing/fix-the-parser"),
@@ -240,7 +230,7 @@ fn the_directory_of_an_ended_trial_is_named_after_its_harness_its_benchmark_and_
 }
 
 #[test]
-fn the_directory_of_a_running_trial_names_its_benchmark_and_its_task_in_one_name() {
+fn the_directory_of_a_running_trial_names_its_dataset_and_its_task_in_one_name() {
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
             .running_trial(3, "parsing/fix-the-parser"),
@@ -249,7 +239,7 @@ fn the_directory_of_a_running_trial_names_its_benchmark_and_its_task_in_one_name
 }
 
 #[test]
-fn a_trial_that_ends_after_another_on_a_task_of_the_same_benchmark_is_kept_beside_it() {
+fn a_trial_that_ends_after_another_on_a_task_of_the_same_dataset_is_kept_beside_it() {
     let directory = Memory::default();
     let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
     let outputs_directory = OutputsDirectory::create(
@@ -258,18 +248,18 @@ fn a_trial_that_ends_after_another_on_a_task_of_the_same_benchmark_is_kept_besid
         &primogenitor,
     )
     .unwrap();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&directory, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&directory, &dataset).unwrap())
         .unwrap();
-    for task in ["benchmark/t1", "benchmark/t2"] {
+    for task in ["dataset/t1", "dataset/t2"] {
         outputs_directory.start_trial(0, task).unwrap();
         outputs_directory
             .end_trial(0, task, TrialResult::Pass)
             .unwrap();
     }
     assert_eq!(
-        entries(&directory, outputs_directory.trials(0).join("benchmark")),
+        entries(&directory, outputs_directory.trials(0).join("dataset")),
         2
     );
 }

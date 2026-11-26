@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::benchmark::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
+use crate::dataset::{Artifact, EnvironmentConfiguration, HealthCheck, TaskConfiguration};
 use crate::genealogy::{Cause, TrialResult};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{
@@ -22,7 +22,7 @@ const VERIFIER: [&str; 2] = ["exec", "/tests/test.sh"];
 const REFUSED: Answer = Answer::Refused("docker is not there");
 const REMOVED: &str = "docker rm --force NAME";
 const ROOM_MADE: &str = r#"rm -rf "$1" && mkdir -p "${1%/*}/""#;
-const GIVEN: &str = "OUTPUTS/running/trial-0-benchmark+t1/given-to-the-verifier";
+const GIVEN: &str = "OUTPUTS/running/trial-0-dataset+t1/given-to-the-verifier";
 const BROUGHT_UP: &str = "docker run --rm --pull never --name NAME --label \
                           cladenc.directed-evolution=OUTPUTS --add-host \
                           host.docker.internal:host-gateway";
@@ -161,7 +161,7 @@ fn a_verifier_that_its_image_does_not_hold_is_given_the_tests_of_the_task() {
             format!(
                 "docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"
             ),
-            "docker cp OUTPUTS/benchmarks/benchmark/t1/tests/. \
+            "docker cp OUTPUTS/datasets/dataset/t1/tests/. \
              NAME:/var/opt/cladenc/harbor/tests"
                 .to_owned(),
             "docker exec --workdir / --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests"

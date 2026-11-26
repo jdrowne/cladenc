@@ -45,8 +45,8 @@ fn the_end_of_a_trial_of_this_format_that_holds_no_seconds_is_not_a_record() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"trial_started","harness":0,"task":"benchmark/t1"}"#,
-            r#"{"record":"trial_finished","harness":0,"task":"benchmark/t1","result":"pass"}"#
+            r#"{"record":"trial_started","harness":0,"task":"dataset/t1"}"#,
+            r#"{"record":"trial_finished","harness":0,"task":"dataset/t1","result":"pass"}"#
         ]),
         JournalError::NotARecord { line: 3 }
     ));
@@ -67,7 +67,7 @@ fn the_end_of_a_diversification_of_this_format_that_holds_no_seconds_is_not_a_re
 #[test]
 fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
     assert!(matches!(
-        error_of(&[r#"{"record":"run","format":35,"primogenitor":"/abs/harness"}"#]),
+        error_of(&[r#"{"record":"run","format":36,"primogenitor":"/abs/harness"}"#]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -75,7 +75,7 @@ fn a_run_record_of_this_format_that_lacks_a_setting_is_not_a_record() {
 #[test]
 fn a_run_record_of_this_format_that_names_no_holdout_tasks_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""holdout_tasks":["benchmark/t2","benchmark/t3"],"#, "")]),
+        error_of(&[&RUN.replace(r#""holdout_tasks":["dataset/t2","dataset/t3"],"#, "")]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -94,7 +94,7 @@ fn a_run_record_of_this_format_that_names_no_repository_of_environments_is_not_a
 #[test]
 fn a_run_record_of_this_format_that_names_no_corroboration_tasks_is_not_a_record() {
     assert!(matches!(
-        error_of(&[&RUN.replace(r#""corroboration_tasks":["benchmark/t3"],"#, "")]),
+        error_of(&[&RUN.replace(r#""corroboration_tasks":["dataset/t3"],"#, "")]),
         JournalError::NotARecord { line: 1 }
     ));
 }
@@ -186,7 +186,7 @@ fn a_record_of_this_format_named_attempt_started_is_not_a_record() {
     assert!(matches!(
         error_of(&[
             RUN,
-            r#"{"record":"attempt_started","harness":0,"task":"benchmark/t1"}"#
+            r#"{"record":"attempt_started","harness":0,"task":"dataset/t1"}"#
         ]),
         JournalError::NotARecord { line: 2 }
     ));

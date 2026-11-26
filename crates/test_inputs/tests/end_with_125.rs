@@ -1,12 +1,12 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use test_inputs::{benchmark, end_with_125_on, end_with_125_on_no_more, temporary_directory};
+use test_inputs::{dataset, end_with_125_on, end_with_125_on_no_more, temporary_directory};
 
 fn kept_tasks_marked(outputs: &Path, tasks: &[&str]) -> PathBuf {
-    let kept = benchmark(&outputs.join("benchmarks"), tasks);
+    let kept = dataset(&outputs.join("datasets"), tasks);
     for task in tasks {
-        end_with_125_on(&outputs.join("benchmarks"), task);
+        end_with_125_on(&outputs.join("datasets"), task);
     }
     kept
 }
@@ -14,7 +14,7 @@ fn kept_tasks_marked(outputs: &Path, tasks: &[&str]) -> PathBuf {
 #[test]
 fn the_marker_on_a_task_is_an_empty_file_in_the_workspace_of_its_environment() {
     let directory = temporary_directory();
-    let made = benchmark(directory.path(), &["t1"]);
+    let made = dataset(directory.path(), &["t1"]);
     end_with_125_on(directory.path(), "t1");
     assert_eq!(
         fs::read_to_string(made.join("t1/environment/workspace/end-with-125")).unwrap(),
@@ -25,7 +25,7 @@ fn the_marker_on_a_task_is_an_empty_file_in_the_workspace_of_its_environment() {
 #[test]
 fn the_marker_is_put_on_the_task_named_and_on_no_other() {
     let directory = temporary_directory();
-    let made = benchmark(directory.path(), &["t1", "t2"]);
+    let made = dataset(directory.path(), &["t1", "t2"]);
     end_with_125_on(directory.path(), "t1");
     assert!(!made.join("t2/environment/workspace/end-with-125").exists());
 }

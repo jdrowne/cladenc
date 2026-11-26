@@ -18,8 +18,8 @@ fn ran(run_command: &str) -> (TempDir, Output) {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory.path(), &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory.path(), &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),

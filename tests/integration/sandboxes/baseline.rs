@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::genealogy::{CreationOutcome, Experiment, TrialResult};
 use cladenc::model::Model;
@@ -31,7 +31,7 @@ fn launch<'a>(image: &'a str, run_command: &'a str, build_command: Option<&'a st
 }
 
 fn trialled(outputs_directory: &OutputsDirectory, harness: u64) {
-    for task in ["benchmark/t1", "benchmark/t2"] {
+    for task in ["dataset/t1", "dataset/t2"] {
         outputs_directory.start_trial(harness, task).unwrap();
         outputs_directory
             .end_trial(harness, task, TrialResult::Fail)
@@ -74,10 +74,10 @@ fn family() -> (TempDir, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap()
-    .holding_out(&["benchmark/t2".to_owned()]);
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    .holding_out(&["dataset/t2".to_owned()]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     trialled(&outputs_directory, 0);
     diversified(&outputs_directory, 1, 0, CreationOutcome::Created);
@@ -160,14 +160,14 @@ fn the_primogenitor_is_given_the_diversification_prompt_the_progenitor_is_given(
 #[test]
 fn the_primogenitor_is_given_the_trials_of_the_progenitor_to_read() {
     assert_eq!(
-        found("cat /var/log/cladenc/trials/benchmark/t1/stdout"),
+        found("cat /var/log/cladenc/trials/dataset/t1/stdout"),
         "trial of 1\n"
     );
 }
 
 #[test]
 fn the_primogenitor_is_given_no_trial_of_the_progenitor_at_a_holdout_task() {
-    assert_eq!(found("ls /var/log/cladenc/trials/benchmark"), "t1\n");
+    assert_eq!(found("ls /var/log/cladenc/trials/dataset"), "t1\n");
 }
 
 #[test]

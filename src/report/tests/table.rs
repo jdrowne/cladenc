@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{Cause, CreationOutcome, Genealogy, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
@@ -11,8 +11,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: ["t1", "t2", "t3", "t4", "t5"].map(str::to_owned).to_vec(),
         }],
         docker_image: "image".to_owned(),
@@ -27,10 +27,10 @@ fn settings() -> Settings {
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 37.5,
         holdout_tasks: ["t1", "t2", "t3", "t4"]
-            .map(|id| format!("benchmark/{id}"))
+            .map(|id| format!("dataset/{id}"))
             .to_vec(),
         corroboration_tasks_percentage: 12.5,
-        corroboration_tasks: vec!["benchmark/t4".to_owned()],
+        corroboration_tasks: vec!["dataset/t4".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
@@ -61,9 +61,9 @@ fn took(trials: f64, diversification: Option<f64>) -> Seconds {
 #[test]
 fn the_table_holds_a_line_for_the_model_one_for_the_run_a_header_and_a_row_for_each_harness() {
     let table = table_with(&[took(4.5, None)], |genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
-        trialled(genealogy, "benchmark/t4", TrialResult::Pass);
-        trialled(genealogy, "benchmark/t5", TrialResult::Fail);
+        trialled(genealogy, "dataset/t1", TrialResult::Pass);
+        trialled(genealogy, "dataset/t4", TrialResult::Pass);
+        trialled(genealogy, "dataset/t5", TrialResult::Fail);
         genealogy.start_diversification(0).unwrap();
     });
     assert_eq!(
@@ -124,9 +124,9 @@ fn a_failed_harness_is_shown_as_failed() {
 #[test]
 fn a_rate_is_printed_to_three_decimal_places() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
-        trialled(genealogy, "benchmark/t2", TrialResult::Fail);
-        trialled(genealogy, "benchmark/t3", TrialResult::Fail);
+        trialled(genealogy, "dataset/t1", TrialResult::Pass);
+        trialled(genealogy, "dataset/t2", TrialResult::Fail);
+        trialled(genealogy, "dataset/t3", TrialResult::Fail);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.333  "));
 }
@@ -195,8 +195,8 @@ fn an_empty_line_stands_between_what_is_said_of_the_directed_evolution_and_the_t
 #[test]
 fn a_corroboration_task_a_harness_completed_adds_nothing_to_its_clade_completion_rate() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Fail);
-        trialled(genealogy, "benchmark/t4", TrialResult::Pass);
+        trialled(genealogy, "dataset/t1", TrialResult::Fail);
+        trialled(genealogy, "dataset/t4", TrialResult::Pass);
     });
     assert!(table.lines().nth(8).unwrap().contains("  0.000  "));
 }
@@ -215,7 +215,7 @@ fn an_inconclusive_trial_is_shown_in_a_column_of_its_own_and_not_as_failed() {
     let table = table(|genealogy| {
         trialled(
             genealogy,
-            "benchmark/t1",
+            "dataset/t1",
             TrialResult::Inconclusive(Cause::NoVerdict),
         );
     });
@@ -227,10 +227,10 @@ fn an_inconclusive_trial_is_shown_in_a_column_of_its_own_and_not_as_failed() {
 #[test]
 fn an_inconclusive_trial_is_one_of_the_finished_trials_of_the_rate_that_is_printed() {
     let table = table(|genealogy| {
-        trialled(genealogy, "benchmark/t1", TrialResult::Pass);
+        trialled(genealogy, "dataset/t1", TrialResult::Pass);
         trialled(
             genealogy,
-            "benchmark/t2",
+            "dataset/t2",
             TrialResult::Inconclusive(Cause::NoVerdict),
         );
     });

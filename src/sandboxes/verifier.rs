@@ -10,7 +10,7 @@ use super::{
     ARTIFACTS, Checked, Copied, HEALTH_CHECK, Retry, SandboxError, Trial, VerifierImage, artifacts,
     harbor, verdict,
 };
-use crate::benchmark::TESTS;
+use crate::dataset::TESTS;
 use crate::genealogy::{Cause, TrialResult};
 
 const VERIFIER: Shell<'static> = Shell {

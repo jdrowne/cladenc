@@ -2,7 +2,7 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 
-use crate::benchmark::ConfigurationError;
+use crate::dataset::ConfigurationError;
 use crate::directed_evolution::DirectedEvolutionError;
 use crate::journal::{JournalError, Started};
 use crate::sandboxes::SandboxError;
@@ -94,10 +94,10 @@ fn an_image_whose_build_was_stopped_is_worded_as_stopped() {
 fn an_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             error: SandboxError::Exit(1),
         }),
-        "the environment of task benchmark/t1 was not built: its build exited with status 1"
+        "the environment of task dataset/t1 was not built: its build exited with status 1"
     );
 }
 
@@ -105,14 +105,14 @@ fn an_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_e
 fn a_task_whose_task_toml_cannot_be_obeyed_is_worded_with_its_task_and_why() {
     assert_eq!(
         worded(DirectedEvolutionError::Configuration {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             error: ConfigurationError::NotSet {
                 table: "environment",
                 name: "API_TOKEN".to_owned(),
                 variable: "TOKEN".to_owned(),
             },
         }),
-        "task benchmark/t1 cannot be given a trial: its task.toml gives API_TOKEN under \
+        "task dataset/t1 cannot be given a trial: its task.toml gives API_TOKEN under \
          environment.env the value of TOKEN, which is not set where cladenc runs"
     );
 }
@@ -121,10 +121,10 @@ fn a_task_whose_task_toml_cannot_be_obeyed_is_worded_with_its_task_and_why() {
 fn a_task_whose_copy_holds_no_task_toml_is_worded_with_its_task() {
     assert_eq!(
         worded(DirectedEvolutionError::Configuration {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             error: ConfigurationError::Missing,
         }),
-        "task benchmark/t1 cannot be given a trial: its task.toml is not there"
+        "task dataset/t1 cannot be given a trial: its task.toml is not there"
     );
 }
 
@@ -132,11 +132,11 @@ fn a_task_whose_copy_holds_no_task_toml_is_worded_with_its_task() {
 fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
     assert_eq!(
         worded(DirectedEvolutionError::NotOnTheMachine {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             image: "parser:3".to_owned(),
             error: io::Error::other("No such image: parser:3"),
         }),
-        "the environment of task benchmark/t1 is not on the machine: its task.toml names the \
+        "the environment of task dataset/t1 is not on the machine: its task.toml names the \
          image parser:3, and cladenc fetches no image: No such image: parser:3"
     );
 }
@@ -145,11 +145,11 @@ fn an_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_s
 fn a_verifier_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_docker_said() {
     assert_eq!(
         worded(DirectedEvolutionError::VerifierNotOnTheMachine {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             image: "verifier:3".to_owned(),
             error: io::Error::other("No such image: verifier:3"),
         }),
-        "the verifier environment of task benchmark/t1 is not on the machine: its task.toml \
+        "the verifier environment of task dataset/t1 is not on the machine: its task.toml \
          names the image verifier:3, and cladenc fetches no image: No such image: verifier:3"
     );
 }
@@ -158,10 +158,10 @@ fn a_verifier_image_that_is_not_on_the_machine_is_worded_with_its_task_and_what_
 fn a_verifier_environment_that_was_not_built_is_worded_with_its_task_and_how_its_build_ended() {
     assert_eq!(
         worded(DirectedEvolutionError::VerifierEnvironment {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             error: SandboxError::Exit(1),
         }),
-        "the verifier environment of task benchmark/t1 was not built: its build exited with \
+        "the verifier environment of task dataset/t1 was not built: its build exited with \
          status 1"
     );
 }
@@ -170,12 +170,12 @@ fn a_verifier_environment_that_was_not_built_is_worded_with_its_task_and_how_its
 fn a_task_that_asks_for_more_than_the_machine_has_is_worded_with_what_it_asks_and_what_there_is() {
     assert_eq!(
         worded(DirectedEvolutionError::TooLarge {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             key: "memory_mb",
             asked: "8192".to_owned(),
             has: "3916".to_owned(),
         }),
-        "task benchmark/t1 asks for more than the machine has: 8192 under memory_mb in its \
+        "task dataset/t1 asks for more than the machine has: 8192 under memory_mb in its \
          task.toml, where Docker has 3916"
     );
 }
@@ -203,10 +203,10 @@ fn a_directed_evolution_stopped_before_it_was_started_is_worded_with_what_resume
 fn an_environment_whose_build_was_stopped_is_worded_as_stopped() {
     assert_eq!(
         worded(DirectedEvolutionError::Environment {
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             error: SandboxError::Stopped,
         }),
-        "the environment of task benchmark/t1 was not built: its build was stopped"
+        "the environment of task dataset/t1 was not built: its build was stopped"
     );
 }
 

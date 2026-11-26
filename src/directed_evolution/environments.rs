@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use super::DirectedEvolutionError;
 use super::said::{Environments, Said, say};
-use crate::benchmark::{self, EnvironmentConfiguration, TaskConfiguration};
+use crate::dataset::{self, EnvironmentConfiguration, TaskConfiguration};
 use crate::journal::Settings;
 use crate::sandboxes::{self, Docker, Environment, Host, Machine, SandboxError, VerifierImage};
 
@@ -261,7 +261,7 @@ impl Making<'_> {
                     name,
                     holds_verifier: true,
                 })
-        } else if benchmark::holds_verifier_dockerfile(
+        } else if dataset::holds_verifier_dockerfile(
             self.host.outputs_directory.files(),
             &self.host.outputs_directory.task(task),
         ) {

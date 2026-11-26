@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::benchmark::{EnvironmentConfiguration, HealthCheck, TaskConfiguration};
+use crate::dataset::{EnvironmentConfiguration, HealthCheck, TaskConfiguration};
 use crate::sandboxes::Environment;
 use crate::sandboxes::sandbox::{self, Bringing};
 

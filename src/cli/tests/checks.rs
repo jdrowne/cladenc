@@ -1,8 +1,8 @@
 use std::path::{self, PathBuf};
 
-use crate::benchmark::Benchmark;
 use crate::cli::StartOptions;
 use crate::cli::checks::Refused;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::holdout::{self, Percentages};
 use crate::journal::Settings;
@@ -18,7 +18,7 @@ fn options(directory: &Memory) -> StartOptions {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmark: vec![test_inputs::benchmark_in(
+        dataset: vec![test_inputs::dataset_in(
             directory,
             directory.path(),
             &["t3", "t2", "t1"],
@@ -76,7 +76,7 @@ fn flags_refused(change: impl FnOnce(&Memory, &mut StartOptions)) -> &'static [&
 fn with_no_verifier_in_a_task() -> Refused {
     checked(|directory, options| {
         directory
-            .remove_dir_all(options.benchmark[0].join("t2/tests"))
+            .remove_dir_all(options.dataset[0].join("t2/tests"))
             .unwrap();
     })
     .unwrap_err()
@@ -95,8 +95,8 @@ fn values_that_fit_their_rows_give_the_settings_of_the_run() {
             model: "a-model".to_owned(),
             model_url: "http://models.example/v1".to_owned(),
             model_key_file: None,
-            benchmarks: vec![Benchmark {
-                directory: root.join("benchmark"),
+            datasets: vec![Dataset {
+                directory: root.join("dataset"),
                 tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
             }],
             docker_image: "image".to_owned(),
@@ -341,7 +341,7 @@ fn a_refused_value_is_said_with_its_flag_and_what_the_flag_takes() {
 #[test]
 fn a_value_refused_for_a_reason_is_said_with_the_reason_after_what_the_option_takes() {
     assert!(with_no_verifier_in_a_task().to_string().starts_with(
-        "--benchmark takes the directory of a benchmark, in which every directory is a task that \
+        "--dataset takes the directory of a dataset, in which every directory is a task that \
          holds a file of text named instruction.md, a file named task.toml that is valid as the \
          task configuration of Harbor, a directory named tests with an executable file named \
          test.sh in it, or a verifier in an image of its own, and a directory named environment \
@@ -443,9 +443,9 @@ fn thirty_in_a_hundred_as_selection_and_as_corroboration_holds_out_two_of_three_
     let settings = checked(|_, _| {}).unwrap();
     assert!(
         [
-            ["benchmark/t1", "benchmark/t2"],
-            ["benchmark/t1", "benchmark/t3"],
-            ["benchmark/t2", "benchmark/t3"]
+            ["dataset/t1", "dataset/t2"],
+            ["dataset/t1", "dataset/t3"],
+            ["dataset/t2", "dataset/t3"]
         ]
         .iter()
         .any(|held_out| settings.holdout_tasks == held_out)
@@ -457,16 +457,16 @@ fn the_holdout_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_draws(
     let settings = checked(|_, _| {}).unwrap();
     assert_eq!(
         settings.holdout_tasks,
-        holdout::draw(&settings.benchmarks, PERCENTAGES, settings.seed)
+        holdout::draw(&settings.datasets, PERCENTAGES, settings.seed)
             .unwrap()
             .holdout_tasks
     );
 }
 
 #[test]
-fn the_percentages_are_taken_of_the_tasks_of_each_benchmark_given() {
+fn the_percentages_are_taken_of_the_tasks_of_each_dataset_given() {
     let settings = checked(|directory, options| {
-        options.benchmark.push(test_inputs::benchmark_named_in(
+        options.dataset.push(test_inputs::dataset_named_in(
             directory,
             directory.path(),
             "refactoring",
@@ -475,7 +475,7 @@ fn the_percentages_are_taken_of_the_tasks_of_each_benchmark_given() {
     })
     .unwrap();
     assert_eq!(
-        ["benchmark/", "refactoring/"].map(|name| {
+        ["dataset/", "refactoring/"].map(|name| {
             settings
                 .holdout_tasks
                 .iter()
@@ -487,7 +487,7 @@ fn the_percentages_are_taken_of_the_tasks_of_each_benchmark_given() {
 }
 
 #[test]
-fn a_selection_tasks_percentage_that_makes_no_task_of_a_benchmark_a_selection_task_is_refused() {
+fn a_selection_tasks_percentage_that_makes_no_task_of_a_dataset_a_selection_task_is_refused() {
     assert_eq!(
         flags_refused(|_, options| options.selection_tasks_percentage = 10.0),
         ["--selection-tasks-percentage"]
@@ -495,46 +495,46 @@ fn a_selection_tasks_percentage_that_makes_no_task_of_a_benchmark_a_selection_ta
 }
 
 #[test]
-fn a_refused_selection_tasks_percentage_is_said_with_what_the_flag_takes_and_the_benchmark() {
+fn a_refused_selection_tasks_percentage_is_said_with_what_the_flag_takes_and_the_dataset() {
     let refused = checked(|_, options| options.selection_tasks_percentage = 10.0).unwrap_err();
     assert_eq!(
         refused.to_string(),
         "--selection-tasks-percentage takes a number above 0 and below 100 that makes at least \
-         one task of every benchmark a selection task: the benchmark `benchmark` holds 3 tasks, \
+         one task of every dataset a selection task: the dataset `dataset` holds 3 tasks, \
          and none of them would be a selection task"
     );
 }
 
 #[test]
-fn a_benchmark_that_is_refused_is_refused_ahead_of_the_selection_tasks_percentage() {
+fn a_dataset_that_is_refused_is_refused_ahead_of_the_selection_tasks_percentage() {
     assert_eq!(
         flags_refused(|directory, options| {
-            options.benchmark = vec![directory.path().join("missing")];
+            options.dataset = vec![directory.path().join("missing")];
             options.selection_tasks_percentage = 10.0;
         }),
-        ["--benchmark"]
+        ["--dataset"]
     );
 }
 
 #[test]
-fn a_benchmark_of_two_tasks_is_refused_by_the_flag_of_the_benchmarks() {
+fn a_dataset_of_two_tasks_is_refused_by_the_flag_of_the_datasets() {
     assert_eq!(
         flags_refused(|directory, options| {
-            options.benchmark = vec![test_inputs::benchmark_named_in(
+            options.dataset = vec![test_inputs::dataset_named_in(
                 directory,
                 directory.path(),
                 "pair",
                 &["t1", "t2"],
             )];
         }),
-        ["--benchmark"]
+        ["--dataset"]
     );
 }
 
 #[test]
-fn a_benchmark_of_two_tasks_is_said_to_hold_fewer_than_three() {
+fn a_dataset_of_two_tasks_is_said_to_hold_fewer_than_three() {
     let refused = checked(|directory, options| {
-        options.benchmark = vec![test_inputs::benchmark_named_in(
+        options.dataset = vec![test_inputs::dataset_named_in(
             directory,
             directory.path(),
             "pair",
@@ -544,8 +544,8 @@ fn a_benchmark_of_two_tasks_is_said_to_hold_fewer_than_three() {
     .unwrap_err();
     assert_eq!(
         refused.to_string(),
-        "--benchmark takes the directory of a benchmark of three tasks at the least: the \
-         benchmark `pair` holds fewer than three tasks, which cannot be divided into a selection \
+        "--dataset takes the directory of a dataset of three tasks at the least: the \
+         dataset `pair` holds fewer than three tasks, which cannot be divided into a selection \
          task, a corroboration task and a non-holdout task"
     );
 }
@@ -557,7 +557,7 @@ fn the_corroboration_tasks_percentage_is_a_setting_as_it_was_given() {
 }
 
 #[test]
-fn thirty_in_a_hundred_of_a_benchmark_of_three_tasks_is_one_corroboration_task() {
+fn thirty_in_a_hundred_of_a_dataset_of_three_tasks_is_one_corroboration_task() {
     let settings = checked(|_, _| {}).unwrap();
     assert_eq!(settings.corroboration_tasks.len(), 1);
 }
@@ -578,16 +578,16 @@ fn the_corroboration_tasks_are_the_ones_that_the_seed_of_the_directed_evolution_
     let settings = checked(|_, _| {}).unwrap();
     assert_eq!(
         settings.corroboration_tasks,
-        holdout::draw(&settings.benchmarks, PERCENTAGES, settings.seed)
+        holdout::draw(&settings.datasets, PERCENTAGES, settings.seed)
             .unwrap()
             .corroboration_tasks
     );
 }
 
 #[test]
-fn the_corroboration_tasks_percentage_is_taken_of_the_tasks_of_each_benchmark_given() {
+fn the_corroboration_tasks_percentage_is_taken_of_the_tasks_of_each_dataset_given() {
     let settings = checked(|directory, options| {
-        options.benchmark.push(test_inputs::benchmark_named_in(
+        options.dataset.push(test_inputs::dataset_named_in(
             directory,
             directory.path(),
             "refactoring",
@@ -596,7 +596,7 @@ fn the_corroboration_tasks_percentage_is_taken_of_the_tasks_of_each_benchmark_gi
     })
     .unwrap();
     assert_eq!(
-        ["benchmark/", "refactoring/"].map(|name| {
+        ["dataset/", "refactoring/"].map(|name| {
             settings
                 .corroboration_tasks
                 .iter()
@@ -616,12 +616,12 @@ fn a_corroboration_tasks_percentage_that_makes_no_task_a_corroboration_task_is_r
 }
 
 #[test]
-fn a_refused_corroboration_tasks_percentage_is_said_with_what_the_flag_takes_and_the_benchmark() {
+fn a_refused_corroboration_tasks_percentage_is_said_with_what_the_flag_takes_and_the_dataset() {
     let refused = checked(|_, options| options.corroboration_tasks_percentage = 10.0).unwrap_err();
     assert_eq!(
         refused.to_string(),
         "--corroboration-tasks-percentage takes a number above 0 and below 100 that makes at \
-         least one task of every benchmark a corroboration task: the benchmark `benchmark` holds \
+         least one task of every dataset a corroboration task: the dataset `dataset` holds \
          3 tasks, and none of them would be a corroboration task"
     );
 }
@@ -638,7 +638,7 @@ fn a_selection_tasks_percentage_that_is_refused_is_refused_ahead_of_the_corrobor
 }
 
 #[test]
-fn percentages_that_hold_out_every_task_of_a_benchmark_are_refused_by_both_flags() {
+fn percentages_that_hold_out_every_task_of_a_dataset_are_refused_by_both_flags() {
     assert_eq!(
         flags_refused(|_, options| options.selection_tasks_percentage = 50.0),
         [
@@ -649,12 +649,12 @@ fn percentages_that_hold_out_every_task_of_a_benchmark_are_refused_by_both_flags
 }
 
 #[test]
-fn percentages_that_hold_out_every_task_are_said_with_what_the_two_flags_take_and_the_benchmark() {
+fn percentages_that_hold_out_every_task_are_said_with_what_the_two_flags_take_and_the_dataset() {
     let refused = checked(|_, options| options.selection_tasks_percentage = 50.0).unwrap_err();
     assert_eq!(
         refused.to_string(),
         "--selection-tasks-percentage and --corroboration-tasks-percentage take numbers that \
-         together leave at least one task of every benchmark a non-holdout task: the benchmark \
-         `benchmark` holds 3 tasks, and every one of them would be held out"
+         together leave at least one task of every dataset a non-holdout task: the dataset \
+         `dataset` holds 3 tasks, and every one of them would be held out"
     );
 }

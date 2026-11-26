@@ -8,7 +8,7 @@ const OPTIONS: [(&str, &str); 14] = [
     ("--primogenitor", "/primogenitor"),
     ("--model", "a-model"),
     ("--model-url", "http://models.example/v1"),
-    ("--benchmark", "/benchmark"),
+    ("--dataset", "/dataset"),
     ("--diversification-docker-image", "image"),
     ("--harness-run-command", "run a harness"),
     ("--outputs-dir", "/outputs"),
@@ -139,31 +139,25 @@ fn an_empty_model_key_file_is_an_error() {
 }
 
 #[test]
-fn a_benchmark_is_the_path_that_is_written() {
+fn a_dataset_is_the_path_that_is_written() {
     assert!(matches!(
-        with("--benchmark", "benchmarks/parsing").unwrap().command,
-        Command::Start(options) if options.benchmark == [Path::new("benchmarks/parsing")]
+        with("--dataset", "datasets/parsing").unwrap().command,
+        Command::Start(options) if options.dataset == [Path::new("datasets/parsing")]
     ));
 }
 
 #[test]
-fn a_benchmark_given_a_second_time_is_a_second_benchmark() {
+fn a_dataset_given_a_second_time_is_a_second_dataset() {
     assert!(matches!(
-        and(Some("--benchmark=benchmarks/refactoring".to_owned())).unwrap().command,
+        and(Some("--dataset=datasets/refactoring".to_owned())).unwrap().command,
         Command::Start(options)
-            if options.benchmark == [Path::new("/benchmark"), Path::new("benchmarks/refactoring")]
+            if options.dataset == [Path::new("/dataset"), Path::new("datasets/refactoring")]
     ));
 }
 
 #[test]
-fn a_second_path_after_one_benchmark_flag_is_an_error() {
-    let given = [
-        "cladenc",
-        "start",
-        "--benchmark",
-        "/benchmark",
-        "/refactoring",
-    ];
+fn a_second_path_after_one_dataset_flag_is_an_error() {
+    let given = ["cladenc", "start", "--dataset", "/dataset", "/refactoring"];
     assert_eq!(
         Cli::try_parse_from(given).unwrap_err().kind(),
         ErrorKind::UnknownArgument
@@ -171,8 +165,8 @@ fn a_second_path_after_one_benchmark_flag_is_an_error() {
 }
 
 #[test]
-fn an_empty_benchmark_is_an_error() {
-    assert!(with("--benchmark", "").is_err());
+fn an_empty_dataset_is_an_error() {
+    assert!(with("--dataset", "").is_err());
 }
 
 #[test]
@@ -261,6 +255,16 @@ fn the_limit_of_concurrent_sandboxes_is_the_number_given() {
 fn the_limit_of_concurrent_sandboxes_has_no_second_name() {
     assert_eq!(
         and(Some("--max-concurrent-containers=8".to_owned()))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownArgument
+    );
+}
+
+#[test]
+fn the_dataset_has_no_second_name() {
+    assert_eq!(
+        and(Some("--benchmark=/dataset".to_owned()))
             .unwrap_err()
             .kind(),
         ErrorKind::UnknownArgument

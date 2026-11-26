@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::model::Model;
 use cladenc::outputs_directory::OutputsDirectory;
@@ -81,9 +81,9 @@ fn the_sandbox_of_a_trial_is_listed_under_the_label_of_its_directed_evolution() 
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     let launch = Launch {
         image: test_inputs::IMAGE,
@@ -99,7 +99,7 @@ fn the_sandbox_of_a_trial_is_listed_under_the_label_of_its_directed_evolution() 
         max_task_health_check_retries: 0,
     };
     let id_file = outputs_directory
-        .running_trial(0, "benchmark/t1")
+        .running_trial(0, "dataset/t1")
         .join("stdout");
     let stop = AtomicBool::new(false);
     thread::scope(|scope| {
@@ -115,7 +115,7 @@ fn the_sandbox_of_a_trial_is_listed_under_the_label_of_its_directed_evolution() 
         });
         let trial = Trial {
             harness: 0,
-            task: "benchmark/t1",
+            task: "dataset/t1",
             environment: &environment(),
         };
         let _ = sandboxes::run_trial(

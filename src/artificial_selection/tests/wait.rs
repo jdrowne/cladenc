@@ -24,7 +24,7 @@ fn child_of(genealogy: &mut Genealogy, progenitor: HarnessId, outcome: CreationO
     genealogy.end_diversification(child, outcome).unwrap();
 }
 
-fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
+fn evaluate_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
         genealogy.start_trial(harness, &task).unwrap();
         genealogy
@@ -33,16 +33,16 @@ fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     }
 }
 
-fn two_harnesses_benchmarked_in_full() -> Genealogy {
+fn two_harnesses_evaluated_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    benchmark_in_full(&mut genealogy, 0);
+    evaluate_in_full(&mut genealogy, 0);
     child_of(&mut genealogy, 0, CREATED);
-    benchmark_in_full(&mut genealogy, 1);
+    evaluate_in_full(&mut genealogy, 1);
     genealogy
 }
 
 fn after(diversifications: &[(HarnessId, CreationOutcome)]) -> Genealogy {
-    let mut genealogy = two_harnesses_benchmarked_in_full();
+    let mut genealogy = two_harnesses_evaluated_in_full();
     for (progenitor, outcome) in diversifications {
         child_of(&mut genealogy, *progenitor, *outcome);
     }
@@ -223,7 +223,7 @@ fn a_diversification_that_is_still_running_does_not_end_the_wait_of_its_progenit
 #[test]
 fn a_harness_that_waits_can_be_the_progenitor_again_once_its_wait_is_over_and_no_trial_is_left() {
     let mut genealogy = after(&[(1, FAILED), (0, CREATED)]);
-    benchmark_in_full(&mut genealogy, 3);
+    evaluate_in_full(&mut genealogy, 3);
     assert!(progenitors(&genealogy).contains(&1));
 }
 

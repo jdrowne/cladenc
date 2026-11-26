@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::genealogy::TrialResult;
 use cladenc::model::Model;
@@ -9,10 +9,10 @@ use cladenc::outputs_directory::OutputsDirectory;
 use cladenc::sandboxes::{self, Environment, Host, Launch, Program, SandboxError, Trial};
 use tempfile::TempDir;
 
-const SHOWN: &str = "benchmark/t1";
-const HELD_OUT: &str = "benchmark/t2";
+const SHOWN: &str = "dataset/t1";
+const HELD_OUT: &str = "dataset/t2";
 const LIST_THE_TRIALS: &str =
-    "ls /var/log/cladenc/trials /var/log/cladenc/trials/benchmark > evidence";
+    "ls /var/log/cladenc/trials /var/log/cladenc/trials/dataset > evidence";
 const LOOK_FOR_THE_HOLDOUT_TASK: &str = "{ find /var/opt/cladenc /var/log/cladenc -name '*t2*'; \
                                          grep -r -l t2 /var/opt/cladenc /var/log/cladenc; } > \
                                          evidence; true";
@@ -44,9 +44,9 @@ fn made() -> (TempDir, OutputsDirectory) {
     )
     .unwrap()
     .holding_out(&[HELD_OUT.to_owned()]);
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1", "t2"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1", "t2"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }
@@ -89,7 +89,7 @@ fn given_in_the_trial_at(task: &str) -> String {
     fs::read_to_string(outputs_directory.trial(0, task).join("stdout")).unwrap()
 }
 
-fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
+fn left_in_the_child_of_an_evaluated_progenitor(run_command: &str) -> String {
     let (_directory, outputs_directory) = made();
     for task in [SHOWN, HELD_OUT] {
         outputs_directory.start_trial(0, task).unwrap();
@@ -113,15 +113,15 @@ fn left_in_the_child_of_a_benchmarked_progenitor(run_command: &str) -> String {
 #[test]
 fn a_progenitor_is_given_its_trials_on_the_tasks_that_are_not_held_out_and_no_other() {
     assert_eq!(
-        left_in_the_child_of_a_benchmarked_progenitor(LIST_THE_TRIALS),
-        "/var/log/cladenc/trials:\nbenchmark\n\n/var/log/cladenc/trials/benchmark:\nt1\n"
+        left_in_the_child_of_an_evaluated_progenitor(LIST_THE_TRIALS),
+        "/var/log/cladenc/trials:\ndataset\n\n/var/log/cladenc/trials/dataset:\nt1\n"
     );
 }
 
 #[test]
 fn nothing_a_progenitor_is_given_is_named_after_a_holdout_task_or_holds_its_id() {
     assert_eq!(
-        left_in_the_child_of_a_benchmarked_progenitor(LOOK_FOR_THE_HOLDOUT_TASK),
+        left_in_the_child_of_an_evaluated_progenitor(LOOK_FOR_THE_HOLDOUT_TASK),
         ""
     );
 }

@@ -3,7 +3,7 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::PathBuf;
 
 use crate::artificial_selection::ArtificialSelection;
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::Genealogy;
 use crate::holdout::TaskSet;
@@ -17,8 +17,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -32,9 +32,9 @@ fn settings() -> Settings {
         max_verifier_health_check_retries: 3,
         max_task_health_check_retries: 2,
         selection_tasks_percentage: 25.0,
-        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t2".to_owned(), "dataset/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        corroboration_tasks: vec!["dataset/t3".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
@@ -82,8 +82,8 @@ fn with_a_path_that_is_not_utf8() -> Record {
 }
 
 #[test]
-fn the_format_of_the_journal_is_35() {
-    assert_eq!(journal::FORMAT, 35);
+fn the_format_of_the_journal_is_36() {
+    assert_eq!(journal::FORMAT, 36);
 }
 
 #[test]
@@ -91,15 +91,15 @@ fn the_run_record_is_written_key_for_key() {
     assert_eq!(
         run(settings()).line().unwrap(),
         concat!(
-            r#"{"record":"run","format":35,"primogenitor":"/abs/harness","model":"a-model","#,
+            r#"{"record":"run","format":36,"primogenitor":"/abs/harness","model":"a-model","#,
             r#""model_url":"http://models.example/v1","model_key_file":null,"#,
             r#""docker_image":"image","dockerfile":null,"docker_build_timeout":null,"#,
             r#""environment_image_repository":"cladenc-environments-0123456789abcdef","#,
             r#""harness_build_command":null,"harness_run_command":"run a harness","#,
-            r#""benchmarks":[{"directory":"/abs/benchmark","tasks":["t1","t2","t3"]}],"#,
-            r#""selection_tasks_percentage":25.0,"holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
+            r#""datasets":[{"directory":"/abs/dataset","tasks":["t1","t2","t3"]}],"#,
+            r#""selection_tasks_percentage":25.0,"holdout_tasks":["dataset/t2","dataset/t3"],"#,
             r#""corroboration_tasks_percentage":25.0,"#,
-            r#""corroboration_tasks":["benchmark/t3"],"max_diversifications":800,"#,
+            r#""corroboration_tasks":["dataset/t3"],"max_diversifications":800,"#,
             r#""max_concurrent_sandboxes":8,"#,
             r#""diversification_timeout":3600,"max_verifier_health_check_retries":3,"#,
             r#""max_task_health_check_retries":2,"seed":7}"#
@@ -118,7 +118,7 @@ fn the_run_record_holds_the_limit_of_concurrent_sandboxes_between_two_other_sett
 fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
         r#""tasks":["t1","t2","t3"]}],"selection_tasks_percentage":25.0,"#,
-        r#""holdout_tasks":["benchmark/t2","benchmark/t3"],"#,
+        r#""holdout_tasks":["dataset/t2","dataset/t3"],"#,
         r#""corroboration_tasks_percentage":25.0,"#
     )));
 }
@@ -127,7 +127,7 @@ fn the_run_record_holds_the_holdout_tasks_after_the_percentage_they_were_drawn_b
 fn the_run_record_holds_the_corroboration_tasks_after_the_percentage_they_were_drawn_by() {
     assert!(run(settings()).line().unwrap().contains(concat!(
         r#""corroboration_tasks_percentage":25.0,"#,
-        r#""corroboration_tasks":["benchmark/t3"],"max_diversifications":800,"#
+        r#""corroboration_tasks":["dataset/t3"],"max_diversifications":800,"#
     )));
 }
 
@@ -150,7 +150,7 @@ fn a_selection_tasks_percentage_with_a_decimal_point_survives_being_written_and_
 }
 
 #[test]
-fn the_settings_give_how_many_tasks_of_a_benchmark_are_in_each_set() {
+fn the_settings_give_how_many_tasks_of_a_dataset_are_in_each_set() {
     let settings = settings();
     assert_eq!(
         [
@@ -158,15 +158,15 @@ fn the_settings_give_how_many_tasks_of_a_benchmark_are_in_each_set() {
             TaskSet::Corroboration,
             TaskSet::NonHoldout
         ]
-        .map(|set| settings.count_of(&settings.benchmarks[0], set)),
+        .map(|set| settings.count_of(&settings.datasets[0], set)),
         [1, 1, 1]
     );
 }
 
 #[test]
-fn the_settings_count_no_holdout_task_of_another_benchmark_as_one_of_a_benchmark() {
+fn the_settings_count_no_holdout_task_of_another_dataset_as_one_of_a_dataset() {
     let settings = settings();
-    let another = Benchmark {
+    let another = Dataset {
         directory: PathBuf::from("/abs/refactoring"),
         tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
     };
@@ -183,29 +183,26 @@ fn the_settings_count_no_holdout_task_of_another_benchmark_as_one_of_a_benchmark
 
 #[test]
 fn the_selection_tasks_are_the_holdout_tasks_that_are_not_corroboration_tasks() {
-    assert_eq!(settings().tasks_of(TaskSet::Selection), ["benchmark/t2"]);
+    assert_eq!(settings().tasks_of(TaskSet::Selection), ["dataset/t2"]);
 }
 
 #[test]
 fn the_corroboration_tasks_are_the_ones_the_run_record_names() {
-    assert_eq!(
-        settings().tasks_of(TaskSet::Corroboration),
-        ["benchmark/t3"]
-    );
+    assert_eq!(settings().tasks_of(TaskSet::Corroboration), ["dataset/t3"]);
 }
 
 #[test]
 fn the_non_holdout_tasks_are_the_tasks_that_are_not_held_out() {
-    assert_eq!(settings().tasks_of(TaskSet::NonHoldout), ["benchmark/t1"]);
+    assert_eq!(settings().tasks_of(TaskSet::NonHoldout), ["dataset/t1"]);
 }
 
 #[test]
 fn a_task_named_a_corroboration_task_that_is_not_held_out_is_a_non_holdout_task() {
     let settings = Settings {
-        corroboration_tasks: vec!["benchmark/t1".to_owned()],
+        corroboration_tasks: vec!["dataset/t1".to_owned()],
         ..settings()
     };
-    assert_eq!(settings.tasks_of(TaskSet::NonHoldout), ["benchmark/t1"]);
+    assert_eq!(settings.tasks_of(TaskSet::NonHoldout), ["dataset/t1"]);
 }
 
 #[test]
@@ -414,8 +411,8 @@ fn settings_with_a_build_command_give_a_genealogy_whose_primogenitor_awaits_its_
     assert_eq!(
         built_with("make harness").genealogy(),
         Genealogy::unbuilt()
-            .selecting_by(&["benchmark/t2".to_owned()])
-            .corroborating_with(&["benchmark/t3".to_owned()])
+            .selecting_by(&["dataset/t2".to_owned()])
+            .corroborating_with(&["dataset/t3".to_owned()])
     );
 }
 
@@ -424,8 +421,8 @@ fn settings_with_no_build_command_give_a_genealogy_whose_primogenitor_is_created
     assert_eq!(
         settings().genealogy(),
         Genealogy::new()
-            .selecting_by(&["benchmark/t2".to_owned()])
-            .corroborating_with(&["benchmark/t3".to_owned()])
+            .selecting_by(&["dataset/t2".to_owned()])
+            .corroborating_with(&["dataset/t3".to_owned()])
     );
 }
 
@@ -438,7 +435,7 @@ fn the_settings_give_a_genealogy_that_is_told_of_the_holdout_tasks_of_the_direct
 fn the_settings_give_a_genealogy_that_selects_by_no_corroboration_task() {
     assert_ne!(
         settings().genealogy(),
-        Genealogy::new().selecting_by(&["benchmark/t2".to_owned(), "benchmark/t3".to_owned()])
+        Genealogy::new().selecting_by(&["dataset/t2".to_owned(), "dataset/t3".to_owned()])
     );
 }
 
@@ -454,15 +451,15 @@ fn the_settings_give_each_task_the_image_of_its_environment_tagged_with_its_plac
         settings().environments(),
         [
             (
-                "benchmark/t1".to_owned(),
+                "dataset/t1".to_owned(),
                 "cladenc-environments-0123456789abcdef:0".to_owned()
             ),
             (
-                "benchmark/t2".to_owned(),
+                "dataset/t2".to_owned(),
                 "cladenc-environments-0123456789abcdef:1".to_owned()
             ),
             (
-                "benchmark/t3".to_owned(),
+                "dataset/t3".to_owned(),
                 "cladenc-environments-0123456789abcdef:2".to_owned()
             )
         ]
@@ -485,9 +482,9 @@ fn the_settings_give_the_artificial_selection_made_from_them() {
         ArtificialSelection {
             max_diversifications: 800,
             tasks: vec![
-                "benchmark/t1".to_owned(),
-                "benchmark/t2".to_owned(),
-                "benchmark/t3".to_owned()
+                "dataset/t1".to_owned(),
+                "dataset/t2".to_owned(),
+                "dataset/t3".to_owned()
             ],
             seed: 7,
         }

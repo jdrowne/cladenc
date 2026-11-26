@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::TrialResult;
 use crate::journal::{self, Journal, JournalError, Record, Seconds, Settings};
@@ -15,8 +15,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -30,9 +30,9 @@ fn settings() -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
-        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t2".to_owned()],
+        holdout_tasks: vec!["dataset/t1".to_owned(), "dataset/t2".to_owned()],
         corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: vec!["benchmark/t2".to_owned()],
+        corroboration_tasks: vec!["dataset/t2".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
@@ -47,21 +47,21 @@ fn outputs_directory(last_line: &str) -> Memory {
         },
         Record::TrialStarted {
             harness: 0,
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
         },
         Record::TrialFinished {
             harness: 0,
-            task: "benchmark/t1".to_owned(),
+            task: "dataset/t1".to_owned(),
             result: TrialResult::Pass,
             seconds: 1.5,
         },
         Record::TrialStarted {
             harness: 0,
-            task: "benchmark/t2".to_owned(),
+            task: "dataset/t2".to_owned(),
         },
         Record::TrialFinished {
             harness: 0,
-            task: "benchmark/t2".to_owned(),
+            task: "dataset/t2".to_owned(),
             result: TrialResult::Fail,
             seconds: 2.0,
         },
@@ -93,13 +93,13 @@ fn finished_with(best_harness: u64) -> String {
 
 fn of_the_records() -> Report {
     let mut genealogy = settings().genealogy();
-    genealogy.start_trial(0, "benchmark/t1").unwrap();
+    genealogy.start_trial(0, "dataset/t1").unwrap();
     genealogy
-        .end_trial(0, "benchmark/t1", TrialResult::Pass)
+        .end_trial(0, "dataset/t1", TrialResult::Pass)
         .unwrap();
-    genealogy.start_trial(0, "benchmark/t2").unwrap();
+    genealogy.start_trial(0, "dataset/t2").unwrap();
     genealogy
-        .end_trial(0, "benchmark/t2", TrialResult::Fail)
+        .end_trial(0, "dataset/t2", TrialResult::Fail)
         .unwrap();
     genealogy.start_diversification(0).unwrap();
     let seconds = [

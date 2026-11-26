@@ -123,7 +123,7 @@ fn with_a_limit_of_three_a_diversification_starts_only_when_nothing_else_runs() 
 }
 
 #[test]
-fn with_a_limit_of_two_no_diversification_starts_before_its_progenitor_is_benchmarked_in_full() {
+fn with_a_limit_of_two_no_diversification_starts_before_its_progenitor_is_evaluated_in_full() {
     assert_eq!(
         fewest_tasks_a_progenitor_had_trialled(&records(two_at_once)),
         Some(5)

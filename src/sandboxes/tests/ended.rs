@@ -4,7 +4,7 @@ use crate::sandboxes::SandboxError;
 use crate::sandboxes::program::Ending;
 use crate::sandboxes::sandbox;
 
-const RUNNING: &str = "/outputs/running/trial-3-benchmark+t1";
+const RUNNING: &str = "/outputs/running/trial-3-dataset+t1";
 
 fn said() -> PathBuf {
     Path::new(RUNNING).join("stderr")

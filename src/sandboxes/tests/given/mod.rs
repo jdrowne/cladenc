@@ -3,14 +3,14 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use crate::benchmark::{Benchmark, HealthCheck, TaskConfiguration};
+use crate::dataset::{Dataset, HealthCheck, TaskConfiguration};
 use crate::file_system::tests::double::Memory;
 use crate::model::Model;
 use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::tests::double::Double;
 use crate::sandboxes::{self, Environment, Host, Launch, Retry, SandboxError, Trial, Trialled};
 
-pub(super) const TASK: &str = "benchmark/t1";
+pub(super) const TASK: &str = "dataset/t1";
 
 pub(crate) const TIMER: &str =
     r#"sh -c "$0" & run=$!; (sleep "$1"; kill -9 $run) > /dev/null 2>&1 & wait $run"#;
@@ -66,15 +66,15 @@ impl Tried {
 pub(super) fn made() -> (Memory, OutputsDirectory) {
     let directory = Memory::default();
     let primogenitor = test_inputs::primogenitor_in(&directory, directory.path());
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
-    let benchmark = Benchmark::read(&directory, &benchmark).unwrap();
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1"]);
+    let dataset = Dataset::read(&directory, &dataset).unwrap();
     let outputs_directory = OutputsDirectory::create(
         directory.shared(),
         &directory.path().join("outputs"),
         &primogenitor,
     )
     .unwrap();
-    outputs_directory.copy_benchmark(&benchmark).unwrap();
+    outputs_directory.copy_dataset(&dataset).unwrap();
     (directory, outputs_directory)
 }
 
@@ -93,7 +93,7 @@ pub(super) fn kept_work() -> String {
 fn kept_of_the_running_trial(kept: &str) -> String {
     Memory::default()
         .path()
-        .join("outputs/running/trial-0-benchmark+t1")
+        .join("outputs/running/trial-0-dataset+t1")
         .join(kept)
         .to_string_lossy()
         .into_owned()

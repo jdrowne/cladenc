@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use super::program::{Ending, FOREVER, LOOK, Limits};
 use super::sandbox::{Run, Shell, Up};
 use super::{Checked, Retry, SandboxError, make_directory};
-use crate::benchmark::HealthCheck;
+use crate::dataset::HealthCheck;
 
 pub(super) fn passes_where_given(
     up: &Up<'_>,

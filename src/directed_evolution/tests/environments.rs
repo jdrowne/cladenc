@@ -8,7 +8,7 @@ use crate::outputs_directory::OutputsDirectory;
 use crate::sandboxes::tests::double::Double;
 use crate::sandboxes::{Host, SandboxError};
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 
 fn not_built(whose: Whose) -> (DirectedEvolutionError, String) {
     let outputs_directory = OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"));
@@ -54,8 +54,8 @@ fn a_verifier_environment_that_is_not_built_is_an_error_of_the_verifier_of_its_t
 fn an_environment_that_is_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         not_built(Whose::TheTask).1,
-        "cladenc: the build of the environment of task benchmark/t1 exited with status 1: what \
-         Docker printed is kept in /outputs/environments/benchmark/t1\n"
+        "cladenc: the build of the environment of task dataset/t1 exited with status 1: what \
+         Docker printed is kept in /outputs/environments/dataset/t1\n"
     );
 }
 
@@ -63,8 +63,8 @@ fn an_environment_that_is_not_built_is_said_with_where_what_docker_printed_is_ke
 fn a_verifier_environment_that_is_not_built_is_said_with_where_what_docker_printed_is_kept() {
     assert_eq!(
         not_built(Whose::TheVerifier).1,
-        "cladenc: the build of the verifier environment of task benchmark/t1 exited with \
-         status 1: what Docker printed is kept in /outputs/environments/benchmark/t1/verifier\n"
+        "cladenc: the build of the verifier environment of task dataset/t1 exited with \
+         status 1: what Docker printed is kept in /outputs/environments/dataset/t1/verifier\n"
     );
 }
 

@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::time::Duration;
 
-use crate::benchmark::configuration::{self, ConfigurationError};
-use crate::benchmark::{self, BenchmarkError, EnvironmentConfiguration, TaskConfiguration};
+use crate::dataset::configuration::{self, ConfigurationError};
+use crate::dataset::{self, DatasetError, EnvironmentConfiguration, TaskConfiguration};
 use crate::file_system::tests::double::Memory;
 
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
@@ -34,16 +34,14 @@ fn refused(written: &str) -> Option<ConfigurationError> {
     read(written).err()
 }
 
-fn tasks_with_t2_changed(
-    change: impl FnOnce(&Memory, &Path),
-) -> Result<Vec<String>, BenchmarkError> {
+fn tasks_with_t2_changed(change: impl FnOnce(&Memory, &Path)) -> Result<Vec<String>, DatasetError> {
     let directory = Memory::default();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1", "t2"]);
-    change(&directory, &benchmark.join("t2"));
-    benchmark::tasks(&directory, &benchmark)
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1", "t2"]);
+    change(&directory, &dataset.join("t2"));
+    dataset::tasks(&directory, &dataset)
 }
 
-fn both_tasks() -> Result<Vec<String>, BenchmarkError> {
+fn both_tasks() -> Result<Vec<String>, DatasetError> {
     Ok(vec!["t1".to_owned(), "t2".to_owned()])
 }
 
@@ -444,7 +442,7 @@ fn a_task_whose_verifier_runs_in_a_copy_of_its_environment_still_needs_its_test_
             directory.remove_file(task.join("tests/test.sh")).unwrap();
             directory.write(task.join("task.toml"), SEPARATE).unwrap();
         }),
-        Err(BenchmarkError::NoVerifier {
+        Err(DatasetError::NoVerifier {
             task: "t2".to_owned()
         })
     );
@@ -459,7 +457,7 @@ fn a_dockerfile_in_the_tests_of_a_task_whose_verifier_shares_the_environment_is_
                 .write(task.join("tests/Dockerfile"), "FROM scratch\n")
                 .unwrap();
         }),
-        Err(BenchmarkError::NoVerifier {
+        Err(DatasetError::NoVerifier {
             task: "t2".to_owned()
         })
     );
@@ -474,7 +472,7 @@ fn a_task_whose_verifier_runs_separately_is_refused_for_a_compose_file_in_its_te
                 .unwrap();
             directory.write(task.join("task.toml"), SEPARATE).unwrap();
         }),
-        Err(BenchmarkError::ManyVerifierContainers {
+        Err(DatasetError::ManyVerifierContainers {
             task: "t2".to_owned()
         })
     );
@@ -489,7 +487,7 @@ fn a_task_that_names_its_verifier_image_is_still_refused_for_a_compose_file_in_i
                 .unwrap();
             directory.write(task.join("task.toml"), NAMED).unwrap();
         }),
-        Err(BenchmarkError::ManyVerifierContainers {
+        Err(DatasetError::ManyVerifierContainers {
             task: "t2".to_owned()
         })
     );
@@ -510,7 +508,7 @@ fn a_compose_file_in_the_tests_of_a_task_whose_verifier_shares_the_environment_i
 #[test]
 fn a_task_whose_verifier_needs_more_than_one_container_is_said_with_its_id() {
     assert_eq!(
-        BenchmarkError::ManyVerifierContainers {
+        DatasetError::ManyVerifierContainers {
             task: "fix-the-parser".to_owned()
         }
         .to_string(),

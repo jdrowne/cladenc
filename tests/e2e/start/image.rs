@@ -33,8 +33,8 @@ fn start_within(directory: &Path, steps: &str, build_timeout: &str) -> Command {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         (
             "--diversification-dockerfile",

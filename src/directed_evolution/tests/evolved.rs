@@ -40,7 +40,7 @@ fn experimented() -> Evolved {
 }
 
 fn with_a_selection_task(_: &Memory, settings: &mut Settings) {
-    settings.holdout_tasks = vec!["benchmark/t1".to_owned()];
+    settings.holdout_tasks = vec!["dataset/t1".to_owned()];
 }
 
 fn selected() -> Evolved {

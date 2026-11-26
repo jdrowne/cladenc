@@ -10,8 +10,8 @@ fn options(directory: &Path) -> Vec<String> {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", "exit 0".into()),
@@ -42,7 +42,7 @@ fn refused(options: impl FnOnce(&Path) -> Vec<String>) -> (TempDir, Output) {
 
 fn with_a_task_that_lacks_its_verifier(directory: &Path) -> Vec<String> {
     let options = options(directory);
-    fs::remove_dir_all(directory.join("benchmark/t1/tests")).unwrap();
+    fs::remove_dir_all(directory.join("dataset/t1/tests")).unwrap();
     options
 }
 
@@ -54,7 +54,7 @@ fn with_quiet(directory: &Path) -> Vec<String> {
 }
 
 #[test]
-fn a_benchmark_with_a_task_that_lacks_its_verifier_exits_with_2() {
+fn a_dataset_with_a_task_that_lacks_its_verifier_exits_with_2() {
     let (_directory, refused) = refused(with_a_task_that_lacks_its_verifier);
     assert_eq!(refused.status.code(), Some(2));
 }

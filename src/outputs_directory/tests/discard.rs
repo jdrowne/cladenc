@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::{CreationOutcome, TrialResult};
 use crate::outputs_directory::OutputsDirectory;
@@ -14,9 +14,9 @@ fn made() -> (Memory, OutputsDirectory) {
         &primogenitor,
     )
     .unwrap();
-    let benchmark = test_inputs::benchmark_in(&directory, directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset_in(&directory, directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&directory, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&directory, &dataset).unwrap())
         .unwrap();
     (directory, outputs_directory)
 }
@@ -33,11 +33,11 @@ fn with_a_diversification_discarded_after_it_ended() -> (Memory, OutputsDirector
 
 fn with_a_trial_discarded_after_it_ended() -> (Memory, OutputsDirectory) {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
+    outputs_directory.start_trial(0, "dataset/t1").unwrap();
     outputs_directory
-        .end_trial(0, "benchmark/t1", TrialResult::Pass)
+        .end_trial(0, "dataset/t1", TrialResult::Pass)
         .unwrap();
-    outputs_directory.discard_trial(0, "benchmark/t1").unwrap();
+    outputs_directory.discard_trial(0, "dataset/t1").unwrap();
     (directory, outputs_directory)
 }
 
@@ -106,15 +106,15 @@ fn discarding_a_diversification_leaves_the_progenitor_as_it_was() {
 #[test]
 fn discarding_a_trial_that_is_running_leaves_nothing_running() {
     let (directory, outputs_directory) = made();
-    outputs_directory.start_trial(0, "benchmark/t1").unwrap();
-    outputs_directory.discard_trial(0, "benchmark/t1").unwrap();
-    assert!(!directory.exists(outputs_directory.running_trial(0, "benchmark/t1")));
+    outputs_directory.start_trial(0, "dataset/t1").unwrap();
+    outputs_directory.discard_trial(0, "dataset/t1").unwrap();
+    assert!(!directory.exists(outputs_directory.running_trial(0, "dataset/t1")));
 }
 
 #[test]
 fn discarding_a_trial_that_ended_leaves_no_directory_of_the_trial() {
     let (directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
-    assert!(!directory.exists(outputs_directory.trial(0, "benchmark/t1")));
+    assert!(!directory.exists(outputs_directory.trial(0, "dataset/t1")));
 }
 
 #[test]
@@ -124,10 +124,10 @@ fn discarding_a_trial_keeps_the_directory_for_the_trials_of_its_harness() {
 }
 
 #[test]
-fn discarding_a_trial_that_ended_leaves_no_trial_in_the_directory_of_its_benchmark() {
+fn discarding_a_trial_that_ended_leaves_no_trial_in_the_directory_of_its_dataset() {
     let (directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
     assert_eq!(
-        entries(&directory, outputs_directory.trials(0).join("benchmark")),
+        entries(&directory, outputs_directory.trials(0).join("dataset")),
         0
     );
 }
@@ -135,7 +135,7 @@ fn discarding_a_trial_that_ended_leaves_no_trial_in_the_directory_of_its_benchma
 #[test]
 fn a_discarded_trial_can_be_started_again() {
     let (_directory, outputs_directory) = with_a_trial_discarded_after_it_ended();
-    assert!(outputs_directory.start_trial(0, "benchmark/t1").is_ok());
+    assert!(outputs_directory.start_trial(0, "dataset/t1").is_ok());
 }
 
 #[test]

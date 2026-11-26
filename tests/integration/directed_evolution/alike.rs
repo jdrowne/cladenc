@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 
-use cladenc::benchmark::Benchmark;
+use cladenc::dataset::Dataset;
 use cladenc::file_system::Disk;
 use cladenc::journal::{self, Settings};
 use cladenc::report;
@@ -24,12 +24,8 @@ fn settings(directory: &Path) -> Settings {
         model: test_inputs::MODEL.to_owned(),
         model_url: test_inputs::MODEL_URL.to_owned(),
         model_key_file: None,
-        benchmarks: vec![
-            Benchmark::read(
-                &Disk,
-                &test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
-            )
-            .unwrap(),
+        datasets: vec![
+            Dataset::read(&Disk, &test_inputs::dataset(directory, &["t1", "t2", "t3"])).unwrap(),
         ],
         docker_image: test_inputs::IMAGE.to_owned(),
         dockerfile: None,
@@ -42,9 +38,9 @@ fn settings(directory: &Path) -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 33.5,
-        holdout_tasks: vec!["benchmark/t2".to_owned(), "benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t2".to_owned(), "dataset/t3".to_owned()],
         corroboration_tasks_percentage: 33.5,
-        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        corroboration_tasks: vec!["dataset/t3".to_owned()],
         environment_image_repository: test_inputs::environment_image_repository(),
         seed: 7,
     }
@@ -135,7 +131,7 @@ fn with_the_run_command_the_manual_gives_a_child_of_the_primogenitor_holds_a_fil
 }
 
 #[test]
-fn with_the_run_command_the_manual_gives_every_harness_is_benchmarked_in_full() {
+fn with_the_run_command_the_manual_gives_every_harness_is_evaluated_in_full() {
     let directory = &*EVOLVED;
     let journal = journal_of(directory);
     assert_eq!(
@@ -157,7 +153,7 @@ fn with_the_run_command_the_manual_gives_a_harness_is_started_as_ever_for_a_tria
         fs::read_to_string(
             directory
                 .path()
-                .join("outputs/trials/2/benchmark/t1/work/trialled")
+                .join("outputs/trials/2/dataset/t1/work/trialled")
         )
         .unwrap(),
         "trialled\n"

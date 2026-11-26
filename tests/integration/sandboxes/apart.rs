@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
 
-use cladenc::benchmark::{Benchmark, TaskConfiguration};
+use cladenc::dataset::{Dataset, TaskConfiguration};
 use cladenc::file_system::Disk;
 use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
@@ -18,7 +18,7 @@ use cladenc::sandboxes::{
 use tempfile::TempDir;
 use test_inputs::Image;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 const SEPARATE: &str = "[verifier]\nenvironment_mode = \"separate\"\n";
 const OWN: &str = "[verifier.environment]\n";
 const REPORT: &str = "artifacts = [\"/app/report.txt\"]\n";
@@ -117,10 +117,10 @@ fn prepared(trial: &Trial<'_>) -> Prepared {
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
-    fs::write(benchmark.join("t1/task.toml"), trial.task_toml).unwrap();
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
+    fs::write(dataset.join("t1/task.toml"), trial.task_toml).unwrap();
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     test_inputs::kept_verifier(&path, "t1", trial.verifier);
     let configuration = TaskConfiguration::read(&Disk, &outputs_directory.task(TASK)).unwrap();

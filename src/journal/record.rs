@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::JournalError;
 use crate::artificial_selection::ArtificialSelection;
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::file_system::FileSystem;
 use crate::genealogy::{CreationOutcome, Genealogy, HarnessId, TrialResult};
 use crate::holdout::TaskSet;
@@ -23,7 +23,7 @@ pub struct Settings {
     pub environment_image_repository: String,
     pub harness_build_command: Option<String>,
     pub harness_run_command: String,
-    pub benchmarks: Vec<Benchmark>,
+    pub datasets: Vec<Dataset>,
     pub selection_tasks_percentage: f64,
     pub holdout_tasks: Vec<String>,
     pub corroboration_tasks_percentage: f64,
@@ -75,9 +75,9 @@ impl Settings {
     }
 
     pub(crate) fn tasks(&self) -> Vec<String> {
-        self.benchmarks
+        self.datasets
             .iter()
-            .flat_map(|benchmark| benchmark.tasks.iter().map(|id| benchmark.task(id)))
+            .flat_map(|dataset| dataset.tasks.iter().map(|id| dataset.task(id)))
             .collect()
     }
 
@@ -101,11 +101,11 @@ impl Settings {
             .collect()
     }
 
-    pub(crate) fn count_of(&self, benchmark: &Benchmark, set: TaskSet) -> u64 {
-        benchmark
+    pub(crate) fn count_of(&self, dataset: &Dataset, set: TaskSet) -> u64 {
+        dataset
             .tasks
             .iter()
-            .filter(|id| self.set_of(&benchmark.task(id)) == set)
+            .filter(|id| self.set_of(&dataset.task(id)) == set)
             .count() as u64
     }
 

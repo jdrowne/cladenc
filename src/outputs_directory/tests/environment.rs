@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::file_system::tests::double::Memory;
 use crate::outputs_directory::OutputsDirectory;
 
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 
 fn made() -> (Memory, OutputsDirectory) {
     let directory = Memory::default();
@@ -21,7 +21,7 @@ fn made() -> (Memory, OutputsDirectory) {
 fn what_is_kept_of_the_environment_of_a_task_is_under_environments_in_the_outputs_directory() {
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs")).environment(TASK),
-        Path::new("/outputs/environments/benchmark/t1")
+        Path::new("/outputs/environments/dataset/t1")
     );
 }
 
@@ -74,7 +74,7 @@ fn what_is_kept_of_a_verifier_environment_is_in_verifier_beside_that_of_its_task
     assert_eq!(
         OutputsDirectory::at(Memory::default().shared(), Path::new("/outputs"))
             .verifier_environment(TASK),
-        Path::new("/outputs/environments/benchmark/t1/verifier")
+        Path::new("/outputs/environments/dataset/t1/verifier")
     );
 }
 

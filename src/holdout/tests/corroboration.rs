@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::holdout::{self, Drawn, Percentages};
 use rand::SeedableRng;
 use rand::seq::index;
@@ -12,19 +12,19 @@ const PERCENTAGES: Percentages = Percentages {
     corroboration: 20.0,
 };
 
-fn benchmark(name: &str, tasks: usize) -> Benchmark {
-    Benchmark {
+fn dataset(name: &str, tasks: usize) -> Dataset {
+    Dataset {
         directory: PathBuf::from("/abs").join(name),
         tasks: (1..=tasks).map(|task| format!("t{task:02}")).collect(),
     }
 }
 
-fn benchmarks() -> [Benchmark; 2] {
-    [benchmark("bugs", 20), benchmark("features", 8)]
+fn datasets() -> [Dataset; 2] {
+    [dataset("bugs", 20), dataset("features", 8)]
 }
 
 fn draw(seed: u64) -> Drawn {
-    holdout::draw(&benchmarks(), PERCENTAGES, seed).unwrap()
+    holdout::draw(&datasets(), PERCENTAGES, seed).unwrap()
 }
 
 fn held_out(seed: u64) -> Vec<String> {
@@ -51,7 +51,7 @@ fn selection_tasks_of(name: &str, seed: u64) -> usize {
 }
 
 #[test]
-fn the_corroboration_percentage_is_taken_of_the_tasks_of_each_benchmark_by_itself() {
+fn the_corroboration_percentage_is_taken_of_the_tasks_of_each_dataset_by_itself() {
     assert_eq!(
         (of("bugs/", drawn(7)).len(), of("features/", drawn(7)).len()),
         (4, 2)
@@ -59,7 +59,7 @@ fn the_corroboration_percentage_is_taken_of_the_tasks_of_each_benchmark_by_itsel
 }
 
 #[test]
-fn the_selection_percentage_is_taken_of_the_tasks_of_each_benchmark_by_itself() {
+fn the_selection_percentage_is_taken_of_the_tasks_of_each_dataset_by_itself() {
     assert_eq!(
         (
             selection_tasks_of("bugs/", 7),
@@ -80,7 +80,7 @@ fn no_task_is_drawn_twice() {
 }
 
 #[test]
-fn the_corroboration_tasks_are_in_the_order_of_the_benchmarks_and_of_their_tasks() {
+fn the_corroboration_tasks_are_in_the_order_of_the_datasets_and_of_their_tasks() {
     let mut in_order = drawn(7);
     in_order.sort();
     assert_eq!(drawn(7), in_order);
@@ -121,10 +121,10 @@ fn the_tasks_are_drawn_from_the_last_stream_but_one_of_the_seeded_generator() {
 }
 
 #[test]
-fn a_benchmark_of_three_tasks_can_have_one_corroboration_task() {
+fn a_dataset_of_three_tasks_can_have_one_corroboration_task() {
     assert_eq!(
         holdout::draw(
-            &[benchmark("bugs", 3)],
+            &[dataset("bugs", 3)],
             Percentages {
                 selection: 30.0,
                 corroboration: 30.0

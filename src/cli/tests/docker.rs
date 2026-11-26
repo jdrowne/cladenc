@@ -46,7 +46,7 @@ fn ended_by_a_signal() -> Ran {
 fn with_a_docker_that_says_nothing_of_the_machine() -> Ran {
     let directory = Memory::default();
     let options = given::options(&directory);
-    let task_toml = directory.path().join("benchmark/t2/task.toml");
+    let task_toml = directory.path().join("dataset/t2/task.toml");
     directory.write(task_toml, ASKS_FOR_A_CPU).unwrap();
     let start = Command::Start(Box::new(options));
     given::executed(Double::default(), &directory, start)
@@ -111,7 +111,7 @@ fn a_start_whose_docker_a_signal_ended_says_which_trial_and_which_signal() {
     assert_eq!(
         said_last(&ended_by_a_signal()),
         "cladenc: the directed evolution stopped before its end: the trial of harness 0 on \
-         task benchmark/t1 was ended by signal 15"
+         task dataset/t1 was ended by signal 15"
     );
 }
 

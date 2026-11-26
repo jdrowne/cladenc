@@ -13,7 +13,7 @@ fn artificial_selection(max_diversifications: u64) -> ArtificialSelection {
     }
 }
 
-fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
+fn evaluate_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     for task in tasks() {
         genealogy.start_trial(harness, &task).unwrap();
         genealogy
@@ -22,14 +22,14 @@ fn benchmark_in_full(genealogy: &mut Genealogy, harness: HarnessId) {
     }
 }
 
-fn with_the_primogenitor_benchmarked_in_full() -> Genealogy {
+fn with_the_primogenitor_evaluated_in_full() -> Genealogy {
     let mut genealogy = Genealogy::new().selecting_by(&tasks());
-    benchmark_in_full(&mut genealogy, 0);
+    evaluate_in_full(&mut genealogy, 0);
     genealogy
 }
 
 fn with_a_child(outcome: CreationOutcome) -> Genealogy {
-    let mut genealogy = with_the_primogenitor_benchmarked_in_full();
+    let mut genealogy = with_the_primogenitor_evaluated_in_full();
     let child = genealogy.start_diversification(0).unwrap();
     genealogy.end_diversification(child, outcome).unwrap();
     genealogy
@@ -40,9 +40,9 @@ fn is_a_diversification(action: Option<Action>) -> bool {
 }
 
 #[test]
-fn a_diversification_is_due_once_every_created_harness_is_benchmarked_in_full() {
+fn a_diversification_is_due_once_every_created_harness_is_evaluated_in_full() {
     let mut genealogy = with_a_child(CreationOutcome::Created);
-    benchmark_in_full(&mut genealogy, 1);
+    evaluate_in_full(&mut genealogy, 1);
     assert!(is_a_diversification(
         artificial_selection(100).next_action(&genealogy, 0)
     ));
@@ -89,7 +89,7 @@ fn a_trial_is_the_next_action_once_the_most_diversifications_have_started() {
 #[test]
 fn a_diversification_is_still_the_next_action_when_one_fewer_than_the_most_have_started() {
     let mut genealogy = with_a_child(CreationOutcome::Created);
-    benchmark_in_full(&mut genealogy, 1);
+    evaluate_in_full(&mut genealogy, 1);
     assert!(is_a_diversification(
         artificial_selection(2).next_action(&genealogy, 0)
     ));
@@ -106,6 +106,6 @@ fn a_diversification_that_failed_counts_among_those_started() {
 #[test]
 fn no_diversification_is_due_once_the_most_have_started() {
     let mut genealogy = with_a_child(CreationOutcome::Created);
-    benchmark_in_full(&mut genealogy, 1);
+    evaluate_in_full(&mut genealogy, 1);
     assert_eq!(artificial_selection(1).next_action(&genealogy, 0), None);
 }

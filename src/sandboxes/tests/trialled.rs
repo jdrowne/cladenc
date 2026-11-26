@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
 
-use crate::benchmark::{Artifact, CollectCommand, TaskConfiguration};
+use crate::dataset::{Artifact, CollectCommand, TaskConfiguration};
 use crate::genealogy::{Cause, TrialResult};
 use crate::model::Model;
 use crate::sandboxes::tests::double::{Answer, Double};
@@ -176,7 +176,7 @@ fn the_tests_of_the_task_are_put_in_the_sandbox_only_once_the_harness_has_ended(
             format!(
                 "docker exec --workdir / --user 0 NAME sh -c {EMPTIED} sh /var/opt/cladenc/harbor/tests"
             ),
-            "docker cp OUTPUTS/benchmarks/benchmark/t1/tests/. \
+            "docker cp OUTPUTS/datasets/dataset/t1/tests/. \
              NAME:/var/opt/cladenc/harbor/tests"
                 .to_owned(),
             "docker exec --workdir / --user 0 NAME chown -R 0 /var/opt/cladenc/harbor/tests"
@@ -264,7 +264,7 @@ fn a_trial_whose_verifier_runs_past_its_time_limit_timed_out() {
 
 #[test]
 fn the_logs_of_the_verifier_are_copied_into_the_directory_of_the_running_trial() {
-    let docker = Double::default().verifying(|trial| trial == "trial-0-benchmark+t1");
+    let docker = Double::default().verifying(|trial| trial == "trial-0-dataset+t1");
     assert_eq!(result_of(&trialled_by(docker)), Some(TrialResult::Pass));
 }
 

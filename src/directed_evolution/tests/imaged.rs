@@ -98,7 +98,7 @@ fn every_sandbox_is_told_never_to_fetch_the_image_that_was_built() {
 }
 
 fn stopped_at_a_trial() -> Evolved {
-    let needles = ["run a harness", "trial-0-benchmark+t2"];
+    let needles = ["run a harness", "trial-0-dataset+t2"];
     imaged_by(Double::default().answering(&needles, &[Answer::Exited(125)]))
 }
 

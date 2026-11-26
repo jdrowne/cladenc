@@ -11,7 +11,7 @@ use super::docker::{Docker, Host};
 use super::left;
 use super::program::{Ending, FOREVER, LEEWAY, Limits};
 use super::{Copied, Environment, SandboxError};
-use crate::benchmark::{HealthCheck, TaskConfiguration};
+use crate::dataset::{HealthCheck, TaskConfiguration};
 use crate::file_system::FileSystem;
 use crate::outputs_directory::{OutputsDirectory, make_usable};
 

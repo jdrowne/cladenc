@@ -1,4 +1,4 @@
-use crate::benchmark::Artifact;
+use crate::dataset::Artifact;
 
 fn listed(paths: &[(&str, &str)]) -> Vec<Artifact> {
     paths

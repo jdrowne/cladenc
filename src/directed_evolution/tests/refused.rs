@@ -56,10 +56,10 @@ fn a_directed_evolution_cannot_start_in_an_outputs_directory_that_exists() {
 }
 
 #[test]
-fn a_directed_evolution_whose_benchmark_lacks_one_of_its_tasks_cannot_make_its_outputs_directory() {
+fn a_directed_evolution_whose_dataset_lacks_one_of_its_tasks_cannot_make_its_outputs_directory() {
     let directory = Memory::default();
     let mut settings = settings(&directory);
-    settings.benchmarks[0].tasks.push("missing".to_owned());
+    settings.datasets[0].tasks.push("missing".to_owned());
     let found = started(&directory, &settings, &directory.path().join("outputs"));
     assert!(matches!(found, Err(DirectedEvolutionError::Io(_))));
 }

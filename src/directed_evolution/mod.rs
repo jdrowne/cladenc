@@ -79,15 +79,15 @@ pub fn start(
     let (made, journal) = OutputsDirectory::create(kept, path, &settings.primogenitor)
         .and_then(|outputs_directory| {
             settings
-                .benchmarks
+                .datasets
                 .iter()
-                .try_for_each(|benchmark| {
+                .try_for_each(|dataset| {
                     let copying = Said::CopyingTasks {
-                        benchmark: &benchmark.directory,
-                        tasks: benchmark.tasks.len() as u64,
+                        dataset: &dataset.directory,
+                        tasks: dataset.tasks.len() as u64,
                     };
                     say(writer, &copying);
-                    outputs_directory.copy_benchmark(benchmark)
+                    outputs_directory.copy_dataset(dataset)
                 })
                 .map(|()| outputs_directory.holding_out(&settings.holdout_tasks))
         })
@@ -123,12 +123,12 @@ pub fn start(
 }
 
 fn say_the_holdout(settings: &Settings, writer: &mut dyn Write) {
-    for benchmark in &settings.benchmarks {
+    for dataset in &settings.datasets {
         let holding_out = Said::HoldingOut {
-            benchmark: &benchmark.directory,
-            selection: settings.count_of(benchmark, TaskSet::Selection),
-            corroboration: settings.count_of(benchmark, TaskSet::Corroboration),
-            tasks: benchmark.tasks.len() as u64,
+            dataset: &dataset.directory,
+            selection: settings.count_of(dataset, TaskSet::Selection),
+            corroboration: settings.count_of(dataset, TaskSet::Corroboration),
+            tasks: dataset.tasks.len() as u64,
         };
         say(writer, &holding_out);
     }

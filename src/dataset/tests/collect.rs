@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use crate::benchmark::configuration::{self, ConfigurationError};
-use crate::benchmark::{CollectCommand, TaskConfiguration};
+use crate::dataset::configuration::{self, ConfigurationError};
+use crate::dataset::{CollectCommand, TaskConfiguration};
 use crate::file_system::tests::double::Memory;
 
 const SNAPSHOT: &str = "[[verifier.collect]]\ncommand = \"pg_dump app > /tmp/rows.sql\"\n";

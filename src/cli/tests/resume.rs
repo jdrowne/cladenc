@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
-use crate::benchmark::Benchmark;
 use crate::cli::tests::given;
 use crate::cli::{self, Cli, Command, ResumeOptions};
+use crate::dataset::Dataset;
 use crate::file_system::tests::double::Memory;
 use crate::genealogy::CreationOutcome;
 use crate::journal::{self, Record, Settings};
@@ -123,8 +123,8 @@ fn ended() -> Memory {
                 model: "a-model".to_owned(),
                 model_url: "http://models.example/v1".to_owned(),
                 model_key_file: None,
-                benchmarks: vec![Benchmark {
-                    directory: PathBuf::from("/abs/benchmark"),
+                datasets: vec![Dataset {
+                    directory: PathBuf::from("/abs/dataset"),
                     tasks: vec!["t1".to_owned()],
                 }],
                 docker_image: "image".to_owned(),

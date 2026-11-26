@@ -4,7 +4,7 @@ use clap::{CommandFactory, Parser};
 
 const WHAT_CLADENC_DOES: &str = "Carries out a directed evolution of an agentic coding harness, in \
                                  which harnesses are cloned, each diversifying its clone, and \
-                                 are benchmarked";
+                                 are evaluated";
 
 const COMMANDS: [&[&str]; 5] = [
     &["cladenc"],
@@ -252,13 +252,13 @@ fn the_help_of_status_names_the_flag_that_gives_the_outputs_directory() {
 }
 
 #[test]
-fn the_help_of_start_names_the_flag_that_names_the_benchmark() {
-    assert!(help_of("start").contains("--benchmark <DIR>"));
+fn the_help_of_start_names_the_flag_that_names_the_dataset() {
+    assert!(help_of("start").contains("--dataset <DIR>"));
 }
 
 #[test]
-fn the_help_of_start_says_that_the_benchmark_flag_is_given_once_for_each_benchmark() {
-    assert!(help_of("start").contains("given once for each benchmark"));
+fn the_help_of_start_says_that_the_dataset_flag_is_given_once_for_each_dataset() {
+    assert!(help_of("start").contains("given once for each dataset"));
 }
 
 #[test]
@@ -280,7 +280,7 @@ fn the_help_of_start_names_the_flag_that_gives_the_corroboration_tasks_percentag
 fn the_help_of_start_says_what_the_corroboration_tasks_percentage_gives() {
     assert!(
         help_of("start")
-            .contains("The percentage of each benchmark's tasks that are corroboration tasks")
+            .contains("The percentage of each dataset's tasks that are corroboration tasks")
     );
 }
 
@@ -288,6 +288,15 @@ fn the_help_of_start_says_what_the_corroboration_tasks_percentage_gives() {
 fn the_help_of_start_says_what_the_selection_tasks_percentage_gives() {
     assert!(
         help_of("start")
-            .contains("The percentage of each benchmark's tasks that are selection tasks")
+            .contains("The percentage of each dataset's tasks that are selection tasks")
     );
+}
+
+#[test]
+fn the_help_of_no_command_says_benchmark() {
+    let printed: Vec<String> = COMMANDS
+        .iter()
+        .map(|command| printed_for(command, "--help").to_lowercase())
+        .collect();
+    assert!(!printed.iter().any(|help| help.contains("benchmark")));
 }

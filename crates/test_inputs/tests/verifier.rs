@@ -3,7 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use tempfile::TempDir;
-use test_inputs::{benchmark, kept_verifier, temporary_directory};
+use test_inputs::{dataset, kept_verifier, temporary_directory};
 
 fn as_made(task: &str) -> String {
     format!(
@@ -19,7 +19,7 @@ fn read(file: &Path) -> String {
 fn kept_with_the_verifier_of_t1_written_anew() -> (TempDir, PathBuf) {
     let directory = temporary_directory();
     let outputs = directory.path().join("outputs");
-    let kept = benchmark(&outputs.join("benchmarks"), &["t1", "t2"]);
+    let kept = dataset(&outputs.join("datasets"), &["t1", "t2"]);
     kept_verifier(&outputs, "t1", "exit 3");
     (directory, kept)
 }
@@ -53,8 +53,8 @@ fn the_verifier_of_another_task_is_left_as_it_was() {
 fn the_verifier_a_person_brought_is_left_as_it_was_when_the_kept_one_is_written_anew() {
     let directory = temporary_directory();
     let outputs = directory.path().join("outputs");
-    let brought = benchmark(directory.path(), &["t1"]);
-    benchmark(&outputs.join("benchmarks"), &["t1"]);
+    let brought = dataset(directory.path(), &["t1"]);
+    dataset(&outputs.join("datasets"), &["t1"]);
     kept_verifier(&outputs, "t1", "exit 3");
     assert_eq!(read(&brought.join("t1/tests/test.sh")), as_made("t1"));
 }

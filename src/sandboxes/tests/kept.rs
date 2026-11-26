@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::benchmark::Artifact;
+use crate::dataset::Artifact;
 use crate::file_system::tests::double::Memory;
 use crate::sandboxes::artifacts;
 

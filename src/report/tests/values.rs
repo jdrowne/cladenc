@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::benchmark::Benchmark;
+use crate::dataset::Dataset;
 use crate::genealogy::{Cause, CreationOutcome, Genealogy, HarnessState, TrialResult};
 use crate::journal::{Seconds, Settings};
 use crate::report::Report;
@@ -12,8 +12,8 @@ fn settings() -> Settings {
         model: "a-model".to_owned(),
         model_url: "http://models.example/v1".to_owned(),
         model_key_file: None,
-        benchmarks: vec![Benchmark {
-            directory: PathBuf::from("/abs/benchmark"),
+        datasets: vec![Dataset {
+            directory: PathBuf::from("/abs/dataset"),
             tasks: vec!["t1".to_owned(), "t2".to_owned(), "t3".to_owned()],
         }],
         docker_image: "image".to_owned(),
@@ -27,9 +27,9 @@ fn settings() -> Settings {
         max_verifier_health_check_retries: 0,
         max_task_health_check_retries: 0,
         selection_tasks_percentage: 25.0,
-        holdout_tasks: vec!["benchmark/t1".to_owned(), "benchmark/t3".to_owned()],
+        holdout_tasks: vec!["dataset/t1".to_owned(), "dataset/t3".to_owned()],
         corroboration_tasks_percentage: 25.0,
-        corroboration_tasks: vec!["benchmark/t3".to_owned()],
+        corroboration_tasks: vec!["dataset/t3".to_owned()],
         environment_image_repository: "cladenc-environments-0123456789abcdef".to_owned(),
         seed: 7,
     }
@@ -46,12 +46,12 @@ fn a_child_that_succeeds_where_its_progenitor_fails() -> Genealogy {
     genealogy
         .end_diversification(child, CreationOutcome::Created)
         .unwrap();
-    trialled(&mut genealogy, 0, "benchmark/t1", TrialResult::Fail);
-    trialled(&mut genealogy, 0, "benchmark/t2", TrialResult::Pass);
-    trialled(&mut genealogy, 0, "benchmark/t3", TrialResult::Pass);
-    trialled(&mut genealogy, child, "benchmark/t1", TrialResult::Pass);
-    trialled(&mut genealogy, child, "benchmark/t2", TrialResult::Fail);
-    trialled(&mut genealogy, child, "benchmark/t3", TrialResult::Fail);
+    trialled(&mut genealogy, 0, "dataset/t1", TrialResult::Fail);
+    trialled(&mut genealogy, 0, "dataset/t2", TrialResult::Pass);
+    trialled(&mut genealogy, 0, "dataset/t3", TrialResult::Pass);
+    trialled(&mut genealogy, child, "dataset/t1", TrialResult::Pass);
+    trialled(&mut genealogy, child, "dataset/t2", TrialResult::Fail);
+    trialled(&mut genealogy, child, "dataset/t3", TrialResult::Fail);
     genealogy
 }
 
@@ -60,19 +60,19 @@ fn a_primogenitor_whose_trials_are_inconclusive() -> Genealogy {
     trialled(
         &mut genealogy,
         0,
-        "benchmark/t1",
+        "dataset/t1",
         TrialResult::Inconclusive(Cause::NoVerdict),
     );
     trialled(
         &mut genealogy,
         0,
-        "benchmark/t2",
+        "dataset/t2",
         TrialResult::Inconclusive(Cause::TimedOut),
     );
     trialled(
         &mut genealogy,
         0,
-        "benchmark/t3",
+        "dataset/t3",
         TrialResult::Inconclusive(Cause::NoVerdict),
     );
     genealogy
@@ -85,7 +85,7 @@ fn a_child_that_is_being_created_and_one_that_failed() -> Genealogy {
         .end_diversification(failed, CreationOutcome::Failed)
         .unwrap();
     genealogy.start_diversification(0).unwrap();
-    genealogy.start_trial(0, "benchmark/t1").unwrap();
+    genealogy.start_trial(0, "dataset/t1").unwrap();
     genealogy
 }
 
@@ -240,8 +240,7 @@ fn the_harness_that_is_ahead_so_far_is_the_one_the_artificial_selection_would_na
 }
 
 #[test]
-fn the_harness_that_is_ahead_so_far_is_benchmarked_in_full_and_completed_the_most_selection_tasks()
-{
+fn the_harness_that_is_ahead_so_far_is_evaluated_in_full_and_completed_the_most_selection_tasks() {
     let report = report(&a_child_that_succeeds_where_its_progenitor_fails());
     assert_eq!(report.leader, Leader::HarnessAheadSoFar(1));
 }
@@ -448,6 +447,6 @@ fn a_task_that_two_harnesses_completed_is_counted_once() {
     genealogy
         .end_diversification(another, CreationOutcome::Created)
         .unwrap();
-    trialled(&mut genealogy, another, "benchmark/t1", TrialResult::Pass);
+    trialled(&mut genealogy, another, "dataset/t1", TrialResult::Pass);
     assert_eq!(report(&genealogy).selection_tasks_completed_by_any, 1);
 }

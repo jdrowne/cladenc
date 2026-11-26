@@ -13,7 +13,7 @@ fn artificial_selection(seed: u64) -> ArtificialSelection {
     }
 }
 
-fn benchmarked(genealogy: &mut Genealogy, harness: HarnessId, completed: &[usize]) {
+fn evaluated(genealogy: &mut Genealogy, harness: HarnessId, completed: &[usize]) {
     for (number, task) in tasks().iter().enumerate() {
         let result = if completed.contains(&number) {
             TrialResult::Pass
@@ -29,13 +29,13 @@ fn two_children_selected_by_the_first_five_tasks(first: &[usize], second: &[usiz
     let mut genealogy = Genealogy::new()
         .selecting_by(&tasks()[..5])
         .corroborating_with(&tasks()[10..]);
-    benchmarked(&mut genealogy, 0, &[]);
+    evaluated(&mut genealogy, 0, &[]);
     for completed in [first, second] {
         let child = genealogy.start_diversification(0).unwrap();
         genealogy
             .end_diversification(child, CreationOutcome::Created)
             .unwrap();
-        benchmarked(&mut genealogy, child, completed);
+        evaluated(&mut genealogy, child, completed);
     }
     genealogy
 }

@@ -1,0 +1,78 @@
+use std::fs;
+use std::path::Path;
+
+use test_inputs::{Disk, dataset, dataset_named_in, temporary_directory};
+
+fn held_by(directory: &Path) -> Vec<String> {
+    let mut held: Vec<String> = fs::read_dir(directory)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+    held.sort();
+    held
+}
+
+#[test]
+fn a_dataset_is_the_directory_named_dataset() {
+    let directory = temporary_directory();
+    assert_eq!(
+        dataset(directory.path(), &["t1"]),
+        directory.path().join("dataset")
+    );
+}
+
+#[test]
+fn a_dataset_holds_a_directory_for_each_of_its_tasks() {
+    let directory = temporary_directory();
+    assert_eq!(
+        held_by(&dataset(directory.path(), &["t2", "t1"])),
+        ["t1", "t2"]
+    );
+}
+
+#[test]
+fn a_dataset_of_no_task_is_an_empty_directory() {
+    let directory = temporary_directory();
+    assert!(held_by(&dataset(directory.path(), &[])).is_empty());
+}
+
+#[test]
+fn each_task_of_a_dataset_has_an_environment_an_instruction_a_configuration_and_its_tests() {
+    let directory = temporary_directory();
+    let made = dataset(directory.path(), &["t1", "t2"]);
+    assert_eq!(
+        held_by(&made.join("t2")),
+        ["environment", "instruction.md", "task.toml", "tests"]
+    );
+}
+
+#[test]
+fn a_dataset_given_a_name_is_the_directory_of_that_name() {
+    let directory = temporary_directory();
+    assert_eq!(
+        dataset_named_in(&Disk, directory.path(), "refactoring", &["t1"]),
+        directory.path().join("refactoring")
+    );
+}
+
+#[test]
+fn a_dataset_given_a_name_holds_a_directory_for_each_of_its_tasks() {
+    let directory = temporary_directory();
+    assert_eq!(
+        held_by(&dataset_named_in(
+            &Disk,
+            directory.path(),
+            "refactoring",
+            &["t2", "t1"]
+        )),
+        ["t1", "t2"]
+    );
+}
+
+#[test]
+fn a_dataset_given_a_name_stands_beside_the_one_named_dataset() {
+    let directory = temporary_directory();
+    dataset(directory.path(), &["t1"]);
+    dataset_named_in(&Disk, directory.path(), "refactoring", &["t1"]);
+    assert_eq!(held_by(directory.path()), ["dataset", "refactoring"]);
+}

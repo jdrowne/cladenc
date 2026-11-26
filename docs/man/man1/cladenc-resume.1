@@ -71,7 +71,7 @@ brings up any sandbox.
 The image that the Dockerfile of each task starts from has to be on the
 machine: Docker fetches one that is not, from the registry of its name.
 A task whose environment is not built stops \fBcladenc resume\fP with exit
-status 2, and environments/<BENCHMARK>/<TASK> in the outputs directory keeps
+status 2, and environments/<DATASET>/<TASK> in the outputs directory keeps
 what Docker printed.
 .PP
 \fBcladenc resume\fP reads the task.toml of the copy of each task again, and

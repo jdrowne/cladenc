@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::benchmark::{CollectCommand, TaskConfiguration};
+use crate::dataset::{CollectCommand, TaskConfiguration};
 use crate::sandboxes::tests::double::{Answer, Double};
 use crate::sandboxes::tests::given::{self, LAUNCH, TASK, Tried};
 

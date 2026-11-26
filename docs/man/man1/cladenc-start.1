@@ -4,8 +4,8 @@ cladenc\-start \- start a new directed evolution and print the directory of its 
 .SH SYNOPSIS
 .nf
 \fBcladenc start\fP
-    \fB\-\-benchmark\fP <DIR>...
     \fB\-\-corroboration\-tasks\-percentage\fP <NUMBER>
+    \fB\-\-dataset\fP <DIR>...
     [\fB\-\-diversification\-docker\-image\fP <IMAGE>]
     [\fB\-\-diversification\-docker\-image\-build\-timeout\fP <SECONDS>]
     [\fB\-\-diversification\-dockerfile\fP <FILE>]
@@ -43,13 +43,13 @@ While the directed evolution has not ended, \fBcladenc status\fP prints its
 state so far.
 .SH FLAGS
 .TP
-\fB\-\-benchmark\fP <DIR>
-The directory of a benchmark, which holds a directory for each task, given
-once for each benchmark.
-.TP
 \fB\-\-corroboration\-tasks\-percentage\fP <NUMBER>
-The percentage of each benchmark's tasks that are corroboration tasks, above 0
+The percentage of each dataset's tasks that are corroboration tasks, above 0
 and below 100.
+.TP
+\fB\-\-dataset\fP <DIR>
+The directory of a dataset, which holds a directory for each task, given
+once for each dataset.
 .TP
 \fB\-\-diversification\-docker\-image\fP <IMAGE>
 The Docker image every diversification and every build of a harness is
@@ -108,7 +108,7 @@ The outputs directory, which start creates.
 The directory of source code copied to make the primogenitor.
 .TP
 \fB\-\-selection\-tasks\-percentage\fP <NUMBER>
-The percentage of each benchmark's tasks that are selection tasks, above 0 and
+The percentage of each dataset's tasks that are selection tasks, above 0 and
 below 100.
 .SH THE IMAGE OF THE DIRECTED EVOLUTION
 Every diversification, and every build of a harness, is carried out in a
@@ -173,7 +173,7 @@ cladenc does not ask Docker to fetch a base image and cannot forbid it: Docker
 fetches a base image that is not on the machine, from the registry of its
 name.
 .SH ENVIRONMENTS
-cladenc builds the environment of every task of every benchmark when the
+cladenc builds the environment of every task of every dataset when the
 directed evolution is started, and again each time it is resumed, before it
 brings up any sandbox, as
 .PP
@@ -191,7 +191,7 @@ then a colon and the place of the task among the tasks of the directed
 evolution, counted from 0
 .TP 8n
 \fB<TASK>\fP
-the task, as <BENCHMARK>/<TASK>
+the task, as <DATASET>/<TASK>
 .TP 8n
 \fB<PATH>\fP
 the path of the outputs directory, with every symbolic link in it resolved
@@ -205,12 +205,12 @@ with an image.
 The second is the label that every sandbox of the directed evolution
 carries.
 It makes the environments of two directed evolutions two images, even where
-both are built from one task of one benchmark, so that removing those of one
+both are built from one task of one dataset, so that removing those of one
 leaves those of the other on the machine.
 .PP
 The build has the time limit that the task.toml of the task gives, as
 build_timeout_sec under environment, or 600 seconds where it gives none.
-environments/<BENCHMARK>/<TASK> in the outputs directory keeps what Docker
+environments/<DATASET>/<TASK> in the outputs directory keeps what Docker
 printed.
 A task whose environment is not built stops the directed evolution with exit
 status 2, and \fBcladenc start\fP leaves it no journal.
@@ -356,11 +356,11 @@ progenitor to improve the clone: what the progenitor leaves there is its child.
 The diversification prompt is a text that cladenc holds itself, the same in
 every diversification: it says what the harness is asked to do, and what the
 harness is given to read.
-No benchmark brings the diversification prompt: the text that a task brings is
+No dataset brings the diversification prompt: the text that a task brings is
 the instruction of the task, which a harness is given in a trial.
 In a diversification, CLADENC_INSTRUCTION holds the diversification prompt.
 /var/log/cladenc/trials holds the finished trials of the progenitor on the
-non-holdout tasks, to read: one directory for each benchmark, and in it one
+non-holdout tasks, to read: one directory for each dataset, and in it one
 for each task, holding what the trial on that task kept.
 .PP
 What this section says of a diversification, it says of one in which a
@@ -412,12 +412,12 @@ the child better at that counts, and that the child is judged by tasks the
 progenitor is not shown.
 The diversification prompt is a request: cladenc enforces none of it.
 .PP
-A harness is cloned only once it has been benchmarked in full, on every task
-of every benchmark of the directed evolution, so that it finds every
+A harness is cloned only once it has been evaluated in full, on every task
+of every dataset of the directed evolution, so that it finds every
 non-holdout task in /var/log/cladenc/trials.
-The primogenitor is benchmarked in full before the first diversification.
+The primogenitor is evaluated in full before the first diversification.
 .PP
-Every harness is benchmarked in full once it is created, whether it is cloned
+Every harness is evaluated in full once it is created, whether it is cloned
 or not.
 cladenc chooses which harness is cloned, partly by chance.
 It does not choose which trial starts next: the created harness with the
@@ -429,15 +429,15 @@ A diversification counts once it is started, whether or not it creates its
 child.
 The diversification of an experiment is not counted.
 The directed evolution ends once that many have been started, each of them has
-ended, and every created harness has been benchmarked in full.
-With one benchmark of 5 tasks and \fB\-\-max\-diversifications\fP 1, the
-primogenitor is benchmarked on the 5 tasks, is cloned and diversifies its
-clone, and its child is benchmarked on the 5 tasks where the diversification
+ended, and every created harness has been evaluated in full.
+With one dataset of 5 tasks and \fB\-\-max\-diversifications\fP 1, the
+primogenitor is evaluated on the 5 tasks, is cloned and diversifies its
+clone, and its child is evaluated on the 5 tasks where the diversification
 created it.
 .PP
 A diversification starts only once no trial is left to start, no trial is
 running and no other diversification is under way: every harness created so
-far has been benchmarked in full, the child of the diversification before
+far has been evaluated in full, the child of the diversification before
 among them.
 So cladenc chooses each harness that is cloned with what every created
 harness completed in hand.
@@ -474,13 +474,13 @@ symbolic link with the same target.
 Such a child would be its progenitor over again, and a model does not answer
 the same way twice, so what the child completed would differ from what its
 progenitor completed by luck alone.
-It is not built and not benchmarked, and it is never chosen to be cloned.
+It is not built and not evaluated, and it is never chosen to be cloned.
 .PP
 Once the progenitor has ended, and again once a build has ended, cladenc makes
 every directory of the source code one that its owner can list, write in and
 enter, and every file one that its owner can read.
 So the permission bits that a harness or a build leaves keep no child from
-being made or benchmarked.
+being made or evaluated.
 .PP
 A child that holds anything but regular files, directories and symbolic links
 is a failed diversification.
@@ -517,7 +517,7 @@ group harness.
 Where the primogenitor leaves the second clone as it was, no singleton control
 group harness is created, and the diversification is recorded as unchanged.
 .PP
-The singleton control group harness is built and benchmarked in full, as the
+The singleton control group harness is built and evaluated in full, as the
 progenitor's child is, and it takes no other part in the directed evolution:
 it is never chosen to be cloned, it is counted in no clade, it is not named
 the best harness, and the diversification it is created in does not count
@@ -578,8 +578,9 @@ timed out; for the primogenitor the directed evolution stops
 .PP
 A build that leaves anything but regular files, directories and symbolic links
 has failed.
-.SH BENCHMARKS
-A benchmark is a directory that holds one directory for each task.
+.SH DATASETS
+Dataset is Harbor's word for a collection of tasks.
+A dataset is a directory that holds one directory for each task.
 The name of a task's directory is the id of the task, made of letters, digits,
 dots, underscores and hyphens, and the directory holds
 .TP 16n
@@ -601,8 +602,8 @@ files the work starts from, and whatever else the Dockerfile uses
 .PP
 as in Harbor's task layout, and may hold more, such as solution, which no
 sandbox is ever given.
-A file that is in the benchmark and in no task is left alone.
-A benchmark that holds no task is refused, and so is one with a task that
+A file that is in the dataset and in no task is left alone.
+A dataset that holds no task is refused, and so is one with a task that
 lacks one of the four, or whose environment directory holds a Compose file,
 such as docker\-compose.yaml: an environment of more than one container cannot
 be built.
@@ -613,32 +614,32 @@ A task whose verifier runs in a sandbox of its own, as said below, is refused
 as well for a Compose file in its tests directory.
 Where the image of that sandbox holds the verifier, the task needs no test.sh.
 .PP
-\fB\-\-benchmark\fP is given once for each benchmark of the directed
+\fB\-\-dataset\fP is given once for each dataset of the directed
 evolution.
-A directed evolution that is given several has each harness benchmarked on all
+A directed evolution that is given several has each harness evaluated on all
 of them, and looks for the one harness that completes the most of their
 selection tasks.
-Every selection task counts the same, so a benchmark with more of them weighs
+Every selection task counts the same, so a dataset with more of them weighs
 more.
-The name of a benchmark is the name of its directory, made of the characters
+The name of a dataset is the name of its directory, made of the characters
 the id of a task is made of, and a task of a directed evolution is known by
 the two together, as
 .PP
 .RS 4
 .EX
-<BENCHMARK>/<TASK>
+<DATASET>/<TASK>
 .EE
 .RE
 .PP
-so two benchmarks may each hold a task of the same id.
-Two benchmarks whose directories have the same name are refused.
-The tasks are copied into benchmarks in the outputs directory when a directed
-evolution is started, each into a directory named after its benchmark, so the
+so two datasets may each hold a task of the same id.
+Two datasets whose directories have the same name are refused.
+The tasks are copied into datasets in the outputs directory when a directed
+evolution is started, each into a directory named after its dataset, so the
 directed evolution keeps the tasks it started with, and \fBcladenc resume\fP
-does not read the directories that \fB\-\-benchmark\fP named.
+does not read the directories that \fB\-\-dataset\fP named.
 .SH HOLDOUT TASKS
 \fB\-\-selection\-tasks\-percentage\fP gives the part of the tasks of each
-benchmark that are selection tasks, as so many in a hundred: a number above 0
+dataset that are selection tasks, as so many in a hundred: a number above 0
 and below 100, such as 45 or 12.5.
 \fB\-\-corroboration\-tasks\-percentage\fP gives the part that are
 corroboration tasks, in the same way.
@@ -647,22 +648,22 @@ tasks.
 The holdout tasks are the tasks that no progenitor reads about, and the tasks
 that are not held out are the non-holdout tasks.
 cladenc draws the selection tasks and the corroboration tasks at random when a
-directed evolution is started, out of each benchmark by itself: the number of
+directed evolution is started, out of each dataset by itself: the number of
 its tasks times the percentage, divided by 100 and rounded to the nearest
 whole number, a half rounded up.
-At 45 and 15, a benchmark of 500 tasks has 225 selection tasks, 75
+At 45 and 15, a dataset of 500 tasks has 225 selection tasks, 75
 corroboration tasks and 200 non-holdout tasks.
 .PP
-A \fB\-\-selection\-tasks\-percentage\fP that leaves a benchmark no selection
+A \fB\-\-selection\-tasks\-percentage\fP that leaves a dataset no selection
 task is refused, and so is a \fB\-\-corroboration\-tasks\-percentage\fP that
-leaves a benchmark no corroboration task, and so are two values that together
-leave a benchmark no non-holdout task.
-So a benchmark holds three tasks at the least, and a benchmark of fewer is
+leaves a dataset no corroboration task, and so are two values that together
+leave a dataset no non-holdout task.
+So a dataset holds three tasks at the least, and a dataset of fewer is
 refused.
 The draw is made once for a directed evolution and written in its journal, and
 \fBcladenc resume\fP reads it there and draws nothing.
 .PP
-Every harness is benchmarked on the holdout tasks as on the non-holdout tasks,
+Every harness is evaluated on the holdout tasks as on the non-holdout tasks,
 selection tasks and corroboration tasks alike, and nothing a harness is given
 in a trial says which of the sets its task is in.
 A harness that diversifies a clone is given the trials of the progenitor on
@@ -673,7 +674,7 @@ Artificial selection goes by the selection tasks and by no others.
 cladenc chooses which harness is cloned by the finished trials of the harness
 and its descendants on the selection tasks, and by how many of those trials
 passed, and it names as
-the best harness the created harness, benchmarked in full, that completed the
+the best harness the created harness, evaluated in full, that completed the
 most selection tasks: of several that completed as many, the one created
 first.
 The non-holdout tasks are what a harness reads to find what to change, and a
@@ -684,7 +685,7 @@ chooses nothing by them: not the harness that is cloned, and never the best
 harness.
 A set of tasks gives a fair count only while nothing is chosen by it.
 .PP
-The best harness is named among many, each benchmarked once, and a model does
+The best harness is named among many, each evaluated once, and a model does
 not answer the same way twice.
 So the best of many harnesses that are all alike has still completed more
 selection tasks than the primogenitor, by luck.
@@ -732,7 +733,7 @@ diversified.
 The line is added because a diversification that changes nothing creates no
 child.
 Such a directed evolution holds as many children as
-\fB\-\-max\-diversifications\fP gives, each of them benchmarked in full.
+\fB\-\-max\-diversifications\fP gives, each of them evaluated in full.
 In \fBcladenc report\fP of it, how far apart the counts of the harnesses lie
 is what luck does to the count of one harness, and how many more selection
 tasks the best harness completed than the primogenitor is what luck and the
@@ -1007,7 +1008,7 @@ a symbolic link to the copy, as said above.
 cladenc builds an image of 2 when it builds the environments of the tasks, and
 as it builds those, under the name of the environment of the task with
 \-verifier after it, and removes it when it removes them.
-environments/<BENCHMARK>/<TASK>/verifier in the outputs directory keeps what
+environments/<DATASET>/<TASK>/verifier in the outputs directory keeps what
 Docker printed.
 An image of 1 that is not on the machine, and an image of 2 that is not built,
 stop the directed evolution with exit status 2.
@@ -1364,7 +1365,7 @@ completes more of such tasks may only be better at drawing that out.
 .SH KEPT TRIALS
 trials in the outputs directory keeps every trial on a task that is not
 held out, in a directory named after the harness, in it one named after the
-benchmark, and in that one named after the task, which holds
+dataset, and in that one named after the task, which holds
 .TP 18n
 \fBresult\fP
 one word: pass, fail or inconclusive

@@ -15,8 +15,8 @@ fn start(directory: &Path, run_command: &str) -> Command {
         ("--model", test_inputs::MODEL.into()),
         ("--model-url", test_inputs::MODEL_URL.into()),
         (
-            "--benchmark",
-            test_inputs::benchmark(directory, &["t1", "t2", "t3"]),
+            "--dataset",
+            test_inputs::dataset(directory, &["t1", "t2", "t3"]),
         ),
         ("--diversification-docker-image", test_inputs::IMAGE.into()),
         ("--harness-run-command", run_command.into()),
@@ -61,17 +61,17 @@ fn stopped_by_an_interrupt() -> TempDir {
     fs::write(
         directory
             .path()
-            .join("benchmark/t1/environment/workspace/hold"),
+            .join("dataset/t1/environment/workspace/hold"),
         "",
     )
     .unwrap();
     let mut cladenc = start.spawn().unwrap();
     let outputs = directory.path().join("outputs");
-    let id_file = outputs.join("running/trial-0-benchmark+t1/stdout");
+    let id_file = outputs.join("running/trial-0-dataset+t1/stdout");
     test_inputs::wait_for_a_line(&mut cladenc, &id_file, &directory.path().join("printed"));
     kill(Pid::from_raw(cladenc.id().cast_signed()), Signal::SIGINT).unwrap();
     cladenc.wait().unwrap();
-    fs::remove_file(outputs.join("benchmarks/benchmark/t1/environment/workspace/hold")).unwrap();
+    fs::remove_file(outputs.join("datasets/dataset/t1/environment/workspace/hold")).unwrap();
     directory
 }
 

@@ -5,7 +5,7 @@ use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use cladenc::benchmark::{Benchmark, TaskConfiguration};
+use cladenc::dataset::{Dataset, TaskConfiguration};
 use cladenc::file_system::Disk;
 use cladenc::genealogy::{Cause, TrialResult};
 use cladenc::model::Model;
@@ -41,7 +41,7 @@ const LEAVE_A_NAMED_PIPE_UNDER_TWO_NAMES: &str =
 const NOT_ON_THE_MACHINE: &str = "cladenc-test-not-on-the-machine:0";
 const LOOK_FOR_THE_TESTS: &str = "ls -d /tests /var/opt/cladenc/harbor/tests \
     /var/log/cladenc/trials 2> /dev/null";
-const TASK: &str = "benchmark/t1";
+const TASK: &str = "dataset/t1";
 const AS_A_USER: &str = "RUN mkdir /app && chown 1000:1000 /app\nUSER 1000\nWORKDIR /app\n\
                          COPY --chown=1000:1000 workspace .\n";
 
@@ -136,9 +136,9 @@ fn trialled_as(trial: &Trial<'_>) -> Trialled {
     let path = directory.path().join("outputs");
     let outputs_directory =
         OutputsDirectory::create(crate::real::disk(), &path, &primogenitor).unwrap();
-    let benchmark = test_inputs::benchmark(directory.path(), &["t1"]);
+    let dataset = test_inputs::dataset(directory.path(), &["t1"]);
     outputs_directory
-        .copy_benchmark(&Benchmark::read(&Disk, &benchmark).unwrap())
+        .copy_dataset(&Dataset::read(&Disk, &dataset).unwrap())
         .unwrap();
     test_inputs::kept_verifier(&path, "t1", trial.verifier);
     if trial.unreadable_in_the_harness {

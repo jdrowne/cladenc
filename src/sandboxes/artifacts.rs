@@ -5,7 +5,7 @@ use std::path::{Component, Path, PathBuf};
 
 use super::sandbox::Up;
 use super::{Copied, SandboxError};
-use crate::benchmark::Artifact;
+use crate::dataset::Artifact;
 use crate::file_system::{FileSystem, Found, Kind};
 
 const KEPT: &str = ".";
