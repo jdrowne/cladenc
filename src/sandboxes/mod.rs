@@ -172,6 +172,7 @@ pub enum SandboxError {
     NotCopiedOut { left: Copied, error: io::Error },
     NotGivenToVerifier { left: String, error: io::Error },
     ChangesNotListed(io::Error),
+    NotWritten { file: PathBuf, error: io::Error },
 }
 
 #[derive(Debug)]
@@ -244,6 +245,11 @@ impl Display for SandboxError {
                 formatter,
                 "was not given a result: Docker did not list what was changed in its sandbox: \
                  {error}"
+            ),
+            Self::NotWritten { file, error } => write!(
+                formatter,
+                "was not given a result: {} could not be written: {error}",
+                file.display()
             ),
         }
     }
@@ -436,8 +442,13 @@ fn read_instruction(files: &dyn FileSystem, running: &Path) -> io::Result<String
     files.read_text(&running.join("instruction"))
 }
 
-fn keep(files: &dyn FileSystem, file: &Path, text: &str) {
-    let _ = files.write(file, text.as_bytes());
+fn keep(files: &dyn FileSystem, file: &Path, text: &str) -> Result<(), SandboxError> {
+    files
+        .write(file, text.as_bytes())
+        .map_err(|error| SandboxError::NotWritten {
+            file: file.to_owned(),
+            error,
+        })
 }
 
 fn make_directory(files: &dyn FileSystem, directory: &Path) {
@@ -498,14 +509,14 @@ impl Trialling<'_> {
             (HarnessEnding::Ended, "ended\n")
         };
         let files = host.outputs_directory.files();
-        keep(files, &self.running.join("ending"), word);
+        keep(files, &self.running.join("ending"), word)?;
         let changes: String = up
             .changes()?
             .into_iter()
             .filter(|change| !before.contains(change))
             .map(|change| change + "\n")
             .collect();
-        keep(files, &self.running.join("changes"), &changes);
+        keep(files, &self.running.join("changes"), &changes)?;
         up.keep_work(&self.running.join("work"))?;
         collect::run(
             &up,

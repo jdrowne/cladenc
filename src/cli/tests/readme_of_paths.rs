@@ -115,3 +115,14 @@ fn the_readme_says_what_cladenc_does_where_docker_does_not_list_the_changes_of_a
          trial again."
     ));
 }
+
+#[test]
+fn the_readme_says_what_cladenc_does_where_it_cannot_write_what_it_records_of_a_trial() {
+    assert!(readme().contains(
+        "Where `cladenc` cannot write the ending of the harness or the list of what it changed \
+         in the directory of the trial, as where the outputs directory has no room left, the \
+         trial is not kept without it: no result is recorded for the trial either, the directed \
+         evolution stops with exit status 1, `cladenc` names the file that was not written and \
+         says why, and `cladenc resume` carries out the trial again."
+    ));
+}

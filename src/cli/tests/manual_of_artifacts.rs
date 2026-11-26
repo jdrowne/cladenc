@@ -186,3 +186,24 @@ fn the_manual_of_start_lists_a_kept_path_not_copied_in_full_among_what_gives_no_
          resume carries out the trial again"
     ));
 }
+
+#[test]
+fn the_manual_of_start_says_what_cladenc_does_where_it_cannot_write_ending_or_changes() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "Once the harness has ended or was stopped, cladenc writes the files named ending and \
+         changes in the directory of the trial, as KEPT TRIALS says. Where one of them cannot \
+         be written, as where the outputs directory has no room left, the trial is not kept \
+         without it: no result is recorded for the trial, and the directed evolution stops with \
+         exit status 1. cladenc then names the harness, the task and the file, and says why the \
+         file was not written. cladenc resume carries out the trial again."
+    ));
+}
+
+#[test]
+fn the_manual_of_start_lists_a_file_that_cannot_be_written_among_what_gives_no_result() {
+    assert!(manual_on_one_line("cladenc-start").contains(
+        "ending or changes, where cladenc cannot write it in the directory of the trial no \
+         result is recorded: the directed evolution stops, and cladenc resume carries out the \
+         trial again"
+    ));
+}

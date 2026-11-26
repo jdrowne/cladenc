@@ -324,6 +324,18 @@ fn changes_that_were_not_listed_are_worded_with_what_docker_said() {
 }
 
 #[test]
+fn a_file_of_a_trial_that_was_not_written_is_worded_with_the_file_and_the_reason() {
+    assert_eq!(
+        worded(SandboxError::NotWritten {
+            file: PathBuf::from("/outputs/running/trial-3-parsing+t1/ending"),
+            error: io::Error::other("no space left on device"),
+        }),
+        "was not given a result: /outputs/running/trial-3-parsing+t1/ending could not be \
+         written: no space left on device"
+    );
+}
+
+#[test]
 fn one_try_of_the_health_check_of_a_verifier_is_not_worded_as_several() {
     assert!(
         worded(SandboxError::VerifierHealthCheck {

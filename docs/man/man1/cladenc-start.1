@@ -845,6 +845,15 @@ recorded for the trial, and the directed evolution stops with exit status 1.
 cladenc then names the harness and the task, and says what Docker said.
 \fBcladenc resume\fP carries out the trial again.
 .PP
+Once the harness has ended or was stopped, cladenc writes the files named
+ending and changes in the directory of the trial, as KEPT TRIALS says.
+Where one of them cannot be written, as where the outputs directory has no
+room left, the trial is not kept without it: no result is recorded for the
+trial, and the directed evolution stops with exit status 1.
+cladenc then names the harness, the task and the file, and says why the file
+was not written.
+\fBcladenc resume\fP carries out the trial again.
+.PP
 /logs and /tests are the two names that Harbor's task layout fixes at the top
 of the filesystem.
 cladenc makes no directory there, as the Filesystem Hierarchy Standard asks of
@@ -1235,6 +1244,10 @@ no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the trial again
 .TP 7n
 \fBthe changes of the sandbox, where Docker does not list them\fP
+no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
+carries out the trial again
+.TP 7n
+\fBending or changes, where cladenc cannot write it in the directory of the trial\fP
 no result is recorded: the directed evolution stops, and \fBcladenc resume\fP
 carries out the trial again
 .TP 7n

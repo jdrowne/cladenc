@@ -1,3 +1,4 @@
+use std::io::ErrorKind;
 use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
@@ -49,6 +50,12 @@ fn kept(tried: &Tried, file: &str) -> Option<String> {
         .directory
         .read_to_string(tried.outputs_directory.trial(0, TASK).join(file))
         .ok()
+}
+
+fn with_a_directory_in_the_place_of(file: &'static str) -> Double {
+    Double::default().doing(&HARNESS, move |directory, asked| {
+        directory.create_dir_all(asked.kept.join(file)).unwrap();
+    })
 }
 
 fn last_word_of(command: &str) -> Option<&str> {
@@ -412,6 +419,57 @@ fn no_list_of_changes_is_kept_where_docker_does_not_list_them_once_the_harness_h
 fn no_verifier_is_run_in_a_sandbox_whose_changes_cannot_be_listed() {
     let listed = [Answer::Printed("C /app\n"), REFUSED];
     let tried = trialled_by(Double::default().answering(&["diff"], &listed));
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains("/tests/test.sh"))
+    );
+}
+
+#[test]
+fn a_trial_whose_ending_cannot_be_written_is_given_no_result() {
+    let tried = trialled_by(with_a_directory_in_the_place_of("ending"));
+    let ending = tried.running().join("ending");
+    assert!(matches!(
+        &tried.result,
+        Err(SandboxError::NotWritten { file, .. }) if *file == ending
+    ));
+}
+
+#[test]
+fn a_trial_whose_list_of_changes_cannot_be_written_is_given_no_result() {
+    let tried = trialled_by(with_a_directory_in_the_place_of("changes"));
+    let changes = tried.running().join("changes");
+    assert!(matches!(
+        &tried.result,
+        Err(SandboxError::NotWritten { file, .. }) if *file == changes
+    ));
+}
+
+#[test]
+fn a_file_of_a_trial_that_cannot_be_written_is_told_with_why_it_was_not() {
+    let tried = trialled_by(with_a_directory_in_the_place_of("ending"));
+    assert!(matches!(
+        &tried.result,
+        Err(SandboxError::NotWritten { error, .. }) if error.kind() == ErrorKind::IsADirectory
+    ));
+}
+
+#[test]
+fn no_verifier_is_run_for_a_trial_whose_ending_cannot_be_written() {
+    let tried = trialled_by(with_a_directory_in_the_place_of("ending"));
+    assert!(
+        !tried
+            .commands()
+            .iter()
+            .any(|command| command.contains("/tests/test.sh"))
+    );
+}
+
+#[test]
+fn no_verifier_is_run_for_a_trial_whose_list_of_changes_cannot_be_written() {
+    let tried = trialled_by(with_a_directory_in_the_place_of("changes"));
     assert!(
         !tried
             .commands()
